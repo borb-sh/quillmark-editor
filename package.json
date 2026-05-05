@@ -46,7 +46,7 @@
     "README.md"
   ],
   "peerDependencies": {
-    "@quillmark/wasm": ">=0.59.0"
+    "@quillmark/wasm": ">=0.71.0"
   },
   "dependencies": {
     "fflate": "^0.8.2",
