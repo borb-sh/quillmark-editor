@@ -1,6 +1,6 @@
 {
   "name": "@quillmark/quiver",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Quiver registry and build tooling for Quillmark",
   "type": "module",
   "license": "MIT",
