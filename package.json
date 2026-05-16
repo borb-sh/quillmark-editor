@@ -6,12 +6,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nibsbin/quillmark-quiver.git"
+    "url": "git+https://github.com/quillmark-org/quiver.git"
   },
   "bugs": {
-    "url": "https://github.com/nibsbin/quillmark-quiver/issues"
+    "url": "https://github.com/quillmark-org/quiver/issues"
   },
-  "homepage": "https://github.com/nibsbin/quillmark-quiver#readme",
+  "homepage": "https://github.com/quillmark-org/quiver#readme",
   "keywords": [
     "quillmark",
     "quiver",
