@@ -20,7 +20,7 @@
   ],
   "author": "Quillmark Contributors",
   "engines": {
-    "node": ">=18"
+    "node": ">=24"
   },
   "exports": {
     ".": {
@@ -51,14 +51,14 @@
     "README.md"
   ],
   "peerDependencies": {
-    "@quillmark/wasm": ">=0.71.0"
+    "@quillmark/wasm": ">=0.79.0"
   },
   "dependencies": {
     "fflate": "^0.8.2",
     "yaml": "^2.8.3"
   },
   "devDependencies": {
-    "@quillmark/wasm": "0.71.1",
+    "@quillmark/wasm": "^0.79.0",
     "@types/node": "^25.3.3",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"

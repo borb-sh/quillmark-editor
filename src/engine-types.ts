@@ -1,5 +1,5 @@
 /**
- * Minimal structural types matching @quillmark/wasm >=0.71.0.
+ * Minimal structural types matching @quillmark/wasm >=0.79.0.
  *
  * Shape:
  *   class Quillmark { quill(tree: Map<string, Uint8Array>): Quill }
