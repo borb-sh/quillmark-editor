@@ -44,17 +44,16 @@ my-quiver/
 ```
 
 Recommended CI: use the bundled `@quillmark/quiver/testing` harness — it
-loads with `Quiver.fromDir` and exercises every quill so validation errors
-surface on publish, not on the consumer's build. The harness uses
-`node:test` (built into Node 18+); no extra test-runner dependency
-required. If you prefer vitest/jest/mocha, write a 12-line loop against
-the main API instead.
+loads with `Quiver.fromDir`, compiles every quill, and renders each quill's
+blueprint so validation errors surface on publish, not on the consumer's
+build. The harness uses `node:test` (built into Node 18+); no extra
+test-runner dependency required. If you prefer vitest/jest/mocha, write a
+12-line loop against the main API instead.
 
 ## Manual validation (rendering samples)
 
 The CI harness proves every quill _compiles_; it does not produce output a
-human can look at. To eyeball real renders, drop an `example.md` next to a
-quill's template (`quills/<name>/<x.y.z>/example.md`) and run the
+human can look at. To eyeball real renders, run the
 `@quillmark/quiver/preview` helper:
 
 ```ts
@@ -69,12 +68,12 @@ await renderQuiverSamples(import.meta.url, {
 // → writes ./preview/<name>@<version>.<fmt> + index.html
 ```
 
-It renders every quill's `example.md`, writes the artifacts to `outDir`
-(default `preview/`), and emits an `index.html` gallery. A `.gitignore` is
-written into `outDir` so the generated artifacts are never accidentally
-committed. Quills without an `example.md` are skipped; a quill that throws
-is recorded as failed — with every diagnostic, not just the first —
-without aborting the run, so one broken quill never hides the rest.
+It renders every quill's auto-generated blueprint (`quill.blueprint`), writes
+the artifacts to `outDir` (default `preview/`), and emits an `index.html`
+gallery. A `.gitignore` is written into `outDir` so the generated artifacts
+are never accidentally committed. A quill that throws is recorded as failed —
+with every diagnostic, not just the first — without aborting the run, so one
+broken quill never hides the rest.
 
 To iterate on a subset, pass `include` / `exclude` (each entry matches a
 quill name or canonical ref):

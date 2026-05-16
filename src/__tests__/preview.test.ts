@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { renderQuiverSamples } from "../preview.js";
 import type { QuillmarkLike } from "../engine-types.js";
 
-// Fixture: `memo` has an example.md, `plain` does not.
+// Fixture: `memo` and `plain` both render via their blueprints.
 const PREVIEW_FIXTURE = fileURLToPath(
   new URL("./fixtures/preview-quiver", import.meta.url),
 );
@@ -32,11 +32,14 @@ const MockDocument = {
   },
 };
 
+const MOCK_BLUEPRINT = "---\nQUILL: mock\n---\n\n# Mock blueprint";
+
 /** Mock engine whose quill echoes the document markdown as artifact bytes. */
 function makeEngine(): QuillmarkLike {
   return {
     quill() {
       return {
+        blueprint: MOCK_BLUEPRINT,
         render(doc: unknown, opts: unknown) {
           const md = (doc as { md: string }).md;
           const format =
@@ -52,7 +55,7 @@ function makeEngine(): QuillmarkLike {
 }
 
 describe("renderQuiverSamples", () => {
-  it("renders quills with an example.md and skips those without", async () => {
+  it("renders every quill using its blueprint", async () => {
     const outDir = makeOutDir();
     const results = await renderQuiverSamples(PREVIEW_FIXTURE, {
       engine: makeEngine(),
@@ -69,8 +72,8 @@ describe("renderQuiverSamples", () => {
     expect(memo.warnings).toEqual(["warning: mock warning"]);
 
     const plain = results.find((r) => r.ref === "plain@1.0.0")!;
-    expect(plain.status).toBe("skipped");
-    expect(plain.reasons.join(" ")).toContain("example.md");
+    expect(plain.status).toBe("rendered");
+    expect(plain.files).toEqual(["plain@1.0.0.pdf"]);
   });
 
   it("writes the rendered artifact bytes to disk", async () => {
@@ -83,7 +86,7 @@ describe("renderQuiverSamples", () => {
     });
 
     const artifact = await readFile(join(outDir, "memo@1.0.0.pdf"), "utf8");
-    expect(artifact).toContain("# Memo example");
+    expect(artifact).toContain("# Mock blueprint");
   });
 
   it("writes an index.html gallery", async () => {
@@ -98,7 +101,7 @@ describe("renderQuiverSamples", () => {
     const html = await readFile(join(outDir, "index.html"), "utf8");
     expect(html).toContain("Quiver preview — preview");
     expect(html).toContain("memo@1.0.0.pdf");
-    expect(html).toContain('class="card skipped"');
+    expect(html).not.toContain('class="card skipped"');
   });
 
   it("honors a forced output format", async () => {
@@ -122,6 +125,7 @@ describe("renderQuiverSamples", () => {
     const explodingEngine: QuillmarkLike = {
       quill() {
         return {
+          blueprint: MOCK_BLUEPRINT,
           render() {
             throw new Error("boom");
           },
@@ -136,13 +140,13 @@ describe("renderQuiverSamples", () => {
       quiet: true,
     });
 
-    const memo = results.find((r) => r.ref === "memo@1.0.0")!;
-    expect(memo.status).toBe("failed");
-    expect(memo.reasons).toEqual(["boom"]);
-    // The skipped quill is still reported — the run did not abort.
-    expect(results.find((r) => r.ref === "plain@1.0.0")!.status).toBe(
-      "skipped",
-    );
+    expect(results.every((r) => r.status === "failed")).toBe(true);
+    expect(results.find((r) => r.ref === "memo@1.0.0")!.reasons).toEqual([
+      "boom",
+    ]);
+    expect(results.find((r) => r.ref === "plain@1.0.0")!.reasons).toEqual([
+      "boom",
+    ]);
   });
 
   it("surfaces every diagnostic from a failed render", async () => {
@@ -150,6 +154,7 @@ describe("renderQuiverSamples", () => {
     const explodingEngine: QuillmarkLike = {
       quill() {
         return {
+          blueprint: MOCK_BLUEPRINT,
           render() {
             const err = new Error("2 error(s): first") as Error & {
               diagnostics: { severity: string; message: string }[];

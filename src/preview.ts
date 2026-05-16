@@ -3,9 +3,9 @@
  *
  * `runQuiverTests` (`@quillmark/quiver/testing`) proves every quill *compiles*
  * — it never produces a rendered artifact a human can look at. This module
- * closes that gap: it renders each quill's bundled `example.md`, writes the
- * artifacts to a directory, and emits an `index.html` gallery so an author
- * can eyeball real output before publishing.
+ * closes that gap: it renders each quill's blueprint, writes the artifacts to
+ * a directory, and emits an `index.html` gallery so an author can eyeball real
+ * output before publishing.
  *
  * Node-only: writes files and loads a source quiver from disk.
  *
@@ -20,9 +20,9 @@
  *   });
  *   // → open ./preview/index.html
  *
- * The example document is the `example.md` file inside each quill version
- * directory (`quills/<name>/<version>/example.md`). Quills without one are
- * skipped, not failed.
+ * The sample document is the auto-generated blueprint (`quill.blueprint`) for
+ * each quill version. Every quill always has a blueprint, so no quills are
+ * skipped for lack of a sample document.
  *
  * A `.gitignore` is written into `outDir` so the generated artifacts are not
  * accidentally committed.
@@ -32,9 +32,6 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Quiver } from "./node.js";
 import type { QuillmarkLike } from "./engine-types.js";
-
-/** The `example.md` filename looked up inside each quill version directory. */
-const EXAMPLE_FILE = "example.md";
 
 /** Default directory rendered artifacts are written to. */
 const DEFAULT_OUT_DIR = "preview";
@@ -92,8 +89,8 @@ export interface RenderQuiverSamplesOptions {
 export interface RenderedSample {
   /** Canonical ref, e.g. `"memo@1.0.0"`. */
   ref: string;
-  /** `rendered` — artifacts written; `skipped` — no example; `failed` — error. */
-  status: "rendered" | "skipped" | "failed";
+  /** `rendered` — artifacts written; `failed` — error. */
+  status: "rendered" | "failed";
   /** Artifact filenames written under `outDir` (relative). */
   files: string[];
   /** Render warnings, formatted `"severity: message"`. */
@@ -106,7 +103,7 @@ export interface RenderedSample {
 }
 
 /**
- * Renders every quill's `example.md` and writes the artifacts plus an
+ * Renders every quill's blueprint and writes the artifacts plus an
  * `index.html` gallery to `outDir`.
  *
  * Does NOT fail fast: a quill that throws is recorded as `failed` and the
@@ -176,22 +173,10 @@ async function renderOne(
 ): Promise<RenderedSample> {
   const ref = `${name}@${version}`;
 
-  const tree = await quiver.loadTree(name, version);
-  const exampleBytes = tree.get(EXAMPLE_FILE);
-  if (exampleBytes === undefined) {
-    return {
-      ref,
-      status: "skipped",
-      files: [],
-      warnings: [],
-      reasons: [`no ${EXAMPLE_FILE} in quill directory`],
-    };
-  }
-
   let result: RenderResultLike;
   try {
     const quill = await quiver.getQuill(ref, { engine: opts.engine });
-    const markdown = new TextDecoder().decode(exampleBytes);
+    const markdown = quill.blueprint;
     const doc = opts.Document.fromMarkdown(markdown);
     result = quill.render(
       doc,
@@ -248,10 +233,7 @@ function printSummary(
     for (const extra of r.reasons.slice(1)) console.log(`             ${extra}`);
     for (const w of r.warnings) console.log(`             ⚠ ${w}`);
   }
-  console.log(
-    `\n${count("rendered")} rendered, ${count("skipped")} skipped, ` +
-      `${count("failed")} failed`,
-  );
+  console.log(`\n${count("rendered")} rendered, ${count("failed")} failed`);
   console.log(`Open ${join(outDir, "index.html")} to review.\n`);
 }
 
@@ -311,7 +293,6 @@ function renderIndexHtml(
   .card { background: #fff; border: 1px solid #ddd; border-radius: 8px;
           padding: 1rem; margin: 1rem 0; }
   .card.failed { border-color: #e0b4b4; }
-  .card.skipped { opacity: 0.7; }
   h2 { font-size: 1rem; margin: 0 0 0.5rem; }
   .badge { font-size: 0.7rem; text-transform: uppercase; background: #eee;
            border-radius: 4px; padding: 2px 6px; vertical-align: middle; }

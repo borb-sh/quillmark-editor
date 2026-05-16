@@ -25,4 +25,6 @@ export interface QuillmarkLike {
 export interface QuillLike {
   render(doc: unknown, opts?: unknown): unknown;
   open?: (doc: unknown) => unknown;
+  /** Auto-generated annotated Markdown blueprint — always present in @quillmark/wasm >=0.79.0. */
+  blueprint: string;
 }

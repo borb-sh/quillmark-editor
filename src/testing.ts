@@ -7,10 +7,10 @@
  *
  * Usage (place this file next to your Quiver.yaml):
  *
- *   import { Quillmark } from "@quillmark/wasm";
+ *   import { Quillmark, Document } from "@quillmark/wasm";
  *   import { runQuiverTests } from "@quillmark/quiver/testing";
  *   const engine = new Quillmark();
- *   runQuiverTests(import.meta.url, engine);
+ *   runQuiverTests(import.meta.url, engine, Document);
  *
  * Run with `node --test`.
  */
@@ -21,6 +21,7 @@ import { describe, it, before } from "node:test";
 // static-method type signature.
 import { Quiver } from "./node.js";
 import type { QuillmarkLike } from "./engine-types.js";
+import type { DocumentFactoryLike } from "./preview.js";
 
 /**
  * Registers a `node:test` describe block that validates every quill
@@ -30,11 +31,13 @@ import type { QuillmarkLike } from "./engine-types.js";
  * to Quiver.yaml). Pass an absolute directory path for any other layout.
  *
  * Validation covers the full loading pipeline: Quiver.yaml, Quill.yaml,
- * all template files, and engine compilation via engine.quill(tree).
+ * all template files, engine compilation via engine.quill(tree), and a
+ * full render of each quill's blueprint document.
  */
 export function runQuiverTests(
   metaUrlOrDir: string,
   engine: QuillmarkLike,
+  Document: DocumentFactoryLike,
 ): void {
   describe("Quiver", () => {
     let quiver!: Quiver;
@@ -49,14 +52,17 @@ export function runQuiverTests(
       }
     });
 
-    it("compiles every quill version without error", async () => {
+    it("compiles and renders every quill's blueprint without error", async () => {
       for (const name of quiver.quillNames()) {
         for (const version of quiver.versionsOf(name)) {
-          const quill = await quiver.getQuill(`${name}@${version}`, { engine });
-          if (typeof quill.render !== "function") {
-            throw new Error(
-              `${name}@${version}: engine returned non-conforming Quill`,
-            );
+          const ref = `${name}@${version}`;
+          const quill = await quiver.getQuill(ref, { engine });
+          const doc = Document.fromMarkdown(quill.blueprint);
+          const result = quill.render(doc) as {
+            artifacts?: unknown[];
+          };
+          if (!Array.isArray(result.artifacts) || result.artifacts.length === 0) {
+            throw new Error(`${ref}: blueprint render produced no artifacts`);
           }
         }
       }
