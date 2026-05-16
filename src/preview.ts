@@ -23,6 +23,9 @@
  * The example document is the `example.md` file inside each quill version
  * directory (`quills/<name>/<version>/example.md`). Quills without one are
  * skipped, not failed.
+ *
+ * A `.gitignore` is written into `outDir` so the generated artifacts are not
+ * accidentally committed.
  */
 
 import { mkdir, writeFile } from "node:fs/promises";
@@ -73,6 +76,16 @@ export interface RenderQuiverSamplesOptions {
   format?: string;
   /** Suppress the console summary. Default: false. */
   quiet?: boolean;
+  /**
+   * Render only these quills. Each entry matches a quill name (`"memo"`) or a
+   * canonical ref (`"memo@1.0.0"`). Omit to render all quills.
+   */
+  include?: string[];
+  /**
+   * Skip these quills. Each entry matches a quill name (`"memo"`) or a
+   * canonical ref (`"memo@1.0.0"`). Applied after `include`.
+   */
+  exclude?: string[];
 }
 
 /** Per-quill outcome returned by `renderQuiverSamples`. */
@@ -85,8 +98,11 @@ export interface RenderedSample {
   files: string[];
   /** Render warnings, formatted `"severity: message"`. */
   warnings: string[];
-  /** Why the quill was skipped or failed; absent when rendered. */
-  reason?: string;
+  /**
+   * Why the quill was skipped or failed. Empty when rendered. A failed render
+   * carries every diagnostic from the engine, not just the first.
+   */
+  reasons: string[];
 }
 
 /**
@@ -111,10 +127,12 @@ export async function renderQuiverSamples(
   const results: RenderedSample[] = [];
   for (const name of quiver.quillNames()) {
     for (const version of quiver.versionsOf(name)) {
+      if (!isSelected(name, `${name}@${version}`, opts)) continue;
       results.push(await renderOne(quiver, name, version, outDir, opts));
     }
   }
 
+  await writeFile(join(outDir, ".gitignore"), "*\n");
   await writeFile(
     join(outDir, "index.html"),
     renderIndexHtml(quiver.name, results),
@@ -122,6 +140,31 @@ export async function renderQuiverSamples(
 
   if (!opts.quiet) printSummary(quiver.name, outDir, results);
   return results;
+}
+
+/** Whether a quill passes the `include`/`exclude` filters. */
+function isSelected(
+  name: string,
+  ref: string,
+  opts: RenderQuiverSamplesOptions,
+): boolean {
+  const matches = (list: string[]) => list.includes(name) || list.includes(ref);
+  if (opts.include && !matches(opts.include)) return false;
+  if (opts.exclude && matches(opts.exclude)) return false;
+  return true;
+}
+
+/**
+ * Formats a thrown render error into one string per diagnostic. `@quillmark/wasm`
+ * attaches a `diagnostics` array to its errors; fall back to the message when
+ * an error carries none.
+ */
+function failureReasons(err: unknown): string[] {
+  const diagnostics = (err as { diagnostics?: DiagnosticLike[] }).diagnostics;
+  if (Array.isArray(diagnostics) && diagnostics.length > 0) {
+    return diagnostics.map((d) => `${d.severity}: ${d.message}`);
+  }
+  return [(err as Error).message];
 }
 
 async function renderOne(
@@ -141,7 +184,7 @@ async function renderOne(
       status: "skipped",
       files: [],
       warnings: [],
-      reason: `no ${EXAMPLE_FILE} in quill directory`,
+      reasons: [`no ${EXAMPLE_FILE} in quill directory`],
     };
   }
 
@@ -160,7 +203,7 @@ async function renderOne(
       status: "failed",
       files: [],
       warnings: [],
-      reason: (err as Error).message,
+      reasons: failureReasons(err),
     };
   }
 
@@ -174,7 +217,7 @@ async function renderOne(
       status: "failed",
       files: [],
       warnings,
-      reason: "render produced no artifacts",
+      reasons: ["render produced no artifacts"],
     };
   }
 
@@ -186,7 +229,7 @@ async function renderOne(
     await writeFile(join(outDir, fileName), artifact.bytes);
     files.push(fileName);
   }
-  return { ref, status: "rendered", files, warnings };
+  return { ref, status: "rendered", files, warnings, reasons: [] };
 }
 
 function printSummary(
@@ -200,8 +243,9 @@ function printSummary(
   console.log(`\nQuiver "${quiverName}" — sample render`);
   for (const r of results) {
     const detail =
-      r.status === "rendered" ? r.files.join(", ") : (r.reason ?? "");
+      r.status === "rendered" ? r.files.join(", ") : (r.reasons[0] ?? "");
     console.log(`  [${r.status.padEnd(8)}] ${r.ref}${detail ? ` — ${detail}` : ""}`);
+    for (const extra of r.reasons.slice(1)) console.log(`             ${extra}`);
     for (const w of r.warnings) console.log(`             ⚠ ${w}`);
   }
   console.log(
@@ -240,7 +284,9 @@ function renderIndexHtml(
       const body =
         r.status === "rendered"
           ? r.files.map(embedArtifact).join("\n")
-          : `<p class="reason">${escapeHtml(r.reason ?? "")}</p>`;
+          : `<ul class="reasons">${r.reasons
+              .map((reason) => `<li>${escapeHtml(reason)}</li>`)
+              .join("")}</ul>`;
       const warnings = r.warnings.length
         ? `<ul class="warnings">${r.warnings
             .map((w) => `<li>${escapeHtml(w)}</li>`)
@@ -272,7 +318,7 @@ function renderIndexHtml(
   .failed .badge { background: #f3d2d2; }
   .art { width: 100%; height: 600px; border: 1px solid #eee; }
   img.art { height: auto; }
-  .reason { color: #a33; font-style: italic; }
+  .reasons { color: #a33; font-style: italic; }
   .warnings { color: #96690a; font-size: 0.85rem; }
 </style>
 </head>

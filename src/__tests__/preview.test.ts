@@ -70,7 +70,7 @@ describe("renderQuiverSamples", () => {
 
     const plain = results.find((r) => r.ref === "plain@1.0.0")!;
     expect(plain.status).toBe("skipped");
-    expect(plain.reason).toContain("example.md");
+    expect(plain.reasons.join(" ")).toContain("example.md");
   });
 
   it("writes the rendered artifact bytes to disk", async () => {
@@ -138,10 +138,78 @@ describe("renderQuiverSamples", () => {
 
     const memo = results.find((r) => r.ref === "memo@1.0.0")!;
     expect(memo.status).toBe("failed");
-    expect(memo.reason).toBe("boom");
+    expect(memo.reasons).toEqual(["boom"]);
     // The skipped quill is still reported — the run did not abort.
     expect(results.find((r) => r.ref === "plain@1.0.0")!.status).toBe(
       "skipped",
     );
+  });
+
+  it("surfaces every diagnostic from a failed render", async () => {
+    const outDir = makeOutDir();
+    const explodingEngine: QuillmarkLike = {
+      quill() {
+        return {
+          render() {
+            const err = new Error("2 error(s): first") as Error & {
+              diagnostics: { severity: string; message: string }[];
+            };
+            err.diagnostics = [
+              { severity: "error", message: "first" },
+              { severity: "error", message: "second" },
+            ];
+            throw err;
+          },
+        };
+      },
+    };
+
+    const results = await renderQuiverSamples(PREVIEW_FIXTURE, {
+      engine: explodingEngine,
+      Document: MockDocument,
+      outDir,
+      quiet: true,
+    });
+
+    const memo = results.find((r) => r.ref === "memo@1.0.0")!;
+    expect(memo.status).toBe("failed");
+    expect(memo.reasons).toEqual(["error: first", "error: second"]);
+
+    const html = await readFile(join(outDir, "index.html"), "utf8");
+    expect(html).toContain("error: first");
+    expect(html).toContain("error: second");
+  });
+
+  it("filters quills with include and exclude", async () => {
+    const includeOnly = await renderQuiverSamples(PREVIEW_FIXTURE, {
+      engine: makeEngine(),
+      Document: MockDocument,
+      outDir: makeOutDir(),
+      quiet: true,
+      include: ["memo"],
+    });
+    expect(includeOnly.map((r) => r.ref)).toEqual(["memo@1.0.0"]);
+
+    const excluded = await renderQuiverSamples(PREVIEW_FIXTURE, {
+      engine: makeEngine(),
+      Document: MockDocument,
+      outDir: makeOutDir(),
+      quiet: true,
+      exclude: ["memo@1.0.0"],
+    });
+    expect(excluded.map((r) => r.ref)).toEqual(["plain@1.0.0"]);
+  });
+
+  it("writes a .gitignore into the output directory", async () => {
+    const outDir = makeOutDir();
+    await renderQuiverSamples(PREVIEW_FIXTURE, {
+      engine: makeEngine(),
+      Document: MockDocument,
+      outDir,
+      quiet: true,
+    });
+
+    const gitignore = await readFile(join(outDir, ".gitignore"), "utf8");
+    expect(gitignore.trim()).toBe("*");
   });
 });

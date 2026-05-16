@@ -70,9 +70,27 @@ await renderQuiverSamples(import.meta.url, {
 ```
 
 It renders every quill's `example.md`, writes the artifacts to `outDir`
-(default `preview/`), and emits an `index.html` gallery. Quills
-without an `example.md` are skipped; a quill that throws is recorded as
-failed without aborting the run, so one broken quill never hides the rest.
+(default `preview/`), and emits an `index.html` gallery. A `.gitignore` is
+written into `outDir` so the generated artifacts are never accidentally
+committed. Quills without an `example.md` are skipped; a quill that throws
+is recorded as failed — with every diagnostic, not just the first —
+without aborting the run, so one broken quill never hides the rest.
+
+To iterate on a subset, pass `include` / `exclude` (each entry matches a
+quill name or canonical ref):
+
+```ts
+await renderQuiverSamples(import.meta.url, {
+  engine: new Quillmark(),
+  Document,
+  exclude: ["broken-quill"], // or: include: ["memo@1.0.0"]
+});
+```
+
+> **Linking the source repo?** `@quillmark/quiver/preview` resolves to
+> `./dist/preview.js`, which only exists after `npm install && npm run build`
+> in the `@quillmark/quiver` checkout. If you `npm link` it and see
+> `Cannot find module './dist/preview.js'`, build the linked package first.
 
 ## Consuming a quiver (Node)
 
