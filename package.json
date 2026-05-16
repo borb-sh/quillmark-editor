@@ -63,6 +63,9 @@
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
+  "bin": {
+    "quiver": "./dist/bin/quiver.js"
+  },
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
