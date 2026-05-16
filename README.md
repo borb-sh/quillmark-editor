@@ -50,6 +50,30 @@ surface on publish, not on the consumer's build. The harness uses
 required. If you prefer vitest/jest/mocha, write a 12-line loop against
 the main API instead.
 
+## Manual validation (rendering samples)
+
+The CI harness proves every quill _compiles_; it does not produce output a
+human can look at. To eyeball real renders, drop an `example.md` next to a
+quill's template (`quills/<name>/<x.y.z>/example.md`) and run the
+`@quillmark/quiver/preview` helper:
+
+```ts
+// scripts/preview.ts — run with: node --experimental-strip-types scripts/preview.ts
+import { Quillmark, Document } from "@quillmark/wasm";
+import { renderQuiverSamples } from "@quillmark/quiver/preview";
+
+await renderQuiverSamples(import.meta.url, {
+  engine: new Quillmark(),
+  Document,
+});
+// → writes ./preview/<name>@<version>.<fmt> + index.html
+```
+
+It renders every quill's `example.md`, writes the artifacts to `outDir`
+(default `preview/`), and emits an `index.html` gallery. Quills
+without an `example.md` are skipped; a quill that throws is recorded as
+failed without aborting the run, so one broken quill never hides the rest.
+
 ## Consuming a quiver (Node)
 
 ```ts

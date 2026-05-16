@@ -34,11 +34,16 @@
     "./testing": {
       "types": "./dist/testing.d.ts",
       "import": "./dist/testing.js"
+    },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "import": "./dist/preview.js"
     }
   },
   "sideEffects": [
     "./dist/node.js",
-    "./dist/testing.js"
+    "./dist/testing.js",
+    "./dist/preview.js"
   ],
   "files": [
     "dist",
