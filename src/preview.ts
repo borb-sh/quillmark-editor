@@ -3,9 +3,9 @@
  *
  * `runQuiverTests` (`@quillmark/quiver/testing`) proves every quill *compiles*
  * — it never produces a rendered artifact a human can look at. This module
- * closes that gap: it renders each quill's blueprint, writes the artifacts to
- * a directory, and emits an `index.html` gallery so an author can eyeball real
- * output before publishing.
+ * closes that gap: it renders each quill's example document, writes the
+ * artifacts to a directory, and emits an `index.html` gallery so an author can
+ * eyeball real output before publishing.
  *
  * Node-only: writes files and loads a source quiver from disk.
  *
@@ -20,9 +20,11 @@
  *   });
  *   // → open ./preview/index.html
  *
- * The sample document is the auto-generated blueprint (`quill.blueprint`) for
- * each quill version. Every quill always has a blueprint, so no quills are
- * skipped for lack of a sample document.
+ * The sample document is the illustrative example (`quill.example`) for each
+ * quill version — a fully filled-out, always-renderable document (the
+ * blueprint itself carries `<must-fill>` sentinels and is not renderable).
+ * Every quill always has an example, so no quills are skipped for lack of a
+ * sample document.
  *
  * A `.gitignore` is written into `outDir` so the generated artifacts are not
  * accidentally committed.
@@ -103,7 +105,7 @@ export interface RenderedSample {
 }
 
 /**
- * Renders every quill's blueprint and writes the artifacts plus an
+ * Renders every quill's example document and writes the artifacts plus an
  * `index.html` gallery to `outDir`.
  *
  * Does NOT fail fast: a quill that throws is recorded as `failed` and the
@@ -176,7 +178,7 @@ async function renderOne(
   let result: RenderResultLike;
   try {
     const quill = await quiver.getQuill(ref, { engine: opts.engine });
-    const markdown = quill.blueprint;
+    const markdown = quill.example;
     const doc = opts.Document.fromMarkdown(markdown);
     result = quill.render(
       doc,

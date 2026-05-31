@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { renderQuiverSamples } from "../preview.js";
 import type { QuillmarkLike } from "../engine-types.js";
 
-// Fixture: `memo` and `plain` both render via their blueprints.
+// Fixture: `memo` and `plain` both render via their example documents.
 const PREVIEW_FIXTURE = fileURLToPath(
   new URL("./fixtures/preview-quiver", import.meta.url),
 );
@@ -32,14 +32,14 @@ const MockDocument = {
   },
 };
 
-const MOCK_BLUEPRINT = "---\nQUILL: mock\n---\n\n# Mock blueprint";
+const MOCK_EXAMPLE = "---\nQUILL: mock\n---\n\n# Mock example";
 
 /** Mock engine whose quill echoes the document markdown as artifact bytes. */
 function makeEngine(): QuillmarkLike {
   return {
     quill() {
       return {
-        blueprint: MOCK_BLUEPRINT,
+        example: MOCK_EXAMPLE,
         render(doc: unknown, opts: unknown) {
           const md = (doc as { md: string }).md;
           const format =
@@ -55,7 +55,7 @@ function makeEngine(): QuillmarkLike {
 }
 
 describe("renderQuiverSamples", () => {
-  it("renders every quill using its blueprint", async () => {
+  it("renders every quill using its example", async () => {
     const outDir = makeOutDir();
     const results = await renderQuiverSamples(PREVIEW_FIXTURE, {
       engine: makeEngine(),
@@ -86,7 +86,7 @@ describe("renderQuiverSamples", () => {
     });
 
     const artifact = await readFile(join(outDir, "memo@1.0.0.pdf"), "utf8");
-    expect(artifact).toContain("# Mock blueprint");
+    expect(artifact).toContain("# Mock example");
   });
 
   it("writes an index.html gallery", async () => {
@@ -125,7 +125,7 @@ describe("renderQuiverSamples", () => {
     const explodingEngine: QuillmarkLike = {
       quill() {
         return {
-          blueprint: MOCK_BLUEPRINT,
+          example: MOCK_EXAMPLE,
           render() {
             throw new Error("boom");
           },
@@ -154,7 +154,7 @@ describe("renderQuiverSamples", () => {
     const explodingEngine: QuillmarkLike = {
       quill() {
         return {
-          blueprint: MOCK_BLUEPRINT,
+          example: MOCK_EXAMPLE,
           render() {
             const err = new Error("2 error(s): first") as Error & {
               diagnostics: { severity: string; message: string }[];

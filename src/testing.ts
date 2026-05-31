@@ -32,7 +32,7 @@ import type { DocumentFactoryLike } from "./preview.js";
  *
  * Validation covers the full loading pipeline: Quiver.yaml, Quill.yaml,
  * all template files, engine compilation via engine.quill(tree), and a
- * full render of each quill's blueprint document.
+ * full render of each quill's example document.
  */
 export function runQuiverTests(
   metaUrlOrDir: string,
@@ -52,17 +52,17 @@ export function runQuiverTests(
       }
     });
 
-    it("compiles and renders every quill's blueprint without error", async () => {
+    it("compiles and renders every quill's example without error", async () => {
       for (const name of quiver.quillNames()) {
         for (const version of quiver.versionsOf(name)) {
           const ref = `${name}@${version}`;
           const quill = await quiver.getQuill(ref, { engine });
-          const doc = Document.fromMarkdown(quill.blueprint);
+          const doc = Document.fromMarkdown(quill.example);
           const result = quill.render(doc) as {
             artifacts?: unknown[];
           };
           if (!Array.isArray(result.artifacts) || result.artifacts.length === 0) {
-            throw new Error(`${ref}: blueprint render produced no artifacts`);
+            throw new Error(`${ref}: example render produced no artifacts`);
           }
         }
       }

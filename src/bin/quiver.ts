@@ -116,10 +116,10 @@ async function test(): Promise<void> {
       const ref = `${name}@${version}`;
       try {
         const quill = await quiver.getQuill(ref, { engine });
-        const doc = Document.fromMarkdown(quill.blueprint);
+        const doc = Document.fromMarkdown(quill.example);
         const result = quill.render(doc) as { artifacts?: unknown[] };
         if (!Array.isArray(result.artifacts) || result.artifacts.length === 0) {
-          throw new Error("blueprint render produced no artifacts");
+          throw new Error("example render produced no artifacts");
         }
         console.log(`pass  ${ref}`);
         pass++;

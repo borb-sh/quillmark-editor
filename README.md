@@ -45,8 +45,8 @@ my-quiver/
 
 Recommended CI: use the bundled `@quillmark/quiver/testing` harness — it
 loads with `Quiver.fromDir`, compiles every quill, and renders each quill's
-blueprint so validation errors surface on publish, not on the consumer's
-build. The harness uses `node:test` (built into Node 18+); no extra
+example document so validation errors surface on publish, not on the
+consumer's build. The harness uses `node:test` (built into Node 18+); no extra
 test-runner dependency required. If you prefer vitest/jest/mocha, write a
 12-line loop against the main API instead.
 
@@ -68,8 +68,10 @@ await renderQuiverSamples(import.meta.url, {
 // → writes ./preview/<name>@<version>.<fmt> + index.html
 ```
 
-It renders every quill's auto-generated blueprint (`quill.blueprint`), writes
-the artifacts to `outDir` (default `preview/`), and emits an `index.html`
+It renders every quill's illustrative example document (`quill.example` — a
+fully filled-out, always-renderable sample; the blueprint itself carries
+`<must-fill>` sentinels and is not directly renderable), writes the artifacts
+to `outDir` (default `preview/`), and emits an `index.html`
 gallery. A `.gitignore` is written into `outDir` so the generated artifacts
 are never accidentally committed. A quill that throws is recorded as failed —
 with every diagnostic, not just the first — without aborting the run, so one

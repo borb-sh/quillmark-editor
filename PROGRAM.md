@@ -465,7 +465,7 @@ const result = quill.render(doc, { format: "pdf" });
   test runners wire their own loops against the main API.
 
 **Dependencies:**
-- Peer: `@quillmark/wasm@>=0.71.0` with `Quillmark`, `Document.fromMarkdown`, `engine.quill(tree)`, and `quill.render(doc, opts?)` APIs.
+- Peer: `@quillmark/wasm@>=0.86.0` with `Quillmark`, `Document.fromMarkdown`, `engine.quill(tree)`, `quill.render(doc, opts?)`, and `quill.example` (renderable sample document) APIs.
 - Runtime: `fflate ^0.8.2` for zip read/write (Node + browser)
 - Dev-only: `node:crypto` (MD5 hashing in `build()` — never reached at runtime)
 - No test-runner peer dependency; `/testing` uses `node:test` (built-in)

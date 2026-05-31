@@ -1,5 +1,5 @@
 /**
- * Minimal structural types matching @quillmark/wasm >=0.79.0.
+ * Minimal structural types matching @quillmark/wasm >=0.86.0.
  *
  * Shape:
  *   class Quillmark { quill(tree: Map<string, Uint8Array>): Quill }
@@ -25,6 +25,18 @@ export interface QuillmarkLike {
 export interface QuillLike {
   render(doc: unknown, opts?: unknown): unknown;
   open?: (doc: unknown) => unknown;
-  /** Auto-generated annotated Markdown blueprint — always present in @quillmark/wasm >=0.79.0. */
+  /**
+   * Auto-generated annotated Markdown blueprint for LLM/authoring consumers.
+   * Carries `<must-fill>` sentinels for Must Fill fields, so it is *not*
+   * directly renderable — render `example` instead.
+   */
   blueprint: string;
+  /**
+   * The illustrative "filled-out" reference document — always renderable.
+   * Each field resolves to its `example:`, else its `default:`, else a
+   * type-empty zero value, with no `<must-fill>` sentinels. Introduced in
+   * @quillmark/wasm >=0.86.0. Used by Quiver's preview/testing helpers to
+   * render a sample artifact for each quill.
+   */
+  example: string;
 }
