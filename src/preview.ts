@@ -11,20 +11,19 @@
  *
  * Usage (place a script next to your Quiver.yaml):
  *
- *   import { Quillmark, Document } from "@quillmark/wasm";
+ *   import { Quillmark } from "@quillmark/wasm";
  *   import { renderQuiverSamples } from "@quillmark/quiver/preview";
  *
  *   await renderQuiverSamples(import.meta.url, {
  *     engine: new Quillmark(),
- *     Document,
  *   });
  *   // → open ./preview/index.html
  *
- * The sample document is the illustrative example (`quill.example`) for each
- * quill version — a fully filled-out, always-renderable document (the
- * blueprint itself carries `<must-fill>` sentinels and is not renderable).
- * Every quill always has an example, so no quills are skipped for lack of a
- * sample document.
+ * The sample document is the illustrative example seeded by
+ * `quill.seedDocument()` for each quill version — a fully filled-out,
+ * always-renderable document (the blueprint itself carries `<must-fill>`
+ * sentinels and is not renderable). Every quill always seeds an example, so no
+ * quills are skipped for lack of a sample document.
  *
  * A `.gitignore` is written into `outDir` so the generated artifacts are not
  * accidentally committed.
@@ -33,42 +32,19 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Quiver } from "./node.js";
-import type { QuillmarkLike } from "./engine-types.js";
+import type {
+  Quillmark,
+  RenderResult,
+  Diagnostic,
+  OutputFormat,
+} from "@quillmark/wasm";
 
 /** Default directory rendered artifacts are written to. */
 const DEFAULT_OUT_DIR = "preview";
 
-/**
- * Structural shape of the `Document` class from `@quillmark/wasm`. Only the
- * `fromMarkdown` factory is used; passing the real class satisfies this.
- */
-export interface DocumentFactoryLike {
-  fromMarkdown(markdown: string): unknown;
-}
-
-/** One render output: a format-tagged byte payload. */
-interface ArtifactLike {
-  format: string;
-  bytes: Uint8Array;
-}
-
-/** A render-time diagnostic (warning/note). */
-interface DiagnosticLike {
-  severity: string;
-  message: string;
-}
-
-/** Structural shape of `RenderResult` from `@quillmark/wasm`. */
-interface RenderResultLike {
-  artifacts?: ArtifactLike[];
-  warnings?: DiagnosticLike[];
-}
-
 export interface RenderQuiverSamplesOptions {
   /** Quillmark engine instance (`new Quillmark()` from `@quillmark/wasm`). */
-  engine: QuillmarkLike;
-  /** The `Document` class from `@quillmark/wasm`. */
-  Document: DocumentFactoryLike;
+  engine: Quillmark;
   /** Directory to write rendered artifacts into. Default: `preview`. */
   outDir?: string;
   /** Force an output format (`pdf`/`svg`/`png`/`txt`). Default: engine's choice. */
@@ -159,7 +135,7 @@ function isSelected(
  * an error carries none.
  */
 function failureReasons(err: unknown): string[] {
-  const diagnostics = (err as { diagnostics?: DiagnosticLike[] }).diagnostics;
+  const diagnostics = (err as { diagnostics?: Diagnostic[] }).diagnostics;
   if (Array.isArray(diagnostics) && diagnostics.length > 0) {
     return diagnostics.map((d) => `${d.severity}: ${d.message}`);
   }
@@ -175,15 +151,14 @@ async function renderOne(
 ): Promise<RenderedSample> {
   const ref = `${name}@${version}`;
 
-  let result: RenderResultLike;
+  let result: RenderResult;
   try {
     const quill = await quiver.getQuill(ref, { engine: opts.engine });
-    const markdown = quill.example;
-    const doc = opts.Document.fromMarkdown(markdown);
+    const doc = quill.seedDocument();
     result = quill.render(
       doc,
-      opts.format ? { format: opts.format } : undefined,
-    ) as RenderResultLike;
+      opts.format ? { format: opts.format as OutputFormat } : undefined,
+    );
   } catch (err) {
     return {
       ref,

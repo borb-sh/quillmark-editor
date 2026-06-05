@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Quiver } from "../node.js";
-import type { QuillmarkLike, QuillLike } from "../engine-types.js";
+import type { Quillmark, Quill } from "@quillmark/wasm";
 import { makeMockEngine } from "./helpers/mock-engine.js";
 
 const SAMPLE_FIXTURE = new URL("./fixtures/sample-quiver", import.meta.url)
@@ -61,7 +61,7 @@ describe("Quiver.resolve", () => {
 // ─── getQuill ─────────────────────────────────────────────────────────────────
 
 describe("Quiver.getQuill", () => {
-  it("9. canonical ref returns mock QuillLike; engine.quill called with tree containing Quill.yaml", async () => {
+  it("9. canonical ref returns mock Quill; engine.quill called with tree containing Quill.yaml", async () => {
     const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
     const { calls, engine } = makeMockEngine();
 
@@ -149,15 +149,15 @@ describe("Quiver.getQuill", () => {
   it("17. if engine.quill throws, error propagates and in-flight entry is cleared (retry works)", async () => {
     const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
     let callCount = 0;
-    const flakyEngine: QuillmarkLike = {
-      quill(_tree: Map<string, Uint8Array>): QuillLike {
+    const flakyEngine = {
+      quill(_tree: Map<string, Uint8Array>): Quill {
         callCount++;
         if (callCount === 1) {
           throw new Error("engine exploded");
         }
-        return { render: () => ({ ok: true }) };
+        return { render: () => ({ ok: true }) } as unknown as Quill;
       },
-    };
+    } as unknown as Quillmark;
 
     await expect(
       quiver.getQuill("memo@1.0.0", { engine: flakyEngine }),
@@ -304,13 +304,13 @@ describe("Quiver tree cache lifecycle", () => {
     });
 
     let engineCalls = 0;
-    const flakyEngine: QuillmarkLike = {
-      quill(_tree: Map<string, Uint8Array>): QuillLike {
+    const flakyEngine = {
+      quill(_tree: Map<string, Uint8Array>): Quill {
         engineCalls++;
         if (engineCalls === 1) throw new Error("boom");
-        return { render: () => ({ ok: true }) };
+        return { render: () => ({ ok: true }) } as unknown as Quill;
       },
-    };
+    } as unknown as Quillmark;
 
     await expect(
       quiver.getQuill("memo@1.0.0", { engine: flakyEngine }),

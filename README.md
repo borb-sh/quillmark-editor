@@ -58,19 +58,19 @@ human can look at. To eyeball real renders, run the
 
 ```ts
 // scripts/preview.ts — run with: node --experimental-strip-types scripts/preview.ts
-import { Quillmark, Document } from "@quillmark/wasm";
+import { Quillmark } from "@quillmark/wasm";
 import { renderQuiverSamples } from "@quillmark/quiver/preview";
 
 await renderQuiverSamples(import.meta.url, {
   engine: new Quillmark(),
-  Document,
 });
 // → writes ./preview/<name>@<version>.<fmt> + index.html
 ```
 
-It renders every quill's illustrative example document (`quill.example` — a
-fully filled-out, always-renderable sample; the blueprint itself carries
-`<must-fill>` sentinels and is not directly renderable), writes the artifacts
+It renders every quill's illustrative example document (seeded via
+`quill.seedDocument()` — a fully filled-out, always-renderable sample; the
+blueprint itself carries `<must-fill>` sentinels and is not directly
+renderable), writes the artifacts
 to `outDir` (default `preview/`), and emits an `index.html`
 gallery. A `.gitignore` is written into `outDir` so the generated artifacts
 are never accidentally committed. A quill that throws is recorded as failed —
@@ -83,7 +83,6 @@ quill name or canonical ref):
 ```ts
 await renderQuiverSamples(import.meta.url, {
   engine: new Quillmark(),
-  Document,
   exclude: ["broken-quill"], // or: include: ["memo@1.0.0"]
 });
 ```
@@ -207,7 +206,3 @@ try {
 ```
 
 Error codes: `invalid_ref`, `quill_not_found`, `quiver_invalid`, `transport_error`.
-
-## Full specification
-
-See [PROGRAM.md](./PROGRAM.md) for the complete API surface, runtime artifact format specification, and design decisions.

@@ -7,10 +7,10 @@
  *
  * Usage (place this file next to your Quiver.yaml):
  *
- *   import { Quillmark, Document } from "@quillmark/wasm";
+ *   import { Quillmark } from "@quillmark/wasm";
  *   import { runQuiverTests } from "@quillmark/quiver/testing";
  *   const engine = new Quillmark();
- *   runQuiverTests(import.meta.url, engine, Document);
+ *   runQuiverTests(import.meta.url, engine);
  *
  * Run with `node --test`.
  */
@@ -20,8 +20,7 @@ import { describe, it, before } from "node:test";
 // `Quiver.fromDir` is callable at runtime, and gives us the augmented
 // static-method type signature.
 import { Quiver } from "./node.js";
-import type { QuillmarkLike } from "./engine-types.js";
-import type { DocumentFactoryLike } from "./preview.js";
+import type { Quillmark } from "@quillmark/wasm";
 
 /**
  * Registers a `node:test` describe block that validates every quill
@@ -36,8 +35,7 @@ import type { DocumentFactoryLike } from "./preview.js";
  */
 export function runQuiverTests(
   metaUrlOrDir: string,
-  engine: QuillmarkLike,
-  Document: DocumentFactoryLike,
+  engine: Quillmark,
 ): void {
   describe("Quiver", () => {
     let quiver!: Quiver;
@@ -57,7 +55,7 @@ export function runQuiverTests(
         for (const version of quiver.versionsOf(name)) {
           const ref = `${name}@${version}`;
           const quill = await quiver.getQuill(ref, { engine });
-          const doc = Document.fromMarkdown(quill.example);
+          const doc = quill.seedDocument();
           const result = quill.render(doc) as {
             artifacts?: unknown[];
           };

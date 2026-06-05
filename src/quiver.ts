@@ -11,7 +11,7 @@
  */
 
 import { QuiverError } from "./errors.js";
-import type { QuillmarkLike, QuillLike } from "./engine-types.js";
+import type { Quillmark, Quill } from "@quillmark/wasm";
 import { parseQuillRef } from "./ref.js";
 import { matchesSemverSelector, chooseHighestVersion } from "./semver.js";
 
@@ -32,8 +32,8 @@ export class Quiver {
    * getQuill calls coalesce into a single materialization.
    */
   readonly #quillCache: WeakMap<
-    QuillmarkLike,
-    Map<string, Promise<QuillLike>>
+    Quillmark,
+    Map<string, Promise<Quill>>
   > = new WeakMap();
 
   /**
@@ -181,8 +181,8 @@ export class Quiver {
    */
   async getQuill(
     ref: string,
-    opts: { engine: QuillmarkLike },
-  ): Promise<QuillLike> {
+    opts: { engine: Quillmark },
+  ): Promise<Quill> {
     const canonicalRef = await this.resolve(ref);
     const engine = opts.engine;
 
@@ -213,8 +213,8 @@ export class Quiver {
    */
   async #materializeQuill(
     canonicalRef: string,
-    engine: QuillmarkLike,
-  ): Promise<QuillLike> {
+    engine: Quillmark,
+  ): Promise<Quill> {
     const tree = await this.#getTreeCached(canonicalRef);
     const quill = engine.quill(tree);
     this.#treeCache.delete(canonicalRef);
