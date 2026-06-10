@@ -3,11 +3,33 @@
  * so no filesystem or network is needed.
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import { loadBuiltQuiver } from "../built-loader.js";
 import { packFiles } from "../bundle.js";
 import { QuiverError } from "../errors.js";
 import type { BuiltTransport } from "../built-loader.js";
+import { mockQuillFromTree } from "./helpers/mock-engine.js";
+
+// The Quiver tree path is private (`getQuill` → internal `#loadTree`). To
+// observe the tree the loader produced, stub `Quill.fromTree` and read the
+// tree it was handed; `getQuill` resolves the ref and drives the same loader.
+let treeStub: ReturnType<typeof mockQuillFromTree> | undefined;
+afterEach(() => {
+  treeStub?.restore();
+  treeStub = undefined;
+});
+
+/** Drives the loader via `getQuill` and returns the tree fed to Quill.fromTree. */
+async function loadTreeViaGetQuill(
+  quiver: { getQuill: (ref: string) => Promise<unknown> },
+  name: string,
+  version: string,
+): Promise<Map<string, Uint8Array>> {
+  treeStub ??= mockQuillFromTree();
+  const before = treeStub.calls.length;
+  await quiver.getQuill(`${name}@${version}`);
+  return treeStub.calls[before]!;
+}
 
 // ─── In-memory mock transport ─────────────────────────────────────────────────
 
@@ -122,25 +144,25 @@ describe("loadBuiltQuiver — happy path", () => {
   });
 });
 
-describe("loadBuiltQuiver — loadTree rehydration", () => {
-  it("loadTree returns file tree with content files", async () => {
+describe("loadBuiltQuiver — tree rehydration", () => {
+  it("loaded tree has content files", async () => {
     const q = await loadBuiltQuiver(buildMinimalTransport());
-    const tree = await q.loadTree("memo", "1.0.0");
+    const tree = await loadTreeViaGetQuill(q, "memo", "1.0.0");
 
     expect(tree).toBeInstanceOf(Map);
     expect(tree.has("Quill.yaml")).toBe(true);
     expect(tree.has("template.typ")).toBe(true);
   });
 
-  it("loadTree returns correct bytes for content files", async () => {
+  it("loaded tree has correct bytes for content files", async () => {
     const q = await loadBuiltQuiver(buildMinimalTransport());
-    const tree = await q.loadTree("memo", "1.0.0");
+    const tree = await loadTreeViaGetQuill(q, "memo", "1.0.0");
 
     const quillYaml = new TextDecoder().decode(tree.get("Quill.yaml"));
     expect(quillYaml).toBe("name: memo\n");
   });
 
-  it("loadTree rehydrates fonts at correct paths", async () => {
+  it("rehydrates fonts at correct paths", async () => {
     const fontBytes = new Uint8Array([0xde, 0xad, 0xbe, 0xef]);
     const fontHash = "aabbccddeeff00112233445566778899";
 
@@ -162,16 +184,16 @@ describe("loadBuiltQuiver — loadTree rehydration", () => {
     });
 
     const q = await loadBuiltQuiver(transport);
-    const tree = await q.loadTree("memo", "1.0.0");
+    const tree = await loadTreeViaGetQuill(q, "memo", "1.0.0");
 
     expect(tree.has("fonts/body.ttf")).toBe(true);
     expect(tree.get("fonts/body.ttf")).toEqual(fontBytes);
   });
 
-  it("loadTree throws transport_error for unknown name/version", async () => {
+  it("getQuill throws quill_not_found for unknown name/version", async () => {
     const q = await loadBuiltQuiver(buildMinimalTransport());
-    await expect(q.loadTree("memo", "9.9.9")).rejects.toThrow(
-      expect.objectContaining({ code: "transport_error" }),
+    await expect(q.getQuill("memo@9.9.9")).rejects.toThrow(
+      expect.objectContaining({ code: "quill_not_found" }),
     );
   });
 });
@@ -208,9 +230,14 @@ describe("loadBuiltQuiver — font coalescing", () => {
     });
 
     const q = await loadBuiltQuiver(transport);
+    treeStub = mockQuillFromTree();
 
-    // Fire both concurrently.
-    await Promise.all([q.loadTree("quillA", "1.0.0"), q.loadTree("quillB", "1.0.0")]);
+    // Fire both concurrently. Each getQuill drives the loader, which coalesces
+    // the shared font fetch.
+    await Promise.all([
+      q.getQuill("quillA@1.0.0"),
+      q.getQuill("quillB@1.0.0"),
+    ]);
 
     // Store fetch should have happened exactly once.
     const storeFetches = transport.fetchLog.filter((p) =>
@@ -318,7 +345,7 @@ describe("loadBuiltQuiver — missing bundle or store entry", () => {
     });
 
     const q = await loadBuiltQuiver(transport);
-    await expect(q.loadTree("foo", "1.0.0")).rejects.toThrow(
+    await expect(q.getQuill("foo@1.0.0")).rejects.toThrow(
       expect.objectContaining({ code: "transport_error" }),
     );
   });
@@ -341,7 +368,7 @@ describe("loadBuiltQuiver — missing bundle or store entry", () => {
     });
 
     const q = await loadBuiltQuiver(transport);
-    await expect(q.loadTree("foo", "1.0.0")).rejects.toThrow(
+    await expect(q.getQuill("foo@1.0.0")).rejects.toThrow(
       expect.objectContaining({ code: "transport_error" }),
     );
   });

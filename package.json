@@ -1,6 +1,6 @@
 {
   "name": "@quillmark/quiver",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Quiver registry and build tooling for Quillmark",
   "type": "module",
   "license": "MIT",
@@ -50,14 +50,14 @@
     "README.md"
   ],
   "peerDependencies": {
-    "@quillmark/wasm": ">=0.88.0"
+    "@quillmark/wasm": ">=0.90.0-0"
   },
   "dependencies": {
     "fflate": "^0.8.2",
     "yaml": "^2.8.3"
   },
   "devDependencies": {
-    "@quillmark/wasm": "^0.88.0",
+    "@quillmark/wasm": "0.90.0",
     "@types/node": "^25.3.3",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
@@ -67,6 +67,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "prepack": "rm -rf dist && tsc",
     "test": "vitest run",
     "lint": "tsc --noEmit"
   }

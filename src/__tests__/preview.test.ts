@@ -1,13 +1,17 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import { readFile, readdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { renderQuiverSamples } from "../preview.js";
-import type { Quillmark } from "@quillmark/wasm";
+import {
+  renderQuiverSamples,
+  type RenderQuiverSamplesOptions,
+} from "../preview.js";
 
-// Fixture: `memo` and `plain` both render via their example documents.
+// Fixture: `memo` and `plain` are valid core quills (parseable + seedable), so
+// `renderQuiverSamples` materializes them via `quiver.getQuill` and seeds a real
+// Document. The Engine is mocked, so no real Typst render runs.
 const PREVIEW_FIXTURE = fileURLToPath(
   new URL("./fixtures/preview-quiver", import.meta.url),
 );
@@ -20,33 +24,36 @@ function makeOutDir(): string {
 }
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   await Promise.all(
     tempDirs.splice(0).map((d) => rm(d, { recursive: true, force: true })),
   );
 });
 
-const MOCK_EXAMPLE = "---\nQUILL: mock\n---\n\n# Mock example";
-
-/** Mock engine whose quill echoes the seeded document markdown as artifact bytes. */
-function makeEngine(): Quillmark {
+/**
+ * Mock canonical Engine. Takes the real core Quill + seeded Document that
+ * `renderQuiverSamples` produces and echoes a deterministic artifact whose
+ * bytes encode the chosen format — no real backend involved.
+ */
+function makeEngine(): RenderQuiverSamplesOptions["engine"] {
   return {
-    quill() {
+    async render(_quill: unknown, _doc: unknown, opts: unknown) {
+      const format = (opts as { format?: string } | undefined)?.format ?? "pdf";
       return {
-        seedDocument() {
-          return { md: MOCK_EXAMPLE };
-        },
-        render(doc: unknown, opts: unknown) {
-          const md = (doc as { md: string }).md;
-          const format =
-            (opts as { format?: string } | undefined)?.format ?? "pdf";
-          return {
-            artifacts: [{ format, bytes: new TextEncoder().encode(md) }],
-            warnings: [{ severity: "warning", message: "mock warning" }],
-          };
-        },
+        artifacts: [
+          { format, bytes: new TextEncoder().encode(`rendered:${format}`) },
+        ],
+        warnings: [{ severity: "warning", message: "mock warning" }],
       };
     },
-  } as unknown as Quillmark;
+  } as unknown as RenderQuiverSamplesOptions["engine"];
+}
+
+/** Engine whose render rejects, to exercise the failure path. */
+function explodingEngine(
+  render: () => never,
+): RenderQuiverSamplesOptions["engine"] {
+  return { render } as unknown as RenderQuiverSamplesOptions["engine"];
 }
 
 describe("renderQuiverSamples", () => {
@@ -79,7 +86,7 @@ describe("renderQuiverSamples", () => {
     });
 
     const artifact = await readFile(join(outDir, "memo@1.0.0.pdf"), "utf8");
-    expect(artifact).toContain("# Mock example");
+    expect(artifact).toBe("rendered:pdf");
   });
 
   it("writes an index.html gallery", async () => {
@@ -113,21 +120,12 @@ describe("renderQuiverSamples", () => {
 
   it("records a render failure without aborting the run", async () => {
     const outDir = makeOutDir();
-    const explodingEngine = {
-      quill() {
-        return {
-          seedDocument() {
-            return {};
-          },
-          render() {
-            throw new Error("boom");
-          },
-        };
-      },
-    } as unknown as Quillmark;
+    const engine = explodingEngine(() => {
+      throw new Error("boom");
+    });
 
     const results = await renderQuiverSamples(PREVIEW_FIXTURE, {
-      engine: explodingEngine,
+      engine,
       outDir,
       quiet: true,
     });
@@ -143,28 +141,19 @@ describe("renderQuiverSamples", () => {
 
   it("surfaces every diagnostic from a failed render", async () => {
     const outDir = makeOutDir();
-    const explodingEngine = {
-      quill() {
-        return {
-          seedDocument() {
-            return {};
-          },
-          render() {
-            const err = new Error("2 error(s): first") as Error & {
-              diagnostics: { severity: string; message: string }[];
-            };
-            err.diagnostics = [
-              { severity: "error", message: "first" },
-              { severity: "error", message: "second" },
-            ];
-            throw err;
-          },
-        };
-      },
-    } as unknown as Quillmark;
+    const engine = explodingEngine(() => {
+      const err = new Error("2 error(s): first") as Error & {
+        diagnostics: { severity: string; message: string }[];
+      };
+      err.diagnostics = [
+        { severity: "error", message: "first" },
+        { severity: "error", message: "second" },
+      ];
+      throw err;
+    });
 
     const results = await renderQuiverSamples(PREVIEW_FIXTURE, {
-      engine: explodingEngine,
+      engine,
       outDir,
       quiet: true,
     });

@@ -1,20 +1,28 @@
-import type { Quillmark, Quill } from "@quillmark/wasm";
+import { vi, type MockInstance } from "vitest";
+import { Quill } from "@quillmark/wasm";
 
 /**
- * In-test mock for the Quillmark engine. Records every `engine.quill(tree)`
- * call. The mock implements only the slice of the engine contract Quiver
- * exercises, so it is cast to the real `@quillmark/wasm` types.
+ * Stubs `Quill.fromTree` so tests can exercise `Quiver.getQuill` without the
+ * real WASM validator (quill construction is now engine-free — `getQuill`
+ * calls `Quill.fromTree(tree)` directly). Each call records the tree it was
+ * given and returns a fresh fake `Quill` whose identity tracks the
+ * caching/coalescing behavior under test.
+ *
+ * Returns `calls` (the trees passed to `Quill.fromTree`, in order) and a
+ * `restore()` to undo the stub. Install in `beforeEach`/at test top and call
+ * `restore()` after.
  */
-export function makeMockEngine(): {
+export function mockQuillFromTree(): {
   calls: Array<Map<string, Uint8Array>>;
-  engine: Quillmark;
+  spy: MockInstance;
+  restore: () => void;
 } {
   const calls: Array<Map<string, Uint8Array>> = [];
-  const engine = {
-    quill(tree: Map<string, Uint8Array>): Quill {
+  const spy = vi
+    .spyOn(Quill, "fromTree")
+    .mockImplementation((tree: Map<string, Uint8Array>): Quill => {
       calls.push(tree);
-      return { render: () => ({ ok: true }) } as unknown as Quill;
-    },
-  } as unknown as Quillmark;
-  return { calls, engine };
+      return { seedDocument: () => ({}) } as unknown as Quill;
+    });
+  return { calls, spy, restore: () => spy.mockRestore() };
 }

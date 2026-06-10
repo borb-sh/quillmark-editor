@@ -1,1 +1,11 @@
-name: plain
+quill:
+  name: plain
+  version: "1.0.0"
+  backend: typst
+  description: Preview fixture (plain)
+main:
+  fields:
+    title:
+      type: string
+      description: Plain title
+      example: Plain Title

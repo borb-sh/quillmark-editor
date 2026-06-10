@@ -7,10 +7,9 @@
  *
  * Usage (place this file next to your Quiver.yaml):
  *
- *   import { Quillmark } from "@quillmark/wasm";
+ *   import { Engine } from "@quillmark/wasm";
  *   import { runQuiverTests } from "@quillmark/quiver/testing";
- *   const engine = new Quillmark();
- *   runQuiverTests(import.meta.url, engine);
+ *   runQuiverTests(import.meta.url, new Engine());
  *
  * Run with `node --test`.
  */
@@ -20,7 +19,7 @@ import { describe, it, before } from "node:test";
 // `Quiver.fromDir` is callable at runtime, and gives us the augmented
 // static-method type signature.
 import { Quiver } from "./node.js";
-import type { Quillmark } from "@quillmark/wasm";
+import type { Engine } from "@quillmark/wasm";
 
 /**
  * Registers a `node:test` describe block that validates every quill
@@ -30,13 +29,10 @@ import type { Quillmark } from "@quillmark/wasm";
  * to Quiver.yaml). Pass an absolute directory path for any other layout.
  *
  * Validation covers the full loading pipeline: Quiver.yaml, Quill.yaml,
- * all template files, engine compilation via engine.quill(tree), and a
- * full render of each quill's example document.
+ * all template files, quill construction via Quill.fromTree(tree), and a
+ * full render of each quill's example document via engine.render(quill, doc).
  */
-export function runQuiverTests(
-  metaUrlOrDir: string,
-  engine: Quillmark,
-): void {
+export function runQuiverTests(metaUrlOrDir: string, engine: Engine): void {
   describe("Quiver", () => {
     let quiver!: Quiver;
 
@@ -54,11 +50,17 @@ export function runQuiverTests(
       for (const name of quiver.quillNames()) {
         for (const version of quiver.versionsOf(name)) {
           const ref = `${name}@${version}`;
-          const quill = await quiver.getQuill(ref, { engine });
+          // The Engine takes the core Quill + its seeded Document directly and
+          // clones them into the backend; the doc clone is freed inside render,
+          // and we free our own core Document here.
+          const quill = await quiver.getQuill(ref);
           const doc = quill.seedDocument();
-          const result = quill.render(doc) as {
-            artifacts?: unknown[];
-          };
+          let result: { artifacts?: unknown[] };
+          try {
+            result = await engine.render(quill, doc);
+          } finally {
+            doc.free();
+          }
           if (!Array.isArray(result.artifacts) || result.artifacts.length === 0) {
             throw new Error(`${ref}: example render produced no artifacts`);
           }

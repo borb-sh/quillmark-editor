@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
 import { Quiver } from "../node.js";
 import { QuiverError } from "../errors.js";
+import { mockQuillFromTree } from "./helpers/mock-engine.js";
 
 // Absolute path to the committed fixture
 const SAMPLE_FIXTURE = new URL("./fixtures/sample-quiver", import.meta.url).pathname;
@@ -57,55 +58,61 @@ describe("Quiver.fromDir", () => {
     expect(typeof q.name).toBe("string");
   });
 
-  // --- loadTree ---
+  // --- tree loading (observed via the tree fed to Quill.fromTree) ---
+  //
+  // The tree path is private (`getQuill` → internal `#loadTree`). To inspect
+  // the loaded tree, stub `Quill.fromTree` and read the tree it was handed.
 
-  it("loadTree('memo', '1.0.0') returns a Map with Quill.yaml and template.typ", async () => {
+  let stub: ReturnType<typeof mockQuillFromTree> | undefined;
+  afterEach(() => {
+    stub?.restore();
+    stub = undefined;
+  });
+
+  it("getQuill('memo@1.0.0') loads a tree with Quill.yaml and template.typ", async () => {
     const q = await Quiver.fromDir(SAMPLE_FIXTURE);
-    const tree = await q.loadTree("memo", "1.0.0");
+    stub = mockQuillFromTree();
+    await q.getQuill("memo@1.0.0");
+    const tree = stub.calls[0]!;
     expect(tree).toBeInstanceOf(Map);
     expect(tree.has("Quill.yaml")).toBe(true);
     expect(tree.has("template.typ")).toBe(true);
   });
 
-  it("loadTree values are Uint8Array", async () => {
+  it("loaded tree values are Uint8Array", async () => {
     const q = await Quiver.fromDir(SAMPLE_FIXTURE);
-    const tree = await q.loadTree("memo", "1.0.0");
+    stub = mockQuillFromTree();
+    await q.getQuill("memo@1.0.0");
+    const tree = stub.calls[0]!;
     for (const value of tree.values()) {
       expect(value).toBeInstanceOf(Uint8Array);
     }
   });
 
-  it("loadTree returns different tree objects on repeated calls (no caching)", async () => {
+  it("loads the correct version: 1.1.0 content differs from 1.0.0", async () => {
     const q = await Quiver.fromDir(SAMPLE_FIXTURE);
-    const tree1 = await q.loadTree("memo", "1.0.0");
-    const tree2 = await q.loadTree("memo", "1.0.0");
-    // Different Map instances — lazy reads each time
-    expect(tree1).not.toBe(tree2);
-  });
-
-  it("loadTree reads correct version: 1.1.0 content differs from 1.0.0", async () => {
-    const q = await Quiver.fromDir(SAMPLE_FIXTURE);
-    const tree100 = await q.loadTree("memo", "1.0.0");
-    const tree110 = await q.loadTree("memo", "1.1.0");
-    const text100 = new TextDecoder().decode(tree100.get("template.typ")!);
-    const text110 = new TextDecoder().decode(tree110.get("template.typ")!);
+    stub = mockQuillFromTree();
+    await q.getQuill("memo@1.0.0");
+    await q.getQuill("memo@1.1.0");
+    const text100 = new TextDecoder().decode(stub.calls[0]!.get("template.typ")!);
+    const text110 = new TextDecoder().decode(stub.calls[1]!.get("template.typ")!);
     expect(text100).toContain("1.0.0");
     expect(text110).toContain("1.1.0");
   });
 
-  // --- loadTree not-found / errors ---
+  // --- not-found / errors ---
 
-  it("loadTree throws transport_error for unknown quill name", async () => {
+  it("getQuill throws quill_not_found for unknown quill name", async () => {
     const q = await Quiver.fromDir(SAMPLE_FIXTURE);
-    await expect(q.loadTree("unknown", "1.0.0")).rejects.toThrow(
-      expect.objectContaining({ code: "transport_error" }),
+    await expect(q.getQuill("unknown@1.0.0")).rejects.toThrow(
+      expect.objectContaining({ code: "quill_not_found" }),
     );
   });
 
-  it("loadTree throws transport_error for unknown version of a known quill", async () => {
+  it("getQuill throws quill_not_found for unknown version of a known quill", async () => {
     const q = await Quiver.fromDir(SAMPLE_FIXTURE);
-    await expect(q.loadTree("memo", "99.0.0")).rejects.toThrow(
-      expect.objectContaining({ code: "transport_error" }),
+    await expect(q.getQuill("memo@99.0.0")).rejects.toThrow(
+      expect.objectContaining({ code: "quill_not_found" }),
     );
   });
 

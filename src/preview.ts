@@ -11,12 +11,10 @@
  *
  * Usage (place a script next to your Quiver.yaml):
  *
- *   import { Quillmark } from "@quillmark/wasm";
+ *   import { Engine } from "@quillmark/wasm";
  *   import { renderQuiverSamples } from "@quillmark/quiver/preview";
  *
- *   await renderQuiverSamples(import.meta.url, {
- *     engine: new Quillmark(),
- *   });
+ *   await renderQuiverSamples(import.meta.url, { engine: new Engine() });
  *   // → open ./preview/index.html
  *
  * The sample document is the illustrative example seeded by
@@ -32,19 +30,19 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Quiver } from "./node.js";
-import type {
-  Quillmark,
-  RenderResult,
-  Diagnostic,
-  OutputFormat,
-} from "@quillmark/wasm";
+import { isQuillmarkError } from "@quillmark/wasm";
+import type { Engine, RenderResult, OutputFormat } from "@quillmark/wasm";
 
 /** Default directory rendered artifacts are written to. */
 const DEFAULT_OUT_DIR = "preview";
 
 export interface RenderQuiverSamplesOptions {
-  /** Quillmark engine instance (`new Quillmark()` from `@quillmark/wasm`). */
-  engine: Quillmark;
+  /**
+   * Canonical render engine (`new Engine()` from `@quillmark/wasm`). It takes the
+   * core `Quill`/`Document` that quiver produces and clones them into the
+   * backend on demand — no build-matching or handle-crossing for the caller.
+   */
+  engine: Engine;
   /** Directory to write rendered artifacts into. Default: `preview`. */
   outDir?: string;
   /** Force an output format (`pdf`/`svg`/`png`/`txt`). Default: engine's choice. */
@@ -131,13 +129,12 @@ function isSelected(
 
 /**
  * Formats a thrown render error into one string per diagnostic. `@quillmark/wasm`
- * attaches a `diagnostics` array to its errors; fall back to the message when
- * an error carries none.
+ * throws `QuillmarkError`s (an `Error` carrying `diagnostics`); fall back to
+ * the message for anything else.
  */
 function failureReasons(err: unknown): string[] {
-  const diagnostics = (err as { diagnostics?: Diagnostic[] }).diagnostics;
-  if (Array.isArray(diagnostics) && diagnostics.length > 0) {
-    return diagnostics.map((d) => `${d.severity}: ${d.message}`);
+  if (isQuillmarkError(err) && err.diagnostics.length > 0) {
+    return err.diagnostics.map((d) => `${d.severity}: ${d.message}`);
   }
   return [(err as Error).message];
 }
@@ -153,12 +150,19 @@ async function renderOne(
 
   let result: RenderResult;
   try {
-    const quill = await quiver.getQuill(ref, { engine: opts.engine });
+    // Canonical render path: a core Quill + its seeded Document handed straight
+    // to the Engine, which clones them into the backend and frees the clones.
+    const quill = await quiver.getQuill(ref);
     const doc = quill.seedDocument();
-    result = quill.render(
-      doc,
-      opts.format ? { format: opts.format as OutputFormat } : undefined,
-    );
+    try {
+      result = await opts.engine.render(
+        quill,
+        doc,
+        opts.format ? { format: opts.format as OutputFormat } : undefined,
+      );
+    } finally {
+      doc.free();
+    }
   } catch (err) {
     return {
       ref,

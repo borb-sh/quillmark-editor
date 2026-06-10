@@ -14,7 +14,7 @@ import { tmpdir } from "node:os";
 import { randomUUID } from "node:crypto";
 import { Quiver } from "../node.js";
 import { QuiverError } from "../errors.js";
-import { makeMockEngine } from "./helpers/mock-engine.js";
+import { mockQuillFromTree } from "./helpers/mock-engine.js";
 
 // ─── Fixture ──────────────────────────────────────────────────────────────────
 
@@ -113,7 +113,7 @@ describe("Integration: build → fromBuiltUrl → resolve → getQuill", () => {
     expect(await built.resolve("resume")).toBe("resume@2.0.0");
   });
 
-  it("quiver.getQuill returns a mock quill with correct tree", async () => {
+  it("quiver.getQuill builds a quill from the correct tree", async () => {
     const outDir = tempDir();
     tmpDirs.push(outDir);
 
@@ -123,14 +123,16 @@ describe("Integration: build → fromBuiltUrl → resolve → getQuill", () => {
     mockFetch = makeMockFetch(outDir, baseUrl);
 
     const built = await Quiver.fromBuiltUrl(baseUrl);
-    const { calls, engine } = makeMockEngine();
+    const { calls, restore } = mockQuillFromTree();
+    try {
+      const quill = await built.getQuill("memo@1.0.0");
 
-    const quill = await built.getQuill("memo@1.0.0", { engine });
-
-    expect(quill).toBeDefined();
-    expect(typeof quill.render).toBe("function");
-    expect(calls).toHaveLength(1);
-    expect(calls[0]!.has("Quill.yaml")).toBe(true);
+      expect(quill).toBeDefined();
+      expect(calls).toHaveLength(1);
+      expect(calls[0]!.has("Quill.yaml")).toBe(true);
+    } finally {
+      restore();
+    }
   });
 
   it("quiver.getQuill for unknown version throws quill_not_found", async () => {
@@ -143,9 +145,8 @@ describe("Integration: build → fromBuiltUrl → resolve → getQuill", () => {
     mockFetch = makeMockFetch(outDir, baseUrl);
 
     const built = await Quiver.fromBuiltUrl(baseUrl);
-    const { engine } = makeMockEngine();
 
-    await expect(built.getQuill("memo@9.9.9", { engine })).rejects.toThrow(
+    await expect(built.getQuill("memo@9.9.9")).rejects.toThrow(
       expect.objectContaining({ code: "quill_not_found" }),
     );
   });
@@ -269,16 +270,17 @@ describe("Integration: build → fromBuiltDir → resolve → getQuill", () => {
       throw new Error("fetch must not be called by fromBuiltDir");
     }) as typeof globalThis.fetch;
 
+    const { calls, restore } = mockQuillFromTree();
     try {
       const built = await Quiver.fromBuiltDir(outDir);
-      const { calls, engine } = makeMockEngine();
 
-      const quill = await built.getQuill("memo@1.0.0", { engine });
+      const quill = await built.getQuill("memo@1.0.0");
 
       expect(quill).toBeDefined();
       expect(calls).toHaveLength(1);
       expect(calls[0]!.has("Quill.yaml")).toBe(true);
     } finally {
+      restore();
       if (original !== undefined) globalThis.fetch = original;
     }
   });

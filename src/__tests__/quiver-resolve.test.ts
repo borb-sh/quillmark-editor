@@ -1,7 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import { Quiver } from "../node.js";
-import type { Quillmark, Quill } from "@quillmark/wasm";
-import { makeMockEngine } from "./helpers/mock-engine.js";
+import { mockQuillFromTree } from "./helpers/mock-engine.js";
 
 const SAMPLE_FIXTURE = new URL("./fixtures/sample-quiver", import.meta.url)
   .pathname;
@@ -61,24 +60,31 @@ describe("Quiver.resolve", () => {
 // ─── getQuill ─────────────────────────────────────────────────────────────────
 
 describe("Quiver.getQuill", () => {
-  it("9. canonical ref returns mock Quill; engine.quill called with tree containing Quill.yaml", async () => {
-    const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
-    const { calls, engine } = makeMockEngine();
+  // `getQuill` builds quills via the engine-free `Quill.fromTree`; stub it so
+  // these tests don't depend on the real WASM validator.
+  let stub: ReturnType<typeof mockQuillFromTree> | undefined;
+  afterEach(() => {
+    stub?.restore();
+    stub = undefined;
+  });
 
-    const quill = await quiver.getQuill("memo@1.0.0", { engine });
+  it("9. canonical ref returns a Quill; Quill.fromTree called with tree containing Quill.yaml", async () => {
+    const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+    stub = mockQuillFromTree();
+
+    const quill = await quiver.getQuill("memo@1.0.0");
 
     expect(quill).toBeDefined();
-    expect(typeof quill.render).toBe("function");
-    expect(calls).toHaveLength(1);
-    expect(calls[0]!.has("Quill.yaml")).toBe(true);
+    expect(stub.calls).toHaveLength(1);
+    expect(stub.calls[0]!.has("Quill.yaml")).toBe(true);
   });
 
   it("10. selector ref resolves and returns a quill", async () => {
     const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
-    const { engine } = makeMockEngine();
+    stub = mockQuillFromTree();
 
-    const a = await quiver.getQuill("memo", { engine });
-    const b = await quiver.getQuill("memo@1.1.0", { engine });
+    const a = await quiver.getQuill("memo");
+    const b = await quiver.getQuill("memo@1.1.0");
 
     // Both resolve to memo@1.1.0 → identical cached instance.
     expect(a).toBe(b);
@@ -86,86 +92,71 @@ describe("Quiver.getQuill", () => {
 
   it("11. same canonical ref returns cached instance (identity equality)", async () => {
     const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
-    const { engine } = makeMockEngine();
+    stub = mockQuillFromTree();
 
-    const quill1 = await quiver.getQuill("memo@1.0.0", { engine });
-    const quill2 = await quiver.getQuill("memo@1.0.0", { engine });
+    const quill1 = await quiver.getQuill("memo@1.0.0");
+    const quill2 = await quiver.getQuill("memo@1.0.0");
 
     expect(quill1).toBe(quill2);
   });
 
-  it("12. engine.quill called exactly once for repeated getQuill of same ref", async () => {
+  it("12. Quill.fromTree called exactly once for repeated getQuill of same ref", async () => {
     const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
-    const { calls, engine } = makeMockEngine();
+    stub = mockQuillFromTree();
 
-    await quiver.getQuill("memo@1.0.0", { engine });
-    await quiver.getQuill("memo@1.0.0", { engine });
+    await quiver.getQuill("memo@1.0.0");
+    await quiver.getQuill("memo@1.0.0");
 
-    expect(calls).toHaveLength(1);
+    expect(stub.calls).toHaveLength(1);
   });
 
-  it("13. concurrent calls for same ref coalesce into one engine.quill call", async () => {
+  it("13. concurrent calls for same ref coalesce into one Quill.fromTree call", async () => {
     const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
-    const { calls, engine } = makeMockEngine();
+    stub = mockQuillFromTree();
 
     const [a, b] = await Promise.all([
-      quiver.getQuill("memo@1.0.0", { engine }),
-      quiver.getQuill("memo@1.0.0", { engine }),
+      quiver.getQuill("memo@1.0.0"),
+      quiver.getQuill("memo@1.0.0"),
     ]);
 
     expect(a).toBe(b);
-    expect(calls).toHaveLength(1);
-  });
-
-  it("14. distinct engines get distinct cached quills", async () => {
-    const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
-    const { engine: e1 } = makeMockEngine();
-    const { engine: e2 } = makeMockEngine();
-
-    const q1 = await quiver.getQuill("memo@1.0.0", { engine: e1 });
-    const q2 = await quiver.getQuill("memo@1.0.0", { engine: e2 });
-
-    expect(q1).not.toBe(q2);
+    expect(stub.calls).toHaveLength(1);
   });
 
   it('15. getQuill("memo@1.2.3") (version not present) → quill_not_found', async () => {
     const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
-    const { engine } = makeMockEngine();
+    stub = mockQuillFromTree();
 
-    await expect(quiver.getQuill("memo@1.2.3", { engine })).rejects.toThrow(
+    await expect(quiver.getQuill("memo@1.2.3")).rejects.toThrow(
       expect.objectContaining({ code: "quill_not_found" }),
     );
   });
 
   it('16. getQuill("memo@^1") (malformed) → invalid_ref', async () => {
     const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
-    const { engine } = makeMockEngine();
+    stub = mockQuillFromTree();
 
-    await expect(quiver.getQuill("memo@^1", { engine })).rejects.toThrow(
+    await expect(quiver.getQuill("memo@^1")).rejects.toThrow(
       expect.objectContaining({ code: "invalid_ref" }),
     );
   });
 
-  it("17. if engine.quill throws, error propagates and in-flight entry is cleared (retry works)", async () => {
+  it("17. if Quill.fromTree throws, error propagates and in-flight entry is cleared (retry works)", async () => {
     const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+    stub = mockQuillFromTree();
     let callCount = 0;
-    const flakyEngine = {
-      quill(_tree: Map<string, Uint8Array>): Quill {
-        callCount++;
-        if (callCount === 1) {
-          throw new Error("engine exploded");
-        }
-        return { render: () => ({ ok: true }) } as unknown as Quill;
-      },
-    } as unknown as Quillmark;
+    stub.spy.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1) throw new Error("quill construction exploded");
+      return { seedDocument: () => ({}) } as unknown as never;
+    });
 
-    await expect(
-      quiver.getQuill("memo@1.0.0", { engine: flakyEngine }),
-    ).rejects.toThrow("engine exploded");
+    await expect(quiver.getQuill("memo@1.0.0")).rejects.toThrow(
+      "quill construction exploded",
+    );
 
-    const quill = await quiver.getQuill("memo@1.0.0", { engine: flakyEngine });
+    const quill = await quiver.getQuill("memo@1.0.0");
     expect(quill).toBeDefined();
-    expect(typeof quill.render).toBe("function");
     expect(callCount).toBe(2);
   });
 });
@@ -195,14 +186,17 @@ function makeCountingQuiver(opts: {
 }
 
 describe("Quiver.warm", () => {
-  it("18. warm() does not require an engine and does not materialize quills", async () => {
+  it("18. warm() does not materialize quills (no Quill.fromTree calls)", async () => {
     const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
-    const { calls } = makeMockEngine();
+    const { calls, restore } = mockQuillFromTree();
+    try {
+      await quiver.warm();
 
-    await quiver.warm();
-
-    // No engine was passed; no engine.quill calls happen anywhere.
-    expect(calls).toHaveLength(0);
+      // warm() is network-only; it never constructs quills.
+      expect(calls).toHaveLength(0);
+    } finally {
+      restore();
+    }
   });
 
   it("19. warm() prefetches every (name, version); loader called once per ref", async () => {
@@ -223,14 +217,17 @@ describe("Quiver.warm", () => {
       name: "test",
       catalog: new Map([["memo", ["1.0.0"]]]),
     });
-    const { calls, engine } = makeMockEngine();
+    const { calls, restore } = mockQuillFromTree();
+    try {
+      await quiver.warm();
+      expect(loaderCalls()).toBe(1);
 
-    await quiver.warm();
-    expect(loaderCalls()).toBe(1);
-
-    await quiver.getQuill("memo@1.0.0", { engine });
-    expect(loaderCalls()).toBe(1); // still 1 — tree cache hit
-    expect(calls).toHaveLength(1); // engine.quill ran exactly once
+      await quiver.getQuill("memo@1.0.0");
+      expect(loaderCalls()).toBe(1); // still 1 — tree cache hit
+      expect(calls).toHaveLength(1); // Quill.fromTree ran exactly once
+    } finally {
+      restore();
+    }
   });
 
   it("21. warm() is idempotent — second warm() does not refetch", async () => {
@@ -278,81 +275,95 @@ describe("Quiver.warm", () => {
   });
 });
 
-// ─── tree cache lifecycle ────────────────────────────────────────────────────
+// ─── quill cache lifecycle ───────────────────────────────────────────────────
 
-describe("Quiver tree cache lifecycle", () => {
-  it("24. tree is purged after successful materialization (different engine refetches)", async () => {
-    const { quiver, loaderCalls } = makeCountingQuiver({
-      name: "test",
-      catalog: new Map([["memo", ["1.0.0"]]]),
-    });
-    const { engine: e1 } = makeMockEngine();
-    const { engine: e2 } = makeMockEngine();
-
-    await quiver.getQuill("memo@1.0.0", { engine: e1 });
-    expect(loaderCalls()).toBe(1);
-
-    // Different engine → quill cache miss; tree was purged → loader called again.
-    await quiver.getQuill("memo@1.0.0", { engine: e2 });
-    expect(loaderCalls()).toBe(2);
+describe("Quiver quill cache lifecycle", () => {
+  // The quill cache is keyed by ref (not engine): `Quill.fromTree` is
+  // engine-free, so one quill per ref is shared. After a ref materializes
+  // once, repeat `getQuill` calls hit the quill cache and never re-fetch.
+  // The fetched tree is consumed (evicted) once its quill materializes — the
+  // bounded quill cache is the only retained copy.
+  let stub: ReturnType<typeof mockQuillFromTree> | undefined;
+  afterEach(() => {
+    stub?.restore();
+    stub = undefined;
   });
 
-  it("25. tree is retained on engine failure so retry skips network", async () => {
+  it("24. tree is consumed after successful materialization; quill stays cached, no refetch", async () => {
     const { quiver, loaderCalls } = makeCountingQuiver({
       name: "test",
       catalog: new Map([["memo", ["1.0.0"]]]),
     });
+    stub = mockQuillFromTree();
 
-    let engineCalls = 0;
-    const flakyEngine = {
-      quill(_tree: Map<string, Uint8Array>): Quill {
-        engineCalls++;
-        if (engineCalls === 1) throw new Error("boom");
-        return { render: () => ({ ok: true }) } as unknown as Quill;
-      },
-    } as unknown as Quillmark;
+    const a = await quiver.getQuill("memo@1.0.0");
+    expect(loaderCalls()).toBe(1);
+    expect(stub.calls).toHaveLength(1);
 
-    await expect(
-      quiver.getQuill("memo@1.0.0", { engine: flakyEngine }),
-    ).rejects.toThrow("boom");
+    // The fetched tree was consumed by materialization. The quill is cached
+    // per ref, so a second getQuill returns the same instance with no second
+    // materialization and — critically — no refetch.
+    const b = await quiver.getQuill("memo@1.0.0");
+    expect(b).toBe(a);
+    expect(loaderCalls()).toBe(1);
+    expect(stub.calls).toHaveLength(1);
+  });
 
-    const quill = await quiver.getQuill("memo@1.0.0", { engine: flakyEngine });
+  it("25. tree is retained on Quill.fromTree failure so retry skips network", async () => {
+    const { quiver, loaderCalls } = makeCountingQuiver({
+      name: "test",
+      catalog: new Map([["memo", ["1.0.0"]]]),
+    });
+    stub = mockQuillFromTree();
+    let fromTreeCalls = 0;
+    stub.spy.mockImplementation(() => {
+      fromTreeCalls++;
+      if (fromTreeCalls === 1) throw new Error("boom");
+      return { seedDocument: () => ({}) } as unknown as never;
+    });
+
+    await expect(quiver.getQuill("memo@1.0.0")).rejects.toThrow("boom");
+
+    const quill = await quiver.getQuill("memo@1.0.0");
     expect(quill).toBeDefined();
     expect(loaderCalls()).toBe(1); // network paid once
-    expect(engineCalls).toBe(2); // engine called twice (fail + retry)
+    expect(fromTreeCalls).toBe(2); // construction tried twice (fail + retry)
   });
 
-  it("26. warm + getQuill: tree from warm is consumed and purged on materialization", async () => {
+  it("26. warm + getQuill: tree from warm is consumed by materialization; quill then cached", async () => {
     const { quiver, loaderCalls } = makeCountingQuiver({
       name: "test",
       catalog: new Map([["memo", ["1.0.0"]]]),
     });
-    const { engine: e1 } = makeMockEngine();
-    const { engine: e2 } = makeMockEngine();
+    stub = mockQuillFromTree();
 
     await quiver.warm();
     expect(loaderCalls()).toBe(1);
 
-    await quiver.getQuill("memo@1.0.0", { engine: e1 });
+    const a = await quiver.getQuill("memo@1.0.0");
     expect(loaderCalls()).toBe(1); // tree from warm — no fetch
+    expect(stub.calls).toHaveLength(1);
 
-    // Tree was purged after materialization; second engine refetches.
-    await quiver.getQuill("memo@1.0.0", { engine: e2 });
-    expect(loaderCalls()).toBe(2);
+    // The warmed tree was consumed (evicted) by materialization; the quill is
+    // cached per ref → no refetch, no re-materialization on subsequent calls.
+    const b = await quiver.getQuill("memo@1.0.0");
+    expect(b).toBe(a);
+    expect(loaderCalls()).toBe(1);
+    expect(stub.calls).toHaveLength(1);
   });
 
-  it("27. repeated getQuill on same engine hits quill cache; no tree access", async () => {
+  it("27. repeated getQuill hits quill cache; no tree access, one construction", async () => {
     const { quiver, loaderCalls } = makeCountingQuiver({
       name: "test",
       catalog: new Map([["memo", ["1.0.0"]]]),
     });
-    const { calls, engine } = makeMockEngine();
+    stub = mockQuillFromTree();
 
-    const a = await quiver.getQuill("memo@1.0.0", { engine });
-    const b = await quiver.getQuill("memo@1.0.0", { engine });
+    const a = await quiver.getQuill("memo@1.0.0");
+    const b = await quiver.getQuill("memo@1.0.0");
 
     expect(a).toBe(b);
     expect(loaderCalls()).toBe(1);
-    expect(calls).toHaveLength(1);
+    expect(stub.calls).toHaveLength(1);
   });
 });
