@@ -57,7 +57,7 @@
     "yaml": "^2.8.3"
   },
   "devDependencies": {
-    "@quillmark/wasm": "0.90.0",
+    "@quillmark/wasm": "0.91.0",
     "@types/node": "^25.3.3",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
