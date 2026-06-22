@@ -94,6 +94,31 @@ export class Quiver {
     return loadBuiltQuiver(transport);
   }
 
+  /**
+   * Browser-safe factory. Seeds the catalog from caller-provided manifest
+   * bytes — never fetches `latest.json` — then fetches bundles lazily and
+   * content-addressed, relative to `baseUrl`, like `fromBuiltUrl`. For SSR
+   * consumers that already hold the manifest at build time.
+   *
+   * Throws `quiver_invalid` on malformed manifest bytes, `transport_error`
+   * on a `file://` baseUrl or a later bundle fetch failure.
+   */
+  static async fromManifest(
+    baseUrl: string,
+    manifestBytes: Uint8Array,
+  ): Promise<Quiver> {
+    if (baseUrl.startsWith("file://")) {
+      throw new QuiverError(
+        "transport_error",
+        `Quiver.fromManifest requires an http(s):// or origin-relative baseUrl; got "${baseUrl}". For local build output, use Quiver.fromBuiltDir from @quillmark/quiver/node.`,
+      );
+    }
+    const { HttpTransport } = await import("./transports/http-transport.js");
+    const { seedBuiltQuiver } = await import("./built-loader.js");
+    const transport = new HttpTransport(baseUrl);
+    return seedBuiltQuiver(transport, manifestBytes);
+  }
+
   /** Returns all known quill names, sorted lexicographically. */
   quillNames(): string[] {
     return [...this.#catalog.keys()].sort();

@@ -194,13 +194,13 @@ describe("Integration: fromBuiltUrl error cases", () => {
     );
   });
 
-  it("fromBuiltUrl with malformed Quiver.json throws quiver_invalid", async () => {
+  it("fromBuiltUrl with malformed latest.json throws quiver_invalid", async () => {
     const outDir = tempDir();
     tmpDirs.push(outDir);
     await mkdir(outDir, { recursive: true });
 
     const { writeFile } = await import("node:fs/promises");
-    await writeFile(join(outDir, "Quiver.json"), "not-json");
+    await writeFile(join(outDir, "latest.json"), "not-json");
 
     const baseUrl = "https://mock.cdn.example.com/malformed/";
     mockFetch = makeMockFetch(outDir, baseUrl);
@@ -231,6 +231,71 @@ describe("Integration: fromBuiltUrl error cases", () => {
   it("fromBuiltUrl rejects file:// URLs with transport_error", async () => {
     await expect(
       Quiver.fromBuiltUrl("file:///tmp/quiver/"),
+    ).rejects.toThrow(expect.objectContaining({ code: "transport_error" }));
+  });
+});
+
+describe("Integration: build → fromManifest (seed) → resolve → getQuill", () => {
+  const tmpDirs: string[] = [];
+  let mockFetch: { restore: () => void } | undefined;
+
+  afterEach(async () => {
+    if (mockFetch !== undefined) {
+      mockFetch.restore();
+      mockFetch = undefined;
+    }
+    for (const d of tmpDirs.splice(0)) {
+      await rm(d, { recursive: true, force: true });
+    }
+  });
+
+  /** Read the build output's manifest bytes the way an SSR consumer would. */
+  async function readManifestBytes(outDir: string): Promise<Uint8Array> {
+    const { manifest } = JSON.parse(
+      await readFile(join(outDir, "latest.json"), "utf8"),
+    ) as { manifest: string };
+    return new Uint8Array(await readFile(join(outDir, manifest)));
+  }
+
+  it("seeds the catalog, fetches no pointer/manifest, fetches bundles lazily", async () => {
+    const outDir = tempDir();
+    tmpDirs.push(outDir);
+    await Quiver.build(SAMPLE_FIXTURE, outDir);
+    const manifestBytes = await readManifestBytes(outDir);
+
+    const urls: string[] = [];
+    const baseUrl = "https://mock.cdn.example.com/my-quiver/";
+    const inner = makeMockFetch(outDir, baseUrl);
+    const wrapped = globalThis.fetch;
+    globalThis.fetch = ((url: string) => {
+      urls.push(url);
+      return wrapped(url);
+    }) as typeof globalThis.fetch;
+    mockFetch = { restore: inner.restore };
+
+    const built = await Quiver.fromManifest(baseUrl, manifestBytes);
+    expect(built.name).toBe("sample");
+    expect(built.quillNames().sort()).toEqual(["memo", "resume"]);
+    expect(built.versionsOf("memo").sort()).toEqual(["1.0.0", "1.1.0"]);
+
+    const { restore } = mockQuillFromTree();
+    try {
+      await built.getQuill("memo@1.0.0");
+    } finally {
+      restore();
+    }
+
+    expect(urls.some((u) => /Quiver\.json$|manifest\.[0-9a-f]+\.json$/.test(u))).toBe(false);
+    expect(urls.some((u) => /memo@1\.0\.0\.[0-9a-f]+\.zip$/.test(u))).toBe(true);
+  });
+
+  it("malformed manifest → quiver_invalid; file:// baseUrl → transport_error", async () => {
+    await expect(
+      Quiver.fromManifest("https://cdn.example.com/q/", new TextEncoder().encode("not-json")),
+    ).rejects.toThrow(expect.objectContaining({ code: "quiver_invalid" }));
+
+    await expect(
+      Quiver.fromManifest("file:///tmp/quiver/", new TextEncoder().encode("{}")),
     ).rejects.toThrow(expect.objectContaining({ code: "transport_error" }));
   });
 });

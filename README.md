@@ -192,6 +192,53 @@ const quill = await quiver.getQuill(doc.quillRef);
 const result = await engine.render(quill, doc, { format: "pdf" });
 ```
 
+## SSR seeding (skip the `latest.json` pointer)
+
+`Quiver.fromBuiltUrl(url)` first fetches `<url>/latest.json` — a stable-named,
+non-content-addressed pointer to the current manifest — before fetching the
+manifest itself. Because that one filename is stable, a CDN edge or browser
+cache can serve a **stale pointer** after a release and silently pin the
+client to the old catalog, with no error. Per-host cache headers only fix this
+one serving layer at a time.
+
+If you already hold the manifest bytes at build time — a common case for SSR
+consumers, which read the built artifact during their own build — seed the
+catalog from them directly with `Quiver.fromManifest`. It never requests
+`latest.json`; bundles and fonts are still fetched lazily and
+content-addressed, relative to `baseUrl`, exactly as with `fromBuiltUrl`:
+
+```ts
+// Server build step — read the manifest the build wrote.
+// build-output/latest.json → { "manifest": "manifest.<hash>.json" }
+import { readFile } from "node:fs/promises";
+
+const { manifest } = JSON.parse(
+  await readFile("./public/quivers/my-quiver/latest.json", "utf8"),
+);
+const manifestBytes = new Uint8Array(
+  await readFile(`./public/quivers/my-quiver/${manifest}`),
+);
+// Inline manifestBytes into the page payload (e.g. base64) for the client.
+```
+
+```ts
+// Browser / SSR runtime — seed from the bytes you shipped, no pointer fetch.
+import { Engine, Document } from "@quillmark/wasm";
+import { Quiver } from "@quillmark/quiver";
+
+const quiver = await Quiver.fromManifest("/quivers/my-quiver/", manifestBytes);
+const engine = new Engine();
+
+const doc = Document.fromMarkdown(markdownString);
+const quill = await quiver.getQuill(doc.quillRef);
+const result = await engine.render(quill, doc, { format: "pdf" });
+```
+
+`fromManifest` is browser-safe (no `node:*` imports) and shares
+`fromBuiltUrl`'s error semantics: `quiver_invalid` for malformed manifest
+bytes, `transport_error` for a `file://` `baseUrl` or a later bundle-fetch
+failure.
+
 ## Server-side runtime (Node, packed artifact on disk)
 
 For server-side rendering where the packed artifact ships in the deployment

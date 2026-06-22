@@ -25,10 +25,10 @@ describe("FsBuiltTransport.fetchBytes", () => {
     tmpDirs.push(dir);
     await mkdir(dir, { recursive: true });
     const expected = new Uint8Array([0xde, 0xad, 0xbe, 0xef]);
-    await writeFile(join(dir, "Quiver.json"), expected);
+    await writeFile(join(dir, "latest.json"), expected);
 
     const transport = new FsBuiltTransport(dir);
-    const bytes = await transport.fetchBytes("Quiver.json");
+    const bytes = await transport.fetchBytes("latest.json");
 
     expect(bytes).toEqual(expected);
   });
@@ -61,7 +61,7 @@ describe("FsBuiltTransport.fetchBytes", () => {
     const transport = new FsBuiltTransport(
       join(tmpdir(), `fs-no-such-${randomUUID()}`),
     );
-    await expect(transport.fetchBytes("Quiver.json")).rejects.toThrow(
+    await expect(transport.fetchBytes("latest.json")).rejects.toThrow(
       expect.objectContaining({ code: "transport_error" }),
     );
   });

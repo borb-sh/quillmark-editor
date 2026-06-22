@@ -63,12 +63,12 @@ describe("buildQuiver — happy path (sample-quiver fixture)", () => {
     }
   });
 
-  it("writes Quiver.json with a manifest pointer", async () => {
+  it("writes latest.json with a manifest pointer", async () => {
     const out = tempDir();
     tmpDirs.push(out);
     await buildQuiver(SAMPLE_FIXTURE, out);
 
-    const raw = await readFile(join(out, "Quiver.json"), "utf-8");
+    const raw = await readFile(join(out, "latest.json"), "utf-8");
     const pointer = JSON.parse(raw) as { manifest: string };
     expect(pointer.manifest).toMatch(/^manifest\.[0-9a-f]{6}\.json$/);
   });
@@ -78,7 +78,7 @@ describe("buildQuiver — happy path (sample-quiver fixture)", () => {
     tmpDirs.push(out);
     await buildQuiver(SAMPLE_FIXTURE, out);
 
-    const ptr = JSON.parse(await readFile(join(out, "Quiver.json"), "utf-8")) as {
+    const ptr = JSON.parse(await readFile(join(out, "latest.json"), "utf-8")) as {
       manifest: string;
     };
     const manifest = JSON.parse(
@@ -94,7 +94,7 @@ describe("buildQuiver — happy path (sample-quiver fixture)", () => {
     tmpDirs.push(out);
     await buildQuiver(SAMPLE_FIXTURE, out);
 
-    const ptr = JSON.parse(await readFile(join(out, "Quiver.json"), "utf-8")) as {
+    const ptr = JSON.parse(await readFile(join(out, "latest.json"), "utf-8")) as {
       manifest: string;
     };
     const manifest = JSON.parse(
@@ -112,7 +112,7 @@ describe("buildQuiver — happy path (sample-quiver fixture)", () => {
     tmpDirs.push(out);
     await buildQuiver(SAMPLE_FIXTURE, out);
 
-    const ptr = JSON.parse(await readFile(join(out, "Quiver.json"), "utf-8")) as {
+    const ptr = JSON.parse(await readFile(join(out, "latest.json"), "utf-8")) as {
       manifest: string;
     };
     const manifest = JSON.parse(
@@ -140,7 +140,7 @@ describe("buildQuiver — happy path (sample-quiver fixture)", () => {
     tmpDirs.push(out);
     await buildQuiver(SAMPLE_FIXTURE, out);
 
-    const ptr = JSON.parse(await readFile(join(out, "Quiver.json"), "utf-8")) as {
+    const ptr = JSON.parse(await readFile(join(out, "latest.json"), "utf-8")) as {
       manifest: string;
     };
     const manifest = JSON.parse(
@@ -217,7 +217,7 @@ describe("buildQuiver — font dehydration & deduplication", () => {
 
     await buildQuiver(src, out);
 
-    const ptr = JSON.parse(await readFile(join(out, "Quiver.json"), "utf-8")) as {
+    const ptr = JSON.parse(await readFile(join(out, "latest.json"), "utf-8")) as {
       manifest: string;
     };
     const manifest = JSON.parse(
@@ -249,7 +249,7 @@ describe("buildQuiver — font dehydration & deduplication", () => {
 
     await buildQuiver(src, out);
 
-    const ptr = JSON.parse(await readFile(join(out, "Quiver.json"), "utf-8")) as {
+    const ptr = JSON.parse(await readFile(join(out, "latest.json"), "utf-8")) as {
       manifest: string;
     };
     const manifest = JSON.parse(
@@ -283,7 +283,7 @@ describe("buildQuiver — determinism", () => {
 
     const getManifest = async (outDir: string) => {
       const ptr = JSON.parse(
-        await readFile(join(outDir, "Quiver.json"), "utf-8"),
+        await readFile(join(outDir, "latest.json"), "utf-8"),
       ) as { manifest: string };
       return JSON.parse(await readFile(join(outDir, ptr.manifest), "utf-8")) as {
         quills: Array<{ bundle: string }>;
@@ -307,10 +307,10 @@ describe("buildQuiver — determinism", () => {
     await buildQuiver(SAMPLE_FIXTURE, out2);
 
     const ptr1 = JSON.parse(
-      await readFile(join(out1, "Quiver.json"), "utf-8"),
+      await readFile(join(out1, "latest.json"), "utf-8"),
     ) as { manifest: string };
     const ptr2 = JSON.parse(
-      await readFile(join(out2, "Quiver.json"), "utf-8"),
+      await readFile(join(out2, "latest.json"), "utf-8"),
     ) as { manifest: string };
 
     expect(ptr1.manifest).toBe(ptr2.manifest);
@@ -395,13 +395,13 @@ describe("Quiver.build (static method delegation)", () => {
     }
   });
 
-  it("Quiver.build delegates to buildQuiver and writes Quiver.json", async () => {
+  it("Quiver.build delegates to buildQuiver and writes latest.json", async () => {
     const out = tempDir();
     tmpDirs.push(out);
 
     await Quiver.build(SAMPLE_FIXTURE, out);
 
-    const raw = await readFile(join(out, "Quiver.json"), "utf-8");
+    const raw = await readFile(join(out, "latest.json"), "utf-8");
     const pointer = JSON.parse(raw) as { manifest: string };
     expect(pointer.manifest).toMatch(/^manifest\.[0-9a-f]{6}\.json$/);
   });

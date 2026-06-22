@@ -159,20 +159,20 @@ function parsePointer(raw: string): string {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    throw new QuiverError("quiver_invalid", "Quiver.json contains invalid JSON");
+    throw new QuiverError("quiver_invalid", "latest.json contains invalid JSON");
   }
 
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    throw new QuiverError("quiver_invalid", "Quiver.json must be a JSON object");
+    throw new QuiverError("quiver_invalid", "latest.json must be a JSON object");
   }
 
   const obj = parsed as Record<string, unknown>;
-  assertNoUnknownKeys(obj, ["manifest"], "Quiver.json");
+  assertNoUnknownKeys(obj, ["manifest"], "latest.json");
 
   if (typeof obj["manifest"] !== "string" || obj["manifest"].length === 0) {
     throw new QuiverError(
       "quiver_invalid",
-      'Quiver.json must have a non-empty string "manifest" field',
+      'latest.json must have a non-empty string "manifest" field',
     );
   }
 
@@ -306,12 +306,53 @@ function parseManifest(raw: string): BuiltManifest {
   };
 }
 
-// ─── Main entry point ─────────────────────────────────────────────────────────
+// ─── Catalog assembly ─────────────────────────────────────────────────────────
+
+/**
+ * Validate manifest bytes (`quiver_invalid` on format errors) and assemble a
+ * Quiver backed by a BuiltLoader over `transport`. Shared by `loadBuiltQuiver`
+ * (pointer-following) and `seedBuiltQuiver` (seed).
+ */
+function buildQuiverFromManifestBytes(
+  transport: BuiltTransport,
+  manifestBytes: Uint8Array,
+): Quiver {
+  const manifest = parseManifest(new TextDecoder().decode(manifestBytes));
+
+  // catalog: name → versions (desc); index: "name@version" → entry (dedup).
+  const catalogRaw = new Map<string, string[]>();
+  const index = new Map<string, BuiltQuillEntry>();
+
+  for (const entry of manifest.quills) {
+    const key = `${entry.name}@${entry.version}`;
+    if (index.has(key)) {
+      throw new QuiverError(
+        "quiver_invalid",
+        `Duplicate quill entry in manifest: "${key}"`,
+      );
+    }
+    index.set(key, entry);
+
+    const versions = catalogRaw.get(entry.name) ?? [];
+    versions.push(entry.version);
+    catalogRaw.set(entry.name, versions);
+  }
+
+  for (const [, versions] of catalogRaw) {
+    versions.sort((a, b) => compareSemver(b, a));
+  }
+
+  const loader = new BuiltLoader(transport, index);
+
+  return Quiver._fromLoader(manifest.name, catalogRaw, loader);
+}
+
+// ─── Main entry points ────────────────────────────────────────────────────────
 
 /**
  * Load a build-output quiver via the given transport.
  *
- * 1. Fetches Quiver.json (pointer) and parses it.
+ * 1. Fetches latest.json (pointer) and parses it.
  * 2. Fetches the manifest file it points to and validates it.
  * 3. Builds a catalog from manifest entries (versions sorted descending).
  * 4. Returns a Quiver instance backed by a BuiltLoader.
@@ -322,12 +363,12 @@ export async function loadBuiltQuiver(
   // 1. Fetch and parse pointer.
   let pointerBytes: Uint8Array;
   try {
-    pointerBytes = await transport.fetchBytes("Quiver.json");
+    pointerBytes = await transport.fetchBytes("latest.json");
   } catch (err) {
     if (err instanceof QuiverError) throw err;
     throw new QuiverError(
       "transport_error",
-      `Failed to fetch Quiver.json: ${(err as Error).message}`,
+      `Failed to fetch latest.json: ${(err as Error).message}`,
       { cause: err },
     );
   }
@@ -351,35 +392,18 @@ export async function loadBuiltQuiver(
     );
   }
 
-  const manifest = parseManifest(new TextDecoder().decode(manifestBytes));
+  // 3–4. Validate manifest + assemble catalog/loader.
+  return buildQuiverFromManifestBytes(transport, manifestBytes);
+}
 
-  // 3. Build catalog: name → versions sorted descending.
-  //    Also build index map: "name@version" → entry (with duplicate detection).
-  const catalogRaw = new Map<string, string[]>();
-  const index = new Map<string, BuiltQuillEntry>();
-
-  for (const entry of manifest.quills) {
-    const key = `${entry.name}@${entry.version}`;
-    if (index.has(key)) {
-      throw new QuiverError(
-        "quiver_invalid",
-        `Duplicate quill entry in manifest: "${key}"`,
-      );
-    }
-    index.set(key, entry);
-
-    const versions = catalogRaw.get(entry.name) ?? [];
-    versions.push(entry.version);
-    catalogRaw.set(entry.name, versions);
-  }
-
-  for (const [, versions] of catalogRaw) {
-    versions.sort((a, b) => compareSemver(b, a));
-  }
-
-  // 4. Build loader.
-  const loader = new BuiltLoader(transport, index);
-
-  // 5. Return Quiver via internal factory.
-  return Quiver._fromLoader(manifest.name, catalogRaw, loader);
+/**
+ * Seed a quiver from caller-provided manifest bytes, skipping the latest.json
+ * pointer fetch. `transport` is used only for lazy bundle/font fetches.
+ * Throws `quiver_invalid` on malformed bytes.
+ */
+export function seedBuiltQuiver(
+  transport: BuiltTransport,
+  manifestBytes: Uint8Array,
+): Quiver {
+  return buildQuiverFromManifestBytes(transport, manifestBytes);
 }

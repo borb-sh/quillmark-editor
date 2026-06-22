@@ -20,7 +20,7 @@ const FONT_EXT = /\.(ttf|otf|woff|woff2)$/i;
  *
  * Output layout:
  *   outDir/
- *     Quiver.json                   # stable pointer
+ *     latest.json                   # stable pointer to the current manifest
  *     manifest.<md5prefix6>.json    # hashed manifest
  *     <name>@<version>.<md5>.zip    # one bundle per quill
  *     store/
@@ -157,9 +157,9 @@ export async function buildQuiver(
     );
   }
 
-  // 9–10. Write stable pointer Quiver.json.
+  // 9–10. Write stable pointer latest.json.
   const pointer = { manifest: manifestFileName };
-  const pointerPath = join(outDir, "Quiver.json");
+  const pointerPath = join(outDir, "latest.json");
 
   try {
     await writeFile(pointerPath, JSON.stringify(pointer), "utf-8");

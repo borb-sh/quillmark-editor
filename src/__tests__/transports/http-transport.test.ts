@@ -46,10 +46,10 @@ describe("HttpTransport.fetchBytes", () => {
     });
 
     const transport = new HttpTransport("https://cdn.example.com/quivers/my/");
-    const bytes = await transport.fetchBytes("Quiver.json");
+    const bytes = await transport.fetchBytes("latest.json");
 
     expect(bytes).toEqual(expected);
-    expect(capturedUrls).toEqual(["https://cdn.example.com/quivers/my/Quiver.json"]);
+    expect(capturedUrls).toEqual(["https://cdn.example.com/quivers/my/latest.json"]);
   });
 
   it("HTTP 404 throws transport_error", async () => {
@@ -78,7 +78,7 @@ describe("HttpTransport.fetchBytes", () => {
     const transport = new HttpTransport("https://cdn.example.com/quivers/");
     let thrown: unknown;
     try {
-      await transport.fetchBytes("Quiver.json");
+      await transport.fetchBytes("latest.json");
     } catch (e) {
       thrown = e;
     }

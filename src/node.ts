@@ -62,7 +62,7 @@ type NodeQuiverStatics = {
 
   /**
    * Loads a packed (build-output) quiver from a local directory containing
-   * `Quiver.json` and the manifest/bundle/store files written by
+   * `latest.json` and the manifest/bundle/store files written by
    * `Quiver.build`. Symmetric to `fromBuiltUrl(url)` but reads from disk
    * instead of HTTP — no network required.
    *
