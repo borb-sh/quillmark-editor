@@ -6,12 +6,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/quillmark-org/quiver.git"
+    "url": "git+https://github.com/borb-sh/quiver.git"
   },
   "bugs": {
-    "url": "https://github.com/quillmark-org/quiver/issues"
+    "url": "https://github.com/borb-sh/quiver/issues"
   },
-  "homepage": "https://github.com/quillmark-org/quiver#readme",
+  "homepage": "https://github.com/borb-sh/quiver#readme",
   "keywords": [
     "quillmark",
     "quiver",
