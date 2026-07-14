@@ -1,6 +1,12 @@
 # Quillmark Editor Designs
 
-In-flight design docs — open direction and questions, not yet settled. Nothing
-committed here yet; we talk it through before writing.
+In-flight design docs — scope only for now; content lands as we talk each through.
 
-<!-- Skeleton. Add design docs as we discuss and decide. -->
+Two headline surfaces, a thin overview, and two supporting docs for the shared
+substrate:
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) — the package at a glance; surfaces, substrate, data flow, public API.
+- [VISUAL_EDITOR.md](VISUAL_EDITOR.md) — the headline WYSIWYG.
+- [PREVIEW.md](PREVIEW.md) — the headline live preview.
+- [CODEC.md](CODEC.md) — markdown ↔ ProseMirror.
+- [DOCUMENT_MODEL.md](DOCUMENT_MODEL.md) — live `Document` + `@quillmark/wasm`/quiver boundary + diagnostics.
