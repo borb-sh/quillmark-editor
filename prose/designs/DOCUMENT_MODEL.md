@@ -5,7 +5,14 @@ boundary, and diagnostics are quillmark's, each with a canonical home in
 quillmark canon. This ledger pins the *exact* quillmark surface `@quillmark/editor`
 V1 consumes, cites where each is documented, and marks its stability. It is the
 one place the version coupling to `@quillmark/wasm` is recorded; when a surface
-below moves, the editor's dependency moves with it. Corpus content types
+below moves, the editor's dependency moves with it.
+
+**V1 builds on `@quillmark/wasm` 0.94.0** (current released: 0.92.1). Every verb
+in the table below is stable as of that release — the session/paint surface still
+carries `@experimental` today but is promoted at 0.94.0, so the editor targets it
+as settled ground.
+
+Corpus content types
 (`RichText`) and their ProseMirror mapping are the editor's own work —
 [CODEC.md](CODEC.md), not here.
 
@@ -26,7 +33,7 @@ Stability column says otherwise.
 | **Op-grained corpus edit** | `doc.applyChange(addr, bundle)`, `doc.install(addr, rt)`, `doc.revise(addr, md)` → `Delta`; `Addr`, `ChangeBundle` | `DOCUMENT_STORAGE.md`, `CONVERT.md` | stable |
 | **Positions & markdown edges** | `doc.positionAt`, `importMarkdown` / `exportMarkdown` / `rebase` / `mapPos` | `references/markdown-spec.md`, `CONVERT.md` | stable |
 | **Validation & diagnostics** | `quill.validate(doc)` → `Diagnostic[]`, `Document.warnings`, `LiveSession.warnings`, `QuillmarkError` shape | `SCHEMAS.md`, `ERROR.md` | stable |
-| **Live session & paint** (preview) | `engine.open(quill, doc)` → `LiveSession` (`apply` → `ChangeSet`, `paint`, `pageSize`, `regions` / `fieldBoxes` / `fieldAt` / `positionAt` / `locate`, `supportsCanvas`, `warnings`); `PaintOptions` / `PaintResult` / `PageSize` / `CorpusHit` / `FieldRegion` | quillmark `PREVIEW.md` | **`@experimental`** |
+| **Live session & paint** (preview) | `engine.open(quill, doc)` → `LiveSession` (`apply` → `ChangeSet`, `paint`, `pageSize`, `regions` / `fieldBoxes` / `fieldAt` / `positionAt` / `locate`, `supportsCanvas`, `warnings`); `PaintOptions` / `PaintResult` / `PageSize` / `CorpusHit` / `FieldRegion` | quillmark `PREVIEW.md` | `@experimental` @ 0.92.1 → stable @ 0.94.0 |
 
 Consumed by: [CODEC.md](CODEC.md) (op-grained edit, positions, markdown edges),
 [PREVIEW.md](PREVIEW.md) (live session & paint), [VISUAL_EDITOR.md](VISUAL_EDITOR.md)
@@ -34,19 +41,18 @@ Consumed by: [CODEC.md](CODEC.md) (op-grained edit, positions, markdown edges),
 
 ## Stability seams
 
-Two, and only two, are not settled ground under the editor:
+At the 0.94.0 target the whole table is stable API, so one seam remains:
 
-- **The session/paint surface is `@experimental`** — `Engine.open`, `LiveSession`,
-  `PaintOptions` / `PaintResult` / `PageSize`, `ChangeSet`, `supportsCanvas` all
-  carry the marker (ships ahead of its first production consumer). That consumer is
-  this editor's Preview; V1 is where the surface hardens, so treat a break here as
-  co-design with quillmark, not a fixed dependency.
 - **`Island.props` is typed `unknown`** at the WASM boundary — the codec's
   table/image schemas track a shape the surface does not pin ([CODEC.md](CODEC.md)
-  §Islands). A candidate for a typed island surface upstream.
+  §Islands). A candidate for a typed island surface upstream; not resolved by the
+  0.94.0 promotion, since it is a typing gap, not an `@experimental` marker.
 
-Everything else in the table is stable quillmark API; the editor pins a
-`@quillmark/wasm` version and rides it.
+The session/paint surface (`Engine.open`, `LiveSession`, `PaintOptions` /
+`PaintResult` / `PageSize`, `ChangeSet`, `supportsCanvas`) carries `@experimental`
+only through 0.92.1; 0.94.0 promotes it and the editor's Preview is its first
+production consumer. The window to co-design a break in that surface is before
+0.94.0 ships — after it, the editor pins the version and rides it.
 
 ## What the editor owns at this boundary
 
