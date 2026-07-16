@@ -100,3 +100,21 @@ with Phase 4.) Pinned.
   silently no-ops from the user's view.
 - Corpus normalization means round-trips are idempotent *only up to normalize* —
   tests must assert post-normalize equality, not byte equality.
+
+## Implementation deviations (recorded)
+
+- **Encode is a structured diff, not step-lowering.** `lower` computes the new
+  corpus (`pmToRichText`, decode's inverse) and diffs old→new into the bundle. The
+  output is pure `applyChange` ops (delta/lineOps/markOps), never `install` except
+  the fallback below — so anchors still rebase. A shared `scanDoc` walk yields both
+  the corpus projection and the position-map runs, so they cannot disagree.
+- **`continues` is not op-expressible** ([quillmark-issues/0002](../quillmark-issues/0002-no-continues-line-op.md)):
+  `applyChange`'s `LineOp` set cannot *create* a hard-break / code-interior line.
+  Edits *within* such a block lower correctly (no lineOps when metadata is
+  unchanged); *creating* one falls back to `doc.install` — the design's sanctioned
+  narrow structural fallback, costing that field's anchors for that one edit.
+- **Island *creation* falls back to install** (no island channel in `ChangeBundle`);
+  edits around an existing island lower via delta-retain + auto-rebase.
+- **Absent declared field:** `readLeaf` decodes an empty corpus and the first edit
+  `install`s (creating the field — `applyChange` throws on an absent field), so
+  `createField` is self-sufficient for `default:`-only fields.

@@ -1,0 +1,251 @@
+// The prose leaf — `createField` (VISUAL_EDITOR §Surface). One corpus field, one
+// PM `EditorState`/`EditorView`, wired to the WASM edit surface. It reads the
+// leaf's `RichText`, decodes to a PM state, mounts a view + plugin stack (history,
+// keymap, input rules, the anchor-position plugin), and `dispatchTransaction`:
+//   (a) apply optimistically to the view,
+//   (b) lower the tr to a `ChangeBundle` (or `install` for a structural edit ops
+//       cannot represent — prose/quillmark-issues/0002),
+//   (c) commit via `doc.applyChange(addr, bundle)`,
+//   (d) fire `onCaretMove` with the new USV caret.
+// On an `applyChange` throw the optimistic PM state stays and the error is logged
+// — never a crash. Caret continuity across own-edits is the PM `StepMap`; an
+// EXTERNAL corpus change re-hydrates through `applyExternal`, gated by `reconcile`.
+import { baseKeymap, toggleMark } from 'prosemirror-commands';
+import { history, redo, undo } from 'prosemirror-history';
+import { keymap } from 'prosemirror-keymap';
+import type { Node as PMNode, Schema } from 'prosemirror-model';
+import { EditorState, Plugin, PluginKey, TextSelection, type Command } from 'prosemirror-state';
+import { splitListItem } from 'prosemirror-schema-list';
+import { EditorView } from 'prosemirror-view';
+import type { Document, Quill, RichText, Addr } from '../index.js';
+import { decode } from './decode.js';
+import { corpusToPM, pmToCorpus, buildLineIndex, type LineIndex } from './positions.js';
+import { lower, pmToRichText, structureNeedsInstall } from './encode.js';
+import { anchorsFromRichText, type AnchorPos } from './marks.js';
+import { createReconciler, type Reconciler } from './reconcile.js';
+import { inputRulesPlugin } from './inputrules.js';
+import { blockSchema, inlineSchema } from './schema.js';
+
+/** Options for {@link createField}. */
+export interface CreateFieldOpts {
+	doc: Document;
+	quill: Quill;
+	addr: Addr;
+	container: HTMLElement;
+	/** Constrained single-textblock schema (a `richtext(inline)` field). */
+	inline?: boolean;
+	/** Inline + marks/islands stripped (a `plaintext` field). Implies `inline`. */
+	plaintext?: boolean;
+	/** Suppress the markdown-shorthand input rules (Phase 4 opt-out). */
+	noInputRules?: boolean;
+	onFocus?(addr: Addr): void;
+	/** Fired with the new USV caret after an edit or a selection move. */
+	onCaretMove?(addr: Addr, pos: number): void;
+}
+
+/** The prose-leaf handle (VISUAL_EDITOR §Surface). */
+export interface FieldController {
+	/** Place the caret at USV `pos` (preview onCaretPick → corpusToPM → here). */
+	setCaret(pos: number): void;
+	/** External corpus change → re-hydrate this leaf (gated by reconcile). */
+	applyExternal(): void;
+	focus(): void;
+	/** The current stored corpus for this addr (for tests / reconcile). */
+	getCorpus(): RichText;
+	destroy(): void;
+}
+
+const anchorKey = new PluginKey<AnchorPos[]>('quill-anchors');
+
+/** Plugin-held anchor positions (PM coords), mapped through every edit's `StepMap`. */
+function anchorPlugin(seed: AnchorPos[]): Plugin<AnchorPos[]> {
+	return new Plugin<AnchorPos[]>({
+		key: anchorKey,
+		state: {
+			init: () => seed,
+			apply: (tr, anchors) =>
+				tr.docChanged ? anchors.map((a) => ({ id: a.id, pos: tr.mapping.map(a.pos) })) : anchors
+		}
+	});
+}
+
+/** Read the leaf's raw stored `RichText` for `addr`. */
+function readLeaf(doc: Document, addr: Addr): RichText {
+	if (addr.field != null) {
+		if (addr.card != null) {
+			const card = doc.cards[addr.card];
+			const item = card?.payloadItems.find((p) => p.type === 'field' && p.key === addr.field);
+			return item && item.type === 'field' ? (item.value as RichText) : emptyCorpus();
+		}
+		// An absent field reads `undefined` — a default-only richtext field
+		// (e.g. `tag_line`) has no stored value until first edited. Decode an
+		// empty corpus rather than crash; the first edit installs/commits it.
+		return (doc.get(addr.field) as RichText | undefined) ?? emptyCorpus();
+	}
+	if (addr.card != null) return doc.cards[addr.card].body;
+	return doc.main.body;
+}
+
+function emptyCorpus(): RichText {
+	return { text: '', lines: [{ containers: [], kind: 'para' }], marks: [], islands: [] };
+}
+
+/** Whether the leaf's field currently holds a stored value (a body is always present). */
+function leafPresent(doc: Document, addr: Addr): boolean {
+	if (addr.field == null) return true;
+	if (addr.card != null) {
+		const card = doc.cards[addr.card];
+		return !!card?.payloadItems.find((p) => p.type === 'field' && p.key === addr.field);
+	}
+	return doc.get(addr.field) !== undefined;
+}
+
+export function createField(opts: CreateFieldOpts): FieldController {
+	const { doc, addr, container } = opts;
+	const inline = !!opts.inline || !!opts.plaintext;
+	const plaintext = !!opts.plaintext;
+	const schema: Schema = inline ? inlineSchema : blockSchema;
+
+	// `known` is the codec's view of the stored corpus — kept in sync after every
+	// own-edit so `reconcile` can tell an external change from the field's own.
+	const reconciler: Reconciler = createReconciler(readLeaf(doc, addr));
+
+	let index: LineIndex; // rebuilt on every structural change
+	let view: EditorView;
+
+	const state = buildState(reconciler.last as RichText);
+	index = buildLineIndex(state.doc);
+
+	view = new EditorView(container, {
+		state,
+		dispatchTransaction: (tr) => {
+			const oldRt = reconciler.last as RichText;
+			const next = view.state.apply(tr);
+			view.updateState(next); // (a) optimistic
+			index = buildLineIndex(next.doc);
+
+			if (tr.docChanged) {
+				commitEdit(oldRt, next.doc);
+			}
+			// (d) caret — for both structural and selection-only changes.
+			opts.onCaretMove?.(addr, pmToCorpus(next.doc, index, next.selection.head));
+		},
+		handleDOMEvents: {
+			focus: () => {
+				opts.onFocus?.(addr);
+				return false;
+			}
+		}
+	});
+
+	function buildState(rt: RichText): EditorState {
+		const pmDoc: PMNode = decode(rt, schema, { plaintext });
+		const anchors = plaintext ? [] : anchorsFromRichText(rt);
+		// Seed anchor plugin positions in PM coords via a fresh index over pmDoc.
+		const seedIndex = buildLineIndex(pmDoc);
+		const seededAnchors = anchors.map((a) => ({
+			id: a.id,
+			pos: corpusToPM(pmDoc, seedIndex, a.pos)
+		}));
+		return EditorState.create({ doc: pmDoc, plugins: plugins(schema, seededAnchors) });
+	}
+
+	function plugins(sc: Schema, seededAnchors: AnchorPos[]): Plugin[] {
+		const list: Plugin[] = [history(), anchorPlugin(seededAnchors)];
+		if (!opts.noInputRules) list.push(inputRulesPlugin(sc));
+		list.push(keymap(editorKeymap(sc, inline, plaintext)));
+		list.push(keymap(baseKeymap));
+		return list;
+	}
+
+	// (b)+(c): lower the edit to ops and commit — or `install` for a structural
+	// edit the op vocabulary cannot express. Keep the optimistic PM on throw.
+	function commitEdit(oldRt: RichText, newDoc: PMNode): void {
+		const newRt = pmToRichText(newDoc);
+		try {
+			// `applyChange` throws on an absent declared field (verified), so the FIRST
+			// edit to one installs the value (creating it — no prior anchors to lose);
+			// `structureNeedsInstall` is the other install case (a new `continues` line).
+			if (!leafPresent(doc, addr) || structureNeedsInstall(oldRt, newRt)) {
+				doc.install(addr, newRt); // create-or-structural fallback; pays this field's anchors
+			} else {
+				// Pre-edit anchors are the stored corpus's anchors (USV); post-edit
+				// anchors are the plugin's positions (mapped through the tr) as USV.
+				const oldAnchors = plaintext ? [] : anchorsFromRichText(oldRt);
+				const newAnchors = plaintext ? [] : readAnchorsUsv(newDoc);
+				const bundle = lower(oldRt, newDoc, { oldAnchors, newAnchors });
+				doc.applyChange(addr, bundle);
+			}
+			reconciler.commit(readLeaf(doc, addr));
+		} catch (e) {
+			// Optimistic PM stays; surface the boundary error without crashing.
+			console.error('[quillmark/editor] applyChange failed; keeping optimistic state', e);
+		}
+	}
+
+	/** Anchor positions in the CURRENT (new) doc, as USV. */
+	function readAnchorsUsv(newDoc: PMNode): AnchorPos[] {
+		const anchors = anchorKey.getState(view.state) ?? [];
+		return anchors.map((a) => ({ id: a.id, pos: pmToCorpus(newDoc, index, a.pos) }));
+	}
+
+	const controller: FieldController = {
+		setCaret(pos: number): void {
+			const pm = corpusToPM(view.state.doc, index, pos);
+			const sel = TextSelection.create(view.state.doc, pm);
+			view.dispatch(view.state.tr.setSelection(sel));
+			view.focus();
+		},
+		applyExternal(): void {
+			const current = readLeaf(doc, addr);
+			if (!reconciler.shouldRehydrate(current)) return; // own edit / no change
+			const caretUsv = pmToCorpus(view.state.doc, index, view.state.selection.head);
+			const fresh = buildState(current);
+			view.updateState(fresh);
+			index = buildLineIndex(fresh.doc);
+			// Best-effort caret continuity across an external change: keep the USV.
+			const pm = corpusToPM(fresh.doc, index, caretUsv);
+			view.dispatch(view.state.tr.setSelection(TextSelection.create(fresh.doc, pm)));
+			reconciler.commit(current);
+		},
+		focus(): void {
+			view.focus();
+		},
+		getCorpus(): RichText {
+			return readLeaf(doc, addr);
+		},
+		destroy(): void {
+			view.destroy();
+		}
+	};
+	// The underlying view is an available (undocumented) handle: Phase 4 composes
+	// views into the VisualEditor, and tests drive edits through it.
+	(controller as FieldController & { view: EditorView }).view = view;
+	return controller;
+}
+
+/** The field's keymap: history, mark toggles, list Enter; Enter suppressed inline. */
+function editorKeymap(
+	schema: Schema,
+	inline: boolean,
+	plaintext: boolean
+): Record<string, Command> {
+	const map: Record<string, Command> = {
+		'Mod-z': undo,
+		'Mod-y': redo,
+		'Shift-Mod-z': redo
+	};
+	if (!plaintext) {
+		if (schema.marks.strong) map['Mod-b'] = toggleMark(schema.marks.strong);
+		if (schema.marks.em) map['Mod-i'] = toggleMark(schema.marks.em);
+		if (schema.marks.underline) map['Mod-u'] = toggleMark(schema.marks.underline);
+	}
+	if (inline) {
+		// One textblock only: swallow Enter so no second block is attempted.
+		map['Enter'] = () => true;
+	} else if (schema.nodes.list_item) {
+		// Prefer splitting the list item; fall through to baseKeymap otherwise.
+		map['Enter'] = splitListItem(schema.nodes.list_item);
+	}
+	return map;
+}
