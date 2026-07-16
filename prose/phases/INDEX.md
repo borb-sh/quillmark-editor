@@ -41,8 +41,8 @@ build proper is five phases:
 
 **Phases 2 (Preview) and 3 (Codec) are independent** once Phase 1 lands — Preview
 wraps `LiveSession` and needs no ProseMirror; Codec is pure corpus↔PM and needs no
-canvas. They can run in parallel by two teams. Phase 4 needs the Codec; Phase 5
-needs everything.
+canvas. They can land in either order. Phase 4 needs the Codec; Phase 5 needs
+everything.
 
 | Phase | Doc | Implements (design) |
 | --- | --- | --- |
@@ -75,8 +75,10 @@ and a live paint of a real document — that de-risks everything downstream.
 - **Testing has two tiers.** Pure/core logic — the codec above all — is
   Vitest-covered, including round-trip and position-map property tests. What unit
   tests cannot reach (canvas paint, scroll virtualization, DPR, the click
-  round-trip) is exercised in the **playground**, the manual harness the
-  architecture already calls for. `svelte-check` + `prettier` stay CI gates.
+  round-trip) is exercised in the **playground**, the harness the architecture
+  already calls for — driven in a real browser, headless included; scripted
+  browser checks stand in for a human pass. `svelte-check` + `prettier` stay CI
+  gates.
 - **One reference quill.** All development and manual verification run against
   [`fixtures/quills/usaf_memo/0.2.0`](../../fixtures/quills/usaf_memo/0.2.0) — a
   real Typst quill that exercises every field type (`array`, inline `richtext`,
@@ -87,15 +89,16 @@ and a live paint of a real document — that de-risks everything downstream.
   API; a needed internal is an API gap to fix, not a reach-in. This is how each
   phase proves its seams are clean.
 - **Open questions are decisions, not guesses.** Each phase names the design
-  open-questions it must settle and carries a **recommended default** for each;
-  the team ratifies or overrides at phase start. Items the designs defer past V1
+  open-questions it settles and records the **settled decision** (Phases 1–4 are
+  ratified; Phase 5's carry recommended defaults until it starts). The
+  implementer follows them; a deviation forced by implementation reality is
+  recorded in the phase doc, not silently taken. Items the designs defer past V1
   (the insert surface / table authoring, the full theming contract) stay deferred
   and are named where they land.
 
 The [DOCUMENT_MODEL](../designs/DOCUMENT_MODEL.md) ledger is the single home for the
 `@quillmark/wasm` boundary; each phase carries only the one or two boundary details
 it consumes, where it consumes them. The 0.94.0 surface was verified against the
-ledger and matches — with two slips the phases note at their use sites
-(`positionAt` is on `LiveSession`, not `Document`, per Phase 2; `QuillCardUi`
-exposes only `title` though real quills carry `ui.groups`, per Phase 4), worth
-folding back into the ledger.
+ledger and matches; the two typing seams it carries (`Island.props: unknown`,
+`QuillCardUi` narrower than the schema JSON) are recorded in the ledger's
+stability seams.

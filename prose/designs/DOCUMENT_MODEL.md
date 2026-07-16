@@ -31,7 +31,7 @@ Stability column says otherwise.
 | **Typed writer** (scalar/array/object + append) | `quill.writer(doc)` → `DocumentWriter` (`set` / `setAll` / `setBody` / `addCard` / `removeCard` / `card(i)`) | `PROGRAMMATIC.md`, `SCHEMAS.md` | stable |
 | **Structure mutators** | `insertCard(i, card)`, `moveCard(from, to)`, `setCardKind(i, kind)`, `removeCard(i)`, `setCardExtNamespace(i, ns, val)` (the `$ext.editor` write unit) | `CARDS.md`, `DOCUMENT_STORAGE.md` | stable |
 | **Op-grained corpus edit** | `doc.applyChange(addr, bundle)`, `doc.install(addr, rt)`, `doc.revise(addr, md)` → `Delta`; `Addr`, `ChangeBundle` | `DOCUMENT_STORAGE.md`, `CONVERT.md` | stable |
-| **Positions & markdown edges** | `doc.positionAt`, `importMarkdown` / `exportMarkdown` / `rebase` / `mapPos` | `references/markdown-spec.md`, `CONVERT.md` | stable |
+| **Positions & markdown edges** | `importMarkdown` / `exportMarkdown` / `rebase` / `mapPos` (module-level); position→geometry queries (`positionAt` / `locate`) live on `LiveSession` (row below) | `references/markdown-spec.md`, `CONVERT.md` | stable |
 | **Validation & diagnostics** | `quill.validate(doc)` → `Diagnostic[]`, `Document.warnings`, `LiveSession.warnings`, `QuillmarkError` shape | `SCHEMAS.md`, `ERROR.md` | stable |
 | **Live session & paint** (preview) | `engine.open(quill, doc)` → `LiveSession` (`apply` → `ChangeSet`, `paint`, `pageSize`, `regions` / `fieldBoxes` / `fieldAt` / `positionAt` / `locate`, `supportsCanvas`, `warnings`); `PaintOptions` / `PaintResult` / `PageSize` / `CorpusHit` / `FieldRegion` | quillmark `PREVIEW.md` | `@experimental` @ 0.92.1 → stable @ 0.94.0 |
 
@@ -41,12 +41,18 @@ Consumed by: [CODEC.md](CODEC.md) (op-grained edit, positions, markdown edges),
 
 ## Stability seams
 
-At the 0.94.0 target the whole table is stable API, so one seam remains:
+At the 0.94.0 target the whole table is stable API, so what remains is typing
+gaps, not `@experimental` markers:
 
 - **`Island.props` is typed `unknown`** at the WASM boundary — the codec's
   table/image schemas track a shape the surface does not pin ([CODEC.md](CODEC.md)
   §Islands). A candidate for a typed island surface upstream; not resolved by the
-  0.94.0 promotion, since it is a typing gap, not an `@experimental` marker.
+  0.94.0 promotion.
+- **`QuillCardUi` is narrower than the schema JSON** — the typed surface exposes
+  only `title`, while real quills carry `ui.groups` (the fixture's
+  `main.ui.groups`). The editor reads group order from the schema JSON when
+  present ([VISUAL_EDITOR.md](VISUAL_EDITOR.md) §Structure; Phase 4's settled
+  decision). A candidate for widening the typed surface upstream.
 
 The session/paint surface (`Engine.open`, `LiveSession`, `PaintOptions` /
 `PaintResult` / `PageSize`, `ChangeSet`, `supportsCanvas`) carries `@experimental`

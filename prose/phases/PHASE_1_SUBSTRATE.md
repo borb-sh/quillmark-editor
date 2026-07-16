@@ -20,7 +20,10 @@ lifecycle, the consumed WASM surface).
 - **The subpath export skeleton.** `/core`, `/preview`, `/visual`, `/source`
   as module roots, `/form` reserved; the `svelte` condition today, the others
   landing as their phases do. `/preview` stays free of any editor-side import
-  (the reserved-package promotion in `ARCHITECTURE` §Packaging).
+  (the reserved-package promotion in `ARCHITECTURE` §Packaging) — **enforced by
+  a check** (a lint rule or import-graph assertion run with the test suite),
+  not by inspection, so the rule holds through Phases 2–5 without a
+  retroactive audit.
 - **The fixture load path.** Turn `fixtures/quills/usaf_memo/0.2.0` into a
   `Quill.fromTree(Map<string, Uint8Array>)` the playground and tests can call —
   the one way a real quill enters the system.
@@ -47,21 +50,20 @@ fixture tree ─► Quill.fromTree ─► Quill handle
 The core owns handle lifecycle; the consumer (playground) owns the session. The
 exit test drives exactly this chain.
 
-## Decisions this phase forces
+## Settled decisions
 
-- **Fixture packaging for the browser.** How the quill tree reaches the playground
-  (Vite asset glob vs. a served directory). *Recommended:* an eager `?url` asset
-  glob over `fixtures/**`, fetched into the `Uint8Array` map at startup — keeps the
-  fixture a plain input, not an app asset.
-- **Handle-ownership shape.** Whether the core exposes a small session/handle
-  wrapper or hands raw `Quill`/`Document` to the consumer. *Recommended:* a thin
-  core module that owns `init` and handle freeing, exposing the raw handles — the
-  designs put lifecycle in the core but keep the handles quillmark's.
+- **Fixture packaging for the browser.** An eager `?url` asset glob over
+  `fixtures/**`, fetched into the `Uint8Array` map at startup — keeps the fixture
+  a plain input, not an app asset (not a served directory).
+- **Handle ownership.** A thin core module owns `init` and handle freeing and
+  exposes the raw `Quill`/`Document` handles — the designs put lifecycle in the
+  core but keep the handles quillmark's (no wrapper types).
 
 ## Exit criteria
 
-- `npm run build` emits the subpath `dist` with framework-free `.d.ts`; `/preview`
-  reaches no editor-side code.
+- `npm run build` emits the subpath `dist` with framework-free `.d.ts`; the
+  `/preview` import-boundary check runs with `npm test` and fails on an
+  editor-side import.
 - `npm test` runs Vitest (green, even if only a smoke test exists).
 - The playground route loads `usaf_memo`, seeds a `Document`, opens a
   `LiveSession`, and reports `pageCount` / `supportsCanvas` / `warnings` — the WASM

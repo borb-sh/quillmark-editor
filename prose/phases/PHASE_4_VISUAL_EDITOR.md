@@ -62,26 +62,26 @@ quill.schema ✕ Document.payload ──(join)──► card tree (Svelte, keyed
    validate + warnings + render errors ─► field address ─► inline diagnostic
 ```
 
-## Decisions this phase forces
+## Settled decisions
 
-- **Card-instance identity: session key vs. stamped `$id`.** *Recommended:* a
-  session key in V1 (identity is the editor's concern), with a clean path to adopt a
-  document `$id` if identity must survive storage round-trips — the write boundary is
-  the same either way.
-- **Group ordering source.** The typed `QuillCardUi` exposes only `title`, but real
-  quills carry `ui.groups` (see the fixture's `main.ui.groups: [addressing,
-  letterhead, classification, additional]`). *Recommended:* read group order from the
-  schema JSON's `ui.groups` when present, else first-appearance order; confirm the
-  boundary detail with the WASM owners.
+- **Card-instance identity.** A session key in V1 (identity is the editor's
+  concern), with a clean path to adopt a document `$id` if identity must survive
+  storage round-trips — the write boundary is the same either way.
+- **Group ordering source.** Read group order from the schema JSON's `ui.groups`
+  when present, else first-appearance order. The typed `QuillCardUi` exposes
+  only `title` while real quills carry `ui.groups` (the fixture's
+  `main.ui.groups: [addressing, letterhead, classification, additional]`) — a
+  recorded seam in the boundary ledger, and a candidate for widening the typed
+  surface upstream.
 - **Structural keymap.** Enter-at-end-of-body → add a card, Tab between fields —
-  navigation crossing leaf boundaries no single PM keymap owns. *Recommended:* a
-  shell keymap over `activeAddr` above the leaves.
-- **Undo across leaves.** *Recommended:* per-leaf PM history is the V1 default;
-  add a coordinating stack only if a document-level undo spanning a structural op
-  plus a prose edit proves necessary.
-- **Array/table convergence.** How far the `array`-of-`object` table control
-  converges with the richtext table island. *Recommended:* keep them separate
-  citizens in V1; converge the affordance later.
+  navigation crossing leaf boundaries no single PM keymap owns — is a shell
+  keymap over `activeAddr` above the leaves.
+- **Undo across leaves.** Per-leaf PM history; add a coordinating stack only if
+  a document-level undo spanning a structural op plus a prose edit proves
+  necessary.
+- **Array/table convergence.** The `array`-of-`object` table control and the
+  richtext table island stay separate citizens in V1; converge the affordance
+  later.
 
 ## Exit criteria
 
