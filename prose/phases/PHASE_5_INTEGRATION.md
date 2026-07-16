@@ -85,8 +85,9 @@ CodeMirror (debug source view). Any theming-token tooling if used. Pinned.
 ## Risks / watch-items
 
 - The `/preview`-editor-import-free rule is easy to violate accidentally once
-  everything is in one repo; add a lint/boundary check so the reserved-package
-  promotion stays a re-export, not a refactor.
+  everything is in one repo; the import-boundary check lands with Phase 1's
+  skeleton — keep it green, and audit the built `dist` here so the
+  reserved-package promotion stays a re-export, not a refactor.
 - The bridge must stay consumer-layer — folding it into the editor would couple the
   two headline surfaces the designs deliberately keep independent.
 - Promotion to canon is not a rename: canon "describes what *is* and points into the

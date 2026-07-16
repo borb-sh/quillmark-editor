@@ -55,25 +55,21 @@ caret:   CorpusHit.pos / FieldRegion.span ──corpusToPM──► PM caret
                                     PM caret ──pmToCorpus──► preview focus
 ```
 
-## Decisions this phase forces
+## Settled decisions
 
-These are the design's own open questions; settle them at phase start:
+These settle the design's own open questions:
 
-- **The PM node/mark schema and the input-rule set.** The designs defer the schema
-  and shorthands (`**`, `#`, `- `, `1. `, `> `, table entry) to "the VisualEditor
-  discussion," but the schema is the codec's foundation. *Recommended:* define the
-  node/mark schema **here** (it is what decode/lower target), and expose the
-  input-rule set as a plugin the VisualEditor mounts — the codec owns the schema,
-  Phase 4 owns which rules are on.
-- **Anchors: decorations vs. a document mark.** *Recommended:* decorations, per the
-  design; revisit only if comment-thread UX wants them in the document proper.
-- **The `install` fallback boundary.** The precise transaction complexity
-  (structural paste) at which lowering falls back to `install(addr, rt)` and pays
-  that field's anchors. *Recommended:* start with lowering-only + a narrow,
-  explicit paste fallback; widen only against a real failing transaction.
-- **Island props typing.** The `Island.props: unknown` seam. *Recommended:* the
-  codec owns local table/image prop schemas for V1; note the candidate upstream
-  typed-island surface but do not block on it.
+- **The PM node/mark schema and the input-rule set.** The node/mark schema is
+  defined **here** — it is what decode/lower target; the input-rule set (`**`,
+  `#`, `- `, `1. `, `> `, table entry) ships as a plugin the VisualEditor
+  mounts. The codec owns the schema, Phase 4 owns which rules are on.
+- **Anchors.** Decorations, per the design; revisit only if comment-thread UX
+  wants them in the document proper.
+- **The `install` fallback boundary.** Lowering-only plus a narrow, explicit
+  paste fallback (`install(addr, rt)` pays that field's anchors); widen only
+  against a real failing transaction.
+- **Island props typing.** The codec owns local table/image prop schemas for
+  V1; the candidate upstream typed-island surface stays noted, not a blocker.
 
 ## Exit criteria
 

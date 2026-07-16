@@ -45,18 +45,18 @@ click ─► PDF-pt ─► session.positionAt ─► CorpusHit ─► onCaretPic
 `refresh(changeSet)` is the only lifecycle hop. One session, many edit sources,
 preview stays a view.
 
-## Decisions this phase forces
+## Settled decisions
 
-- **Overlay theming tokens.** The CSS-var names for the active-field ring and
-  click targets. *Recommended:* ship a minimal named set now; fold into the wider
-  theming contract Phase 5 owns — do not invent a broad system here.
-- **Zoom model.** `setZoom` folds into `densityScale`. *Recommended:* treat zoom as
-  density (crispness) and let layout width track the container, per the paint
-  contract's `layoutScale × densityScale`; revisit a separate layout-zoom only if a
-  fit-to-width control demands it.
+- **Overlay theming tokens.** A minimal named CSS-var set for the active-field
+  ring and click targets; the wider theming contract is Phase 5's — no broad
+  system here.
+- **Zoom model.** Zoom is density (crispness): `setZoom` folds into
+  `densityScale` and layout width tracks the container, per the paint contract's
+  `layoutScale × densityScale`. A separate layout-zoom waits for a fit-to-width
+  control to demand it.
 - **`clamped` handling.** When `PaintResult.clamped` forces density down (large
-  page > 16384 px), decide whether to surface the soft-render state. *Recommended:*
-  honor it silently in V1; expose only if it bites the reference quill.
+  page > 16384 px), honor it silently in V1; surface the soft-render state only
+  if it bites the reference quill.
 
 ## Exit criteria
 
@@ -79,6 +79,7 @@ None beyond Phase 1 — the canvas API and `LiveSession` are enough.
   clicks and boxes drift apart; make this one shared transform, tested against
   known geometry.
 - DPR and the 16384-px backing clamp are browser-only — they land in the
-  playground harness, not unit tests. Budget manual verification.
+  playground harness, not unit tests. Verify by driving the playground in a
+  real browser (headless is fine; scripted checks stand in for a human pass).
 - `fieldBoxes` returns content boxes only (scalar-reference / widget fields carry
   no `span`); the overlay must not assume every field has a union box.
