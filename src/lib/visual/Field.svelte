@@ -6,9 +6,10 @@
   arrays, and objects commit their value UP through `onCommitScalar`, which the
   parent lowers to the typed writer.
 
-  `diagnostics` is a Phase-4b seam: the routed diagnostics for this field are
-  threaded in and rendered as a minimal inline line — 4b replaces this with the
-  real severity/must_fill chrome.
+  `diagnostics` is the routed `Diagnostic[]` for this field (VisualEditor's
+  `diagByKey`, merging `quill.validate`, local commit errors, and the external
+  `diagnostics` prop — VISUAL_EDITOR §Diagnostics) — rendered via the shared
+  `DiagnosticList`, severity-styled, NON-GATING.
 -->
 <script lang="ts">
 	import type { Document, Quill, Addr, Diagnostic } from '../core/index.js';
@@ -23,6 +24,7 @@
 	import DateField from './DateField.svelte';
 	import ArrayField from './ArrayField.svelte';
 	import ObjectField from './ObjectField.svelte';
+	import DiagnosticList from './DiagnosticList.svelte';
 
 	interface Props {
 		field: FieldModel;
@@ -129,14 +131,7 @@
 		{/if}
 	</div>
 
-	{#if diagnostics && diagnostics.length}
-		<!-- Phase 4b seam: minimal inline routing, replaced by severity/must_fill chrome. -->
-		<div class="qm-field-diag" data-testid={testid ? `diag-${testid}` : undefined}>
-			{#each diagnostics as d, i (i)}
-				<span class="qm-diag-line" data-severity={d.severity}>{d.message}</span>
-			{/each}
-		</div>
-	{/if}
+	<DiagnosticList {diagnostics} testid={testid ? `diag-${testid}` : undefined} />
 </div>
 
 <style>
@@ -154,17 +149,5 @@
 		font-size: 0.75rem;
 		font-weight: 600;
 		color: var(--qm-label, #555);
-	}
-	.qm-field-diag {
-		display: flex;
-		flex-direction: column;
-		gap: 0.1rem;
-	}
-	.qm-diag-line {
-		font-size: 0.72rem;
-		color: #b25000;
-	}
-	.qm-diag-line[data-severity='error'] {
-		color: #c5221f;
 	}
 </style>

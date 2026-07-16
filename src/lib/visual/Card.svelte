@@ -15,6 +15,7 @@
 	import Field from './Field.svelte';
 	import ProseField from './ProseField.svelte';
 	import CardControls from './CardControls.svelte';
+	import DiagnosticList from './DiagnosticList.svelte';
 
 	/** The per-card operation bundle the VisualEditor builds (all resolve id→index lazily). */
 	interface CardOps {
@@ -163,6 +164,7 @@
 					{unregister}
 					testid={`prose-${base}-body`}
 				/>
+				<DiagnosticList diagnostics={ops.diagFor(undefined)} testid={`diag-${base}-body`} />
 			</div>
 		{/if}
 	</div>

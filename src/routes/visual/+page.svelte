@@ -1,15 +1,22 @@
 <!--
   Phase 4 playground: mount <VisualEditor> over a seeded reference-quill document
-  and prove the exit criteria in a real browser (e2e/visual.spec.ts). A live
-  `data-testid="doc-json"` dump reads curated doc state (field values, card order,
-  card titles/bodies) so the spec asserts commits actually LANDED in the
-  Document, not just that the DOM changed. Client-only (WASM + PM need the
-  browser); handles are freed on unmount.
+  and prove the exit criteria in a real browser (e2e/visual.spec.ts,
+  e2e/visual-chrome.spec.ts). A live `data-testid="doc-json"` dump reads curated
+  doc state (field values, card order, card titles/bodies, `subject`'s marks) so
+  the spec asserts commits actually LANDED in the Document, not just that the
+  DOM changed. Client-only (WASM + PM need the browser); handles are freed on
+  unmount.
+
+  `inject-diagnostics`: a test-only affordance for Phase 4b's diagnostics
+  producer #3 (the consumer-supplied `diagnostics` prop, VISUAL_EDITOR
+  §Diagnostics) — a real consumer (Phase 5) would derive these from
+  `LiveSession.warnings` / render errors; here a button stands in so
+  e2e/visual-chrome.spec.ts can prove the routing without a live render.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Quill, Document, init } from '$lib/core';
-	import type { Addr, Card as CardType, RichText } from '$lib/core';
+	import type { Addr, Card as CardType, RichText, Diagnostic } from '$lib/core';
 	import { VisualEditor } from '$lib/visual';
 	import { loadUsafMemoTree } from '../fixture';
 
@@ -20,6 +27,7 @@
 	let docHandle: Document | undefined = $state();
 	let lastAddr = $state('none');
 	let dumpTick = $state(0);
+	let externalDiagnostics = $state<Diagnostic[]>([]);
 
 	let toFree: Array<{ free(): void }> = [];
 
@@ -32,6 +40,20 @@
 		return p && p.type === 'field' ? p.value : undefined;
 	}
 
+	// A consumer-supplied diagnostic feed stand-in (Phase 5 would derive this
+	// from LiveSession.warnings / render errors) — one main-field path, one
+	// best-effort card-field path, proving the external producer routes to both.
+	function injectDiagnostics(): void {
+		externalDiagnostics = [
+			{ severity: 'warning', message: 'External test warning on subject', path: 'subject' },
+			{
+				severity: 'error',
+				message: 'External test error on indorsement 0 from',
+				path: '$cards.indorsement.0.from'
+			}
+		];
+	}
+
 	// Curated read of the live doc for assertions — re-derives on any commit
 	// (onChange) or caret move (a prose edit).
 	const dump = $derived.by(() => {
@@ -40,6 +62,7 @@
 		if (!doc) return '{}';
 		const obj = {
 			subject: (doc.get('subject') as RichText | undefined)?.text ?? '',
+			subjectMarks: (doc.get('subject') as RichText | undefined)?.marks ?? [],
 			tag_line: (doc.get('tag_line') as RichText | undefined)?.text ?? '',
 			body: doc.main.body.text,
 			font_size: doc.get('font_size') ?? null,
@@ -115,12 +138,16 @@
 						onActiveAddrChange={handleActiveAddr}
 						onCaretMove={() => refresh()}
 						onChange={refresh}
+						diagnostics={externalDiagnostics}
 					/>
 				{/if}
 			</div>
 			<aside class="state-panel">
 				<div class="state-label">active addr</div>
 				<pre data-testid="active-addr">{lastAddr}</pre>
+				<button type="button" data-testid="inject-diagnostics" onclick={injectDiagnostics}
+					>Inject test diagnostics</button
+				>
 				<div class="state-label">doc state</div>
 				<pre data-testid="doc-json">{dump}</pre>
 			</aside>

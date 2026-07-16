@@ -7,7 +7,11 @@
     • commit routing — prose leaves lower to `applyChange` (in the codec); scalars/
       arrays/objects go through the typed `writer`; structure through the mutators;
     • focus + the bridge outputs (`onActiveAddrChange`, `onCaretMove`) and the
-      `setCaret(hit)` entry Phase 5 wires to the preview.
+      `setCaret(hit)` entry Phase 5 wires to the preview;
+    • the ONE formatting popover (`FormatPopover`, mounted once, observing the
+      active leaf via `getActiveLeaf`) and diagnostics routing (`diagnostics.ts`:
+      quill.validate + local commit errors + the external `diagnostics` prop,
+      merged into `diagByKey` and threaded to each `<Field>`/card body).
 
   REACTIVITY ACROSS THE WASM HANDLE. The `Document` is opaque to Svelte, so a
   `revision` counter is bumped after every scalar/structure mutation and the card
@@ -31,7 +35,15 @@
 		humanize,
 		type CardModel
 	} from './structure.js';
+	import {
+		fieldKeyToString,
+		routeAndResolve,
+		mergeDiagnostics,
+		type FieldKey,
+		type RoutedDiagnostic
+	} from './diagnostics.js';
 	import Card from './Card.svelte';
+	import FormatPopover from './FormatPopover.svelte';
 
 	interface Props {
 		doc: Document;
@@ -42,7 +54,11 @@
 		onCaretMove?: (addr: Addr, pos: number) => void;
 		/** Fired after every scalar/structure mutation — a change signal for a host. */
 		onChange?: () => void;
-		/** Phase-4b seam: routed diagnostics (rendered minimally inline for now). */
+		/**
+		 * External diagnostics (Phase 5: `LiveSession.warnings` + render errors via
+		 * `FieldRegion.field`), routed by `.path` and merged with `quill.validate`
+		 * and local commit errors (VISUAL_EDITOR §Diagnostics).
+		 */
 		diagnostics?: Diagnostic[];
 	}
 	let { doc, quill, onActiveAddrChange, onCaretMove, onChange, diagnostics }: Props = $props();
@@ -53,6 +69,12 @@
 	// Session ids, one per composable card, reordered in lockstep with structure ops.
 	// svelte-ignore state_referenced_locally
 	let cardIds = $state<string[]>(initIds(doc.cardCount, seq));
+
+	// Local commit-error diagnostics (VISUAL_EDITOR §Diagnostics, producer #2):
+	// one slot per field key, replaced on each failed `commitScalar`, cleared on
+	// the next successful one for that field. Id-keyed (not positional) so an
+	// error stays pinned to its field across a card reorder.
+	let commitErrors = $state(new Map<string, RoutedDiagnostic>());
 
 	const kinds = $derived(Object.keys(quill.schema.card_kinds ?? {}));
 
@@ -94,10 +116,22 @@
 	}
 
 	// ── Commit routing ──────────────────────────────────────────────────────────
-	// Scalars / arrays / objects → the typed writer (schema-checked; a bad value
-	// throws and is logged, never crashes). Prose leaves commit themselves via the
-	// codec (applyChange) and do NOT pass through here.
+	// Scalars / arrays / objects → the typed writer (schema-checked). Prose leaves
+	// commit themselves via the codec (applyChange) and do NOT pass through here.
+	//
+	// A bad value makes `writer.set` THROW a `QuillmarkError` (verified: e.g.
+	// `set('font_size', 'abc')` → "[EditError::FieldConform] field 'font_size'
+	// does not conform to its schema type: string is not a valid number"; the
+	// thrown diagnostic carries no `path`/`code`). The editor already KNOWS the
+	// field/card being committed, so the diagnostic is built from THAT address —
+	// never parsed from the message (VISUAL_EDITOR §Diagnostics, producer #2) —
+	// and stashed in `commitErrors`, id-keyed so it survives a later card reorder.
+	// A subsequent SUCCESSFUL commit for the same field clears it. Nothing here
+	// gates: the value is simply not written (the document is unchanged on
+	// throw, per the boundary's own transactional contract) and editing continues.
 	function commitScalar(id: string, isMain: boolean, name: string, value: unknown): void {
+		const key: FieldKey = { card: isMain ? undefined : id, field: name };
+		const keyStr = fieldKeyToString(key);
 		try {
 			const w = quill.writer(doc);
 			if (isMain) {
@@ -107,8 +141,17 @@
 				if (i < 0) return;
 				w.card(i).set(name, value);
 			}
+			if (commitErrors.has(keyStr)) {
+				const next = new Map(commitErrors);
+				next.delete(keyStr);
+				commitErrors = next;
+			}
 			bump();
 		} catch (e) {
+			const message = e instanceof Error ? e.message : String(e);
+			const next = new Map(commitErrors);
+			next.set(keyStr, { key, diagnostic: { severity: 'error', message } });
+			commitErrors = next;
 			console.error('[quillmark/editor] scalar commit failed', e);
 		}
 	}
@@ -146,6 +189,15 @@
 		if (activeCardId === id) {
 			activeCardId = undefined;
 			activeAddr = undefined;
+		}
+		// Drop any commit-error diagnostics id-keyed to the now-gone card — id-keying
+		// (VISUAL_EDITOR §"The address is the spine") avoids mis-attributing them to
+		// whichever card next takes this position, but an orphaned entry would
+		// otherwise sit in the map forever (ids are never reused).
+		if ([...commitErrors.keys()].some((k) => k.startsWith(`${id}:`))) {
+			const next = new Map(commitErrors);
+			for (const k of [...next.keys()]) if (k.startsWith(`${id}:`)) next.delete(k);
+			commitErrors = next;
 		}
 		bump();
 	}
@@ -190,22 +242,32 @@
 		return cardAddr(id, field);
 	}
 
-	// ── Diagnostics routing (4b seam) ───────────────────────────────────────────
-	const diagByPath = $derived.by(() => {
-		const m = new Map<string, Diagnostic[]>();
-		for (const d of diagnostics ?? []) {
-			if (!d.path) continue;
-			const arr = m.get(d.path);
-			if (arr) arr.push(d);
-			else m.set(d.path, [d]);
+	// ── Diagnostics routing (VISUAL_EDITOR §Diagnostics) ────────────────────────
+	// Producer #1: quill.validate(doc), re-run every revision (empirically always
+	// `[]` for usaf_memo — no field in the fixture carries a `!must_fill` marker —
+	// but the routing exists for the general contract, not just this fixture).
+	const validation = $derived.by(() => {
+		revision; // re-run on every mutation, per VISUAL_EDITOR §Diagnostics
+		try {
+			return quill.validate(doc);
+		} catch (e) {
+			console.error('[quillmark/editor] validate failed', e);
+			return [] as Diagnostic[];
 		}
-		return m;
 	});
-	function diagFor(isMain: boolean, field?: string): Diagnostic[] | undefined {
-		// Minimal routing: main fields by bare path. Card-field paths and the
-		// render/warnings producers are wired in Phase 4b.
-		if (!field || !isMain) return undefined;
-		return diagByPath.get(field);
+
+	// Merge all three producers: validate() + external (both positional `.path`,
+	// resolved to the live stable-id keying) + local commit errors (already
+	// id-keyed). Precedence is errors-before-warnings within a field's list
+	// (mergeDiagnostics sorts; nothing is dropped — diagnostics never gate, so
+	// nothing here hides one either).
+	const diagByKey = $derived.by(() => {
+		const fromValidate = routeAndResolve(validation, cardIds);
+		const fromExternal = routeAndResolve(diagnostics, cardIds);
+		return mergeDiagnostics(fromValidate, fromExternal, [...commitErrors.values()]);
+	});
+	function diagFor(id: string, isMain: boolean, field?: string): Diagnostic[] | undefined {
+		return diagByKey.get(fieldKeyToString({ card: isMain ? undefined : id, field }));
 	}
 
 	function opsFor(id: string, isMain: boolean) {
@@ -217,7 +279,7 @@
 			remove: () => removeCardById(id),
 			retype: (kind: string) => retypeCardById(id, kind),
 			rename: (title: string) => renameCardById(id, title),
-			diagFor: (field?: string) => diagFor(isMain, field)
+			diagFor: (field?: string) => diagFor(id, isMain, field)
 		};
 	}
 
@@ -331,6 +393,8 @@
 		{/each}
 	{/if}
 </div>
+
+<FormatPopover {getActiveLeaf} />
 
 {#snippet addAffordance(atIndex: number)}
 	<div class="qm-add-card">
