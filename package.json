@@ -4,6 +4,10 @@
 	"description": "Open-source editor + live preview components for Quillmark WASM consumers.",
 	"license": "MIT",
 	"type": "module",
+	"packageManager": "npm@10.9.7",
+	"engines": {
+		"node": ">=22"
+	},
 	"svelte": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"exports": {
@@ -33,19 +37,22 @@
 		"svelte": "^5.0.0"
 	},
 	"dependencies": {
+		"@quillmark/wasm": "0.94.0",
 		"bits-ui": "^2.0.0"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^6.0.0",
 		"@sveltejs/kit": "^2.22.0",
 		"@sveltejs/package": "^2.5.0",
-		"@sveltejs/vite-plugin-svelte": "^7.0.0",
-		"publint": "^0.3.0",
+		"@sveltejs/vite-plugin-svelte": "^6.0.0",
 		"prettier": "^3.4.0",
 		"prettier-plugin-svelte": "^3.3.0",
+		"publint": "^0.3.0",
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.1.0",
 		"typescript": "^5.7.0",
-		"vite": "^6.0.0"
+		"vite": "^6.0.0",
+		"vite-plugin-top-level-await": "^1.6.0",
+		"vite-plugin-wasm": "^3.6.0"
 	}
 }
