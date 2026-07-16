@@ -107,3 +107,29 @@ quill.schema ✕ Document.payload ──(join)──► card tree (Svelte, keyed
   loops on index reintroduces exactly the prior art's phantom-placeholder pain.
 - Reconciliation is field-scoped (Phase 3's gate) — the editor holds optimistic PM
   state and re-hydrates one leaf on external change, never the whole tree.
+
+## Implementation deviations (recorded)
+
+- **Stable identity is a getter-backed `Addr`.** A prose leaf mounts once with an
+  `Addr` whose `card` is a getter resolving `cardIndexOf(id)` at commit time, so a
+  reorder is `moveCard` + a session-id splice — no remount, no lost caret. Cards
+  key on a session id (`IdSeq`), resolved to an index only at the mutation boundary.
+- **The formatting `anchor` button is deferred** ([quillmark-issues/0003](../quillmark-issues/0003-no-anchor-insert-command.md)):
+  an anchor is a decoration, and `createField` exposes no verb to insert one at an
+  arbitrary selection. The button renders disabled; the six formatting marks
+  (`strong`/`em`/`underline`/`strike`/`code`/`link`) fully work via `toggleMark` →
+  the codec's `markOps`. Consistent with the design's "revisit if comment-thread UX
+  wants anchors in the document proper."
+- **`number` fields use `type="text"`** — a native number input sanitizes an invalid
+  string to `""` before JS sees it, hiding the commit-time coercion diagnostic; a
+  non-parseable entry forwards the raw string so `writer.set`'s coercion is the judge.
+- **Array-of-richtext elements commit by whole-array `writer.set`** (value semantics)
+  — an element is not `applyChange`-addressable (`Addr.field` is a flat name), so
+  each renders as a prose leaf but its commit replaces the whole array, dropping
+  element-internal anchors per commit. Acceptable for inline references.
+- **Diagnostics producers:** the editor runs `quill.validate` (empty for the valid
+  fixture — no `!must_fill`) and constructs commit-time coercion errors at the
+  `commitScalar` call site (the visible producer); `LiveSession.warnings` + render
+  errors route in via a prop (Phase 5 supplies them). Card-path routing of
+  `Diagnostic.path` is a best-effort grammar assumption (unverifiable against the
+  fixture). Retype is a header control (degenerate for the single `indorsement` kind).
