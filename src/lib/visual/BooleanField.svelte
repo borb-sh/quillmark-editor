@@ -9,10 +9,12 @@
 	interface Props {
 		value: boolean | undefined;
 		fallback?: boolean;
+		/** Accessible name — the visual label is a bare span the checkbox can't reference. */
+		label?: string;
 		onCommit: (v: boolean) => void;
 		testid?: string;
 	}
-	let { value, fallback, onCommit, testid }: Props = $props();
+	let { value, fallback, label, onCommit, testid }: Props = $props();
 
 	// svelte-ignore state_referenced_locally
 	let local = $state(value ?? fallback ?? false);
@@ -28,6 +30,7 @@
 	class="qm-check"
 	type="checkbox"
 	checked={local}
+	aria-label={label}
 	data-testid={testid}
 	onchange={(e) => {
 		local = (e.currentTarget as HTMLInputElement).checked;

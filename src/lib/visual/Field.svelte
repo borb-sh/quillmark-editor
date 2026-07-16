@@ -12,7 +12,7 @@
   `DiagnosticList`, severity-styled, NON-GATING.
 -->
 <script lang="ts">
-	import type { Document, Quill, Addr, Diagnostic } from '../core/index.js';
+	import type { Document, Addr, Diagnostic } from '../core/index.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import type { FieldModel } from './structure.js';
 	import { enumValues } from './structure.js';
@@ -30,7 +30,6 @@
 		field: FieldModel;
 		value: unknown;
 		doc: Document;
-		quill: Quill;
 		/** LIVE prose address (getter-`card`); used only when control === 'prose'. */
 		proseAddr: Addr;
 		leafKey: string;
@@ -46,7 +45,6 @@
 		field,
 		value,
 		doc,
-		quill,
 		proseAddr,
 		leafKey,
 		onCommitScalar,
@@ -71,7 +69,6 @@
 		{#if field.control === 'prose'}
 			<ProseField
 				{doc}
-				{quill}
 				addr={proseAddr}
 				inline={field.inline}
 				plaintext={field.plaintext}
@@ -87,6 +84,7 @@
 				value={value as string | undefined}
 				values={enumValues(field.schema) ?? []}
 				fallback={field.schema.default as string | undefined}
+				label={field.label}
 				onCommit={onCommitScalar}
 				{testid}
 			/>
@@ -95,6 +93,7 @@
 				value={value as number | undefined}
 				integer={field.schema.type === 'integer'}
 				fallback={field.schema.default as number | undefined}
+				label={field.label}
 				onCommit={onCommitScalar}
 				{testid}
 			/>
@@ -102,22 +101,31 @@
 			<BooleanField
 				value={value as boolean | undefined}
 				fallback={field.schema.default as boolean | undefined}
+				label={field.label}
 				onCommit={onCommitScalar}
 				{testid}
 			/>
 		{:else if field.control === 'date'}
-			<DateField value={value as string | undefined} onCommit={onCommitScalar} {testid} />
+			<DateField
+				value={value as string | undefined}
+				label={field.label}
+				onCommit={onCommitScalar}
+				{testid}
+			/>
 		{:else if field.control === 'array'}
 			<ArrayField
 				value={value as unknown[] | undefined}
 				items={field.schema.items}
+				label={field.label}
 				onCommit={onCommitScalar}
+				onFocusEl={() => onFocus?.(proseAddr)}
 				{testid}
 			/>
 		{:else if field.control === 'object'}
 			<ObjectField
 				value={value as Record<string, unknown> | undefined}
 				properties={field.schema.properties}
+				label={field.label}
 				onCommit={onCommitScalar}
 				{testid}
 			/>
@@ -125,6 +133,7 @@
 			<TextField
 				value={value as string | undefined}
 				placeholder={defaultStr}
+				label={field.label}
 				onCommit={onCommitScalar}
 				{testid}
 			/>

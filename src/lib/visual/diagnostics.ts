@@ -36,11 +36,15 @@ import type { Diagnostic } from '../core/index.js';
 
 /** A field's routing address. `card` is `undefined` for the main card; a
  * composable card slot is a stable session id (the editor's own bookkeeping)
- * once resolved, or a raw corpus index straight off a parsed `path` (resolve
- * via {@link resolveCardKey} before merging with id-keyed sources). `field`
- * `undefined` addresses the body (the field-less leaf). */
+ * once resolved, or a raw PER-KIND ordinal straight off a parsed `path`
+ * (resolve via {@link resolveCardKey} before merging with id-keyed sources).
+ * `field` `undefined` addresses the body (the field-less leaf). */
 export interface FieldKey {
 	card?: string | number;
+	/** The `<kind>` segment of a positional `$cards.` path — the ordinal is
+	 * per-kind (fixture plate.typ: the absolute loop index is NOT the ordinal
+	 * once kinds interleave). Dropped by {@link resolveCardKey}. */
+	cardKind?: string;
 	field?: string;
 }
 
@@ -65,7 +69,9 @@ export function parsePath(path: string): FieldKey | undefined {
 		const parts = path.split('.'); // $cards.<kind>.<i>[.<field>]
 		const i = Number(parts[2]);
 		if (!Number.isInteger(i) || i < 0) return undefined;
-		return parts[3] != null ? { card: i, field: parts[3] } : { card: i };
+		return parts[3] != null
+			? { card: i, cardKind: parts[1], field: parts[3] }
+			: { card: i, cardKind: parts[1] };
 	}
 	if (path.includes('.')) return undefined; // an array element (e.g. references.0) — not routable
 	return { field: path };
@@ -81,10 +87,31 @@ export function parsePath(path: string): FieldKey | undefined {
  * unchanged. `undefined` when the index is out of the current card array —
  * the diagnostic is dropped rather than mis-routed to the wrong card.
  */
-export function resolveCardKey(key: FieldKey, cardIds: readonly string[]): FieldKey | undefined {
+export function resolveCardKey(
+	key: FieldKey,
+	cardIds: readonly string[],
+	cardKinds?: readonly string[]
+): FieldKey | undefined {
 	if (typeof key.card !== 'number') return key;
-	const id = cardIds[key.card];
+	// A positional ordinal is PER-KIND (see {@link FieldKey.cardKind}); resolve
+	// it to the absolute slot against the live kinds when the caller supplies
+	// them, else fall back to treating it as absolute (single-kind documents
+	// make the two readings identical).
+	const abs =
+		key.cardKind != null && cardKinds != null
+			? perKindCardIndex(cardKinds, key.cardKind, key.card)
+			: key.card;
+	const id = abs >= 0 ? cardIds[abs] : undefined;
 	return id != null ? { card: id, field: key.field } : undefined;
+}
+
+/** The absolute slot of the `ordinal`-th card of `kind`, or -1 when absent. */
+export function perKindCardIndex(kinds: readonly string[], kind: string, ordinal: number): number {
+	let seen = -1;
+	for (let i = 0; i < kinds.length; i++) {
+		if (kinds[i] === kind && ++seen === ordinal) return i;
+	}
+	return -1;
 }
 
 /** One diagnostic paired with the `FieldKey` it targets. */
@@ -107,11 +134,12 @@ export function routeByPath(diagnostics: Diagnostic[] | undefined): RoutedDiagno
 /** `routeByPath` + `resolveCardKey` in one step — the convenience a reactive caller (VisualEditor) wants for producers #1/#3. */
 export function routeAndResolve(
 	diagnostics: Diagnostic[] | undefined,
-	cardIds: readonly string[]
+	cardIds: readonly string[],
+	cardKinds?: readonly string[]
 ): RoutedDiagnostic[] {
 	const out: RoutedDiagnostic[] = [];
 	for (const r of routeByPath(diagnostics)) {
-		const resolved = resolveCardKey(r.key, cardIds);
+		const resolved = resolveCardKey(r.key, cardIds, cardKinds);
 		if (resolved) out.push({ key: resolved, diagnostic: r.diagnostic });
 	}
 	return out;

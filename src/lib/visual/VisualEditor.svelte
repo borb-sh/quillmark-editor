@@ -39,6 +39,7 @@
 		fieldKeyToString,
 		routeAndResolve,
 		mergeDiagnostics,
+		perKindCardIndex,
 		type FieldKey,
 		type RoutedDiagnostic
 	} from './diagnostics.js';
@@ -262,8 +263,9 @@
 	// (mergeDiagnostics sorts; nothing is dropped — diagnostics never gate, so
 	// nothing here hides one either).
 	const diagByKey = $derived.by(() => {
-		const fromValidate = routeAndResolve(validation, cardIds);
-		const fromExternal = routeAndResolve(diagnostics, cardIds);
+		const cardKinds = model.cards.map((c) => c.kind);
+		const fromValidate = routeAndResolve(validation, cardIds, cardKinds);
+		const fromExternal = routeAndResolve(diagnostics, cardIds, cardKinds);
 		return mergeDiagnostics(fromValidate, fromExternal, [...commitErrors.values()]);
 	});
 	function diagFor(id: string, isMain: boolean, field?: string): Diagnostic[] | undefined {
@@ -344,9 +346,17 @@
 		if (field === '$body') return 'main:$body';
 		if (field.startsWith('$cards.')) {
 			const parts = field.split('.'); // $cards.<kind>.<i>[.<field>]
-			const i = Number(parts[2]);
-			if (!Number.isInteger(i) || i < 0 || i >= cardIds.length) return undefined;
-			return `${cardIds[i]}:${parts[3] ?? '$body'}`;
+			const ord = Number(parts[2]);
+			if (!Number.isInteger(ord) || ord < 0) return undefined;
+			// `<i>` is a PER-KIND ordinal (fixture plate.typ: the absolute loop
+			// index is NOT the ordinal once kinds interleave).
+			const abs = perKindCardIndex(
+				model.cards.map((c) => c.kind),
+				parts[1],
+				ord
+			);
+			if (abs < 0 || abs >= cardIds.length) return undefined;
+			return `${cardIds[abs]}:${parts[3] ?? '$body'}`;
 		}
 		// A bare "<field>" is a main leaf; "<field>.<n>" is an array element (no leaf).
 		if (!field.includes('.')) return `main:${field}`;
@@ -358,7 +368,6 @@
 	<Card
 		card={model.main}
 		{doc}
-		{quill}
 		index={-1}
 		isFirst={true}
 		isLast={true}
@@ -377,7 +386,6 @@
 			<Card
 				card={c}
 				{doc}
-				{quill}
 				index={i}
 				isFirst={i === 0}
 				isLast={i === model.cards.length - 1}
@@ -414,7 +422,11 @@
 						<button
 							type="button"
 							data-testid={`add-card-${atIndex}-${k}`}
-							onclick={() => addCard(atIndex, k)}>{humanize(k)}</button
+							onclick={(e) => {
+								addCard(atIndex, k);
+								// <details> has no auto-close on selection.
+								(e.currentTarget as HTMLElement).closest('details')?.removeAttribute('open');
+							}}>{humanize(k)}</button
 						>
 					{/each}
 				</div>

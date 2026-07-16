@@ -10,11 +10,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createField, type FieldController } from '../core/codec/index.js';
-	import type { Document, Quill, Addr } from '../core/index.js';
+	import type { Document, Addr } from '../core/index.js';
 
 	interface Props {
 		doc: Document;
-		quill: Quill;
 		addr: Addr;
 		inline?: boolean;
 		plaintext?: boolean;
@@ -29,7 +28,6 @@
 
 	let {
 		doc,
-		quill,
 		addr,
 		inline,
 		plaintext,
@@ -51,7 +49,6 @@
 		if (!containerEl) return;
 		const controller = createField({
 			doc,
-			quill,
 			addr,
 			container: containerEl,
 			inline,

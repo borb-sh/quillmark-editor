@@ -133,3 +133,16 @@ quill.schema ✕ Document.payload ──(join)──► card tree (Svelte, keyed
   errors route in via a prop (Phase 5 supplies them). Card-path routing of
   `Diagnostic.path` is a best-effort grammar assumption (unverifiable against the
   fixture). Retype is a header control (degenerate for the single `indorsement` kind).
+- **`$cards.<kind>.<i>` resolves `<i>` as a PER-KIND ordinal** (both the
+  `CorpusHit` caret bridge and diagnostic routing) — the fixture's own plate
+  documents "the absolute loop index `i` is NOT that ordinal once kinds
+  interleave". Identical to absolute indexing on any single-kind document (all
+  the fixture can exercise), so the interleaved case is pinned by unit tests
+  only.
+- **Three in-scope items did not land in 4b and remain open** (deferred, not
+  silently dropped): the touch accessory bar; the structural shell keymap
+  (Enter-at-end-of-body → add card, Tab between fields); and editing an island
+  already present in an imported document (islands render as opaque atoms;
+  `prosemirror-tables` is pinned but unused until this lands). Also minor: the
+  popover keymap mirror covers `Mod-b/i/u` only — strike/code/link have no
+  shortcut.

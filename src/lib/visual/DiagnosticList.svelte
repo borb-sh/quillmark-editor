@@ -16,7 +16,8 @@
 </script>
 
 {#if diagnostics && diagnostics.length}
-	<div class="qm-diag-list" data-testid={testid}>
+	<!-- role=status: commit errors appear mid-typing; announce without stealing focus. -->
+	<div class="qm-diag-list" data-testid={testid} role="status">
 		{#each diagnostics as d, i (i)}
 			<span class="qm-diag-line" data-severity={d.severity}>{d.message}</span>
 		{/each}

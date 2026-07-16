@@ -8,10 +8,12 @@
 
 	interface Props {
 		value: string | undefined;
+		/** Accessible name — the visual label is a bare span the input can't reference. */
+		label?: string;
 		onCommit: (v: string) => void;
 		testid?: string;
 	}
-	let { value, onCommit, testid }: Props = $props();
+	let { value, label, onCommit, testid }: Props = $props();
 
 	// svelte-ignore state_referenced_locally
 	let local = $state(value ?? '');
@@ -27,6 +29,7 @@
 	class="qm-input"
 	type="date"
 	value={local}
+	aria-label={label}
 	data-testid={testid}
 	oninput={(e) => {
 		local = (e.currentTarget as HTMLInputElement).value;

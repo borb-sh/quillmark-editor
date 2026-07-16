@@ -16,10 +16,16 @@ import type { EditorState, Plugin, Transaction } from 'prosemirror-state';
 /**
  * A mark input rule: when `regexp` (ending in the closing delimiter) matches
  * before the caret, wrap capture group 1 in `markType` and drop the delimiters.
- * The captured text is in group 1; group 2 (if present) is the opening delimiter
- * consumed for smart re-triggering.
+ * `delimLen` is the delimiter length (opening == closing for every rule here).
+ * `match[0]` anatomy is `prefix? open captured close` — the em rule's
+ * `(?:^|[^*])` guard consumes ONE non-delimiter prefix char into the match, so
+ * positions are derived from the KNOWN delimiter/capture lengths, never from
+ * `indexOf` (which both deletes that prefix char and mis-anchors when it
+ * happens to equal the captured text). `[start, end)` spans `match[0]` minus
+ * the just-typed text (not yet inserted when the rule fires), so the trailing
+ * delete covers only the closing-delimiter chars actually in the doc.
  */
-function markInputRule(regexp: RegExp, markType: MarkType): InputRule {
+function markInputRule(regexp: RegExp, markType: MarkType, delimLen: number): InputRule {
 	return new InputRule(
 		regexp,
 		(
@@ -31,16 +37,14 @@ function markInputRule(regexp: RegExp, markType: MarkType): InputRule {
 			const captured = match[1];
 			if (captured == null) return null;
 			const tr = state.tr;
-			// Full match text; the capture sits at a known offset inside it.
-			const full = match[0];
-			const contentStart = start + full.indexOf(captured);
+			const prefixLen = match[0].length - (captured.length + 2 * delimLen);
+			const openStart = start + prefixLen;
+			const contentStart = openStart + delimLen;
 			const contentEnd = contentStart + captured.length;
 			// Delete trailing delimiter, then leading, then mark the surviving content.
 			if (end > contentEnd) tr.delete(contentEnd, end);
-			if (contentStart > start) tr.delete(start, contentStart);
-			const markFrom = start;
-			const markTo = start + captured.length;
-			tr.addMark(markFrom, markTo, markType.create());
+			tr.delete(openStart, contentStart);
+			tr.addMark(openStart, openStart + captured.length, markType.create());
 			tr.removeStoredMark(markType); // don't let the mark bleed into the next char
 			return tr;
 		}
@@ -53,10 +57,10 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 	const m = schema.marks;
 
 	// Inline marks. Non-greedy capture between matching delimiters.
-	if (m.strong) rules.push(markInputRule(/\*\*([^*]+)\*\*$/, m.strong));
-	if (m.em) rules.push(markInputRule(/(?:^|[^*])\*([^*]+)\*$/, m.em));
-	if (m.strike) rules.push(markInputRule(/~~([^~]+)~~$/, m.strike));
-	if (m.code) rules.push(markInputRule(/`([^`]+)`$/, m.code));
+	if (m.strong) rules.push(markInputRule(/\*\*([^*]+)\*\*$/, m.strong, 2));
+	if (m.em) rules.push(markInputRule(/(?:^|[^*])\*([^*]+)\*$/, m.em, 1));
+	if (m.strike) rules.push(markInputRule(/~~([^~]+)~~$/, m.strike, 2));
+	if (m.code) rules.push(markInputRule(/`([^`]+)`$/, m.code, 1));
 
 	// Block shorthands (only where the schema has the node — the inline schema
 	// omits them, so this stays a no-op there).

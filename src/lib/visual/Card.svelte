@@ -8,7 +8,7 @@
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import type { Document, Quill, Addr, Diagnostic } from '../core/index.js';
+	import type { Document, Addr, Diagnostic } from '../core/index.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import type { CardModel, FieldModel } from './structure.js';
 	import { packRows, humanize } from './structure.js';
@@ -32,7 +32,6 @@
 	interface Props {
 		card: CardModel;
 		doc: Document;
-		quill: Quill;
 		index: number;
 		isFirst: boolean;
 		isLast: boolean;
@@ -47,7 +46,6 @@
 	let {
 		card,
 		doc,
-		quill,
 		index,
 		isFirst,
 		isLast,
@@ -80,6 +78,7 @@
 				class="qm-card-title"
 				value={localTitle}
 				placeholder={card.titlePlaceholder}
+				aria-label="Card title"
 				data-testid={`card-title-${index}`}
 				oninput={(e) => {
 					localTitle = (e.currentTarget as HTMLInputElement).value;
@@ -133,7 +132,6 @@
 								field={f}
 								value={card.values[f.name]}
 								{doc}
-								{quill}
 								proseAddr={ops.makeAddr(f.name)}
 								leafKey={ops.leafKey(f.name)}
 								onCommitScalar={(v) => ops.commit(f.name, v)}
@@ -155,7 +153,6 @@
 				<span class="qm-field-label">Body</span>
 				<ProseField
 					{doc}
-					{quill}
 					addr={ops.makeAddr(undefined)}
 					leafKey={ops.leafKey(undefined)}
 					{onFocus}
