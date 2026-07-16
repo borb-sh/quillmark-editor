@@ -1,0 +1,108 @@
+// Criteria 2, 4 (overlap), 5, 6 — decode idempotence up to normalization,
+// overlapping-mark inline splits, island round-trip, inline/plaintext constraints.
+import { describe, it, expect } from 'vitest';
+import { decode, pmToRichText, blockSchema, inlineSchema } from '$lib/core/codec';
+import type { RichText } from '$lib/core';
+import { md, normalize, corpusEqual, subjectCorpus, bodyCorpus } from './_util.js';
+
+/** decode → pmToRichText, both sides normalized through the real corpus. */
+function reCorpus(rt: RichText): RichText {
+	return normalize(pmToRichText(decode(rt, blockSchema)));
+}
+
+describe('decode idempotence (up to normalization)', () => {
+	const cases: Record<string, RichText> = {
+		twoParas: md('First para.\n\nSecond para.'),
+		heading: md('# Title\n\nBody text with a tail.'),
+		bulletList: md('- one\n- two\n- three'),
+		nestedList: md('- outer\n    - inner1\n    - inner2'),
+		orderedList: md('1. first\n2. second\n3. third'),
+		blockquote: md('> quoted line\n\nafter the quote'),
+		nestedQuoteList: md('> - quoted bullet'),
+		codeFence: md('```js\nconst x = 1;\nconst y = 2;\n```'),
+		hardBreak: md('line one\\\nline two'),
+		marks: md('normal **bold** *italic* `code` [link](http://x)'),
+		overlap: md('**bold _both_ italic**'),
+		strike: md('~~struck~~ and plain'),
+		underline: md('<u>underlined</u> text'),
+		astral: md('emoji 😀 and 漢字 **bold 🎉**'),
+		realSubject: subjectCorpus(),
+		realBody: bodyCorpus()
+	};
+	for (const [name, rt] of Object.entries(cases)) {
+		it(name, () => {
+			expect(corpusEqual(reCorpus(rt), normalize(rt)), name).toBe(true);
+		});
+	}
+});
+
+describe('overlapping formatting → correct inline node splits', () => {
+	it('strong[0,4)+emph[2,6) yields {strong},{strong,emph},{emph}', () => {
+		const rt: RichText = {
+			text: 'abcdef',
+			lines: [{ containers: [], kind: 'para' }],
+			marks: [
+				{ start: 0, end: 4, type: 'strong' },
+				{ start: 2, end: 6, type: 'emph' }
+			],
+			islands: []
+		};
+		const para = decode(rt, blockSchema).child(0);
+		const runs = para.children.map((n) => ({
+			text: n.text,
+			marks: n.marks.map((m) => m.type.name).sort()
+		}));
+		expect(runs).toEqual([
+			{ text: 'ab', marks: ['strong'] },
+			{ text: 'cd', marks: ['em', 'strong'] },
+			{ text: 'ef', marks: ['em'] }
+		]);
+	});
+});
+
+describe('island round-trip (id preserved)', () => {
+	it('image (inline island) survives decode → pmToRichText → normalize', () => {
+		const rt = md('![alt text](img.png)');
+		expect(rt.islands[0].type).toBe('image');
+		const back = pmToRichText(decode(rt, blockSchema));
+		expect(back.islands).toHaveLength(1);
+		expect(back.islands[0].type).toBe('image');
+		expect(back.islands[0].id).toBe(rt.islands[0].id);
+		expect(back.text).toContain('￼');
+		expect(corpusEqual(normalize(back), normalize(rt))).toBe(true);
+	});
+
+	it('table (block island) survives with id preserved', () => {
+		const rt = md('| a | b |\n|---|---|\n| 1 | 2 |');
+		expect(rt.islands[0].type).toBe('table');
+		const decoded = decode(rt, blockSchema);
+		expect(decoded.child(0).type.name).toBe('island_block');
+		const back = pmToRichText(decoded);
+		expect(back.islands[0].type).toBe('table');
+		expect(back.islands[0].id).toBe(rt.islands[0].id);
+		expect(corpusEqual(normalize(back), normalize(rt))).toBe(true);
+	});
+});
+
+describe('inline / plaintext constraints', () => {
+	it('inline schema decodes to exactly one paragraph', () => {
+		const doc = decode(md('a\n\nb\n\nc'), inlineSchema);
+		expect(doc.childCount).toBe(1);
+		expect(doc.child(0).type.name).toBe('paragraph');
+	});
+
+	it('inline keeps marks', () => {
+		const doc = decode(md('plain **bold** end'), inlineSchema);
+		const hasStrong = doc
+			.child(0)
+			.children.some((n) => n.marks.some((m) => m.type.name === 'strong'));
+		expect(hasStrong).toBe(true);
+	});
+
+	it('plaintext strips marks', () => {
+		const doc = decode(md('plain **bold** *em*'), inlineSchema, { plaintext: true });
+		const anyMark = doc.child(0).children.some((n) => n.marks.length > 0);
+		expect(anyMark).toBe(false);
+		expect(doc.child(0).textContent).toBe('plain bold em');
+	});
+});
