@@ -126,6 +126,30 @@ describe('field-level reconciliation', () => {
 	});
 });
 
+describe('createField over an ABSENT declared richtext field', () => {
+	it('installs on the first edit (applyChange throws on absent), then applyChanges', () => {
+		const doc = quill().seedDocument();
+		// `tag_line` is `default:`-only, so it is absent from the seed.
+		expect(doc.get('tag_line')).toBeUndefined();
+		const field = createField({
+			doc,
+			quill: quill(),
+			addr: { field: 'tag_line' },
+			container: mount(),
+			inline: true
+		});
+		const view = viewOf(field);
+		// First edit → the codec installs the field (creating it).
+		view.dispatch(view.state.tr.insertText('Motto', 1));
+		expect((doc.get('tag_line') as { text: string } | undefined)?.text).toBe('Motto');
+		// Second edit → the field is now present, so it lowers to applyChange and lands.
+		field.setCaret(5);
+		view.dispatch(view.state.tr.insertText('!', view.state.selection.head));
+		expect((doc.get('tag_line') as { text: string }).text).toBe('Motto!');
+		field.destroy();
+	});
+});
+
 describe('field install-fallback for an un-lowerable structural edit', () => {
 	it('a hard break falls back to install without corrupting the store', () => {
 		const doc = quill().seedDocument();

@@ -77,7 +77,10 @@ function readLeaf(doc: Document, addr: Addr): RichText {
 			const item = card?.payloadItems.find((p) => p.type === 'field' && p.key === addr.field);
 			return item && item.type === 'field' ? (item.value as RichText) : emptyCorpus();
 		}
-		return doc.get(addr.field) as RichText;
+		// An absent field reads `undefined` — a default-only richtext field
+		// (e.g. `tag_line`) has no stored value until first edited. Decode an
+		// empty corpus rather than crash; the first edit installs/commits it.
+		return (doc.get(addr.field) as RichText | undefined) ?? emptyCorpus();
 	}
 	if (addr.card != null) return doc.cards[addr.card].body;
 	return doc.main.body;
@@ -85,6 +88,16 @@ function readLeaf(doc: Document, addr: Addr): RichText {
 
 function emptyCorpus(): RichText {
 	return { text: '', lines: [{ containers: [], kind: 'para' }], marks: [], islands: [] };
+}
+
+/** Whether the leaf's field currently holds a stored value (a body is always present). */
+function leafPresent(doc: Document, addr: Addr): boolean {
+	if (addr.field == null) return true;
+	if (addr.card != null) {
+		const card = doc.cards[addr.card];
+		return !!card?.payloadItems.find((p) => p.type === 'field' && p.key === addr.field);
+	}
+	return doc.get(addr.field) !== undefined;
 }
 
 export function createField(opts: CreateFieldOpts): FieldController {
@@ -150,8 +163,11 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	function commitEdit(oldRt: RichText, newDoc: PMNode): void {
 		const newRt = pmToRichText(newDoc);
 		try {
-			if (structureNeedsInstall(oldRt, newRt)) {
-				doc.install(addr, newRt); // narrow fallback; pays this field's anchors
+			// `applyChange` throws on an absent declared field (verified), so the FIRST
+			// edit to one installs the value (creating it — no prior anchors to lose);
+			// `structureNeedsInstall` is the other install case (a new `continues` line).
+			if (!leafPresent(doc, addr) || structureNeedsInstall(oldRt, newRt)) {
+				doc.install(addr, newRt); // create-or-structural fallback; pays this field's anchors
 			} else {
 				// Pre-edit anchors are the stored corpus's anchors (USV); post-edit
 				// anchors are the plugin's positions (mapped through the tr) as USV.
