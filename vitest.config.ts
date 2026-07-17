@@ -20,7 +20,7 @@ export default defineConfig({
 	resolve: { alias: { $lib: lib } },
 	test: {
 		environment: 'node',
-		include: ['src/**/*.{test,spec}.ts', 'tests/**/*.{test,spec}.ts'],
+		include: ['tests/**/*.{test,spec}.ts'],
 		// The 26 MB Typst backend compiles lazily on the first `Engine.open`; the
 		// first test that opens a session pays it, so the budget is generous.
 		testTimeout: 30000,

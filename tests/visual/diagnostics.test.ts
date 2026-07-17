@@ -40,12 +40,20 @@ describe('parsePath', () => {
 		expect(parsePath('subject')).toEqual({ field: 'subject' });
 		expect(parsePath('font_size')).toEqual({ field: 'font_size' });
 	});
-	it('maps $cards.<kind>.<i>.<field> to a card field, index only (kind is informational)', () => {
-		expect(parsePath('$cards.indorsement.0.from')).toEqual({ card: 0, field: 'from' });
-		expect(parsePath('$cards.indorsement.2.date')).toEqual({ card: 2, field: 'date' });
+	it('maps $cards.<kind>.<i>.<field> to a card field, keeping the kind (the ordinal is per-kind)', () => {
+		expect(parsePath('$cards.indorsement.0.from')).toEqual({
+			card: 0,
+			cardKind: 'indorsement',
+			field: 'from'
+		});
+		expect(parsePath('$cards.indorsement.2.date')).toEqual({
+			card: 2,
+			cardKind: 'indorsement',
+			field: 'date'
+		});
 	});
 	it('maps $cards.<kind>.<i> (no field) to a card body', () => {
-		expect(parsePath('$cards.indorsement.1')).toEqual({ card: 1 });
+		expect(parsePath('$cards.indorsement.1')).toEqual({ card: 1, cardKind: 'indorsement' });
 	});
 	it('rejects an array-element path (no single-field commit address)', () => {
 		expect(parsePath('references.0')).toBeUndefined();
@@ -74,6 +82,26 @@ describe('resolveCardKey', () => {
 		});
 		expect(resolveCardKey({ field: 'subject' }, cardIds)).toEqual({ field: 'subject' });
 	});
+	it('resolves a per-kind ordinal against interleaved kinds (fixture plate.typ grammar)', () => {
+		const kinds = ['a', 'b', 'a'];
+		// The SECOND `a` card (per-kind ordinal 1) sits at absolute slot 2.
+		expect(resolveCardKey({ card: 1, cardKind: 'a', field: 'x' }, cardIds, kinds)).toEqual({
+			card: 'c2',
+			field: 'x'
+		});
+		expect(resolveCardKey({ card: 0, cardKind: 'b', field: 'x' }, cardIds, kinds)).toEqual({
+			card: 'c1',
+			field: 'x'
+		});
+		// No third `a` card exists — dropped, not mis-routed.
+		expect(resolveCardKey({ card: 2, cardKind: 'a', field: 'x' }, cardIds, kinds)).toBeUndefined();
+	});
+	it('falls back to an absolute index when kinds are not supplied', () => {
+		expect(resolveCardKey({ card: 1, cardKind: 'a', field: 'x' }, cardIds)).toEqual({
+			card: 'c1',
+			field: 'x'
+		});
+	});
 });
 
 describe('routeByPath', () => {
@@ -87,7 +115,10 @@ describe('routeByPath', () => {
 		const routed = routeByPath([warn('w1', 'subject'), err('e1', '$cards.indorsement.0.from')]);
 		expect(routed).toEqual([
 			{ key: { field: 'subject' }, diagnostic: warn('w1', 'subject') },
-			{ key: { card: 0, field: 'from' }, diagnostic: err('e1', '$cards.indorsement.0.from') }
+			{
+				key: { card: 0, cardKind: 'indorsement', field: 'from' },
+				diagnostic: err('e1', '$cards.indorsement.0.from')
+			}
 		]);
 	});
 	it('handles an undefined/empty list', () => {

@@ -17,7 +17,10 @@
 // re-exports them, this collapses to a plain `export type { … } from '…'`.
 
 import type { Document } from '@quillmark/wasm';
-import { mapPos } from '@quillmark/wasm';
+// `import type` even though `mapPos` is a function — it is consumed only in
+// `typeof` position, and a value import here would survive verbatimModuleSyntax
+// into the emitted JS, making this types-only module eagerly load the WASM core.
+import type { mapPos } from '@quillmark/wasm';
 
 /** A richtext write address: `{}` main body, `{card}` a card body, `{field}` a main field, `{card,field}` a card field. */
 export type Addr = Parameters<Document['applyChange']>[0];

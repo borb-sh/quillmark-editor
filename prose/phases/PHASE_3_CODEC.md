@@ -118,3 +118,15 @@ with Phase 4.) Pinned.
 - **Absent declared field:** `readLeaf` decodes an empty corpus and the first edit
   `install`s (creating the field — `applyChange` throws on an absent field), so
   `createField` is self-sufficient for `default:`-only fields.
+- **No table-entry input rule ships.** The settled shorthand set lists "table
+  entry", but islands are opaque atoms until Phase 4's deferred island editing
+  lands — a rule that creates a table has nothing to create it *into*. The rest
+  of the set (`**`/`*`/`~~`/`` ` ``/`#`/`- `/`1. `/`> `) ships as settled; the
+  table rule lands with island authoring.
+- **Install is also the recovery path.** Beyond the two gated fallbacks
+  (`continues` shapes and island-slot inserts — `structureNeedsInstall` checks
+  the positional `continues` vector and the delta insert, not just counts), a
+  `commitEdit` whose `applyChange` throws for any other reason retries as
+  `doc.install` of the optimistic projection. Without that, the reconciler
+  keeps re-diffing from the stale store and the field silently stops
+  persisting — install bounds the damage to that field's anchors.

@@ -1,8 +1,8 @@
 <!--
-  A `number` / `integer` field → numeric input. `integer` steps by 1 and parses
-  as int; `number` allows decimals (fixture `font_size` = 11.5). Commits the
-  parsed value on change; a blank entry commits nothing (the field falls back
-  to its `default:` at render).
+  A `number` / `integer` field → numeric input (fixture `font_size` = 11.5).
+  Commits the parsed value on change; a blank entry commits nothing — the
+  document keeps its last committed value, the placeholder only ghosts the
+  schema `default:`.
 
   `type="text"`, not `type="number"` — a native number input SANITIZES an
   invalid string to `""` before the DOM `value` setter even runs (verified:
@@ -21,10 +21,12 @@
 		value: number | undefined;
 		integer?: boolean;
 		fallback?: number;
+		/** Accessible name — the visual label is a bare span the input can't reference. */
+		label?: string;
 		onCommit: (v: number | string) => void;
 		testid?: string;
 	}
-	let { value, integer, fallback, onCommit, testid }: Props = $props();
+	let { value, integer, fallback, label, onCommit, testid }: Props = $props();
 
 	// svelte-ignore state_referenced_locally
 	let local = $state(value != null ? String(value) : '');
@@ -38,7 +40,10 @@
 	function commit(raw: string): void {
 		local = raw;
 		if (raw.trim() === '') return;
-		const n = integer ? parseInt(raw, 10) : parseFloat(raw);
+		// Number(), not parseFloat/parseInt: a prefix parse would silently commit
+		// `14.5` for `14.5x` (and truncate `11.9` → 11 on integer fields) instead
+		// of letting the boundary judge the full entry.
+		const n = Number(raw);
 		onCommit(Number.isNaN(n) ? raw : n);
 	}
 </script>
@@ -49,6 +54,7 @@
 	inputmode={integer ? 'numeric' : 'decimal'}
 	value={local}
 	placeholder={fallback != null ? String(fallback) : ''}
+	aria-label={label}
 	data-testid={testid}
 	oninput={(e) => commit((e.currentTarget as HTMLInputElement).value)}
 />

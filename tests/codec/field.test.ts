@@ -31,7 +31,6 @@ describe('createField over a real usaf_memo leaf', () => {
 		const caret: number[] = [];
 		const field = createField({
 			doc,
-			quill: quill(),
 			addr: { field: 'subject' },
 			container: mount(),
 			inline: true,
@@ -53,7 +52,7 @@ describe('createField over a real usaf_memo leaf', () => {
 	});
 
 	it('edits the main body via applyChange and preserves marks path', () => {
-		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
+		const field = createField({ doc, addr: {}, container: mount() });
 		const before = doc.main.body.text;
 		const view = viewOf(field);
 		view.dispatch(view.state.tr.insertText('Z', 2)); // PM 2 = USV 1 (after first char)
@@ -67,7 +66,6 @@ describe('createField over a real usaf_memo leaf', () => {
 	it('caret survives an own-edit through the StepMap', () => {
 		const field = createField({
 			doc,
-			quill: quill(),
 			addr: { field: 'subject' },
 			container: mount()
 		});
@@ -85,7 +83,6 @@ describe('createField over a real usaf_memo leaf', () => {
 	it('setCaret maps a USV position to the PM caret', () => {
 		const field = createField({
 			doc,
-			quill: quill(),
 			addr: { field: 'subject' },
 			container: mount()
 		});
@@ -102,7 +99,6 @@ describe('field-level reconciliation', () => {
 		const doc = quill().seedDocument();
 		const field = createField({
 			doc,
-			quill: quill(),
 			addr: { field: 'subject' },
 			container: mount()
 		});
@@ -133,7 +129,6 @@ describe('createField over an ABSENT declared richtext field', () => {
 		expect(doc.get('tag_line')).toBeUndefined();
 		const field = createField({
 			doc,
-			quill: quill(),
 			addr: { field: 'tag_line' },
 			container: mount(),
 			inline: true
@@ -153,7 +148,7 @@ describe('createField over an ABSENT declared richtext field', () => {
 describe('field install-fallback for an un-lowerable structural edit', () => {
 	it('a hard break falls back to install without corrupting the store', () => {
 		const doc = quill().seedDocument();
-		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
+		const field = createField({ doc, addr: {}, container: mount() });
 		const view = viewOf(field);
 		// Insert a hard_break into the first paragraph (a `continues` line ops
 		// cannot create → the field installs the whole corpus instead).

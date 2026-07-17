@@ -200,4 +200,73 @@ describe('structureNeedsInstall — the continues-line boundary gap gate', () =>
 		const edited = { ...code2, text: code2.text.replace('a', 'aa') };
 		expect(structureNeedsInstall(code2, edited)).toBe(false);
 	});
+	it('flags a break↔split swap at UNCHANGED text (no delta, flags flipped)', () => {
+		// A hard break replaced by a real paragraph split: net text identical, so
+		// the count heuristic alone would take the op path — but `applyChange`
+		// has no continues op in either direction, so the store would keep the
+		// break while PM shows a split, forever.
+		const withBreak = md('one\\\ntwo'); // para + continues line
+		const split: RichText = {
+			...withBreak,
+			lines: withBreak.lines.map((l) => ({ containers: l.containers, kind: 'para' }) as never)
+		};
+		expect(structureNeedsInstall(withBreak, split)).toBe(true);
+		expect(structureNeedsInstall(split, withBreak)).toBe(true);
+	});
+	it('flags a MOVED continues line at equal counts', () => {
+		const mk = (flags: boolean[], text: string): RichText => ({
+			text,
+			lines: flags.map(
+				(c) => ({ containers: [], kind: 'para', ...(c ? { continues: true } : {}) }) as never
+			),
+			marks: [],
+			islands: []
+		});
+		// [F,T,F] -> [F,F,T] with a text edit elsewhere: same count, wrong shape.
+		expect(
+			structureNeedsInstall(
+				mk([false, true, false], 'a\nb\nc'),
+				mk([false, false, true], 'a\nb\ncX')
+			)
+		).toBe(true);
+	});
+	it('does NOT flag an edit that merely shifts an existing continues line', () => {
+		const withBreak = md('one\\\ntwo');
+		// Insert text before the break: the boundary survives, flags unchanged.
+		const edited = { ...withBreak, text: 'X' + withBreak.text };
+		expect(structureNeedsInstall(withBreak, edited)).toBe(false);
+	});
+	it('does NOT flag deleting the hard break (join — the flag vanishes with its \\n)', () => {
+		const withBreak = md('one\\\ntwo');
+		const joined = md('onetwo');
+		expect(structureNeedsInstall(withBreak, joined)).toBe(false);
+	});
+	it('flags a NEW code-internal line (inserted \\n must be a real line, corpus says continues)', () => {
+		const code1 = md('```\nab\n```');
+		const code2: RichText = {
+			text: code1.text.replace('ab', 'a\nb'),
+			lines: [...code1.lines, { containers: [], continues: true, kind: 'code' } as never],
+			marks: [],
+			islands: []
+		};
+		expect(structureNeedsInstall(code1, code2)).toBe(true);
+	});
+	it('flags a delta whose insert carries an island slot (IslandSlotInInsert at the boundary)', () => {
+		const island = '\uFFFC';
+		const mkIsland = (text: string): RichText => ({
+			text,
+			lines: [{ containers: [], kind: 'para' }],
+			marks: [],
+			islands: [{ id: 'i1', type: 'image', props: {} } as never]
+		});
+		// One splice spanning the slot re-inserts it: X at 1 and Y at 14 collapse
+		// to a single delta whose insert contains U+FFFC.
+		const oldRt = mkIsland(`before ${island} after`);
+		const newRt = mkIsland(`bXefore ${island} afteYr`);
+		expect(structureNeedsInstall(oldRt, newRt)).toBe(true);
+		// Island CREATION (paste containing an image) likewise inserts a slot.
+		const plain = md('before  after');
+		const withIsland = mkIsland(`before ${island} after`);
+		expect(structureNeedsInstall(plain, withIsland)).toBe(true);
+	});
 });

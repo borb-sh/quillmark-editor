@@ -18,19 +18,26 @@
 	interface Props {
 		value: unknown[] | undefined;
 		items: QuillFieldSchema | undefined;
+		/** Accessible-name prefix for the element controls (`label` + 1-based index). */
+		label?: string;
 		onCommit: (arr: unknown[]) => void;
+		/** A prose element gained focus — joins the field in the focus federation. */
+		onFocusEl?: () => void;
 		testid?: string;
 	}
-	let { value, items, onCommit, testid }: Props = $props();
+	let { value, items, label, onCommit, onFocusEl, testid }: Props = $props();
 
 	const control = $derived(elementControl(items));
 	const plaintext = $derived(items?.type === 'plaintext');
 	const arr = $derived((value ?? []) as unknown[]);
 
 	// Parallel stable ids, one per element, kept in lockstep with the data below.
+	// Seeded eagerly so a non-empty array renders its rows on the FIRST pass —
+	// an effect-only seed mounts every element editor in a second render.
 	const seq = new IdSeq();
-	let ids = $state<string[]>([]);
-	// Length reconcile (seed + defend against an out-of-band length change);
+	// svelte-ignore state_referenced_locally
+	let ids = $state<string[]>(Array.from({ length: (value ?? []).length }, () => seq.next()));
+	// Length reconcile (defend against an out-of-band length change);
 	// order is maintained by the mutators, not here.
 	$effect(() => {
 		const n = arr.length;
@@ -104,11 +111,13 @@
 					value={(arr[k] ?? emptyElement()) as RichText}
 					{plaintext}
 					onChange={(rt) => commitElement(k, rt)}
+					{onFocusEl}
 					testid={testid ? `${testid}-el-${k}` : undefined}
 				/>
 			{:else if control === 'object'}
 				<textarea
 					class="qm-input qm-json"
+					aria-label={label != null ? `${label} ${k + 1}` : undefined}
 					data-testid={testid ? `${testid}-el-${k}` : undefined}
 					value={JSON.stringify(arr[k] ?? {})}
 					onchange={(e) => {
@@ -123,6 +132,7 @@
 				<div class="qm-array-input">
 					<TextField
 						value={String(arr[k] ?? '')}
+						label={label != null ? `${label} ${k + 1}` : undefined}
 						onCommit={(v) => commitElement(k, v)}
 						testid={testid ? `${testid}-el-${k}` : undefined}
 					/>

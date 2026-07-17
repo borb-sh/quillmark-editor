@@ -14,10 +14,10 @@ import { baseKeymap, toggleMark } from 'prosemirror-commands';
 import { history, redo, undo } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
 import type { Node as PMNode, Schema } from 'prosemirror-model';
-import { EditorState, Plugin, PluginKey, TextSelection, type Command } from 'prosemirror-state';
+import { EditorState, Plugin, PluginKey, Selection, type Command } from 'prosemirror-state';
 import { splitListItem } from 'prosemirror-schema-list';
 import { EditorView } from 'prosemirror-view';
-import type { Document, Quill, RichText, Addr } from '../index.js';
+import type { Document, RichText, Addr } from '../index.js';
 import { decode } from './decode.js';
 import { corpusToPM, pmToCorpus, buildLineIndex, type LineIndex } from './positions.js';
 import { lower, pmToRichText, structureNeedsInstall } from './encode.js';
@@ -29,7 +29,6 @@ import { blockSchema, inlineSchema } from './schema.js';
 /** Options for {@link createField}. */
 export interface CreateFieldOpts {
 	doc: Document;
-	quill: Quill;
 	addr: Addr;
 	container: HTMLElement;
 	/** Constrained single-textblock schema (a `richtext(inline)` field). */
@@ -178,8 +177,19 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			}
 			reconciler.commit(readLeaf(doc, addr));
 		} catch (e) {
-			// Optimistic PM stays; surface the boundary error without crashing.
-			console.error('[quillmark/editor] applyChange failed; keeping optimistic state', e);
+			// Bound the damage: an op path the gates missed leaves the store STALE
+			// while PM keeps the edit — and because the reconciler then re-diffs
+			// from that stale corpus, every later edit re-throws and the field
+			// silently stops persisting. Install the full projection instead
+			// (correct store, pays this field's anchors).
+			console.error('[quillmark/editor] applyChange failed; falling back to install', e);
+			try {
+				doc.install(addr, newRt);
+				reconciler.commit(readLeaf(doc, addr));
+			} catch (e2) {
+				// Optimistic PM stays; surface the boundary error without crashing.
+				console.error('[quillmark/editor] install fallback failed; keeping optimistic state', e2);
+			}
 		}
 	}
 
@@ -192,7 +202,10 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	const controller: FieldController = {
 		setCaret(pos: number): void {
 			const pm = corpusToPM(view.state.doc, index, pos);
-			const sel = TextSelection.create(view.state.doc, pm);
+			// `Selection.near`, not `TextSelection.create`: the mapped position can
+			// be non-inline (before an island/rule block, or doc-level in an empty
+			// nested textblock), where a raw TextSelection is invalid.
+			const sel = Selection.near(view.state.doc.resolve(pm));
 			view.dispatch(view.state.tr.setSelection(sel));
 			view.focus();
 		},
@@ -205,7 +218,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			index = buildLineIndex(fresh.doc);
 			// Best-effort caret continuity across an external change: keep the USV.
 			const pm = corpusToPM(fresh.doc, index, caretUsv);
-			view.dispatch(view.state.tr.setSelection(TextSelection.create(fresh.doc, pm)));
+			view.dispatch(view.state.tr.setSelection(Selection.near(fresh.doc.resolve(pm))));
 			reconciler.commit(current);
 		},
 		focus(): void {

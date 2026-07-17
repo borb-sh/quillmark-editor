@@ -376,15 +376,66 @@ function kindKey(l: RichTextLine): unknown {
 }
 
 /**
- * True when reaching `newRt` from `oldRt` requires a `continues` line the op
- * vocabulary cannot create (a new hard break, or a new code-internal line). The
- * field falls back to `install` in that case (paying that field's anchors). Errs
- * toward `install` — correctness over anchor preservation for this rare edit.
+ * True when reaching `newRt` from `oldRt` is outside the op vocabulary and the
+ * field must fall back to `install` (paying that field's anchors):
+ *
+ *   • the delta's insert would carry an island slot — `applyChange` throws
+ *     `IslandSlotInInsert`, so island creation, and any single-splice edit that
+ *     spans a slot and re-inserts it, are not op-reachable;
+ *   • the `continues` flags ops cannot touch: `applyChange` has no `continues`
+ *     op — a retained `\n` keeps its line's flag, a deleted `\n` joins (its
+ *     flag vanishes), an inserted `\n` splits into a REAL line (`continues`
+ *     false). Any new-side flag vector that splice model cannot produce (a new
+ *     hard break, a code-internal line, a break↔split swap at unchanged text)
+ *     requires install.
+ *
+ * Errs toward `install` — correctness over anchor preservation for rare edits.
  */
 export function structureNeedsInstall(oldRt: RichText, newRt: RichText): boolean {
-	const oldC = oldRt.lines.filter((l) => l.continues).length;
-	const newC = newRt.lines.filter((l) => l.continues).length;
-	return newC > oldC;
+	const delta = diffText(oldRt.text, newRt.text);
+	if (delta) {
+		const inserted = delta.ops.find((op) => 'insert' in op) as { insert: string } | undefined;
+		if (inserted?.insert.includes(ISLAND_SLOT)) return true;
+	}
+	return !continuesReachable(oldRt, newRt, delta);
+}
+
+/** Whether the splice model above yields exactly `newRt`'s `continues` vector. */
+function continuesReachable(oldRt: RichText, newRt: RichText, delta: Delta | undefined): boolean {
+	// Line 0 never continues anything; a flip there is unreachable by definition.
+	if (!!oldRt.lines[0]?.continues !== !!newRt.lines[0]?.continues) return false;
+	const actual = newRt.lines.slice(1).map((l) => !!l.continues);
+	const oldFlags = oldRt.lines.slice(1).map((l) => !!l.continues);
+	if (!delta) return sameFlags(actual, oldFlags);
+
+	// The single splice in USV coords: [p, p+del) replaced by `ins`.
+	let p = 0;
+	let del = 0;
+	let ins = '';
+	for (const op of delta.ops) {
+		if ('retain' in op) {
+			if (del === 0 && ins === '') p = op.retain;
+		} else if ('delete' in op) del = op.delete;
+		else ins = op.insert;
+	}
+
+	// Boundary j (the j-th `\n` of the old text) carries old line j+1's flag.
+	// Expected new vector: surviving pre-splice boundaries, then one REAL line
+	// per inserted `\n`, then surviving post-splice boundaries.
+	const cps = codePoints(oldRt.text);
+	const boundaries: { pos: number; flag: boolean }[] = [];
+	for (let i = 0, j = 0; i < cps.length; i++) {
+		if (cps[i] === '\n') boundaries.push({ pos: i, flag: oldFlags[j++] });
+	}
+	const expected: boolean[] = [];
+	for (const b of boundaries) if (b.pos < p) expected.push(b.flag);
+	for (const c of ins) if (c === '\n') expected.push(false);
+	for (const b of boundaries) if (b.pos >= p + del) expected.push(b.flag);
+	return sameFlags(actual, expected);
+}
+
+function sameFlags(a: boolean[], b: boolean[]): boolean {
+	return a.length === b.length && a.every((v, i) => v === b[i]);
 }
 
 // ── Mark diff ───────────────────────────────────────────────────────────────

@@ -6,7 +6,7 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Engine, Quill, init, type LiveSession, type Diagnostic } from '$lib/core';
+	import { Engine, Quill, init, type Diagnostic } from '$lib/core';
 	import { loadUsafMemoTree } from './fixture';
 
 	type Status =
@@ -27,27 +27,30 @@
 		  };
 
 	let status = $state<Status>({ phase: 'loading' });
-	let session: LiveSession | undefined;
 	let toFree: Array<{ free(): void }> = [];
 
 	onMount(() => {
 		let cancelled = false;
 		(async () => {
+			// Handles created so far, newest first — freed in reverse creation
+			// order on unmount-during-open AND on a mid-chain failure (e.g.
+			// `engine.open` throwing after `quill`/`doc` already exist).
+			const created: Array<{ free(): void }> = [];
 			try {
 				init();
 				const tree = await loadUsafMemoTree();
 				const quill = Quill.fromTree(tree);
+				created.unshift(quill);
 				const doc = quill.seedDocument();
+				created.unshift(doc);
 				const engine = new Engine();
 				const openedSession = await engine.open(quill, doc);
+				created.unshift(openedSession);
 				if (cancelled) {
-					openedSession.free();
-					doc.free();
-					quill.free();
+					for (const h of created) h.free();
 					return;
 				}
-				session = openedSession;
-				toFree = [openedSession, doc, quill];
+				toFree = created;
 				status = {
 					phase: 'ready',
 					treeSize: tree.size,
@@ -62,6 +65,7 @@
 					warnings: openedSession.warnings
 				};
 			} catch (e) {
+				for (const h of created) h.free();
 				if (!cancelled)
 					status = { phase: 'error', message: e instanceof Error ? e.message : String(e) };
 			}
@@ -70,7 +74,6 @@
 			cancelled = true;
 			for (const h of toFree) h.free();
 			toFree = [];
-			session = undefined;
 		};
 	});
 </script>

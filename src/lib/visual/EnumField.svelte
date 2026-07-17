@@ -10,10 +10,12 @@
 		value: string | undefined;
 		values: string[];
 		fallback?: string;
+		/** Accessible name — the visual label is a bare span the select can't reference. */
+		label?: string;
 		onCommit: (v: string) => void;
 		testid?: string;
 	}
-	let { value, values, fallback, onCommit, testid }: Props = $props();
+	let { value, values, fallback, label, onCommit, testid }: Props = $props();
 
 	// svelte-ignore state_referenced_locally
 	let local = $state(value ?? fallback ?? '');
@@ -28,6 +30,7 @@
 <select
 	class="qm-select"
 	value={local}
+	aria-label={label}
 	data-testid={testid}
 	onchange={(e) => {
 		local = (e.currentTarget as HTMLSelectElement).value;

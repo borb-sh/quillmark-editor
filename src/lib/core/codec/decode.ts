@@ -10,7 +10,7 @@
 import type { Mark, Node as PMNode, Schema } from 'prosemirror-model';
 import type { RichText, RichTextContainer, RichTextLine, RichTextMark } from '../wasm-types.js';
 import { ISLAND_SLOT } from './islands.js';
-import { isAnchor, pmMarkFromCorpus } from './marks.js';
+import { isAnchor, markKey, pmMarkFromCorpus } from './marks.js';
 import { isInlineSchema } from './schema.js';
 
 /** Code points of `s` (USV units) — the iteration granularity the corpus speaks. */
@@ -127,9 +127,16 @@ function groupBlocks(
 			const ordered = here.ordered;
 			const start = here.start;
 			let j = i + 1;
+			let prevOrd = (here as { ordinal: number }).ordinal;
 			while (j < leaves.length) {
 				const c = atDepth(leaves[j], depth);
 				if (!c || c.container !== 'list_item' || c.ordered !== ordered || c.start !== start) break;
+				// An ordinal reset is an ADJACENT SIBLING list (corpus preserves the
+				// shape) — merging it here would re-encode `[0,1,0]` as `[0,1,2]`,
+				// breaking the decode round-trip on the first edit.
+				const ord = (c as { ordinal: number }).ordinal;
+				if (ord < prevOrd) break;
+				prevOrd = ord;
 				j++;
 			}
 			const run = leaves.slice(i, j);
@@ -243,15 +250,10 @@ function buildInline(
 /** A stable key for a mark set (order-independent) to detect run boundaries. */
 function markSetKey(active: RichTextMark[]): string {
 	if (!active.length) return '';
-	return active
-		.map((m) => {
-			if (m.type === 'link') return `link:${(m as { url: string }).url}`;
-			if ('attrs' in m && !isAnchor(m))
-				return `${m.type}:${JSON.stringify((m as { attrs: unknown }).attrs)}`;
-			return m.type;
-		})
-		.sort()
-		.join('|');
+	// Per-mark keys via the shared NUL-delimited `markKey`; the set is joined via
+	// JSON so no url/attrs content can collide with a delimiter (`link:a|strong`
+	// as a url used to alias `{link:a} + {strong}`).
+	return JSON.stringify(active.map((m) => markKey(m as unknown as Record<string, unknown>)).sort());
 }
 
 /** The PM mark array for an active corpus mark set (anchors already excluded). */

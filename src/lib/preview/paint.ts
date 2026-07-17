@@ -17,8 +17,6 @@ export interface PageSlot {
 export interface PaintLoop {
 	/** Live view of the current per-page slots — same array identity for the loop's life. */
 	readonly slots: readonly PageSlot[];
-	/** Repaint mounted pages in `pages` (default: every currently-mounted page). */
-	repaint(pages?: Iterable<number>): void;
 	/** Reconcile slot count to `pageCount`, re-cache geometry, repaint mounted `dirtyPages`. */
 	refresh(dirtyPages: readonly number[], pageCount: number): void;
 	/** Fold a density multiplier into every future paint; repaints mounted pages now. */
@@ -35,9 +33,11 @@ export function createPaintLoop(
 	margin: number
 ): PaintLoop {
 	// The IntersectionObserver root must be a scrollable ancestor of the slots;
-	// respect a consumer's own choice if they already set one.
-	if (!container.style.overflowY) container.style.overflowY = 'auto';
-	if (!container.style.position) container.style.position = 'relative';
+	// respect a consumer's own choice if they already set one (computed style, so
+	// a stylesheet rule counts as a choice, not just an inline style).
+	const computed = getComputedStyle(container);
+	if (computed.overflowY === 'visible') container.style.overflowY = 'auto';
+	if (computed.position === 'static') container.style.position = 'relative';
 
 	const slots: PageSlot[] = [];
 	const pageByEl = new Map<Element, number>();
@@ -87,11 +87,15 @@ export function createPaintLoop(
 			canvas = document.createElement('canvas');
 			canvas.className = 'qm-page-canvas';
 			Object.assign(canvas.style, { position: 'absolute', inset: '0', display: 'block' });
+		}
+		// Contextless canvas: bail BEFORE registering, so `updateBand` still sees
+		// the page as unmounted and retries instead of keeping a blank page.
+		const ctx = canvas.getContext('2d');
+		if (!ctx) return;
+		if (!canvases.has(slot.page)) {
 			slot.el.insertBefore(canvas, slot.el.firstChild);
 			canvases.set(slot.page, canvas);
 		}
-		const ctx = canvas.getContext('2d');
-		if (!ctx) return;
 		const layoutScale = (slot.el.clientWidth || slot.size.widthPt) / slot.size.widthPt;
 		const densityScale = (window.devicePixelRatio || 1) * zoom;
 		const result = session.paint(ctx, slot.page, { layoutScale, densityScale });
@@ -110,17 +114,21 @@ export function createPaintLoop(
 	// pages that fell outside it. Only touches pages CHANGING band membership —
 	// an already-mounted page in the band is left alone (paint contract: an idle
 	// canvas keeps its pixels for free; repainting it here would be pure waste).
-	function updateBand(): void {
-		if (visible.size === 0 || slots.length === 0) return;
+	function updateBand(): Set<number> {
+		const painted = new Set<number>();
+		if (visible.size === 0 || slots.length === 0) return painted;
 		const min = Math.min(...visible);
 		const max = Math.max(...visible);
 		const lo = Math.max(0, min - margin);
 		const hi = Math.min(slots.length - 1, max + margin);
 		for (const slot of slots) {
 			const inBand = slot.page >= lo && slot.page <= hi;
-			if (inBand && !canvases.has(slot.page)) paintSlot(slot);
-			else if (!inBand && canvases.has(slot.page)) unmountPage(slot.page);
+			if (inBand && !canvases.has(slot.page)) {
+				paintSlot(slot);
+				painted.add(slot.page);
+			} else if (!inBand && canvases.has(slot.page)) unmountPage(slot.page);
 		}
+		return painted;
 	}
 
 	// Grow/shrink the slot array to `pageCount` (trailing add/remove — a recompile
@@ -141,7 +149,12 @@ export function createPaintLoop(
 			slots.push(makeSlot(slots.length));
 		}
 		for (let i = 0; i < slots.length; i++) {
-			slots[i] = { ...slots[i], size: session.pageSize(i) };
+			const size = session.pageSize(i);
+			slots[i] = { ...slots[i], size };
+			// Keep the page box's shape in step with the re-read size — a recompile
+			// can change a page's dimensions without changing the count, and every
+			// %-space overlay/click transform assumes box shape matches PageSize.
+			slots[i].el.style.aspectRatio = `${size.widthPt} / ${size.heightPt}`;
 		}
 	}
 
@@ -151,17 +164,14 @@ export function createPaintLoop(
 		get slots() {
 			return slots;
 		},
-		repaint(pages) {
-			const target = pages ? new Set(pages) : new Set(canvases.keys());
-			for (const page of target) {
-				const slot = slots[page];
-				if (slot && canvases.has(page)) paintSlot(slot);
-			}
-		},
 		refresh(dirtyPages, pageCount) {
 			reconcile(pageCount);
-			updateBand(); // slot count may have moved the band (pages added/removed)
+			// Slot count may have moved the band (pages added/removed); a page the
+			// band just painted is already post-apply, so a second full
+			// rasterization from the dirty loop would add nothing.
+			const painted = updateBand();
 			for (const page of dirtyPages) {
+				if (painted.has(page)) continue;
 				const slot = slots[page];
 				if (slot && canvases.has(page)) paintSlot(slot);
 			}

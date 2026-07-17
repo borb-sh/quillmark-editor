@@ -106,3 +106,64 @@ describe('inline / plaintext constraints', () => {
 		expect(doc.child(0).textContent).toBe('plain bold em');
 	});
 });
+
+describe('adjacent sibling lists (ordinal reset)', () => {
+	const item = (ordinal: number) =>
+		({ container: 'list_item', ordered: false, start: 1, ordinal }) as never;
+	// Two adjacent bullet lists: ordinals [0,1] then a reset to [0].
+	const twoLists: RichText = {
+		text: 'a\nb\nc',
+		lines: [
+			{ containers: [item(0)], kind: 'para' },
+			{ containers: [item(1)], kind: 'para' },
+			{ containers: [item(0)], kind: 'para' }
+		],
+		marks: [],
+		islands: []
+	};
+
+	it('decodes an ordinal reset as a NEW list, not a merged one', () => {
+		const doc = decode(twoLists, blockSchema);
+		expect(doc.childCount).toBe(2);
+		expect(doc.child(0).type.name).toBe('bullet_list');
+		expect(doc.child(0).childCount).toBe(2);
+		expect(doc.child(1).type.name).toBe('bullet_list');
+		expect(doc.child(1).childCount).toBe(1);
+	});
+
+	it('round-trips through the corpus (the exit-criterion shape)', () => {
+		// Normalization preserves the two-list shape, so a merged decode would
+		// re-encode ordinals [0,1,2] and fail this equality.
+		const canon = normalize(twoLists);
+		expect(corpusEqual(normalize(pmToRichText(decode(canon, blockSchema))), canon)).toBe(true);
+	});
+});
+
+describe('mark-set run keying', () => {
+	it('does not alias a link url containing a legacy delimiter with a mark set', () => {
+		// url "a|strong" on [0,1) next to {link "a", strong} on [1,2): under the
+		// old ':'/'|' keying both sets keyed identically, merging the runs and
+		// dropping the second set entirely.
+		const rt: RichText = {
+			text: 'ab',
+			lines: [{ containers: [], kind: 'para' }],
+			marks: [
+				{ start: 0, end: 1, type: 'link', url: 'a|strong' } as never,
+				{ start: 1, end: 2, type: 'link', url: 'a' } as never,
+				{ start: 1, end: 2, type: 'strong' } as never
+			],
+			islands: []
+		};
+		const para = decode(rt, blockSchema).child(0);
+		expect(para.childCount).toBe(2);
+		expect(para.child(0).marks.map((m) => [m.type.name, m.attrs.href])).toEqual([
+			['link', 'a|strong']
+		]);
+		const second = para
+			.child(1)
+			.marks.map((m) => m.type.name)
+			.sort();
+		expect(second).toEqual(['link', 'strong']);
+		expect(para.child(1).marks.find((m) => m.type.name === 'link')?.attrs.href).toBe('a');
+	});
+});

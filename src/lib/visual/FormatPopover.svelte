@@ -144,6 +144,13 @@
 		};
 	});
 
+	// Any close path that bypasses `sync` (e.g. Escape while the link input holds
+	// focus — bits-ui flips `open` itself) must not leave a stale prompt for the
+	// next open.
+	$effect(() => {
+		if (!open) linkPromptOpen = false;
+	});
+
 	/** Swallow the button's mousedown so focus/selection never leave the leaf. */
 	function keepFocus(e: MouseEvent): void {
 		e.preventDefault();

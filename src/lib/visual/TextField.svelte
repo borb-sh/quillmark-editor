@@ -9,10 +9,12 @@
 	interface Props {
 		value: string | undefined;
 		placeholder?: string;
+		/** Accessible name — the visual label is a bare span the input can't reference. */
+		label?: string;
 		onCommit: (v: string) => void;
 		testid?: string;
 	}
-	let { value, placeholder, onCommit, testid }: Props = $props();
+	let { value, placeholder, label, onCommit, testid }: Props = $props();
 
 	// Local input state; reconcile only an EXTERNAL change (untrack the local
 	// read/write so own-typing never re-runs the sync and resets the caret). The
@@ -32,6 +34,7 @@
 	type="text"
 	value={local}
 	{placeholder}
+	aria-label={label}
 	data-testid={testid}
 	oninput={(e) => {
 		local = (e.currentTarget as HTMLInputElement).value;

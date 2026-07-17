@@ -17,10 +17,12 @@
 	interface Props {
 		value: Record<string, unknown> | undefined;
 		properties: Record<string, QuillFieldSchema> | undefined;
+		/** Accessible-name prefix for the property controls. */
+		label?: string;
 		onCommit: (obj: Record<string, unknown>) => void;
 		testid?: string;
 	}
-	let { value, properties, onCommit, testid }: Props = $props();
+	let { value, properties, label, onCommit, testid }: Props = $props();
 
 	const entries = $derived(Object.entries(properties ?? {}));
 	const obj = $derived((value ?? {}) as Record<string, unknown>);
@@ -33,10 +35,12 @@
 <div class="qm-object" data-testid={testid}>
 	{#each entries as [key, sub] (key)}
 		{@const kind = controlKind(sub)}
+		{@const propLabel = `${label != null ? `${label} ` : ''}${sub.ui?.title ?? humanize(key)}`}
 		<div class="qm-object-prop">
 			<span class="qm-object-label">{sub.ui?.title ?? humanize(key)}</span>
 			{#if kind === 'enum'}
 				<EnumField
+					label={propLabel}
 					value={obj[key] as string | undefined}
 					values={enumValues(sub) ?? []}
 					fallback={sub.default as string | undefined}
@@ -44,6 +48,7 @@
 				/>
 			{:else if kind === 'number'}
 				<NumberField
+					label={propLabel}
 					value={obj[key] as number | undefined}
 					integer={sub.type === 'integer'}
 					fallback={sub.default as number | undefined}
@@ -51,14 +56,20 @@
 				/>
 			{:else if kind === 'boolean'}
 				<BooleanField
+					label={propLabel}
 					value={obj[key] as boolean | undefined}
 					fallback={sub.default as boolean | undefined}
 					onCommit={(v) => commitProp(key, v)}
 				/>
 			{:else if kind === 'date'}
-				<DateField value={obj[key] as string | undefined} onCommit={(v) => commitProp(key, v)} />
+				<DateField
+					label={propLabel}
+					value={obj[key] as string | undefined}
+					onCommit={(v) => commitProp(key, v)}
+				/>
 			{:else if kind === 'text'}
 				<TextField
+					label={propLabel}
 					value={obj[key] as string | undefined}
 					placeholder={sub.default != null ? String(sub.default) : undefined}
 					onCommit={(v) => commitProp(key, v)}

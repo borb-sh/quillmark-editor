@@ -32,6 +32,16 @@ export function createOverlay(session: LiveSession, slots: readonly PageSlot[]):
 		return layer;
 	});
 
+	// The ring survives `build()` — a refresh rebuilds every box, and losing the
+	// active highlight on each apply would make it useless.
+	let activeField: string | undefined;
+
+	function applyRing(el: HTMLElement, field: string): void {
+		const isActive = field === activeField;
+		el.style.border = isActive ? RING_ACTIVE : RING;
+		el.classList.toggle(ACTIVE_CLASS, isActive);
+	}
+
 	// Field names come from `regions()` (the only session query that enumerates
 	// them — Preview carries no schema); the boxes themselves come from
 	// `fieldBoxes(field)`, which is content-only and `[]` for a scalar-reference
@@ -57,9 +67,9 @@ export function createOverlay(session: LiveSession, slots: readonly PageSlot[]):
 					height: `${pct.height}%`,
 					boxSizing: 'border-box',
 					borderRadius: '2px',
-					border: RING,
 					background: 'var(--qm-field-bg, transparent)'
 				});
+				applyRing(el, field);
 				layer.appendChild(el);
 			}
 		}
@@ -70,12 +80,11 @@ export function createOverlay(session: LiveSession, slots: readonly PageSlot[]):
 	return {
 		refresh: build,
 		setActiveField(field) {
+			activeField = field;
 			for (const layer of layers) {
 				for (const child of Array.from(layer.children)) {
 					const el = child as HTMLElement;
-					const isActive = field !== undefined && el.getAttribute(FIELD_ATTR) === field;
-					el.style.border = isActive ? RING_ACTIVE : RING;
-					el.classList.toggle(ACTIVE_CLASS, isActive);
+					applyRing(el, el.getAttribute(FIELD_ATTR) ?? '');
 				}
 			}
 		},

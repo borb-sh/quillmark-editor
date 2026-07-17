@@ -25,8 +25,13 @@ export function createBridge(
 	const unlisten: Array<() => void> = [];
 
 	if (onCaretPick) {
-		for (const slot of slots) {
+		for (const { page, el } of slots) {
 			const handleClick = (ev: MouseEvent): void => {
+				// Re-read through the live array: a same-count `refresh` swaps the
+				// slot objects to re-cache `size`, and the click math must use the
+				// current compile's PageSize, not the one captured at bridge build.
+				const slot = slots[page];
+				if (!slot) return;
 				const box = slot.el.getBoundingClientRect();
 				const px = ev.clientX - box.left;
 				const py = ev.clientY - box.top;
@@ -34,8 +39,8 @@ export function createBridge(
 				const hit = session.positionAt(slot.page, pt.x, pt.y);
 				if (hit) onCaretPick(hit);
 			};
-			slot.el.addEventListener('click', handleClick);
-			unlisten.push(() => slot.el.removeEventListener('click', handleClick));
+			el.addEventListener('click', handleClick);
+			unlisten.push(() => el.removeEventListener('click', handleClick));
 		}
 	}
 
