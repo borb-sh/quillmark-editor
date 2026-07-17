@@ -27,6 +27,7 @@
 	import {
 		IdSeq,
 		initIds,
+		idIndex,
 		fieldModels,
 		groupOrder,
 		groupSections,
@@ -46,6 +47,13 @@
 	import Card from './Card.svelte';
 	import FormatPopover from './FormatPopover.svelte';
 
+	/**
+	 * REMOUNT CONTRACT. `cardIds`, the id `seq`, and the leaf registry seed ONCE
+	 * from the initial `doc` (see the reactivity note above); swapping `doc`/`quill`
+	 * in place is NOT observed and silently desyncs the card tree. Swap by
+	 * REMOUNTING (`{#key doc}`, as the playground does) — edits flow the other way,
+	 * mutating the passed-in `doc` handle directly.
+	 */
 	interface Props {
 		doc: Document;
 		quill: Quill;
@@ -85,7 +93,7 @@
 	}
 	/** Resolve a stable card id to its current corpus index (the mutation boundary). */
 	function cardIndexOf(id: string): number {
-		return cardIds.indexOf(id);
+		return idIndex(cardIds, id);
 	}
 
 	// ── Leaf registry (setCaret target lookup + the 4b active-leaf seam) ────────

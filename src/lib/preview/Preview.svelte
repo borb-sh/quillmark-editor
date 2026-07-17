@@ -11,6 +11,12 @@
 	import { createPreview, type PreviewController } from './controller.js';
 	import type { LiveSession, CorpusHit, ChangeSet } from '../core/index.js';
 
+	/**
+	 * REMOUNT CONTRACT. `createPreview` binds once in `onMount`; a later change to
+	 * `session` (or `margin`/`overlays`/`onCaretPick`) is NOT observed. Swap the
+	 * session by REMOUNTING (`{#key session}`, as the playground does); drive
+	 * in-place edits through the `refresh(change)` method, not a prop change.
+	 */
 	interface Props {
 		session: LiveSession;
 		margin?: number;

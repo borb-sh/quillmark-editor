@@ -13,7 +13,8 @@ lifecycle, the consumed WASM surface).
 
 ## In scope
 
-- **WASM lifecycle.** `init` / `initSync`, and the owner of the `Quill` and
+- **WASM lifecycle.** `init` (the sync panic-hook installer — shipped 0.94.0
+  has no async `initSync` split), and the owner of the `Quill` and
   `Document` handles across a session — who holds them, when they are freed, and
   the `Engine` that dispatches renders. This is the core's single most important
   responsibility (`DOCUMENT_MODEL` §What the editor owns).

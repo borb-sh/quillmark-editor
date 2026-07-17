@@ -37,6 +37,8 @@ export interface CreateFieldOpts {
 	plaintext?: boolean;
 	/** Suppress the markdown-shorthand input rules (Phase 4 opt-out). */
 	noInputRules?: boolean;
+	/** Accessible name → `aria-label` on the `contenteditable` (the visual label is a sibling it can't reference). */
+	label?: string;
 	onFocus?(addr: Addr): void;
 	/** Fired with the new USV caret after an edit or a selection move. */
 	onCaretMove?(addr: Addr, pos: number): void;
@@ -117,6 +119,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 
 	view = new EditorView(container, {
 		state,
+		attributes: opts.label ? { 'aria-label': opts.label } : undefined,
 		dispatchTransaction: (tr) => {
 			const oldRt = reconciler.last as RichText;
 			const next = view.state.apply(tr);

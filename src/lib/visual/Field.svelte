@@ -72,6 +72,7 @@
 				addr={proseAddr}
 				inline={field.inline}
 				plaintext={field.plaintext}
+				label={field.label}
 				{leafKey}
 				{onFocus}
 				{onCaretMove}

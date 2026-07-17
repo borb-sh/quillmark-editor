@@ -22,11 +22,13 @@
 	interface Props {
 		value: RichText;
 		plaintext?: boolean;
+		/** Accessible name for the editable region (the array has no per-element label). */
+		label?: string;
 		onChange: (rt: RichText) => void;
 		onFocusEl?: () => void;
 		testid?: string;
 	}
-	let { value, plaintext, onChange, onFocusEl, testid }: Props = $props();
+	let { value, plaintext, label, onChange, onFocusEl, testid }: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
 
@@ -57,6 +59,9 @@
 		});
 		const view = new EditorView(containerEl, {
 			state,
+			// Names the `contenteditable` for assistive tech (the array row has no
+			// label element to associate).
+			attributes: label ? { 'aria-label': label } : undefined,
 			dispatchTransaction(tr) {
 				const next = view.state.apply(tr);
 				view.updateState(next);
