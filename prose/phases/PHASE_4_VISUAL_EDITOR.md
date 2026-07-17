@@ -24,7 +24,7 @@ prose-body editing, composed into one editable tree that writes ops to the live
   body are one abstraction (both richtext leaves), differing only in address form.
 - **A control per field type.** `richtext`/`plaintext` (± `inline`) → prose leaf;
   `string` → text input; `enum` → select over `values`; `number`/`integer` →
-  numeric; `boolean` → toggle; `datetime` → date control; `array` → reorderable
+  numeric; `boolean` → toggle; `datetime` → date control; `array` → add/remove
   repeater (`items: object` → a typed table); `object` → nested subform.
 - **The address spine + stable card identity.** Every editable unit keyed by `Addr`;
   each card *instance* keyed by a **stable identity**, resolved to an index only at
@@ -85,7 +85,7 @@ quill.schema ✕ Document.payload ──(join)──► card tree (Svelte, keyed
 
 ## Exit criteria
 
-- Full WYSIWYG edit of `usaf_memo`: every main field type edits (arrays reorder,
+- Full WYSIWYG edit of `usaf_memo`: every main field type edits (arrays add/remove,
   the inline `subject` and body take prose, enums/dates/numbers commit), and
   `indorsement` cards add / reorder / delete / retype / rename over stable keys with
   no caret loss.
@@ -114,6 +114,13 @@ quill.schema ✕ Document.payload ──(join)──► card tree (Svelte, keyed
   `Addr` whose `card` is a getter resolving `cardIndexOf(id)` at commit time, so a
   reorder is `moveCard` + a session-id splice — no remount, no lost caret. Cards
   key on a session id (`IdSeq`), resolved to an index only at the mutation boundary.
+- **Array fields drop the element ↑/↓ reorder.** The brief said "reorderable
+  repeater"; shipped as add/remove only. Rows take entry order and the array
+  commits by value (a mis-order is fixed by editing in place), so per-row reorder
+  on every array — including cosmetic scalar lists — was chrome the corpus doesn't
+  earn. The card stack keeps its ↑/↓. Design updated ([VISUAL_EDITOR_UIUX.md](../designs/VISUAL_EDITOR_UIUX.md)
+  §Fields, [VISUAL_EDITOR.md](../designs/VISUAL_EDITOR.md)); reorder can return
+  behind an `items`/`ui` hint if a quill needs an author-ordered list.
 - **The formatting `anchor` button is deferred** ([quillmark-issues/0003](../quillmark-issues/0003-no-anchor-insert-command.md)):
   an anchor is a decoration, and `createField` exposes no verb to insert one at an
   arbitrary selection. The button renders disabled; the six formatting marks

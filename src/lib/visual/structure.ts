@@ -14,7 +14,7 @@ export type ControlKind =
 	| 'number' // number / integer
 	| 'boolean' // boolean → toggle
 	| 'date' // datetime
-	| 'array' // reorderable repeater
+	| 'array' // add/remove repeater
 	| 'object'; // nested subform
 
 /** One field, projected: its schema, the control it renders as, and its layout hints. */
