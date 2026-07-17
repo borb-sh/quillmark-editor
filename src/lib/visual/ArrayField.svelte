@@ -5,6 +5,8 @@
   by `items.type`: `string` → text input, `richtext` → a prose element
   ({@link ProseArrayElement}), `object` → a minimal JSON editor (no
   array-of-object field exists in the fixture — implemented minimally, UNTESTED).
+  The add affordance sits in the label header row (space-between with the field
+  label); {@link Field} skips its own label for array controls.
 
   No reorder: an array's order is fixed at declaration/entry order. Elements
   carry a parallel session-id list so add/remove splices keyed editors rather
@@ -77,6 +79,19 @@
 </script>
 
 <div class="qm-array" data-testid={testid}>
+	<div class="qm-array-header">
+		{#if label != null}
+			<span class="qm-field-label">{label}</span>
+		{:else}
+			<span></span>
+		{/if}
+		<button
+			type="button"
+			class="qm-add-el"
+			data-testid={testid ? `${testid}-add` : undefined}
+			onclick={add}>+ Add</button
+		>
+	</div>
 	{#each ids as id, k (id)}
 		<div class="qm-array-row">
 			{#if control === 'prose'}
@@ -121,12 +136,6 @@
 			>
 		</div>
 	{/each}
-	<button
-		type="button"
-		class="qm-add-el"
-		data-testid={testid ? `${testid}-add` : undefined}
-		onclick={add}>+ Add</button
-	>
 </div>
 
 <style>
@@ -134,6 +143,17 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.35rem;
+	}
+	.qm-array-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+	.qm-field-label {
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--qm-label, #555);
 	}
 	.qm-array-row {
 		display: flex;
@@ -166,7 +186,6 @@
 		min-height: 2.5rem;
 	}
 	.qm-add-el {
-		align-self: flex-start;
 		border: 1px dashed var(--qm-border, #b8b8b8);
 		background: transparent;
 		border-radius: 4px;
