@@ -1,13 +1,14 @@
 <!--
-  An `array` field → a reorderable repeater. Elements commit by VALUE: every
-  edit / reorder / add / remove rebuilds the whole array and hands it to the
-  parent's typed `writer.set(field, wholeArray)` (arrays are not op-addressed).
-  Element control by `items.type`: `string` → text input, `richtext` → a prose
-  element ({@link ProseArrayElement}), `object` → a minimal JSON editor (no
+  An `array` field → an add/remove repeater. Elements commit by VALUE: every
+  edit / add / remove rebuilds the whole array and hands it to the parent's typed
+  `writer.set(field, wholeArray)` (arrays are not op-addressed). Element control
+  by `items.type`: `string` → text input, `richtext` → a prose element
+  ({@link ProseArrayElement}), `object` → a minimal JSON editor (no
   array-of-object field exists in the fixture — implemented minimally, UNTESTED).
 
-  Elements carry a parallel session-id list reordered in lockstep with the data,
-  so a reorder MOVES the keyed element editors rather than remounting them.
+  No reorder: an array's order is fixed at declaration/entry order. Elements
+  carry a parallel session-id list so add/remove splices keyed editors rather
+  than remounting the tail; the ids only ever grow or shrink, never permute.
 -->
 <script lang="ts">
 	import type { RichText, QuillFieldSchema } from '../core/index.js';
@@ -73,39 +74,11 @@
 		ids = ids.filter((_, i) => i !== k);
 		onCommit(arr.filter((_, i) => i !== k));
 	}
-	function move(k: number, dir: -1 | 1): void {
-		const j = k + dir;
-		if (j < 0 || j >= arr.length) return;
-		const a = arr.slice();
-		[a[k], a[j]] = [a[j], a[k]];
-		const w = ids.slice();
-		[w[k], w[j]] = [w[j], w[k]];
-		ids = w;
-		onCommit(a);
-	}
 </script>
 
 <div class="qm-array" data-testid={testid}>
 	{#each ids as id, k (id)}
 		<div class="qm-array-row">
-			<div class="qm-array-reorder">
-				<button
-					type="button"
-					class="qm-mini"
-					title="Move up"
-					disabled={k === 0}
-					data-testid={testid ? `${testid}-up-${k}` : undefined}
-					onclick={() => move(k, -1)}>↑</button
-				>
-				<button
-					type="button"
-					class="qm-mini"
-					title="Move down"
-					disabled={k === arr.length - 1}
-					data-testid={testid ? `${testid}-down-${k}` : undefined}
-					onclick={() => move(k, 1)}>↓</button
-				>
-			</div>
 			{#if control === 'prose'}
 				<ProseArrayElement
 					value={(arr[k] ?? emptyElement()) as RichText}
@@ -165,10 +138,6 @@
 		display: flex;
 		align-items: flex-start;
 		gap: 0.3rem;
-	}
-	.qm-array-reorder {
-		display: flex;
-		flex-direction: column;
 	}
 	.qm-array-input {
 		flex: 1;

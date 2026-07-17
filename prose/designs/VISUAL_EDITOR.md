@@ -54,8 +54,10 @@ multi-line prose leaf; with `inline: true`, a single-line one (constrained PM,
 [CODEC.md](CODEC.md) §Inline mode). `plaintext` (± `inline`) is a prose leaf with
 marks and islands suppressed. `string` is a text input, `enum` a select over
 `values:`, `number`/`integer` a numeric input, `boolean` a toggle, `datetime` a
-date control. `array` is a reorderable repeater (`items: {type: object}` → a typed
-table); `object` a nested subform recursing the mapping over `properties`. The
+date control. `array` is an add/remove repeater (`items: {type: object}` → a typed
+table) — elements hold declaration/entry order, no reorder control (see
+[VISUAL_EDITOR_UIUX.md](VISUAL_EDITOR_UIUX.md) §"Array fields"); `object` a nested
+subform recursing the mapping over `properties`. The
 text-ish types are the corpus's data-vs-content × open/plain-vs-formatted 2×2 —
 `enum`/`string` are form controls, `plaintext`/`richtext` prose leaves — and only
 the content side reaches the codec.

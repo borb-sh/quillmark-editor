@@ -70,6 +70,12 @@ is a separate concern (the island controls), not gated by this.
 - **Per-field state** — focus, inline diagnostics, and a ghosted `default:`
   placeholder (never written back — it lives in the schema). No `must_fill` nudge
   and no separate tips surface in V1.
+- **Array fields** — a repeater: one control per element (text / prose / minimal
+  JSON by `items.type`), a per-row delete, an add affordance at the foot. No
+  element reorder — rows hold entry order, and the array commits by value, so a
+  mis-order is fixed by editing in place, not by moving rows. (The card stack
+  keeps ↑/↓ — a curated set of heavyweight blocks earns it; a scalar list does
+  not.) Reorder can return behind an `items`/`ui` hint if a quill needs it.
 
 ## Editor→preview
 
