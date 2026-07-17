@@ -11,6 +11,15 @@
 	import { createPreview, type PreviewController } from './controller.js';
 	import type { LiveSession, CorpusHit, ChangeSet } from '../core/index.js';
 
+	/**
+	 * REMOUNT CONTRACT. `createPreview` binds to `session` once in `onMount`; a
+	 * later change to `session` (or `margin`/`overlays`/`onCaretPick`) is NOT
+	 * observed — this wrapper installs no `$effect` to tear down and recreate on
+	 * prop-identity change. To point the preview at a different session, REMOUNT
+	 * the component (`{#key session}` or an `{#if}` gate, as the playground does).
+	 * In-place document edits are driven imperatively through `refresh(change)`
+	 * after a `session.apply` elsewhere — not through a prop change.
+	 */
 	interface Props {
 		session: LiveSession;
 		margin?: number;

@@ -37,6 +37,13 @@ export interface CreateFieldOpts {
 	plaintext?: boolean;
 	/** Suppress the markdown-shorthand input rules (Phase 4 opt-out). */
 	noInputRules?: boolean;
+	/**
+	 * Accessible name for the editable region — set as `aria-label` on the PM
+	 * `contenteditable`. The leaf's visual label is a detached sibling the
+	 * contenteditable cannot reference, so without this the region is nameless to
+	 * assistive tech (a11y follow-up).
+	 */
+	label?: string;
 	onFocus?(addr: Addr): void;
 	/** Fired with the new USV caret after an edit or a selection move. */
 	onCaretMove?(addr: Addr, pos: number): void;
@@ -117,6 +124,9 @@ export function createField(opts: CreateFieldOpts): FieldController {
 
 	view = new EditorView(container, {
 		state,
+		// Names the `contenteditable` for assistive tech (the visual label is a
+		// sibling the editable element cannot associate to).
+		attributes: opts.label ? { 'aria-label': opts.label } : undefined,
 		dispatchTransaction: (tr) => {
 			const oldRt = reconciler.last as RichText;
 			const next = view.state.apply(tr);

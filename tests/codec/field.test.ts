@@ -162,3 +162,30 @@ describe('field install-fallback for an un-lowerable structural edit', () => {
 		field.destroy();
 	});
 });
+
+describe('createField accessible name (a11y follow-up)', () => {
+	it('sets aria-label on the editable element when a label is given', () => {
+		const doc = quill().seedDocument();
+		const field = createField({
+			doc,
+			addr: { field: 'subject' },
+			container: mount(),
+			inline: true,
+			label: 'Subject'
+		});
+		expect(viewOf(field).dom.getAttribute('aria-label')).toBe('Subject');
+		field.destroy();
+	});
+
+	it('leaves the editable element unnamed when no label is given', () => {
+		const doc = quill().seedDocument();
+		const field = createField({
+			doc,
+			addr: { field: 'subject' },
+			container: mount(),
+			inline: true
+		});
+		expect(viewOf(field).dom.hasAttribute('aria-label')).toBe(false);
+		field.destroy();
+	});
+});

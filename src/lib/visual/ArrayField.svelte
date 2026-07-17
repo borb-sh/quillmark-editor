@@ -110,6 +110,7 @@
 				<ProseArrayElement
 					value={(arr[k] ?? emptyElement()) as RichText}
 					{plaintext}
+					label={label != null ? `${label} ${k + 1}` : undefined}
 					onChange={(rt) => commitElement(k, rt)}
 					{onFocusEl}
 					testid={testid ? `${testid}-el-${k}` : undefined}

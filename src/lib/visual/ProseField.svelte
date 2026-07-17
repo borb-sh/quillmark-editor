@@ -17,6 +17,8 @@
 		addr: Addr;
 		inline?: boolean;
 		plaintext?: boolean;
+		/** Accessible name for the editable region (the visual label is a sibling span). */
+		label?: string;
 		/** Stable identity for the registry + a DOM stamp the e2e uses to prove no-remount. */
 		leafKey: string;
 		onFocus?: (addr: Addr) => void;
@@ -31,6 +33,7 @@
 		addr,
 		inline,
 		plaintext,
+		label,
 		leafKey,
 		onFocus,
 		onCaretMove,
@@ -53,6 +56,7 @@
 			container: containerEl,
 			inline,
 			plaintext,
+			label,
 			onFocus,
 			onCaretMove
 		});

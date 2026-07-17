@@ -154,6 +154,7 @@
 				<ProseField
 					{doc}
 					addr={ops.makeAddr(undefined)}
+					label="Body"
 					leafKey={ops.leafKey(undefined)}
 					{onFocus}
 					{onCaretMove}

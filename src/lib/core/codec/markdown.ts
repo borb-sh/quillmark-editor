@@ -45,8 +45,9 @@ export interface CopyLoss {
 
 /**
  * Report whether an `exportMarkdown(rt)` copy would drop identity/underline/
- * unknown marks, so the caller can warn before a lossy copy. Islands report their
- * own `loss` — a `degraded`/`unrepresentable` island also loses fidelity.
+ * unknown marks, so the caller can warn before a lossy copy. Marks only — island
+ * fidelity loss (a `degraded`/`unrepresentable` island) is out of scope here and
+ * lands with island editing.
  */
 export function copyWouldDrop(rt: RichText): CopyLoss {
 	let anchors = false;

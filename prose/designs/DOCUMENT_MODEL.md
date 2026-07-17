@@ -65,7 +65,8 @@ production consumer. The window to co-design a break in that surface is before
 The substrate is quillmark's; two thin slices at the seam are the editor's, and
 they live in their surface docs, not here:
 
-- **Handle lifecycle** — WASM `init` / `initSync`, who holds the `Quill` and
+- **Handle lifecycle** — WASM `init` (sync; shipped 0.94.0 has no async
+  `initSync` split), who holds the `Quill` and
   `Document` handles across a session, and when they are freed. The vanilla-TS core
   owns this ([ARCHITECTURE.md](ARCHITECTURE.md) §Core vs chrome).
 - **Diagnostics routing** — three producers (`quill.validate`,
