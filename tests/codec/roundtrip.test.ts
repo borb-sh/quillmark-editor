@@ -1,14 +1,10 @@
-// Criterion 1 follow-up (issue #20): the two structural gaps the Phase 3 brief
-// implies but the fixed-example suites do not cover.
-//   (1) The decode → lower round-trip had only exhaustive per-offset loops over a
-//       handful of hand-written corpora. A small SEEDED generator over random
-//       line kinds / containers / continues flags / marks asserts
-//       `normalize(pmToRichText(decode(rt))) == normalize(rt)` — the ordinal-reset
-//       list merge fixed in the review is exactly the shape this would have hit.
-//   (2) The position map was only ever scanned over STATIC docs. The Phase 3 exit
-//       criterion says it "holds across astral characters AND structural edits";
-//       these split/join/wrap a block, REBUILD `buildLineIndex`, and re-assert the
-//       clean-inverse property on the rebuilt index.
+// Issue #20 — the two structural gaps the Phase 3 brief implies but the
+// fixed-example suites miss:
+//   (1) the decode → lower round-trip had no randomized coverage — a SEEDED
+//       generator over random line kinds / containers / continues / marks asserts
+//       `normalize(pmToRichText(decode(rt))) == normalize(rt)`;
+//   (2) the position map was only scanned over STATIC docs — these split/join/wrap
+//       a block, REBUILD `buildLineIndex`, and re-assert the clean-inverse property.
 import { describe, it, expect } from 'vitest';
 import { EditorState } from 'prosemirror-state';
 import { wrapIn } from 'prosemirror-commands';

@@ -48,12 +48,11 @@
 	import FormatPopover from './FormatPopover.svelte';
 
 	/**
-	 * REMOUNT CONTRACT. `cardIds`, the id `seq`, and the leaf registry are seeded
-	 * ONCE from the initial `doc` (see the reactivity note above); swapping the
-	 * `doc`/`quill` props in place is NOT observed and silently desyncs the card
-	 * tree from the live document. To edit a different document, REMOUNT the
-	 * component (`{#key doc}`, as the playground does). Edits flow the other way —
-	 * this component mutates the passed-in `doc` handle directly.
+	 * REMOUNT CONTRACT. `cardIds`, the id `seq`, and the leaf registry seed ONCE
+	 * from the initial `doc` (see the reactivity note above); swapping `doc`/`quill`
+	 * in place is NOT observed and silently desyncs the card tree. Swap by
+	 * REMOUNTING (`{#key doc}`, as the playground does) — edits flow the other way,
+	 * mutating the passed-in `doc` handle directly.
 	 */
 	interface Props {
 		doc: Document;

@@ -1,11 +1,7 @@
 // @vitest-environment jsdom
-// Issue #10: a preview constructed over a zero-page session must not be a
-// permanent empty-state stub. The old controller returned a stub whose
-// `refresh()` ignored every later `ChangeSet`, so a session that opened empty
-// (0 pages) and later compiled pages stayed stuck on "No pages to preview.",
-// and the N→0 direction left a blank container instead of the message. These
-// drive the count transitions and assert the empty state and the page slots
-// track the LIVE count.
+// Issue #10: a zero-page session must not be a permanent empty-state stub. These
+// drive the count transitions and assert the "No pages" element and the page
+// slots both track the LIVE count — 0→N escapes the empty state, N→0 returns.
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { createPreview } from '$lib/preview/controller';
 import type { LiveSession, ChangeSet } from '$lib/core';

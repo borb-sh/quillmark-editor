@@ -41,21 +41,17 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	const overlaysEnabled = opts.overlays ?? true;
 	container.classList.add(CONTAINER_CLASS);
 
-	// The paint loop is safe to construct at any page count: zero pages reconciles
-	// to zero slots and never calls the `paint`/`pageSize` verbs the boundary
-	// refuses there (BOUNDARY_NOTES). What it must NOT do at zero pages is query
-	// geometry — so overlay (`session.regions()` at build) and bridge are held
-	// until slots actually exist, (re)built by `refresh` when the count crosses 0.
+	// The paint loop is safe at any page count: zero pages reconciles to zero slots
+	// and never calls the `paint`/`pageSize` verbs the boundary refuses there
+	// (BOUNDARY_NOTES). overlay/bridge DO query geometry at build (`session.regions()`),
+	// so they are held until slots exist — (re)built by `refresh` when the count crosses 0.
 	const paintLoop: PaintLoop = createPaintLoop(session, container, margin);
 	let overlay: OverlayController | undefined;
 	let bridge: BridgeController | undefined;
 
 	// The empty-state element, shown whenever the LIVE page count is 0 — at
-	// construction (an empty seed) OR after an `apply` drops back to 0. Toggled,
-	// never a permanent branch: the old code returned a stub controller here whose
-	// `refresh` ignored every later `ChangeSet`, so a session that opened empty and
-	// later compiled pages stayed stuck on this message forever, and the N→0
-	// direction left a blank container instead of the message.
+	// construction (empty seed) or after an `apply` drops back to 0. Toggled on the
+	// live count, not a one-time branch, so 0→N paints and N→0 shows the message.
 	let empty: HTMLElement | undefined;
 	function showEmpty(): void {
 		if (empty) return;
