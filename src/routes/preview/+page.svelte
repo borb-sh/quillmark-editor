@@ -18,8 +18,7 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Engine, Quill, Document, init } from '$lib/core';
-	import type { LiveSession, CorpusHit, ChangeSet } from '$lib/core';
+	import type { Quill, Document, LiveSession, CorpusHit, ChangeSet } from '$lib/core';
 	import { Preview } from '$lib/preview';
 	import { loadUsafMemoTree } from '../fixture';
 
@@ -61,6 +60,9 @@
 		let cancelled = false;
 		(async () => {
 			try {
+				// Dynamic: keep WASM's top-level await out of the route module so
+				// Safari/dev doesn't TDZ on Kit's `component` export (#7805).
+				const { Engine, Quill, init } = await import('$lib/core');
 				init();
 				const tree = await loadUsafMemoTree();
 				const quill = Quill.fromTree(tree);

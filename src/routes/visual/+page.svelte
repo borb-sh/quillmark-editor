@@ -15,14 +15,14 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Quill, Document, init } from '$lib/core';
-	import type { Addr, Card as CardType, RichText, Diagnostic } from '$lib/core';
-	import { VisualEditor } from '$lib/visual';
+	import type { Quill, Document, Addr, Card as CardType, RichText, Diagnostic } from '$lib/core';
 	import { loadUsafMemoTree } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
+	type VisualEditorComponent = typeof import('$lib/visual').VisualEditor;
 
 	let status = $state<Status>({ phase: 'loading' });
+	let VisualEditor = $state<VisualEditorComponent | undefined>();
 	let quillHandle: Quill | undefined = $state();
 	let docHandle: Document | undefined = $state();
 	let lastAddr = $state('none');
@@ -91,6 +91,13 @@
 		let cancelled = false;
 		(async () => {
 			try {
+				// Dynamic: keep WASM's top-level await out of the route module so
+				// Safari/dev doesn't TDZ on Kit's `component` export (#7805).
+				// VisualEditor pulls the codec → `mapPos`, so it rides the same import.
+				const [{ Quill, init }, visual] = await Promise.all([
+					import('$lib/core'),
+					import('$lib/visual')
+				]);
 				init();
 				const tree = await loadUsafMemoTree();
 				const quill = Quill.fromTree(tree);
@@ -100,6 +107,7 @@
 					quill.free();
 					return;
 				}
+				VisualEditor = visual.VisualEditor;
 				quillHandle = quill;
 				docHandle = doc;
 				toFree = [doc, quill];
@@ -113,6 +121,7 @@
 			cancelled = true;
 			for (const h of toFree) h.free();
 			toFree = [];
+			VisualEditor = undefined;
 			quillHandle = undefined;
 			docHandle = undefined;
 		};
@@ -131,7 +140,7 @@
 		<p data-testid="status" class="ready">Ready.</p>
 		<div class="layout">
 			<div class="editor-shell">
-				{#if docHandle && quillHandle}
+				{#if VisualEditor && docHandle && quillHandle}
 					<VisualEditor
 						doc={docHandle}
 						quill={quillHandle}

@@ -6,7 +6,7 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Engine, Quill, init, type Diagnostic } from '$lib/core';
+	import type { Diagnostic } from '$lib/core';
 	import { loadUsafMemoTree } from './fixture';
 
 	type Status =
@@ -37,6 +37,9 @@
 			// `engine.open` throwing after `quill`/`doc` already exist).
 			const created: Array<{ free(): void }> = [];
 			try {
+				// Dynamic: keep WASM's top-level await out of the route module so
+				// Safari/dev doesn't TDZ on Kit's `component` export (#7805).
+				const { Engine, Quill, init } = await import('$lib/core');
 				init();
 				const tree = await loadUsafMemoTree();
 				const quill = Quill.fromTree(tree);
