@@ -1,14 +1,14 @@
 // Encode — PM → a `ChangeBundle` for `applyChange` (CODEC §Encode). Direction:
-// corpus is truth, PM its projection, edits are OPS. We do NOT re-`install`; we
+// content is truth, PM its projection, edits are OPS. We do NOT re-`install`; we
 // lower to `{ delta?, lineOps?, markOps? }` so identity anchors rebase through the
 // splice.
 //
-// Implementation (per the phase brief's permitted route): `pmToRichText` is a pure
+// Implementation (per the phase brief's permitted route): `pmToContent` is a pure
 // inverse of decode; `lower` diffs old→new into ops. Empirically grounded (see
 // scratchpad probes): a raw `\n` in the `delta` splits a line and a deleted `\n`
 // joins — so ALL text routes through `delta`, `lineOps` carry only `setKind` /
 // `setContainers` metadata, and every op reads in ONE coordinate space, the
-// post-delta (final) USV corpus. `applyChange` auto-rebases existing marks with
+// post-delta (final) USV content. `applyChange` auto-rebases existing marks with
 // start-assoc `after` / end-assoc `before` (== `mapPos`), so the mark diff
 // replicates that rebase exactly and is coverage-precise. `applyChange` has no
 // `continues` op, so a NEW hard-break / code-internal line is not op-reachable —
@@ -21,15 +21,15 @@ import type {
 	Delta,
 	LineOp,
 	MarkOp,
-	RichText,
-	RichTextContainer,
-	RichTextIsland,
-	RichTextLine,
-	RichTextMark
-} from '../wasm-types.js';
+	Content,
+	ContentContainer,
+	ContentIsland,
+	ContentLine,
+	ContentMark
+} from '@quillmark/wasm';
 import { codePoints, usvLength } from './decode.js';
 import { ISLAND_SLOT, islandEntryFromNode } from './islands.js';
-import { corpusDescriptorFromPM, markKey } from './marks.js';
+import { contentDescriptorFromPM, markKey } from './marks.js';
 
 // ── Position-map runs (consumed by positions.ts) ────────────────────────────
 // A run is one segment of exact PM↔USV correspondence, in document order.
@@ -40,9 +40,9 @@ export type PosRun =
 
 export interface Scan {
 	text: string;
-	lines: RichTextLine[];
-	marks: RichTextMark[];
-	islands: RichTextIsland[];
+	lines: ContentLine[];
+	marks: ContentMark[];
+	islands: ContentIsland[];
 	runs: PosRun[];
 	/** Total PM position at the end of the document content (doc.content.size). */
 	pmEnd: number;
@@ -52,14 +52,14 @@ export interface Scan {
 
 /** A working accumulator threaded through the walk. */
 interface Acc extends Scan {
-	rawMarks: RichTextMark[]; // per-text-node marks, merged into `marks` at the end
-	lastContentEndPm: number; // PM position after the previous corpus line's content
+	rawMarks: ContentMark[]; // per-text-node marks, merged into `marks` at the end
+	lastContentEndPm: number; // PM position after the previous content line's content
 }
 
 /**
- * Walk a PM document once, producing the corpus projection AND the position-map
+ * Walk a PM document once, producing the content projection AND the position-map
  * runs (they share the traversal so they can never disagree). This is the single
- * source both `pmToRichText` and the position map draw from.
+ * source both `pmToContent` and the position map draw from.
  */
 export function scanDoc(doc: PMNode): Scan {
 	const acc: Acc = {
@@ -79,8 +79,8 @@ export function scanDoc(doc: PMNode): Scan {
 	return acc;
 }
 
-/** `pmToRichText` — the pure inverse of decode (drops the position runs). */
-export function pmToRichText(doc: PMNode): RichText {
+/** `pmToContent` — the pure inverse of decode (drops the position runs). */
+export function pmToContent(doc: PMNode): Content {
 	const { text, lines, marks, islands } = scanDoc(doc);
 	return { text, lines, marks, islands };
 }
@@ -90,7 +90,7 @@ function scanBlocks(
 	acc: Acc,
 	parent: PMNode,
 	contentStart: number,
-	containers: RichTextContainer[]
+	containers: ContentContainer[]
 ): void {
 	let pm = contentStart;
 	parent.forEach((child) => {
@@ -99,7 +99,7 @@ function scanBlocks(
 	});
 }
 
-function scanBlock(acc: Acc, node: PMNode, nodePos: number, containers: RichTextContainer[]): void {
+function scanBlock(acc: Acc, node: PMNode, nodePos: number, containers: ContentContainer[]): void {
 	const name = node.type.name;
 	const contentStart = nodePos + 1;
 	switch (name) {
@@ -130,7 +130,7 @@ function scanBlock(acc: Acc, node: PMNode, nodePos: number, containers: RichText
 			const codeText = node.textContent;
 			if (codeText.length) emitText(acc, codeText, contentStart, []);
 			// Internal `\n`s already sit in the text (and its run); add the extra
-			// corpus lines they imply as `continues` code lines.
+			// content lines they imply as `continues` code lines.
 			const extra = codeText.split('\n').length - 1;
 			for (let i = 0; i < extra; i++) {
 				acc.lines.push({
@@ -164,7 +164,7 @@ function scanBlock(acc: Acc, node: PMNode, nodePos: number, containers: RichText
 			const start = ordered ? (node.attrs.start as number) : 1;
 			let itemPos = contentStart;
 			node.forEach((item, _off, index) => {
-				const container: RichTextContainer = {
+				const container: ContentContainer = {
 					container: 'list_item',
 					ordered,
 					start,
@@ -182,11 +182,11 @@ function scanBlock(acc: Acc, node: PMNode, nodePos: number, containers: RichText
 	}
 }
 
-/** Open a new corpus line: emit the boundary `\n` (except the first line) + record. */
+/** Open a new content line: emit the boundary `\n` (except the first line) + record. */
 function beginLine(
 	acc: Acc,
 	thisContentStart: number,
-	containers: RichTextContainer[],
+	containers: ContentContainer[],
 	kind: KindPart
 ): void {
 	if (acc.lines.length > 0) {
@@ -198,7 +198,7 @@ function beginLine(
 		});
 		acc.text += '\n';
 	}
-	acc.lines.push({ containers, ...kind } as RichTextLine);
+	acc.lines.push({ containers, ...kind } as ContentLine);
 }
 
 /** Walk a textblock's inline content; emit text/atom/hard-break runs + marks. */
@@ -206,7 +206,7 @@ function scanInline(
 	acc: Acc,
 	block: PMNode,
 	contentStart: number,
-	containers: RichTextContainer[],
+	containers: ContentContainer[],
 	kind: KindPart
 ): void {
 	let pm = contentStart;
@@ -214,10 +214,10 @@ function scanInline(
 		if (child.isText) {
 			emitText(acc, child.text ?? '', pm, child.marks);
 		} else if (child.type.name === 'hard_break') {
-			// A within-block hard break: the corpus `\n` (a `continues` line).
+			// A within-block hard break: the content `\n` (a `continues` line).
 			acc.runs.push({ kind: 'nl', pmStart: pm, pmEnd: pm + 1, usvStart: usvLength(acc.text) });
 			acc.text += '\n';
-			acc.lines.push({ containers, continues: true, ...kind } as RichTextLine);
+			acc.lines.push({ containers, continues: true, ...kind } as ContentLine);
 		} else if (child.type.name === 'island_inline') {
 			acc.runs.push({ kind: 'atom', pmStart: pm, usvStart: usvLength(acc.text) });
 			acc.text += ISLAND_SLOT;
@@ -229,7 +229,7 @@ function scanInline(
 	});
 }
 
-/** Append a text node's chars: one position run + a corpus mark per formatting/unknown mark. */
+/** Append a text node's chars: one position run + a content mark per formatting/unknown mark. */
 function emitText(acc: Acc, s: string, pmStart: number, marks: readonly Mark[]): void {
 	if (!s.length) return;
 	const usvStart = usvLength(acc.text);
@@ -240,8 +240,8 @@ function emitText(acc: Acc, s: string, pmStart: number, marks: readonly Mark[]):
 		acc.rawMarks.push({
 			start: usvStart,
 			end: usvStart + len,
-			...corpusDescriptorFromPM(mark)
-		} as RichTextMark);
+			...contentDescriptorFromPM(mark)
+		} as ContentMark);
 	}
 }
 
@@ -253,15 +253,15 @@ type KindPart =
 	| { kind: 'rule' };
 
 /** Merge adjacent/overlapping same-descriptor marks into maximal ranges. */
-function mergeMarks(raw: RichTextMark[]): RichTextMark[] {
-	const groups = new Map<string, RichTextMark[]>();
+function mergeMarks(raw: ContentMark[]): ContentMark[] {
+	const groups = new Map<string, ContentMark[]>();
 	for (const m of raw) {
 		const key = markKey(descriptorOf(m));
 		let list = groups.get(key);
 		if (!list) groups.set(key, (list = []));
 		list.push(m);
 	}
-	const out: RichTextMark[] = [];
+	const out: ContentMark[] = [];
 	for (const list of groups.values()) {
 		list.sort((a, b) => a.start - b.start);
 		let cur = { ...list[0] };
@@ -275,7 +275,7 @@ function mergeMarks(raw: RichTextMark[]): RichTextMark[] {
 		}
 		out.push(cur);
 	}
-	// Stable, corpus-like order: by start, then end.
+	// Stable, content-like order: by start, then end.
 	out.sort((a, b) => a.start - b.start || a.end - b.end);
 	return out;
 }
@@ -289,13 +289,13 @@ interface LowerOpts {
 	newAnchors?: { id: string; pos: number }[];
 }
 
-/** Lower a PM edit (old corpus + new PM doc) to a `ChangeBundle`. */
-export function lower(oldRt: RichText, newDoc: PMNode, opts: LowerOpts = {}): ChangeBundle {
-	return diffToBundle(oldRt, pmToRichText(newDoc), opts);
+/** Lower a PM edit (old content + new PM doc) to a `ChangeBundle`. */
+export function lower(oldRt: Content, newDoc: PMNode, opts: LowerOpts = {}): ChangeBundle {
+	return diffToBundle(oldRt, pmToContent(newDoc), opts);
 }
 
-/** The core diff old→new corpus → ops. Exported for direct testing. */
-export function diffToBundle(oldRt: RichText, newRt: RichText, opts: LowerOpts = {}): ChangeBundle {
+/** The core diff old→new content → ops. Exported for direct testing. */
+export function diffToBundle(oldRt: Content, newRt: Content, opts: LowerOpts = {}): ChangeBundle {
 	const delta = diffText(oldRt.text, newRt.text);
 	const lineOps = diffLines(oldRt, newRt);
 	const markOps = diffMarks(oldRt, newRt, delta, opts);
@@ -327,7 +327,7 @@ export function diffText(oldText: string, newText: string): Delta | undefined {
 }
 
 /** Per-line `setContainers` + `setKind` when the line metadata changed; else none. */
-export function diffLines(oldRt: RichText, newRt: RichText): LineOp[] {
+export function diffLines(oldRt: Content, newRt: Content): LineOp[] {
 	if (lineMetaEqual(oldRt.lines, newRt.lines)) return [];
 	const ops: LineOp[] = [];
 	// Force every new line's metadata. Redundant ops are safe no-ops (verified),
@@ -343,7 +343,7 @@ export function diffLines(oldRt: RichText, newRt: RichText): LineOp[] {
 	return ops;
 }
 
-function kindOp(line: number, l: RichTextLine): LineOp {
+function kindOp(line: number, l: ContentLine): LineOp {
 	switch (l.kind) {
 		case 'heading':
 			return { op: 'setKind', line, kind: 'heading', level: l.level };
@@ -360,7 +360,7 @@ function kindOp(line: number, l: RichTextLine): LineOp {
 	}
 }
 
-function lineMetaEqual(a: RichTextLine[], b: RichTextLine[]): boolean {
+function lineMetaEqual(a: ContentLine[], b: ContentLine[]): boolean {
 	if (a.length !== b.length) return false;
 	for (let i = 0; i < a.length; i++) {
 		if (!!a[i].continues !== !!b[i].continues) return false;
@@ -369,7 +369,7 @@ function lineMetaEqual(a: RichTextLine[], b: RichTextLine[]): boolean {
 	}
 	return true;
 }
-function kindKey(l: RichTextLine): unknown {
+function kindKey(l: ContentLine): unknown {
 	if (l.kind === 'heading') return ['heading', l.level];
 	if (l.kind === 'code') return ['code', l.lang ?? null];
 	return [l.kind];
@@ -391,7 +391,7 @@ function kindKey(l: RichTextLine): unknown {
  *
  * Errs toward `install` — correctness over anchor preservation for rare edits.
  */
-export function structureNeedsInstall(oldRt: RichText, newRt: RichText): boolean {
+export function structureNeedsInstall(oldRt: Content, newRt: Content): boolean {
 	const delta = diffText(oldRt.text, newRt.text);
 	if (delta) {
 		const inserted = delta.ops.find((op) => 'insert' in op) as { insert: string } | undefined;
@@ -401,7 +401,7 @@ export function structureNeedsInstall(oldRt: RichText, newRt: RichText): boolean
 }
 
 /** Whether the splice model above yields exactly `newRt`'s `continues` vector. */
-function continuesReachable(oldRt: RichText, newRt: RichText, delta: Delta | undefined): boolean {
+function continuesReachable(oldRt: Content, newRt: Content, delta: Delta | undefined): boolean {
 	// Line 0 never continues anything; a flip there is unreachable by definition.
 	if (!!oldRt.lines[0]?.continues !== !!newRt.lines[0]?.continues) return false;
 	const actual = newRt.lines.slice(1).map((l) => !!l.continues);
@@ -447,8 +447,8 @@ interface Interval {
 
 /** Formatting/unknown marks → add/remove ops; anchors → add/removeAnchor by id. */
 export function diffMarks(
-	oldRt: RichText,
-	newRt: RichText,
+	oldRt: Content,
+	newRt: Content,
 	delta: Delta | undefined,
 	opts: LowerOpts
 ): MarkOp[] {
@@ -500,7 +500,7 @@ interface FormattingGroup {
 	intervals: Interval[];
 }
 
-function descriptorOf(m: RichTextMark): Record<string, unknown> {
+function descriptorOf(m: ContentMark): Record<string, unknown> {
 	if (m.type === 'link') return { type: 'link', url: (m as { url: string }).url };
 	if ('attrs' in m && m.type !== 'anchor')
 		return { type: m.type, attrs: (m as { attrs: unknown }).attrs };
@@ -509,8 +509,8 @@ function descriptorOf(m: RichTextMark): Record<string, unknown> {
 
 /** Group non-anchor marks by descriptor key, mapping each to an interval. */
 function groupFormatting(
-	marks: RichTextMark[],
-	toInterval: (m: RichTextMark) => Interval
+	marks: ContentMark[],
+	toInterval: (m: ContentMark) => Interval
 ): Map<string, FormattingGroup> {
 	const groups = new Map<string, FormattingGroup>();
 	for (const m of marks) {

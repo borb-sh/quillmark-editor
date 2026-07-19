@@ -42,6 +42,7 @@ describe('controlKind', () => {
 		expect(controlKind(f({ type: 'number' }))).toBe('number');
 		expect(controlKind(f({ type: 'integer' }))).toBe('number');
 		expect(controlKind(f({ type: 'boolean' }))).toBe('boolean');
+		expect(controlKind(f({ type: 'date' }))).toBe('date');
 		expect(controlKind(f({ type: 'datetime' }))).toBe('date');
 		expect(controlKind(f({ type: 'array' }))).toBe('array');
 		expect(controlKind(f({ type: 'object' }))).toBe('object');

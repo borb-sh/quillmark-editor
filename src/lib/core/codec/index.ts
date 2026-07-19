@@ -1,5 +1,5 @@
-// The codec barrel — the bidirectional bridge between one corpus field (`RichText`)
-// and one ProseMirror document (CODEC). Decode (corpus → PM), lower (PM tr → a
+// The codec barrel — the bidirectional bridge between one content field (`Content`)
+// and one ProseMirror document (CODEC). Decode (content → PM), lower (PM tr → a
 // `ChangeBundle` for `applyChange`), the USV↔PM position map, and the `createField`
 // prose leaf. Consumed by Phase 4 (the VisualEditor) and the codec test suite.
 
@@ -13,7 +13,7 @@ export { blockSchema, inlineSchema, isInlineSchema } from './schema.js';
 // Decode / encode / positions (tests + Phase 4).
 export { decode, codePoints, usvLength } from './decode.js';
 export {
-	pmToRichText,
+	pmToContent,
 	lower,
 	diffToBundle,
 	diffText,
@@ -23,17 +23,17 @@ export {
 	scanDoc
 } from './encode.js';
 export type { PosRun, Scan } from './encode.js';
-export { corpusToPM, pmToCorpus, buildLineIndex } from './positions.js';
+export { usvToPM, pmToUsv, buildLineIndex } from './positions.js';
 export type { LineIndex } from './positions.js';
 
 // Marks + islands (the algebra and typed props).
 export {
 	isAnchor,
 	isFormatting,
-	pmMarkFromCorpus,
-	corpusDescriptorFromPM,
+	pmMarkFromContent,
+	contentDescriptorFromPM,
 	markKey,
-	anchorsFromRichText
+	anchorsFromContent
 } from './marks.js';
 export type { AnchorPos } from './marks.js';
 export { ISLAND_SLOT, imageProps, tableProps, islandEntryFromNode } from './islands.js';
@@ -45,7 +45,7 @@ export type {
 } from './islands.js';
 
 // Reconciliation gate.
-export { createReconciler, corpusEqual } from './reconcile.js';
+export { createReconciler, contentEqual } from './reconcile.js';
 export type { Reconciler } from './reconcile.js';
 
 // Markdown edges (paste / copy / debug).

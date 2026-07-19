@@ -10,14 +10,14 @@ import {
 	blockSchema,
 	inlineSchema
 } from '$lib/core/codec';
-import type { RichText } from '$lib/core';
+import type { Content } from '$lib/core';
 import { md } from './_util.js';
 
 describe('markdown edges', () => {
 	it('paste rebases markdown onto a base and returns a delta', () => {
 		const base = md('hello');
-		const { corpus, delta } = pasteMarkdown(base, 'hello world');
-		expect(corpus.text).toBe('hello world');
+		const { content, delta } = pasteMarkdown(base, 'hello world');
+		expect(content.text).toBe('hello world');
 		expect(delta.ops.length).toBeGreaterThan(0);
 	});
 
@@ -28,14 +28,14 @@ describe('markdown edges', () => {
 	it('copyWouldDrop flags identity / underline / unknown', () => {
 		expect(copyWouldDrop(md('plain **bold**')).any).toBe(false);
 		expect(copyWouldDrop(md('<u>underline</u>')).underline).toBe(true);
-		const withAnchor: RichText = {
+		const withAnchor: Content = {
 			text: 'abc',
 			lines: [{ containers: [], kind: 'para' }],
 			marks: [{ start: 1, end: 1, type: 'anchor', id: 'x' } as never],
 			islands: []
 		};
 		expect(copyWouldDrop(withAnchor).anchors).toBe(true);
-		const withUnknown: RichText = {
+		const withUnknown: Content = {
 			text: 'abc',
 			lines: [{ containers: [], kind: 'para' }],
 			marks: [{ start: 0, end: 3, type: 'sub', attrs: {} } as never],

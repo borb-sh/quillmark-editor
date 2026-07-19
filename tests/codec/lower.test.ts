@@ -5,9 +5,9 @@
 import { describe, it, expect } from 'vitest';
 import { EditorState } from 'prosemirror-state';
 import type { Transaction } from 'prosemirror-state';
-import { decode, pmToRichText, lower, blockSchema, structureNeedsInstall } from '$lib/core/codec';
-import type { RichText } from '$lib/core';
-import { freshDoc, normalize, corpusEqual, md } from './_util.js';
+import { decode, pmToContent, lower, blockSchema, structureNeedsInstall } from '$lib/core/codec';
+import type { Content } from '$lib/core';
+import { freshDoc, normalize, contentEqual, md } from './_util.js';
 
 interface AnchorOpts {
 	oldAnchors?: { id: string; pos: number }[];
@@ -15,21 +15,17 @@ interface AnchorOpts {
 }
 
 /** Install `rt`, build a PM tr, lower+apply, and assert the store matches PM. */
-function lowerApply(
-	rt: RichText,
-	mkTr: (state: EditorState) => Transaction,
-	opts: AnchorOpts = {}
-) {
+function lowerApply(rt: Content, mkTr: (state: EditorState) => Transaction, opts: AnchorOpts = {}) {
 	const doc = freshDoc();
 	doc.install({}, rt);
-	const oldRt = doc.main.body; // normalized starting corpus
+	const oldRt = doc.main.body; // normalized starting content
 	const state = EditorState.create({ doc: decode(oldRt, blockSchema) });
 	const tr = mkTr(state);
 	const newDoc = tr.doc;
 	const bundle = lower(oldRt, newDoc, opts);
 	doc.applyChange({}, bundle);
 	const stored = doc.main.body;
-	expect(corpusEqual(stored, normalize(pmToRichText(newDoc))), 'stored matches optimistic PM').toBe(
+	expect(contentEqual(stored, normalize(pmToContent(newDoc))), 'stored matches optimistic PM').toBe(
 		true
 	);
 	return { doc, stored, bundle, newDoc };
@@ -93,14 +89,14 @@ describe('formatting marks round-trip', () => {
 });
 
 describe('unknown mark round-trip (verbatim)', () => {
-	const unknownRt: RichText = {
+	const unknownRt: Content = {
 		text: 'abcdef ghi',
 		lines: [{ containers: [], kind: 'para' }],
 		marks: [{ start: 0, end: 6, type: 'sub', attrs: { x: 1 } } as never],
 		islands: []
 	};
-	it('survives decode → pmToRichText verbatim', () => {
-		const back = pmToRichText(decode(unknownRt, blockSchema));
+	it('survives decode → pmToContent verbatim', () => {
+		const back = pmToContent(decode(unknownRt, blockSchema));
 		const u = back.marks.find((m) => m.type === 'sub') as { attrs: unknown } | undefined;
 		expect(u).toBeTruthy();
 		expect(u!.attrs).toEqual({ x: 1 });
@@ -114,7 +110,7 @@ describe('unknown mark round-trip (verbatim)', () => {
 });
 
 describe('identity anchor round-trip (op-based, survives edits)', () => {
-	const anchorRt: RichText = {
+	const anchorRt: Content = {
 		text: 'hello world',
 		lines: [{ containers: [], kind: 'para' }],
 		marks: [{ start: 6, end: 6, type: 'anchor', id: 'a1' } as never],
@@ -165,14 +161,14 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 });
 
 describe('structureNeedsInstall — the continues-line boundary gap gate', () => {
-	const oneLine: RichText = {
+	const oneLine: Content = {
 		text: 'one two',
 		lines: [{ containers: [], kind: 'para' }],
 		marks: [],
 		islands: []
 	};
 	it('flags a new hard-break (continues) line as un-lowerable', () => {
-		const withBreak: RichText = {
+		const withBreak: Content = {
 			text: 'one\ntwo',
 			lines: [
 				{ containers: [], kind: 'para' },
@@ -184,7 +180,7 @@ describe('structureNeedsInstall — the continues-line boundary gap gate', () =>
 		expect(structureNeedsInstall(oneLine, withBreak)).toBe(true);
 	});
 	it('does NOT flag an ordinary block split (both continues:false)', () => {
-		const split: RichText = {
+		const split: Content = {
 			text: 'one\ntwo',
 			lines: [
 				{ containers: [], kind: 'para' },
@@ -206,7 +202,7 @@ describe('structureNeedsInstall — the continues-line boundary gap gate', () =>
 		// has no continues op in either direction, so the store would keep the
 		// break while PM shows a split, forever.
 		const withBreak = md('one\\\ntwo'); // para + continues line
-		const split: RichText = {
+		const split: Content = {
 			...withBreak,
 			lines: withBreak.lines.map((l) => ({ containers: l.containers, kind: 'para' }) as never)
 		};
@@ -214,7 +210,7 @@ describe('structureNeedsInstall — the continues-line boundary gap gate', () =>
 		expect(structureNeedsInstall(split, withBreak)).toBe(true);
 	});
 	it('flags a MOVED continues line at equal counts', () => {
-		const mk = (flags: boolean[], text: string): RichText => ({
+		const mk = (flags: boolean[], text: string): Content => ({
 			text,
 			lines: flags.map(
 				(c) => ({ containers: [], kind: 'para', ...(c ? { continues: true } : {}) }) as never
@@ -241,9 +237,9 @@ describe('structureNeedsInstall — the continues-line boundary gap gate', () =>
 		const joined = md('onetwo');
 		expect(structureNeedsInstall(withBreak, joined)).toBe(false);
 	});
-	it('flags a NEW code-internal line (inserted \\n must be a real line, corpus says continues)', () => {
+	it('flags a NEW code-internal line (inserted \\n must be a real line, content says continues)', () => {
 		const code1 = md('```\nab\n```');
-		const code2: RichText = {
+		const code2: Content = {
 			text: code1.text.replace('ab', 'a\nb'),
 			lines: [...code1.lines, { containers: [], continues: true, kind: 'code' } as never],
 			marks: [],
@@ -253,7 +249,7 @@ describe('structureNeedsInstall — the continues-line boundary gap gate', () =>
 	});
 	it('flags a delta whose insert carries an island slot (IslandSlotInInsert at the boundary)', () => {
 		const island = '\uFFFC';
-		const mkIsland = (text: string): RichText => ({
+		const mkIsland = (text: string): Content => ({
 			text,
 			lines: [{ containers: [], kind: 'para' }],
 			marks: [],

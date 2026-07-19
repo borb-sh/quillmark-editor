@@ -3,7 +3,7 @@
   small editors — NOT one PM document spanning the page. It owns:
     • structure — the schema × payload join, re-derived from the live `Document`;
     • stable card identity — a session-id array reordered in lockstep with the
-      corpus, resolved to an index ONLY at the mutation boundary;
+      content, resolved to an index ONLY at the mutation boundary;
     • commit routing — prose leaves lower to `applyChange` (in the codec); scalars/
       arrays/objects go through the typed `writer`; structure through the mutators;
     • focus + the bridge outputs (`onActiveAddrChange`, `onCaretMove`) and the
@@ -22,7 +22,7 @@
   once per derive.
 -->
 <script lang="ts">
-	import type { Document, Quill, Addr, Diagnostic, CorpusHit } from '../core/index.js';
+	import type { Document, Quill, Addr, Diagnostic, ContentHit } from '../core/index.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import {
 		IdSeq,
@@ -91,7 +91,7 @@
 		revision++;
 		onChange?.();
 	}
-	/** Resolve a stable card id to its current corpus index (the mutation boundary). */
+	/** Resolve a stable card id to its current content index (the mutation boundary). */
 	function cardIndexOf(id: string): number {
 		return idIndex(cardIds, id);
 	}
@@ -171,7 +171,7 @@
 			const overlay = doc.main.seed?.[kind] as Record<string, unknown> | undefined;
 			const card = quill.seedCard(kind, overlay);
 			if (!card) return;
-			doc.insertCard(atIndex, card);
+			doc.insertCard(card, atIndex);
 			cardIds = [...cardIds.slice(0, atIndex), seq.next(), ...cardIds.slice(atIndex)];
 			bump();
 		} catch (e) {
@@ -226,7 +226,7 @@
 		// The `editor` namespace is the write unit and it REPLACES on write, so
 		// merge over any existing keys (id-less in V1, but future-proof).
 		const existing = (doc.cards[i]?.ext?.editor ?? {}) as Record<string, unknown>;
-		doc.setCardExtNamespace(i, 'editor', { ...existing, title });
+		doc.storeExtNamespace({ card: i }, 'editor', { ...existing, title });
 		bump();
 	}
 
@@ -336,8 +336,8 @@
 	});
 
 	// ── Public entry points ─────────────────────────────────────────────────────
-	/** Resolve a preview `CorpusHit` to a mounted leaf and place its caret (Phase 5). */
-	export function setCaret(hit: CorpusHit): void {
+	/** Resolve a preview `ContentHit` to a mounted leaf and place its caret (Phase 5). */
+	export function setCaret(hit: ContentHit): void {
 		const key = leafKeyForHit(hit.field);
 		if (!key) return;
 		leaves.get(key)?.setCaret(hit.pos);
@@ -349,7 +349,7 @@
 		return leaves.get(`${cardPart}:${activeAddr.field ?? '$body'}`);
 	}
 
-	/** Map a `CorpusHit.field` grammar string to a mounted leaf key (BOUNDARY_NOTES). */
+	/** Map a `ContentHit.field` grammar string to a mounted leaf key (BOUNDARY_NOTES). */
 	function leafKeyForHit(field: string): string | undefined {
 		if (field === '$body') return 'main:$body';
 		if (field.startsWith('$cards.')) {

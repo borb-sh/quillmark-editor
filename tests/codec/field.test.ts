@@ -2,13 +2,13 @@
 // Criterion 8 (standalone leaf) + criterion 7 (field-level reconcile). A
 // createField over a REAL usaf_memo `subject` (inline) and body edits via
 // applyChange; the caret survives own-edits through the PM StepMap; an external
-// corpus change re-hydrates and the leaf's own edit does not.
+// content change re-hydrates and the leaf's own edit does not.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EditorView } from 'prosemirror-view';
-import { createField, blockSchema, pmToRichText } from '$lib/core/codec';
+import { createField, blockSchema, pmToContent } from '$lib/core/codec';
 import type { FieldController } from '$lib/core/codec';
 import type { Document } from '$lib/core';
-import { quill, normalize, corpusEqual } from './_util.js';
+import { quill, normalize, contentEqual } from './_util.js';
 
 /** The view is attached to the controller as an undocumented handle. */
 function viewOf(f: FieldController): EditorView {
@@ -110,14 +110,21 @@ describe('field-level reconciliation', () => {
 		field.applyExternal();
 		expect(view.state.doc).toBe(afterOwn); // same state object → no re-hydrate
 
-		// A FOREIGN edit straight to the corpus (another source), then applyExternal.
+		// A FOREIGN edit straight to the content (another source), then applyExternal.
 		doc.applyChange(
 			{ field: 'subject' },
-			{ delta: { ops: [{ insert: 'EXT ' }, { retain: doc.get('subject').text.length }] } }
+			{
+				delta: {
+					ops: [
+						{ insert: 'EXT ' },
+						{ retain: (doc.get('subject') as { text: string }).text.length }
+					]
+				}
+			}
 		);
 		field.applyExternal();
 		expect(view.state.doc.textContent.startsWith('EXT ')).toBe(true);
-		expect((field.getCorpus() as { text: string }).text.startsWith('EXT ')).toBe(true);
+		expect((field.getContent() as { text: string }).text.startsWith('EXT ')).toBe(true);
 		field.destroy();
 	});
 });
@@ -151,14 +158,14 @@ describe('field install-fallback for an un-lowerable structural edit', () => {
 		const field = createField({ doc, addr: {}, container: mount() });
 		const view = viewOf(field);
 		// Insert a hard_break into the first paragraph (a `continues` line ops
-		// cannot create → the field installs the whole corpus instead).
+		// cannot create → the field installs the whole content instead).
 		field.setCaret(3);
 		view.dispatch(view.state.tr.replaceSelectionWith(blockSchema.nodes.hard_break.create(), false));
 		// The store now carries a within-block hard break (continues:true), and it
 		// matches the optimistic PM up to normalization (the install fallback path).
 		const body = doc.main.body;
 		expect(body.lines.some((l) => l.continues)).toBe(true);
-		expect(corpusEqual(body, normalize(pmToRichText(view.state.doc)))).toBe(true);
+		expect(contentEqual(body, normalize(pmToContent(view.state.doc)))).toBe(true);
 		field.destroy();
 	});
 });

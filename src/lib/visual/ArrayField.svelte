@@ -13,7 +13,7 @@
   than remounting the tail; the ids only ever grow or shrink, never permute.
 -->
 <script lang="ts">
-	import type { RichText, QuillFieldSchema } from '../core/index.js';
+	import type { Content, QuillFieldSchema } from '../core/index.js';
 	import { IdSeq, elementControl } from './structure.js';
 	import TextField from './TextField.svelte';
 	import ProseArrayElement from './ProseArrayElement.svelte';
@@ -51,7 +51,7 @@
 
 	function emptyElement(): unknown {
 		if (control === 'prose') {
-			const rt: RichText = {
+			const rt: Content = {
 				text: '',
 				lines: [{ containers: [], kind: 'para' }],
 				marks: [],
@@ -96,7 +96,7 @@
 		<div class="qm-array-row">
 			{#if control === 'prose'}
 				<ProseArrayElement
-					value={(arr[k] ?? emptyElement()) as RichText}
+					value={(arr[k] ?? emptyElement()) as Content}
 					{plaintext}
 					label={label != null ? `${label} ${k + 1}` : undefined}
 					onChange={(rt) => commitElement(k, rt)}

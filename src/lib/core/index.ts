@@ -2,7 +2,7 @@
 //
 // This is the one boundary the rest of the package (and a vanilla consumer)
 // crosses to reach `@quillmark/wasm`: the `Engine`/`Quill`/`Document` handles,
-// the document-free corpus codec, and every boundary type the editor threads
+// the document-free content codec, and every boundary type the editor threads
 // through its surfaces. Handles stay quillmark's — no wrapper types — per
 // DOCUMENT_MODEL §What the editor owns. The codec (Phase 3) and the paint loop's
 // core (Phase 2's `createPreview`) grow here as their phases land.
@@ -12,10 +12,21 @@ export { init } from './lifecycle.js';
 // ── Handles + engine (values) ───────────────────────────────────────────────
 // Re-exported verbatim from the canonical runtime; the editor holds the raw
 // handles and frees them on teardown (LiveSession/Document/Quill each carry
-// `free()`), while `--weak-refs` reclaims any it drops.
-export { Engine, Quill, Document, DocumentWriter, CardWriter } from '@quillmark/wasm';
+// `free()`), while `--weak-refs` reclaims any it drops. The schema-bound writer/
+// view doors (`quill.writer(doc)` / `quill.view(doc)`) return these classes;
+// `MAIN_CARD_ADDR` is the named `{}` main-card selector the card-scoped verbs take.
+export {
+	Engine,
+	Quill,
+	Document,
+	DocumentWriter,
+	CardWriter,
+	DocumentView,
+	CardView,
+	MAIN_CARD_ADDR
+} from '@quillmark/wasm';
 
-// ── Document-free corpus codec (values) ─────────────────────────────────────
+// ── Document-free content codec (values) ─────────────────────────────────────
 // The markdown edges and position-map primitives Phase 3 composes; re-exported
 // so the codec never reaches around `/core` to the package root.
 export { importMarkdown, exportMarkdown, rebase, mapPos, isQuillmarkError } from '@quillmark/wasm';
@@ -37,32 +48,40 @@ export type {
 	PaintOptions,
 	PaintResult,
 	ChangeSet,
-	CorpusHit,
+	ContentHit,
 	HitGranularity,
 	FieldRegion,
 	QuillmarkError
 } from '@quillmark/wasm';
 
-// Corpus + op-grained edit (Codec consumes these). Not re-exported by the WASM
-// runtime root — derived structurally; see wasm-types.ts.
+// Content + op-grained edit (Codec consumes these). The runtime root re-exports
+// the whole vocabulary as of 0.95 (prose/quillmark-issues/0001 resolved upstream),
+// so the structural-derivation seam that used to bridge the gap is gone.
 export type {
-	RichText,
-	RichTextLine,
-	RichTextContainer,
-	RichTextMark,
-	RichTextIsland,
+	Content,
+	ContentLine,
+	ContentContainer,
+	ContentMark,
+	ContentIsland,
 	Addr,
+	CardAddr,
 	Delta,
-	DeltaOp,
 	Assoc,
 	LineOp,
 	MarkOp,
 	ChangeBundle,
-	CardInput
-} from './wasm-types.js';
+	CardInput,
+	PathStep
+} from '@quillmark/wasm';
 
-// Cards, schema, diagnostics (VisualEditor consumes these). `Card` is exported
-// by the runtime root; `CardInput` is not — it rides the corpus block above.
+// `DeltaOp` alone is not on the runtime root — it exports `Delta`, not its op
+// union. One derived line, the last remnant of the old wasm-types seam.
+import type { Delta } from '@quillmark/wasm';
+/** One text-delta op — `retain` / `insert` / `delete`. */
+export type DeltaOp = Delta['ops'][number];
+
+// Cards, schema, diagnostics (VisualEditor consumes these). All on the runtime
+// root, `CardInput` among the content block above.
 export type {
 	Card,
 	PayloadItem,

@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 
 // Phase 2 exit criteria (browser tier): the playground paints usaf_memo, draws
-// field-box overlays, resolves clicks to corpus positions, and bounds mounted
+// field-box overlays, resolves clicks to content positions, and bounds mounted
 // canvases to the visible+margin band on scroll. `/preview` mounts `<Preview
 // margin={0}>` over a fixed short shell specifically so virtualization is
 // observable with a 2-page fixture (see src/routes/preview/+page.svelte's
@@ -37,7 +37,7 @@ test.describe('preview', () => {
 		expect(await page.locator('[data-qm-field]').count()).toBeGreaterThan(0);
 	});
 
-	test('(c) clicking the subject field ink sets last-hit to a subject CorpusHit', async ({
+	test('(c) clicking the subject field ink sets last-hit to a subject ContentHit', async ({
 		page
 	}) => {
 		const subjectBox = page.locator('[data-qm-field="subject"]').first();

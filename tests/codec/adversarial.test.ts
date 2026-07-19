@@ -6,18 +6,18 @@
 // artifact.
 import { describe, it, expect } from 'vitest';
 import { Document } from '$lib/core';
-import type { RichText, RichTextMark } from '$lib/core';
+import type { Content, ContentMark } from '$lib/core';
 import {
 	decode,
 	blockSchema,
 	buildLineIndex,
-	corpusToPM,
-	pmToCorpus,
+	usvToPM,
+	pmToUsv,
 	diffToBundle,
 	usvLength
 } from '$lib/core/codec';
 
-function rt(text: string, marks: RichTextMark[] = [], lines?: RichText['lines']): RichText {
+function rt(text: string, marks: ContentMark[] = [], lines?: Content['lines']): Content {
 	return {
 		text,
 		lines: lines ?? [{ containers: [], kind: 'para' }],
@@ -28,7 +28,7 @@ function rt(text: string, marks: RichTextMark[] = [], lines?: RichText['lines'])
 
 describe('codec adversarial — position map (independent)', () => {
 	it('round-trips at EVERY USV offset across astral/CJK/combining and block boundaries', () => {
-		const samples: RichText[] = [
+		const samples: Content[] = [
 			rt('a😀b'), // astral (emoji: 1 USV, 2 UTF-16)
 			rt('café ☕ x'), // combining-ish + BMP symbol
 			rt('日本語テスト'), // CJK
@@ -48,8 +48,8 @@ describe('codec adversarial — position map (independent)', () => {
 			const idx = buildLineIndex(doc);
 			const n = usvLength(r.text);
 			for (let pos = 0; pos <= n; pos++) {
-				const pm = corpusToPM(doc, idx, pos);
-				const back = pmToCorpus(doc, idx, pm);
+				const pm = usvToPM(doc, idx, pos);
+				const back = pmToUsv(doc, idx, pm);
 				expect(back, `USV ${pos} in ${JSON.stringify(r.text)}`).toBe(pos);
 			}
 		}
@@ -82,7 +82,7 @@ describe('codec adversarial — lower∘apply through a real Document (independe
 	it('a formatting mark added after an astral char lowers to the right USV range', () => {
 		const doc = new Document('usaf_memo@0.2.0');
 		doc.install({}, rt('a😀bold')); // USV: a=0, 😀=1, b=2,o=3,l=4,d=5
-		const withMark = rt('a😀bold', [{ start: 2, end: 6, type: 'strong' } as RichTextMark]);
+		const withMark = rt('a😀bold', [{ start: 2, end: 6, type: 'strong' } as ContentMark]);
 		const bundle = diffToBundle(doc.main.body, withMark);
 		doc.applyChange({}, bundle);
 		const marks = doc.main.body.marks;
@@ -96,7 +96,7 @@ describe('codec adversarial — lower∘apply through a real Document (independe
 		const doc = new Document('usaf_memo@0.2.0');
 		doc.install({}, rt('one two'));
 		// Split into two paragraphs at the space → "one\ntwo", two para lines.
-		const split: RichText = {
+		const split: Content = {
 			text: 'one\ntwo',
 			lines: [
 				{ containers: [], kind: 'para' },

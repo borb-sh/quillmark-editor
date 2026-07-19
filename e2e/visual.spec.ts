@@ -67,38 +67,39 @@ test.describe('visual editor', () => {
 		await expect.poll(async () => (await readDump(page)).letterhead_seal).toBe('dod');
 	});
 
-	test('(d) editing a number (font_size) and a datetime (date) commits', async ({ page }) => {
+	test('(d) editing a number (font_size) and a date (date) commits', async ({ page }) => {
 		await page.getByTestId('main-font_size').fill('14.5');
 		await expect.poll(async () => (await readDump(page)).font_size).toBe(14.5);
 		await page.getByTestId('main-date').fill('2026-03-04');
 		await expect.poll(async () => (await readDump(page)).date).toBe('2026-03-04');
 	});
 
-	test('(e1) reordering and editing an array-of-string (memo_for) commits', async ({ page }) => {
-		const initial = (await readDump(page)).memo_for;
-		expect(initial.length).toBeGreaterThanOrEqual(2);
-		// Move element 0 down → array order swaps.
-		await page.getByTestId('main-memo_for-down-0').click();
-		await expect
-			.poll(async () => (await readDump(page)).memo_for)
-			.toEqual([initial[1], initial[0], ...initial.slice(2)]);
-		// Edit the (now first) element.
-		await page.getByTestId('main-memo_for-el-0').fill('EDITED-ORG');
-		await expect.poll(async () => (await readDump(page)).memo_for[0]).toBe('EDITED-ORG');
-	});
-
-	test('(e2) editing and reordering an array-of-richtext (references) commits', async ({
+	test('(e1) editing, adding, and removing an array-of-string (memo_for) commits', async ({
 		page
 	}) => {
+		const initial = (await readDump(page)).memo_for;
+		expect(initial.length).toBeGreaterThanOrEqual(2);
+		// Edit element 0 (arrays commit by whole-value replace).
+		await page.getByTestId('main-memo_for-el-0').fill('EDITED-ORG');
+		await expect.poll(async () => (await readDump(page)).memo_for[0]).toBe('EDITED-ORG');
+		// Add a row → the array grows by one; fill the new last element.
+		await page.getByTestId('main-memo_for-add').click();
+		await page.getByTestId(`main-memo_for-el-${initial.length}`).fill('ADDED-ORG');
+		await expect.poll(async () => (await readDump(page)).memo_for.at(-1)).toBe('ADDED-ORG');
+		// Remove the first row → length returns to initial, element 1 shifts up.
+		await page.getByTestId('main-memo_for-remove-0').click();
+		await expect.poll(async () => (await readDump(page)).memo_for.length).toBe(initial.length);
+		await expect.poll(async () => (await readDump(page)).memo_for[0]).toBe(initial[1]);
+	});
+
+	test('(e2) editing an array-of-richtext (references) commits', async ({ page }) => {
 		const initial = (await readDump(page)).references;
 		expect(initial.length).toBeGreaterThanOrEqual(2);
 		// Edit element 0's prose → whole-array replace commit.
 		await replaceProse(page, 'main-references-el-0', 'REFERENCE ZERO');
 		await expect.poll(async () => (await readDump(page)).references[0]).toBe('REFERENCE ZERO');
-		// Reorder: move element 0 down → element 1 becomes first.
-		await page.getByTestId('main-references-down-0').click();
-		await expect.poll(async () => (await readDump(page)).references[0]).toBe(initial[1]);
-		await expect.poll(async () => (await readDump(page)).references[1]).toBe('REFERENCE ZERO');
+		// The other elements are untouched by the single-element replace.
+		await expect.poll(async () => (await readDump(page)).references[1]).toBe(initial[1]);
 	});
 
 	test('(f) adding an indorsement card makes it appear', async ({ page }) => {

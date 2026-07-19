@@ -2,7 +2,7 @@
 // fixed-example suites miss:
 //   (1) the decode → lower round-trip had no randomized coverage — a SEEDED
 //       generator over random line kinds / containers / continues / marks asserts
-//       `normalize(pmToRichText(decode(rt))) == normalize(rt)`;
+//       `normalize(pmToContent(decode(rt))) == normalize(rt)`;
 //   (2) the position map was only scanned over STATIC docs — these split/join/wrap
 //       a block, REBUILD `buildLineIndex`, and re-assert the clean-inverse property.
 import { describe, it, expect } from 'vitest';
@@ -12,13 +12,13 @@ import type { Node as PMNode } from 'prosemirror-model';
 import {
 	decode,
 	blockSchema,
-	pmToRichText,
+	pmToContent,
 	buildLineIndex,
-	corpusToPM,
-	pmToCorpus,
+	usvToPM,
+	pmToUsv,
 	usvLength
 } from '$lib/core/codec';
-import { md, normalize, corpusEqual } from './_util.js';
+import { md, normalize, contentEqual } from './_util.js';
 
 // ── A deterministic PRNG (mulberry32) ───────────────────────────────────────
 // Seeded so any failure is reproducible from the reported seed — `Math.random`
@@ -33,9 +33,9 @@ function rng(seed: number): () => number {
 	};
 }
 
-// ── A small markdown corpus generator ───────────────────────────────────────
-// Markdown (not raw `RichText`) is the source so every sample is a guaranteed-
-// valid corpus via `importMarkdown` — the generator explores line kinds, list/
+// ── A small markdown content generator ───────────────────────────────────────
+// Markdown (not raw `Content`) is the source so every sample is a guaranteed-
+// valid content via `importMarkdown` — the generator explores line kinds, list/
 // quote containers, the hard-break `continues` flag, and inline marks, while
 // staying clear of islands (own round-trip concerns, #16) and mark-on-code
 // overlap (a separate normalization edge). At most one mark per word, so no
@@ -87,8 +87,8 @@ describe('generative decode → lower round-trip', () => {
 		for (let seed = 1; seed <= 200; seed++) {
 			const source = genMarkdown(rng(seed));
 			const rt = md(source);
-			const back = pmToRichText(decode(rt, blockSchema));
-			expect(corpusEqual(normalize(back), normalize(rt)), `seed ${seed}\n${source}`).toBe(true);
+			const back = pmToContent(decode(rt, blockSchema));
+			expect(contentEqual(normalize(back), normalize(rt)), `seed ${seed}\n${source}`).toBe(true);
 		}
 	});
 });
@@ -96,14 +96,14 @@ describe('generative decode → lower round-trip', () => {
 // ── Position map across a structural edit + index rebuild ────────────────────
 /** Scan every USV offset of `doc` and assert the freshly-built index is a clean inverse. */
 function assertInverseDoc(doc: PMNode, label: string): void {
-	const rt = pmToRichText(doc);
+	const rt = pmToContent(doc);
 	const index = buildLineIndex(doc);
 	const total = usvLength(rt.text);
 	for (let p = 0; p <= total; p++) {
-		const pm = corpusToPM(doc, index, p);
-		expect(pm, `${label}: corpusToPM(${p}) out of range`).toBeGreaterThanOrEqual(0);
-		expect(pm, `${label}: corpusToPM(${p}) out of range`).toBeLessThanOrEqual(doc.content.size);
-		expect(pmToCorpus(doc, index, pm), `${label}: roundtrip USV ${p}`).toBe(p);
+		const pm = usvToPM(doc, index, p);
+		expect(pm, `${label}: usvToPM(${p}) out of range`).toBeGreaterThanOrEqual(0);
+		expect(pm, `${label}: usvToPM(${p}) out of range`).toBeLessThanOrEqual(doc.content.size);
+		expect(pmToUsv(doc, index, pm), `${label}: roundtrip USV ${p}`).toBe(p);
 	}
 }
 
@@ -139,7 +139,7 @@ describe('position map across structural edits + rebuild', () => {
 
 	it('holds after a split at every interior offset of a paragraph', () => {
 		// ASCII only: sweeping every PM offset would otherwise land between an
-		// emoji's surrogate halves, which is not a corpus edit the map models.
+		// emoji's surrogate halves, which is not a content edit the map models.
 		const doc = decode(md('one two three four five six'), blockSchema);
 		for (let pos = 2; pos < doc.content.size - 1; pos++) {
 			let newDoc: PMNode;

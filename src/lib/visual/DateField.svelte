@@ -1,7 +1,8 @@
 <!--
-  A `datetime` field → native date control. The corpus stores the value as a
+  A `date` (or `datetime`) field → native date control. The stored value is a
   string (fixture uses `YYYY-MM-DD`, blank to mean "today at render"); this binds
-  that string directly and commits it on change.
+  that string directly and commits it on change. The 0.95 value-object lowering is
+  a render-time concern — the editor only ever sees the stored string.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';

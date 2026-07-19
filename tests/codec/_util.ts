@@ -1,10 +1,10 @@
-// Shared codec test helpers. A REAL Document is the normalizer: the corpus
+// Shared codec test helpers. A REAL Document is the normalizer: the content
 // normalizes on write, so round-trips are idempotent only up to normalization —
-// `normalize` installs a RichText and reads it back through the WASM corpus so
+// `normalize` installs a Content and reads it back through the WASM content so
 // tests assert POST-NORMALIZE equality (per the phase brief).
 import { Quill, Document, importMarkdown } from '$lib/core';
-import type { RichText } from '$lib/core';
-import { corpusEqual } from '$lib/core/codec/reconcile.js';
+import type { Content } from '$lib/core';
+import { contentEqual } from '$lib/core/codec/reconcile.js';
 import { loadFixtureTree } from '../helpers/fixtures.js';
 
 let cachedQuill: Quill | undefined;
@@ -17,25 +17,25 @@ export function freshDoc(): Document {
 }
 
 /** Install `rt` into a fresh main body and read it back — the canonical (normalized) form. */
-export function normalize(rt: RichText): RichText {
+export function normalize(rt: Content): Content {
 	const doc = freshDoc();
 	doc.install({}, rt);
 	return doc.main.body;
 }
 
-/** Corpus value-equality (key-order-insensitive), re-exported for assertions. */
-export { corpusEqual };
+/** Content value-equality (key-order-insensitive), re-exported for assertions. */
+export { contentEqual };
 
-/** A corpus from markdown — a guaranteed-valid `RichText` for test inputs. */
-export function md(markdown: string): RichText {
+/** A content from markdown — a guaranteed-valid `Content` for test inputs. */
+export function md(markdown: string): Content {
 	return importMarkdown(markdown);
 }
 
-/** The reference quill's seeded `subject` (inline richtext) corpus. */
-export function subjectCorpus(): RichText {
-	return freshDoc().get('subject') as RichText;
+/** The reference quill's seeded `subject` (inline richtext) content. */
+export function subjectContent(): Content {
+	return freshDoc().get('subject') as Content;
 }
-/** The reference quill's seeded main body corpus. */
-export function bodyCorpus(): RichText {
+/** The reference quill's seeded main body content. */
+export function bodyContent(): Content {
 	return freshDoc().main.body;
 }
