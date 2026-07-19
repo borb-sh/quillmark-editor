@@ -1,10 +1,12 @@
 <!--
   Type dispatch (VISUAL_EDITOR §"A control per field type"). Given one projected
   {@link FieldModel} and its live value, render the label + the control the type
-  maps to. Prose leaves take a parent-built LIVE `addr` (its `card` a getter over
-  the stable-id→index map) so a reorder re-targets without a remount; scalars,
-  arrays, and objects commit their value UP through `onCommitScalar`, which the
-  parent lowers to the typed writer.
+  maps to. Array controls own their label (paired with the add affordance in
+  {@link ArrayField}); other types render the label here. Prose leaves take a
+  parent-built LIVE `addr` (its `card` a getter over the stable-id→index map) so
+  a reorder re-targets without a remount; scalars, arrays, and objects commit
+  their value UP through `onCommitScalar`, which the parent lowers to the typed
+  writer.
 
   `diagnostics` is the routed `Diagnostic[]` for this field (VisualEditor's
   `diagByKey`, merging `quill.validate`, local commit errors, and the external
@@ -64,7 +66,9 @@
 </script>
 
 <div class="qm-field" class:compact={field.compact}>
-	<span class="qm-field-label">{field.label}</span>
+	{#if field.control !== 'array'}
+		<span class="qm-field-label">{field.label}</span>
+	{/if}
 	<div class="qm-field-control">
 		{#if field.control === 'prose'}
 			<ProseField
