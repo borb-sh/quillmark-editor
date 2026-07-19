@@ -141,6 +141,37 @@ test.describe('visual editor chrome — formatting popover', () => {
 		await page.keyboard.type('X');
 		await expect.poll(async () => (await readDump(page)).subject).toContain('X');
 	});
+
+	// Clicking a native input below the fold while the popover holds a prose
+	// selection must not move the viewport: returning focus to the leaf would
+	// re-assert the retained selection and scroll it back into view.
+	test('select-then-click a distant native input does not scroll back to the selection', async ({
+		page
+	}) => {
+		// Seed has one card; pad to six so a far card-title sits well below the fold.
+		for (let i = 0; i < 5; i++) {
+			await page.getByTestId(`add-card-${i + 1}`).click();
+		}
+		await expect.poll(async () => (await readDump(page)).cardCount).toBe(6);
+
+		await replaceProse(page, 'prose-main-body', 'SELECTION ANCHOR');
+		await selectAll(page, 'prose-main-body');
+		await expect(page.getByTestId('format-popover')).toBeVisible();
+
+		const target = page.getByTestId('card-title-5');
+		await target.scrollIntoViewIfNeeded();
+		const scrollBefore = await page.evaluate(() => window.scrollY);
+		expect(scrollBefore).toBeGreaterThan(500); // below the Body fold
+
+		await target.click();
+
+		const after = await page.evaluate(() => ({
+			scrollY: window.scrollY,
+			activeTestId: (document.activeElement as HTMLElement | null)?.dataset?.testid ?? null
+		}));
+		expect(Math.abs(after.scrollY - scrollBefore)).toBeLessThan(50);
+		expect(after.activeTestId).toBe('card-title-5');
+	});
 });
 
 test.describe('visual editor chrome — diagnostics routing', () => {

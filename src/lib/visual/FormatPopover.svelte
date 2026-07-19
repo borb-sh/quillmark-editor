@@ -18,7 +18,7 @@
   transient `selectionchange` events first). `focusout`/scroll/resize keep the
   popover honest when focus leaves the leaf or the page scrolls.
 
-  FOCUS DISCIPLINE. Two failure modes a naive Popover.Content invites:
+  FOCUS DISCIPLINE. Three failure modes a naive Popover.Content invites:
     (1) its default `trapFocus` (true) redirects any focus landing outside its
         DOM back inside — which would make it impossible to click back into
         the editor to change the selection while the popover is showing. Fixed
@@ -27,6 +27,14 @@
         verified against bits-ui's FocusScope) would steal focus from the
         editor onto the first button the instant the popover appears. Fixed by
         `onOpenAutoFocus` calling `preventDefault()`.
+    (3) its default `onCloseAutoFocus` returns focus to the element focused
+        before open — the prose leaf holding the selection. Clicking a native
+        input (card-title, TextField, NumberField) while the popover is open
+        bounces focus off that input back to the leaf; ProseMirror re-asserts
+        the retained selection and the browser scrolls it into view, yanking
+        the viewport off the clicked field. Fixed by `onCloseAutoFocus`
+        calling `preventDefault()` — the intentional returns after mark toggle
+        / link submit go through `view.focus()` in `toggle()`/`submitLink()`.
   A mark button ALSO swallows its own `mousedown` (prosemirror-menu's own
   trick): without it, the browser's default mousedown action focuses the
   button before `click` fires, blurring the editor and collapsing the
@@ -198,6 +206,7 @@
 				sideOffset={8}
 				trapFocus={false}
 				onOpenAutoFocus={(e: Event) => e.preventDefault()}
+				onCloseAutoFocus={(e: Event) => e.preventDefault()}
 			>
 				<!-- `data-testid` lives on THIS div (ours, not bits-ui's own prop-merged
 				     wrapper) so its presence never depends on bits-ui's passthrough. -->
