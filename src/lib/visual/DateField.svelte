@@ -1,8 +1,8 @@
 <!--
   A `date` (or `datetime`) field → native date control. The stored value is a
   string (fixture uses `YYYY-MM-DD`, blank to mean "today at render"); this binds
-  that string directly and commits it on change. The 0.95 value-object lowering is
-  a render-time concern — the editor only ever sees the stored string.
+  that string directly and commits it on change. The value-object a date field
+  lowers to is a render-time concern — the editor only ever sees the stored string.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';

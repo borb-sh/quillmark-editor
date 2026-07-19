@@ -75,7 +75,7 @@ export interface AnchorPos {
 }
 
 /**
- * The identity anchors of a content as `{ id, pos }` in USV — the seed for the
+ * The identity anchors of a `Content` as `{ id, pos }` in USV — the seed for the
  * field's anchor-position plugin and the `oldAnchors` the mark diff rebases.
  * Anchors are zero-width, so `start` is the position.
  */

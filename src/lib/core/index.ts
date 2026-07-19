@@ -54,9 +54,8 @@ export type {
 	QuillmarkError
 } from '@quillmark/wasm';
 
-// Content + op-grained edit (Codec consumes these). The runtime root re-exports
-// the whole vocabulary as of 0.95 (prose/quillmark-issues/0001 resolved upstream),
-// so the structural-derivation seam that used to bridge the gap is gone.
+// Content + op-grained edit (Codec consumes these) — the whole vocabulary
+// `Document`'s methods speak, re-exported verbatim from the runtime root.
 export type {
 	Content,
 	ContentLine,
@@ -74,8 +73,8 @@ export type {
 	PathStep
 } from '@quillmark/wasm';
 
-// `DeltaOp` alone is not on the runtime root — it exports `Delta`, not its op
-// union. One derived line, the last remnant of the old wasm-types seam.
+// `DeltaOp` is the one type the root does not carry — it exports `Delta`, not its
+// op union — so it is derived here.
 import type { Delta } from '@quillmark/wasm';
 /** One text-delta op — `retain` / `insert` / `delete`. */
 export type DeltaOp = Delta['ops'][number];

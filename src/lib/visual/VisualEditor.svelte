@@ -168,7 +168,7 @@
 	// ── Structure mutators (resolve id→index here, then reorder ids in lockstep) ──
 	function addCard(atIndex: number, kind: string): void {
 		try {
-			const overlay = doc.main.seed?.[kind] as Record<string, unknown> | undefined;
+			const overlay = doc.seedOverlay(kind);
 			const card = quill.seedCard(kind, overlay);
 			if (!card) return;
 			doc.insertCard(card, atIndex);

@@ -26,7 +26,7 @@ export function pasteMarkdown(base: Content, md: string): PasteResult {
 	return { content, delta };
 }
 
-/** The markdown projection of a content (LOSSY — see `copyWouldDrop`). */
+/** The markdown projection of a `Content` (LOSSY — see `copyWouldDrop`). */
 export function copyMarkdown(rt: Content): string {
 	return exportMarkdown(rt);
 }

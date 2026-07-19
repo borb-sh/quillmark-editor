@@ -11,7 +11,7 @@ import type { ContentIsland } from '@quillmark/wasm';
 /** The `U+FFFC` object-replacement char that occupies one island slot in `text`. */
 export const ISLAND_SLOT = '￼';
 
-/** A richtext cell inside a table island — a mini content (marks over flat text). */
+/** A richtext cell inside a table island — a mini content model (marks over flat text). */
 export interface IslandTableCell {
 	text: string;
 	marks: { start: number; end: number; type: string; [k: string]: unknown }[];
