@@ -5,7 +5,13 @@
 import { describe, it, expect } from 'vitest';
 import { EditorState } from 'prosemirror-state';
 import type { Transaction } from 'prosemirror-state';
-import { decode, pmToContent, lower, blockSchema, structureNeedsInstall } from '$lib/core/codec';
+import {
+	decode,
+	pmToContent,
+	lower,
+	blockSchema,
+	insertReintroducesIslandSlot
+} from '$lib/core/codec';
 import type { Content } from '$lib/core';
 import { freshDoc, normalize, contentEqual, md } from './_util.js';
 
@@ -61,6 +67,21 @@ describe('lower ∘ apply matches PM', () => {
 	});
 	it('multi-op: insert then delete elsewhere', () => {
 		lowerApply(md('alpha beta gamma'), (s) => s.tr.insertText('ZZ', 6).delete(0, 2));
+	});
+	it('Shift+Enter — a hard break lowers via setContinues (op path, not install)', () => {
+		const { stored, bundle } = lowerApply(md('one two'), (s) =>
+			s.tr.insert(4, blockSchema.nodes.hard_break.create())
+		);
+		expect(stored.lines).toHaveLength(2);
+		expect(!!stored.lines[1].continues).toBe(true);
+		expect(bundle.lineOps?.some((op) => op.op === 'setContinues')).toBe(true);
+	});
+	it('Enter inside a code block — a code-interior line lowers via setContinues', () => {
+		const { stored, bundle } = lowerApply(md('```\nab\n```'), (s) => s.tr.insertText('\n', 2));
+		expect(stored.lines).toHaveLength(2);
+		expect(!!stored.lines[1].continues).toBe(true);
+		expect(stored.lines[1].kind).toBe('code');
+		expect(bundle.lineOps?.some((op) => op.op === 'setContinues')).toBe(true);
 	});
 });
 
@@ -158,16 +179,65 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		doc.applyChange({}, bundle);
 		expect(doc.main.body.marks.some((m) => m.type === 'anchor')).toBe(false);
 	});
+
+	it('an anchor survives a code-block-interior edit (the payoff: op path, not install)', () => {
+		// Adding an interior line to a code block used to route through `install`,
+		// dropping this field's anchors; it now lowers via `setContinues` so the
+		// anchor rebases through the splice instead.
+		const doc = freshDoc();
+		const codeRt: Content = {
+			text: 'abc',
+			lines: [{ containers: [], kind: 'code' }],
+			marks: [{ start: 3, end: 3, type: 'anchor', id: 'c1' } as never],
+			islands: []
+		};
+		doc.install({}, codeRt);
+		const oldRt = doc.main.body;
+		const state = EditorState.create({ doc: decode(oldRt, blockSchema) });
+		const tr = state.tr.insertText('\n', 2); // a code-interior line before the anchor
+		const newRt = pmToContent(tr.doc);
+		expect(insertReintroducesIslandSlot(oldRt, newRt)).toBe(false); // the op path, not install
+		const bundle = lower(oldRt, tr.doc, {
+			oldAnchors: [{ id: 'c1', pos: 3 }],
+			newAnchors: [{ id: 'c1', pos: 4 }] // the \n inserts before it → +1
+		});
+		doc.applyChange({}, bundle);
+		const body = doc.main.body;
+		expect(body.lines).toHaveLength(2);
+		expect(!!body.lines[1].continues).toBe(true);
+		const anchor = body.marks.find((m) => m.type === 'anchor') as { id: string } | undefined;
+		expect(anchor?.id).toBe('c1');
+	});
 });
 
-describe('structureNeedsInstall — the continues-line boundary gap gate', () => {
-	const oneLine: Content = {
-		text: 'one two',
+describe('insertReintroducesIslandSlot — the one op-unreachable edit', () => {
+	const island = '￼';
+	const mkIsland = (text: string): Content => ({
+		text,
 		lines: [{ containers: [], kind: 'para' }],
 		marks: [],
-		islands: []
-	};
-	it('flags a new hard-break (continues) line as un-lowerable', () => {
+		islands: [{ id: 'i1', type: 'image', props: {} } as never]
+	});
+
+	it('flags a splice whose insert re-carries an island slot (IslandSlotInInsert)', () => {
+		// Two edits (X after `b`, Y before `r`) collapse to one splice spanning the
+		// slot, so its insert contains U+FFFC — `applyChange` would throw.
+		const oldRt = mkIsland(`before ${island} after`);
+		const newRt = mkIsland(`bXefore ${island} afteYr`);
+		expect(insertReintroducesIslandSlot(oldRt, newRt)).toBe(true);
+	});
+	it('flags island creation (a paste inserting a fresh slot)', () => {
+		const plain = md('before  after');
+		const withIsland = mkIsland(`before ${island} after`);
+		expect(insertReintroducesIslandSlot(plain, withIsland)).toBe(true);
+	});
+	it('does NOT flag an edit around an existing island (the slot is retained, not re-inserted)', () => {
+		const oldRt = mkIsland(`before ${island} after`);
+		const newRt = mkIsland(`before ${island} afterX`);
+		expect(insertReintroducesIslandSlot(oldRt, newRt)).toBe(false);
+	});
+	it('does NOT flag a new hard break or code-interior line (they lower via setContinues)', () => {
+		const oneLine = md('one two');
 		const withBreak: Content = {
 			text: 'one\ntwo',
 			lines: [
@@ -177,67 +247,8 @@ describe('structureNeedsInstall — the continues-line boundary gap gate', () =>
 			marks: [],
 			islands: []
 		};
-		expect(structureNeedsInstall(oneLine, withBreak)).toBe(true);
-	});
-	it('does NOT flag an ordinary block split (both continues:false)', () => {
-		const split: Content = {
-			text: 'one\ntwo',
-			lines: [
-				{ containers: [], kind: 'para' },
-				{ containers: [], kind: 'para' }
-			],
-			marks: [],
-			islands: []
-		};
-		expect(structureNeedsInstall(oneLine, split)).toBe(false);
-	});
-	it('does NOT flag a text edit inside an existing code block (continues preserved)', () => {
-		const code2 = md('```\na\nb\n```'); // 2 code lines, 2nd continues
-		const edited = { ...code2, text: code2.text.replace('a', 'aa') };
-		expect(structureNeedsInstall(code2, edited)).toBe(false);
-	});
-	it('flags a break↔split swap at UNCHANGED text (no delta, flags flipped)', () => {
-		// A hard break replaced by a real paragraph split: net text identical, so
-		// the count heuristic alone would take the op path — but `applyChange`
-		// has no continues op in either direction, so the store would keep the
-		// break while PM shows a split, forever.
-		const withBreak = md('one\\\ntwo'); // para + continues line
-		const split: Content = {
-			...withBreak,
-			lines: withBreak.lines.map((l) => ({ containers: l.containers, kind: 'para' }) as never)
-		};
-		expect(structureNeedsInstall(withBreak, split)).toBe(true);
-		expect(structureNeedsInstall(split, withBreak)).toBe(true);
-	});
-	it('flags a MOVED continues line at equal counts', () => {
-		const mk = (flags: boolean[], text: string): Content => ({
-			text,
-			lines: flags.map(
-				(c) => ({ containers: [], kind: 'para', ...(c ? { continues: true } : {}) }) as never
-			),
-			marks: [],
-			islands: []
-		});
-		// [F,T,F] -> [F,F,T] with a text edit elsewhere: same count, wrong shape.
-		expect(
-			structureNeedsInstall(
-				mk([false, true, false], 'a\nb\nc'),
-				mk([false, false, true], 'a\nb\ncX')
-			)
-		).toBe(true);
-	});
-	it('does NOT flag an edit that merely shifts an existing continues line', () => {
-		const withBreak = md('one\\\ntwo');
-		// Insert text before the break: the boundary survives, flags unchanged.
-		const edited = { ...withBreak, text: 'X' + withBreak.text };
-		expect(structureNeedsInstall(withBreak, edited)).toBe(false);
-	});
-	it('does NOT flag deleting the hard break (join — the flag vanishes with its \\n)', () => {
-		const withBreak = md('one\\\ntwo');
-		const joined = md('onetwo');
-		expect(structureNeedsInstall(withBreak, joined)).toBe(false);
-	});
-	it('flags a NEW code-internal line (inserted \\n must be a real line, content says continues)', () => {
+		expect(insertReintroducesIslandSlot(oneLine, withBreak)).toBe(false);
+
 		const code1 = md('```\nab\n```');
 		const code2: Content = {
 			text: code1.text.replace('ab', 'a\nb'),
@@ -245,24 +256,6 @@ describe('structureNeedsInstall — the continues-line boundary gap gate', () =>
 			marks: [],
 			islands: []
 		};
-		expect(structureNeedsInstall(code1, code2)).toBe(true);
-	});
-	it('flags a delta whose insert carries an island slot (IslandSlotInInsert at the boundary)', () => {
-		const island = '\uFFFC';
-		const mkIsland = (text: string): Content => ({
-			text,
-			lines: [{ containers: [], kind: 'para' }],
-			marks: [],
-			islands: [{ id: 'i1', type: 'image', props: {} } as never]
-		});
-		// One splice spanning the slot re-inserts it: X at 1 and Y at 14 collapse
-		// to a single delta whose insert contains U+FFFC.
-		const oldRt = mkIsland(`before ${island} after`);
-		const newRt = mkIsland(`bXefore ${island} afteYr`);
-		expect(structureNeedsInstall(oldRt, newRt)).toBe(true);
-		// Island CREATION (paste containing an image) likewise inserts a slot.
-		const plain = md('before  after');
-		const withIsland = mkIsland(`before ${island} after`);
-		expect(structureNeedsInstall(plain, withIsland)).toBe(true);
+		expect(insertReintroducesIslandSlot(code1, code2)).toBe(false);
 	});
 });

@@ -3,8 +3,8 @@
 // leaf's `Content`, decodes to a PM state, mounts a view + plugin stack (history,
 // keymap, input rules, the anchor-position plugin), and `dispatchTransaction`:
 //   (a) apply optimistically to the view,
-//   (b) lower the tr to a `ChangeBundle` (or `install` for a structural edit ops
-//       cannot represent — prose/quillmark-issues/0002),
+//   (b) lower the tr to a `ChangeBundle` (or `install` for island creation, the
+//       one structural edit the op vocabulary cannot represent),
 //   (c) commit via `doc.applyChange(addr, bundle)`,
 //   (d) fire `onCaretMove` with the new USV caret.
 // On an `applyChange` throw the optimistic PM state stays and the error is logged
@@ -20,7 +20,7 @@ import { EditorView } from 'prosemirror-view';
 import type { Document, Content, Addr } from '../index.js';
 import { decode } from './decode.js';
 import { usvToPM, pmToUsv, buildLineIndex, type LineIndex } from './positions.js';
-import { lower, pmToContent, structureNeedsInstall } from './encode.js';
+import { lower, pmToContent, insertReintroducesIslandSlot } from './encode.js';
 import { anchorsFromContent, type AnchorPos } from './marks.js';
 import { createReconciler, type Reconciler } from './reconcile.js';
 import { inputRulesPlugin } from './inputrules.js';
@@ -167,8 +167,8 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		try {
 			// `applyChange` throws on an absent declared field (verified), so the FIRST
 			// edit to one installs the value (creating it — no prior anchors to lose);
-			// `structureNeedsInstall` is the other install case (a new `continues` line).
-			if (!leafPresent(doc, addr) || structureNeedsInstall(oldRt, newRt)) {
+			// island creation is the other install case (`insertReintroducesIslandSlot`).
+			if (!leafPresent(doc, addr) || insertReintroducesIslandSlot(oldRt, newRt)) {
 				doc.install(addr, newRt); // create-or-structural fallback; pays this field's anchors
 			} else {
 				// Pre-edit anchors are the stored content's anchors (USV); post-edit
