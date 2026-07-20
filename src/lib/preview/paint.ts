@@ -4,7 +4,10 @@
 // pages, per the paint contract). Builds the per-page slot elements overlay.ts
 // and bridge.ts attach their own DOM/listeners to; owns `pageSize` caching and
 // slot-count reconciliation across an `apply` (`ChangeSet.pageCount` can differ
-// from the previous compile — pages can be added or removed).
+// from the previous compile — pages can be added or removed). A ResizeObserver
+// plus a DPR media-query listener repaint mounted pages when the container's CSS
+// width or `devicePixelRatio` changes, so a frozen canvas never outlives the
+// page box it fills (issue #9).
 import type { LiveSession, PageSize } from '../core/index.js';
 
 /** One page's DOM slot — the box overlay.ts/bridge.ts position against, plus its cached geometry. */
@@ -174,6 +177,72 @@ export function createPaintLoop(
 
 	reconcile(session.pageCount);
 
+	// ── Keep mounted rasters in step with the display ───────────────────────────
+	// Every paint freezes `canvas.style.width/height` to the box width AT THAT
+	// PAINT (paintSlot). A page that stays mounted while the container's CSS width
+	// or `devicePixelRatio` shifts would otherwise keep a stale raster the %-space
+	// overlay/click math silently drifts off of — the box tracks the container, the
+	// ink does not. Two observers close the gap by repainting mounted pages from
+	// their current box; canvases are `position:absolute`, so a repaint can't feed
+	// back into layout (and thus can't re-trigger the resize observer).
+
+	// Repaint mounted pages (all, or a given subset) from their live geometry — the
+	// one path resize, DPR, and zoom share; each `paintSlot` re-reads the slot's
+	// current `clientWidth`. A no-op for an unmounted page.
+	function repaint(pages?: Iterable<number>): void {
+		for (const page of pages ?? canvases.keys()) {
+			const slot = slots[page];
+			if (slot && canvases.has(page)) paintSlot(slot);
+		}
+	}
+
+	// Coalesce a burst of observer callbacks into one repaint on the next frame.
+	// `force` (a DPR change) bypasses the width guard, since a DPR change moves no
+	// CSS-px width; a plain resize repaints only when the width actually moved, so
+	// a height-only or no-op tick costs nothing.
+	let rafId = 0;
+	let lastWidth = container.clientWidth;
+	let forcePending = false;
+	function scheduleRepaint(force: boolean): void {
+		if (force) forcePending = true;
+		if (rafId) return;
+		rafId = requestAnimationFrame(() => {
+			rafId = 0;
+			const forced = forcePending;
+			forcePending = false;
+			const width = container.clientWidth;
+			if (!forced && width === lastWidth) return;
+			lastWidth = width;
+			repaint();
+		});
+	}
+
+	// Container CSS-width changes (drag the pane wider, resize the window). Guarded
+	// for jsdom, which ships no ResizeObserver — the unit suite drives no resize, so
+	// skipping it there is correct; the browser tier (e2e) exercises the real path.
+	const resizeObserver =
+		typeof ResizeObserver === 'undefined'
+			? undefined
+			: new ResizeObserver(() => scheduleRepaint(false));
+	resizeObserver?.observe(container);
+
+	// `devicePixelRatio` changes (window dragged to a different-DPI monitor, browser
+	// zoom) leave CSS-px width untouched, so the ResizeObserver never sees them —
+	// watch DPR directly. A `(resolution: …dppx)` query pins the CURRENT ratio and
+	// is therefore one-shot: re-arm it against the new ratio on each change. Guarded
+	// for environments (jsdom) without `matchMedia`.
+	let dprQuery: MediaQueryList | undefined;
+	function onDprChange(): void {
+		scheduleRepaint(true);
+		armDprListener();
+	}
+	function armDprListener(): void {
+		if (typeof matchMedia === 'undefined') return;
+		dprQuery = matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+		dprQuery.addEventListener('change', onDprChange, { once: true });
+	}
+	armDprListener();
+
 	return {
 		get slots() {
 			return slots;
@@ -192,12 +261,12 @@ export function createPaintLoop(
 		},
 		setDensityZoom(z) {
 			zoom = z;
-			for (const page of canvases.keys()) {
-				const slot = slots[page];
-				if (slot) paintSlot(slot);
-			}
+			repaint();
 		},
 		destroy() {
+			if (rafId) cancelAnimationFrame(rafId);
+			resizeObserver?.disconnect();
+			dprQuery?.removeEventListener('change', onDprChange);
 			observer.disconnect();
 			for (const page of [...canvases.keys()]) unmountPage(page);
 			for (const slot of slots) slot.el.remove();

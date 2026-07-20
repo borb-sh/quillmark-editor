@@ -54,6 +54,17 @@ preview stays a view.
   `densityScale` and layout width tracks the container, per the paint contract's
   `layoutScale × densityScale`. A separate layout-zoom waits for a fit-to-width
   control to demand it.
+  - **Resize/DPR repaint (issue #9).** "Layout width tracks the container" and
+    the exit criterion below both assume a mounted canvas keeps filling its page
+    box, but each paint freezes `canvas.style.width/height` and nothing re-ran it
+    on a live page — a resize or DPR change left the raster stale under the
+    %-tracked box (overlays drift off the ink). The paint loop now owns a
+    rAF-coalesced `ResizeObserver` (container width) + a re-arming
+    `matchMedia('(resolution: …dppx)')` listener (DPR) that repaint mounted pages;
+    canvases are `position:absolute`, so the repaint can't feed back into layout.
+    This adds behavior beyond the original zoom decision but upholds its premise —
+    recorded here per the deviation policy. Browser-only, so verified in the e2e
+    tier (`e2e/preview.spec.ts` case (i)), not jsdom.
 - **`clamped` handling.** When `PaintResult.clamped` forces density down (large
   page > 16384 px), honor it silently in V1; surface the soft-render state only
   if it bites the reference quill.
