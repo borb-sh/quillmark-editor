@@ -48,7 +48,8 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "svelte-kit sync && svelte-package",
-		"preview": "vite preview",
+		"build:app": "svelte-kit sync && vite build",
+		"preview": "npm run build:app && vite preview",
 		"prepack": "svelte-kit sync && svelte-package && publint",
 		"test": "svelte-kit sync && vitest run",
 		"test:watch": "svelte-kit sync && vitest",
@@ -76,7 +77,7 @@
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.61.1",
-		"@sveltejs/adapter-auto": "^6.0.0",
+		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.22.0",
 		"@sveltejs/package": "^2.5.0",
 		"@sveltejs/vite-plugin-svelte": "^6.0.0",
