@@ -78,7 +78,7 @@
 	});
 </script>
 
-<div bind:this={containerEl} class="qm-prose qm-array-prose" data-testid={testid}></div>
+<div bind:this={containerEl} class="qm-array-prose" data-testid={testid}></div>
 
 <style>
 	.qm-array-prose {

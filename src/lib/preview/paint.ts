@@ -30,7 +30,11 @@ const PAGE_GAP_PX = 16;
 export function createPaintLoop(
 	session: LiveSession,
 	container: HTMLElement,
-	margin: number
+	margin: number,
+	// Notified when a slot's `session.paint` throws — the loop swallows the throw
+	// (see `paintSlot`) so one bad page never aborts the band sweep; the caller
+	// decides how to surface it.
+	onPaintError?: (page: number, err: unknown) => void
 ): PaintLoop {
 	// The IntersectionObserver root must be a scrollable ancestor of the slots;
 	// respect a consumer's own choice if they already set one (computed style, so
@@ -98,9 +102,19 @@ export function createPaintLoop(
 		}
 		const layoutScale = (slot.el.clientWidth || slot.size.widthPt) / slot.size.widthPt;
 		const densityScale = (window.devicePixelRatio || 1) * zoom;
-		const result = session.paint(ctx, slot.page, { layoutScale, densityScale });
-		canvas.style.width = `${result.layoutWidth}px`;
-		canvas.style.height = `${result.layoutHeight}px`;
+		try {
+			const result = session.paint(ctx, slot.page, { layoutScale, densityScale });
+			canvas.style.width = `${result.layoutWidth}px`;
+			canvas.style.height = `${result.layoutHeight}px`;
+		} catch (err) {
+			// A paint that throws must not abort the band loop — `updateBand` runs in
+			// the IntersectionObserver callback and sweeps every entry, so an
+			// uncaught throw would strand the rest of the band unpainted. Unmount the
+			// half-mounted canvas (so the page is a retryable unmounted slot, not a
+			// blank registered one) and surface the failure; the sweep moves on.
+			unmountPage(slot.page);
+			onPaintError?.(slot.page, err);
+		}
 	}
 
 	function unmountPage(page: number): void {

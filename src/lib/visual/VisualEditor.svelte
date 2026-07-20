@@ -388,6 +388,11 @@
 		{unregister}
 	/>
 
+	<!-- Cards render only when the schema declares `card_kinds`. Edge case (issue
+	     #21): a document carrying cards under a schema with none shows them
+	     nowhere — no list, no delete affordance. Left as-is (the reference fixture
+	     never hits it); if it becomes reachable, render the list with add/retype
+	     disabled rather than gating the whole thing away. -->
 	{#if kinds.length}
 		{@render addAffordance(0)}
 		{#each model.cards as c, i (c.id)}
