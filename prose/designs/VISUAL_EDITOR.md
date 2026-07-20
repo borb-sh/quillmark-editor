@@ -3,23 +3,23 @@
 Scope: the headline WYSIWYG surface over a Quillmark document — the card/field
 structure, the schema-driven fields, and prose-body editing, and how they compose
 into one editable tree. This doc owns the **composition**; the per-field
-corpus↔ProseMirror translation is [CODEC.md](CODEC.md), the rendered view and its
+content↔ProseMirror translation is [CODEC.md](CODEC.md), the rendered view and its
 caret bridge are [PREVIEW.md](PREVIEW.md), the live `Document` and WASM boundary
 are [DOCUMENT_MODEL.md](DOCUMENT_MODEL.md). Grounds on quillmark's document and
 schema model (canon: quillmark `CARDS.md`, `SCHEMAS.md`, `DOCUMENT_STORAGE.md`)
-and the WASM edit surface (`Document`, `quill.writer(doc)`, the addressed corpus
+and the WASM edit surface (`Document`, `quill.writer(doc)`, the addressed content
 verbs).
 
 ## Federated, not monolithic
 
 The VisualEditor is a **thin composition layer** over many small editors, not one
 ProseMirror document spanning the page. The schema is the outline, a Svelte tree
-renders it, and each corpus leaf — a body, a `richtext`/`plaintext` field — is a
+renders it, and each content leaf — a body, a `richtext`/`plaintext` field — is a
 separate sub-document with its own PM state, view, history, and plugins; scalar
 fields are plain form controls. This resolves the skeleton's "whether these split
 into sub-docs is TBD": **they split.**
 
-The corpus already stores a document as separate leaves at distinct addresses of
+The content already stores a document as separate leaves at distinct addresses of
 distinct types — a card's body, its `intro` richtext field, its `signature_block`
 array are three `Addr`s carrying three value types. A single PM document would
 have to re-encode that schema tree as PM nodes and re-derive every address from
@@ -29,7 +29,7 @@ handlers, a plain-text fallback that silently destroys structure on the next
 round-trip. Federation deletes that layer. The editor renders the schema directly
 and lets each leaf pick its editor by type; it owns structure, control selection,
 card operations, focus, command dispatch, and diagnostics routing, and delegates
-the substance — corpus↔PM to the [codec](CODEC.md), geometry to the
+the substance — content↔PM to the [codec](CODEC.md), geometry to the
 [preview](PREVIEW.md), truth and mutators to the [document model](DOCUMENT_MODEL.md).
 
 ## Structure mirrors the schema
@@ -42,7 +42,7 @@ editor row of the projection table).
 
 **A card is a list of fields**, rendered in **declaration order** (the `fields`
 map key order — order is not a `ui` hint), then a body. The body is the field-less
-corpus leaf (`Addr {card?}`, no `field`), gated by `body.enabled`. Metadata and
+content leaf (`Addr {card?}`, no `field`), gated by `body.enabled`. Metadata and
 body are **one abstraction**: a body is a richtext leaf, a `richtext` field is a
 richtext leaf, and both take the same prose-field editor and codec, differing only
 in address form (`{card}` vs `{card, field}`) and prominence. The metadata-vs-body
@@ -58,7 +58,7 @@ date control. `array` is an add/remove repeater (`items: {type: object}` → a t
 table) — elements hold declaration/entry order, no reorder control (see
 [VISUAL_EDITOR_UIUX.md](VISUAL_EDITOR_UIUX.md) §"Array fields"); `object` a nested
 subform recursing the mapping over `properties`. The
-text-ish types are the corpus's data-vs-content × open/plain-vs-formatted 2×2 —
+text-ish types are the model's data-vs-content × open/plain-vs-formatted 2×2 —
 `enum`/`string` are form controls, `plaintext`/`richtext` prose leaves — and only
 the content side reaches the codec.
 
@@ -95,13 +95,13 @@ inexpressible from the UI — clear and unset collapse to one gesture.
 
 ## The address is the spine
 
-Every editable unit is keyed by an address — a corpus leaf by `Addr {card?,
+Every editable unit is keyed by an address — a content leaf by `Addr {card?,
 field?}`, a scalar by its `{card?, field}` path, a card by position. One
 identifier is what `applyChange` targets, what the preview bridge speaks
-(`CorpusHit.field`, `FieldRegion.field`), what a diagnostic routes to, and what
+(`ContentHit.field`, `FieldRegion.field`), what a diagnostic routes to, and what
 Svelte keys the tree on.
 
-But cards are **positional** in the corpus (`cards[i]`), and that is the prior
+But cards are **positional** in the content (`cards[i]`), and that is the prior
 art's deepest pain: index-keyed loops, stale-index write guards, reused-component
 reconciliation, phantom placeholders. So the VisualEditor keys each card
 *instance* by a **stable identity** — its `$id` when present, else a session key —
@@ -123,8 +123,8 @@ a whole-document re-serialize:
 - **structure** → `insertCard` / `removeCard` / `moveCard` / `setCardKind`.
 
 Reconciliation is field-scoped. The editor holds its optimistic PM state and
-re-hydrates a leaf only on an **external** corpus change (a paste, a `revise`,
-another edit source), gated by canonical-corpus equality scoped to that leaf — the
+re-hydrates a leaf only on an **external** content change (a paste, a `revise`,
+another edit source), gated by canonical-content equality scoped to that leaf — the
 narrow analog of the prior art's whole-document `Document.equals` re-init gate
 ([CODEC.md](CODEC.md) §Reconciliation). Caret continuity across the editor's *own*
 edits is the leaf's PM `StepMap`, not a re-hydrate.
@@ -137,7 +137,7 @@ edits is the leaf's PM `StepMap`, not a re-hydrate.
   cascade is `$seed` overlay › `example:` › absent (canon: `CARDS.md`).
 - **Reorder / delete** — `moveCard` / `removeCard`, over stable keys.
 - **Retype** — `setCardKind`; the field list re-projects, kept fields keep their
-  corpus.
+  content.
 - **Rename** — `$ext.editor.title`, editor state that never reaches the backend
   (canon: `CARDS.md`). The editor holds the `editor` namespace and writes it whole
   via `setCardExtNamespace` (the namespace is the write unit).
@@ -150,7 +150,7 @@ parent to survive remounts (the prior art's workaround). Both directions
 ([PREVIEW.md](PREVIEW.md) §Click bridge):
 
 - **preview → editor** — `onCaretPick(hit)` resolves `hit.field` to a leaf, which
-  runs `codec.corpusToPM(hit.pos)` and sets its PM caret; a `'segment'` hit just
+  runs `codec.usvToPM(hit.pos)` and sets its PM caret; a `'segment'` hit just
   focuses the leaf.
 - **editor → preview** — a caret move in the active leaf calls
   `preview.focusPosition(field, pos)`.
@@ -160,14 +160,14 @@ parent to survive remounts (the prior art's workaround). Both directions
 Editing chrome is thin and **per-leaf**; structural chrome is Svelte in the shell.
 
 - **Formatting** — a selection toolbar and keymap over the active leaf in the
-  corpus mark vocabulary (`strong`/`emph`/`underline`/`strike`/`code`/`link`, plus
+  content mark vocabulary (`strong`/`emph`/`underline`/`strike`/`code`/`link`, plus
   `anchor` identity), emitting PM transactions the codec lowers to `markOps`.
 - **Input rules** — the markdown shorthands (`**`, `#`, `- `, table entry) are PM
   input rules producing ordinary transactions; markdown is an input *shorthand*,
   never the stored form.
 - **Tables / islands** — driven from the PM model (a `CellSelection`,
   decorations), not reconstructed from DOM geometry. An island is one PM leaf node
-  over one corpus `U+FFFC` slot ([CODEC.md](CODEC.md) §Islands).
+  over one content `U+FFFC` slot ([CODEC.md](CODEC.md) §Islands).
 - **Structure** — add-card affordance, headers, move/delete/retype controls, group
   sections, over the document mutators.
 
@@ -196,8 +196,8 @@ function createField(opts: {
 }): FieldController;
 
 interface FieldController {
-  setCaret(pos: number): void;   // preview onCaretPick → codec.corpusToPM → here
-  applyExternal(): void;         // external corpus change → re-hydrate this leaf (gated)
+  setCaret(pos: number): void;   // preview onCaretPick → codec.usvToPM → here
+  applyExternal(): void;         // external content change → re-hydrate this leaf (gated)
   focus(): void;
   destroy(): void;
 }
@@ -205,7 +205,7 @@ interface FieldController {
 
 ```svelte
 <!-- chrome: renders the card tree, mounts a <ProseField> (createField) per
-     corpus leaf and a form control per scalar field. -->
+     content leaf and a form control per scalar field. -->
 <VisualEditor
   {doc} {quill}
   onActiveAddrChange={(addr) => …}
@@ -216,9 +216,9 @@ interface FieldController {
 
 ## Not owned
 
-- corpus↔PM, the position map, mark/island translation — the codec's
+- content↔PM, the position map, mark/island translation — the codec's
   ([CODEC.md](CODEC.md)).
-- paint, page geometry, caret rects, click→corpus — the preview's
+- paint, page geometry, caret rects, click→content — the preview's
   ([PREVIEW.md](PREVIEW.md)).
 - document truth, mutators, `validate`, the WASM boundary — the document model's
   ([DOCUMENT_MODEL.md](DOCUMENT_MODEL.md)).
@@ -232,7 +232,7 @@ interface FieldController {
   the same; the question is whether identity is the editor's concern or the
   document's.
 - **Array/table convergence** — how far the `array`-of-`object` table control
-  converges with the richtext table island. Different corpus citizens (a scalar
+  converges with the richtext table island. Different content citizens (a scalar
   array field vs a body island), similar affordance.
 - **Layout as data** — how much responsive column packing is `ui.group`/`compact`
   driven vs the editor's own policy.

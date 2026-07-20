@@ -30,7 +30,7 @@ preview-only consumer not pulling ProseMirror/CodeMirror — is a dependency-gra
 concern that subpath entries already solve: each subpath is its own module root,
 so a bundler pulls only what the imported entry reaches. The one thing separate
 packages add, independent versioning, is a cost here: the surfaces share a
-substrate (Document model, engine boundary, `CorpusHit`/`ChangeSet` types) and
+substrate (Document model, engine boundary, `ContentHit`/`ChangeSet` types) and
 co-evolve, so a per-package version matrix is tax with no payer.
 
 Reserved, not taken: `@quillmark/preview` as its own package. Preview is the one

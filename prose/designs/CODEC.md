@@ -1,20 +1,20 @@
 # Codec
 
-Scope: the bidirectional codec between one corpus field (`RichText`) and one
-ProseMirror document — decode (corpus → PM), the transaction lowering (PM → a
+Scope: the bidirectional codec between one content field (`Content`) and one
+ProseMirror document — decode (content → PM), the transaction lowering (PM → a
 `ChangeBundle` for `applyChange`), and the USV ↔ PM position map that carries the
 caret. One field, one PM doc; the VisualEditor composes many. Markdown is not in
 this loop — it is an edge codec (§Markdown at the edges), never the edit
 representation.
 
-Grounds on quillmark's `RichText` corpus and its WASM edit surface (canon:
+Grounds on quillmark's `Content` model and its WASM edit surface (canon:
 quillmark `prose/canon/DOCUMENT_STORAGE.md`, `CONVERT.md`; the WASM
 `Card.body` / `install` / `applyChange` / `positionAt` API). The preview↔editor
 half of the caret bridge lives in [PREVIEW.md](PREVIEW.md).
 
 ## The two models
 
-The corpus `RichText` is one flat `text` over Unicode scalar values (`\n` a line
+The `Content` model is one flat `text` over Unicode scalar values (`\n` a line
 boundary, `U+FFFC` an island slot), a `lines` list (each a `kind` + a
 `containers` path + a `continues` flag) from which the block tree is *derived*, a
 set of freely-overlapping `marks`, and `islands`. It carries no node identity
@@ -25,13 +25,13 @@ ProseMirror is a nested node tree whose inline text carries a *set* of marks and
 whose positions count node boundaries; its identity is the tree itself.
 
 Bridging the two is the codec's whole job: **flat-text-with-attributes ↔
-nested-tree**. It is a translation layer, not a thin adapter — the corpus
+nested-tree**. It is a translation layer, not a thin adapter — the content
 normalizes on every write, PM has no overlapping-mark or zero-width-mark concept,
 and neither side's positions are the other's.
 
-## Direction: the corpus is truth; PM is its projection; edits are ops
+## Direction: the content is truth; PM is its projection; edits are ops
 
-Decode is a pure function corpus → PM. Encode does **not** rebuild a `RichText`
+Decode is a pure function content → PM. Encode does **not** rebuild a `Content`
 and `install` it — it lowers each PM transaction to a `ChangeBundle { delta?,
 lineOps?, markOps? }` and calls `doc.applyChange(addr, bundle)`. Op-based,
 because:
@@ -49,7 +49,7 @@ because:
 lower precisely (a structural paste); it costs that field's anchors, so it is the
 exception, not the path.
 
-## Decode — corpus → PM
+## Decode — content → PM
 
 Fold the flat lines into the tree: group consecutive lines by common
 `containers` prefix (a shared `[ListItem]` path is one item's paragraphs;
@@ -85,33 +85,33 @@ Lower `tr.steps` to the three channels in `applyChange`'s application order
 - **anchors** — decoration adds/removes become `add {type:"anchor", id}` /
   `removeAnchor {id}`.
 
-Line indices and mark ranges are computed against the *post-delta* corpus, so the
+Line indices and mark ranges are computed against the *post-delta* content, so the
 bundle reads the same way `applyChange` applies it.
 
 ## Positions — USV ↔ PM
 
-`corpusToPM(pos)` / `pmToCorpus(pmPos)`: a corpus USV offset is a character index
+`usvToPM(pos)` / `pmToUsv(pmPos)`: a content USV offset is a character index
 into `text` (with `\n` and `U+FFFC` each one USV); a PM position counts node
 tokens. The map walks the line structure — PM inline offset `k` in block `N` is
 `lineStart(N) + k` — held as a `line → USV start` index and rebuilt on structural
-change. This is the function a `positionAt` result (`CorpusHit.pos`) and a
+change. This is the function a `positionAt` result (`ContentHit.pos`) and a
 `FieldRegion.span` pass through to reach a PM caret, and the one `locate` runs in
 reverse for the preview overlay.
 
 **UTF-16 hazard.** JS strings — and the text offsets inside PM positions — are
-UTF-16; corpus offsets are USV (code points). An astral character is two UTF-16
+UTF-16; content offsets are USV (code points). An astral character is two UTF-16
 units but one USV, so the map converts; skip it and a caret drifts one unit per
 emoji it passes. quillmark's `usv` helper does not cross to WASM — the codec owns
 the conversion.
 
 ## Marks — formatting vs identity
 
-The corpus mark set is two algebra classes, and they route to two different PM
+The content mark set is two algebra classes, and they route to two different PM
 mechanisms:
 
 - **formatting** (`strong` / `emph` / `underline` / `strike` / `code` / `link`)
   is a property of a range. ↔ PM marks. A round-trip through PM yields the union
-  ranges, which is what corpus normalization produces anyway, so formatting is
+  ranges, which is what content normalization produces anyway, so formatting is
   stable.
 - **identity** (`anchor{id}` — comment threads, stable references; zero-width
   capable, no glyph) is a handle, not a property. It has no home as a PM mark (a
@@ -141,7 +141,7 @@ candidate for a typed island surface upstream.
 island-free. The codec runs a constrained PM schema (one textblock, no block
 splitting, Enter suppressed); `plaintext` additionally strips all marks. Same
 decode / lower / position machinery, narrower schema. No WASM plaintext string
-codec exists — the corpus-object round-trip via `install` / `applyChange` is the
+codec exists — the content-object round-trip via `install` / `applyChange` is the
 path; `importMarkdown` is the wrong tool on a plaintext field (it parses markdown
 syntax).
 
@@ -157,14 +157,14 @@ Markdown never represents an edit, but it stays a boundary format:
 
 ## Reconciliation
 
-The corpus normalizes on write (marks sorted and same-kind-unioned, zero-width
+The content normalizes on write (marks sorted and same-kind-unioned, zero-width
 formatting dropped, invariants enforced), so `decode ∘ lower` is idempotent only
-*up to normalization* — a projected PM doc and the re-decoded stored corpus agree
+*up to normalization* — a projected PM doc and the re-decoded stored content agree
 after normalize, not byte-for-byte. The editor holds its optimistic PM state and
-re-hydrates a field only on an **external** corpus change (another edit source, a
-paste, a `revise`), gated by canonical-corpus equality scoped to the field that
+re-hydrates a field only on an **external** content change (another edit source, a
+paste, a `revise`), gated by canonical-content equality scoped to the field that
 changed — the analog of web-app's whole-document `Document.equals` gate, moved
-onto the corpus and narrowed to one field. Caret continuity across the editor's
+onto the content and narrowed to one field. Caret continuity across the editor's
 *own* edits is the VisualEditor's `StepMap`, not the codec's.
 
 ## Open questions
@@ -174,7 +174,7 @@ onto the corpus and narrowed to one field. Caret continuity across the editor's
 - **island props typing** — the `unknown` seam, and whether to push a typed
   island surface into `@quillmark/wasm`.
 - **complex-paste lowering** — the precise boundary at which transaction lowering
-  falls back to `install`, and whether a corpus-level diff (not exposed to WASM
+  falls back to `install`, and whether a content-level diff (not exposed to WASM
   today) would narrow it.
 - **input rules and the PM schema itself** — the markdown shorthands (`**`, `#`,
   `- `, table entry) and the node/mark schema. Behavior is deferred to the

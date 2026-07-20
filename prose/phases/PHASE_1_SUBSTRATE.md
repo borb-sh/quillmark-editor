@@ -13,7 +13,7 @@ lifecycle, the consumed WASM surface).
 
 ## In scope
 
-- **WASM lifecycle.** `init` (the sync panic-hook installer — shipped 0.94.0
+- **WASM lifecycle.** `init` (the sync panic-hook installer — shipped 0.95.1
   has no async `initSync` split), and the owner of the `Quill` and
   `Document` handles across a session — who holds them, when they are freed, and
   the `Engine` that dispatches renders. This is the core's single most important
@@ -35,7 +35,7 @@ lifecycle, the consumed WASM surface).
 
 ## Out of scope
 
-Painting (Phase 2), any corpus↔PM translation (Phase 3), any editing UI
+Painting (Phase 2), any content↔PM translation (Phase 3), any editing UI
 (Phase 4). This phase renders nothing to a canvas and edits nothing.
 
 ## The flow

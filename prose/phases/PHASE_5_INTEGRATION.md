@@ -13,7 +13,7 @@ theming), and the seams the surface docs push to the consumer.
 ## In scope
 
 - **The caret bridge, both directions.** `preview.onCaretPick(hit)` → resolve
-  `hit.field` to a leaf → `codec.corpusToPM(hit.pos)` → set the PM caret (a
+  `hit.field` to a leaf → `codec.usvToPM(hit.pos)` → set the PM caret (a
   `'segment'` hit just focuses); and a caret move in the active leaf →
   `preview.focusPosition(field, pos)`. The bridge lives at the **consumer** layer
   and is opt-in — the editor is unaware of the preview.
@@ -48,7 +48,7 @@ insert menu / table authoring) remain deferred.
 ```
 one LiveSession (consumer-owned)
    VisualEditor edits ──► applyChange / writer ──► session.apply ──► ChangeSet ──► preview.refresh
-   preview click ──► CorpusHit ──► onCaretPick ──► codec.corpusToPM ──► editor caret
+   preview click ──► ContentHit ──► onCaretPick ──► codec.usvToPM ──► editor caret
    editor caret ──► preview.focusPosition
    validate + warnings + render errors ──► merged, field-keyed ──► inline diagnostics
 ```

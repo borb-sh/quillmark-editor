@@ -14,7 +14,7 @@ prose-body editing, composed into one editable tree that writes ops to the live
 ## In scope
 
 - **Federated composition.** A thin Svelte layer over many sub-editors, **not** one
-  PM document spanning the page. Each corpus leaf (a body, a `richtext`/`plaintext`
+  PM document spanning the page. Each content leaf (a body, a `richtext`/`plaintext`
   field) is its own PM sub-document via the codec's `createField`; scalar fields are
   plain form controls. The editor owns structure, control selection, card
   operations, focus, command dispatch, and diagnostics routing.
@@ -45,7 +45,7 @@ prose-body editing, composed into one editable tree that writes ops to the live
 
 ## Out of scope
 
-corpus↔PM (Phase 3); paint/geometry (Phase 2); document truth/mutators/`validate`
+content↔PM (Phase 3); paint/geometry (Phase 2); document truth/mutators/`validate`
 (quillmark); persistence, quill resolution, the editor|preview split shell (the
 consumer / Phase 5). **Deferred past V1** (named, not silent): the *position*
 formatting anchor — gutter insert affordance, its menu, the slash command, and
@@ -56,7 +56,7 @@ is in scope; authoring a new one is not.
 
 ```
 quill.schema ✕ Document.payload ──(join)──► card tree (Svelte, keyed by stable id)
-   each corpus leaf ─► createField (Phase 3) ─► PM sub-doc ─► applyChange
+   each content leaf ─► createField (Phase 3) ─► PM sub-doc ─► applyChange
    each scalar field ─► form control ─► quill.writer(doc).set(...)
    structure ─► insertCard / moveCard / setCardKind / removeCard
    validate + warnings + render errors ─► field address ─► inline diagnostic
@@ -117,7 +117,7 @@ quill.schema ✕ Document.payload ──(join)──► card tree (Svelte, keyed
 - **Array fields drop the element ↑/↓ reorder.** The brief said "reorderable
   repeater"; shipped as add/remove only. Rows take entry order and the array
   commits by value (a mis-order is fixed by editing in place), so per-row reorder
-  on every array — including cosmetic scalar lists — was chrome the corpus doesn't
+  on every array — including cosmetic scalar lists — was chrome the content doesn't
   earn. The card stack keeps its ↑/↓. Design updated ([VISUAL_EDITOR_UIUX.md](../designs/VISUAL_EDITOR_UIUX.md)
   §Fields, [VISUAL_EDITOR.md](../designs/VISUAL_EDITOR.md)); reorder can return
   behind an `items`/`ui` hint if a quill needs an author-ordered list.
@@ -141,7 +141,7 @@ quill.schema ✕ Document.payload ──(join)──► card tree (Svelte, keyed
   `Diagnostic.path` is a best-effort grammar assumption (unverifiable against the
   fixture). Retype is a header control (degenerate for the single `indorsement` kind).
 - **`$cards.<kind>.<i>` resolves `<i>` as a PER-KIND ordinal** (both the
-  `CorpusHit` caret bridge and diagnostic routing) — the fixture's own plate
+  `ContentHit` caret bridge and diagnostic routing) — the fixture's own plate
   documents "the absolute loop index `i` is NOT that ordinal once kinds
   interleave". Identical to absolute indexing on any single-kind document (all
   the fixture can exercise), so the interleaved case is pinned by unit tests
