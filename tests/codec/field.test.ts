@@ -136,7 +136,9 @@ describe('plaintext fields mount no markdown input rules', () => {
 	// `handleTextInput` with the char that completes the pattern.
 	function fireClosingStar(view: EditorView): unknown {
 		const pos = view.state.selection.head;
-		return view.someProp('handleTextInput', (f) => f(view, pos, pos, '*'));
+		// `handleTextInput(view, from, to, text, deflt)`; the input-rules plugin
+		// never calls `deflt`, so a no-op tr satisfies the type.
+		return view.someProp('handleTextInput', (f) => f(view, pos, pos, '*', () => view.state.tr));
 	}
 
 	it('a plaintext field does NOT fire the strong rule — delimiters and no-marks survive', () => {
