@@ -54,7 +54,7 @@ export interface CardModel {
 	titleOverride: string;
 	/** Schema-resolved title used as the rename placeholder (composable cards). */
 	titlePlaceholder: string;
-	/** Field name → current stored value (absent fields simply missing). */
+	/** Field name → current stored value (absent fields missing). */
 	values: Record<string, unknown>;
 	sections: GroupSection[];
 	hasBody: boolean;

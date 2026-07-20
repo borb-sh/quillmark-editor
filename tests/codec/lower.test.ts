@@ -181,9 +181,9 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 	});
 
 	it('an anchor survives a code-block-interior edit (the payoff: op path, not install)', () => {
-		// Adding an interior line to a code block used to route through `install`,
-		// dropping this field's anchors; it now lowers via `setContinues` so the
-		// anchor rebases through the splice instead.
+		// Adding an interior line to a code block lowers via `setContinues`, not
+		// `install`, so this field's anchor rebases through the splice instead of
+		// being dropped.
 		const doc = freshDoc();
 		const codeRt: Content = {
 			text: 'abc',

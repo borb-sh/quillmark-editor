@@ -141,9 +141,8 @@ describe('adjacent sibling lists (ordinal reset)', () => {
 
 describe('mark-set run keying', () => {
 	it('does not alias a link url containing a legacy delimiter with a mark set', () => {
-		// url "a|strong" on [0,1) next to {link "a", strong} on [1,2): under the
-		// old ':'/'|' keying both sets keyed identically, merging the runs and
-		// dropping the second set entirely.
+		// url "a|strong" on [0,1) next to {link "a", strong} on [1,2): the two mark
+		// sets must key differently, or the runs merge and the second set is dropped.
 		const rt: Content = {
 			text: 'ab',
 			lines: [{ containers: [], kind: 'para' }],
