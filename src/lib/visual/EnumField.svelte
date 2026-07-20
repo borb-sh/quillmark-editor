@@ -1,14 +1,13 @@
 <!--
   A `string`+`enum` (or `type: 'enum'`) field → select over `enum ?? values`.
   When nothing is authored the select shows a distinct UNSET sentinel that GHOSTS
-  the `default:` (muted, shown-never-written) — not the default masquerading as a
-  selected value (issue #21a): that made the ghost indistinguishable from an
-  authored pick AND made re-picking the default a no-op (the value already equaled
-  it, so `onchange` never fired). The sentinel commits nothing; any real pick —
-  INCLUDING the value that equals the default — commits via the parent's typed
-  `writer.set`. Explicitly picking the default is the one place "commit the default"
-  is genuine intent, now expressible. The sentinel stays in the list even once a
-  value is authored, as the "clear back to default" (unset) affordance.
+  the `default:` (muted, shown-never-written), distinguishable from an authored
+  pick and re-selectable — so re-picking the default fires `onchange` (issue #21a).
+  The sentinel commits nothing; any real pick — INCLUDING the value that equals the
+  default — commits via the parent's typed `writer.set`. Explicitly picking the
+  default is the one place "commit the default" is genuine intent, expressible. The
+  sentinel stays in the list once a value is authored, as the "clear back to
+  default" (unset) affordance.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';

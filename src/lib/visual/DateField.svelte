@@ -2,10 +2,9 @@
   A `date` (or `datetime`) field → native date control. The stored value is a
   string (fixture uses `YYYY-MM-DD`, blank to mean "today at render"); this binds
   that string directly and commits it at `change`. A cleared control commits
-  `undefined` — the unset rung (the parent removes the field, so the memo quill's
-  blank-date → `datetime.today()` substitution genuinely applies) rather than the
-  document holding the last date (issue #12). The value-object a date field lowers
-  to is a render-time concern — the editor only ever sees the stored string.
+  `undefined` — the unset rung: the parent removes the field, so the memo quill's
+  blank-date → `datetime.today()` substitution applies (issue #12). The value-object
+  a date field lowers to is a render-time concern — the editor only sees the stored string.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
@@ -38,9 +37,8 @@
 	oninput={(e) => {
 		local = (e.currentTarget as HTMLInputElement).value;
 	}}
-	onchange={(e) => {
-		local = (e.currentTarget as HTMLInputElement).value;
-		// Blank → `undefined` (unset rung); a real date → the string as-is.
+	onchange={() => {
+		// `local` is owned by `oninput`. Blank → `undefined` (unset rung); a real date as-is.
 		onCommit(local === '' ? undefined : local);
 	}}
 />

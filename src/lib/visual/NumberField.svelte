@@ -3,12 +3,11 @@
   Commits at `change` (blur/Enter), NOT per keystroke: a partial numeric entry
   (`-`, `1.`, `1e`) is never a document state worth a boundary round-trip, and
   committing it live flashes a coercion diagnostic + `console.error` on every
-  intermediate prefix — now announced by `DiagnosticList`'s `role="status"` live
+  intermediate prefix, announced by `DiagnosticList`'s `role="status"` live
   region (issue #13). A blank entry commits `undefined` — the UNSET rung of the
   commitment ladder: the parent removes the field and the engine renders the
-  ghosted `default:` for real (issue #12), instead of the document silently
-  keeping its last value. Settling at `change` also keeps select-all-and-retype
-  from flashing the preview through the default mid-keystroke.
+  ghosted `default:` (issue #12). Settling at `change` also keeps
+  select-all-and-retype from flashing the preview through the default mid-keystroke.
 
   `type="text"`, not `type="number"` — a native number input SANITIZES an
   invalid string to `""` before the DOM `value` setter even runs (verified:
@@ -43,10 +42,9 @@
 		});
 	});
 
+	// Parse a settled entry and emit it; `local` is owned by `oninput`. Blank →
+	// `undefined` (the unset rung — parent removes the field, default renders).
 	function commit(raw: string): void {
-		local = raw;
-		// Blank → `undefined`: the unset rung (parent removes the field, default
-		// renders). Any non-blank entry commits at `change` only (see the header).
 		if (raw.trim() === '') return void onCommit(undefined);
 		// Number(), not parseFloat/parseInt: a prefix parse would silently commit
 		// `14.5` for `14.5x` (and truncate `11.9` → 11 on integer fields) instead

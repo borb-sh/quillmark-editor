@@ -82,8 +82,8 @@ test.describe('visual editor', () => {
 		page
 	}) => {
 		// Author, then clear: the field is REMOVED, so `doc.get` reads absent and the
-		// dump is null — NOT the last committed value the old blank-commits-nothing
-		// path stranded it on. The engine then resolves the ghosted `default:`.
+		// dump is null (not the last committed value) — the engine resolves the
+		// ghosted `default:` at render.
 		await page.getByTestId('main-font_size').fill('14.5');
 		await page.getByTestId('main-font_size').blur();
 		await expect.poll(async () => (await readDump(page)).font_size).toBe(14.5);

@@ -68,7 +68,7 @@
 		// A cleared element control commits `undefined` (the unset rung), but an
 		// array slot is positional — an array defaults as a whole (`[]`), no
 		// per-element `default:` to fall back to. Keep the slot as the type's empty
-		// element (the pre-unset behavior) rather than leaving an array hole.
+		// element, not an array hole.
 		copy[k] = next === undefined ? emptyElement() : next;
 		onCommit(copy);
 	}

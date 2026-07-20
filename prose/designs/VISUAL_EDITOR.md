@@ -79,10 +79,10 @@ not a gate.
 commits `undefined`; the VisualEditor lowers that to `doc.removeField(addr)` (the
 quill-free store lane — an unset writes no value, so no schema lane applies), never
 a write. An absent field resolves authored › `default:` › zero-fill at render
-(canon `SCHEMAS.md`), so the ghosted `default:` genuinely takes effect and the
-ghost is truthful, not a snapshot. Committing the default instead would freeze a
-value the schema can no longer move — the engine never persists a default, nor does
-the editor. `EnumField` gives unset a ghost sentinel option — picking it unsets,
+(canon `SCHEMAS.md`), so the ghosted `default:` takes effect and the ghost is
+truthful, not a snapshot. Committing the default instead would freeze a value
+against later schema changes — the engine never persists a default, nor does the
+editor. `EnumField` gives unset a ghost sentinel option — picking it unsets,
 picking any value (the default included) writes — so "commit the default" is
 expressible and shown-never-written stays visible. `BooleanField` is exempt (a
 checkbox has no blank). Unset, and every numeric commit, settles at `change`
