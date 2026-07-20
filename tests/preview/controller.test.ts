@@ -2,7 +2,7 @@
 // Issue #10: a zero-page session must not be a permanent empty-state stub. These
 // drive the count transitions and assert the "No pages" element and the page
 // slots both track the LIVE count — 0→N escapes the empty state, N→0 returns.
-import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
 import { createPreview } from '$lib/preview/controller';
 import type { LiveSession, ChangeSet } from '$lib/core';
 
@@ -20,10 +20,10 @@ beforeAll(() => {
 });
 
 /** A report-only session stub: only the geometry verbs the loop/overlay call at build. */
-function mockSession(pageCount: number): LiveSession {
+function mockSession(pageCount: number, supportsCanvas = true): LiveSession {
 	return {
 		pageCount,
-		supportsCanvas: true,
+		supportsCanvas,
 		pageSize: () => ({ widthPt: 612, heightPt: 792 }),
 		paint: () => ({
 			layoutWidth: 612,
@@ -88,5 +88,120 @@ describe('preview controller empty-state across page-count transitions', () => {
 		preview.destroy();
 		expect(isEmpty()).toBe(false);
 		expect(container.classList.contains('qm-preview')).toBe(false);
+	});
+});
+
+// Issue #11: `supportsCanvas` must gate the view (runtime.d.ts says re-check the
+// getter after `open`), and the gate is re-read per compile so a non-paintable
+// compile that later becomes paintable recovers — the #10 escape, generalized.
+describe('preview controller supportsCanvas gating', () => {
+	let container: HTMLDivElement;
+	beforeEach(() => {
+		container = document.createElement('div');
+		document.body.appendChild(container);
+	});
+	const pages = () => container.querySelectorAll('.qm-page').length;
+
+	it('a compile with pages the boundary cannot raster shows the unsupported message, not blank pages', () => {
+		const preview = createPreview(mockSession(2, false), { container });
+		expect(container.querySelector('.qm-preview-unsupported')).toBeTruthy();
+		expect(container.querySelector('.qm-preview-empty')).toBeFalsy();
+		expect(pages()).toBe(0);
+		preview.destroy();
+	});
+
+	it('a non-canvas compile that becomes paintable on a later apply escapes the message', () => {
+		let paintable = false;
+		// A live getter so `render` re-reads the capability per compile (a real
+		// session's getter reflects the last-good compile after `apply`).
+		const session = {
+			...mockSession(2),
+			get supportsCanvas() {
+				return paintable;
+			}
+		} as unknown as LiveSession;
+
+		const preview = createPreview(session, { container });
+		expect(container.querySelector('.qm-preview-unsupported')).toBeTruthy();
+		expect(pages()).toBe(0);
+
+		paintable = true;
+		preview.refresh(change(2));
+		expect(container.querySelector('.qm-preview-message')).toBeFalsy();
+		expect(pages()).toBe(2);
+		preview.destroy();
+	});
+});
+
+// Issue #11: a `session.paint` that throws must not abort the band sweep — it is
+// caught per-slot and surfaced as an error state instead of an unhandled throw
+// inside the IntersectionObserver callback.
+describe('preview controller paint resilience', () => {
+	let container: HTMLDivElement;
+	let ioInstances: CapturingIO[];
+	let prevIO: unknown;
+	let prevGetContext: typeof HTMLCanvasElement.prototype.getContext;
+
+	// A capturing IntersectionObserver whose callback the test fires on demand —
+	// jsdom has none, and this path needs a page to actually reach `paint`.
+	class CapturingIO {
+		cb: (entries: { target: Element; isIntersecting: boolean }[]) => void;
+		targets: Element[] = [];
+		constructor(cb: CapturingIO['cb']) {
+			this.cb = cb;
+			ioInstances.push(this);
+		}
+		observe(el: Element): void {
+			this.targets.push(el);
+		}
+		unobserve(el: Element): void {
+			this.targets = this.targets.filter((t) => t !== el);
+		}
+		disconnect(): void {
+			this.targets = [];
+		}
+		fireAll(): void {
+			this.cb(this.targets.map((target) => ({ target, isIntersecting: true })));
+		}
+	}
+
+	beforeEach(() => {
+		ioInstances = [];
+		container = document.createElement('div');
+		document.body.appendChild(container);
+		prevIO = (globalThis as unknown as { IntersectionObserver: unknown }).IntersectionObserver;
+		(globalThis as unknown as { IntersectionObserver: unknown }).IntersectionObserver = CapturingIO;
+		// jsdom's canvas has no 2d context; hand `paintSlot` a truthy stub so it
+		// proceeds to `session.paint` (the throw under test) instead of bailing.
+		prevGetContext = HTMLCanvasElement.prototype.getContext;
+		HTMLCanvasElement.prototype.getContext =
+			(() => ({})) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+	});
+	afterEach(() => {
+		(globalThis as unknown as { IntersectionObserver: unknown }).IntersectionObserver = prevIO;
+		HTMLCanvasElement.prototype.getContext = prevGetContext;
+	});
+
+	function throwingSession(pageCount: number): LiveSession {
+		return {
+			...mockSession(pageCount),
+			paint: () => {
+				throw new Error('backend refused to paint');
+			}
+		} as unknown as LiveSession;
+	}
+
+	it('a paint that throws surfaces an error state without aborting the observer sweep', () => {
+		const preview = createPreview(throwingSession(2), { container });
+		expect(container.querySelectorAll('.qm-page').length).toBe(2);
+
+		const io = ioInstances[ioInstances.length - 1];
+		// The whole point: the band sweep does not throw out of the IO callback.
+		expect(() => io.fireAll()).not.toThrow();
+		expect(container.querySelector('.qm-preview-error')).toBeTruthy();
+		// …and a failed paint leaves no blank registered canvas behind.
+		expect(container.querySelectorAll('canvas.qm-page-canvas').length).toBe(0);
+
+		preview.destroy();
 	});
 });

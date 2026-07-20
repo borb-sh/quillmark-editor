@@ -241,7 +241,10 @@
 							>
 						</form>
 					{:else}
-						<div class="qm-format-buttons" role="toolbar" aria-label="Formatting">
+						<!-- `role="group"`, not `toolbar`: these buttons carry no roving-tabindex /
+						     arrow-key navigation, so the ARIA toolbar contract would be a lie;
+						     a labelled group is the honest description (issue #19). -->
+						<div class="qm-format-buttons" role="group" aria-label="Formatting">
 							{#each MARKS as m (m.name)}
 								<button
 									type="button"

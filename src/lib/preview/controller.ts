@@ -32,8 +32,14 @@ export interface PreviewController {
 	destroy(): void;
 }
 
-const EMPTY_CLASS = 'qm-preview-empty';
 const CONTAINER_CLASS = 'qm-preview';
+// The message states share one element; each carries `MESSAGE_CLASS` plus a
+// state class so a consumer (and the tests) can target them. `EMPTY_CLASS` is
+// kept for the zero-page hook that issue #10 established.
+const MESSAGE_CLASS = 'qm-preview-message';
+const EMPTY_CLASS = 'qm-preview-empty';
+const UNSUPPORTED_CLASS = 'qm-preview-unsupported';
+const ERROR_CLASS = 'qm-preview-error';
 
 export function createPreview(session: LiveSession, opts: PreviewOptions): PreviewController {
 	const container = opts.container;
@@ -41,29 +47,38 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	const overlaysEnabled = opts.overlays ?? true;
 	container.classList.add(CONTAINER_CLASS);
 
-	// The paint loop is safe at any page count: zero pages reconciles to zero slots
-	// and never calls the `paint`/`pageSize` verbs the boundary refuses there.
-	// overlay/bridge DO query geometry at build (`session.regions()`),
-	// so they are held until slots exist — (re)built by `refresh` when the count crosses 0.
-	const paintLoop: PaintLoop = createPaintLoop(session, container, margin);
+	// The full-container message slot, shared by every non-paint state — the empty
+	// seed / drop-to-zero, a compile that cannot paint (`supportsCanvas` false),
+	// and a paint that threw. One element, restamped; these states are mutually
+	// exclusive, and the zero-page case keeps its `qm-preview-empty` hook.
+	let message: HTMLElement | undefined;
+	function showMessage(text: string, state: string): void {
+		if (!message) {
+			message = document.createElement('div');
+			container.appendChild(message);
+		}
+		message.className = `${MESSAGE_CLASS} ${state}`;
+		message.textContent = text;
+	}
+	function hideMessage(): void {
+		message?.remove();
+		message = undefined;
+	}
+
+	// The paint loop is safe at any page count: zero pages reconciles to zero
+	// slots and never calls the `paint`/`pageSize` verbs the boundary refuses
+	// there. A paint that unexpectedly throws is caught per-slot and surfaced
+	// through the shared message rather than aborting the observer callback
+	// mid-sweep (runtime.d.ts: even a `supportsCanvas` compile can hit a paint
+	// the boundary refuses — brittle to leave uncaught).
+	const paintLoop: PaintLoop = createPaintLoop(session, container, margin, (page, err) => {
+		console.error(`[quillmark] preview paint failed for page ${page}`, err);
+		showMessage('Preview failed to render.', ERROR_CLASS);
+	});
+	// overlay/bridge query geometry at build (`session.regions()`), so they are
+	// held until slots exist — (re)built by `render` when a compile is paintable.
 	let overlay: OverlayController | undefined;
 	let bridge: BridgeController | undefined;
-
-	// The empty-state element, shown whenever the LIVE page count is 0 — at
-	// construction (empty seed) or after an `apply` drops back to 0. Toggled on the
-	// live count, not a one-time branch, so 0→N paints and N→0 shows the message.
-	let empty: HTMLElement | undefined;
-	function showEmpty(): void {
-		if (empty) return;
-		empty = document.createElement('div');
-		empty.className = EMPTY_CLASS;
-		empty.textContent = 'No pages to preview.';
-		container.appendChild(empty);
-	}
-	function hideEmpty(): void {
-		empty?.remove();
-		empty = undefined;
-	}
 
 	// overlay/bridge live and die with the slot set. Rebuilt (not patched) whenever
 	// the count changes: the slots array is a stable identity but its members are
@@ -79,32 +94,49 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 		bridge = undefined;
 	}
 
-	if (paintLoop.slots.length > 0) attach();
-	else showEmpty();
+	// Reflect one compile's paintability into the DOM: page slots + overlay/bridge
+	// when there is something to paint, the shared message otherwise. Called at
+	// construction and after every `apply`, so `supportsCanvas` is re-read per
+	// compile (runtime.d.ts: re-check after `open`) and a 0-page or non-canvas
+	// compile that later gains paintable pages recovers — issue #10 generalized
+	// past the count to the paint capability.
+	function render(pageCount: number, dirtyPages: readonly number[]): void {
+		if (!session.supportsCanvas || pageCount === 0) {
+			// Nothing paintable: collapse slots, drop geometry attachments, say why.
+			// A 0-page compile is a recoverable empty; a compile with pages the
+			// boundary cannot raster is a genuine unsupported.
+			paintLoop.refresh([], 0);
+			detach();
+			showMessage(
+				pageCount === 0 ? 'No pages to preview.' : 'Preview is not available for this document.',
+				pageCount === 0 ? EMPTY_CLASS : UNSUPPORTED_CLASS
+			);
+			return;
+		}
+		// Read the count against the current slots BEFORE reconcile moves it, and
+		// clear any prior message BEFORE painting so a paint that throws mid-refresh
+		// leaves its error surfaced rather than have `hideMessage` clobber it.
+		const countChanged = pageCount !== paintLoop.slots.length;
+		hideMessage();
+		paintLoop.refresh(dirtyPages, pageCount);
+		if (countChanged || !bridge) {
+			// The slot set moved under overlay/bridge's feet (pages added/removed,
+			// or we are leaving a message state) — rebuild both against the
+			// reconciled slots rather than patch a stale snapshot in place.
+			detach();
+			attach();
+		} else {
+			// Box positions can still shift within the same page set (text reflow),
+			// so geometry is always re-read, not just dirty pages.
+			overlay?.refresh();
+		}
+	}
+
+	render(session.pageCount, []);
 
 	return {
 		refresh(change) {
-			const countChanged = change.pageCount !== paintLoop.slots.length;
-			paintLoop.refresh(change.dirtyPages, change.pageCount);
-			if (change.pageCount === 0) {
-				// Dropped to (or held at) zero pages — tear the geometry attachments
-				// down and surface the empty state.
-				detach();
-				showEmpty();
-				return;
-			}
-			hideEmpty();
-			if (countChanged || !bridge) {
-				// The slot set moved under overlay/bridge's feet (pages added/removed,
-				// or we are leaving the empty state) — rebuild both against the
-				// reconciled slots rather than patch a stale snapshot in place.
-				detach();
-				attach();
-			} else {
-				// Box positions can still shift within the same page set (text
-				// reflow), so geometry is always re-read, not just dirty pages.
-				overlay?.refresh();
-			}
+			render(change.pageCount, change.dirtyPages);
 		},
 		scrollToField(field) {
 			bridge?.scrollToField(field);
@@ -120,7 +152,7 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 		destroy() {
 			detach();
 			paintLoop.destroy();
-			hideEmpty();
+			hideMessage();
 			container.classList.remove(CONTAINER_CLASS);
 		}
 	};
