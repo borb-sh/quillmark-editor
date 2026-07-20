@@ -68,10 +68,50 @@ test.describe('visual editor', () => {
 	});
 
 	test('(d) editing a number (font_size) and a date (date) commits', async ({ page }) => {
+		// Number/date commit at `change` (blur/Enter), not per keystroke (issue #13) —
+		// so the assertion follows a blur, mirroring a real settle.
 		await page.getByTestId('main-font_size').fill('14.5');
+		await page.getByTestId('main-font_size').blur();
 		await expect.poll(async () => (await readDump(page)).font_size).toBe(14.5);
 		await page.getByTestId('main-date').fill('2026-03-04');
+		await page.getByTestId('main-date').blur();
 		await expect.poll(async () => (await readDump(page)).date).toBe('2026-03-04');
+	});
+
+	test('(d2) clearing a number / date UNSETS the field — removed, not held (issue #12)', async ({
+		page
+	}) => {
+		// Author, then clear: the field is REMOVED, so `doc.get` reads absent and the
+		// dump is null (not the last committed value) — the engine resolves the
+		// ghosted `default:` at render.
+		await page.getByTestId('main-font_size').fill('14.5');
+		await page.getByTestId('main-font_size').blur();
+		await expect.poll(async () => (await readDump(page)).font_size).toBe(14.5);
+		await page.getByTestId('main-font_size').fill('');
+		await page.getByTestId('main-font_size').blur();
+		await expect.poll(async () => (await readDump(page)).font_size).toBeNull();
+
+		await page.getByTestId('main-date').fill('2026-03-04');
+		await page.getByTestId('main-date').blur();
+		await expect.poll(async () => (await readDump(page)).date).toBe('2026-03-04');
+		await page.getByTestId('main-date').fill('');
+		await page.getByTestId('main-date').blur();
+		await expect.poll(async () => (await readDump(page)).date).toBeNull();
+	});
+
+	test('(d3) an enum unsets via the ghost sentinel; picking the default VALUE writes it (issue #21a)', async ({
+		page
+	}) => {
+		// Author a value, then pick the ghost sentinel (always the first option) →
+		// the field is UNSET (null), the "clear back to default" affordance.
+		await page.getByTestId('main-classification').selectOption('CUI');
+		await expect.poll(async () => (await readDump(page)).classification).toBe('CUI');
+		await page.getByTestId('main-classification').selectOption({ index: 0 });
+		await expect.poll(async () => (await readDump(page)).classification).toBeNull();
+		// Explicitly picking the default value ('' — a real enum member here) is a
+		// GENUINE write, distinct from unset: authored-default ('') vs null.
+		await page.getByTestId('main-classification').selectOption('');
+		await expect.poll(async () => (await readDump(page)).classification).toBe('');
 	});
 
 	test('(e1) editing, adding, and removing an array-of-string (memo_for) commits', async ({

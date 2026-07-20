@@ -191,7 +191,10 @@ test.describe('visual editor chrome — diagnostics routing', () => {
 		page.on('pageerror', (e) => pageErrors.push(String(e)));
 		const before = (await readDump(page)).font_size;
 
+		// Commit is at `change` (issue #13) — blur to settle the bad entry so the
+		// boundary judges it and the coercion diagnostic surfaces.
 		await page.getByTestId('main-font_size').fill('abc');
+		await page.getByTestId('main-font_size').blur();
 		await expect(page.getByTestId('diag-main-font_size')).toBeVisible();
 		await expect(page.getByTestId('diag-main-font_size')).toContainText('font_size');
 
@@ -202,15 +205,18 @@ test.describe('visual editor chrome — diagnostics routing', () => {
 
 	test('a subsequent valid commit clears the commit-error diagnostic', async ({ page }) => {
 		await page.getByTestId('main-font_size').fill('abc');
+		await page.getByTestId('main-font_size').blur();
 		await expect(page.getByTestId('diag-main-font_size')).toBeVisible();
 
 		await page.getByTestId('main-font_size').fill('16');
+		await page.getByTestId('main-font_size').blur();
 		await expect.poll(async () => (await readDump(page)).font_size).toBe(16);
 		await expect(page.getByTestId('diag-main-font_size')).toBeHidden();
 	});
 
 	test('the app keeps working after a coercion error (non-gating)', async ({ page }) => {
 		await page.getByTestId('main-font_size').fill('not-a-number');
+		await page.getByTestId('main-font_size').blur();
 		await expect(page.getByTestId('diag-main-font_size')).toBeVisible();
 		// Editing elsewhere still works — nothing gates.
 		await replaceProse(page, 'prose-main-subject', 'STILLWORKS');

@@ -65,7 +65,11 @@
 
 	function commitElement(k: number, next: unknown): void {
 		const copy = arr.slice();
-		copy[k] = next;
+		// A cleared element control commits `undefined` (the unset rung), but an
+		// array slot is positional — an array defaults as a whole (`[]`), no
+		// per-element `default:` to fall back to. Keep the slot as the type's empty
+		// element, not an array hole.
+		copy[k] = next === undefined ? emptyElement() : next;
 		onCommit(copy);
 	}
 	function add(): void {

@@ -127,6 +127,8 @@
 	// ── Commit routing ──────────────────────────────────────────────────────────
 	// Scalars / arrays / objects → the typed writer (schema-checked). Prose leaves
 	// commit themselves via the codec (applyChange) and do NOT pass through here.
+	// A scalar control commits `undefined` for a cleared entry — the unset lane
+	// below (`doc.removeField`), not a write.
 	//
 	// A bad value makes `writer.set` THROW a `QuillmarkError` (verified: e.g.
 	// `set('font_size', 'abc')` → "[EditError::FieldConform] field 'font_size'
@@ -142,13 +144,31 @@
 		const key: FieldKey = { card: isMain ? undefined : id, field: name };
 		const keyStr = fieldKeyToString(key);
 		try {
-			const w = quill.writer(doc);
-			if (isMain) {
-				w.set(name, value);
+			if (value === undefined) {
+				// The UNSET rung of the commitment ladder (a cleared scalar control,
+				// VISUAL_EDITOR §"the commitment ladder"): REMOVE the field so the
+				// engine's authored › `default:` › zero-fill resolve renders the
+				// default, rather than baking a snapshot the schema can't track
+				// (canon SCHEMAS.md — the engine never persists a default; nor do we).
+				// Removal writes no value, so there is nothing for a schema to conform:
+				// it goes through the quill-free `doc.removeField` (bare string = main
+				// `{ field }`; `{ card, field }` for a card), NOT the typed writer.
+				if (isMain) {
+					doc.removeField(name);
+				} else {
+					const i = cardIndexOf(id);
+					if (i < 0) return;
+					doc.removeField({ card: i, field: name });
+				}
 			} else {
-				const i = cardIndexOf(id);
-				if (i < 0) return;
-				w.card(i).set(name, value);
+				const w = quill.writer(doc);
+				if (isMain) {
+					w.set(name, value);
+				} else {
+					const i = cardIndexOf(id);
+					if (i < 0) return;
+					w.card(i).set(name, value);
+				}
 			}
 			if (commitErrors.has(keyStr)) {
 				const next = new Map(commitErrors);

@@ -1,7 +1,13 @@
 <!--
   A `string`+`enum` (or `type: 'enum'`) field → select over `enum ?? values`.
-  Seeds the shown option from the authored value, else the `default:` (ghosted,
-  not written until the user picks). Commits on change.
+  When nothing is authored the select shows a distinct UNSET sentinel that GHOSTS
+  the `default:` (muted, shown-never-written), distinguishable from an authored
+  pick and re-selectable — so re-picking the default fires `onchange` (issue #21a).
+  The sentinel commits nothing; any real pick — INCLUDING the value that equals the
+  default — commits via the parent's typed `writer.set`. Explicitly picking the
+  default is the one place "commit the default" is genuine intent, expressible. The
+  sentinel stays in the list once a value is authored, as the "clear back to
+  default" (unset) affordance.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
@@ -12,15 +18,20 @@
 		fallback?: string;
 		/** Accessible name — the visual label is a bare span the select can't reference. */
 		label?: string;
-		onCommit: (v: string) => void;
+		onCommit: (v: string | undefined) => void;
 		testid?: string;
 	}
 	let { value, values, fallback, label, onCommit, testid }: Props = $props();
 
+	// The sentinel's option value — a namespaced marker that no schema-authored
+	// enum member would ever be (`values` are classification markings, seal ids, and
+	// the like), so it never collides with a real option.
+	const UNSET = '__qm_unset__';
+
 	// svelte-ignore state_referenced_locally
-	let local = $state(value ?? fallback ?? '');
+	let local = $state(value ?? UNSET);
 	$effect(() => {
-		const incoming = value ?? fallback ?? '';
+		const incoming = value ?? UNSET;
 		untrack(() => {
 			if (incoming !== local) local = incoming;
 		});
@@ -29,14 +40,20 @@
 
 <select
 	class="qm-select"
+	class:ghosted={local === UNSET}
 	value={local}
 	aria-label={label}
 	data-testid={testid}
 	onchange={(e) => {
 		local = (e.currentTarget as HTMLSelectElement).value;
-		onCommit(local);
+		// Sentinel → unset (parent `removeField`, default renders); any real pick
+		// (incl. the default value) → a genuine write.
+		onCommit(local === UNSET ? undefined : local);
 	}}
 >
+	<option value={UNSET} class="qm-ghost"
+		>{fallback != null && fallback !== '' ? fallback : '—'}</option
+	>
 	{#each values as v (v)}
 		<option value={v}>{v === '' ? '—' : v}</option>
 	{/each}
@@ -51,5 +68,13 @@
 		border-radius: 4px;
 		font: inherit;
 		background: var(--qm-field-bg, #fff);
+	}
+	/* Shown-never-written: the closed control reads muted while unset, matching the
+	   ghosted placeholder the text/number controls show. */
+	.qm-select.ghosted {
+		color: var(--qm-ghost, #9a9a9a);
+	}
+	.qm-ghost {
+		color: var(--qm-ghost, #9a9a9a);
 	}
 </style>

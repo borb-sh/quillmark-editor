@@ -1,7 +1,12 @@
 <!--
-  A `string` field → text input. Commits live (on input) via the parent's typed
-  `writer.set`. The ghosted `default:` is the placeholder — shown, never written
-  (VISUAL_EDITOR §"the commitment ladder").
+  A `string` field → text input. Commits a non-empty edit LIVE (on input) via the
+  parent's typed `writer.set`, so the preview tracks typing. A cleared field is the
+  UNSET rung of the commitment ladder (VISUAL_EDITOR §"the commitment ladder"): it
+  commits `undefined` (the parent removes the field, ghosted `default:` renders) —
+  but at `change` (blur), NOT per keystroke, so select-all-and-retype doesn't flash
+  the field through its default between the delete and the first typed char.
+  Trade-off (recorded in VISUAL_EDITOR): an explicit empty string OVER a non-empty
+  default is inexpressible from the UI — clear and unset collapse to one gesture.
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
@@ -11,7 +16,7 @@
 		placeholder?: string;
 		/** Accessible name — the visual label is a bare span the input can't reference. */
 		label?: string;
-		onCommit: (v: string) => void;
+		onCommit: (v: string | undefined) => void;
 		testid?: string;
 	}
 	let { value, placeholder, label, onCommit, testid }: Props = $props();
@@ -38,7 +43,11 @@
 	data-testid={testid}
 	oninput={(e) => {
 		local = (e.currentTarget as HTMLInputElement).value;
-		onCommit(local);
+		// Live-commit a non-empty edit; defer a cleared field to `change` (see header).
+		if (local !== '') onCommit(local);
+	}}
+	onchange={() => {
+		if (local === '') onCommit(undefined);
 	}}
 />
 
