@@ -98,6 +98,9 @@ dist
 # Sveltekit cache directory
 .svelte-kit/
 
+# SvelteKit adapter-static playground output (npm run build:app)
+/build/
+
 # vitepress build output
 **/.vitepress/dist
 

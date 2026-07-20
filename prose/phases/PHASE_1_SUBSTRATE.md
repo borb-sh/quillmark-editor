@@ -83,3 +83,20 @@ Vitest (+ its jsdom/browser env as the core needs). No ProseMirror, no CodeMirro
   path is the first place a `?raw`-vs-`?url` mistake would corrupt them.
 - `Document.main` / `cards` allocate on every read (per the WASM docs) — set the
   expectation now that hot paths cache, so Phases 3–4 do not rediscover it.
+
+## Implementation deviations (recorded)
+
+- **The playground static build landed late.** In-scope here ("Build + test
+  tooling"), it was missed at phase close: `svelte.config.js` shipped
+  `adapter-auto` (no static adapter — outside a recognized platform it warns and
+  emits nothing) with a comment calling the app "dev-only", contradicting
+  ARCHITECTURE §Playground. Closed by [#14](https://github.com/borb-sh/quillmark-editor/issues/14):
+  `@sveltejs/adapter-static` with `fallback: 'index.html'` — an SPA, matching the
+  `ssr = false` / `prerender = false` `+layout.ts` already declared. Library
+  packaging and app bundling stay decoupled: `build` is `svelte-package` (the
+  published surface, the CI gate); `build:app` is `vite build` (the deployed
+  playground); `preview` builds then serves it.
+- **Deploy target is the owner's, deferred.** The adapter emits root-relative
+  static output — host-agnostic, no pipeline wired yet. A project-subpath host
+  (e.g. a GitHub Pages project site) needs only `kit.paths.base` set in
+  `svelte.config.js`; nothing else assumes a base.
