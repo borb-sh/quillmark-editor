@@ -129,6 +129,52 @@ describe('field-level reconciliation', () => {
 	});
 });
 
+describe('plaintext fields mount no markdown input rules', () => {
+	// `inlineSchema` still declares the mark types, so before the fix a `**x**`
+	// input rule would fire in a plaintext field, applying a strong mark and eating
+	// the literal delimiters. The rule is triggered the way a keystroke does — via
+	// `handleTextInput` with the char that completes the pattern.
+	function fireClosingStar(view: EditorView): unknown {
+		const pos = view.state.selection.head;
+		return view.someProp('handleTextInput', (f) => f(view, pos, pos, '*'));
+	}
+
+	it('a plaintext field does NOT fire the strong rule — delimiters and no-marks survive', () => {
+		const doc = quill().seedDocument();
+		const field = createField({
+			doc,
+			addr: { field: 'tag_line' }, // default-only → decodes empty, first edit installs
+			container: mount(),
+			plaintext: true
+		});
+		const view = viewOf(field);
+		view.dispatch(view.state.tr.insertText('**x*', 1)); // literal; the closing `*` fires the rule
+		expect(fireClosingStar(view)).toBeFalsy(); // no input-rules plugin → not intercepted
+		view.dispatch(view.state.tr.insertText('*', view.state.selection.head));
+		const rt = doc.get('tag_line') as { text: string; marks: unknown[] };
+		expect(rt.text).toBe('**x**');
+		expect(rt.marks).toHaveLength(0);
+		field.destroy();
+	});
+
+	it('a non-plaintext inline field DOES fire it (proving the guard is what suppresses it)', () => {
+		const doc = quill().seedDocument();
+		const field = createField({
+			doc,
+			addr: { field: 'tag_line' },
+			container: mount(),
+			inline: true
+		});
+		const view = viewOf(field);
+		view.dispatch(view.state.tr.insertText('**x*', 1));
+		expect(fireClosingStar(view)).toBe(true); // the rule intercepts and transforms
+		const rt = doc.get('tag_line') as { text: string; marks: { type: string }[] };
+		expect(rt.text).toBe('x');
+		expect(rt.marks.some((m) => m.type === 'strong')).toBe(true);
+		field.destroy();
+	});
+});
+
 describe('createField over an ABSENT declared richtext field', () => {
 	it('installs on the first edit (applyChange throws on absent), then applyChanges', () => {
 		const doc = quill().seedDocument();

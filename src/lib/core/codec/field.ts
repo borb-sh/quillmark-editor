@@ -154,7 +154,12 @@ export function createField(opts: CreateFieldOpts): FieldController {
 
 	function plugins(sc: Schema, seededAnchors: AnchorPos[]): Plugin[] {
 		const list: Plugin[] = [history(), anchorPlugin(seededAnchors)];
-		if (!opts.noInputRules) list.push(inputRulesPlugin(sc));
+		// A `plaintext` field carries no marks (decode strips them, the keymap
+		// suppresses Mod-b/i/u), so it must not mount the markdown-shorthand rules
+		// either: `inlineSchema` still declares the mark types, so a `**bold**` rule
+		// would apply a strong mark AND eat the literal delimiters. The inline schema
+		// has no block nodes, so those rules are the ONLY ones it would add — skip all.
+		if (!opts.noInputRules && !plaintext) list.push(inputRulesPlugin(sc));
 		list.push(keymap(editorKeymap(sc, inline, plaintext)));
 		list.push(keymap(baseKeymap));
 		return list;

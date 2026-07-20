@@ -53,13 +53,19 @@ function resolveInLib(spec: string, fromFile: string): string | null {
 	else if (spec.startsWith(`${SELF}/`)) base = join(LIB, spec.slice(SELF.length + 1));
 	else if (spec.startsWith('.')) base = resolve(dirname(fromFile), spec);
 	else return null; // bare specifier — checked against FORBIDDEN_EXTERNAL, not walked
+	// TS-ESM specifiers carry the EMITTED extension (`./paint.js` → `paint.ts`,
+	// `./Preview.svelte`), so strip a trailing `.js`/`.ts`/`.svelte` before
+	// building candidates — else a `.js` specifier resolves to nothing and the
+	// transitive walk (this test's whole reason to exist over a grep) never leaves
+	// `src/lib/preview`, silently passing a relative reach into the codec/core.
+	const stem = base.replace(/\.(js|ts|svelte)$/, '');
 	for (const cand of [
 		base,
-		`${base}.ts`,
-		`${base}.js`,
-		`${base}.svelte`,
-		join(base, 'index.ts'),
-		join(base, 'index.js')
+		`${stem}.ts`,
+		`${stem}.js`,
+		`${stem}.svelte`,
+		join(stem, 'index.ts'),
+		join(stem, 'index.js')
 	]) {
 		if (existsSync(cand) && statSync(cand).isFile()) return cand;
 	}
