@@ -2,7 +2,7 @@
   Phase 2 playground: mount <Preview> over a live session of the reference quill
   and prove the three responsibilities in a real browser — paint (canvas per
   page), overlay (field-box rects), and the click bridge (positionAt -> a
-  CorpusHit written to `data-testid="last-hit"` for the e2e spec to assert on).
+  ContentHit written to `data-testid="last-hit"` for the e2e spec to assert on).
 
   `margin={0}` (the component's own default is 1) is deliberate: usaf_memo is a
   2-page fixture, and any margin >= 1 always keeps BOTH pages mounted regardless
@@ -18,7 +18,7 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Quill, Document, LiveSession, CorpusHit, ChangeSet } from '$lib/core';
+	import type { Quill, Document, LiveSession, ContentHit, ChangeSet } from '$lib/core';
 	import { Preview } from '$lib/preview';
 	import { loadUsafMemoTree } from '../fixture';
 
@@ -26,7 +26,7 @@
 
 	let status = $state<Status>({ phase: 'loading' });
 	let session: LiveSession | undefined = $state();
-	let lastHit = $state<CorpusHit | undefined>(undefined);
+	let lastHit = $state<ContentHit | undefined>(undefined);
 	let lastChange = $state<ChangeSet | undefined>(undefined);
 	let previewRef: ReturnType<typeof Preview> | undefined = $state();
 
@@ -34,7 +34,7 @@
 	let quillHandle: Quill | undefined;
 	let docHandle: Document | undefined;
 
-	function handleCaretPick(hit: CorpusHit): void {
+	function handleCaretPick(hit: ContentHit): void {
 		lastHit = hit;
 	}
 

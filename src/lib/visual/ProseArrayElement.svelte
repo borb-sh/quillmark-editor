@@ -4,7 +4,7 @@
   `references.0` has no op address (BOUNDARY_NOTES §applyChange addressing). So
   this is NOT a `createField` leaf: it mounts a minimal PM view over the codec's
   decode/encode + inline schema, and on every edit hands the re-encoded
-  `RichText` UP to the parent {@link ArrayField}, which commits the WHOLE array
+  `Content` UP to the parent {@link ArrayField}, which commits the WHOLE array
   by value (`writer.set(field, arrayWithElementReplaced)`). Anchors within an
   element are dropped on that value write — acceptable for inline refs. Mounts
   ONCE per stable element id (no reset on the parent's re-derive).
@@ -16,15 +16,15 @@
 	import { keymap } from 'prosemirror-keymap';
 	import { EditorState, type Command } from 'prosemirror-state';
 	import { EditorView } from 'prosemirror-view';
-	import { decode, pmToRichText, inlineSchema, inputRulesPlugin } from '../core/codec/index.js';
-	import type { RichText } from '../core/index.js';
+	import { decode, pmToContent, inlineSchema, inputRulesPlugin } from '../core/codec/index.js';
+	import type { Content } from '../core/index.js';
 
 	interface Props {
-		value: RichText;
+		value: Content;
 		plaintext?: boolean;
 		/** Accessible name for the editable region (the array has no per-element label). */
 		label?: string;
-		onChange: (rt: RichText) => void;
+		onChange: (rt: Content) => void;
 		onFocusEl?: () => void;
 		testid?: string;
 	}
@@ -65,7 +65,7 @@
 			dispatchTransaction(tr) {
 				const next = view.state.apply(tr);
 				view.updateState(next);
-				if (tr.docChanged) onChange(pmToRichText(next.doc));
+				if (tr.docChanged) onChange(pmToContent(next.doc));
 			},
 			handleDOMEvents: {
 				focus: () => {

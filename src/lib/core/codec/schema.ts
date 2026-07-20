@@ -1,6 +1,6 @@
 // The PM schema — the codec OWNS it; decode/encode target it. Nodes mirror the
-// corpus block kinds (para/heading/code/rule/island) and its container nesting
-// (list_item/quote → lists/blockquote); marks mirror the corpus formatting set
+// content block kinds (para/heading/code/rule/island) and its container nesting
+// (list_item/quote → lists/blockquote); marks mirror the content formatting set
 // plus the inert `unknown` carrier. `blockSchema` is the full field; `inlineSchema`
 // is the constrained single-textblock form for `richtext(inline)` / `plaintext`
 // (one paragraph, no block split, no containers, no islands) — same decode/lower/

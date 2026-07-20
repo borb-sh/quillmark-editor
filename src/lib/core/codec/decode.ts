@@ -1,4 +1,4 @@
-// Decode — corpus → PM, a pure function (CODEC §Decode). Fold the flat lines into
+// Decode — content → PM, a pure function (CODEC §Decode). Fold the flat lines into
 // the tree: group a `continues` run into one block (para hard breaks → `hard_break`
 // nodes; a code fence's lines → one `code_block`), nest by shared `containers`
 // prefix (`list_item`/`quote` → lists/blockquote), select the block node by
@@ -8,12 +8,12 @@
 // decorations (field.ts). Positions throughout are USV; `Array.from` iterates by
 // code point so an astral char is one unit, never a surrogate half.
 import type { Mark, Node as PMNode, Schema } from 'prosemirror-model';
-import type { RichText, RichTextContainer, RichTextLine, RichTextMark } from '../wasm-types.js';
+import type { Content, ContentContainer, ContentLine, ContentMark } from '@quillmark/wasm';
 import { ISLAND_SLOT } from './islands.js';
-import { isAnchor, markKey, pmMarkFromCorpus } from './marks.js';
+import { isAnchor, markKey, pmMarkFromContent } from './marks.js';
 import { isInlineSchema } from './schema.js';
 
-/** Code points of `s` (USV units) — the iteration granularity the corpus speaks. */
+/** Code points of `s` (USV units) — the iteration granularity the content speaks. */
 export function codePoints(s: string): string[] {
 	return Array.from(s);
 }
@@ -26,21 +26,21 @@ export function usvLength(s: string): number {
 
 /** One `continues`-joined block, pre-nesting: its container path + per-line segments. */
 interface Leaf {
-	line: RichTextLine;
-	containers: RichTextContainer[];
+	line: ContentLine;
+	containers: ContentContainer[];
 	segments: { text: string; startUSV: number }[];
 }
 
 /** A live cursor over the island entries, consumed in text (document) order. */
-type IslandCursor = { i: number; rt: RichText };
+type IslandCursor = { i: number; rt: Content };
 
 interface DecodeOpts {
 	/** Strip all marks (a `plaintext` field). */
 	plaintext?: boolean;
 }
 
-/** Decode a `RichText` to a PM document under `schema`. */
-export function decode(rt: RichText, schema: Schema, opts: DecodeOpts = {}): PMNode {
+/** Decode a `Content` to a PM document under `schema`. */
+export function decode(rt: Content, schema: Schema, opts: DecodeOpts = {}): PMNode {
 	const lineTexts = rt.text.split('\n');
 	// Per-line USV start: line i begins after all earlier lines and their `\n`s.
 	const starts: number[] = [];
@@ -74,11 +74,11 @@ export function decode(rt: RichText, schema: Schema, opts: DecodeOpts = {}): PMN
 
 /** Inline / plaintext decode: one paragraph, containers and islands stripped. */
 function decodeInline(
-	rt: RichText,
+	rt: Content,
 	schema: Schema,
 	lineTexts: string[],
 	starts: number[],
-	marks: RichTextMark[],
+	marks: ContentMark[],
 	cursor: IslandCursor
 ): PMNode {
 	// An inline field is single-line; join any stray lines with a space (no
@@ -98,7 +98,7 @@ function groupBlocks(
 	schema: Schema,
 	leaves: Leaf[],
 	depth: number,
-	marks: RichTextMark[],
+	marks: ContentMark[],
 	cursor: IslandCursor
 ): PMNode[] {
 	const out: PMNode[] = [];
@@ -131,7 +131,7 @@ function groupBlocks(
 			while (j < leaves.length) {
 				const c = atDepth(leaves[j], depth);
 				if (!c || c.container !== 'list_item' || c.ordered !== ordered || c.start !== start) break;
-				// An ordinal reset is an ADJACENT SIBLING list (corpus preserves the
+				// An ordinal reset is an ADJACENT SIBLING list (content preserves the
 				// shape) — merging it here would re-encode `[0,1,0]` as `[0,1,2]`,
 				// breaking the decode round-trip on the first edit.
 				const ord = (c as { ordinal: number }).ordinal;
@@ -163,12 +163,12 @@ function groupBlocks(
 	return out;
 }
 
-function atDepth(leaf: Leaf, depth: number): RichTextContainer | undefined {
+function atDepth(leaf: Leaf, depth: number): ContentContainer | undefined {
 	return leaf.containers[depth];
 }
 
 /** A single leaf block node (para/heading/code/rule/island) from its segments. */
-function makeLeaf(schema: Schema, leaf: Leaf, marks: RichTextMark[], cursor: IslandCursor): PMNode {
+function makeLeaf(schema: Schema, leaf: Leaf, marks: ContentMark[], cursor: IslandCursor): PMNode {
 	const kind = leaf.line.kind;
 	if (kind === 'rule') return schema.nodes.horizontal_rule.create();
 	if (kind === 'island') {
@@ -209,7 +209,7 @@ function buildInline(
 	schema: Schema,
 	segText: string,
 	segStartUSV: number,
-	marks: RichTextMark[],
+	marks: ContentMark[],
 	cursor: IslandCursor,
 	stripIslands: boolean
 ): PMNode[] {
@@ -248,7 +248,7 @@ function buildInline(
 }
 
 /** A stable key for a mark set (order-independent) to detect run boundaries. */
-function markSetKey(active: RichTextMark[]): string {
+function markSetKey(active: ContentMark[]): string {
 	if (!active.length) return '';
 	// Per-mark keys via the shared NUL-delimited `markKey`; the set is joined via
 	// JSON so no url/attrs content can collide with a delimiter (`link:a|strong`
@@ -256,11 +256,11 @@ function markSetKey(active: RichTextMark[]): string {
 	return JSON.stringify(active.map((m) => markKey(m as unknown as Record<string, unknown>)).sort());
 }
 
-/** The PM mark array for an active corpus mark set (anchors already excluded). */
-function buildMarkSet(schema: Schema, active: RichTextMark[]): readonly Mark[] {
+/** The PM mark array for an active content mark set (anchors already excluded). */
+function buildMarkSet(schema: Schema, active: ContentMark[]): readonly Mark[] {
 	let set: readonly Mark[] = [];
 	for (const m of active) {
-		const pm = pmMarkFromCorpus(schema, m);
+		const pm = pmMarkFromContent(schema, m);
 		if (pm) set = pm.addToSet(set);
 	}
 	return set;

@@ -1,7 +1,7 @@
 // `@quillmark/editor/visual` — the WYSIWYG surface (Phase 4).
 //
 // The federated VisualEditor: a thin Svelte composition over many small editors.
-// Each corpus leaf is the codec's `createField` prose leaf; scalar fields are
+// Each content leaf is the codec's `createField` prose leaf; scalar fields are
 // form controls; structure/cards are the editor's own. Depends on `/core` and the
 // codec. RELATIVE imports (not `$lib`) — svelte-package ships this as-is.
 export { default as VisualEditor } from './VisualEditor.svelte';

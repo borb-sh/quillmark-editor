@@ -3,6 +3,11 @@
 **Package:** `@quillmark/wasm` 0.94.0
 **Severity:** friction (worked around downstream; no functional block)
 **Filed by:** @quillmark/editor Phase 1 integration
+**Status:** RESOLVED in 0.95.1 — the runtime root now re-exports the whole
+vocabulary (under the `Content*` genus, the 0.95 `RichText → Content` rename). The
+editor's structural-derivation seam (`src/lib/core/wasm-types.ts`) collapsed to a
+plain re-export from `@quillmark/wasm` and was deleted; only `DeltaOp` (the op
+union of the exported `Delta`) stays derived, inline in `/core`.
 
 ## What
 

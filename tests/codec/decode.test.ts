@@ -1,17 +1,17 @@
 // Criteria 2, 4 (overlap), 5, 6 — decode idempotence up to normalization,
 // overlapping-mark inline splits, island round-trip, inline/plaintext constraints.
 import { describe, it, expect } from 'vitest';
-import { decode, pmToRichText, blockSchema, inlineSchema } from '$lib/core/codec';
-import type { RichText } from '$lib/core';
-import { md, normalize, corpusEqual, subjectCorpus, bodyCorpus } from './_util.js';
+import { decode, pmToContent, blockSchema, inlineSchema } from '$lib/core/codec';
+import type { Content } from '$lib/core';
+import { md, normalize, contentEqual, subjectContent, bodyContent } from './_util.js';
 
-/** decode → pmToRichText, both sides normalized through the real corpus. */
-function reCorpus(rt: RichText): RichText {
-	return normalize(pmToRichText(decode(rt, blockSchema)));
+/** decode → pmToContent, both sides normalized through the real content. */
+function reContent(rt: Content): Content {
+	return normalize(pmToContent(decode(rt, blockSchema)));
 }
 
 describe('decode idempotence (up to normalization)', () => {
-	const cases: Record<string, RichText> = {
+	const cases: Record<string, Content> = {
 		twoParas: md('First para.\n\nSecond para.'),
 		heading: md('# Title\n\nBody text with a tail.'),
 		bulletList: md('- one\n- two\n- three'),
@@ -26,19 +26,19 @@ describe('decode idempotence (up to normalization)', () => {
 		strike: md('~~struck~~ and plain'),
 		underline: md('<u>underlined</u> text'),
 		astral: md('emoji 😀 and 漢字 **bold 🎉**'),
-		realSubject: subjectCorpus(),
-		realBody: bodyCorpus()
+		realSubject: subjectContent(),
+		realBody: bodyContent()
 	};
 	for (const [name, rt] of Object.entries(cases)) {
 		it(name, () => {
-			expect(corpusEqual(reCorpus(rt), normalize(rt)), name).toBe(true);
+			expect(contentEqual(reContent(rt), normalize(rt)), name).toBe(true);
 		});
 	}
 });
 
 describe('overlapping formatting → correct inline node splits', () => {
 	it('strong[0,4)+emph[2,6) yields {strong},{strong,emph},{emph}', () => {
-		const rt: RichText = {
+		const rt: Content = {
 			text: 'abcdef',
 			lines: [{ containers: [], kind: 'para' }],
 			marks: [
@@ -61,15 +61,15 @@ describe('overlapping formatting → correct inline node splits', () => {
 });
 
 describe('island round-trip (id preserved)', () => {
-	it('image (inline island) survives decode → pmToRichText → normalize', () => {
+	it('image (inline island) survives decode → pmToContent → normalize', () => {
 		const rt = md('![alt text](img.png)');
 		expect(rt.islands[0].type).toBe('image');
-		const back = pmToRichText(decode(rt, blockSchema));
+		const back = pmToContent(decode(rt, blockSchema));
 		expect(back.islands).toHaveLength(1);
 		expect(back.islands[0].type).toBe('image');
 		expect(back.islands[0].id).toBe(rt.islands[0].id);
 		expect(back.text).toContain('￼');
-		expect(corpusEqual(normalize(back), normalize(rt))).toBe(true);
+		expect(contentEqual(normalize(back), normalize(rt))).toBe(true);
 	});
 
 	it('table (block island) survives with id preserved', () => {
@@ -77,10 +77,10 @@ describe('island round-trip (id preserved)', () => {
 		expect(rt.islands[0].type).toBe('table');
 		const decoded = decode(rt, blockSchema);
 		expect(decoded.child(0).type.name).toBe('island_block');
-		const back = pmToRichText(decoded);
+		const back = pmToContent(decoded);
 		expect(back.islands[0].type).toBe('table');
 		expect(back.islands[0].id).toBe(rt.islands[0].id);
-		expect(corpusEqual(normalize(back), normalize(rt))).toBe(true);
+		expect(contentEqual(normalize(back), normalize(rt))).toBe(true);
 	});
 });
 
@@ -111,7 +111,7 @@ describe('adjacent sibling lists (ordinal reset)', () => {
 	const item = (ordinal: number) =>
 		({ container: 'list_item', ordered: false, start: 1, ordinal }) as never;
 	// Two adjacent bullet lists: ordinals [0,1] then a reset to [0].
-	const twoLists: RichText = {
+	const twoLists: Content = {
 		text: 'a\nb\nc',
 		lines: [
 			{ containers: [item(0)], kind: 'para' },
@@ -131,11 +131,11 @@ describe('adjacent sibling lists (ordinal reset)', () => {
 		expect(doc.child(1).childCount).toBe(1);
 	});
 
-	it('round-trips through the corpus (the exit-criterion shape)', () => {
+	it('round-trips through the content (the exit-criterion shape)', () => {
 		// Normalization preserves the two-list shape, so a merged decode would
 		// re-encode ordinals [0,1,2] and fail this equality.
 		const canon = normalize(twoLists);
-		expect(corpusEqual(normalize(pmToRichText(decode(canon, blockSchema))), canon)).toBe(true);
+		expect(contentEqual(normalize(pmToContent(decode(canon, blockSchema))), canon)).toBe(true);
 	});
 });
 
@@ -144,7 +144,7 @@ describe('mark-set run keying', () => {
 		// url "a|strong" on [0,1) next to {link "a", strong} on [1,2): under the
 		// old ':'/'|' keying both sets keyed identically, merging the runs and
 		// dropping the second set entirely.
-		const rt: RichText = {
+		const rt: Content = {
 			text: 'ab',
 			lines: [{ containers: [], kind: 'para' }],
 			marks: [

@@ -1,12 +1,12 @@
-// Positions — the USV ↔ PM map that carries the caret (CODEC §Positions). A corpus
+// Positions — the USV ↔ PM map that carries the caret (CODEC §Positions). A content
 // offset is a USV code-point index into the flat `text`; a PM position counts node
 // tokens. The map is a list of runs (built by the shared `scanDoc` walk, so it can
-// never disagree with the corpus projection) that tile the text: a `text` run
+// never disagree with the content projection) that tile the text: a `text` run
 // where PM and USV advance together (converting UTF-16↔USV per code point — the
 // hazard: an astral char is two UTF-16 units but one USV), an `nl` run for a
-// corpus `\n` spanning a PM block boundary or hard break, and an `atom` run for a
-// `U+FFFC` island slot. `CorpusHit.pos` / `FieldRegion.span` reach a PM caret
-// through `corpusToPM`; the preview overlay runs `pmToCorpus` in reverse.
+// content `\n` spanning a PM block boundary or hard break, and an `atom` run for a
+// `U+FFFC` island slot. `ContentHit.pos` / `FieldRegion.span` reach a PM caret
+// through `usvToPM`; the preview overlay runs `pmToUsv` in reverse.
 import type { Node as PMNode } from 'prosemirror-model';
 import { scanDoc, type PosRun } from './encode.js';
 
@@ -46,8 +46,8 @@ function runEndPm(run: PosRun): number {
 	return run.pmStart + 1;
 }
 
-/** USV corpus offset → PM position. */
-export function corpusToPM(_doc: PMNode, index: LineIndex, usvPos: number): number {
+/** USV content offset → PM position. */
+export function usvToPM(_doc: PMNode, index: LineIndex, usvPos: number): number {
 	const usv = clamp(usvPos, 0, index.usvEnd);
 	if (usv >= index.usvEnd) return index.usvEnd === 0 ? index.firstContentStart : index.pmEndContent;
 	for (const run of index.runs) {
@@ -60,8 +60,8 @@ export function corpusToPM(_doc: PMNode, index: LineIndex, usvPos: number): numb
 	return index.firstContentStart;
 }
 
-/** PM position → USV corpus offset. */
-export function pmToCorpus(_doc: PMNode, index: LineIndex, pmPos: number): number {
+/** PM position → USV content offset. */
+export function pmToUsv(_doc: PMNode, index: LineIndex, pmPos: number): number {
 	if (index.runs.length === 0) return 0;
 	if (pmPos < index.runs[0].pmStart) return 0;
 	for (const run of index.runs) {
@@ -75,7 +75,7 @@ export function pmToCorpus(_doc: PMNode, index: LineIndex, pmPos: number): numbe
 			if (pmPos >= run.pmStart && pmPos < run.pmStart + 1) return run.usvStart;
 		}
 	}
-	// Past the last covered PM position → the end of the corpus text.
+	// Past the last covered PM position → the end of the content text.
 	return index.usvEnd;
 }
 

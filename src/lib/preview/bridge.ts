@@ -1,11 +1,11 @@
 // The click bridge: a click on a page slot resolves pixel -> PDF-pt (the EXACT
-// inverse of overlay.ts's forward transform, both from geometry.ts) -> a corpus
+// inverse of overlay.ts's forward transform, both from geometry.ts) -> a content
 // hit via `session.positionAt`, surfaced through `onCaretPick`. Also the
 // editor->preview scroll commands (`scrollToField`/`focusPosition`), which
 // place an ephemeral marker at the target's % position and let the DOM scroll
 // to it — robust to zoom/resize since it reads the SAME percent geometry the
 // overlay draws, not a hand-rolled pixel offset.
-import type { LiveSession, CorpusHit } from '../core/index.js';
+import type { LiveSession, ContentHit } from '../core/index.js';
 import type { PageSlot } from './paint.js';
 import { rectToPercent, clickToPdfPt, type PercentRect } from './geometry.js';
 
@@ -20,7 +20,7 @@ export interface BridgeController {
 export function createBridge(
 	session: LiveSession,
 	slots: readonly PageSlot[],
-	onCaretPick: ((hit: CorpusHit) => void) | undefined
+	onCaretPick: ((hit: ContentHit) => void) | undefined
 ): BridgeController {
 	const unlisten: Array<() => void> = [];
 

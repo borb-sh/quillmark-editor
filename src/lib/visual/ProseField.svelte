@@ -1,5 +1,5 @@
 <!--
-  One corpus prose leaf — a thin Svelte mount of the codec's `createField`
+  One content prose leaf — a thin Svelte mount of the codec's `createField`
   (VISUAL_EDITOR §Surface). Mounts ONCE per stable leaf key and tears down on
   unmount; the leaf owns its PM state, history, and per-keystroke `applyChange`
   commit, so this wrapper adds no logic beyond wiring and registration. The
@@ -45,7 +45,7 @@
 	let containerEl: HTMLDivElement | undefined = $state();
 
 	// An absent richtext field (a `default:`-only field like `tag_line`) is handled
-	// by the codec itself — `createField` decodes an empty corpus and installs on
+	// by the codec itself — `createField` decodes an empty content and installs on
 	// the first edit — so this wrapper adds no pre-seeding, and an untouched field
 	// stays absent (its default rendering intact) until actually edited.
 	onMount(() => {

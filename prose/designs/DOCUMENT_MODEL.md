@@ -7,13 +7,15 @@ V1 consumes, cites where each is documented, and marks its stability. It is the
 one place the version coupling to `@quillmark/wasm` is recorded; when a surface
 below moves, the editor's dependency moves with it.
 
-**V1 builds on `@quillmark/wasm` 0.94.0** (current released: 0.92.1). Every verb
-in the table below is stable as of that release — the session/paint surface still
-carries `@experimental` today but is promoted at 0.94.0, so the editor targets it
-as settled ground.
+**V1 builds on `@quillmark/wasm` 0.95.1.** Every verb in the table below is stable
+as of that release. The 0.95 mutation-surface cleanup is the settled ground the
+editor targets: `store*` verbs for verbatim writes, one unified `Addr` (`{card?,
+field?}`) collapsing the old `*CardField` pairs, the schema-bound `writer`/`view`
+doors (`quill.writer(doc)` / `quill.view(doc)`), a card-first `insertCard(card,
+at?)`, and the `datetime` split into `date` and `datetime`.
 
-Corpus content types
-(`RichText`) and their ProseMirror mapping are the editor's own work —
+Content types
+(`Content` and its parts) and their ProseMirror mapping are the editor's own work —
 [CODEC.md](CODEC.md), not here.
 
 Cross-repo references read `quillmark prose/canon/X.md` (a different repo; links do
@@ -27,13 +29,13 @@ Stability column says otherwise.
 
 | Concern | Verbs / types | Canon | Stability |
 | --- | --- | --- | --- |
-| **Truth & seeding** | `quill.seedDocument` / `seedMain` / `seedCard(kind, overlay)`, `Quill.fromTree` / `toTree`, `quill.schema` / `blueprint` / `metadata` | `SCHEMAS.md`, `CARDS.md`, `DOCUMENT_STORAGE.md`, `QUILL.md` | stable |
-| **Typed writer** (scalar/array/object + append) | `quill.writer(doc)` → `DocumentWriter` (`set` / `setAll` / `setBody` / `addCard` / `removeCard` / `card(i)`) | `PROGRAMMATIC.md`, `SCHEMAS.md` | stable |
-| **Structure mutators** | `insertCard(i, card)`, `moveCard(from, to)`, `setCardKind(i, kind)`, `removeCard(i)`, `setCardExtNamespace(i, ns, val)` (the `$ext.editor` write unit) | `CARDS.md`, `DOCUMENT_STORAGE.md` | stable |
-| **Op-grained corpus edit** | `doc.applyChange(addr, bundle)`, `doc.install(addr, rt)`, `doc.revise(addr, md)` → `Delta`; `Addr`, `ChangeBundle` | `DOCUMENT_STORAGE.md`, `CONVERT.md` | stable |
-| **Positions & markdown edges** | `importMarkdown` / `exportMarkdown` / `rebase` / `mapPos` (module-level); position→geometry queries (`positionAt` / `locate`) live on `LiveSession` (row below) | `references/markdown-spec.md`, `CONVERT.md` | stable |
+| **Truth & seeding** | `quill.seedDocument` / `seedMain` / `seedCard(kind, overlay)`, `Quill.fromTree` / `toTree`, `quill.schema` / `blueprint` / `metadata`; `doc.seedOverlay(kind)` / `card(i)` / `cardIndexById(id)` | `SCHEMAS.md`, `CARDS.md`, `DOCUMENT_STORAGE.md`, `QUILL.md` | stable |
+| **Typed writer / read view** (scalar/array/object + append) | `quill.writer(doc)` → `DocumentWriter` (`set` / `setAll` / `setBody` / `reviseField` / `addCard` / `removeCard` / `card(i)`); `quill.view(doc)` → `DocumentView` (`get` / `getBody` / `card(i)`) for schema-typed reads | `PROGRAMMATIC.md`, `SCHEMAS.md` | stable |
+| **Structure mutators** | `insertCard(card, at?)`, `moveCard(from, to)`, `setCardKind(i, kind)`, `removeCard(i)`, `storeExtNamespace({card}, ns, val)` (the `$ext.editor` write unit) | `CARDS.md`, `DOCUMENT_STORAGE.md` | stable |
+| **Op-grained content edit** | `doc.applyChange(addr, bundle)`, `doc.install(addr, rt)`, `doc.revise(addr, md)` → `Delta`; unified `Addr` (`{card?, field?}`, bare string = `{field}`), `CardAddr`, `ChangeBundle`; `doc.storeField` / `storeFields` / `storeFill` / `get` / `removeField` (quill-free store lane) | `DOCUMENT_STORAGE.md`, `CONVERT.md` | stable |
+| **Positions & markdown edges** | `importMarkdown` / `exportMarkdown` / `rebase` (→ `{content, delta}`) / `mapPos` (module-level); position→geometry queries (`positionAt` / `locate`) live on `LiveSession` (row below) | `references/markdown-spec.md`, `CONVERT.md` | stable |
 | **Validation & diagnostics** | `quill.validate(doc)` → `Diagnostic[]`, `Document.warnings`, `LiveSession.warnings`, `QuillmarkError` shape | `SCHEMAS.md`, `ERROR.md` | stable |
-| **Live session & paint** (preview) | `engine.open(quill, doc)` → `LiveSession` (`apply` → `ChangeSet`, `paint`, `pageSize`, `regions` / `fieldBoxes` / `fieldAt` / `positionAt` / `locate`, `supportsCanvas`, `warnings`); `PaintOptions` / `PaintResult` / `PageSize` / `CorpusHit` / `FieldRegion` | quillmark `PREVIEW.md` | `@experimental` @ 0.92.1 → stable @ 0.94.0 |
+| **Live session & paint** (preview) | `engine.open(quill, doc)` → `LiveSession` (`apply` → `ChangeSet`, `paint`, `pageSize`, `regions` / `fieldBoxes` / `fieldAt` / `positionAt` / `locate`, `supportsCanvas`, `warnings`); `PaintOptions` / `PaintResult` / `PageSize` / `ContentHit` / `FieldRegion` | quillmark `PREVIEW.md` | stable |
 
 Consumed by: [CODEC.md](CODEC.md) (op-grained edit, positions, markdown edges),
 [PREVIEW.md](PREVIEW.md) (live session & paint), [VISUAL_EDITOR.md](VISUAL_EDITOR.md)
@@ -41,13 +43,13 @@ Consumed by: [CODEC.md](CODEC.md) (op-grained edit, positions, markdown edges),
 
 ## Stability seams
 
-At the 0.94.0 target the whole table is stable API, so what remains is typing
+At the 0.95.1 target the whole table is stable API, so what remains is typing
 gaps, not `@experimental` markers:
 
-- **`Island.props` is typed `unknown`** at the WASM boundary — the codec's
+- **`ContentIsland.props` is typed `unknown`** at the WASM boundary — the codec's
   table/image schemas track a shape the surface does not pin ([CODEC.md](CODEC.md)
   §Islands). A candidate for a typed island surface upstream; not resolved by the
-  0.94.0 promotion.
+  0.95 mutation-surface cleanup.
 - **`QuillCardUi` is narrower than the schema JSON** — the typed surface exposes
   only `title`, while real quills carry `ui.groups` (the fixture's
   `main.ui.groups`). The editor reads group order from the schema JSON when
@@ -55,17 +57,16 @@ gaps, not `@experimental` markers:
   decision). A candidate for widening the typed surface upstream.
 
 The session/paint surface (`Engine.open`, `LiveSession`, `PaintOptions` /
-`PaintResult` / `PageSize`, `ChangeSet`, `supportsCanvas`) carries `@experimental`
-only through 0.92.1; 0.94.0 promotes it and the editor's Preview is its first
-production consumer. The window to co-design a break in that surface is before
-0.94.0 ships — after it, the editor pins the version and rides it.
+`PaintResult` / `PageSize`, `ChangeSet`, `supportsCanvas`) is stable as of the
+pinned 0.95.1 and the editor's Preview is its first production consumer: the editor
+pins the version and rides it.
 
 ## What the editor owns at this boundary
 
 The substrate is quillmark's; two thin slices at the seam are the editor's, and
 they live in their surface docs, not here:
 
-- **Handle lifecycle** — WASM `init` (sync; shipped 0.94.0 has no async
+- **Handle lifecycle** — WASM `init` (sync; shipped 0.95.1 has no async
   `initSync` split), who holds the `Quill` and
   `Document` handles across a session, and when they are freed. The vanilla-TS core
   owns this ([ARCHITECTURE.md](ARCHITECTURE.md) §Core vs chrome).
@@ -77,8 +78,8 @@ they live in their surface docs, not here:
 
 ## Not owned here
 
-- corpus↔PM translation, position map, mark/island lowering — [CODEC.md](CODEC.md).
-- paint, page geometry, click→corpus — [PREVIEW.md](PREVIEW.md).
+- content↔PM translation, position map, mark/island lowering — [CODEC.md](CODEC.md).
+- paint, page geometry, click→content — [PREVIEW.md](PREVIEW.md).
 - the schema × payload composition, card operations, focus — [VISUAL_EDITOR.md](VISUAL_EDITOR.md).
 - the `Document` model itself, its serialization, and its mutator semantics —
   quillmark canon (the table's Canon column).

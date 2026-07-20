@@ -1,6 +1,6 @@
-// The prose leaf — `createField` (VISUAL_EDITOR §Surface). One corpus field, one
+// The prose leaf — `createField` (VISUAL_EDITOR §Surface). One content field, one
 // PM `EditorState`/`EditorView`, wired to the WASM edit surface. It reads the
-// leaf's `RichText`, decodes to a PM state, mounts a view + plugin stack (history,
+// leaf's `Content`, decodes to a PM state, mounts a view + plugin stack (history,
 // keymap, input rules, the anchor-position plugin), and `dispatchTransaction`:
 //   (a) apply optimistically to the view,
 //   (b) lower the tr to a `ChangeBundle` (or `install` for a structural edit ops
@@ -9,7 +9,7 @@
 //   (d) fire `onCaretMove` with the new USV caret.
 // On an `applyChange` throw the optimistic PM state stays and the error is logged
 // — never a crash. Caret continuity across own-edits is the PM `StepMap`; an
-// EXTERNAL corpus change re-hydrates through `applyExternal`, gated by `reconcile`.
+// EXTERNAL content change re-hydrates through `applyExternal`, gated by `reconcile`.
 import { baseKeymap, toggleMark } from 'prosemirror-commands';
 import { history, redo, undo } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
@@ -17,11 +17,11 @@ import type { Node as PMNode, Schema } from 'prosemirror-model';
 import { EditorState, Plugin, PluginKey, Selection, type Command } from 'prosemirror-state';
 import { splitListItem } from 'prosemirror-schema-list';
 import { EditorView } from 'prosemirror-view';
-import type { Document, RichText, Addr } from '../index.js';
+import type { Document, Content, Addr } from '../index.js';
 import { decode } from './decode.js';
-import { corpusToPM, pmToCorpus, buildLineIndex, type LineIndex } from './positions.js';
-import { lower, pmToRichText, structureNeedsInstall } from './encode.js';
-import { anchorsFromRichText, type AnchorPos } from './marks.js';
+import { usvToPM, pmToUsv, buildLineIndex, type LineIndex } from './positions.js';
+import { lower, pmToContent, structureNeedsInstall } from './encode.js';
+import { anchorsFromContent, type AnchorPos } from './marks.js';
 import { createReconciler, type Reconciler } from './reconcile.js';
 import { inputRulesPlugin } from './inputrules.js';
 import { blockSchema, inlineSchema } from './schema.js';
@@ -46,13 +46,13 @@ export interface CreateFieldOpts {
 
 /** The prose-leaf handle (VISUAL_EDITOR §Surface). */
 export interface FieldController {
-	/** Place the caret at USV `pos` (preview onCaretPick → corpusToPM → here). */
+	/** Place the caret at USV `pos` (preview onCaretPick → usvToPM → here). */
 	setCaret(pos: number): void;
-	/** External corpus change → re-hydrate this leaf (gated by reconcile). */
+	/** External content change → re-hydrate this leaf (gated by reconcile). */
 	applyExternal(): void;
 	focus(): void;
-	/** The current stored corpus for this addr (for tests / reconcile). */
-	getCorpus(): RichText;
+	/** The current stored content for this addr (for tests / reconcile). */
+	getContent(): Content;
 	destroy(): void;
 }
 
@@ -70,24 +70,24 @@ function anchorPlugin(seed: AnchorPos[]): Plugin<AnchorPos[]> {
 	});
 }
 
-/** Read the leaf's raw stored `RichText` for `addr`. */
-function readLeaf(doc: Document, addr: Addr): RichText {
+/** Read the leaf's raw stored `Content` for `addr`. */
+function readLeaf(doc: Document, addr: Addr): Content {
 	if (addr.field != null) {
 		if (addr.card != null) {
 			const card = doc.cards[addr.card];
 			const item = card?.payloadItems.find((p) => p.type === 'field' && p.key === addr.field);
-			return item && item.type === 'field' ? (item.value as RichText) : emptyCorpus();
+			return item && item.type === 'field' ? (item.value as Content) : emptyContent();
 		}
 		// An absent field reads `undefined` — a default-only richtext field
 		// (e.g. `tag_line`) has no stored value until first edited. Decode an
-		// empty corpus rather than crash; the first edit installs/commits it.
-		return (doc.get(addr.field) as RichText | undefined) ?? emptyCorpus();
+		// empty content rather than crash; the first edit installs/commits it.
+		return (doc.get(addr.field) as Content | undefined) ?? emptyContent();
 	}
 	if (addr.card != null) return doc.cards[addr.card].body;
 	return doc.main.body;
 }
 
-function emptyCorpus(): RichText {
+function emptyContent(): Content {
 	return { text: '', lines: [{ containers: [], kind: 'para' }], marks: [], islands: [] };
 }
 
@@ -107,21 +107,21 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	const plaintext = !!opts.plaintext;
 	const schema: Schema = inline ? inlineSchema : blockSchema;
 
-	// `known` is the codec's view of the stored corpus — kept in sync after every
+	// `known` is the codec's view of the stored content — kept in sync after every
 	// own-edit so `reconcile` can tell an external change from the field's own.
 	const reconciler: Reconciler = createReconciler(readLeaf(doc, addr));
 
 	let index: LineIndex; // rebuilt on every structural change
 	let view: EditorView;
 
-	const state = buildState(reconciler.last as RichText);
+	const state = buildState(reconciler.last as Content);
 	index = buildLineIndex(state.doc);
 
 	view = new EditorView(container, {
 		state,
 		attributes: opts.label ? { 'aria-label': opts.label } : undefined,
 		dispatchTransaction: (tr) => {
-			const oldRt = reconciler.last as RichText;
+			const oldRt = reconciler.last as Content;
 			const next = view.state.apply(tr);
 			view.updateState(next); // (a) optimistic
 			index = buildLineIndex(next.doc);
@@ -130,7 +130,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 				commitEdit(oldRt, next.doc);
 			}
 			// (d) caret — for both structural and selection-only changes.
-			opts.onCaretMove?.(addr, pmToCorpus(next.doc, index, next.selection.head));
+			opts.onCaretMove?.(addr, pmToUsv(next.doc, index, next.selection.head));
 		},
 		handleDOMEvents: {
 			focus: () => {
@@ -140,14 +140,14 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		}
 	});
 
-	function buildState(rt: RichText): EditorState {
+	function buildState(rt: Content): EditorState {
 		const pmDoc: PMNode = decode(rt, schema, { plaintext });
-		const anchors = plaintext ? [] : anchorsFromRichText(rt);
+		const anchors = plaintext ? [] : anchorsFromContent(rt);
 		// Seed anchor plugin positions in PM coords via a fresh index over pmDoc.
 		const seedIndex = buildLineIndex(pmDoc);
 		const seededAnchors = anchors.map((a) => ({
 			id: a.id,
-			pos: corpusToPM(pmDoc, seedIndex, a.pos)
+			pos: usvToPM(pmDoc, seedIndex, a.pos)
 		}));
 		return EditorState.create({ doc: pmDoc, plugins: plugins(schema, seededAnchors) });
 	}
@@ -162,8 +162,8 @@ export function createField(opts: CreateFieldOpts): FieldController {
 
 	// (b)+(c): lower the edit to ops and commit — or `install` for a structural
 	// edit the op vocabulary cannot express. Keep the optimistic PM on throw.
-	function commitEdit(oldRt: RichText, newDoc: PMNode): void {
-		const newRt = pmToRichText(newDoc);
+	function commitEdit(oldRt: Content, newDoc: PMNode): void {
+		const newRt = pmToContent(newDoc);
 		try {
 			// `applyChange` throws on an absent declared field (verified), so the FIRST
 			// edit to one installs the value (creating it — no prior anchors to lose);
@@ -171,9 +171,9 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			if (!leafPresent(doc, addr) || structureNeedsInstall(oldRt, newRt)) {
 				doc.install(addr, newRt); // create-or-structural fallback; pays this field's anchors
 			} else {
-				// Pre-edit anchors are the stored corpus's anchors (USV); post-edit
+				// Pre-edit anchors are the stored content's anchors (USV); post-edit
 				// anchors are the plugin's positions (mapped through the tr) as USV.
-				const oldAnchors = plaintext ? [] : anchorsFromRichText(oldRt);
+				const oldAnchors = plaintext ? [] : anchorsFromContent(oldRt);
 				const newAnchors = plaintext ? [] : readAnchorsUsv(newDoc);
 				const bundle = lower(oldRt, newDoc, { oldAnchors, newAnchors });
 				doc.applyChange(addr, bundle);
@@ -182,7 +182,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		} catch (e) {
 			// Bound the damage: an op path the gates missed leaves the store STALE
 			// while PM keeps the edit — and because the reconciler then re-diffs
-			// from that stale corpus, every later edit re-throws and the field
+			// from that stale content, every later edit re-throws and the field
 			// silently stops persisting. Install the full projection instead
 			// (correct store, pays this field's anchors).
 			console.error('[quillmark/editor] applyChange failed; falling back to install', e);
@@ -199,12 +199,12 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	/** Anchor positions in the CURRENT (new) doc, as USV. */
 	function readAnchorsUsv(newDoc: PMNode): AnchorPos[] {
 		const anchors = anchorKey.getState(view.state) ?? [];
-		return anchors.map((a) => ({ id: a.id, pos: pmToCorpus(newDoc, index, a.pos) }));
+		return anchors.map((a) => ({ id: a.id, pos: pmToUsv(newDoc, index, a.pos) }));
 	}
 
 	const controller: FieldController = {
 		setCaret(pos: number): void {
-			const pm = corpusToPM(view.state.doc, index, pos);
+			const pm = usvToPM(view.state.doc, index, pos);
 			// `Selection.near`, not `TextSelection.create`: the mapped position can
 			// be non-inline (before an island/rule block, or doc-level in an empty
 			// nested textblock), where a raw TextSelection is invalid.
@@ -215,19 +215,19 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		applyExternal(): void {
 			const current = readLeaf(doc, addr);
 			if (!reconciler.shouldRehydrate(current)) return; // own edit / no change
-			const caretUsv = pmToCorpus(view.state.doc, index, view.state.selection.head);
+			const caretUsv = pmToUsv(view.state.doc, index, view.state.selection.head);
 			const fresh = buildState(current);
 			view.updateState(fresh);
 			index = buildLineIndex(fresh.doc);
 			// Best-effort caret continuity across an external change: keep the USV.
-			const pm = corpusToPM(fresh.doc, index, caretUsv);
+			const pm = usvToPM(fresh.doc, index, caretUsv);
 			view.dispatch(view.state.tr.setSelection(Selection.near(fresh.doc.resolve(pm))));
 			reconciler.commit(current);
 		},
 		focus(): void {
 			view.focus();
 		},
-		getCorpus(): RichText {
+		getContent(): Content {
 			return readLeaf(doc, addr);
 		},
 		destroy(): void {

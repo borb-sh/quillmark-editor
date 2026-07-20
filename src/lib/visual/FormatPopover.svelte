@@ -7,7 +7,7 @@
   straight at the leaf's `EditorView`. The codec's own `dispatchTransaction`
   (field.ts, read-only from here) lowers the resulting transaction to
   `markOps` and commits via `applyChange` — this component never touches the
-  corpus. The keymap mirror (Mod-b/i/u) already lives in the codec's keymap
+  content. The keymap mirror (Mod-b/i/u) already lives in the codec's keymap
   (field.ts); this is the pointer affordance for all six marks.
 
   SELECTION OBSERVATION. The view's `dispatchTransaction` is the codec's
@@ -55,7 +55,7 @@
 	}
 	let { getActiveLeaf }: Props = $props();
 
-	/** The six corpus formatting marks (VISUAL_EDITOR_UIUX §Formatting); `anchor` is a 7th, separately rendered disabled (see the button below). */
+	/** The six content formatting marks (VISUAL_EDITOR_UIUX §Formatting); `anchor` is a 7th, separately rendered disabled (see the button below). */
 	const MARKS: { name: string; label: string; title: string }[] = [
 		{ name: 'strong', label: 'B', title: 'Bold (Mod-B)' },
 		{ name: 'em', label: 'I', title: 'Emphasis (Mod-I)' },

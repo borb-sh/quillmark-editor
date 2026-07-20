@@ -89,10 +89,15 @@
 
 /// Formats a date for the memo heading.
 ///
-/// - String: shown as-is (use for fixed text like placeholders).
-/// - datetime: USAF style `DD Month YYYY`; DAF style `Month DD, YYYY`.
+/// Dispatches on the shape a date field can arrive in:
+/// - str: shown as-is (fixed text like a placeholder).
+/// - datetime: a native Typst datetime (e.g. `datetime.today()`) — USAF style
+///   `DD Month YYYY`, DAF style `Month DD, YYYY`.
+/// - dict: a Quillmark `date`/`datetime` field lowers to a click-to-edit value
+///   object `{ value: datetime, display: closure }`; `display` is a stored closure
+///   over `.display`, so call it through parentheses — a dict has no `.display` method.
 ///
-/// - date (str|datetime): Date to format for display
+/// - date (str | datetime | dict): Date to format for display
 /// - memo-style (str): `"usaf"` or `"daf"`
 /// -> content
 #let display-date(date, memo-style: "usaf") = {
@@ -108,7 +113,11 @@
     } else {
       "[day padding:none] [month repr:long] [year]"
     }
-    date.display(pattern)
+    if type(date) == datetime {
+      date.display(pattern)
+    } else {
+      (date.display)(pattern)
+    }
   }
 }
 

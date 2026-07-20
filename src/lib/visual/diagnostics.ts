@@ -22,9 +22,9 @@
 //      `FieldRegion.field`), routed by `.path` like #1.
 //
 // FIELD-KEY SPACE. Two addressing schemes meet here: producers #1/#3 speak
-// `Diagnostic.path`, a POSITIONAL string (the CorpusHit/FieldRegion grammar,
+// `Diagnostic.path`, a POSITIONAL string (the ContentHit/FieldRegion grammar,
 // BOUNDARY_NOTES — `$body` / `<field>` / `$cards.<kind>.<i>.<field>`; verified
-// for CorpusHit/FieldRegion, BEST-EFFORT for Diagnostic.path since the fixture
+// for ContentHit/FieldRegion, BEST-EFFORT for Diagnostic.path since the fixture
 // cannot produce a non-empty `validate()` result to check the card-path shape
 // against). The editor's OWN addressing (VisualEditor's `commitScalar`, the
 // `leaves` registry) is STABLE-ID keyed so a diagnostic stays pinned to the
@@ -55,8 +55,8 @@ export function fieldKeyToString(k: FieldKey): string {
 
 /**
  * Parse a producer's `path` grammar (BOUNDARY_NOTES §"FieldRegion.field /
- * CorpusHit.field GRAMMAR") into a `FieldKey`, `card` as a raw corpus index.
- * Verified for CorpusHit/FieldRegion; `Diagnostic.path` is assumed to share it
+ * ContentHit.field GRAMMAR") into a `FieldKey`, `card` as a raw content index.
+ * Verified for ContentHit/FieldRegion; `Diagnostic.path` is assumed to share it
  * (both are quillmark's one field-addressing grammar) but is NOT independently
  * confirmed for card paths — BEST-EFFORT, per the phase brief. Returns
  * `undefined` for a grammar this can't place as ONE field (an array element
@@ -78,7 +78,7 @@ export function parsePath(path: string): FieldKey | undefined {
 }
 
 /**
- * Resolve a positional `FieldKey` (a raw corpus index, straight off
+ * Resolve a positional `FieldKey` (a raw content index, straight off
  * `parsePath`) to the editor's stable-id keying using the LIVE `cardIds`
  * array — re-resolved fresh on every call (never cached), the same "resolve
  * only at the point of use" discipline `cardIndexOf` applies to writes

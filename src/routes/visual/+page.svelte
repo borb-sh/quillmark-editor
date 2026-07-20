@@ -15,7 +15,7 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Quill, Document, Addr, Card as CardType, RichText, Diagnostic } from '$lib/core';
+	import type { Quill, Document, Addr, Card as CardType, Content, Diagnostic } from '$lib/core';
 	import { loadUsafMemoTree } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
@@ -61,16 +61,16 @@
 		const doc = docHandle;
 		if (!doc) return '{}';
 		const obj = {
-			subject: (doc.get('subject') as RichText | undefined)?.text ?? '',
-			subjectMarks: (doc.get('subject') as RichText | undefined)?.marks ?? [],
-			tag_line: (doc.get('tag_line') as RichText | undefined)?.text ?? '',
+			subject: (doc.get('subject') as Content | undefined)?.text ?? '',
+			subjectMarks: (doc.get('subject') as Content | undefined)?.marks ?? [],
+			tag_line: (doc.get('tag_line') as Content | undefined)?.text ?? '',
 			body: doc.main.body.text,
 			font_size: doc.get('font_size') ?? null,
 			classification: doc.get('classification') ?? null,
 			letterhead_seal: doc.get('letterhead_seal') ?? null,
 			date: doc.get('date') ?? null,
 			memo_for: doc.get('memo_for') ?? [],
-			references: ((doc.get('references') as RichText[] | undefined) ?? []).map((r) => r.text),
+			references: ((doc.get('references') as Content[] | undefined) ?? []).map((r) => r.text),
 			cardCount: doc.cardCount,
 			cards: doc.cards.map((c) => ({
 				kind: c.kind,

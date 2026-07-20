@@ -13,7 +13,7 @@ export type ControlKind =
 	| 'enum' // string+enum | type:'enum' → select
 	| 'number' // number / integer
 	| 'boolean' // boolean → toggle
-	| 'date' // datetime
+	| 'date' // date / datetime → native date control
 	| 'array' // add/remove repeater
 	| 'object'; // nested subform
 
@@ -83,6 +83,7 @@ export function controlKind(f: QuillFieldSchema): ControlKind {
 			return 'number';
 		case 'boolean':
 			return 'boolean';
+		case 'date':
 		case 'datetime':
 			return 'date';
 		case 'array':
@@ -219,7 +220,7 @@ export function bodyEnabled(cardSchema: QuillCardSchema | undefined): boolean {
 }
 
 // ── Session identity (VISUAL_EDITOR §"The address is the spine") ─────────────
-// Cards are POSITIONAL in the corpus and `doc.cards` re-allocates on each read,
+// Cards are POSITIONAL in the content and `doc.cards` re-allocates on each read,
 // so a stable card-instance key cannot be the card object (a fresh object every
 // derive) — it is a session id held in a parallel array, reordered in lockstep
 // with the structure ops and resolved to an index only at the mutation boundary.

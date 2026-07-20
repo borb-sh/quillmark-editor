@@ -9,7 +9,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createPreview, type PreviewController } from './controller.js';
-	import type { LiveSession, CorpusHit, ChangeSet } from '../core/index.js';
+	import type { LiveSession, ContentHit, ChangeSet } from '../core/index.js';
 
 	/**
 	 * REMOUNT CONTRACT. `createPreview` binds once in `onMount`; a later change to
@@ -21,7 +21,7 @@
 		session: LiveSession;
 		margin?: number;
 		overlays?: boolean;
-		onCaretPick?: (hit: CorpusHit) => void;
+		onCaretPick?: (hit: ContentHit) => void;
 	}
 
 	let { session, margin, overlays, onCaretPick }: Props = $props();
