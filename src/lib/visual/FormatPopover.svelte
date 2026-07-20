@@ -130,10 +130,11 @@
 	// consequence of the user gesture, so it always reads the FINAL, settled
 	// selection. `pending` collapses a burst to a single scheduled callback.
 	let pending = false;
+	let rafHandle = 0;
 	function deferredSync(): void {
 		if (pending) return;
 		pending = true;
-		requestAnimationFrame(() => {
+		rafHandle = requestAnimationFrame(() => {
 			pending = false;
 			sync();
 		});
@@ -149,6 +150,10 @@
 			document.removeEventListener('focusout', deferredSync);
 			window.removeEventListener('scroll', deferredSync, true);
 			window.removeEventListener('resize', deferredSync);
+			// A burst-coalescing rAF may still be in flight at teardown; cancel it so
+			// `sync()` never runs against the destroyed component.
+			if (pending) cancelAnimationFrame(rafHandle);
+			pending = false;
 		};
 	});
 

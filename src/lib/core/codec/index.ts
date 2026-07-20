@@ -29,7 +29,6 @@ export type { LineIndex } from './positions.js';
 // Marks + islands (the algebra and typed props).
 export {
 	isAnchor,
-	isFormatting,
 	pmMarkFromContent,
 	contentDescriptorFromPM,
 	markKey,

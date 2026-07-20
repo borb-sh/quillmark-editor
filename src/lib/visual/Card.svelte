@@ -10,7 +10,7 @@
 	import { untrack } from 'svelte';
 	import type { Document, Addr, Diagnostic } from '../core/index.js';
 	import type { FieldController } from '../core/codec/index.js';
-	import type { CardModel, FieldModel } from './structure.js';
+	import type { CardModel } from './structure.js';
 	import { packRows, humanize } from './structure.js';
 	import Field from './Field.svelte';
 	import ProseField from './ProseField.svelte';

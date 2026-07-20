@@ -153,3 +153,16 @@ quill.schema ✕ Document.payload ──(join)──► card tree (Svelte, keyed
   `prosemirror-tables` is pinned but unused until this lands). Also minor: the
   popover keymap mirror covers `Mod-b/i/u` only — strike/code/link have no
   shortcut.
+- **`array`-of-`object` ships as a JSON textarea, not the settled "typed table"**
+  ([VISUAL_EDITOR.md](../designs/VISUAL_EDITOR.md) §"A control per field type").
+  `ArrayField` renders each object element as a `JSON.stringify` `<textarea>`
+  (commit on valid parse, prior value kept on invalid). The fixture declares no
+  `array`-of-`object` field, so the path is unexercised; the typed-table control
+  (and the "array/table convergence" it presumes) lands with island/table
+  authoring, deferred past V1.
+- **`object` fields recurse over SCALAR properties only.** `ObjectField` projects
+  a nested subform for `string`/`enum`/`number`/`boolean`/`date` properties and
+  commits the whole object by value; a nested `prose`/`array`/`object` property
+  renders an inert "not editable in V1" placeholder rather than recursing. The
+  fixture declares no `object` field, so this is untested against a real leaf;
+  full recursion lands when a quill needs it.
