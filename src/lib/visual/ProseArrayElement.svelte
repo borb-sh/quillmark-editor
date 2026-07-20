@@ -1,7 +1,7 @@
 <!--
   One element of an array-of-`richtext` field (fixture `references`). Array
   elements are NOT `applyChange`-addressable — `Addr.field` is a flat name, so
-  `references.0` has no op address (BOUNDARY_NOTES §applyChange addressing). So
+  `references.0` has no op address. So
   this is NOT a `createField` leaf: it mounts a minimal PM view over the codec's
   decode/encode + inline schema, and on every edit hands the re-encoded
   `Content` UP to the parent {@link ArrayField}, which commits the WHOLE array

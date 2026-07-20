@@ -13,7 +13,7 @@
 
   The "apply an edit" button exercises the OTHER half of the exit criteria (an
   apply repaints dirty ∩ visible pages) without reaching into Phase 3's codec:
-  `doc.revise` is a Phase-1 substrate primitive (BOUNDARY_NOTES), so this stays
+  `doc.revise` is a Phase-1 substrate primitive, so this stays
   in the playground route's lane, not Preview's — Preview never calls `apply`.
 -->
 <script lang="ts">

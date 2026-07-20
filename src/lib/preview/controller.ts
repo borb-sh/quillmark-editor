@@ -42,8 +42,8 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	container.classList.add(CONTAINER_CLASS);
 
 	// The paint loop is safe at any page count: zero pages reconciles to zero slots
-	// and never calls the `paint`/`pageSize` verbs the boundary refuses there
-	// (BOUNDARY_NOTES). overlay/bridge DO query geometry at build (`session.regions()`),
+	// and never calls the `paint`/`pageSize` verbs the boundary refuses there.
+	// overlay/bridge DO query geometry at build (`session.regions()`),
 	// so they are held until slots exist — (re)built by `refresh` when the count crosses 0.
 	const paintLoop: PaintLoop = createPaintLoop(session, container, margin);
 	let overlay: OverlayController | undefined;
