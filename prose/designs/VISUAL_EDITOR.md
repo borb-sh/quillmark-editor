@@ -75,6 +75,24 @@ nudge. Nothing gates — an incomplete document edits and renders fine (canon:
 `SCHEMAS.md` zero-fill render). Completeness is a read of `quill.validate(doc)`,
 not a gate.
 
+**Clearing a scalar unsets it.** A blank number / text / date / enum control
+commits `undefined`; the VisualEditor lowers that to `doc.removeField(addr)` (the
+quill-free store lane — an unset writes no value, so no schema lane applies), never
+a write. An absent field resolves authored › `default:` › zero-fill at render
+(canon `SCHEMAS.md`), so the ghosted `default:` genuinely takes effect and the
+ghost is truthful, not a snapshot. Committing the default instead would freeze a
+value the schema can no longer move — the engine never persists a default, nor does
+the editor. `EnumField` gives unset a ghost sentinel option — picking it unsets,
+picking any value (the default included) writes — so "commit the default" is
+expressible and shown-never-written stays visible. `BooleanField` is exempt (a
+checkbox has no blank). Unset, and every numeric commit, settles at `change`
+(blur/Enter): a per-keystroke commit round-trips transient invalid prefixes (`-`,
+`1.`) through the boundary and flashes a coercion diagnostic the `role="status"`
+live region announces. Text keeps live commit but defers its clear to `change` — an
+instant unset would flash the field through its default mid-retype (select-all →
+type). Trade-off: an explicit empty string OVER a non-empty default is
+inexpressible from the UI — clear and unset collapse to one gesture.
+
 ## The address is the spine
 
 Every editable unit is keyed by an address — a corpus leaf by `Addr {card?,

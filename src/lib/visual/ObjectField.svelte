@@ -28,7 +28,16 @@
 	const obj = $derived((value ?? {}) as Record<string, unknown>);
 
 	function commitProp(key: string, v: unknown): void {
-		onCommit({ ...obj, [key]: v });
+		if (v === undefined) {
+			// A nested control cleared (the unset rung): drop the key so the property
+			// is ABSENT in the committed object — resolving to its own `default:` —
+			// rather than an `undefined` hole carried through `writer.set`.
+			const rest = { ...obj };
+			delete rest[key];
+			onCommit(rest);
+		} else {
+			onCommit({ ...obj, [key]: v });
+		}
 	}
 </script>
 
