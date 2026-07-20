@@ -6,14 +6,14 @@
 // Implementation (per the phase brief's permitted route): `pmToContent` is a pure
 // inverse of decode; `lower` diffs old→new into ops. Empirically grounded (see
 // scratchpad probes): a raw `\n` in the `delta` splits a line and a deleted `\n`
-// joins — so ALL text routes through `delta`, `lineOps` carry only `setKind` /
-// `setContainers` metadata, and every op reads in ONE coordinate space, the
-// post-delta (final) USV content. `applyChange` auto-rebases existing marks with
-// start-assoc `after` / end-assoc `before` (== `mapPos`), so the mark diff
-// replicates that rebase exactly and is coverage-precise. `applyChange` has no
-// `continues` op, so a NEW hard-break / code-internal line is not op-reachable —
-// `structureNeedsInstall` flags it for the field's `install` fallback
-// (prose/quillmark-issues/0002).
+// joins — so ALL text routes through `delta`, `lineOps` carry per-line `setKind` /
+// `setContainers` / `setContinues` metadata, and every op reads in ONE coordinate
+// space, the post-delta (final) USV content. `applyChange` auto-rebases existing
+// marks with start-assoc `after` / end-assoc `before` (== `mapPos`), so the mark
+// diff replicates that rebase exactly and is coverage-precise. The one op-
+// unreachable edit is island creation: a `delta` insert carrying an island slot
+// throws `IslandSlotInInsert`, so `insertReintroducesIslandSlot` flags it for the
+// field's `install` fallback.
 import type { Mark, Node as PMNode } from 'prosemirror-model';
 import { mapPos } from '../index.js';
 import type {
@@ -326,19 +326,20 @@ export function diffText(oldText: string, newText: string): Delta | undefined {
 	return { ops };
 }
 
-/** Per-line `setContainers` + `setKind` when the line metadata changed; else none. */
+/** Per-line `setContainers` / `setKind` / `setContinues` when line metadata changed; else none. */
 export function diffLines(oldRt: Content, newRt: Content): LineOp[] {
 	if (lineMetaEqual(oldRt.lines, newRt.lines)) return [];
 	const ops: LineOp[] = [];
 	// Force every new line's metadata. Redundant ops are safe no-ops (verified),
 	// so this is correct regardless of how the delta's split/join inheritance left
-	// the intermediate metadata. `continues` is NOT settable — see
-	// structureNeedsInstall for the fallback.
+	// the intermediate metadata. `continues` is a boundary property of the `\n`
+	// preceding a line — line 0 has no predecessor, never carries it, and the op
+	// rejects it there, so it's set only for lines ≥ 1.
 	for (let i = 0; i < newRt.lines.length; i++) {
-		ops.push({ op: 'setContainers', line: i, containers: newRt.lines[i].containers });
-	}
-	for (let i = 0; i < newRt.lines.length; i++) {
-		ops.push(kindOp(i, newRt.lines[i]));
+		const l = newRt.lines[i];
+		ops.push({ op: 'setContainers', line: i, containers: l.containers });
+		ops.push(kindOp(i, l));
+		if (i > 0) ops.push({ op: 'setContinues', line: i, continues: !!l.continues });
 	}
 	return ops;
 }
@@ -376,66 +377,16 @@ function kindKey(l: ContentLine): unknown {
 }
 
 /**
- * True when reaching `newRt` from `oldRt` is outside the op vocabulary and the
- * field must fall back to `install` (paying that field's anchors):
- *
- *   • the delta's insert would carry an island slot — `applyChange` throws
- *     `IslandSlotInInsert`, so island creation, and any single-splice edit that
- *     spans a slot and re-inserts it, are not op-reachable;
- *   • the `continues` flags ops cannot touch: `applyChange` has no `continues`
- *     op — a retained `\n` keeps its line's flag, a deleted `\n` joins (its
- *     flag vanishes), an inserted `\n` splits into a REAL line (`continues`
- *     false). Any new-side flag vector that splice model cannot produce (a new
- *     hard break, a code-internal line, a break↔split swap at unchanged text)
- *     requires install.
- *
- * Errs toward `install` — correctness over anchor preservation for rare edits.
+ * The one edit outside the op vocabulary: a `delta` insert that (re)introduces an
+ * island slot. `applyChange` throws `IslandSlotInInsert`, so island *creation* —
+ * and any single splice that spans a slot and re-inserts it — must fall back to
+ * `install` (paying that field's anchors). Every other structural edit, including
+ * a new hard break or a code-interior line, lowers op-wise via `setContinues`.
  */
-export function structureNeedsInstall(oldRt: Content, newRt: Content): boolean {
-	const delta = diffText(oldRt.text, newRt.text);
-	if (delta) {
-		const inserted = delta.ops.find((op) => 'insert' in op) as { insert: string } | undefined;
-		if (inserted?.insert.includes(ISLAND_SLOT)) return true;
-	}
-	return !continuesReachable(oldRt, newRt, delta);
-}
-
-/** Whether the splice model above yields exactly `newRt`'s `continues` vector. */
-function continuesReachable(oldRt: Content, newRt: Content, delta: Delta | undefined): boolean {
-	// Line 0 never continues anything; a flip there is unreachable by definition.
-	if (!!oldRt.lines[0]?.continues !== !!newRt.lines[0]?.continues) return false;
-	const actual = newRt.lines.slice(1).map((l) => !!l.continues);
-	const oldFlags = oldRt.lines.slice(1).map((l) => !!l.continues);
-	if (!delta) return sameFlags(actual, oldFlags);
-
-	// The single splice in USV coords: [p, p+del) replaced by `ins`.
-	let p = 0;
-	let del = 0;
-	let ins = '';
-	for (const op of delta.ops) {
-		if ('retain' in op) {
-			if (del === 0 && ins === '') p = op.retain;
-		} else if ('delete' in op) del = op.delete;
-		else ins = op.insert;
-	}
-
-	// Boundary j (the j-th `\n` of the old text) carries old line j+1's flag.
-	// Expected new vector: surviving pre-splice boundaries, then one REAL line
-	// per inserted `\n`, then surviving post-splice boundaries.
-	const cps = codePoints(oldRt.text);
-	const boundaries: { pos: number; flag: boolean }[] = [];
-	for (let i = 0, j = 0; i < cps.length; i++) {
-		if (cps[i] === '\n') boundaries.push({ pos: i, flag: oldFlags[j++] });
-	}
-	const expected: boolean[] = [];
-	for (const b of boundaries) if (b.pos < p) expected.push(b.flag);
-	for (const c of ins) if (c === '\n') expected.push(false);
-	for (const b of boundaries) if (b.pos >= p + del) expected.push(b.flag);
-	return sameFlags(actual, expected);
-}
-
-function sameFlags(a: boolean[], b: boolean[]): boolean {
-	return a.length === b.length && a.every((v, i) => v === b[i]);
+export function insertReintroducesIslandSlot(oldRt: Content, newRt: Content): boolean {
+	const inserted = diffText(oldRt.text, newRt.text)?.ops.find((op) => 'insert' in op) as
+		{ insert: string } | undefined;
+	return !!inserted?.insert.includes(ISLAND_SLOT);
 }
 
 // ── Mark diff ───────────────────────────────────────────────────────────────

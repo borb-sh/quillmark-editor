@@ -108,11 +108,12 @@ with Phase 4.) Pinned.
   output is pure `applyChange` ops (delta/lineOps/markOps), never `install` except
   the fallback below — so anchors still rebase. A shared `scanDoc` walk yields both
   the corpus projection and the position-map runs, so they cannot disagree.
-- **`continues` is not op-expressible** ([quillmark-issues/0002](../quillmark-issues/0002-no-continues-line-op.md)):
-  `applyChange`'s `LineOp` set cannot *create* a hard-break / code-interior line.
-  Edits *within* such a block lower correctly (no lineOps when metadata is
-  unchanged); *creating* one falls back to `doc.install` — the design's sanctioned
-  narrow structural fallback, costing that field's anchors for that one edit.
+- **`continues` lowers via `setContinues`** ([quillmark-issues/0002](../quillmark-issues/0002-no-continues-line-op.md),
+  resolved in `@quillmark/wasm` 0.95.1): `diffLines` force-sets each line's
+  `continues` flag alongside `setContainers` / `setKind`, so a new hard break or
+  code-interior line lowers op-wise and the field's anchors rebase through the
+  splice. `continues` is boundary metadata of the preceding `\n` — line 0 never
+  carries it and the op rejects it there, so it is set only for lines ≥ 1.
 - **Island *creation* falls back to install** (no island channel in `ChangeBundle`);
   edits around an existing island lower via delta-retain + auto-rebase.
 - **Absent declared field:** `readLeaf` decodes an empty corpus and the first edit
@@ -129,10 +130,9 @@ with Phase 4.) Pinned.
   no new lowering surface, so it ships too (`inputrules.ts`; `blockSchema` mounts
   nine rules, `edges.test.ts` pins the count). Recorded here so the set of nine is
   the documented set, not eight-plus-one-silent.
-- **Install is also the recovery path.** Beyond the two gated fallbacks
-  (`continues` shapes and island-slot inserts — `structureNeedsInstall` checks
-  the positional `continues` vector and the delta insert, not just counts), a
-  `commitEdit` whose `applyChange` throws for any other reason retries as
-  `doc.install` of the optimistic projection. Without that, the reconciler
-  keeps re-diffing from the stale store and the field silently stops
-  persisting — install bounds the damage to that field's anchors.
+- **Install is also the recovery path.** Beyond the one gated fallback
+  (island-slot inserts — `insertReintroducesIslandSlot` checks the delta insert
+  for a re-carried `U+FFFC`), a `commitEdit` whose `applyChange` throws for any
+  other reason retries as `doc.install` of the optimistic projection. Without
+  that, the reconciler keeps re-diffing from the stale store and the field
+  silently stops persisting — install bounds the damage to that field's anchors.

@@ -3,6 +3,12 @@
 **Package:** `@quillmark/wasm` 0.94.0
 **Severity:** friction (worked around downstream via a narrow `install` fallback)
 **Filed by:** @quillmark/editor Phase 3 (codec)
+**Status:** RESOLVED in 0.95.1 — the requested `{ op: "setContinues"; line; continues }`
+`LineOp` shipped (`core/wasm.d.ts`), rejecting `continues: true` on line 0. The
+editor lowers hard breaks and code-interior lines through it (`encode.ts`
+`diffLines`); the `install` fallback below is retired, leaving island creation as
+the sole op-unreachable edit (`insertReintroducesIslandSlot`). The historical
+account is kept below as the record of the gap.
 
 ## What
 

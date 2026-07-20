@@ -19,7 +19,7 @@ export {
 	diffText,
 	diffLines,
 	diffMarks,
-	structureNeedsInstall,
+	insertReintroducesIslandSlot,
 	scanDoc
 } from './encode.js';
 export type { PosRun, Scan } from './encode.js';
