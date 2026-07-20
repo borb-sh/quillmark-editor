@@ -22,8 +22,8 @@
 //      `FieldRegion.field`), routed by `.path` like #1.
 //
 // FIELD-KEY SPACE. Two addressing schemes meet here: producers #1/#3 speak
-// `Diagnostic.path`, a POSITIONAL string (the ContentHit/FieldRegion grammar,
-// BOUNDARY_NOTES — `$body` / `<field>` / `$cards.<kind>.<i>.<field>`; verified
+// `Diagnostic.path`, a POSITIONAL string (the ContentHit/FieldRegion grammar —
+// `$body` / `<field>` / `$cards.<kind>.<i>.<field>`; verified
 // for ContentHit/FieldRegion, BEST-EFFORT for Diagnostic.path since the fixture
 // cannot produce a non-empty `validate()` result to check the card-path shape
 // against). The editor's OWN addressing (VisualEditor's `commitScalar`, the
@@ -54,8 +54,8 @@ export function fieldKeyToString(k: FieldKey): string {
 }
 
 /**
- * Parse a producer's `path` grammar (BOUNDARY_NOTES §"FieldRegion.field /
- * ContentHit.field GRAMMAR") into a `FieldKey`, `card` as a raw content index.
+ * Parse a producer's `path` grammar into a `FieldKey`, `card` as a raw content
+ * index.
  * Verified for ContentHit/FieldRegion; `Diagnostic.path` is assumed to share it
  * (both are quillmark's one field-addressing grammar) but is NOT independently
  * confirmed for card paths — BEST-EFFORT, per the phase brief. Returns

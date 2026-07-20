@@ -123,6 +123,12 @@ with Phase 4.) Pinned.
   lands — a rule that creates a table has nothing to create it *into*. The rest
   of the set (`**`/`*`/`~~`/`` ` ``/`#`/`- `/`1. `/`> `) ships as settled; the
   table rule lands with island authoring.
+- **A code-fence input rule (` ``` ` → `code_block`) ships beyond the settled
+  set.** The eight-rule list above omits it, but a bare ` ``` ` on a line is the
+  natural markdown shorthand for a fence and reuses `textblockTypeInputRule` with
+  no new lowering surface, so it ships too (`inputrules.ts`; `blockSchema` mounts
+  nine rules, `edges.test.ts` pins the count). Recorded here so the set of nine is
+  the documented set, not eight-plus-one-silent.
 - **Install is also the recovery path.** Beyond the two gated fallbacks
   (`continues` shapes and island-slot inserts — `structureNeedsInstall` checks
   the positional `continues` vector and the delta insert, not just counts), a

@@ -4,3 +4,8 @@ package-lock.json
 # prettier would collapse aligned code-sketch comments and churn a test input.
 prose/
 fixtures/
+
+# Claude Code tooling — agent config and skills copied from the sibling quillmark
+# checkout (hand-formatted prose). Never shipped (`files: ["dist"]`), not package
+# source, so it stays out of the prettier gate like `prose/`.
+.claude/

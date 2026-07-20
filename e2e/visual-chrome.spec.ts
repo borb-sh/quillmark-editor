@@ -81,6 +81,10 @@ test.describe('visual editor chrome — formatting popover', () => {
 	}) => {
 		await replaceProse(page, 'prose-main-subject', 'ITALICWORD');
 		await selectAll(page, 'prose-main-subject');
+		// Gate on the popover settling (its rAF-deferred sync mounts it and sets the
+		// active-mark state) before reading a button's class — every sibling test
+		// waits for this; skipping it races the sync.
+		await expect(page.getByTestId('format-popover')).toBeVisible();
 		const em = page.getByTestId('mark-em');
 		await expect(em).not.toHaveClass(/active/);
 		await em.click();

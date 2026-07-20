@@ -5,7 +5,7 @@
 // This module owns the type-name translation and the descriptor keying the mark
 // diff groups by; the anchor↔decoration bridge is field.ts, the mark ops are
 // encode.ts. `emph` is the content name; `em` the PM name — the one asymmetry.
-import type { Mark, MarkType, Schema } from 'prosemirror-model';
+import type { Mark, Schema } from 'prosemirror-model';
 import type { ContentMark } from '@quillmark/wasm';
 
 /** Content formatting types that map 1:1 to a same-named PM mark. */
@@ -14,11 +14,6 @@ const PLAIN_FORMATTING = new Set(['strong', 'underline', 'strike', 'code']);
 /** Is this content mark an identity anchor (zero-width handle, → a decoration)? */
 export function isAnchor(m: ContentMark): m is ContentMark & { type: 'anchor'; id: string } {
 	return m.type === 'anchor';
-}
-
-/** Is this content mark a formatting mark (has a PM mark projection)? */
-export function isFormatting(m: ContentMark): boolean {
-	return PLAIN_FORMATTING.has(m.type) || m.type === 'emph' || m.type === 'link';
 }
 
 /** A PM mark from a content formatting/unknown mark, or `null` for an anchor. */
@@ -59,13 +54,6 @@ export function markKey(descriptor: Record<string, unknown>): string {
 	if (type === 'link') return `link\u0000${String(descriptor.url)}`;
 	if (descriptor.attrs !== undefined) return `${type}\u0000${JSON.stringify(descriptor.attrs)}`;
 	return type;
-}
-
-/** Which PM mark types are formatting marks in the given schema (excludes `unknown`). */
-export function formattingMarkTypes(schema: Schema): MarkType[] {
-	return ['strong', 'em', 'underline', 'strike', 'code', 'link']
-		.map((n) => schema.marks[n])
-		.filter((t): t is MarkType => !!t);
 }
 
 /** A held anchor position: an identity id at a USV content offset (zero-width). */

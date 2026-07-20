@@ -102,7 +102,7 @@ describe('geometry: against a real compiled session (usaf_memo)', () => {
 		const engine = new Engine();
 		const session = await engine.open(quill, doc);
 		try {
-			// BOUNDARY_NOTES: subject -> 2 boxes (page 0 header + page 1 continuation),
+			// subject -> 2 boxes (page 0 header + page 1 continuation),
 			// same span — the exact case overlay.ts's "group by field" exists for.
 			const boxes = session.fieldBoxes('subject');
 			expect(boxes.length).toBeGreaterThanOrEqual(2);

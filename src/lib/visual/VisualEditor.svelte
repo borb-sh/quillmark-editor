@@ -349,7 +349,7 @@
 		return leaves.get(`${cardPart}:${activeAddr.field ?? '$body'}`);
 	}
 
-	/** Map a `ContentHit.field` grammar string to a mounted leaf key (BOUNDARY_NOTES). */
+	/** Map a `ContentHit.field` grammar string to a mounted leaf key. */
 	function leafKeyForHit(field: string): string | undefined {
 		if (field === '$body') return 'main:$body';
 		if (field.startsWith('$cards.')) {
