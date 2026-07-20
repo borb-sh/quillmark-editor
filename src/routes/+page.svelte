@@ -85,6 +85,11 @@
 	<h1>@quillmark/editor</h1>
 	<p class="sub">Phase 1 substrate — the WASM boundary proven live.</p>
 
+	<nav aria-label="Playground pages">
+		<a href="/preview">Preview <span>Phase 2 — paint, overlay, click bridge</span></a>
+		<a href="/visual">Visual <span>Phase 4 — the WYSIWYG surface</span></a>
+	</nav>
+
 	{#if status.phase === 'loading'}
 		<p data-testid="status" class="loading">Loading reference quill…</p>
 	{:else if status.phase === 'error'}
@@ -127,6 +132,32 @@
 	.sub {
 		color: #666;
 		margin-top: 0;
+	}
+	nav {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		margin: 1.5rem 0;
+	}
+	nav a {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		padding: 0.6rem 0.9rem;
+		border: 1px solid #e2e2e2;
+		border-radius: 8px;
+		text-decoration: none;
+		color: #1a56db;
+		font-weight: 600;
+	}
+	nav a:hover {
+		border-color: #1a56db;
+		background: #f5f8ff;
+	}
+	nav a span {
+		color: #8a8a8a;
+		font-weight: 400;
+		font-size: 0.78rem;
 	}
 	.ready {
 		color: #137333;
