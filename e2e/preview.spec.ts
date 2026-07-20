@@ -148,4 +148,45 @@ test.describe('preview', () => {
 			.poll(async () => scrollContainer.evaluate((el) => el.scrollTop), { timeout: 10_000 })
 			.toBeLessThan(scrollTopAtBottom);
 	});
+
+	// Issue #9: a mounted canvas froze its CSS width at paint time and nothing
+	// observed the container resizing, so a widened/narrowed pane left the raster
+	// the wrong size under the %-tracked page box (overlays drift off the ink).
+	// The ResizeObserver in paint.ts must repaint mounted pages so the canvas
+	// re-fits its box. Narrow the shell and assert the canvas tracks the box.
+	test('(i) resizing the container repaints the mounted canvas to track the page box', async ({
+		page
+	}) => {
+		const canvas = page.locator('canvas.qm-page-canvas').first();
+		await expect(canvas).toBeVisible();
+
+		// The paint contract's layoutWidth == the box's clientWidth, so a correctly
+		// fitted canvas renders exactly as wide as its `.qm-page` box.
+		const widths = () =>
+			page.evaluate(() => {
+				const c = document.querySelector('canvas.qm-page-canvas') as HTMLCanvasElement;
+				const box = c.parentElement as HTMLElement;
+				return { canvas: c.getBoundingClientRect().width, box: box.clientWidth };
+			});
+		const before = await widths();
+		expect(Math.abs(before.canvas - before.box)).toBeLessThan(2);
+
+		// Narrow the shell so the %-width page box shrinks under the mounted canvas.
+		await page.evaluate(() => {
+			(document.querySelector('.preview-shell') as HTMLElement).style.width = '360px';
+		});
+
+		// The box shrinks immediately (CSS %); without the ResizeObserver the canvas
+		// keeps its frozen width and drifts. Poll until the repaint re-fits it to the
+		// (now clearly smaller) box.
+		await expect
+			.poll(
+				async () => {
+					const w = await widths();
+					return Math.abs(w.canvas - w.box) < 2 && w.box < before.box - 50;
+				},
+				{ timeout: 10_000 }
+			)
+			.toBe(true);
+	});
 });
