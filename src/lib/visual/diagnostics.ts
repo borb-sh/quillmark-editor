@@ -114,6 +114,18 @@ export function perKindCardIndex(kinds: readonly string[], kind: string, ordinal
 	return -1;
 }
 
+/** The kind and per-kind ordinal of the card at absolute index `i` — the inverse
+ * of {@link perKindCardIndex} (the two are round-tripped in caret.test.ts). */
+export function cardKindOrdinal(
+	kinds: readonly string[],
+	i: number
+): { kind: string; ordinal: number } {
+	const kind = kinds[i];
+	let ordinal = 0;
+	for (let k = 0; k < i; k++) if (kinds[k] === kind) ordinal++;
+	return { kind, ordinal };
+}
+
 /** One diagnostic paired with the `FieldKey` it targets. */
 export interface RoutedDiagnostic {
 	key: FieldKey;

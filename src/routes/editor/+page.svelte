@@ -71,6 +71,9 @@
 	// injected render-error stand-ins (recomputed on every recompile).
 	let injected = $state<Diagnostic[]>([]);
 	let externalDiagnostics = $state<Diagnostic[]>([]);
+	function syncDiagnostics(): void {
+		externalDiagnostics = session ? [...session.warnings, ...injected] : injected;
+	}
 
 	// Bridge observability (e2e).
 	let lastHit = $state<ContentHit | undefined>();
@@ -97,8 +100,7 @@
 			lastChange = change;
 			previewRef?.refresh(change);
 			sourceRef?.refresh();
-			// Re-read the live warnings each compile; merge the injected stand-ins.
-			externalDiagnostics = [...session.warnings, ...injected];
+			syncDiagnostics(); // re-read live warnings each compile, merged with the stand-ins
 		} catch (e) {
 			// A failed recompile keeps the last-good preview (the session is
 			// transactional); surface it without crashing the shell.
@@ -128,9 +130,6 @@
 		// A prose edit surfaces only as a caret move — recompile to follow it.
 		scheduleRecompile();
 	}
-	function handleChange(): void {
-		scheduleRecompile();
-	}
 
 	function injectDiagnostics(): void {
 		injected = [
@@ -141,7 +140,7 @@
 				path: '$cards.indorsement.0.from'
 			}
 		];
-		externalDiagnostics = session ? [...session.warnings, ...injected] : injected;
+		syncDiagnostics();
 	}
 
 	onMount(() => {
@@ -149,14 +148,15 @@
 		(async () => {
 			try {
 				// Dynamic import keeps WASM's top-level await out of the route module
-				// (Safari/dev TDZ, Kit #7805); VisualEditor rides the same import.
+				// (Safari/dev TDZ, Kit #7805); VisualEditor rides the same import. The
+				// fixture fetch is independent of both, so it runs alongside them.
+				const treeP = loadUsafMemoTree();
 				const [{ Engine, Quill, init }, visual] = await Promise.all([
 					import('$lib/core'),
 					import('$lib/visual')
 				]);
 				init();
-				const tree = await loadUsafMemoTree();
-				const quill = Quill.fromTree(tree);
+				const quill = Quill.fromTree(await treeP);
 				const doc = quill.seedDocument();
 				const engine = new Engine();
 				const openedSession = await engine.open(quill, doc);
@@ -171,7 +171,7 @@
 				session = openedSession;
 				quillHandle = quill;
 				docHandle = doc;
-				externalDiagnostics = [...openedSession.warnings];
+				syncDiagnostics();
 				toFree = [openedSession, doc, quill];
 				status = { phase: 'ready' };
 			} catch (e) {
@@ -232,7 +232,7 @@
 						quill={quillHandle}
 						onActiveAddrChange={handleActiveAddr}
 						onCaretMove={handleCaretMove}
-						onChange={handleChange}
+						onChange={scheduleRecompile}
 						diagnostics={externalDiagnostics}
 					/>
 				{/if}

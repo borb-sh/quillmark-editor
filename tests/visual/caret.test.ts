@@ -3,7 +3,7 @@
 // This pins the grammar and its inverse relationship with the parse side.
 import { describe, it, expect } from 'vitest';
 import { fieldPathForAddr } from '$lib/visual/caret';
-import { parsePath, perKindCardIndex } from '$lib/visual/diagnostics';
+import { parsePath, perKindCardIndex, cardKindOrdinal } from '$lib/visual/diagnostics';
 
 describe('fieldPathForAddr', () => {
 	it('maps the main body and main fields', () => {
@@ -28,6 +28,14 @@ describe('fieldPathForAddr', () => {
 	it('drops an out-of-range or malformed card index', () => {
 		expect(fieldPathForAddr({ card: 5 }, ['indorsement'])).toBeUndefined();
 		expect(fieldPathForAddr({ card: -1 }, ['indorsement'])).toBeUndefined();
+	});
+
+	it('cardKindOrdinal round-trips with perKindCardIndex', () => {
+		const kinds = ['note', 'indorsement', 'note', 'indorsement'];
+		kinds.forEach((_, i) => {
+			const { kind, ordinal } = cardKindOrdinal(kinds, i);
+			expect(perKindCardIndex(kinds, kind, ordinal)).toBe(i);
+		});
 	});
 
 	it('is the inverse of parsePath (+ perKindCardIndex) for routable addresses', () => {

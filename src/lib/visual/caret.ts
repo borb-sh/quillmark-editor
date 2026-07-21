@@ -5,7 +5,8 @@
 // (`$body` / `<field>` / `$cards.<kind>.<ordinal>[.<field>]`, verified against
 // `session.regions()`). This is the mapping between them — the inverse of the
 // grammar `diagnostics.ts`'s `parsePath` / `VisualEditor`'s `leafKeyForHit`
-// consume, and the same per-kind ordinal `perKindCardIndex` resolves.
+// consume; the per-kind ordinal comes from `cardKindOrdinal`, the inverse of the
+// `perKindCardIndex` those two resolve through (both in `diagnostics.ts`).
 //
 // It lives at the CONSUMER seam, not inside the editor: the VisualEditor stays
 // unaware of the preview (the two headline surfaces are deliberately independent),
@@ -13,6 +14,7 @@
 // no codec hop — it is already the shared content coordinate `focusPosition`
 // takes; only the address is translated here.
 import type { Addr } from '../core/index.js';
+import { cardKindOrdinal } from './diagnostics.js';
 
 /**
  * Map an editor `Addr` to the preview's field-path grammar string, or `undefined`
@@ -34,10 +36,7 @@ export function fieldPathForAddr(addr: Addr, kinds: readonly string[]): string |
 	}
 	const i = addr.card;
 	if (!Number.isInteger(i) || i < 0 || i >= kinds.length) return undefined;
-	const kind = kinds[i];
-	// Ordinal = how many same-kind cards precede this one.
-	let ord = 0;
-	for (let k = 0; k < i; k++) if (kinds[k] === kind) ord++;
-	const base = `$cards.${kind}.${ord}`;
+	const { kind, ordinal } = cardKindOrdinal(kinds, i);
+	const base = `$cards.${kind}.${ordinal}`;
 	return addr.field != null ? `${base}.${addr.field}` : base;
 }

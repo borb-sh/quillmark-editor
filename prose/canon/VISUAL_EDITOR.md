@@ -24,8 +24,7 @@ The VisualEditor is a **thin composition layer** over many small editors, not on
 ProseMirror document spanning the page. The schema is the outline, a Svelte tree
 renders it, and each content leaf — a body, a `richtext`/`plaintext` field — is a
 separate sub-document with its own PM state, view, history, and plugins; scalar
-fields are plain form controls. This resolves the skeleton's "whether these split
-into sub-docs is TBD": **they split.**
+fields are plain form controls.
 
 The content already stores a document as separate leaves at distinct addresses of
 distinct types — a card's body, its `intro` richtext field, its `signature_block`

@@ -28,8 +28,6 @@ export interface SourceViewOptions {
 export interface SourceViewController {
 	/** Re-serialize `doc.toMarkdown()` into the view — call after an edit lands. */
 	refresh(): void;
-	/** The markdown currently shown (the last successful serialize). */
-	markdown(): string;
 	destroy(): void;
 }
 
@@ -80,9 +78,6 @@ export function createSourceView(opts: SourceViewOptions): SourceViewController 
 			if (next === current) return; // no re-render when the serialize is unchanged
 			current = next;
 			view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: next } });
-		},
-		markdown(): string {
-			return current;
 		},
 		destroy(): void {
 			view.destroy();

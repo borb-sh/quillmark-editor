@@ -2,8 +2,8 @@
   `@quillmark/editor/source`'s Svelte wrapper — mounts `createSourceView` over a
   container div on mount, tears it down on unmount. No logic beyond wiring;
   view.ts owns the CodeMirror surface and the `toMarkdown()` serialize. Exposes
-  `refresh()` (re-serialize after an edit lands) and `markdown()` (the shown text)
-  as instance methods (`bind:this`) — pure passthrough.
+  `refresh()` (re-serialize after an edit lands) as an instance method
+  (`bind:this`) — pure passthrough.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -34,9 +34,6 @@
 
 	export function refresh(): void {
 		controller?.refresh();
-	}
-	export function markdown(): string {
-		return controller?.markdown() ?? '';
 	}
 </script>
 
