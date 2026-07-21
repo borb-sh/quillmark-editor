@@ -40,7 +40,7 @@ geometry.
   (Y-flipped from PDF-pt). Drawn by default — active-field ring, click targets —
   themeable via CSS vars, opt-out. `field` is not unique (a field split across
   pages or shown in header + footer surfaces several boxes); group by `field`.
-- **Bridge** — clicks resolve to a corpus position and surface as a hook;
+- **Bridge** — clicks resolve to a content position and surface as a hook;
   commands scroll/focus a field.
 
 A **field box** is the rectangle on the rendered page where a schema field's
@@ -52,18 +52,18 @@ into one (striped) box per page.
 
 The preview owns the pixel→pt math (inverse of the overlay transform) and the
 session query; the consumer completes the caret move, because only the editor's
-codec maps a corpus offset to a ProseMirror position.
+codec maps a content offset to a ProseMirror position.
 
 ```
-click → PDF-pt → session.positionAt(p, x, y) → CorpusHit → onCaretPick(hit)
+click → PDF-pt → session.positionAt(p, x, y) → ContentHit → onCaretPick(hit)
                                                             ↳ consumer:
-                                                              codec.corpusToPM → setCaret
+                                                              codec.usvToPM → setCaret
 ```
 
-`CorpusHit.granularity` decides precision: `'cluster'` → caret-exact;
+`ContentHit.granularity` decides precision: `'cluster'` → caret-exact;
 `'segment'` → focus the field/segment, no exact caret. `positionAt` returns
 nothing for non-field ink (margins, page chrome) — the hook does not fire. One
-hook suffices: `CorpusHit` carries `field`, so coarse "focus this field" is just
+hook suffices: `ContentHit` carries `field`, so coarse "focus this field" is just
 ignoring `pos`.
 
 ## Minimal surface
@@ -75,7 +75,7 @@ interface PreviewOptions {
   container: HTMLElement;
   margin?: number;        // pages kept painted beyond the viewport; default 1
   overlays?: boolean;     // draw field-box overlays; default true
-  onCaretPick?(hit: CorpusHit): void;   // preview → editor
+  onCaretPick?(hit: ContentHit): void;   // preview → editor
 }
 
 interface PreviewController {

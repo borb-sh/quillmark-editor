@@ -250,9 +250,9 @@ function buildInline(
 /** A stable key for a mark set (order-independent) to detect run boundaries. */
 function markSetKey(active: ContentMark[]): string {
 	if (!active.length) return '';
-	// Per-mark keys via the shared NUL-delimited `markKey`; the set is joined via
-	// JSON so no url/attrs content can collide with a delimiter (`link:a|strong`
-	// as a url used to alias `{link:a} + {strong}`).
+	// Per-mark keys via the shared NUL-delimited `markKey`; the set is JSON-joined
+	// so no url/attrs content collides with a delimiter — a `link:a|strong` url
+	// stays distinct from the two-mark set `{link:a} + {strong}`.
 	return JSON.stringify(active.map((m) => markKey(m as unknown as Record<string, unknown>)).sort());
 }
 

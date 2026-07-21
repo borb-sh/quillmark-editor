@@ -21,7 +21,7 @@ so it runs in parallel with the Codec.
   themeable via CSS vars, opt-out. Group by `field` (a field spans pages / repeats
   in header+footer → several boxes).
 - **Bridge.** Clicks resolve pixel→PDF-pt (inverse of the overlay transform) →
-  `session.positionAt` → `CorpusHit` → `onCaretPick(hit)`. `scrollToField`,
+  `session.positionAt` → `ContentHit` → `onCaretPick(hit)`. `scrollToField`,
   `focusPosition`, `setZoom` complete the command surface.
 
 ## Out of scope
@@ -38,7 +38,7 @@ consumer: session.apply(nextDoc) ─► ChangeSet
                                        │
           preview.refresh(changeSet) ─► repaint (dirtyPages ∩ visible), re-read geometry
 
-click ─► PDF-pt ─► session.positionAt ─► CorpusHit ─► onCaretPick(hit)
+click ─► PDF-pt ─► session.positionAt ─► ContentHit ─► onCaretPick(hit)
                                                          ↳ consumer completes the caret move
 ```
 
@@ -75,7 +75,7 @@ preview stays a view.
   mounts/unmounts canvases and memory stays bounded to visible + margin.
 - Field-box overlays land on the right rectangles across pages and survive a
   container resize (percent positioning).
-- A click on field ink fires `onCaretPick` with a `CorpusHit` carrying the right
+- A click on field ink fires `onCaretPick` with a `ContentHit` carrying the right
   `field`; a click on margin/chrome fires nothing.
 - `scrollToField` / `focusPosition` / `setZoom` behave; an `apply` from the
   playground repaints only dirty ∩ visible pages.

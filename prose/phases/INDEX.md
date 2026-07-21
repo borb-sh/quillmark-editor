@@ -9,7 +9,7 @@ write them. The designs own the *what*; these own the *order and the seams*.
 
 ## The spine
 
-Phase 0 (preflight tooling for `@quillmark/wasm` 0.94.0) is already merged. The
+Phase 0 (preflight tooling for `@quillmark/wasm`) is already merged. The
 build proper is five phases:
 
 ```
@@ -19,18 +19,18 @@ build proper is five phases:
         │   Engine wiring, build + test tooling)          │
         └───────────────┬───────────────┬────────────────┘
                         │               │
-          ┌─────────────▼──┐   ┌────────▼──────────────┐
-          │ Phase 2        │   │ Phase 3               │
-          │ Preview        │   │ Codec                 │
-          │ (LiveSession   │   │ (corpus ↔ ProseMirror,│
-          │  paint loop)   │   │  the correctness core)│
-          └─────────────┬──┘   └────────┬──────────────┘
+          ┌─────────────▼──┐   ┌────────▼───────────────┐
+          │ Phase 2        │   │ Phase 3                │
+          │ Preview        │   │ Codec                  │
+          │ (LiveSession   │   │ (content ↔ ProseMirror,│
+          │  paint loop)   │   │  the correctness core) │
+          └─────────────┬──┘   └────────┬───────────────┘
                         │               │
-                        │      ┌────────▼──────────────┐
-                        │      │ Phase 4               │
-                        │      │ VisualEditor          │
-                        │      │ (federated field tree)│
-                        │      └────────┬──────────────┘
+                        │      ┌────────▼───────────────┐
+                        │      │ Phase 4                │
+                        │      │ VisualEditor           │
+                        │      │ (federated field tree) │
+                        │      └────────┬───────────────┘
                         │               │
                      ┌──▼───────────────▼──┐
                      │ Phase 5             │
@@ -40,7 +40,7 @@ build proper is five phases:
 ```
 
 **Phases 2 (Preview) and 3 (Codec) are independent** once Phase 1 lands — Preview
-wraps `LiveSession` and needs no ProseMirror; Codec is pure corpus↔PM and needs no
+wraps `LiveSession` and needs no ProseMirror; Codec is pure content↔PM and needs no
 canvas. They can land in either order. Phase 4 needs the Codec; Phase 5 needs
 everything.
 
@@ -98,7 +98,7 @@ and a live paint of a real document — that de-risks everything downstream.
 
 The [DOCUMENT_MODEL](../designs/DOCUMENT_MODEL.md) ledger is the single home for the
 `@quillmark/wasm` boundary; each phase carries only the one or two boundary details
-it consumes, where it consumes them. The 0.94.0 surface was verified against the
+it consumes, where it consumes them. The 0.95.1 surface was verified against the
 ledger and matches; the two typing seams it carries (`Island.props: unknown`,
 `QuillCardUi` narrower than the schema JSON) are recorded in the ledger's
 stability seams.

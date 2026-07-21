@@ -3,7 +3,7 @@
 // hit via `session.positionAt`, surfaced through `onCaretPick`. Also the
 // editor->preview scroll commands (`scrollToField`/`focusPosition`), which
 // place an ephemeral marker at the target's % position and let the DOM scroll
-// to it — robust to zoom/resize since it reads the SAME percent geometry the
+// to it — unaffected by zoom/resize since it reads the SAME percent geometry the
 // overlay draws, not a hand-rolled pixel offset.
 import type { LiveSession, ContentHit } from '../core/index.js';
 import type { PageSlot } from './paint.js';

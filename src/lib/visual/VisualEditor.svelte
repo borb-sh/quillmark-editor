@@ -138,7 +138,7 @@
 	// never parsed from the message (VISUAL_EDITOR §Diagnostics, producer #2) —
 	// and stashed in `commitErrors`, id-keyed so it survives a later card reorder.
 	// A subsequent SUCCESSFUL commit for the same field clears it. Nothing here
-	// gates: the value is simply not written (the document is unchanged on
+	// gates: the value is not written (the document is unchanged on
 	// throw, per the boundary's own transactional contract) and editing continues.
 	function commitScalar(id: string, isMain: boolean, name: string, value: unknown): void {
 		const key: FieldKey = { card: isMain ? undefined : id, field: name };

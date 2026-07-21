@@ -45,7 +45,7 @@ export function createOverlay(session: LiveSession, slots: readonly PageSlot[]):
 	// Field names come from `regions()` (the only session query that enumerates
 	// them — Preview carries no schema); the boxes themselves come from
 	// `fieldBoxes(field)`, which is content-only and `[]` for a scalar-reference
-	// or widget field, so a nameless-of-content field simply contributes no boxes.
+	// or widget field, so a nameless-of-content field contributes no boxes.
 	function build(): void {
 		for (const layer of layers) layer.replaceChildren();
 		const fields = new Set<string>();

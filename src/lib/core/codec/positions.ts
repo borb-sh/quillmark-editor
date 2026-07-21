@@ -9,6 +9,7 @@
 // through `usvToPM`; the preview overlay runs `pmToUsv` in reverse.
 import type { Node as PMNode } from 'prosemirror-model';
 import { scanDoc, type PosRun } from './encode.js';
+import { usvLength } from './decode.js';
 
 /** A prebuilt line→position index for a PM doc, rebuilt on structural change. */
 export interface LineIndex {
@@ -37,7 +38,7 @@ export function buildLineIndex(doc: PMNode): LineIndex {
 
 /** USV width of a run (code points it owns). */
 function runUsvLen(run: PosRun): number {
-	return run.kind === 'text' ? countCodePoints(run.s) : 1;
+	return run.kind === 'text' ? usvLength(run.s) : 1;
 }
 /** PM position just past a run (its exclusive end). */
 function runEndPm(run: PosRun): number {
@@ -80,12 +81,6 @@ export function pmToUsv(_doc: PMNode, index: LineIndex, pmPos: number): number {
 }
 
 // ── UTF-16 ↔ USV conversions within one text run ────────────────────────────
-
-function countCodePoints(s: string): number {
-	let n = 0;
-	for (const _ of s) n++;
-	return n;
-}
 
 /** UTF-16 length of the first `n` code points of `s`. */
 function utf16OfCodePoints(s: string, n: number): number {

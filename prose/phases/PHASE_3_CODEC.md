@@ -1,7 +1,7 @@
 # Phase 3 — Codec
 
-**Goal:** the bidirectional codec between **one** corpus field (`RichText`) and
-**one** ProseMirror document — decode (corpus → PM), transaction lowering (PM → a
+**Goal:** the bidirectional codec between **one** content field (`Content`) and
+**one** ProseMirror document — decode (content → PM), transaction lowering (PM → a
 `ChangeBundle` for `applyChange`), and the USV↔PM position map that carries the
 caret. This is the correctness core of the whole editor; it is where the prior
 art accreted its weight, so it earns the heaviest test coverage.
@@ -13,7 +13,7 @@ Preview. **Unblocks Phase 4.**
 
 ## In scope — one field, one PM doc
 
-- **Decode.** Fold the flat `RichText` (`text` + `lines` + `marks` + `islands`)
+- **Decode.** Fold the flat `Content` (`text` + `lines` + `marks` + `islands`)
   into a PM tree: group lines by shared `containers`, join `continues` runs,
   select the block node by `LineKind`, apply marks over their ranges, lower island
   slots to PM leaf nodes.
@@ -21,9 +21,9 @@ Preview. **Unblocks Phase 4.**
   lineOps?, markOps? }` in `applyChange`'s application order (delta → lineOps →
   markOps, ranges in post-delta coordinates) and call `doc.applyChange(addr,
   bundle)`. Op-based, so identity anchors rebase — **not** an `install` re-write.
-- **Position map.** `corpusToPM` / `pmToCorpus`, walking the line structure,
-  rebuilt on structural change — **UTF-16-safe** (JS/PM offsets are UTF-16, corpus
-  offsets are USV). This is the function `CorpusHit.pos` and `FieldRegion.span`
+- **Position map.** `usvToPM` / `pmToUsv`, walking the line structure,
+  rebuilt on structural change — **UTF-16-safe** (JS/PM offsets are UTF-16, content
+  offsets are USV). This is the function `ContentHit.pos` and `FieldRegion.span`
   pass through to reach a PM caret, and its inverse feeds the preview overlay.
 - **Marks.** Two algebra classes to two mechanisms: **formatting**
   (`strong`/`emph`/`underline`/`strike`/`code`/`link`) ↔ PM marks; **identity**
@@ -37,8 +37,8 @@ Preview. **Unblocks Phase 4.**
 - **Markdown edges.** Paste (`rebase` → splice the delta), copy
   (`exportMarkdown`, lossy — warn before dropping identity), debug source
   (`toMarkdown`, read-only). Markdown is never the edit representation.
-- **Reconciliation.** Re-hydrate a field only on an **external** corpus change,
-  gated by canonical-corpus equality scoped to that field.
+- **Reconciliation.** Re-hydrate a field only on an **external** content change,
+  gated by canonical-content equality scoped to that field.
 
 ## Out of scope
 
@@ -49,10 +49,10 @@ preview half of the caret bridge (Phase 2); the document model and mutators
 ## The flow
 
 ```
-decode:  RichText ──(fold lines, apply marks, lower islands)──► PM doc
+decode:  Content ──(fold lines, apply marks, lower islands)──► PM doc
 edit:    PM transaction ──(lower steps)──► ChangeBundle ──► doc.applyChange(addr, bundle)
-caret:   CorpusHit.pos / FieldRegion.span ──corpusToPM──► PM caret
-                                    PM caret ──pmToCorpus──► preview focus
+caret:   ContentHit.pos / FieldRegion.span ──usvToPM──► PM caret
+                                    PM caret ──pmToUsv──► preview focus
 ```
 
 ## Settled decisions
@@ -78,7 +78,7 @@ These settle the design's own open questions:
   `applyChange`; the caret survives own-edits through the PM `StepMap`.
 - **Round-trip property tests (Vitest):** `decode` then re-`decode`-after-normalize
   agree; `lower` then apply then `decode` matches the optimistic PM state up to
-  corpus normalization; the position map holds across astral characters and
+  content normalization; the position map holds across astral characters and
   structural edits.
 - Formatting, identity anchors, unknown marks, and one island type each survive a
   round-trip; inline/plaintext constraints hold.
@@ -104,10 +104,10 @@ with Phase 4.) Pinned.
 ## Implementation deviations (recorded)
 
 - **Encode is a structured diff, not step-lowering.** `lower` computes the new
-  corpus (`pmToRichText`, decode's inverse) and diffs old→new into the bundle. The
+  content (`pmToContent`, decode's inverse) and diffs old→new into the bundle. The
   output is pure `applyChange` ops (delta/lineOps/markOps), never `install` except
   the fallback below — so anchors still rebase. A shared `scanDoc` walk yields both
-  the corpus projection and the position-map runs, so they cannot disagree.
+  the content projection and the position-map runs, so they cannot disagree.
 - **`continues` lowers via `setContinues`** ([quillmark-issues/0002](../quillmark-issues/0002-no-continues-line-op.md),
   resolved in `@quillmark/wasm` 0.95.1): `diffLines` force-sets each line's
   `continues` flag alongside `setContainers` / `setKind`, so a new hard break or
@@ -116,7 +116,7 @@ with Phase 4.) Pinned.
   carries it and the op rejects it there, so it is set only for lines ≥ 1.
 - **Island *creation* falls back to install** (no island channel in `ChangeBundle`);
   edits around an existing island lower via delta-retain + auto-rebase.
-- **Absent declared field:** `readLeaf` decodes an empty corpus and the first edit
+- **Absent declared field:** `readLeaf` decodes an empty content and the first edit
   `install`s (creating the field — `applyChange` throws on an absent field), so
   `createField` is self-sufficient for `default:`-only fields.
 - **No table-entry input rule ships.** The settled shorthand set lists "table
