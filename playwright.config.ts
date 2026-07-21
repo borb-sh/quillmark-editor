@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 
-// The second test tier (phases INDEX): scripted browser checks stand in for a
+// The second test tier: scripted browser checks stand in for a
 // human pass over what unit tests cannot reach — canvas paint, scroll
 // virtualization, DPR, the click round-trip. Specs live in `e2e/` (top-level) so
 // Vitest's `tests/**` glob never sees them. The browser is the preinstalled

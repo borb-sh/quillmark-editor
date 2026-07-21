@@ -1,18 +1,17 @@
 # Visual Editor — UI/UX
 
-Scope: the interaction and visual patterns of the VisualEditor — the card-stack
-metaphor, per-field affordances, the formatting chrome, and the editor→preview
-coupling. The architectural composition (ownership, the address spine, the edit
-ops) is [VISUAL_EDITOR.md](VISUAL_EDITOR.md); this doc is the surface a user
-touches. Prior art is web-app; a decision that carries it forward says so.
+> **Implementation**: `src/lib/visual/`
 
-This records the V1 surface. The theming baseline ships (§"Complex UX, minimal
-UI"); the insert surface stays deferred (§Open), and a few capabilities are
-deferred past V1 and named where they belong.
+## TL;DR
 
-Implementation: `src/lib/visual/` — the card stack (`Card`, `CardControls`), the
-per-field controls, `FormatPopover` (the selection popover), `DiagnosticList`
-(inline diagnostics). The `--qm-*` theming baseline is catalogued in
+The interaction and visual patterns of the VisualEditor — the card-stack metaphor,
+per-field affordances, the formatting chrome, and the editor→preview coupling. The
+architectural composition (ownership, the address spine, the edit ops) is
+[VISUAL_EDITOR.md](VISUAL_EDITOR.md); this doc is the surface a user touches. Prior
+art is web-app; a decision that carries it forward says so. This records the V1
+surface: the theming baseline ships (§"Complex UX, minimal UI"), the insert surface
+stays deferred (§Open), and a few capabilities deferred past V1 are named where
+they belong. The `--qm-*` theming baseline is catalogued in
 [`THEMING.md`](../../THEMING.md).
 
 ## Two settled principles
@@ -55,13 +54,16 @@ split leaves the position surface a place to land later without disturbing marks
 **Marks — selection popover.** A non-empty selection in a prose leaf raises a
 popover over the active leaf: `strong`, `emph`, `underline`, `strike`, `code`,
 `link`, plus `anchor` identity. It emits PM transactions the codec lowers to
-`markOps`. The keymap mirrors it (`Cmd+B`…) for keyboard. On touch, an accessory
-bar above the keyboard carries the same marks — a selection popover fights the OS
-selection handles.
+`markOps`. A keymap mirrors the core marks (`Mod-b`/`i`/`u`) for keyboard;
+`strike`/`code`/`link` stay toolbar-only in V1. On touch, the same marks are meant
+to ride an accessory bar above the keyboard (a popover fights the OS selection
+handles) — the touch bar is deferred (§Open).
 
-**Input rules — typist shorthand, no chrome.** `**`, `*`, `~~`, `` ` ``, `<u>`,
-`# `, `- `, `1. `, `> `. These cover marks and the block shorthands (headings,
-lists, quote). Markdown is an input shorthand, never the stored form.
+**Input rules — typist shorthand, no chrome.** `**`, `*`, `~~`, `` ` ``, `# `,
+`- `, `1. `, `> `, and a ` ``` ` code fence. These cover the marks and the block
+shorthands (headings, lists, quote, code); underline is keymap-only (`Mod-u`), and
+no table-entry rule ships (island authoring deferred, §Open). Markdown is an input
+shorthand, never the stored form.
 
 **Deferred past V1 — the position anchor:** a gutter insert affordance, its menu,
 and a slash command, together the doors onto insertion. While deferred, the editor
@@ -105,3 +107,6 @@ Debug-only, per [ARCHITECTURE.md](ARCHITECTURE.md) — not an editable dual mode
   part hooks, dark mode — is deferred.
 - **Insert surface (post-V1)** — the deferred position anchor: gutter affordance,
   menu, slash command, and table/island authoring.
+- **Formatting reach (post-V1)** — the touch accessory bar and keymap shortcuts
+  for `strike` / `code` / `link` (only `Mod-b`/`i`/`u` bind today); the popover's
+  `anchor` button awaits an anchor-insert verb at the WASM boundary.

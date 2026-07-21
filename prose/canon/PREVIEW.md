@@ -1,13 +1,14 @@
 # Preview
 
-Scope: the headline live preview surface — turning the current document into a
-rendered, continuously-updating view of the output.
+> **Implementation**: `src/lib/preview/`
 
-Implementation: `src/lib/preview/` — `controller.ts` composes the paint loop
-(`paint.ts`), the field-box overlay (`overlay.ts`), and the click/scroll bridge
-(`bridge.ts`) over one `LiveSession`; `Preview.svelte` is the wrapper. The
-pixel↔pt math is `geometry.ts`. The subpath imports nothing editor-side — enforced
-by `tests/preview-boundary.test.ts`.
+## TL;DR
+
+The headline live preview surface — turning the current document into a rendered,
+continuously-updating view of the output. `PreviewController` (vanilla-TS core)
+composes the paint loop, the field-box overlay, and the click/scroll bridge over
+one `LiveSession`, wrapped by a thin `<Preview>` Svelte component. The subpath
+imports nothing editor-side — enforced by `tests/preview-boundary.test.ts`.
 
 ## Shape
 
@@ -41,7 +42,12 @@ geometry.
 
 - **Paint** — one `<canvas>` per visible page (+ margin), painted via
   `session.paint`; mounted/unmounted on scroll, so memory stays bounded to
-  *visible + margin* per the canon.
+  *visible + margin* per the canon. Mounted pages repaint on container-width
+  changes (a rAF-coalesced `ResizeObserver`) and on DPR changes (a re-arming
+  `(resolution: …dppx)` query), so the raster tracks the `%`-positioned overlay
+  instead of going stale; the canvases are `position:absolute`, so a repaint never
+  feeds back into layout. When `PaintResult.clamped` caps density on an oversized
+  page, V1 honors it silently.
 - **Overlay** — field boxes (`session.fieldBoxes`) positioned as CSS `%`
   (Y-flipped from PDF-pt). Drawn by default — active-field ring, click targets —
   themeable via CSS vars, opt-out. `field` is not unique (a field split across

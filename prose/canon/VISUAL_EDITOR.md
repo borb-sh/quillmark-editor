@@ -1,22 +1,17 @@
 # Visual Editor
 
-Scope: the headline WYSIWYG surface over a Quillmark document — the card/field
-structure, the schema-driven fields, and prose-body editing, and how they compose
-into one editable tree. This doc owns the **composition**; the per-field
-content↔ProseMirror translation is [CODEC.md](CODEC.md), the rendered view and its
-caret bridge are [PREVIEW.md](PREVIEW.md), the live `Document` and WASM boundary
-are [DOCUMENT_MODEL.md](DOCUMENT_MODEL.md). Grounds on quillmark's document and
-schema model (canon: quillmark `CARDS.md`, `SCHEMAS.md`, `DOCUMENT_STORAGE.md`)
-and the WASM edit surface (`Document`, `quill.writer(doc)`, the addressed content
-verbs).
+> **Implementation**: `src/lib/visual/`
 
-Implementation: `src/lib/visual/` — `VisualEditor.svelte` (the composition, the
-stable-id spine, commit routing, focus + bridge outputs), `structure.ts` (the
-schema × payload projection), `diagnostics.ts` (the three-producer routing merge),
-`caret.ts` (`fieldPathForAddr`, the editor→preview address mapping), and the
-per-control components (`Card`, `Field`, `ProseField`, the scalar fields,
-`FormatPopover`). The prose leaf itself is the codec's `createField`
-([CODEC.md](CODEC.md)).
+## TL;DR
+
+The headline WYSIWYG surface over a Quillmark document — the card/field structure,
+the schema-driven fields, and prose-body editing, and how they compose into one
+editable tree. This doc owns the **composition**; the per-field content↔ProseMirror
+translation is [CODEC.md](CODEC.md), the rendered view and its caret bridge are
+[PREVIEW.md](PREVIEW.md), the live `Document` and WASM boundary are
+[DOCUMENT_MODEL.md](DOCUMENT_MODEL.md). Grounds on quillmark's document and schema
+model (canon: quillmark `CARDS.md`, `SCHEMAS.md`, `DOCUMENT_STORAGE.md`) and the
+WASM edit surface (`Document`, `quill.writer(doc)`, the addressed content verbs).
 
 ## Federated, not monolithic
 
@@ -61,10 +56,13 @@ multi-line prose leaf; with `inline: true`, a single-line one (constrained PM,
 [CODEC.md](CODEC.md) §Inline mode). `plaintext` (± `inline`) is a prose leaf with
 marks and islands suppressed. `string` is a text input, `enum` a select over
 `values:`, `number`/`integer` a numeric input, `boolean` a toggle, `datetime` a
-date control. `array` is an add/remove repeater (`items: {type: object}` → a typed
-table) — elements hold declaration/entry order, no reorder control (see
-[VISUAL_EDITOR_UIUX.md](VISUAL_EDITOR_UIUX.md) §"Array fields"); `object` a nested
-subform recursing the mapping over `properties`. The
+date control. `array` is an add/remove repeater — elements hold declaration/entry
+order, no reorder control (see [VISUAL_EDITOR_UIUX.md](VISUAL_EDITOR_UIUX.md)
+§"Array fields"); an `object`-element array commits each element as minimal JSON in
+V1, not a typed table (deferred, §"Settled and deferred"). `object` is a nested
+subform over `properties`, **scalar properties only** in V1 — a nested
+`prose`/`array`/`object` property shows a "not editable in V1" placeholder rather
+than recursing. The
 text-ish types are the model's data-vs-content × open/plain-vs-formatted 2×2 —
 `enum`/`string` are form controls, `plaintext`/`richtext` prose leaves — and only
 the content side reaches the codec.
@@ -169,12 +167,15 @@ parent to survive remounts (the prior art's workaround). Both directions
 
 Editing chrome is thin and **per-leaf**; structural chrome is Svelte in the shell.
 
-- **Formatting** — a selection toolbar and keymap over the active leaf in the
-  content mark vocabulary (`strong`/`emph`/`underline`/`strike`/`code`/`link`, plus
-  `anchor` identity), emitting PM transactions the codec lowers to `markOps`.
-- **Input rules** — the markdown shorthands (`**`, `#`, `- `, table entry) are PM
-  input rules producing ordinary transactions; markdown is an input *shorthand*,
-  never the stored form.
+- **Formatting** — a selection toolbar over the active leaf in the content mark
+  vocabulary (`strong`/`emph`/`underline`/`strike`/`code`/`link`, plus `anchor`
+  identity), emitting PM transactions the codec lowers to `markOps`. A keymap
+  mirrors the core marks (`Mod-b`/`i`/`u`); `strike`/`code`/`link` are toolbar-only
+  in V1.
+- **Input rules** — the markdown shorthands (`**`, `*`, `~~`, `` ` ``, `# `, `- `,
+  `1. `, `> `, and a ` ``` ` code fence) are PM input rules producing ordinary
+  transactions; markdown is an input *shorthand*, never the stored form. No
+  table-entry rule (island authoring deferred).
 - **Tables / islands** — driven from the PM model (a `CellSelection`,
   decorations), not reconstructed from DOM geometry. An island is one PM leaf node
   over one content `U+FFFC` slot ([CODEC.md](CODEC.md) §Islands).

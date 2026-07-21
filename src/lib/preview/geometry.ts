@@ -2,7 +2,7 @@
 // (a FieldRegion rect -> CSS % of the page box, overlay.ts) and the bridge's
 // inverse (a CSS px click -> PDF-pt for `positionAt`, bridge.ts) derive from
 // `PageSize` alone here, so they can never drift apart — the correctness seam
-// PHASE_2 calls out. Pure: no DOM, no session — safe to unit-test against known
+// PREVIEW.md calls out. Pure: no DOM, no session — safe to unit-test against known
 // geometry (tests/preview/geometry.test.ts).
 import type { PageSize } from '../core/index.js';
 

@@ -1,7 +1,7 @@
-# PR gate: the two tiers that run without a browser. `lint` + `check` are the
-# ratified CI gates (prose/phases/INDEX.md); `test` is the Vitest core tier and
-# `build` proves `svelte-package` still emits `dist/`. The playground browser
-# tier stands in for a human pass and runs elsewhere, so it is not gated here.
+# PR gate: the tiers that run without a browser. `lint` + `check` + `check:canon`
+# are the gates; `test` is the Vitest core tier and `build` proves `svelte-package`
+# still emits `dist/`. The playground browser tier stands in for a human pass and
+# runs elsewhere, so it is not gated here.
 name: CI
 
 on:
@@ -35,6 +35,9 @@ jobs:
 
       - name: Check (svelte-check)
         run: npm run check
+
+      - name: Canon spine
+        run: npm run check:canon
 
       - name: Test (vitest)
         run: npm test
