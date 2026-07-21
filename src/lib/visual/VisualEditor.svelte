@@ -360,7 +360,15 @@
 	export function setCaret(hit: ContentHit): void {
 		const key = leafKeyForHit(hit.field);
 		if (!key) return;
-		leaves.get(key)?.setCaret(hit.pos);
+		const leaf = leaves.get(key);
+		if (!leaf) return;
+		// A `'segment'` hit landed on origin-less ink (list markers, a code fence's
+		// interior): `pos` is the segment START, not a cluster-exact caret
+		// (HitGranularity), so just focus the leaf rather than snap the caret to a
+		// spot the click did not resolve. `'cluster'` (and an absent granularity —
+		// the backend did not report it, treat as exact) places the caret.
+		if (hit.granularity === 'segment') leaf.focus();
+		else leaf.setCaret(hit.pos);
 	}
 	/** The active leaf's controller — the 4b formatting-popover observation seam. */
 	export function getActiveLeaf(): FieldController | undefined {

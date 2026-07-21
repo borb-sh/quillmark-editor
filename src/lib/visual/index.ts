@@ -13,3 +13,7 @@ export type { CreateFieldOpts, FieldController } from '../core/codec/index.js';
 
 // The projection types — useful to a consumer building its own chrome.
 export type { ControlKind, FieldModel, GroupSection, CardModel } from './structure.js';
+
+// The editor→preview caret-bridge address mapping (Phase 5) — a consumer wiring
+// `onCaretMove` to `preview.focusPosition` maps the editor `Addr` through this.
+export { fieldPathForAddr } from './caret.js';
