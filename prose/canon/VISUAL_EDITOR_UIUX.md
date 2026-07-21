@@ -6,8 +6,14 @@ coupling. The architectural composition (ownership, the address spine, the edit
 ops) is [VISUAL_EDITOR.md](VISUAL_EDITOR.md); this doc is the surface a user
 touches. Prior art is web-app; a decision that carries it forward says so.
 
-This records the V1 surface. Two questions stay open (§Open); a few capabilities
-are deferred past V1 and named where they belong.
+This records the V1 surface. The theming baseline ships (§"Complex UX, minimal
+UI"); the insert surface stays deferred (§Open), and a few capabilities are
+deferred past V1 and named where they belong.
+
+Implementation: `src/lib/visual/` — the card stack (`Card`, `CardControls`), the
+per-field controls, `FormatPopover` (the selection popover), `DiagnosticList`
+(inline diagnostics). The `--qm-*` theming baseline is catalogued in
+[`THEMING.md`](../../THEMING.md).
 
 ## Two settled principles
 
@@ -20,8 +26,9 @@ top-to-bottom down one column; the document's structure is the page's structure.
 direct manipulation, the caret bridge, per-field state, against a bare built-in
 visual opinion, so a consumer restyles to its brand without fighting baked-in
 design. Structure and behavior live in the primitives (bits-ui's headless base);
-appearance is a themeable surface with a neutral, overridable baseline. The exact
-theming contract is open (§Open).
+appearance is a themeable surface with a neutral, overridable baseline — a set of
+`--qm-*` custom properties ([`THEMING.md`](../../THEMING.md)). The broad theming
+system stays deferred (§Open).
 
 ## Card stack
 
@@ -87,14 +94,14 @@ editor|preview split shell is the consumer's.
 
 ## Source view
 
-Debug-only, per [ARCHITECTURE.md](ARCHITECTURE.md) — not an editable dual mode. A
-source view is a whole-document serialize/parse round-trip, the layer federation
-deletes.
+Debug-only, per [ARCHITECTURE.md](ARCHITECTURE.md) — not an editable dual mode. The
+`@quillmark/editor/source` surface is a read-only CodeMirror mirror of
+`Document.toMarkdown()`, the whole-document serialize the layer federation deletes.
 
 ## Open
 
-- **Theming contract** — the themeable surface that delivers minimal, tunable UI:
-  custom-property names, class vs. part hooks, what a consumer overrides. Kept
-  simple for now; the shape is deferred.
+- **Theming (broad system)** — the baseline `--qm-*` token set ships
+  ([`THEMING.md`](../../THEMING.md)); the broad system — semantic scales, class vs.
+  part hooks, dark mode — is deferred.
 - **Insert surface (post-V1)** — the deferred position anchor: gutter affordance,
   menu, slash command, and table/island authoring.

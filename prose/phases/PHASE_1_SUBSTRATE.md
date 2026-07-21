@@ -5,8 +5,8 @@ consumer can load the reference quill, hold a live `Document`, and open a
 `LiveSession` — with the build, the subpath exports, and the test runner all in
 place. No user-facing surface yet; this is the ground the other phases stand on.
 
-**Implements:** [ARCHITECTURE](../designs/ARCHITECTURE.md) (core/chrome split,
-packaging, playground), [DOCUMENT_MODEL](../designs/DOCUMENT_MODEL.md) (handle
+**Implements:** [ARCHITECTURE](../canon/ARCHITECTURE.md) (core/chrome split,
+packaging, playground), [DOCUMENT_MODEL](../canon/DOCUMENT_MODEL.md) (handle
 lifecycle, the consumed WASM surface).
 
 **Depends on:** Phase 0 (done).

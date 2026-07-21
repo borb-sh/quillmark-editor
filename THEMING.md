@@ -1,0 +1,91 @@
+# Theming
+
+`@quillmark/editor` ships **complex UX over a thin skin** (VISUAL_EDITOR_UIUX
+§"Complex UX, minimal UI"): the surfaces carry the behavior — direct
+manipulation, the caret bridge, per-field state — against a neutral, overridable
+visual baseline a consumer restyles to its brand without fighting baked-in
+design.
+
+The surface is a set of CSS **custom properties**. Every one is consumed as
+`var(--qm-…, <neutral default>)`, so an unset token falls back to the baseline and
+a set token overrides it — no component defines a token, so there is nothing to
+unset. Scope an override to any ancestor of the mounted surface (the whole app,
+or one pane):
+
+```css
+.my-editor {
+	--qm-font: 'Inter', system-ui, sans-serif;
+	--qm-text: #10233b;
+	--qm-border: #d7dee8;
+	--qm-field-ring-active: #6d28d9;
+}
+```
+
+This is the **baseline** contract — small, and deliberately so. The broad theming
+system (semantic scales, class-vs-part hooks, dark mode) is deferred past V1
+(VISUAL_EDITOR_UIUX §Open); the tokens below are stable, a later system layers
+over them rather than replacing them. A handful of secondary chrome colors (hover
+tints, control edges) are not yet tokenized and fall under that deferred pass.
+
+## Tokens
+
+### Base — typography & text
+
+| Token                | Default                                | What it colors                                             |
+| -------------------- | -------------------------------------- | ---------------------------------------------------------- |
+| `--qm-font`          | `ui-sans-serif, system-ui, sans-serif` | The editor surface's font family.                          |
+| `--qm-text`          | `#1a1a1a`                              | Primary text.                                              |
+| `--qm-label`         | `#555`                                 | Field labels.                                              |
+| `--qm-section-label` | `#8a8a8a`                              | `ui.group` section labels.                                 |
+| `--qm-ghost`         | `#9a9a9a`                              | The ghosted `default:` placeholder (never written back).   |
+| `--qm-border`        | neutral grey                           | The shared chrome border across cards, fields, and leaves. |
+
+### Card chrome
+
+| Token          | Default   | What it colors                  |
+| -------------- | --------- | ------------------------------- |
+| `--qm-main-bg` | `#fff`    | The main card's background.     |
+| `--qm-card-bg` | `#fafafa` | A composable card's background. |
+
+### Field & prose leaf
+
+| Token               | Default   | What it colors                           |
+| ------------------- | --------- | ---------------------------------------- |
+| `--qm-field-bg`     | `#fff`    | A field control / prose-leaf background. |
+| `--qm-diag-error`   | `#c5221f` | An `error` inline diagnostic.            |
+| `--qm-diag-warning` | `#b25000` | A `warning` inline diagnostic.           |
+
+### Preview overlay
+
+The field-box overlay drawn over the painted page (PREVIEW §Overlay). Opt out of
+the overlay entirely with `<Preview overlays={false}>`; restyle it with:
+
+| Token                          | Default                        | What it colors                         |
+| ------------------------------ | ------------------------------ | -------------------------------------- |
+| `--qm-field-ring`              | `rgba(37, 99, 235, 0.55)`      | An idle field box's ring.              |
+| `--qm-field-ring-width`        | `1px`                          | Idle ring width.                       |
+| `--qm-field-ring-active`       | `#2563eb`                      | The active field box's ring.           |
+| `--qm-field-ring-active-width` | `2px`                          | Active ring width.                     |
+| `--qm-page-bg`                 | `#fff`                         | The page background behind the canvas. |
+| `--qm-page-shadow`             | `0 1px 4px rgba(0, 0, 0, 0.2)` | The page drop shadow.                  |
+
+### Formatting popover
+
+The selection-mark popover (VISUAL_EDITOR_UIUX §Formatting).
+
+| Token                    | Default   | What it colors                                |
+| ------------------------ | --------- | --------------------------------------------- |
+| `--qm-popover-bg`        | `#fff`    | The popover background.                       |
+| `--qm-popover-hover`     | `#f0f0f0` | A hovered mark button.                        |
+| `--qm-popover-active-bg` | `#1a1a1a` | An active (applied) mark button's background. |
+| `--qm-popover-active-fg` | `#fff`    | An active mark button's foreground.           |
+
+### Debug source view
+
+The read-only `@quillmark/editor/source` surface.
+
+| Token                     | Default   | What it colors          |
+| ------------------------- | --------- | ----------------------- |
+| `--qm-source-bg`          | `#fbfbfb` | The editor background.  |
+| `--qm-source-gutter-bg`   | `#f3f3f3` | The line-number gutter. |
+| `--qm-source-gutter-text` | `#9a9a9a` | The line numbers.       |

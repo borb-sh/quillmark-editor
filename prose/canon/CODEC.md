@@ -12,6 +12,13 @@ quillmark `prose/canon/DOCUMENT_STORAGE.md`, `CONVERT.md`; the WASM
 `Card.body` / `install` / `applyChange` / `positionAt` API). The preview↔editor
 half of the caret bridge lives in [PREVIEW.md](PREVIEW.md).
 
+Implementation: `src/lib/core/codec/` — `decode.ts` (content → PM), `encode.ts`
+(PM → `ChangeBundle`), `positions.ts` (the USV↔PM map), `marks.ts` / `islands.ts`
+(the mark algebra and island props), `reconcile.ts` (the field-scoped rehydrate
+gate), `markdown.ts` (the paste/copy edges), `inputrules.ts` + `schema.ts` (the PM
+schema and shorthands), and `field.ts` — `createField`, the prose leaf that wires
+them to one PM view.
+
 ## The two models
 
 The `Content` model is one flat `text` over Unicode scalar values (`\n` a line
@@ -167,15 +174,20 @@ changed — the analog of web-app's whole-document `Document.equals` gate, moved
 onto the content and narrowed to one field. Caret continuity across the editor's
 *own* edits is the VisualEditor's `StepMap`, not the codec's.
 
-## Open questions
+## Seams and deferrals
 
-- **anchors as decorations vs a document mark** — decorations here; revisit if
-  comment-thread UX wants them in the document proper.
-- **island props typing** — the `unknown` seam, and whether to push a typed
-  island surface into `@quillmark/wasm`.
-- **complex-paste lowering** — the precise boundary at which transaction lowering
-  falls back to `install`, and whether a content-level diff (not exposed to WASM
-  today) would narrow it.
-- **input rules and the PM schema itself** — the markdown shorthands (`**`, `#`,
-  `- `, table entry) and the node/mark schema. Behavior is deferred to the
-  VisualEditor discussion; they produce transactions this codec already lowers.
+- **anchors are decorations, not a document mark.** Plugin-held positions keyed by
+  id, mapped through `tr.mapping` and lowered to `anchor` ops — the split that
+  keeps identity off PM's mark mechanism. A move into the document proper waits on
+  comment-thread UX that needs it.
+- **island props typing** is the one open seam: `ContentIsland.props` is `unknown`
+  at the WASM boundary, so the codec's `table`/`image` schemas track a shape the
+  surface does not pin (DOCUMENT_MODEL §Stability seams). A candidate for a typed
+  island surface upstream.
+- **complex-paste lowering** falls back to `install(addr, rt)` when a transaction
+  is too tangled to lower precisely (a structural paste), paying that field's
+  anchors. A content-level diff that would narrow the fallback is not exposed by
+  the boundary today.
+- **input rules and the PM schema** ship: the markdown shorthands (`**`, `#`,
+  `- `, table entry) are PM input rules producing ordinary transactions this codec
+  lowers; markdown is an input shorthand, never the stored form.

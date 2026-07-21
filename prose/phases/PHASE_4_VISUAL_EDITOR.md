@@ -5,8 +5,8 @@ editors over a Quillmark document: the card stack, the schema-driven fields, and
 prose-body editing, composed into one editable tree that writes ops to the live
 `Document`.
 
-**Implements:** [VISUAL_EDITOR](../designs/VISUAL_EDITOR.md),
-[VISUAL_EDITOR_UIUX](../designs/VISUAL_EDITOR_UIUX.md).
+**Implements:** [VISUAL_EDITOR](../canon/VISUAL_EDITOR.md),
+[VISUAL_EDITOR_UIUX](../canon/VISUAL_EDITOR_UIUX.md).
 
 **Depends on:** Phases 1 and 3 (the codec is the per-leaf substance). Preview
 (Phase 2) is not required to build it, but the caret bridge is wired in Phase 5.
@@ -118,8 +118,8 @@ quill.schema ✕ Document.payload ──(join)──► card tree (Svelte, keyed
   repeater"; shipped as add/remove only. Rows take entry order and the array
   commits by value (a mis-order is fixed by editing in place), so per-row reorder
   on every array — including cosmetic scalar lists — was chrome the content doesn't
-  earn. The card stack keeps its ↑/↓. Design updated ([VISUAL_EDITOR_UIUX.md](../designs/VISUAL_EDITOR_UIUX.md)
-  §Fields, [VISUAL_EDITOR.md](../designs/VISUAL_EDITOR.md)); reorder can return
+  earn. The card stack keeps its ↑/↓. Design updated ([VISUAL_EDITOR_UIUX.md](../canon/VISUAL_EDITOR_UIUX.md)
+  §Fields, [VISUAL_EDITOR.md](../canon/VISUAL_EDITOR.md)); reorder can return
   behind an `items`/`ui` hint if a quill needs an author-ordered list.
 - **The formatting `anchor` button is deferred** ([quillmark-issues/0003](../quillmark-issues/0003-no-anchor-insert-command.md)):
   an anchor is a decoration, and `createField` exposes no verb to insert one at an
@@ -154,7 +154,7 @@ quill.schema ✕ Document.payload ──(join)──► card tree (Svelte, keyed
   popover keymap mirror covers `Mod-b/i/u` only — strike/code/link have no
   shortcut.
 - **`array`-of-`object` ships as a JSON textarea, not the settled "typed table"**
-  ([VISUAL_EDITOR.md](../designs/VISUAL_EDITOR.md) §"A control per field type").
+  ([VISUAL_EDITOR.md](../canon/VISUAL_EDITOR.md) §"A control per field type").
   `ArrayField` renders each object element as a `JSON.stringify` `<textarea>`
   (commit on valid parse, prior value kept on invalid). The fixture declares no
   `array`-of-`object` field, so the path is unexercised; the typed-table control

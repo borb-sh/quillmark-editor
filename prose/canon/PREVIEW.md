@@ -3,6 +3,12 @@
 Scope: the headline live preview surface — turning the current document into a
 rendered, continuously-updating view of the output.
 
+Implementation: `src/lib/preview/` — `controller.ts` composes the paint loop
+(`paint.ts`), the field-box overlay (`overlay.ts`), and the click/scroll bridge
+(`bridge.ts`) over one `LiveSession`; `Preview.svelte` is the wrapper. The
+pixel↔pt math is `geometry.ts`. The subpath imports nothing editor-side — enforced
+by `tests/preview-boundary.test.ts`.
+
 ## Shape
 
 `PreviewController` (vanilla-TS core, `createPreview`), wrapped by a thin

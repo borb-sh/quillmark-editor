@@ -1,6 +1,19 @@
 # Quillmark Editor Canon Index
 
-Canonical documentation for the `@quillmark/editor` package. Empty for now —
-docs land here as designs settle.
+Canonical documentation for the `@quillmark/editor` package — the settled systems,
+describing what *is* and pointing into the code. Promoted from
+[`designs/`](../designs/INDEX.md) as each surface shipped (Phases 1–5).
 
-<!-- Skeleton. Add entries as canon docs are written. -->
+Two headline surfaces, a thin overview, and two supporting docs for the shared
+substrate:
+
+- [ARCHITECTURE.md](ARCHITECTURE.md) — the package at a glance; surfaces, substrate, data flow, the subpath public API, the playground shell, theming.
+- [VISUAL_EDITOR.md](VISUAL_EDITOR.md) — the federated WYSIWYG (shape/composition).
+- [VISUAL_EDITOR_UIUX.md](VISUAL_EDITOR_UIUX.md) — the VisualEditor's interaction and visual patterns.
+- [PREVIEW.md](PREVIEW.md) — the live preview (paint, overlay, click bridge).
+- [CODEC.md](CODEC.md) — content (`Content`) ↔ ProseMirror.
+- [DOCUMENT_MODEL.md](DOCUMENT_MODEL.md) — boundary ledger: the exact `@quillmark/wasm` surface V1 consumes, its canon homes, and stability. Not a model doc — the `Document` is quillmark's.
+
+Deferred and not-yet-designed work is named in [`designs/`](../designs/INDEX.md).
+The `--qm-*` theming baseline is catalogued in the package's
+[`THEMING.md`](../../THEMING.md).

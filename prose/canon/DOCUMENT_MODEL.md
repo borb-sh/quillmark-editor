@@ -7,6 +7,11 @@ V1 consumes, cites where each is documented, and marks its stability. It is the
 one place the version coupling to `@quillmark/wasm` is recorded; when a surface
 below moves, the editor's dependency moves with it.
 
+Implementation: `src/lib/core/index.ts` re-exports this whole surface verbatim —
+the one door the rest of the package crosses to reach `@quillmark/wasm`. The two
+slices the editor owns at the seam live in `lifecycle.ts` (handle `init`) and
+`src/lib/visual/diagnostics.ts` (the routing merge).
+
 **V1 builds on `@quillmark/wasm` 0.95.1.** Every verb in the table below is stable
 as of that release. The 0.95 mutation-surface cleanup is the settled ground the
 editor targets: `store*` verbs for verbatim writes, one unified `Addr` (`{card?,
