@@ -5,7 +5,7 @@
 view. This is the first visible headline artifact: seed the reference quill, paint
 it, scroll it, click it.
 
-**Implements:** [PREVIEW](../designs/PREVIEW.md).
+**Implements:** [PREVIEW](../canon/PREVIEW.md).
 
 **Depends on:** Phase 1. **Independent of Phase 3** — Preview needs no ProseMirror,
 so it runs in parallel with the Codec.

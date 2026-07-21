@@ -11,4 +11,5 @@ Long-form project documentation, in tiers by maturity:
   settled designs into shipped code: one direction brief per phase. Start at
   [`phases/INDEX.md`](phases/INDEX.md).
 
-<!-- Skeleton. Structure only — no settled content yet. -->
+Phases 1–5 have shipped; the V1 surfaces are described in `canon/`, with deferred
+work named in `designs/`.

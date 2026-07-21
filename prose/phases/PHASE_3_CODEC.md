@@ -6,7 +6,7 @@
 caret. This is the correctness core of the whole editor; it is where the prior
 art accreted its weight, so it earns the heaviest test coverage.
 
-**Implements:** [CODEC](../designs/CODEC.md).
+**Implements:** [CODEC](../canon/CODEC.md).
 
 **Depends on:** Phase 1. **Independent of Phase 2** — runs in parallel with
 Preview. **Unblocks Phase 4.**

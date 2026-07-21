@@ -10,6 +10,14 @@ schema model (canon: quillmark `CARDS.md`, `SCHEMAS.md`, `DOCUMENT_STORAGE.md`)
 and the WASM edit surface (`Document`, `quill.writer(doc)`, the addressed content
 verbs).
 
+Implementation: `src/lib/visual/` — `VisualEditor.svelte` (the composition, the
+stable-id spine, commit routing, focus + bridge outputs), `structure.ts` (the
+schema × payload projection), `diagnostics.ts` (the three-producer routing merge),
+`caret.ts` (`fieldPathForAddr`, the editor→preview address mapping), and the
+per-control components (`Card`, `Field`, `ProseField`, the scalar fields,
+`FormatPopover`). The prose leaf itself is the codec's `createField`
+([CODEC.md](CODEC.md)).
+
 ## Federated, not monolithic
 
 The VisualEditor is a **thin composition layer** over many small editors, not one
@@ -149,11 +157,14 @@ leaves are keyed by stable identity, this is plain state, not a value hoisted to
 parent to survive remounts (the prior art's workaround). Both directions
 ([PREVIEW.md](PREVIEW.md) §Click bridge):
 
-- **preview → editor** — `onCaretPick(hit)` resolves `hit.field` to a leaf, which
-  runs `codec.usvToPM(hit.pos)` and sets its PM caret; a `'segment'` hit just
-  focuses the leaf.
-- **editor → preview** — a caret move in the active leaf calls
-  `preview.focusPosition(field, pos)`.
+- **preview → editor** — `visualEditor.setCaret(hit)` resolves `hit.field` to a
+  leaf, which runs `codec.usvToPM(hit.pos)` and sets its PM caret; a `'segment'`
+  hit just focuses the leaf (`hit.pos` is a segment start, not a cluster-exact
+  caret).
+- **editor → preview** — a caret move in the active leaf emits `onCaretMove(addr,
+  pos)`; the consumer maps `addr` to the preview's field-path grammar with
+  `fieldPathForAddr` (`caret.ts`) and calls `preview.focusPosition(field, pos)`.
+  The USV `pos` is the shared coordinate — no codec hop.
 
 ## Chrome
 
@@ -188,17 +199,20 @@ vanilla-TS core seam, the composition is Svelte chrome.
 // core: one prose leaf — owns the codec, the PM view, and its plugin stack.
 function createField(opts: {
   doc: Document;
-  quill: Quill;
-  addr: Addr;                                    // {card?, field?}; field-less = a body
+  addr: Addr; // {card?, field?}; field-less = a body
   container: HTMLElement;
+  inline?: boolean; // one-textblock schema (a richtext(inline) field)
+  plaintext?: boolean; // inline + marks/islands stripped
+  label?: string; // aria-label on the contenteditable
   onFocus?(addr: Addr): void;
-  onCaretMove?(addr: Addr, pos: number): void;   // → preview.focusPosition
+  onCaretMove?(addr: Addr, pos: number): void;
 }): FieldController;
 
 interface FieldController {
-  setCaret(pos: number): void;   // preview onCaretPick → codec.usvToPM → here
-  applyExternal(): void;         // external content change → re-hydrate this leaf (gated)
+  setCaret(pos: number): void; // preview onCaretPick → codec.usvToPM → here
+  applyExternal(): void; // external content change → re-hydrate this leaf (gated)
   focus(): void;
+  getContent(): Content; // the leaf's stored content (tests / reconcile)
   destroy(): void;
 }
 ```
@@ -207,9 +221,13 @@ interface FieldController {
 <!-- chrome: renders the card tree, mounts a <ProseField> (createField) per
      content leaf and a form control per scalar field. -->
 <VisualEditor
+  bind:this={visualEditor}
   {doc} {quill}
   onActiveAddrChange={(addr) => …}
-  onCaretMove={(field, pos) => preview.focusPosition(field, pos)}
+  onCaretMove={(addr, pos) => {
+    const field = fieldPathForAddr(addr, doc.cards.map((c) => c.kind));
+    if (field) preview.focusPosition(field, pos);
+  }}
 />
 <!-- bridge in: visualEditor.setCaret(hit) from preview.onCaretPick -->
 ```
@@ -225,20 +243,22 @@ interface FieldController {
 - persistence, autosave, quill resolution, the editor|preview split shell — the
   consumer's (the playground wires them; [ARCHITECTURE.md](ARCHITECTURE.md)).
 
-## Open questions
+## Settled and deferred
 
-- **Card-instance identity** — a session key, or a stable `$id` stamped at
-  author/seed time so identity survives storage round-trips? The write boundary is
-  the same; the question is whether identity is the editor's concern or the
-  document's.
+- **Card-instance identity is a session key** — an in-memory id per card,
+  reordered in lockstep with the content and resolved to an index only at the
+  mutation boundary (`structure.ts` `IdSeq`). A stable `$id` stamped at seed time,
+  so identity survives a storage round-trip, is a document-side change deferred
+  past V1.
+- **Layout is `ui`-driven** — `ui.group` sections, `ui.compact` packs a shared
+  row (`structure.ts`); the editor adds no responsive policy of its own.
+- **Undo is per-leaf** — each prose leaf carries its own PM history. A
+  document-level undo spanning a structural op plus a prose edit — a coordinating
+  stack above the leaves — is deferred.
 - **Array/table convergence** — how far the `array`-of-`object` table control
-  converges with the richtext table island. Different content citizens (a scalar
-  array field vs a body island), similar affordance.
-- **Layout as data** — how much responsive column packing is `ui.group`/`compact`
-  driven vs the editor's own policy.
+  converges with the richtext table island (a scalar array field vs a body island,
+  similar affordance) is deferred.
 - **Structural keymap** — Enter-at-end-of-body to add a card, Tab between fields:
-  navigation crossing leaf boundaries that no single PM keymap owns. Likely a
-  shell keymap over `activeAddr`.
-- **Undo across leaves** — per-leaf PM history is the default; whether a
-  document-level undo spanning a structural op plus a prose edit needs a
-  coordinating stack above the leaves.
+  navigation crossing leaf boundaries no single PM keymap owns. Deferred; it lands
+  as a shell keymap over `activeAddr`, alongside the deferred insert surface
+  (VISUAL_EDITOR_UIUX §Open).

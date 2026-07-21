@@ -1,7 +1,7 @@
 # Implementation Phases
 
 Scope: the sequenced, high-level plan for building `@quillmark/editor` from the
-settled [designs](../designs/INDEX.md). Each phase doc is a **direction brief for
+settled [designs](../canon/INDEX.md). Each phase doc is a **direction brief for
 a SWE team** — goal, scope boundary, the data-flow shape, the decisions it forces,
 and verifiable exit criteria. It is deliberately **flow-level, not implementation
 detail**: it says what a phase delivers and how the pieces connect, not how to
@@ -46,11 +46,11 @@ everything.
 
 | Phase | Doc | Implements (design) |
 | --- | --- | --- |
-| 1 | [PHASE_1_SUBSTRATE.md](PHASE_1_SUBSTRATE.md) | [ARCHITECTURE](../designs/ARCHITECTURE.md), [DOCUMENT_MODEL](../designs/DOCUMENT_MODEL.md) |
-| 2 | [PHASE_2_PREVIEW.md](PHASE_2_PREVIEW.md) | [PREVIEW](../designs/PREVIEW.md) |
-| 3 | [PHASE_3_CODEC.md](PHASE_3_CODEC.md) | [CODEC](../designs/CODEC.md) |
-| 4 | [PHASE_4_VISUAL_EDITOR.md](PHASE_4_VISUAL_EDITOR.md) | [VISUAL_EDITOR](../designs/VISUAL_EDITOR.md), [VISUAL_EDITOR_UIUX](../designs/VISUAL_EDITOR_UIUX.md) |
-| 5 | [PHASE_5_INTEGRATION.md](PHASE_5_INTEGRATION.md) | [ARCHITECTURE](../designs/ARCHITECTURE.md) (playground, public API) |
+| 1 | [PHASE_1_SUBSTRATE.md](PHASE_1_SUBSTRATE.md) | [ARCHITECTURE](../canon/ARCHITECTURE.md), [DOCUMENT_MODEL](../canon/DOCUMENT_MODEL.md) |
+| 2 | [PHASE_2_PREVIEW.md](PHASE_2_PREVIEW.md) | [PREVIEW](../canon/PREVIEW.md) |
+| 3 | [PHASE_3_CODEC.md](PHASE_3_CODEC.md) | [CODEC](../canon/CODEC.md) |
+| 4 | [PHASE_4_VISUAL_EDITOR.md](PHASE_4_VISUAL_EDITOR.md) | [VISUAL_EDITOR](../canon/VISUAL_EDITOR.md), [VISUAL_EDITOR_UIUX](../canon/VISUAL_EDITOR_UIUX.md) |
+| 5 | [PHASE_5_INTEGRATION.md](PHASE_5_INTEGRATION.md) | [ARCHITECTURE](../canon/ARCHITECTURE.md) (playground, public API) |
 
 ## Why this order
 
@@ -96,7 +96,7 @@ and a live paint of a real document — that de-risks everything downstream.
   (the insert surface / table authoring, the full theming contract) stay deferred
   and are named where they land.
 
-The [DOCUMENT_MODEL](../designs/DOCUMENT_MODEL.md) ledger is the single home for the
+The [DOCUMENT_MODEL](../canon/DOCUMENT_MODEL.md) ledger is the single home for the
 `@quillmark/wasm` boundary; each phase carries only the one or two boundary details
 it consumes, where it consumes them. The 0.95.1 surface was verified against the
 ledger and matches; the two typing seams it carries (`Island.props: unknown`,

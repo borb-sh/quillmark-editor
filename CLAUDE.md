@@ -5,10 +5,10 @@ SvelteKit lib/app repo: `src/lib` → `svelte-package` → the published package
 `src/routes` → the dev playground (never published).
 
 Start at [`prose/phases/INDEX.md`](prose/phases/INDEX.md) — the build order,
-cross-cutting policies, and per-phase briefs. The settled designs:
-[`prose/designs/INDEX.md`](prose/designs/INDEX.md). **Phases 1–4 are the
-implementation mandate; Phase 5 (integration & hardening) follows once they
-land.** Each phase's "Settled decisions" are ratified — follow them; record any
+cross-cutting policies, and per-phase briefs. The settled systems live in
+[`prose/canon/INDEX.md`](prose/canon/INDEX.md); deferred and not-yet-designed work
+in [`prose/designs/INDEX.md`](prose/designs/INDEX.md). **Phases 1–5 have landed.**
+Each phase's "Settled decisions" are ratified — follow them; record any
 implementation-forced deviation in the phase doc.
 
 Comments and docs: dense, present-tense, no marketing — the `dense-prose` skill
@@ -34,7 +34,7 @@ Comments and docs: dense, present-tense, no marketing — the `dense-prose` skil
 ## The WASM boundary, fast
 
 - The boundary ledger — exact consumed surface, canon homes, stability:
-  [`prose/designs/DOCUMENT_MODEL.md`](prose/designs/DOCUMENT_MODEL.md).
+  [`prose/canon/DOCUMENT_MODEL.md`](prose/canon/DOCUMENT_MODEL.md).
 - `DocumentWriter` and the ergonomic verbs live in the package's hand-written
   runtime layer: `node_modules/@quillmark/wasm/runtime/runtime.d.ts` is the
   canonical typing — read it before assuming a verb's shape.

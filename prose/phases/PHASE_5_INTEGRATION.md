@@ -5,7 +5,7 @@ glue the primitives push outward, and harden the package for release — the car
 bridge, diagnostics routing, the split shell, the debug source view, a theming
 baseline, and a public-API audit. Then promote the settled designs into `canon/`.
 
-**Implements:** [ARCHITECTURE](../designs/ARCHITECTURE.md) (playground, public API,
+**Implements:** [ARCHITECTURE](../canon/ARCHITECTURE.md) (playground, public API,
 theming), and the seams the surface docs push to the consumer.
 
 **Depends on:** Phases 2, 3, and 4.
@@ -20,7 +20,7 @@ theming), and the seams the surface docs push to the consumer.
 - **Diagnostics routing.** Merge the three producers (`quill.validate`,
   `LiveSession.warnings`, render errors via `FieldRegion.field`), key them to field
   addresses, de-duplicate with a settled precedence. This is the editor's own slice
-  named in [DOCUMENT_MODEL](../designs/DOCUMENT_MODEL.md) §Diagnostics routing.
+  named in [DOCUMENT_MODEL](../canon/DOCUMENT_MODEL.md) §Diagnostics routing.
 - **The split-pane shell.** The editor|preview layout, session open, and edit
   routing — the reference wiring the playground demonstrates (one session, edits
   from the VisualEditor, `preview.refresh` on each `ChangeSet`).

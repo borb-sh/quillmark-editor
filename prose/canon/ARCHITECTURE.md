@@ -4,6 +4,10 @@ Scope: what `@quillmark/editor` is — the VisualEditor and Preview surfaces, th
 shared document/engine substrate beneath them, the data flow between them, and
 the package's public API (the minimal source editor lives here as a debug view).
 
+Implementation: `src/lib/` → `svelte-package` → `dist/` (the published tarball);
+`src/routes/` → the playground. The subpath roots are `src/lib/{index,core/index,
+preview/index,visual/index,source/index}.ts`.
+
 ## Core vs chrome
 
 TS-first, zero `.js`. Two layers:
@@ -23,7 +27,8 @@ API in a few lines.
 ## Packaging
 
 **One package, `@quillmark/editor`, with subpath exports** — `/core`, `/preview`,
-`/visual`, `/source`, `/form` (future). Not split into `@quillmark/preview` etc.
+`/visual`, `/source` ship; `/form` is reserved for the deferred metadata surface.
+Not split into `@quillmark/preview` etc.
 
 Subpaths, not separate packages, because the thing a split would buy — a
 preview-only consumer not pulling ProseMirror/CodeMirror — is a dependency-graph
@@ -39,7 +44,8 @@ that wants neither a dep named "editor" nor the editor deps. Keep the `/preview`
 subpath free of any editor-side import so the promotion stays a re-export, not a
 refactor — pay it when a viewer-only consumer appears.
 
-Today only the `svelte` condition is exposed; subpaths land as the core does.
+Each subpath export declares `types` + `svelte` + `default`, all pointing at the
+`dist/<subpath>/index.js` module root; `publint` gates the map.
 
 ## Playground
 
@@ -55,5 +61,26 @@ gap to fix, and exercising the subpaths proves their seams are clean), and it
 stays a harness, not a product (pick a quill, edit, preview, diagnostics — no
 auth, persistence, or multi-doc management).
 
-<!-- Remaining content pending discussion: document model, preview internals,
-     VisualEditor decomposition, codec, theming, public API. -->
+The routes are `/preview` (paint + overlay + click bridge), `/visual` (the
+VisualEditor over a seeded document), and `/editor` — the reference **split-pane
+shell**: one `LiveSession`, the VisualEditor and Preview over one document, the
+caret bridge wired both ways, the preview following edits on a debounced
+`session.apply`, `session.warnings` routed to inline diagnostics, and the source
+view. The bridge is consumer-layer glue: the editor emits addresses and carets,
+the preview surfaces hits, and the shell joins them (`fieldPathForAddr` maps an
+editor `Addr` to the preview's field-path grammar) — neither surface imports the
+other.
+
+## Theming
+
+The surfaces carry the behavior against a neutral, overridable baseline — a set of
+`--qm-*` custom properties a consumer overrides on any ancestor (VISUAL_EDITOR_UIUX
+§"Complex UX, minimal UI"). The shipped baseline is catalogued in the package's
+[`THEMING.md`](../../THEMING.md); the broad theming system (semantic scales, part
+hooks, dark mode) is deferred past V1.
+
+The systems beneath these surfaces have their own canon: the document/WASM
+boundary ([DOCUMENT_MODEL.md](DOCUMENT_MODEL.md)), the paint loop
+([PREVIEW.md](PREVIEW.md)), the content codec ([CODEC.md](CODEC.md)), and the
+VisualEditor's composition ([VISUAL_EDITOR.md](VISUAL_EDITOR.md),
+[VISUAL_EDITOR_UIUX.md](VISUAL_EDITOR_UIUX.md)).
