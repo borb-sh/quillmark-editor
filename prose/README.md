@@ -10,6 +10,9 @@ Long-form project documentation, in tiers by maturity:
 - **`phases/`** — the sequenced, high-level implementation plan that turns the
   settled designs into shipped code: one direction brief per phase. Start at
   [`phases/INDEX.md`](phases/INDEX.md).
+- **`inspiration/`** — prior-art studies and source material that steer the
+  editor's direction; not canon and not a plan. Start at
+  [`inspiration/INDEX.md`](inspiration/INDEX.md).
 
 Phases 1–5 have shipped; the V1 surfaces are described in `canon/`, with deferred
 work named in `designs/`.
