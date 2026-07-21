@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { base } from '$app/paths';
 	import type { Diagnostic } from '$lib/core';
 	import { loadUsafMemoTree } from './fixture';
 
@@ -86,8 +87,8 @@
 	<p class="sub">Phase 1 substrate — the WASM boundary proven live.</p>
 
 	<nav aria-label="Playground pages">
-		<a href="/preview">Preview <span>Phase 2 — paint, overlay, click bridge</span></a>
-		<a href="/visual">Visual <span>Phase 4 — the WYSIWYG surface</span></a>
+		<a href="{base}/preview">Preview <span>Phase 2 — paint, overlay, click bridge</span></a>
+		<a href="{base}/visual">Visual <span>Phase 4 — the WYSIWYG surface</span></a>
 	</nav>
 
 	{#if status.phase === 'loading'}
