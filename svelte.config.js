@@ -9,9 +9,15 @@ const config = {
 		// from src/lib; `vite build` emits the deployed playground (src/routes) as a
 		// static SPA. `+layout.ts` already sets ssr=false/prerender=false, so the
 		// fallback below is the whole app — no per-route prerender, no server.
-		// Root-relative (no paths.base): the deploy target is the owner's call and a
-		// project-subpath host only needs paths.base set here.
-		adapter: adapter({ fallback: 'index.html' })
+		adapter: adapter({ fallback: 'index.html' }),
+		// Root-relative by default (empty base). A project-subpath host — the
+		// GitHub Pages project site at `borb-sh.github.io/quillmark-editor` — sets
+		// BASE_PATH=/quillmark-editor at build time (the Pages workflow feeds it
+		// from `configure-pages`) so assets and links resolve under the subpath.
+		// Dev, `preview`, and `svelte-package` leave it unset and stay at root.
+		paths: {
+			base: process.env.BASE_PATH ?? ''
+		}
 	}
 };
 
