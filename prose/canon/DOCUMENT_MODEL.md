@@ -1,16 +1,16 @@
 # Document Model — Boundary Ledger
 
-Scope: **not** a document-model design — the `Document`, its mutators, the WASM
-boundary, and diagnostics are quillmark's, each with a canonical home in
-quillmark canon. This ledger pins the *exact* quillmark surface `@quillmark/editor`
-V1 consumes, cites where each is documented, and marks its stability. It is the
-one place the version coupling to `@quillmark/wasm` is recorded; when a surface
-below moves, the editor's dependency moves with it.
+> **Implementation**: `@quillmark/wasm` (the consumed surface) · `src/lib/core/` (the boundary door that re-exports it verbatim)
 
-Implementation: `src/lib/core/index.ts` re-exports this whole surface verbatim —
-the one door the rest of the package crosses to reach `@quillmark/wasm`. The two
-slices the editor owns at the seam live in `lifecycle.ts` (handle `init`) and
-`src/lib/visual/diagnostics.ts` (the routing merge).
+## TL;DR
+
+**Not** a document-model design — the `Document`, its mutators, the WASM boundary,
+and diagnostics are quillmark's, each with a canonical home in quillmark canon.
+This ledger pins the *exact* quillmark surface `@quillmark/editor` V1 consumes,
+cites where each is documented, and marks its stability. It is the one place the
+version coupling to `@quillmark/wasm` is recorded; when a surface below moves, the
+editor's dependency moves with it. `src/lib/core/` re-exports the whole surface
+verbatim — the one door the rest of the package crosses to reach the WASM package.
 
 **V1 builds on `@quillmark/wasm` 0.95.1.** Every verb in the table below is stable
 as of that release. The 0.95 mutation-surface cleanup is the settled ground the

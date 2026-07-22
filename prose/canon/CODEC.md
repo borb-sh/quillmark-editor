@@ -1,23 +1,19 @@
 # Codec
 
-Scope: the bidirectional codec between one content field (`Content`) and one
-ProseMirror document — decode (content → PM), the transaction lowering (PM → a
-`ChangeBundle` for `applyChange`), and the USV ↔ PM position map that carries the
-caret. One field, one PM doc; the VisualEditor composes many. Markdown is not in
-this loop — it is an edge codec (§Markdown at the edges), never the edit
-representation.
+> **Implementation**: `src/lib/core/codec/`
 
-Grounds on quillmark's `Content` model and its WASM edit surface (canon:
-quillmark `prose/canon/DOCUMENT_STORAGE.md`, `CONVERT.md`; the WASM
-`Card.body` / `install` / `applyChange` / `positionAt` API). The preview↔editor
-half of the caret bridge lives in [PREVIEW.md](PREVIEW.md).
+## TL;DR
 
-Implementation: `src/lib/core/codec/` — `decode.ts` (content → PM), `encode.ts`
-(PM → `ChangeBundle`), `positions.ts` (the USV↔PM map), `marks.ts` / `islands.ts`
-(the mark algebra and island props), `reconcile.ts` (the field-scoped rehydrate
-gate), `markdown.ts` (the paste/copy edges), `inputrules.ts` + `schema.ts` (the PM
-schema and shorthands), and `field.ts` — `createField`, the prose leaf that wires
-them to one PM view.
+The bidirectional codec between one content field (`Content`) and one ProseMirror
+document — decode (content → PM), the transaction lowering (PM → a `ChangeBundle`
+for `applyChange`), and the USV ↔ PM position map that carries the caret. One
+field, one PM doc; the VisualEditor composes many. Markdown is not in this loop —
+it is an edge codec (§Markdown at the edges), never the edit representation.
+
+Grounds on quillmark's `Content` model and its WASM edit surface (canon: quillmark
+`prose/canon/DOCUMENT_STORAGE.md`, `CONVERT.md`; the WASM `Card.body` / `install`
+/ `applyChange` / `positionAt` API). The preview↔editor half of the caret bridge
+lives in [PREVIEW.md](PREVIEW.md).
 
 ## The two models
 
@@ -39,22 +35,25 @@ and neither side's positions are the other's.
 ## Direction: the content is truth; PM is its projection; edits are ops
 
 Decode is a pure function content → PM. Encode does **not** rebuild a `Content`
-and `install` it — it lowers each PM transaction to a `ChangeBundle { delta?,
-lineOps?, markOps? }` and calls `doc.applyChange(addr, bundle)`. Op-based,
-because:
+and `install` it — it projects the new PM doc back to content (`pmToContent`,
+decode's inverse) and diffs `old → new` into a `ChangeBundle { delta?, lineOps?,
+markOps? }`, applied by `doc.applyChange(addr, bundle)`. Op-based, because:
 
 - **anchors survive.** `install` is value semantics — it drops the identity
   anchors (comment threads, stable references) of the previous value.
   `applyChange` splices, so anchors rebase through the edit.
 - **it is the seam's grain.** The `delta` channel is CodeMirror-`ChangeSet`
-  isomorphic; marks and line attributes are separate op channels by design. A PM
-  transaction already carries the splice (a `ReplaceStep`'s `from`/`to`/`slice`)
-  and the mark steps — lowering reads them out in USV coordinates, it does not
-  re-diff.
+  isomorphic; marks and line attributes are separate op channels by design.
+  Lowering is a **whole-field diff, not a step replay**: rather than translate
+  each `tr.step` out of PM's node coordinates and open-slice depths, it
+  re-derives the content projection once and diffs `old → new` in one post-delta
+  USV coordinate space. The diff replicates `applyChange`'s own mark rebase
+  (start-assoc `after`, end-assoc `before` ≡ `mapPos`), so it stays
+  coverage-precise.
 
-`install(addr, rt)` stays as the escape hatch for a transaction too tangled to
-lower precisely (a structural paste); it costs that field's anchors, so it is the
-exception, not the path.
+`install(addr, rt)` stays as the escape hatch when a change can't lower op-wise
+(island creation; §Encode) or `applyChange` throws; it costs that field's anchors,
+so it is the exception, not the path.
 
 ## Decode — content → PM
 
@@ -75,25 +74,31 @@ either carrying the island `id` and typed props.
 
 Two mark kinds do **not** become PM marks — see §Marks.
 
-## Encode — PM transaction → `ChangeBundle`
+## Encode — PM edit → `ChangeBundle`
 
-Lower `tr.steps` to the three channels in `applyChange`'s application order
-(`delta` first, then `lineOps`, then `markOps` in *post-delta* coordinates):
+`lower(oldRt, newDoc)` projects the new PM doc to content (`pmToContent`) and diffs
+`old → new` into the three channels, in `applyChange`'s application order (`delta`,
+then `lineOps`, then `markOps`, all in *post-delta* coordinates):
 
-- **text** — a `ReplaceStep`'s flat text change becomes `delta` ops
-  (`retain` / `insert` / `delete`) over USV.
-- **structure** — the same step's block-boundary effect (an open slice that
-  splits or joins), plus explicit structural commands, becomes `lineOps`: Enter
-  in a paragraph is `split{at}`; a joining Backspace is `join{line}`; a heading
-  toggle is `setKind`; list indent/outdent and blockquote wrap are
-  `setContainers`.
-- **formatting** — `addMark` / `removeMark` steps become `markOps` `add` /
-  `remove` over post-delta USV ranges.
-- **anchors** — decoration adds/removes become `add {type:"anchor", id}` /
-  `removeAnchor {id}`.
+- **text** — a minimal single-splice diff of the flat USV text becomes `delta`
+  ops (`retain` / `insert` / `delete`). A line split or join rides the delta: an
+  inserted `\n` splits a line, a deleted `\n` joins — there is no separate
+  split/join op.
+- **line metadata** — when any line's `kind` / `containers` / `continues`
+  changed, `lineOps` restate every line's metadata (`setKind`, `setContainers`,
+  and `setContinues` for lines ≥ 1). Redundant restatements are safe no-ops, so
+  the pass is correct whatever intermediate metadata the delta's split/join left.
+- **formatting** — the mark-coverage difference becomes `markOps` `add` /
+  `remove` over post-delta USV ranges; old marks are first rebased through the
+  delta exactly as `applyChange` rebases them (start-assoc `after`, end-assoc
+  `before` ≡ `mapPos`).
+- **anchors** — the decoration-set difference by id becomes `add {type:"anchor",
+  id}` / `removeAnchor {id}`, positions already in final coords.
 
-Line indices and mark ranges are computed against the *post-delta* content, so the
-bundle reads the same way `applyChange` applies it.
+Everything reads against the *post-delta* content, so the bundle reads the same way
+`applyChange` applies it. The one edit the op vocabulary can't reach is **island
+creation** — a `delta` insert carrying an island slot throws `IslandSlotInInsert`,
+so the field falls back to `install`.
 
 ## Positions — USV ↔ PM
 
@@ -184,10 +189,12 @@ onto the content and narrowed to one field. Caret continuity across the editor's
   at the WASM boundary, so the codec's `table`/`image` schemas track a shape the
   surface does not pin (DOCUMENT_MODEL §Stability seams). A candidate for a typed
   island surface upstream.
-- **complex-paste lowering** falls back to `install(addr, rt)` when a transaction
-  is too tangled to lower precisely (a structural paste), paying that field's
-  anchors. A content-level diff that would narrow the fallback is not exposed by
-  the boundary today.
-- **input rules and the PM schema** ship: the markdown shorthands (`**`, `#`,
-  `- `, table entry) are PM input rules producing ordinary transactions this codec
-  lowers; markdown is an input shorthand, never the stored form.
+- **install fallback** catches the edits the diff can't lower op-wise: island
+  *creation* (a `delta` can't reintroduce a slot — `IslandSlotInInsert`) and any
+  `applyChange` that throws. Both retry as `install(addr, rt)`, paying that field's
+  anchors — the exception, not the path.
+- **input rules and the PM schema** ship: the markdown shorthands (`**`, `*`,
+  `~~`, `` ` ``, `# `, `- `, `1. `, `> `, and a ` ``` ` code fence) are PM input
+  rules producing ordinary transactions this codec lowers; markdown is an input
+  shorthand, never the stored form. No table-entry rule ships — table/island
+  authoring is deferred (VISUAL_EDITOR_UIUX §Open).

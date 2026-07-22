@@ -55,6 +55,7 @@
 		"test:watch": "svelte-kit sync && vitest",
 		"test:e2e": "playwright test",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:canon": "node scripts/check-canon.mjs",
 		"format": "prettier --write .",
 		"lint": "prettier --check ."
 	},

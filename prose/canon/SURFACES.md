@@ -1,13 +1,15 @@
 # Surfaces
 
-Scope: the visual chrome of the editor's surfaces — background, border, shadow,
-padding, and radius — across the card stack, its fields and body, and the floating
+> **Implementation**: `src/lib/visual/`
+
+## TL;DR
+
+The visual chrome of the editor's surfaces — background, border, shadow, padding,
+and radius — across the card stack, its fields and body, and the floating
 selection popover. The visual language that motivates the choices (monochrome,
 typographic, restrained) is [AESTHETIC.md](AESTHETIC.md); the tokens are
 [`THEMING.md`](../../THEMING.md). Prior art is web-app, whose `SURFACES.md` this
 carries.
-
-Implementation: `src/lib/visual/` — `Card`, the per-field controls, `FormatPopover`.
 
 Two orthogonal rules decide how a surface looks, each with a single source so a new
 control inherits them instead of reinventing:

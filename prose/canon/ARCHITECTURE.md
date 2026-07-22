@@ -1,12 +1,14 @@
 # Architecture
 
-Scope: what `@quillmark/editor` is — the VisualEditor and Preview surfaces, the
-shared document/engine substrate beneath them, the data flow between them, and
-the package's public API (the minimal source editor lives here as a debug view).
+> **Implementation**: `src/lib/` (the package) · `src/routes/` (the playground)
 
-Implementation: `src/lib/` → `svelte-package` → `dist/` (the published tarball);
-`src/routes/` → the playground. The subpath roots are `src/lib/{index,core/index,
-preview/index,visual/index,source/index}.ts`.
+## TL;DR
+
+What `@quillmark/editor` is — the VisualEditor and Preview surfaces, the shared
+document/engine substrate beneath them, the data flow between them, and the
+package's public API (the minimal source editor lives here as a debug view).
+`src/lib/` → `svelte-package` → `dist/` is the published tarball; `src/routes/`
+is the playground.
 
 ## Core vs chrome
 

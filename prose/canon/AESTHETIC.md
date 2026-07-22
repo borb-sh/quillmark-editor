@@ -1,13 +1,16 @@
 # Visual Aesthetic
 
-Scope: the visual language of the editor surfaces — the look a consumer sees
-before theming, and the rules a restyle preserves. The surface chrome it governs
-(background, border, shadow, padding, radius) is [SURFACES.md](SURFACES.md); the
-token baseline it draws on is [`THEMING.md`](../../THEMING.md). Prior art is
-web-app, whose `AESTHETIC.md` this carries.
+> **Implementation**: `src/lib/visual/`
 
-Implementation: `src/lib/visual/` — the reference surface is the `/visual`
-playground route over the reference quill.
+## TL;DR
+
+The visual language of the editor surfaces — the look a consumer sees before
+theming, and the rules a restyle preserves; styles live in component `<style>`
+blocks, and the `/visual` playground route is the reference surface. The surface
+chrome it governs (background, border, shadow, padding, radius) is
+[SURFACES.md](SURFACES.md); the token baseline it draws on is
+[`THEMING.md`](../../THEMING.md). Prior art is web-app, whose `AESTHETIC.md` this
+carries.
 
 ## The look
 

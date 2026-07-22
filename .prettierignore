@@ -1,6 +1,6 @@
 package-lock.json
 
-# Hand-formatted design/phase prose and the reference-quill fixture tree:
+# Hand-formatted canon and design prose and the reference-quill fixture tree:
 # prettier would collapse aligned code-sketch comments and churn a test input.
 prose/
 fixtures/

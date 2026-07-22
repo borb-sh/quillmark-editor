@@ -1,5 +1,5 @@
-// The `/preview` reserved-package invariant, enforced (PHASE_1 §subpath skeleton,
-// ARCHITECTURE §Packaging): the `/preview` subpath imports no editor-side code,
+// The `/preview` reserved-package invariant, enforced (ARCHITECTURE §Packaging):
+// the `/preview` subpath imports no editor-side code,
 // so the eventual `@quillmark/preview` promotion is a re-export, not a refactor.
 // "Editor-side" is concretely the heavy libraries a viewer-only consumer must not
 // pull — ProseMirror and CodeMirror — plus the codec and the `/visual`/`/source`

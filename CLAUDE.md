@@ -4,12 +4,12 @@ Editor + live-preview component library for Quillmark WASM consumers. A
 SvelteKit lib/app repo: `src/lib` → `svelte-package` → the published package;
 `src/routes` → the dev playground (never published).
 
-Start at [`prose/phases/INDEX.md`](prose/phases/INDEX.md) — the build order,
-cross-cutting policies, and per-phase briefs. The settled systems live in
-[`prose/canon/INDEX.md`](prose/canon/INDEX.md); deferred and not-yet-designed work
-in [`prose/designs/INDEX.md`](prose/designs/INDEX.md). **Phases 1–5 have landed.**
-Each phase's "Settled decisions" are ratified — follow them; record any
-implementation-forced deviation in the phase doc.
+Start at [`prose/canon/INDEX.md`](prose/canon/INDEX.md) — the settled systems that
+describe V1 (**Phases 1–5 have shipped**). Deferred and not-yet-designed work is
+named in [`prose/designs/INDEX.md`](prose/designs/INDEX.md) and tracked as GitHub
+issues. Every canon doc follows the spine documented in
+[`prose/README.md`](prose/README.md) (`> **Implementation**:` folder anchor +
+`## TL;DR`); `npm run check:canon` gates it.
 
 Comments and docs: dense, present-tense, no marketing — the `dense-prose` skill
 (in the sibling `quillmark` checkout's `.claude/skills/`).
@@ -18,8 +18,9 @@ Comments and docs: dense, present-tense, no marketing — the `dense-prose` skil
 
 - `npm run dev` — the playground (Vite).
 - `npm run build` — `svelte-kit sync && svelte-package` → `dist/`.
-- `npm test` — Vitest (lands with Phase 1).
+- `npm test` — Vitest.
 - `npm run check` / `npm run lint` — svelte-check / prettier; CI gates.
+- `npm run check:canon` — canon spine lint (CI gate; see `prose/README.md`).
 
 ## Boundaries
 
@@ -44,7 +45,7 @@ Comments and docs: dense, present-tense, no marketing — the `dense-prose` skil
 
 ## Verification
 
-Two tiers (phases INDEX): Vitest for pure/core logic; the playground for what
+Two tiers: Vitest for pure/core logic; the playground for what
 unit tests cannot reach (canvas paint, scroll virtualization, DPR, the click
 round-trip). In the Claude cloud environment, drive the playground headlessly —
 Chromium is preinstalled (`/opt/pw-browsers/chromium`,
