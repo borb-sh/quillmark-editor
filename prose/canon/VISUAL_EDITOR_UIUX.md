@@ -109,4 +109,5 @@ Debug-only, per [ARCHITECTURE.md](ARCHITECTURE.md) — not an editable dual mode
   menu, slash command, and table/island authoring.
 - **Formatting reach (post-V1)** — the touch accessory bar and keymap shortcuts
   for `strike` / `code` / `link` (only `Mod-b`/`i`/`u` bind today); the popover's
-  `anchor` button awaits an anchor-insert verb at the WASM boundary.
+  `anchor` button awaits a codec anchor-insert seam (a `FieldController.insertAnchor`
+  verb — anchors are editor-side decorations, not WASM marks).
