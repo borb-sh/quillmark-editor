@@ -24,8 +24,8 @@ overrides to its brand without fighting baked-in decoration.
 
 - **Monochrome and typographic.** Weight and whitespace carry hierarchy, not color
   fills or decorative borders. Color encodes meaning — an inline diagnostic
-  (`--qm-diag-error`, `--qm-diag-warning`), a focused field's ring
-  (`--qm-field-ring-active`) — never ornament.
+  (`--qm-diag-error`, `--qm-diag-warning`), the preview overlay's active field
+  box (`--qm-field-ring-active`) — never ornament.
 - **Icons encode identity or function — never decoration.** A control's glyph
   names its action: reorder, delete, a formatting mark. An icon that dresses a
   label or a section heading, doing a job a word already does, is cut.

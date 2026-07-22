@@ -75,8 +75,10 @@ interpolated with live values — overridden per instance by `$ext.editor.title`
 
 **The editor projects the commitment ladder.** Per field: show the authored value;
 else ghost the `default:` as placeholder (never written back — it lives in the
-schema); offer `example:` as guidance; surface a `!must_fill` marker as a soft
-nudge. Nothing gates — an incomplete document edits and renders fine (canon:
+schema). A `!must_fill` marker surfaces as a routed `validate()` warning
+(§Diagnostics); `example:` reaches the editor only through the seed cascade
+(§"Card operations") — no per-field tips surface in V1 (VISUAL_EDITOR_UIUX
+§Fields). Nothing gates — an incomplete document edits and renders fine (canon:
 `SCHEMAS.md` zero-fill render). Completeness is a read of `quill.validate(doc)`,
 not a gate.
 

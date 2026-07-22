@@ -52,18 +52,25 @@ edge aligns to one gutter. Stacked regions — a card's header, its field list, 
 body — are separated by one gap, not per-region margins that drift. Pick from the
 scale; an in-between value is a review smell.
 
-**Radius.** One `--qm-radius` base with at most a small derived step, by surface
+**Radius.** One radius base with at most a small derived step, by surface
 weight — the card one tier, its interior controls a tighter one — not a free choice
-per component. Four unrelated radii is drift, not a scale.
+per component. Four unrelated radii is drift, not a scale. Neither radius nor
+spacing is tokenized yet — the values are literals in component styles
+([#46](https://github.com/borb-sh/quillmark-editor/issues/46); the deferred
+theming pass, [`THEMING.md`](../../THEMING.md)).
 
 ## Focus and active state
 
-A surface a caret or selection can land on shows it, within the monochrome palette.
-A focused field or prose leaf draws a ring rather than clearing the native outline
-with nothing in its place; the active card is set apart from its neighbors (the
-`active` state that pins the reorder chevrons, VISUAL_EDITOR_UIUX §"Card stack").
-The active field ring is the one place a non-neutral hue is load-bearing
-(`--qm-field-ring-active`), so the focused target reads at a glance.
+A surface a caret or selection can land on shows it, within the monochrome
+palette. Doctrine: a focused field or prose leaf draws a ring rather than
+clearing the native outline with nothing in its place. Today the scalar controls
+keep the native outline and the prose leaf clears it with no replacement — that
+gap, and the missing editor-side focus token, are
+[#45](https://github.com/borb-sh/quillmark-editor/issues/45). The active card is
+set apart from its neighbors (the `active` state that pins the reorder chevrons,
+VISUAL_EDITOR_UIUX §"Card stack"). The one non-neutral load-bearing hue shipped
+is the preview overlay's active field box (`--qm-field-ring-active` — THEMING
+§"Preview overlay"), so the focused target reads at a glance.
 
 ## Preventing drift
 
