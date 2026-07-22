@@ -5,8 +5,15 @@ The V1 surfaces have shipped and their designs are promoted to
 [`canon/`](../canon/INDEX.md); what remains here is the work deferred past V1,
 named but not yet designed.
 
-No design docs are open right now. The deferred surfaces, each named in the canon
-that borders it:
+Open design docs:
+
+- [RESTING_FIELDS.md](RESTING_FIELDS.md) — fields rest as typography; control
+  chrome surfaces on hover/focus.
+- [QUIET_PREVIEW.md](QUIET_PREVIEW.md) — the preview as proof sheet: overlay
+  rings only for the active field and under the pointer.
+
+The deferred surfaces named but not yet designed, each in the canon that borders
+it:
 
 - **Insert surface (post-V1)** — the position anchor the formatting split leaves a
   place for: a gutter insert affordance, its menu, a slash command, and table /
@@ -21,5 +28,5 @@ that borders it:
   document-level undo spanning a structural op plus a prose edit (canon
   VISUAL_EDITOR §"Settled and deferred").
 
-A doc lands here when one of these is picked up, and moves to `canon/` once it
-ships.
+A deferred surface gains a doc here when picked up; a doc moves to `canon/`
+once it ships.

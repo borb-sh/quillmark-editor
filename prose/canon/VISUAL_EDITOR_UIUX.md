@@ -77,8 +77,9 @@ is a separate concern (the island controls), not gated by this.
   Layout density carries web-app's system: `ui.group`/`ui.compact` drive columns.
 - **Prose leaf** — the body and each rich field as an inline WYSIWYG surface.
 - **Per-field state** — focus, inline diagnostics, and a ghosted `default:`
-  placeholder (never written back — it lives in the schema). No `must_fill` nudge
-  and no separate tips surface in V1.
+  placeholder (never written back — it lives in the schema). A `!must_fill`
+  marker surfaces only as a routed `validate()` warning among those diagnostics;
+  no dedicated nudge and no tips surface (`example:`) in V1.
 - **Array fields** — a repeater: one control per element (text / prose / minimal
   JSON by `items.type`), a per-row delete, an add affordance at the foot. No
   element reorder — rows hold entry order, and the array commits by value, so a
@@ -86,13 +87,15 @@ is a separate concern (the island controls), not gated by this.
   keeps ↑/↓ — a curated set of heavyweight blocks earns it; a scalar list does
   not.) Reorder can return behind an `items`/`ui` hint if a quill needs it.
 
-## Editor→preview
+## Editor↔preview
 
-Coupling is one-way and opt-in. The editor emits its active address and caret
-moves; a consumer may wire those to a preview so the preview follows the editor.
-The preview is unaware of the VisualEditor — there is no click-in-preview path
-back to a field. The bridge lives at the consumer layer and is not mandatory; the
-editor|preview split shell is the consumer's.
+Coupling is consumer-wired and opt-in, in both directions (VISUAL_EDITOR §"Focus
+and the preview bridge"). The editor emits its active address and caret moves,
+which the consumer may feed to `preview.focusPosition` so the preview follows
+the editor; a preview click surfaces a `ContentHit` the consumer may hand to
+`visualEditor.setCaret`, landing the caret in the editor — the click round-trip.
+Neither surface imports the other; the bridge and the editor|preview split shell
+live at the consumer layer (the playground wires both).
 
 ## Source view
 
