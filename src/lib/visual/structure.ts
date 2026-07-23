@@ -121,14 +121,14 @@ export function fieldModels(cardSchema: QuillCardSchema): FieldModel[] {
 }
 
 /**
- * Group-section order (VISUAL_EDITOR §Layout, and the recorded typing seam): the
- * schema's `ui.groups` object KEY ORDER when present — read via a cast, since the
- * typed `QuillCardUi` omits `groups` — else the first-appearance order of each
- * field's `ui.group`.
+ * Group-section order (VISUAL_EDITOR §Layout): the schema's `ui.groups` registry
+ * KEY ORDER when present — `QuillCardUi.groups` is a typed `Record` as of
+ * `@quillmark/wasm` 0.96.0 (the retired typing seam), so this reads it directly —
+ * else the first-appearance order of each field's `ui.group`.
  */
 export function groupOrder(cardSchema: QuillCardSchema): string[] {
-	const groups = (cardSchema.ui as { groups?: Record<string, unknown> } | undefined)?.groups;
-	if (groups && typeof groups === 'object') return Object.keys(groups);
+	const groups = cardSchema.ui?.groups;
+	if (groups) return Object.keys(groups);
 	const order: string[] = [];
 	for (const f of Object.values(cardSchema.fields)) {
 		const g = f.ui?.group;
@@ -138,17 +138,32 @@ export function groupOrder(cardSchema: QuillCardSchema): string[] {
 }
 
 /**
+ * A group's display label: the `ui.groups[g].title` override when the registry
+ * declares one, else the humanized id (`memo_for` → "Memo for") — the same
+ * id-derives-the-label rule a field's key follows.
+ */
+export function groupLabel(cardSchema: QuillCardSchema, group: string): string {
+	return cardSchema.ui?.groups?.[group]?.title ?? humanize(group);
+}
+
+/**
  * Sort field models into ordered group sections. Declared groups first (in
  * `order`), each carrying its fields in declaration order; then any remaining
- * groups (including the ungrouped bucket) in first-appearance order.
+ * groups (including the ungrouped bucket) in first-appearance order. `labelFor`
+ * resolves a group id to its display label (the `ui.groups` title override, via
+ * {@link groupLabel}); it defaults to {@link humanize} for the label-free caller.
  */
-export function groupSections(fields: FieldModel[], order: string[]): GroupSection[] {
+export function groupSections(
+	fields: FieldModel[],
+	order: string[],
+	labelFor: (group: string) => string = humanize
+): GroupSection[] {
 	const sections: GroupSection[] = [];
 	const emitted = new Set<string | undefined>();
 	for (const g of order) {
 		const fs = fields.filter((f) => f.group === g);
 		if (fs.length) {
-			sections.push({ group: g, label: humanize(g), fields: fs });
+			sections.push({ group: g, label: labelFor(g), fields: fs });
 			emitted.add(g);
 		}
 	}
@@ -156,7 +171,7 @@ export function groupSections(fields: FieldModel[], order: string[]): GroupSecti
 		if (emitted.has(f.group)) continue;
 		sections.push({
 			group: f.group,
-			label: f.group ? humanize(f.group) : '',
+			label: f.group ? labelFor(f.group) : '',
 			fields: fields.filter((x) => x.group === f.group)
 		});
 		emitted.add(f.group);

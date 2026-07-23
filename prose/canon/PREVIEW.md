@@ -56,9 +56,10 @@ geometry.
   commands scroll/focus a field.
 
 A **field box** is the rectangle on the rendered page where a schema field's
-content lands — the address the editor edits (`subject`, `cards[2].name`)
-mapped to on-page geometry. `fieldBoxes(field)` unions a field's segment rects
-into one (striped) box per page.
+content lands — the field's canonical `DocPath` address (`main.subject`,
+`cards.<kind>[2].name`, cards by absolute document index) mapped to on-page
+geometry. `fieldBoxes(field)` unions a field's segment rects into one (striped)
+box per page.
 
 ## Click bridge
 

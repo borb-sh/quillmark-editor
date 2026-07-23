@@ -4,7 +4,7 @@
 // prose leaf. Consumed by Phase 4 (the VisualEditor) and the codec test suite.
 
 // The prose leaf.
-export { createField } from './field.js';
+export { createField, emptyContent, proseLeafPlugins } from './field.js';
 export type { CreateFieldOpts, FieldController } from './field.js';
 
 // Schemas (the decode/encode target; Phase 4 mounts them).
@@ -26,7 +26,7 @@ export type { PosRun, Scan } from './encode.js';
 export { usvToPM, pmToUsv, buildLineIndex } from './positions.js';
 export type { LineIndex } from './positions.js';
 
-// Marks + islands (the algebra and typed props).
+// Marks + islands (the algebra and node bridge).
 export {
 	isAnchor,
 	pmMarkFromContent,
@@ -35,13 +35,10 @@ export {
 	anchorsFromContent
 } from './marks.js';
 export type { AnchorPos } from './marks.js';
-export { ISLAND_SLOT, imageProps, tableProps, islandEntryFromNode } from './islands.js';
-export type {
-	IslandImageProps,
-	IslandTableProps,
-	IslandTableCell,
-	IslandTableAlign
-} from './islands.js';
+export { ISLAND_SLOT, islandEntryFromNode } from './islands.js';
+// Typed island props are pinned upstream (0.96.0); a props-aware consumer reads
+// them off `ContentIsland.props`, re-exported here from `/core` for one import site.
+export type { TableProps, ImageProps, TableCell } from '../index.js';
 
 // Reconciliation gate.
 export { createReconciler, contentEqual } from './reconcile.js';

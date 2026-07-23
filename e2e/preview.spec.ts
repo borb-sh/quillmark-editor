@@ -40,24 +40,24 @@ test.describe('preview', () => {
 	test('(c) clicking the subject field ink sets last-hit to a subject ContentHit', async ({
 		page
 	}) => {
-		const subjectBox = page.locator('[data-qm-field="subject"]').first();
+		const subjectBox = page.locator('[data-qm-field="main.subject"]').first();
 		await expect(subjectBox).toBeVisible();
 		const rect = await subjectBox.boundingBox();
 		if (!rect) throw new Error('subject overlay box has no bounding box');
 
 		await page.mouse.click(rect.x + rect.width / 2, rect.y + rect.height / 2);
-		await expect(page.getByTestId('last-hit')).toContainText('"field":"subject"');
+		await expect(page.getByTestId('last-hit')).toContainText('"field":"main.subject"');
 	});
 
 	test('(d) clicking a clearly-empty margin area does not change last-hit', async ({ page }) => {
 		// First set last-hit via a real field click, so the follow-up margin click
 		// is proven to leave an EXISTING hit alone, not just that it starts empty.
-		const subjectBox = page.locator('[data-qm-field="subject"]').first();
+		const subjectBox = page.locator('[data-qm-field="main.subject"]').first();
 		await expect(subjectBox).toBeVisible();
 		const sRect = await subjectBox.boundingBox();
 		if (!sRect) throw new Error('subject overlay box has no bounding box');
 		await page.mouse.click(sRect.x + sRect.width / 2, sRect.y + sRect.height / 2);
-		await expect(page.getByTestId('last-hit')).toContainText('"field":"subject"');
+		await expect(page.getByTestId('last-hit')).toContainText('"field":"main.subject"');
 		const before = await page.getByTestId('last-hit').textContent();
 
 		// A few CSS px from the page's own top-left corner — for usaf_memo's

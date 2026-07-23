@@ -14,6 +14,7 @@
 -->
 <script lang="ts">
 	import type { Content, QuillFieldSchema } from '../core/index.js';
+	import { emptyContent } from '../core/codec/index.js';
 	import { IdSeq, elementControl } from './structure.js';
 	import TextField from './TextField.svelte';
 	import ProseArrayElement from './ProseArrayElement.svelte';
@@ -50,15 +51,7 @@
 	});
 
 	function emptyElement(): unknown {
-		if (control === 'prose') {
-			const rt: Content = {
-				text: '',
-				lines: [{ containers: [], kind: 'para' }],
-				marks: [],
-				islands: []
-			};
-			return rt;
-		}
+		if (control === 'prose') return emptyContent();
 		if (control === 'object') return {};
 		return '';
 	}

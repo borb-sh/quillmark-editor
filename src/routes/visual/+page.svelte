@@ -42,14 +42,14 @@
 
 	// A consumer-supplied diagnostic feed stand-in (Phase 5 would derive this
 	// from LiveSession.warnings / render errors) — one main-field path, one
-	// best-effort card-field path, proving the external producer routes to both.
+	// card-field DocPath, proving the external producer routes to both.
 	function injectDiagnostics(): void {
 		externalDiagnostics = [
-			{ severity: 'warning', message: 'External test warning on subject', path: 'subject' },
+			{ severity: 'warning', message: 'External test warning on subject', path: 'main.subject' },
 			{
 				severity: 'error',
 				message: 'External test error on indorsement 0 from',
-				path: '$cards.indorsement.0.from'
+				path: 'cards.indorsement[0].from'
 			}
 		];
 	}

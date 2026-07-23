@@ -141,11 +141,11 @@ mechanisms:
 A table or figure is one `U+FFFC` slot plus one `Island {id, type, props,
 loss}`. Decode maps it to a PM leaf node (block or inline by the slot's line);
 encode writes the slot char and the entry with its `id` preserved (stable
-identity, like an anchor). Known types carry a typed props schema in the codec
-(`table: {header, rows, aligns}`, `image: {url, alt}`); unknown types pass
-opaque. **Seam risk:** `Island.props` is typed `unknown` at the WASM boundary, so
-the codec's table/image schemas track a shape the surface does not pin — a
-candidate for a typed island surface upstream.
+identity, like an anchor). Known types carry a typed props shape pinned upstream
+(`@quillmark/wasm` 0.96.0): `ContentIsland.props` is `TableProps` (`{header, rows,
+aligns}`) for `table`, `ImageProps` (`{url, alt}`) for `image`; an island of any
+other type passes opaque. The open `type` arm means a discriminant check does not
+auto-narrow `props` — key off `type`, read `props` as the matching type.
 
 ## Inline mode
 
@@ -185,10 +185,13 @@ onto the content and narrowed to one field. Caret continuity across the editor's
   id, mapped through `tr.mapping` and lowered to `anchor` ops — the split that
   keeps identity off PM's mark mechanism. A move into the document proper waits on
   comment-thread UX that needs it.
-- **island props typing** is the one open seam: `ContentIsland.props` is `unknown`
-  at the WASM boundary, so the codec's `table`/`image` schemas track a shape the
-  surface does not pin (DOCUMENT_MODEL §Stability seams). A candidate for a typed
-  island surface upstream.
+- **island props are typed at the boundary** (`@quillmark/wasm` 0.96.0): the
+  `ContentIsland.props` union pins `TableProps` for `table` and `ImageProps` for
+  `image` (`TableCell` the cell shape), so the codec reads the shape off the
+  boundary and dropped its hand-rolled `IslandTable*` / `IslandImage*` duplicates
+  and shape guards (DOCUMENT_MODEL §Stability seams). The open `type` arm means a
+  discriminant check does not auto-narrow `props` — key off `type`, read `props`
+  as the matching type. Table/island *authoring* stays deferred (below).
 - **install fallback** catches the edits the diff can't lower op-wise: island
   *creation* (a `delta` can't reintroduce a slot — `IslandSlotInInsert`) and any
   `applyChange` that throws. Both retry as `install(addr, rt)`, paying that field's

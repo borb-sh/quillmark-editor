@@ -33,40 +33,38 @@ describe('fieldKeyToString', () => {
 });
 
 describe('parsePath', () => {
-	it('maps $body to the main body', () => {
-		expect(parsePath('$body')).toEqual({});
+	it('maps main.body to the main body', () => {
+		expect(parsePath('main.body')).toEqual({});
 	});
-	it('maps a bare name to a main field', () => {
-		expect(parsePath('subject')).toEqual({ field: 'subject' });
-		expect(parsePath('font_size')).toEqual({ field: 'font_size' });
+	it('maps a main.<field> path to a main field', () => {
+		expect(parsePath('main.subject')).toEqual({ field: 'subject' });
+		expect(parsePath('main.font_size')).toEqual({ field: 'font_size' });
 	});
-	it('maps $cards.<kind>.<i>.<field> to a card field, keeping the kind (the ordinal is per-kind)', () => {
-		expect(parsePath('$cards.indorsement.0.from')).toEqual({
-			card: 0,
-			cardKind: 'indorsement',
-			field: 'from'
-		});
-		expect(parsePath('$cards.indorsement.2.date')).toEqual({
-			card: 2,
-			cardKind: 'indorsement',
-			field: 'date'
-		});
+	it('maps cards.<kind>[<i>].<field> to a card field by ABSOLUTE document index', () => {
+		expect(parsePath('cards.indorsement[0].from')).toEqual({ card: 0, field: 'from' });
+		expect(parsePath('cards.indorsement[2].date')).toEqual({ card: 2, field: 'date' });
 	});
-	it('maps $cards.<kind>.<i> (no field) to a card body', () => {
-		expect(parsePath('$cards.indorsement.1')).toEqual({ card: 1, cardKind: 'indorsement' });
+	it('maps a card body (a `.body` terminal, or a bare card) to a field-less card key', () => {
+		expect(parsePath('cards.indorsement[1].body')).toEqual({ card: 1 });
+		expect(parsePath('cards.indorsement[1]')).toEqual({ card: 1 });
 	});
-	it('rejects an array-element path (no single-field commit address)', () => {
-		expect(parsePath('references.0')).toBeUndefined();
+	it('routes an unknown-kind card path (cards[<i>].<field>)', () => {
+		expect(parsePath('cards[1].from')).toEqual({ card: 1, field: 'from' });
 	});
-	it('rejects a malformed $cards. path (non-numeric or negative index)', () => {
-		expect(parsePath('$cards.indorsement.x.from')).toBeUndefined();
-		expect(parsePath('$cards.indorsement.-1.from')).toBeUndefined();
+	it('rejects an array-element / nested path (no single-field commit address)', () => {
+		expect(parsePath('main.references.0')).toBeUndefined();
+		expect(parsePath('recipients[0].name')).toBeUndefined();
+	});
+	it('rejects a malformed path (empty, non-numeric or negative index)', () => {
+		expect(parsePath('')).toBeUndefined();
+		expect(parsePath('cards.indorsement[x].from')).toBeUndefined();
+		expect(parsePath('cards.indorsement[-1].from')).toBeUndefined();
 	});
 });
 
 describe('resolveCardKey', () => {
 	const cardIds = ['c0', 'c1', 'c2'];
-	it('resolves a positional index to the live stable id', () => {
+	it('resolves an absolute document index to the live stable id', () => {
 		expect(resolveCardKey({ card: 1, field: 'from' }, cardIds)).toEqual({
 			card: 'c1',
 			field: 'from'
@@ -82,26 +80,6 @@ describe('resolveCardKey', () => {
 		});
 		expect(resolveCardKey({ field: 'subject' }, cardIds)).toEqual({ field: 'subject' });
 	});
-	it('resolves a per-kind ordinal against interleaved kinds (fixture plate.typ grammar)', () => {
-		const kinds = ['a', 'b', 'a'];
-		// The SECOND `a` card (per-kind ordinal 1) sits at absolute slot 2.
-		expect(resolveCardKey({ card: 1, cardKind: 'a', field: 'x' }, cardIds, kinds)).toEqual({
-			card: 'c2',
-			field: 'x'
-		});
-		expect(resolveCardKey({ card: 0, cardKind: 'b', field: 'x' }, cardIds, kinds)).toEqual({
-			card: 'c1',
-			field: 'x'
-		});
-		// No third `a` card exists — dropped, not mis-routed.
-		expect(resolveCardKey({ card: 2, cardKind: 'a', field: 'x' }, cardIds, kinds)).toBeUndefined();
-	});
-	it('falls back to an absolute index when kinds are not supplied', () => {
-		expect(resolveCardKey({ card: 1, cardKind: 'a', field: 'x' }, cardIds)).toEqual({
-			card: 'c1',
-			field: 'x'
-		});
-	});
 });
 
 describe('routeByPath', () => {
@@ -109,15 +87,18 @@ describe('routeByPath', () => {
 		expect(routeByPath([{ severity: 'error', message: 'no path' }])).toEqual([]);
 	});
 	it('drops diagnostics whose path is unroutable', () => {
-		expect(routeByPath([err('bad', 'references.0')])).toEqual([]);
+		expect(routeByPath([err('bad', 'main.references.0')])).toEqual([]);
 	});
 	it('routes a mix of main and card paths', () => {
-		const routed = routeByPath([warn('w1', 'subject'), err('e1', '$cards.indorsement.0.from')]);
+		const routed = routeByPath([
+			warn('w1', 'main.subject'),
+			err('e1', 'cards.indorsement[0].from')
+		]);
 		expect(routed).toEqual([
-			{ key: { field: 'subject' }, diagnostic: warn('w1', 'subject') },
+			{ key: { field: 'subject' }, diagnostic: warn('w1', 'main.subject') },
 			{
-				key: { card: 0, cardKind: 'indorsement', field: 'from' },
-				diagnostic: err('e1', '$cards.indorsement.0.from')
+				key: { card: 0, field: 'from' },
+				diagnostic: err('e1', 'cards.indorsement[0].from')
 			}
 		]);
 	});
@@ -132,15 +113,15 @@ describe('routeAndResolve', () => {
 	it('routes and resolves in one step, dropping out-of-range card paths', () => {
 		const out = routeAndResolve(
 			[
-				warn('w1', 'subject'),
-				err('e1', '$cards.indorsement.1.from'),
-				err('e2', '$cards.indorsement.9.from') // out of range — dropped
+				warn('w1', 'main.subject'),
+				err('e1', 'cards.indorsement[1].from'),
+				err('e2', 'cards.indorsement[9].from') // out of range — dropped
 			],
 			cardIds
 		);
 		expect(out).toEqual([
-			{ key: { field: 'subject' }, diagnostic: warn('w1', 'subject') },
-			{ key: { card: 'c1', field: 'from' }, diagnostic: err('e1', '$cards.indorsement.1.from') }
+			{ key: { field: 'subject' }, diagnostic: warn('w1', 'main.subject') },
+			{ key: { card: 'c1', field: 'from' }, diagnostic: err('e1', 'cards.indorsement[1].from') }
 		]);
 	});
 });

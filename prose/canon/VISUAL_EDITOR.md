@@ -161,9 +161,10 @@ parent to survive remounts (the prior art's workaround). Both directions
   hit just focuses the leaf (`hit.pos` is a segment start, not a cluster-exact
   caret).
 - **editor → preview** — a caret move in the active leaf emits `onCaretMove(addr,
-  pos)`; the consumer maps `addr` to the preview's field-path grammar with
-  `fieldPathForAddr` (`caret.ts`) and calls `preview.focusPosition(field, pos)`.
-  The USV `pos` is the shared coordinate — no codec hop.
+  pos)`; the consumer maps `addr` to the canonical `DocPath` field address with
+  `fieldPathForAddr` (`caret.ts`, built on `formatDocPath`) and calls
+  `preview.focusPosition(field, pos)`. The USV `pos` is the shared coordinate — no
+  codec hop.
 
 ## Chrome
 
@@ -187,10 +188,14 @@ Editing chrome is thin and **per-leaf**; structural chrome is Svelte in the shel
 ## Diagnostics
 
 Three sources, each routed to a field address and shown inline:
-`quill.validate(doc)` (path-keyed `Diagnostic[]` — type errors fatal, `must_fill`
-a soft warning), `LiveSession.warnings`, and render errors mapped through
-`FieldRegion.field`. `must_fill` and present-null never gate; a value that fails
-coercion is the only hard field error (canon: `SCHEMAS.md`).
+`quill.validate(doc)` (`Diagnostic[]` keyed on a canonical `DocPath` `.path` — type
+errors fatal, `must_fill` a soft warning), `LiveSession.warnings`, and render errors
+mapped through `FieldRegion.field`. Routing runs on the boundary's `parseDocPath`
+(`diagnostics.ts`), resolving the absolute card index to the editor's stable-id
+keying; a local commit error is keyed at its known call-site address and carries the
+thrown diagnostic's `code` (0.96 mutator failures carry one). `must_fill` and
+present-null never gate; a value that fails coercion is the only hard field error
+(canon: `SCHEMAS.md`).
 
 ## Surface
 
