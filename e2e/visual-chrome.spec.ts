@@ -223,7 +223,7 @@ test.describe('visual editor chrome — diagnostics routing', () => {
 		await expect.poll(async () => (await readDump(page)).subject).toBe('STILLWORKS');
 	});
 
-	test('(d) an externally supplied diagnostic renders against its main field and (best-effort) its card field', async ({
+	test('(d) an externally supplied diagnostic renders against its main field and its card field', async ({
 		page
 	}) => {
 		expect((await readDump(page)).cards[0]?.kind).toBe('indorsement');

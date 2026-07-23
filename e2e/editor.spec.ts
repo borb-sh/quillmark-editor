@@ -31,16 +31,18 @@ test.describe('editor shell', () => {
 		page.on('pageerror', (e) => errors.push(String(e)));
 
 		// Click the subject field's ink in the PREVIEW overlay (the only place
-		// `[data-qm-field]` exists — the preview surface).
-		const subjectBox = page.locator('[data-qm-field="subject"]').first();
+		// `[data-qm-field]` exists — the preview surface). The overlay keys on the
+		// canonical DocPath address (`main.subject`), as `regions()` reports it.
+		const subjectBox = page.locator('[data-qm-field="main.subject"]').first();
 		await expect(subjectBox).toBeVisible();
 		const rect = await subjectBox.boundingBox();
 		if (!rect) throw new Error('subject overlay box has no bounding box');
 		await page.mouse.click(rect.x + rect.width / 2, rect.y + rect.height / 2);
 
-		// The hit surfaced, and setCaret focused the editor's subject leaf — so the
-		// editor emitted `subject` as its active address (the bridge landed).
-		await expect(page.getByTestId('last-hit')).toContainText('"field":"subject"');
+		// The hit surfaced (its `field` is the canonical DocPath), and setCaret
+		// focused the editor's subject leaf — so the editor emitted its own `Addr`
+		// (`{field:"subject"}`) as the active address (the bridge landed).
+		await expect(page.getByTestId('last-hit')).toContainText('"field":"main.subject"');
 		await expect(page.getByTestId('active-addr')).toContainText('"field":"subject"');
 		expect(errors, errors.join('\n')).toEqual([]);
 	});
@@ -49,9 +51,9 @@ test.describe('editor shell', () => {
 		page
 	}) => {
 		// Click into the editor's subject leaf (an editor-origin caret move, not via
-		// the preview) → onCaretMove → focusPosition with the field-path grammar.
+		// the preview) → onCaretMove → focusPosition with the canonical DocPath address.
 		await pm(page, 'prose-main-subject').click();
-		await expect(page.getByTestId('last-focus')).toContainText('"field":"subject"');
+		await expect(page.getByTestId('last-focus')).toContainText('"field":"main.subject"');
 	});
 
 	test('(d) the preview follows an edit (dirtyPages repaint)', async ({ page }) => {

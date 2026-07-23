@@ -251,8 +251,9 @@
 		const i = cardIndexOf(id);
 		if (i < 0) return;
 		// The `editor` namespace is the write unit and it REPLACES on write, so
-		// merge over any existing keys (id-less in V1, but future-proof).
-		const existing = (doc.cards[i]?.ext?.editor ?? {}) as Record<string, unknown>;
+		// merge over any existing keys (id-less in V1, but future-proof). `card(i)`
+		// reads the one card (i is already validated) instead of serializing all.
+		const existing = (doc.card(i)?.ext?.editor ?? {}) as Record<string, unknown>;
 		doc.storeExtNamespace({ card: i }, 'editor', { ...existing, title });
 		bump();
 	}
@@ -309,7 +310,9 @@
 	function opsFor(id: string, isMain: boolean) {
 		return {
 			makeAddr: (field?: string) => makeAddr(id, isMain, field),
-			leafKey: (field?: string) => `${id}:${field ?? '$body'}`,
+			// The leaf-registry key space IS the diagnostics FieldKey space — one
+			// `fieldKeyToString`, so a leaf and its diagnostics resolve to one string.
+			leafKey: (field?: string) => fieldKeyToString({ card: isMain ? undefined : id, field }),
 			commit: (name: string, value: unknown) => commitScalar(id, isMain, name, value),
 			move: (dir: -1 | 1) => moveCardById(id, dir),
 			remove: () => removeCardById(id),
@@ -381,19 +384,18 @@
 	/** The active leaf's controller — the 4b formatting-popover observation seam. */
 	export function getActiveLeaf(): FieldController | undefined {
 		if (!activeAddr) return undefined;
-		const cardPart = activeAddr.card != null ? activeCardId : 'main';
-		return leaves.get(`${cardPart}:${activeAddr.field ?? '$body'}`);
+		const card = activeAddr.card != null ? activeCardId : undefined;
+		return leaves.get(fieldKeyToString({ card, field: activeAddr.field }));
 	}
 
-	/** Map a `ContentHit.field` (a canonical `DocPath`) to a mounted leaf key —
-	 * the same `parseDocPath` route the diagnostics take, then the absolute card
-	 * index resolved to its live stable id (the leaf registry's key space). */
+	/** Map a `ContentHit.field` (a canonical `DocPath`) to a mounted leaf key — the
+	 * same `parseDocPath` route the diagnostics take, the absolute card index
+	 * resolved to its live stable id, then the shared `fieldKeyToString` form. */
 	function leafKeyForHit(field: string): string | undefined {
 		const key = parsePath(field);
 		if (!key) return undefined;
 		const resolved = resolveCardKey(key, cardIds);
-		if (!resolved) return undefined;
-		return `${resolved.card ?? 'main'}:${resolved.field ?? '$body'}`;
+		return resolved ? fieldKeyToString(resolved) : undefined;
 	}
 </script>
 

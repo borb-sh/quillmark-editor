@@ -133,11 +133,11 @@
 
 	function injectDiagnostics(): void {
 		injected = [
-			{ severity: 'warning', message: 'External test warning on subject', path: 'subject' },
+			{ severity: 'warning', message: 'External test warning on subject', path: 'main.subject' },
 			{
 				severity: 'error',
 				message: 'External test error on indorsement 0 from',
-				path: '$cards.indorsement.0.from'
+				path: 'cards.indorsement[0].from'
 			}
 		];
 		syncDiagnostics();
