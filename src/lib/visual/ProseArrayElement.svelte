@@ -11,12 +11,9 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { baseKeymap, toggleMark } from 'prosemirror-commands';
-	import { history, redo, undo } from 'prosemirror-history';
-	import { keymap } from 'prosemirror-keymap';
-	import { EditorState, type Command } from 'prosemirror-state';
+	import { EditorState } from 'prosemirror-state';
 	import { EditorView } from 'prosemirror-view';
-	import { decode, pmToContent, inlineSchema, inputRulesPlugin } from '../core/codec/index.js';
+	import { decode, pmToContent, inlineSchema, proseLeafPlugins } from '../core/codec/index.js';
 	import type { Content } from '../core/index.js';
 
 	interface Props {
@@ -34,28 +31,14 @@
 
 	onMount(() => {
 		if (!containerEl) return;
-		const schema = inlineSchema;
-		const pmDoc = decode(value, schema, { plaintext: !!plaintext });
-		const km: Record<string, Command> = {
-			'Mod-z': undo,
-			'Mod-y': redo,
-			'Shift-Mod-z': redo,
-			// One textblock only — swallow Enter so no split is attempted.
-			Enter: () => true
-		};
-		if (!plaintext) {
-			if (schema.marks.strong) km['Mod-b'] = toggleMark(schema.marks.strong);
-			if (schema.marks.em) km['Mod-i'] = toggleMark(schema.marks.em);
-			if (schema.marks.underline) km['Mod-u'] = toggleMark(schema.marks.underline);
-		}
+		// An array element is an inline, value-by-value leaf — the SAME keymap and
+		// plugin stack a `createField` leaf mounts (shared `proseLeafPlugins`), minus
+		// the anchor-position plugin (element anchors are dropped on the array's value
+		// write, per the header). Its own `dispatchTransaction` hands `Content` up.
+		const pmDoc = decode(value, inlineSchema, { plaintext: !!plaintext });
 		const state = EditorState.create({
 			doc: pmDoc,
-			plugins: [
-				history(),
-				...(plaintext ? [] : [inputRulesPlugin(schema)]),
-				keymap(km),
-				keymap(baseKeymap)
-			]
+			plugins: proseLeafPlugins(inlineSchema, { inline: true, plaintext: !!plaintext })
 		});
 		const view = new EditorView(containerEl, {
 			state,

@@ -151,20 +151,15 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			id: a.id,
 			pos: usvToPM(pmDoc, seedIndex, a.pos)
 		}));
-		return EditorState.create({ doc: pmDoc, plugins: plugins(schema, seededAnchors) });
-	}
-
-	function plugins(sc: Schema, seededAnchors: AnchorPos[]): Plugin[] {
-		const list: Plugin[] = [history(), anchorPlugin(seededAnchors)];
-		// A `plaintext` field carries no marks (decode strips them, the keymap
-		// suppresses Mod-b/i/u), so it must not mount the markdown-shorthand rules
-		// either: `inlineSchema` still declares the mark types, so a `**bold**` rule
-		// would apply a strong mark AND eat the literal delimiters. The inline schema
-		// has no block nodes, so those rules are the ONLY ones it would add — skip all.
-		if (!opts.noInputRules && !plaintext) list.push(inputRulesPlugin(sc));
-		list.push(keymap(editorKeymap(sc, inline, plaintext)));
-		list.push(keymap(baseKeymap));
-		return list;
+		return EditorState.create({
+			doc: pmDoc,
+			plugins: proseLeafPlugins(schema, {
+				inline,
+				plaintext,
+				noInputRules: opts.noInputRules,
+				afterHistory: [anchorPlugin(seededAnchors)]
+			})
+		});
 	}
 
 	// (b)+(c): lower the edit to ops and commit — or `install` for a structural
@@ -245,6 +240,31 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	// views into the VisualEditor, and tests drive edits through it.
 	(controller as FieldController & { view: EditorView }).view = view;
 	return controller;
+}
+
+/**
+ * The prose-leaf plugin stack (VISUAL_EDITOR §Surface) — shared by
+ * {@link createField} and the array-element inline editor (`ProseArrayElement`),
+ * so the two never fork the keymap/plugin ordering. History first, then any
+ * leaf-specific plugins (`afterHistory` — the addressed leaf passes its
+ * anchor-position plugin; a by-value array element passes none), the
+ * markdown-shorthand input rules, then the field keymap over the base keymap.
+ *
+ * A `plaintext` field carries no marks (decode strips them, the keymap suppresses
+ * Mod-b/i/u), so it also skips the input rules: `inlineSchema` still declares the
+ * mark types, so a `**bold**` rule would apply a strong mark AND eat the literal
+ * delimiters. The inline schema has no block nodes, so those rules are the ONLY
+ * ones it would add — skip all.
+ */
+export function proseLeafPlugins(
+	schema: Schema,
+	opts: { inline: boolean; plaintext: boolean; noInputRules?: boolean; afterHistory?: Plugin[] }
+): Plugin[] {
+	const list: Plugin[] = [history(), ...(opts.afterHistory ?? [])];
+	if (!opts.noInputRules && !opts.plaintext) list.push(inputRulesPlugin(schema));
+	list.push(keymap(editorKeymap(schema, opts.inline, opts.plaintext)));
+	list.push(keymap(baseKeymap));
+	return list;
 }
 
 /** The field's keymap: history, mark toggles, list Enter; Enter suppressed inline. */
