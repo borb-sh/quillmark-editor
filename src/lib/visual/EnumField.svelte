@@ -10,7 +10,7 @@
   default" (unset) affordance.
 -->
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { syncedLocal } from './synced.svelte.js';
 
 	interface Props {
 		value: string | undefined;
@@ -28,27 +28,22 @@
 	// the like), so it never collides with a real option.
 	const UNSET = '__qm_unset__';
 
-	// svelte-ignore state_referenced_locally
-	let local = $state(value ?? UNSET);
-	$effect(() => {
-		const incoming = value ?? UNSET;
-		untrack(() => {
-			if (incoming !== local) local = incoming;
-		});
-	});
+	// Local select state synced to `value` (sentinel when unauthored); own-picks
+	// stay local, only an external change reconciles back in (see `syncedLocal`).
+	const local = syncedLocal(() => value ?? UNSET);
 </script>
 
 <select
 	class="qm-select"
-	class:ghosted={local === UNSET}
-	value={local}
+	class:ghosted={local.value === UNSET}
+	value={local.value}
 	aria-label={label}
 	data-testid={testid}
 	onchange={(e) => {
-		local = (e.currentTarget as HTMLSelectElement).value;
+		local.value = (e.currentTarget as HTMLSelectElement).value;
 		// Sentinel → unset (parent `removeField`, default renders); any real pick
 		// (incl. the default value) → a genuine write.
-		onCommit(local === UNSET ? undefined : local);
+		onCommit(local.value === UNSET ? undefined : local.value);
 	}}
 >
 	<option value={UNSET} class="qm-ghost"

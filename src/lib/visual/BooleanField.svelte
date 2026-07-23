@@ -4,7 +4,7 @@
   real leaf — noted in the phase report.)
 -->
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { syncedLocal } from './synced.svelte.js';
 
 	interface Props {
 		value: boolean | undefined;
@@ -16,25 +16,20 @@
 	}
 	let { value, fallback, label, onCommit, testid }: Props = $props();
 
-	// svelte-ignore state_referenced_locally
-	let local = $state(value ?? fallback ?? false);
-	$effect(() => {
-		const incoming = value ?? fallback ?? false;
-		untrack(() => {
-			if (incoming !== local) local = incoming;
-		});
-	});
+	// Local toggle state synced to `value`; own-toggles stay local, only an external
+	// change reconciles back in (see `syncedLocal`).
+	const local = syncedLocal(() => value ?? fallback ?? false);
 </script>
 
 <input
 	class="qm-check"
 	type="checkbox"
-	checked={local}
+	checked={local.value}
 	aria-label={label}
 	data-testid={testid}
 	onchange={(e) => {
-		local = (e.currentTarget as HTMLInputElement).checked;
-		onCommit(local);
+		local.value = (e.currentTarget as HTMLInputElement).checked;
+		onCommit(local.value);
 	}}
 />
 

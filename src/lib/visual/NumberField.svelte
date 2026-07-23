@@ -20,7 +20,7 @@
   client-side guess. `inputmode` keeps the numeric mobile keyboard.
 -->
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { syncedLocal } from './synced.svelte.js';
 
 	interface Props {
 		value: number | undefined;
@@ -33,14 +33,9 @@
 	}
 	let { value, integer, fallback, label, onCommit, testid }: Props = $props();
 
-	// svelte-ignore state_referenced_locally
-	let local = $state(value != null ? String(value) : '');
-	$effect(() => {
-		const incoming = value != null ? String(value) : '';
-		untrack(() => {
-			if (incoming !== local) local = incoming;
-		});
-	});
+	// Local input state synced to `value` (as a string projection); own-typing
+	// stays local, only an external change reconciles back in (see `syncedLocal`).
+	const local = syncedLocal(() => (value != null ? String(value) : ''));
 
 	// Parse a settled entry and emit it; `local` is owned by `oninput`. Blank →
 	// `undefined` (the unset rung — parent removes the field, default renders).
@@ -58,12 +53,12 @@
 	class="qm-input"
 	type="text"
 	inputmode={integer ? 'numeric' : 'decimal'}
-	value={local}
+	value={local.value}
 	placeholder={fallback != null ? String(fallback) : ''}
 	aria-label={label}
 	data-testid={testid}
 	oninput={(e) => {
-		local = (e.currentTarget as HTMLInputElement).value;
+		local.value = (e.currentTarget as HTMLInputElement).value;
 	}}
 	onchange={(e) => commit((e.currentTarget as HTMLInputElement).value)}
 />
