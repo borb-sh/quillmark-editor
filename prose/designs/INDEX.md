@@ -11,6 +11,9 @@ Open design docs:
   chrome surfaces on hover/focus.
 - [QUIET_PREVIEW.md](QUIET_PREVIEW.md) — the preview as proof sheet: overlay
   rings only for the active field and under the pointer.
+- [FIELD_PROVENANCE.md](FIELD_PROVENANCE.md) — `quill.resolve(doc)` as the
+  editor's provenance source (the `authored | default | zero` rung), a channel
+  parallel to the raw read-model; resolves the #51 decision.
 
 The deferred surfaces named but not yet designed, each in the canon that borders
 it:

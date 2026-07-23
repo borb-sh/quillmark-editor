@@ -28,7 +28,10 @@ Two field states:
 - **Resting** — the value typeset on the card surface: muted label
   (`--qm-label`), value in body type, no border, no fill. An empty field keeps a
   visible affordance — the ghosted `default:` (`--qm-ghost`) over a quiet
-  underline or inset — so empty-and-editable never reads as absent.
+  underline or inset — so empty-and-editable never reads as absent. The
+  `default:` to ghost, and the authored-vs-default distinction the ghost turns
+  on, come from the provenance channel ([FIELD_PROVENANCE.md](FIELD_PROVENANCE.md),
+  `source === 'default'`), not a schema re-read.
 - **Engaged** — on hover, the control chrome fades in; on focus, the full
   control: `--qm-field-bg`, border, and the focus ring
   ([#45](https://github.com/borb-sh/quillmark-editor/issues/45)). A field with a
