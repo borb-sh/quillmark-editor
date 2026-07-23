@@ -307,7 +307,7 @@ export function diffToBundle(oldRt: Content, newRt: Content, opts: LowerOpts = {
 }
 
 /** A minimal single-splice text delta over USV code points, or `undefined` if equal. */
-export function diffText(oldText: string, newText: string): Delta | undefined {
+function diffText(oldText: string, newText: string): Delta | undefined {
 	if (oldText === newText) return undefined;
 	const a = codePoints(oldText);
 	const b = codePoints(newText);
@@ -327,7 +327,7 @@ export function diffText(oldText: string, newText: string): Delta | undefined {
 }
 
 /** Per-line `setContainers` / `setKind` / `setContinues` when line metadata changed; else none. */
-export function diffLines(oldRt: Content, newRt: Content): LineOp[] {
+function diffLines(oldRt: Content, newRt: Content): LineOp[] {
 	if (lineMetaEqual(oldRt.lines, newRt.lines)) return [];
 	const ops: LineOp[] = [];
 	// Force every new line's metadata. Redundant ops are safe no-ops (verified),
@@ -397,7 +397,7 @@ interface Interval {
 }
 
 /** Formatting/unknown marks → add/remove ops; anchors → add/removeAnchor by id. */
-export function diffMarks(
+function diffMarks(
 	oldRt: Content,
 	newRt: Content,
 	delta: Delta | undefined,

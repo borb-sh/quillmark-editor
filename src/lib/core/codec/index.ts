@@ -10,19 +10,11 @@ export type { CreateFieldOpts, FieldController } from './field.js';
 // Schemas (the decode/encode target; Phase 4 mounts them).
 export { blockSchema, inlineSchema, isInlineSchema } from './schema.js';
 
-// Decode / encode / positions (tests + Phase 4).
+// Decode / encode / positions (tests + Phase 4). The single-splice `diff*` helpers
+// and `scanDoc` (+ its `PosRun` / `Scan` shapes) stay internal to the codec — used
+// by `lower` / `buildLineIndex` over relative imports, never off this barrel.
 export { decode, codePoints, usvLength } from './decode.js';
-export {
-	pmToContent,
-	lower,
-	diffToBundle,
-	diffText,
-	diffLines,
-	diffMarks,
-	insertReintroducesIslandSlot,
-	scanDoc
-} from './encode.js';
-export type { PosRun, Scan } from './encode.js';
+export { pmToContent, lower, diffToBundle, insertReintroducesIslandSlot } from './encode.js';
 export { usvToPM, pmToUsv, buildLineIndex } from './positions.js';
 export type { LineIndex } from './positions.js';
 
@@ -43,10 +35,6 @@ export type { TableProps, ImageProps, TableCell } from '../index.js';
 // Reconciliation gate.
 export { createReconciler, contentEqual } from './reconcile.js';
 export type { Reconciler } from './reconcile.js';
-
-// Markdown edges (paste / copy / debug).
-export { pasteMarkdown, copyMarkdown, copyWouldDrop } from './markdown.js';
-export type { PasteResult, CopyLoss } from './markdown.js';
 
 // Input rules (Phase 4 mounts a subset; createField mounts all by default).
 export { markdownInputRules, inputRulesPlugin } from './inputrules.js';
