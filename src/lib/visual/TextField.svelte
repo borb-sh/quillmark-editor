@@ -9,7 +9,7 @@
   default is inexpressible from the UI — clear and unset collapse to one gesture.
 -->
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { syncedLocal } from './synced.svelte.js';
 
 	interface Props {
 		value: string | undefined;
@@ -21,33 +21,25 @@
 	}
 	let { value, placeholder, label, onCommit, testid }: Props = $props();
 
-	// Local input state; reconcile only an EXTERNAL change (untrack the local
-	// read/write so own-typing never re-runs the sync and resets the caret). The
-	// initial-value capture is intentional — external updates flow via the effect.
-	// svelte-ignore state_referenced_locally
-	let local = $state(value ?? '');
-	$effect(() => {
-		const incoming = value ?? '';
-		untrack(() => {
-			if (incoming !== local) local = incoming;
-		});
-	});
+	// Local input state synced to `value`: own-typing stays local, only an external
+	// change reconciles back in (see `syncedLocal`).
+	const local = syncedLocal(() => value ?? '');
 </script>
 
 <input
 	class="qm-input"
 	type="text"
-	value={local}
+	value={local.value}
 	{placeholder}
 	aria-label={label}
 	data-testid={testid}
 	oninput={(e) => {
-		local = (e.currentTarget as HTMLInputElement).value;
+		local.value = (e.currentTarget as HTMLInputElement).value;
 		// Live-commit a non-empty edit; defer a cleared field to `change` (see header).
-		if (local !== '') onCommit(local);
+		if (local.value !== '') onCommit(local.value);
 	}}
 	onchange={() => {
-		if (local === '') onCommit(undefined);
+		if (local.value === '') onCommit(undefined);
 	}}
 />
 

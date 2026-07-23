@@ -7,7 +7,7 @@
   a date field lowers to is a render-time concern — the editor only sees the stored string.
 -->
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { syncedLocal } from './synced.svelte.js';
 
 	interface Props {
 		value: string | undefined;
@@ -18,28 +18,23 @@
 	}
 	let { value, label, onCommit, testid }: Props = $props();
 
-	// svelte-ignore state_referenced_locally
-	let local = $state(value ?? '');
-	$effect(() => {
-		const incoming = value ?? '';
-		untrack(() => {
-			if (incoming !== local) local = incoming;
-		});
-	});
+	// Local input state synced to `value`; own-edits stay local, only an external
+	// change reconciles back in (see `syncedLocal`).
+	const local = syncedLocal(() => value ?? '');
 </script>
 
 <input
 	class="qm-input"
 	type="date"
-	value={local}
+	value={local.value}
 	aria-label={label}
 	data-testid={testid}
 	oninput={(e) => {
-		local = (e.currentTarget as HTMLInputElement).value;
+		local.value = (e.currentTarget as HTMLInputElement).value;
 	}}
 	onchange={() => {
 		// `local` is owned by `oninput`. Blank → `undefined` (unset rung); a real date as-is.
-		onCommit(local === '' ? undefined : local);
+		onCommit(local.value === '' ? undefined : local.value);
 	}}
 />
 

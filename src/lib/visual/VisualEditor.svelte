@@ -251,9 +251,10 @@
 		const i = cardIndexOf(id);
 		if (i < 0) return;
 		// The `editor` namespace is the write unit and it REPLACES on write, so
-		// merge over any existing keys (id-less in V1, but future-proof). `card(i)`
-		// reads the one card (i is already validated) instead of serializing all.
-		const existing = (doc.card(i)?.ext?.editor ?? {}) as Record<string, unknown>;
+		// merge over any existing keys (id-less in V1, but future-proof).
+		// `getExtNamespace` reads just this namespace (i is already validated) rather
+		// than serializing the whole card to fish out one `$ext` slot.
+		const existing = (doc.getExtNamespace({ card: i }, 'editor') ?? {}) as Record<string, unknown>;
 		doc.storeExtNamespace({ card: i }, 'editor', { ...existing, title });
 		bump();
 	}

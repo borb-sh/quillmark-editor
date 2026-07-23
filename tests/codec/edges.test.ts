@@ -2,27 +2,52 @@
 // never the edit representation; these are boundary-format seams. Input-rule
 // LOWERING correctness is covered by lower.test.ts (they emit ordinary trs).
 import { describe, it, expect } from 'vitest';
-import {
-	pasteMarkdown,
-	copyMarkdown,
-	copyWouldDrop,
-	markdownInputRules,
-	blockSchema,
-	inlineSchema
-} from '$lib/core/codec';
+import { markdownInputRules, blockSchema, inlineSchema } from '$lib/core/codec';
+import { rebase, exportMarkdown } from '$lib/core';
 import type { Content } from '$lib/core';
 import { md } from './_util.js';
+
+// `markdown.ts` wrapped these as pasteMarkdown / copyMarkdown / copyWouldDrop —
+// one-line forwards over the public `rebase` / `exportMarkdown` plus this loss
+// check. The wrappers were never barrel API (only this test used them, #48), so
+// the loss check lives here and the two forwards call `rebase` / `exportMarkdown`
+// directly. Re-extract when paste/copy is wired into the editor (CODEC §Markdown
+// at the edges).
+interface CopyLoss {
+	anchors: boolean;
+	underline: boolean;
+	unknown: boolean;
+	any: boolean;
+}
+function copyWouldDrop(rt: Content): CopyLoss {
+	let anchors = false;
+	let underline = false;
+	let unknown = false;
+	for (const m of rt.marks) {
+		if (m.type === 'anchor') anchors = true;
+		else if (m.type === 'underline') underline = true;
+		else if (
+			m.type !== 'strong' &&
+			m.type !== 'emph' &&
+			m.type !== 'strike' &&
+			m.type !== 'code' &&
+			m.type !== 'link'
+		)
+			unknown = true;
+	}
+	return { anchors, underline, unknown, any: anchors || underline || unknown };
+}
 
 describe('markdown edges', () => {
 	it('paste rebases markdown onto a base and returns a delta', () => {
 		const base = md('hello');
-		const { content, delta } = pasteMarkdown(base, 'hello world');
+		const { content, delta } = rebase(base, 'hello world');
 		expect(content.text).toBe('hello world');
 		expect(delta.ops.length).toBeGreaterThan(0);
 	});
 
 	it('copy projects to markdown', () => {
-		expect(copyMarkdown(md('**bold** text')).trim()).toBe('**bold** text');
+		expect(exportMarkdown(md('**bold** text')).trim()).toBe('**bold** text');
 	});
 
 	it('copyWouldDrop flags identity / underline / unknown', () => {
