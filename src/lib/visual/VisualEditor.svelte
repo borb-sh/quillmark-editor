@@ -23,7 +23,15 @@
 -->
 <script lang="ts">
 	import { isQuillmarkError } from '../core/index.js';
-	import type { Document, Quill, Addr, Diagnostic, ContentHit } from '../core/index.js';
+	import type {
+		Document,
+		Quill,
+		Addr,
+		Diagnostic,
+		ContentHit,
+		Resolved,
+		ResolvedField
+	} from '../core/index.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import {
 		IdSeq,
@@ -36,6 +44,8 @@
 		cardTitle,
 		bodyEnabled,
 		humanize,
+		provenanceMap,
+		provenanceByCardIndex,
 		type CardModel
 	} from './structure.js';
 	import {
@@ -332,7 +342,8 @@
 			payloadItems: { type: string; key?: string; value?: unknown }[];
 			ext?: Record<string, unknown>;
 		},
-		cardSchema: Parameters<typeof fieldModels>[0] | undefined
+		cardSchema: Parameters<typeof fieldModels>[0] | undefined,
+		resolvedFields: ResolvedField[]
 	): CardModel {
 		const values: Record<string, unknown> = {};
 		for (const p of card.payloadItems)
@@ -349,6 +360,7 @@
 			titleOverride: extEditor?.title ?? '',
 			titlePlaceholder: cardTitle(cardSchema, kind, values, undefined),
 			values,
+			provenance: provenanceMap(resolvedFields),
 			sections,
 			hasBody: bodyEnabled(cardSchema)
 		};
@@ -359,10 +371,27 @@
 		const schema = quill.schema;
 		const main = doc.main; // allocate once
 		const cards = doc.cards; // allocate once
+		// The provenance channel (FIELD_PROVENANCE): one whole-doc resolve per
+		// derive, feeding the ghosted `default:` only. Guarded — provenance is
+		// chrome, so a resolve failure degrades to no ghosts, never a blank form.
+		let resolved: Resolved | undefined;
+		try {
+			resolved = quill.resolve(doc);
+		} catch (e) {
+			console.error('[quillmark/editor] quill.resolve failed; ghosts fall back to none', e);
+		}
+		const byCard = provenanceByCardIndex(resolved);
 		return {
-			main: buildCard('main', true, 'main', main, schema.main),
+			main: buildCard('main', true, 'main', main, schema.main, resolved?.main.fields ?? []),
 			cards: cards.map((c, i) =>
-				buildCard(cardIds[i] ?? `orphan${i}`, false, c.kind, c, schema.card_kinds?.[c.kind])
+				buildCard(
+					cardIds[i] ?? `orphan${i}`,
+					false,
+					c.kind,
+					c,
+					schema.card_kinds?.[c.kind],
+					byCard.get(i) ?? []
+				)
 			)
 		};
 	});

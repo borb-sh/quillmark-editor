@@ -14,10 +14,10 @@
   `DiagnosticList`, severity-styled, NON-GATING.
 -->
 <script lang="ts">
-	import type { Document, Addr, Diagnostic } from '../core/index.js';
+	import type { Document, Addr, Diagnostic, ResolvedField } from '../core/index.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import type { FieldModel } from './structure.js';
-	import { enumValues } from './structure.js';
+	import { enumValues, ghostDefault } from './structure.js';
 	import ProseField from './ProseField.svelte';
 	import TextField from './TextField.svelte';
 	import EnumField from './EnumField.svelte';
@@ -31,6 +31,9 @@
 	interface Props {
 		field: FieldModel;
 		value: unknown;
+		/** This field's resolved provenance row (FIELD_PROVENANCE) — the ghost's
+		 * source. Feeds the placeholder / fallback only, never `value`. */
+		provenance?: ResolvedField;
 		doc: Document;
 		/** LIVE prose address (getter-`card`); used only when control === 'prose'. */
 		proseAddr: Addr;
@@ -46,6 +49,7 @@
 	let {
 		field,
 		value,
+		provenance,
 		doc,
 		proseAddr,
 		leafKey,
@@ -58,10 +62,13 @@
 		testid
 	}: Props = $props();
 
+	// The ghost the control shows when unset: the resolved `default:` (provenance,
+	// `source === 'default'`). `ghost` is the raw typed value (enum/number/boolean
+	// fallbacks); `defaultStr` its string form (the text placeholder). An
+	// object-valued default does not ghost.
+	const ghost = $derived(ghostDefault(provenance));
 	const defaultStr = $derived(
-		field.schema.default != null && typeof field.schema.default !== 'object'
-			? String(field.schema.default)
-			: undefined
+		ghost != null && typeof ghost !== 'object' ? String(ghost) : undefined
 	);
 </script>
 
@@ -88,7 +95,7 @@
 			<EnumField
 				value={value as string | undefined}
 				values={enumValues(field.schema) ?? []}
-				fallback={field.schema.default as string | undefined}
+				fallback={ghost as string | undefined}
 				label={field.label}
 				onCommit={onCommitScalar}
 				{testid}
@@ -97,7 +104,7 @@
 			<NumberField
 				value={value as number | undefined}
 				integer={field.schema.type === 'integer'}
-				fallback={field.schema.default as number | undefined}
+				fallback={ghost as number | undefined}
 				label={field.label}
 				onCommit={onCommitScalar}
 				{testid}
@@ -105,7 +112,7 @@
 		{:else if field.control === 'boolean'}
 			<BooleanField
 				value={value as boolean | undefined}
-				fallback={field.schema.default as boolean | undefined}
+				fallback={ghost as boolean | undefined}
 				label={field.label}
 				onCommit={onCommitScalar}
 				{testid}

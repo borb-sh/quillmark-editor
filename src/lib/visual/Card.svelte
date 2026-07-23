@@ -131,6 +131,7 @@
 							<Field
 								field={f}
 								value={card.values[f.name]}
+								provenance={card.provenance[f.name]}
 								{doc}
 								proseAddr={ops.makeAddr(f.name)}
 								leafKey={ops.leafKey(f.name)}

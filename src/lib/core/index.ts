@@ -91,8 +91,10 @@ export type {
 } from '@quillmark/wasm';
 
 // Resolved-value view (`quill.resolve(doc)`) — value + provenance per declared
-// field. Not consumed by the editor's form (which reads authored values, not the
-// render projection), re-exported to complete the boundary ledger.
+// field. The form reads AUTHORED values (`values`), not this render projection;
+// the VisualEditor consumes `resolve` on a parallel channel for provenance only —
+// the ghosted `default:` and the `FieldSource` rung (FIELD_PROVENANCE), never the
+// control value.
 export type {
 	FieldSource,
 	ResolvedField,
