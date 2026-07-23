@@ -35,10 +35,10 @@ paths raw:
   authored›default›zero resolution; it was never the editor's to reimplement, so
   there is nothing to offload on the read path.
 
-So the raw reads stay, [#48](https://github.com/borb-sh/quillmark-editor/issues/48)
-item 6 (collapsing `field.ts`'s reads onto `doc.get(addr)`) is unblocked to land,
-and `resolve` is adopted for the one thing the raw reads cannot express:
-provenance.
+So the raw reads stay — and, the read-model now settled, [#48](https://github.com/borb-sh/quillmark-editor/issues/48)
+item 6 lands with this work: `readLeaf` / `leafPresent` collapse their legacy
+`payloadItems` walk onto the unified `doc.get(addr)`. `resolve` is adopted for the
+one thing the raw reads cannot express: provenance.
 
 ## The mechanism
 

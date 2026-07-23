@@ -70,21 +70,16 @@ function anchorPlugin(seed: AnchorPos[]): Plugin<AnchorPos[]> {
 	});
 }
 
-/** Read the leaf's raw stored `Content` for `addr`. */
+/** Read the leaf's raw stored `Content` for `addr` — the unified `doc.get(addr)`
+ * read (DOCUMENT_MODEL): a field value, or the body `Content` when `addr.field` is
+ * absent, without materializing the whole card. Reads are total over the field
+ * axis, so an absent field — a default-only richtext field (e.g. `tag_line`, no
+ * stored value until first edited) — reads `undefined`; decode an empty content
+ * rather than crash, and the first edit installs it. Only an out-of-range
+ * `addr.card` throws, unreachable here: a removed card unmounts its keyed leaf
+ * before a stale index is read. */
 function readLeaf(doc: Document, addr: Addr): Content {
-	if (addr.field != null) {
-		if (addr.card != null) {
-			const card = doc.cards[addr.card];
-			const item = card?.payloadItems.find((p) => p.type === 'field' && p.key === addr.field);
-			return item && item.type === 'field' ? (item.value as Content) : emptyContent();
-		}
-		// An absent field reads `undefined` — a default-only richtext field
-		// (e.g. `tag_line`) has no stored value until first edited. Decode an
-		// empty content rather than crash; the first edit installs/commits it.
-		return (doc.get(addr.field) as Content | undefined) ?? emptyContent();
-	}
-	if (addr.card != null) return doc.cards[addr.card].body;
-	return doc.main.body;
+	return (doc.get(addr) as Content | undefined) ?? emptyContent();
 }
 
 /** The canonical empty `Content` — one empty `para` line. The zero value a prose
@@ -93,14 +88,10 @@ export function emptyContent(): Content {
 	return { text: '', lines: [{ containers: [], kind: 'para' }], marks: [], islands: [] };
 }
 
-/** Whether the leaf's field currently holds a stored value (a body is always present). */
+/** Whether the leaf's field currently holds a stored value — `doc.get` is total, so
+ * an unset field reads `undefined`; a body always reads its `Content` (present). */
 function leafPresent(doc: Document, addr: Addr): boolean {
-	if (addr.field == null) return true;
-	if (addr.card != null) {
-		const card = doc.cards[addr.card];
-		return !!card?.payloadItems.find((p) => p.type === 'field' && p.key === addr.field);
-	}
-	return doc.get(addr.field) !== undefined;
+	return doc.get(addr) !== undefined;
 }
 
 export function createField(opts: CreateFieldOpts): FieldController {

@@ -15,7 +15,7 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Quill, Document, Addr, Card as CardType, Content, Diagnostic } from '$lib/core';
+	import type { Quill, Document, Addr, Content, Diagnostic } from '$lib/core';
 	import { loadUsafMemoTree } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
@@ -33,11 +33,6 @@
 
 	function refresh(): void {
 		dumpTick++;
-	}
-
-	function cardField(c: CardType, name: string): unknown {
-		const p = c.payloadItems.find((it) => it.type === 'field' && it.key === name);
-		return p && p.type === 'field' ? p.value : undefined;
 	}
 
 	// A consumer-supplied diagnostic feed stand-in (Phase 5 would derive this
@@ -64,7 +59,7 @@
 			subject: (doc.get('subject') as Content | undefined)?.text ?? '',
 			subjectMarks: (doc.get('subject') as Content | undefined)?.marks ?? [],
 			tag_line: (doc.get('tag_line') as Content | undefined)?.text ?? '',
-			body: doc.main.body.text,
+			body: (doc.get({}) as Content).text,
 			font_size: doc.get('font_size') ?? null,
 			classification: doc.get('classification') ?? null,
 			letterhead_seal: doc.get('letterhead_seal') ?? null,
@@ -72,10 +67,10 @@
 			memo_for: doc.get('memo_for') ?? [],
 			references: ((doc.get('references') as Content[] | undefined) ?? []).map((r) => r.text),
 			cardCount: doc.cardCount,
-			cards: doc.cards.map((c) => ({
+			cards: doc.cards.map((c, i) => ({
 				kind: c.kind,
 				title: (c.ext?.editor as { title?: string } | undefined)?.title ?? null,
-				from: cardField(c, 'from') ?? null,
+				from: doc.get({ card: i, field: 'from' }) ?? null,
 				body: c.body.text
 			}))
 		};
