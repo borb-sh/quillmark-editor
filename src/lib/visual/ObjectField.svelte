@@ -4,6 +4,12 @@
   exists in the reference quill, so this is implemented to the schema contract
   for SCALAR properties and is UNTESTED against a real leaf (noted in the report);
   nested prose/array/object properties render a placeholder rather than recurse.
+
+  A property's ghosted `default:` is the static schema `sub.default`, not the
+  resolved provenance the top-level ghosts read (FIELD_PROVENANCE) — `resolve`
+  carries no per-property row (an object field resolves as one row whose value is
+  the whole object). Thread it through `ghostDefault` once resolve exposes
+  per-property provenance.
 -->
 <script lang="ts">
 	import type { QuillFieldSchema } from '../core/index.js';

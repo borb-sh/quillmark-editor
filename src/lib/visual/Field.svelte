@@ -63,9 +63,9 @@
 	}: Props = $props();
 
 	// The ghost the control shows when unset: the resolved `default:` (provenance,
-	// `source === 'default'`), replacing the static `field.schema.default` read.
-	// `ghost` is the raw typed value (enum/number/boolean fallbacks); `defaultStr`
-	// its string form (text/date placeholder). Object-valued defaults don't ghost.
+	// `source === 'default'`). `ghost` is the raw typed value (enum/number/boolean
+	// fallbacks); `defaultStr` its string form (the text placeholder). An
+	// object-valued default does not ghost.
 	const ghost = $derived(ghostDefault(provenance));
 	const defaultStr = $derived(
 		ghost != null && typeof ghost !== 'object' ? String(ghost) : undefined

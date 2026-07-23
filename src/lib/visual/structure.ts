@@ -74,19 +74,20 @@ export interface CardModel {
  * and its provenance resolve under one name.
  */
 export function provenanceMap(fields: ResolvedField[]): Record<string, ResolvedField> {
-	const map: Record<string, ResolvedField> = {};
-	for (const f of fields) map[f.name] = f;
-	return map;
+	return Object.fromEntries(fields.map((f) => [f.name, f]));
 }
 
 /**
- * The resolved rows for the composable card at document index `i`, matched on
- * `ResolvedCard.index` (not array position, so it holds whatever order the resolve
- * view returns). Empty when `resolved` is absent (a `resolve` failure degrades to
- * no ghosts, never a blank form) or the card has no resolved entry.
+ * Composable cards' resolved rows keyed by document index (`ResolvedCard.index`,
+ * not array position, so it holds whatever order the resolve view returns) — built
+ * once per derive, so the per-card provenance join is O(1). Empty map when
+ * `resolved` is absent (a `resolve` failure degrades to no ghosts, never a blank
+ * form).
  */
-export function resolvedCardFields(resolved: Resolved | undefined, i: number): ResolvedField[] {
-	return resolved?.cards.find((c) => c.index === i)?.fields ?? [];
+export function provenanceByCardIndex(
+	resolved: Resolved | undefined
+): Map<number, ResolvedField[]> {
+	return new Map((resolved?.cards ?? []).map((c) => [c.index, c.fields]));
 }
 
 /** The ghost a field shows when unset: the resolved `default:` value the render

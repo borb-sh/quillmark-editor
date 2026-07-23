@@ -36,7 +36,7 @@ paths raw:
   there is nothing to offload on the read path.
 
 So the raw reads stay — and, the read-model now settled, [#48](https://github.com/borb-sh/quillmark-editor/issues/48)
-item 6 lands with this work: `readLeaf` / `leafPresent` collapse their legacy
+item 6 lands with this work: `readLeaf` / `leafPresent` collapse their
 `payloadItems` walk onto the unified `doc.get(addr)`. `resolve` is adopted for the
 one thing the raw reads cannot express: provenance.
 
@@ -78,13 +78,12 @@ other is why it renders what it renders.
 
 ## What provenance buys the ghost
 
-The editor ghosts the default from the provenance row, not the schema's static
-`default:`: `Field.svelte` reads `ghostDefault(provenance)` — the resolved value
-when `source === 'default'`, nothing when `'authored'` / `'zero'`. This upgrades
-the ghost to the *resolved* default (correct when a default is dynamic /
-interpolated rather than the static schema literal) and folds the old
-presence-check-plus-schema-read into one `source` read. The controls' `value` is
-untouched — still the authored-raw `values[name]`.
+The editor ghosts the default from the provenance row: `Field.svelte` reads
+`ghostDefault(provenance)` — the resolved value when `source === 'default'`,
+nothing when `'authored'` / `'zero'`. The ghost is the *resolved* default, which a
+dynamic / interpolated default reaches and a static schema literal cannot, and one
+`source` read decides authored-vs-ghost. The controls' `value` is untouched — the
+authored-raw `values[name]`.
 
 The same channel feeds `EnumField`'s unset sentinel (its `fallback` ghost label)
 and `BooleanField`'s unset state, so "the default" has one source of truth across

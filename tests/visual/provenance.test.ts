@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { Quill } from '$lib/core';
 import type { ResolvedField, Resolved } from '$lib/core';
-import { provenanceMap, resolvedCardFields, ghostDefault } from '$lib/visual/structure';
+import { provenanceMap, provenanceByCardIndex, ghostDefault } from '$lib/visual/structure';
 import { loadFixtureTree } from '../helpers/fixtures.js';
 
 let cached: Quill | undefined;
@@ -32,8 +32,8 @@ describe('provenanceMap', () => {
 	});
 });
 
-describe('resolvedCardFields', () => {
-	// Array position 1 carries document index 2 — the match must read `index`.
+describe('provenanceByCardIndex', () => {
+	// Array position 1 carries document index 2 — the map keys on `index`.
 	const resolved = {
 		main: { fields: [], body: null },
 		cards: [
@@ -41,13 +41,14 @@ describe('resolvedCardFields', () => {
 			{ kind: 'k', index: 2, fields: [row('y', 2, 'default')], body: null }
 		]
 	} as unknown as Resolved;
-	it('matches on document index, not array position', () => {
-		expect(resolvedCardFields(resolved, 2)[0]?.name).toBe('y');
-		expect(resolvedCardFields(resolved, 0)[0]?.name).toBe('x');
+	it('keys cards by document index, not array position', () => {
+		const byCard = provenanceByCardIndex(resolved);
+		expect(byCard.get(2)?.[0]?.name).toBe('y');
+		expect(byCard.get(0)?.[0]?.name).toBe('x');
 	});
-	it('returns [] for a missing index or an absent resolve', () => {
-		expect(resolvedCardFields(resolved, 5)).toEqual([]);
-		expect(resolvedCardFields(undefined, 0)).toEqual([]);
+	it('is empty for a missing index or an absent resolve', () => {
+		expect(provenanceByCardIndex(resolved).get(5)).toBeUndefined();
+		expect(provenanceByCardIndex(undefined).size).toBe(0);
 	});
 });
 

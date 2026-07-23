@@ -45,7 +45,7 @@
 		bodyEnabled,
 		humanize,
 		provenanceMap,
-		resolvedCardFields,
+		provenanceByCardIndex,
 		type CardModel
 	} from './structure.js';
 	import {
@@ -380,6 +380,7 @@
 		} catch (e) {
 			console.error('[quillmark/editor] quill.resolve failed; ghosts fall back to none', e);
 		}
+		const byCard = provenanceByCardIndex(resolved);
 		return {
 			main: buildCard('main', true, 'main', main, schema.main, resolved?.main.fields ?? []),
 			cards: cards.map((c, i) =>
@@ -389,7 +390,7 @@
 					c.kind,
 					c,
 					schema.card_kinds?.[c.kind],
-					resolvedCardFields(resolved, i)
+					byCard.get(i) ?? []
 				)
 			)
 		};
