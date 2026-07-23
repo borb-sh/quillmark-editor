@@ -254,10 +254,7 @@
 		// merge over any existing keys (id-less in V1, but future-proof).
 		// `getExtNamespace` reads just this namespace (i is already validated) rather
 		// than serializing the whole card to fish out one `$ext` slot.
-		const existing = (doc.getExtNamespace({ card: i }, 'editor') ?? {}) as Record<
-			string,
-			unknown
-		>;
+		const existing = (doc.getExtNamespace({ card: i }, 'editor') ?? {}) as Record<string, unknown>;
 		doc.storeExtNamespace({ card: i }, 'editor', { ...existing, title });
 		bump();
 	}
