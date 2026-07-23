@@ -1,54 +1,19 @@
 // Islands — the `U+FFFC` slot + `ContentIsland` entry ↔ a PM leaf node. A slot
 // inside a `para` line is an inline island (an image); an `island`-kind line is a
 // block island (a table). The node carries `id`, `islandType`, and the opaque
-// `props` verbatim, so an unknown island type round-trips untouched; the local
-// typed schemas below (`table`, `image`) are what a props-aware consumer reads —
-// `ContentIsland.props` is `unknown` at the WASM boundary (DOCUMENT_MODEL seam),
-// so the codec owns the shape, it is not pinned upstream.
+// `props` verbatim, so an unknown island type round-trips untouched.
+//
+// A props-aware consumer reads the shape straight off the boundary: as of
+// `@quillmark/wasm` 0.96.0 `ContentIsland.props` is the typed union (`TableProps`
+// for `table`, `ImageProps` for `image` — DOCUMENT_MODEL, the retired island-props
+// seam), so the codec no longer hand-rolls the shape or a guard. The open `type`
+// arm means a discriminant check does not auto-narrow `props`; key off `type` and
+// read `props` as the matching upstream type.
 import type { NodeSpec } from 'prosemirror-model';
 import type { ContentIsland } from '@quillmark/wasm';
 
 /** The `U+FFFC` object-replacement char that occupies one island slot in `text`. */
 export const ISLAND_SLOT = '￼';
-
-/** A richtext cell inside a table island — a mini content model (marks over flat text). */
-export interface IslandTableCell {
-	text: string;
-	marks: { start: number; end: number; type: string; [k: string]: unknown }[];
-}
-/** Column alignment as the content reports it. */
-export type IslandTableAlign = 'none' | 'left' | 'center' | 'right';
-/** Typed props for a `table` island (codec-local; not pinned by the boundary). */
-export interface IslandTableProps {
-	header: IslandTableCell[];
-	rows: IslandTableCell[][];
-	aligns: IslandTableAlign[];
-}
-/** Typed props for an `image` island (codec-local). */
-export interface IslandImageProps {
-	url: string;
-	alt: string;
-}
-
-/** Read an `image` island's props, or `undefined` if the shape does not match. */
-export function imageProps(island: ContentIsland): IslandImageProps | undefined {
-	if (island.type !== 'image') return undefined;
-	const p = island.props as Partial<IslandImageProps> | null;
-	if (!p || typeof p.url !== 'string') return undefined;
-	return { url: p.url, alt: typeof p.alt === 'string' ? p.alt : '' };
-}
-
-/** Read a `table` island's props, or `undefined` if the shape does not match. */
-export function tableProps(island: ContentIsland): IslandTableProps | undefined {
-	if (island.type !== 'table') return undefined;
-	const p = island.props as Partial<IslandTableProps> | null;
-	if (!p || !Array.isArray(p.rows) || !Array.isArray(p.header)) return undefined;
-	return {
-		header: p.header as IslandTableCell[],
-		rows: p.rows as IslandTableCell[][],
-		aligns: (Array.isArray(p.aligns) ? p.aligns : []) as IslandTableAlign[]
-	};
-}
 
 // The three island node attributes carry the content entry verbatim: `id` is the
 // stable identity (rebases like an anchor), `islandType` the discriminator, and

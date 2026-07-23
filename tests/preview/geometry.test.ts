@@ -73,7 +73,7 @@ describe('geometry: against a real compiled session (usaf_memo)', () => {
 		const engine = new Engine();
 		const session = await engine.open(quill, doc);
 		try {
-			const boxes = session.fieldBoxes('subject');
+			const boxes = session.fieldBoxes('main.subject');
 			expect(boxes.length).toBeGreaterThan(0);
 			const box = boxes[0];
 			const pageSize = session.pageSize(box.page);
@@ -87,7 +87,7 @@ describe('geometry: against a real compiled session (usaf_memo)', () => {
 
 			const pt = clickToPdfPt(centerPx, centerPy, cssW, cssH, pageSize);
 			const hit = session.positionAt(box.page, pt.x, pt.y);
-			expect(hit?.field).toBe('subject');
+			expect(hit?.field).toBe('main.subject');
 		} finally {
 			session.free();
 			doc.free();
@@ -104,7 +104,7 @@ describe('geometry: against a real compiled session (usaf_memo)', () => {
 		try {
 			// subject -> 2 boxes (page 0 header + page 1 continuation),
 			// same span — the exact case overlay.ts's "group by field" exists for.
-			const boxes = session.fieldBoxes('subject');
+			const boxes = session.fieldBoxes('main.subject');
 			expect(boxes.length).toBeGreaterThanOrEqual(2);
 			const pages = new Set(boxes.map((b) => b.page));
 			expect(pages.size).toBeGreaterThanOrEqual(2);
@@ -118,7 +118,7 @@ describe('geometry: against a real compiled session (usaf_memo)', () => {
 	it('every fieldBoxes rect round-trips through positionAt back to its own field, somewhere in the box', async () => {
 		// NOT the box's geometric center: fieldBoxes unions same-page segments into
 		// ONE rect (PREVIEW.md), so a field whose content is two non-adjacent lines
-		// (e.g. $body, verified empirically: two disjoint line segments with a real
+		// (e.g. main.body, verified empirically: two disjoint line segments with a real
 		// vertical gap between them) has a bounding box whose center legitimately
 		// falls in that gap, off any ink. A grid sample proves the transform is
 		// correct everywhere it's exercised, without assuming a geometry the API

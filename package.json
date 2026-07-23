@@ -68,7 +68,7 @@
 		"@codemirror/state": "6.5.2",
 		"@codemirror/view": "6.38.6",
 		"@lezer/highlight": "1.2.1",
-		"@quillmark/wasm": "0.95.1",
+		"@quillmark/wasm": "0.96.0",
 		"bits-ui": "^2.0.0",
 		"prosemirror-commands": "1.7.1",
 		"prosemirror-history": "1.5.0",

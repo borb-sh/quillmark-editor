@@ -13,7 +13,7 @@ export { init } from './lifecycle.js';
 // Re-exported verbatim from the canonical runtime; the editor holds the raw
 // handles and frees them on teardown (LiveSession/Document/Quill each carry
 // `free()`), while `--weak-refs` reclaims any it drops. The schema-bound writer/
-// view doors (`quill.writer(doc)` / `quill.view(doc)`) return these classes;
+// reader doors (`quill.writer(doc)` / `quill.reader(doc)`) return these classes;
 // `MAIN_CARD_ADDR` is the named `{}` main-card selector the card-scoped verbs take.
 export {
 	Engine,
@@ -21,15 +21,25 @@ export {
 	Document,
 	DocumentWriter,
 	CardWriter,
-	DocumentView,
-	CardView,
+	DocumentReader,
+	CardReader,
 	MAIN_CARD_ADDR
 } from '@quillmark/wasm';
 
 // ── Document-free content codec (values) ─────────────────────────────────────
-// The markdown edges and position-map primitives Phase 3 composes; re-exported
-// so the codec never reaches around `/core` to the package root.
-export { importMarkdown, exportMarkdown, rebase, mapPos, isQuillmarkError } from '@quillmark/wasm';
+// The markdown edges and position-map primitives Phase 3 composes, plus the
+// `DocPath` parser/serializer the address routing (diagnostics + caret bridge)
+// runs on — re-exported so the codec never reaches around `/core` to the package
+// root.
+export {
+	importMarkdown,
+	exportMarkdown,
+	rebase,
+	mapPos,
+	parseDocPath,
+	formatDocPath,
+	isQuillmarkError
+} from '@quillmark/wasm';
 
 // ── Boundary types ──────────────────────────────────────────────────────────
 // The exact surface DOCUMENT_MODEL pins. Split by origin only for reading; a
@@ -55,13 +65,19 @@ export type {
 } from '@quillmark/wasm';
 
 // Content + op-grained edit (Codec consumes these) — the whole vocabulary
-// `Document`'s methods speak, re-exported verbatim from the runtime root.
+// `Document`'s methods speak, re-exported verbatim from the runtime root. The
+// island-props triple (`TableProps` / `ImageProps` / `TableCell`) is pinned
+// upstream as of 0.96.0 (`ContentIsland.props` is the typed union, no longer
+// `unknown`), so the codec reads it instead of hand-rolling the shape.
 export type {
 	Content,
 	ContentLine,
 	ContentContainer,
 	ContentMark,
 	ContentIsland,
+	TableProps,
+	ImageProps,
+	TableCell,
 	Addr,
 	CardAddr,
 	Delta,
@@ -70,7 +86,19 @@ export type {
 	MarkOp,
 	ChangeBundle,
 	CardInput,
-	PathStep
+	PathStep,
+	DocPathSeg
+} from '@quillmark/wasm';
+
+// Resolved-value view (`quill.resolve(doc)`) — value + provenance per declared
+// field. Not consumed by the editor's form (which reads authored values, not the
+// render projection), re-exported to complete the boundary ledger.
+export type {
+	FieldSource,
+	ResolvedField,
+	ResolvedMain,
+	ResolvedCard,
+	Resolved
 } from '@quillmark/wasm';
 
 // `DeltaOp` is the one type the root does not carry — it exports `Delta`, not its
@@ -90,6 +118,7 @@ export type {
 	QuillCardBody,
 	QuillFieldUi,
 	QuillCardUi,
+	QuillGroupUi,
 	QuillMetadata,
 	Diagnostic,
 	Location,

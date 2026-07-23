@@ -1,28 +1,33 @@
 // caret.ts — the editor→preview field-path mapping (Phase 5). Pure address math;
 // the live bridge round-trip is exercised in the browser (e2e/editor.spec.ts).
-// This pins the grammar and its inverse relationship with the parse side.
+// This pins the canonical `DocPath` grammar and its inverse relationship with the
+// `parsePath` route.
 import { describe, it, expect } from 'vitest';
 import { fieldPathForAddr } from '$lib/visual/caret';
-import { parsePath, perKindCardIndex, cardKindOrdinal } from '$lib/visual/diagnostics';
+import { parsePath } from '$lib/visual/diagnostics';
 
 describe('fieldPathForAddr', () => {
 	it('maps the main body and main fields', () => {
-		expect(fieldPathForAddr({}, [])).toBe('$body');
-		expect(fieldPathForAddr({ field: 'subject' }, [])).toBe('subject');
+		expect(fieldPathForAddr({}, [])).toBe('main.body');
+		expect(fieldPathForAddr({ field: 'subject' }, [])).toBe('main.subject');
 	});
 
-	it('maps a card body and card field to the per-kind ordinal grammar', () => {
+	it('maps a card body and card field by ABSOLUTE document index', () => {
 		const kinds = ['indorsement', 'indorsement'];
-		expect(fieldPathForAddr({ card: 0 }, kinds)).toBe('$cards.indorsement.0');
-		expect(fieldPathForAddr({ card: 1 }, kinds)).toBe('$cards.indorsement.1');
-		expect(fieldPathForAddr({ card: 1, field: 'from' }, kinds)).toBe('$cards.indorsement.1.from');
+		expect(fieldPathForAddr({ card: 0 }, kinds)).toBe('cards.indorsement[0].body');
+		expect(fieldPathForAddr({ card: 1 }, kinds)).toBe('cards.indorsement[1].body');
+		expect(fieldPathForAddr({ card: 1, field: 'from' }, kinds)).toBe('cards.indorsement[1].from');
 	});
 
-	it('counts the ordinal PER KIND, not by absolute index', () => {
+	it('addresses by absolute index across interleaved kinds — no per-kind counting', () => {
 		const kinds = ['note', 'indorsement', 'note', 'indorsement'];
-		// The 2nd indorsement sits at absolute index 3 but is per-kind ordinal 1.
-		expect(fieldPathForAddr({ card: 3, field: 'from' }, kinds)).toBe('$cards.indorsement.1.from');
-		expect(fieldPathForAddr({ card: 2 }, kinds)).toBe('$cards.note.1');
+		// The 2nd indorsement sits at absolute index 3 and is addressed as [3].
+		expect(fieldPathForAddr({ card: 3, field: 'from' }, kinds)).toBe('cards.indorsement[3].from');
+		expect(fieldPathForAddr({ card: 2 }, kinds)).toBe('cards.note[2].body');
+	});
+
+	it('uses the unknown-kind form (cards[i]) for a blank kind', () => {
+		expect(fieldPathForAddr({ card: 0, field: 'from' }, [''])).toBe('cards[0].from');
 	});
 
 	it('drops an out-of-range or malformed card index', () => {
@@ -30,15 +35,7 @@ describe('fieldPathForAddr', () => {
 		expect(fieldPathForAddr({ card: -1 }, ['indorsement'])).toBeUndefined();
 	});
 
-	it('cardKindOrdinal round-trips with perKindCardIndex', () => {
-		const kinds = ['note', 'indorsement', 'note', 'indorsement'];
-		kinds.forEach((_, i) => {
-			const { kind, ordinal } = cardKindOrdinal(kinds, i);
-			expect(perKindCardIndex(kinds, kind, ordinal)).toBe(i);
-		});
-	});
-
-	it('is the inverse of parsePath (+ perKindCardIndex) for routable addresses', () => {
+	it('is the inverse of parsePath for routable addresses (absolute index round-trips)', () => {
 		const kinds = ['note', 'indorsement', 'indorsement'];
 		for (const addr of [
 			{},
@@ -50,15 +47,10 @@ describe('fieldPathForAddr', () => {
 			expect(path).toBeDefined();
 			const parsed = parsePath(path!);
 			expect(parsed).toBeDefined();
-			// parsePath yields a per-kind ordinal in `card` + the `cardKind`; resolve
-			// it back to the absolute index and compare to the original addr.
-			if (parsed!.card != null && parsed!.cardKind != null) {
-				const abs = perKindCardIndex(kinds, parsed!.cardKind, parsed!.card as number);
-				expect(abs).toBe(addr.card);
-				expect(parsed!.field).toBe(addr.field);
-			} else {
-				expect(parsed!.field).toBe(addr.field);
-			}
+			// The absolute index and field survive the round-trip directly — no
+			// per-kind resolution, since `DocPath` addresses cards by document index.
+			expect(parsed!.card).toBe(addr.card == null ? undefined : addr.card);
+			expect(parsed!.field).toBe('field' in addr ? addr.field : undefined);
 		}
 	});
 });

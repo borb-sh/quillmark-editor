@@ -22,6 +22,7 @@
   once per derive.
 -->
 <script lang="ts">
+	import { isQuillmarkError } from '../core/index.js';
 	import type { Document, Quill, Addr, Diagnostic, ContentHit } from '../core/index.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import {
@@ -31,6 +32,7 @@
 		fieldModels,
 		groupOrder,
 		groupSections,
+		groupLabel,
 		cardTitle,
 		bodyEnabled,
 		humanize,
@@ -38,9 +40,10 @@
 	} from './structure.js';
 	import {
 		fieldKeyToString,
+		parsePath,
+		resolveCardKey,
 		routeAndResolve,
 		mergeDiagnostics,
-		perKindCardIndex,
 		type FieldKey,
 		type RoutedDiagnostic
 	} from './diagnostics.js';
@@ -130,16 +133,17 @@
 	// A scalar control commits `undefined` for a cleared entry — the unset lane
 	// below (`doc.removeField`), not a write.
 	//
-	// A bad value makes `writer.set` THROW a `QuillmarkError` (verified: e.g.
-	// `set('font_size', 'abc')` → "[EditError::FieldConform] field 'font_size'
-	// does not conform to its schema type: string is not a valid number"; the
-	// thrown diagnostic carries no `path`/`code`). The editor already KNOWS the
-	// field/card being committed, so the diagnostic is built from THAT address —
-	// never parsed from the message (VISUAL_EDITOR §Diagnostics, producer #2) —
-	// and stashed in `commitErrors`, id-keyed so it survives a later card reorder.
-	// A subsequent SUCCESSFUL commit for the same field clears it. Nothing here
-	// gates: the value is not written (the document is unchanged on
-	// throw, per the boundary's own transactional contract) and editing continues.
+	// A bad value makes `writer.set` THROW a `QuillmarkError`; as of 0.96.0 its
+	// `diagnostics[0]` carries a `code` and a canonical `path` (e.g.
+	// `edit::field_conform` at `main.font_size`, or `edit::unknown_field`). The
+	// editor already KNOWS the field/card being committed, so it KEYS the entry
+	// from THAT address — id-keyed so it survives a later card reorder, never
+	// parsed from the positional path — while surfacing the thrown diagnostic
+	// verbatim (its `code`/`message`) as the payload (VISUAL_EDITOR §Diagnostics,
+	// producer #2). It is stashed in `commitErrors`; a subsequent SUCCESSFUL commit
+	// for the same field clears it. Nothing here gates: the value is not written
+	// (the document is unchanged on throw, per the boundary's own transactional
+	// contract) and editing continues.
 	function commitScalar(id: string, isMain: boolean, name: string, value: unknown): void {
 		const key: FieldKey = { card: isMain ? undefined : id, field: name };
 		const keyStr = fieldKeyToString(key);
@@ -177,9 +181,12 @@
 			}
 			bump();
 		} catch (e) {
-			const message = e instanceof Error ? e.message : String(e);
+			const diagnostic: Diagnostic = (isQuillmarkError(e) ? e.diagnostics[0] : undefined) ?? {
+				severity: 'error',
+				message: e instanceof Error ? e.message : String(e)
+			};
 			const next = new Map(commitErrors);
-			next.set(keyStr, { key, diagnostic: { severity: 'error', message } });
+			next.set(keyStr, { key, diagnostic });
 			commitErrors = next;
 			console.error('[quillmark/editor] scalar commit failed', e);
 		}
@@ -291,9 +298,8 @@
 	// (mergeDiagnostics sorts; nothing is dropped — diagnostics never gate, so
 	// nothing here hides one either).
 	const diagByKey = $derived.by(() => {
-		const cardKinds = model.cards.map((c) => c.kind);
-		const fromValidate = routeAndResolve(validation, cardIds, cardKinds);
-		const fromExternal = routeAndResolve(diagnostics, cardIds, cardKinds);
+		const fromValidate = routeAndResolve(validation, cardIds);
+		const fromExternal = routeAndResolve(diagnostics, cardIds);
 		return mergeDiagnostics(fromValidate, fromExternal, [...commitErrors.values()]);
 	});
 	function diagFor(id: string, isMain: boolean, field?: string): Diagnostic[] | undefined {
@@ -328,7 +334,9 @@
 		for (const p of card.payloadItems)
 			if (p.type === 'field' && p.key != null) values[p.key] = p.value;
 		const fields = cardSchema ? fieldModels(cardSchema) : [];
-		const sections = groupSections(fields, cardSchema ? groupOrder(cardSchema) : []);
+		const sections = cardSchema
+			? groupSections(fields, groupOrder(cardSchema), (g) => groupLabel(cardSchema, g))
+			: [];
 		const extEditor = card.ext?.editor as { title?: string } | undefined;
 		return {
 			id,
@@ -377,26 +385,15 @@
 		return leaves.get(`${cardPart}:${activeAddr.field ?? '$body'}`);
 	}
 
-	/** Map a `ContentHit.field` grammar string to a mounted leaf key. */
+	/** Map a `ContentHit.field` (a canonical `DocPath`) to a mounted leaf key —
+	 * the same `parseDocPath` route the diagnostics take, then the absolute card
+	 * index resolved to its live stable id (the leaf registry's key space). */
 	function leafKeyForHit(field: string): string | undefined {
-		if (field === '$body') return 'main:$body';
-		if (field.startsWith('$cards.')) {
-			const parts = field.split('.'); // $cards.<kind>.<i>[.<field>]
-			const ord = Number(parts[2]);
-			if (!Number.isInteger(ord) || ord < 0) return undefined;
-			// `<i>` is a PER-KIND ordinal (fixture plate.typ: the absolute loop
-			// index is NOT the ordinal once kinds interleave).
-			const abs = perKindCardIndex(
-				model.cards.map((c) => c.kind),
-				parts[1],
-				ord
-			);
-			if (abs < 0 || abs >= cardIds.length) return undefined;
-			return `${cardIds[abs]}:${parts[3] ?? '$body'}`;
-		}
-		// A bare "<field>" is a main leaf; "<field>.<n>" is an array element (no leaf).
-		if (!field.includes('.')) return `main:${field}`;
-		return undefined;
+		const key = parsePath(field);
+		if (!key) return undefined;
+		const resolved = resolveCardKey(key, cardIds);
+		if (!resolved) return undefined;
+		return `${resolved.card ?? 'main'}:${resolved.field ?? '$body'}`;
 	}
 </script>
 

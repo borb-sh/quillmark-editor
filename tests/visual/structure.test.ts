@@ -12,6 +12,7 @@ import {
 	humanize,
 	fieldModels,
 	groupOrder,
+	groupLabel,
 	groupSections,
 	packRows,
 	interpolateTitle,
@@ -124,7 +125,7 @@ describe('against the real usaf_memo schema', () => {
 		expect(byName.references.schema.items?.type).toBe('richtext');
 	});
 
-	it('reads group order from ui.groups (the typing-seam cast)', () => {
+	it('reads group order from the typed ui.groups registry', () => {
 		const schema = quill().schema;
 		expect(groupOrder(schema.main)).toEqual([
 			'addressing',
@@ -132,6 +133,19 @@ describe('against the real usaf_memo schema', () => {
 			'classification',
 			'additional'
 		]);
+	});
+
+	it('labels a group from its ui.groups title override, else the humanized id', () => {
+		const schema = quill().schema;
+		// The fixture's group registry carries no title overrides, so the label
+		// humanizes the id.
+		expect(groupLabel(schema.main, 'addressing')).toBe('Addressing');
+		// A registry that declares a title override wins over the humanized id.
+		const withTitle = {
+			fields: {},
+			ui: { groups: { memo_for: { title: 'Memo For' } } }
+		} as unknown as Parameters<typeof groupLabel>[0];
+		expect(groupLabel(withTitle, 'memo_for')).toBe('Memo For');
 	});
 
 	it('sections fields into the declared group order', () => {
