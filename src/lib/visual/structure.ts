@@ -4,7 +4,7 @@
 // are unit-testable in isolation (tests/visual/structure.test.ts). The reactive
 // orchestration (revision counter, live doc reads) lives in VisualEditor.svelte;
 // this module is the projection math it feeds.
-import type { QuillCardSchema, QuillFieldSchema } from '../core/index.js';
+import type { QuillCardSchema, QuillFieldSchema, ResolvedField, Resolved } from '../core/index.js';
 
 /** The control a field type maps to (VISUAL_EDITOR §"A control per field type"). */
 export type ControlKind =
@@ -56,8 +56,44 @@ export interface CardModel {
 	titlePlaceholder: string;
 	/** Field name → current stored value (absent fields missing). */
 	values: Record<string, unknown>;
+	/**
+	 * Field name → its resolved provenance row (`{ value, source }`), parallel to
+	 * `values` (FIELD_PROVENANCE). The channel that feeds chrome — the ghosted
+	 * `default:` and any authored/default/zero affordance — NEVER the control
+	 * value. Empty when `quill.resolve` is unavailable.
+	 */
+	provenance: Record<string, ResolvedField>;
 	sections: GroupSection[];
 	hasBody: boolean;
+}
+
+/**
+ * A card's resolved rows keyed by field name — the provenance channel parallel to
+ * {@link CardModel.values}. `resolve` returns rows in declaration order; the
+ * editor keys them the same way `values` keys its payload walk, so a field's value
+ * and its provenance resolve under one name.
+ */
+export function provenanceMap(fields: ResolvedField[]): Record<string, ResolvedField> {
+	const map: Record<string, ResolvedField> = {};
+	for (const f of fields) map[f.name] = f;
+	return map;
+}
+
+/**
+ * The resolved rows for the composable card at document index `i`, matched on
+ * `ResolvedCard.index` (not array position, so it holds whatever order the resolve
+ * view returns). Empty when `resolved` is absent (a `resolve` failure degrades to
+ * no ghosts, never a blank form) or the card has no resolved entry.
+ */
+export function resolvedCardFields(resolved: Resolved | undefined, i: number): ResolvedField[] {
+	return resolved?.cards.find((c) => c.index === i)?.fields ?? [];
+}
+
+/** The ghost a field shows when unset: the resolved `default:` value the render
+ * would use (`source === 'default'`), else undefined — an `authored` field shows
+ * its value, a `zero` field has no default to ghost. */
+export function ghostDefault(row: ResolvedField | undefined): unknown {
+	return row?.source === 'default' ? row.value : undefined;
 }
 
 /** The control an array's ELEMENTS render as, from `items.type`. */

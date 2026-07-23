@@ -1,6 +1,8 @@
 # Field Provenance
 
-> **Status**: proposed, unscheduled. Resolves the [#51](https://github.com/borb-sh/quillmark-editor/issues/51)
+> **Status**: partly shipped — the provenance channel and the resolved-default
+> ghost land now (`src/lib/visual/`, `src/lib/core/`); the resting-typography
+> visual layer stays deferred. Resolves the [#51](https://github.com/borb-sh/quillmark-editor/issues/51)
 > read-model decision; on promotion amends [VISUAL_EDITOR.md](../canon/VISUAL_EDITOR.md)
 > §"the commitment ladder".
 
@@ -76,41 +78,45 @@ other is why it renders what it renders.
 
 ## What provenance buys the ghost
 
-Today the editor ghosts the default by reading the schema's static `default:`
-(VISUAL_EDITOR §ladder: "it lives in the schema") and decides authored-vs-ghost
-from a presence check (`leafPresent` / an absent key in `values`). `resolve`
-consolidates both into one `source` read and upgrades the ghost to the
-*resolved* default — correct when a default is dynamic / interpolated rather than
-a static literal. That is the [RESTING_FIELDS.md](RESTING_FIELDS.md)
-empty-affordance, sourced truthfully.
+The editor ghosts the default from the provenance row, not the schema's static
+`default:`: `Field.svelte` reads `ghostDefault(provenance)` — the resolved value
+when `source === 'default'`, nothing when `'authored'` / `'zero'`. This upgrades
+the ghost to the *resolved* default (correct when a default is dynamic /
+interpolated rather than the static schema literal) and folds the old
+presence-check-plus-schema-read into one `source` read. The controls' `value` is
+untouched — still the authored-raw `values[name]`.
 
-It also disambiguates `EnumField`'s ghosted default, which today renders as the
-*selected* option — indistinguishable from an authored pick ([#21](https://github.com/borb-sh/quillmark-editor/issues/21),
-relates [#12](https://github.com/borb-sh/quillmark-editor/issues/12)).
-`source === 'default'` is exactly the signal that styles / announces the sentinel
-as default-not-authored.
+The same channel feeds `EnumField`'s unset sentinel (its `fallback` ghost label)
+and `BooleanField`'s unset state, so "the default" has one source of truth across
+every control. A sharper authored/default/zero affordance — styling or announcing
+the sentinel off `source` ([#21](https://github.com/borb-sh/quillmark-editor/issues/21),
+[#12](https://github.com/borb-sh/quillmark-editor/issues/12)) — reads off the same
+map when RESTING_FIELDS is scheduled.
 
-## Cost, and gating it
+## Cost
 
 `resolve` computes whole-document resolution per call — heavier than the local
-`payloadItems` walk `values` is built from. So it is **gated behind a provenance
-consumer**: computed only when RESTING_FIELDS (or another affordance) is engaged,
-never on V1's hot path. When it does run it re-derives on the same `revision`
-bump as `model` — one extra whole-doc pass per scalar/structure mutation, not per
-keystroke (prose leaves commit without bumping `revision`). Until a consumer
-ships, nothing calls `resolve` and the read paths are exactly as they are today.
+`payloadItems` walk `values` is built from. The ghost is a live consumer, so it
+runs in the `model` derive: one whole-doc pass per scalar/structure mutation, not
+per keystroke (prose leaves commit without bumping `revision`). That cost is
+accepted for a memo-sized document, and the call is **guarded** — a `resolve`
+failure logs and degrades to no ghosts, never a blank form (provenance is chrome).
+The deferred RESTING_FIELDS visual layer is the next consumer of the same channel:
+it reads `source` off the `provenance` map already on `CardModel`, no new derive.
 
 ## Open questions
 
-- **Keying body + arbitrary `Addr`.** `resolve` returns declaration-ordered rows
-  per card (main + each card, body under `$body`); the codec's `Addr`-keyed reads
-  need a small translation to those rows (#51 blocker 4). Confirm the `$body` /
-  `{card}` body keys against `runtime.d.ts` when scheduled.
-- **When to compute.** One gated whole-doc `resolve` per derive for now; a
-  narrower single-field query if the boundary later exposes one.
-- **Affordance scope.** The RESTING_FIELDS ghost is the first consumer; a full
-  authored/default/zero indicator (provenance dots) is a superset — design it
-  with RESTING_FIELDS, not ahead of it.
+- **Body and nested defaults stay on their own paths.** `resolve` keys the card
+  body as a sibling `body: ResolvedField | null` (not a `$body` row — the
+  runtime.d.ts prose comment is stale), and object sub-properties / array elements
+  are not individual rows. The scalar ghost needs none of these, so the body prose
+  leaf keeps its raw read and `ObjectField` keeps its schema-default sub-ghosts;
+  wiring provenance into either waits on its own affordance.
+- **When to compute.** One whole-doc `resolve` per derive today; a narrower
+  single-field query if the boundary later exposes one.
+- **Affordance scope.** The ghost is the first consumer; a full
+  authored/default/zero indicator (provenance dots) is a superset — design it with
+  RESTING_FIELDS, not ahead of it.
 
 Cross-refs: [#51](https://github.com/borb-sh/quillmark-editor/issues/51),
 [#48](https://github.com/borb-sh/quillmark-editor/issues/48) (item 6),
