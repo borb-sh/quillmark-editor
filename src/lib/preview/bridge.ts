@@ -7,7 +7,7 @@
 // overlay draws, not a hand-rolled pixel offset.
 import type { LiveSession, ContentHit } from '../core/index.js';
 import type { PageSlot } from './paint.js';
-import { rectToPercent, clickToPdfPt, type PercentRect } from './geometry.js';
+import { rectToPercent, clickToPdfPt, applyPercentRect, type PercentRect } from './geometry.js';
 
 export interface BridgeController {
 	/** Scroll `field`'s first content box into view (a no-op if it has none). */
@@ -48,13 +48,7 @@ export function createBridge(
 	// reuses native scrollIntoView instead of hand-rolling a scroll offset.
 	function scrollToPercentRect(slot: PageSlot, pct: PercentRect): void {
 		const marker = document.createElement('div');
-		Object.assign(marker.style, {
-			position: 'absolute',
-			left: `${pct.left}%`,
-			top: `${pct.top}%`,
-			width: `${pct.width}%`,
-			height: `${pct.height}%`
-		});
+		applyPercentRect(marker, pct);
 		slot.el.appendChild(marker);
 		marker.scrollIntoView({ block: 'center', inline: 'nearest' });
 		marker.remove();

@@ -40,6 +40,22 @@ export function rectToPercent(rect: PdfRect, pageSize: PageSize): PercentRect {
 }
 
 /**
+ * Position `el` absolutely at `pct` (the % rect this module produces) — the one
+ * `PercentRect` → `element.style` write, shared by the overlay's field boxes and
+ * the bridge's scroll marker so the positioning convention lives in one place.
+ * The caller sets any box chrome (border, background) on top.
+ */
+export function applyPercentRect(el: HTMLElement, pct: PercentRect): void {
+	Object.assign(el.style, {
+		position: 'absolute',
+		left: `${pct.left}%`,
+		top: `${pct.top}%`,
+		width: `${pct.width}%`,
+		height: `${pct.height}%`
+	});
+}
+
+/**
  * Inverse: a click at CSS px `(px, py)` within a page element of CSS size
  * `(cssW, cssH)` -> PDF-pt. The EXACT inverse of {@link rectToPercent}: the
  * fraction `rectToPercent` would place a point's box corner at is the same

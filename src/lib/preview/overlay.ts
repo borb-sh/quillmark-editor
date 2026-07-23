@@ -7,7 +7,7 @@
 // decoration, never an independent click target.
 import type { LiveSession } from '../core/index.js';
 import type { PageSlot } from './paint.js';
-import { rectToPercent } from './geometry.js';
+import { rectToPercent, applyPercentRect } from './geometry.js';
 
 export interface OverlayController {
 	/** Re-read geometry and rebuild every box — call after a layout-affecting refresh. */
@@ -59,12 +59,8 @@ export function createOverlay(session: LiveSession, slots: readonly PageSlot[]):
 				const el = document.createElement('div');
 				el.className = 'qm-field-box';
 				el.setAttribute(FIELD_ATTR, field);
+				applyPercentRect(el, pct);
 				Object.assign(el.style, {
-					position: 'absolute',
-					left: `${pct.left}%`,
-					top: `${pct.top}%`,
-					width: `${pct.width}%`,
-					height: `${pct.height}%`,
 					boxSizing: 'border-box',
 					borderRadius: '2px',
 					background: 'var(--qm-field-bg, transparent)'

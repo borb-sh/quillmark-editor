@@ -4,7 +4,7 @@
 // prose leaf. Consumed by Phase 4 (the VisualEditor) and the codec test suite.
 
 // The prose leaf.
-export { createField } from './field.js';
+export { createField, emptyContent } from './field.js';
 export type { CreateFieldOpts, FieldController } from './field.js';
 
 // Schemas (the decode/encode target; Phase 4 mounts them).
