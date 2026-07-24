@@ -65,6 +65,12 @@ export interface CardModel {
 	provenance: Record<string, ResolvedField>;
 	sections: GroupSection[];
 	hasBody: boolean;
+	/**
+	 * The empty-body ghost — the resolved body `default:` as placeholder text
+	 * (issue #58 §9), or undefined when the body is authored / has no default.
+	 * The body prose leaf ghosts it exactly as scalars ghost their `default:`.
+	 */
+	bodyGhost?: string;
 }
 
 /**
@@ -90,11 +96,31 @@ export function provenanceByCardIndex(
 	return new Map((resolved?.cards ?? []).map((c) => [c.index, c.fields]));
 }
 
+/**
+ * Composable cards' resolved BODY rows keyed by document index — the `body`
+ * sibling `resolve` hangs off each card (issue #58 §9), parallel to
+ * {@link provenanceByCardIndex}'s `fields`. Empty map (→ no body ghost) when
+ * `resolved` is absent.
+ */
+export function bodyByCardIndex(resolved: Resolved | undefined): Map<number, ResolvedField | null> {
+	return new Map((resolved?.cards ?? []).map((c) => [c.index, c.body]));
+}
+
 /** The ghost a field shows when unset: the resolved `default:` value the render
  * would use (`source === 'default'`), else undefined — an `authored` field shows
  * its value, a `zero` field has no default to ghost. */
 export function ghostDefault(row: ResolvedField | undefined): unknown {
 	return row?.source === 'default' ? row.value : undefined;
+}
+
+/** The empty-body ghost: the resolved body `default:` as placeholder text (issue
+ * #58 §9), or undefined when the body is authored / has no default. The body row
+ * is `resolve`'s `body` sibling (a `ResolvedField`, never a `fields` row); a
+ * richtext body resolves to a text render — the correct thing to display as a
+ * placeholder (FIELD_PROVENANCE). Mirrors the scalar `defaultStr` derivation. */
+export function bodyGhostText(body: ResolvedField | null | undefined): string | undefined {
+	const ghost = ghostDefault(body ?? undefined);
+	return ghost != null && typeof ghost !== 'object' ? String(ghost) : undefined;
 }
 
 /** The control an array's ELEMENTS render as, from `items.type`. */

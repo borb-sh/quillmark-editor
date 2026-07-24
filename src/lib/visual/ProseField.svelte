@@ -19,6 +19,8 @@
 		plaintext?: boolean;
 		/** Accessible name for the editable region (the visual label is a sibling span). */
 		label?: string;
+		/** Ghost shown on the empty leaf — the resolved `default:` (issue #58 §9). */
+		placeholder?: string;
 		/** Stable identity for the registry + a DOM stamp the e2e uses to prove no-remount. */
 		leafKey: string;
 		onFocus?: (addr: Addr) => void;
@@ -34,6 +36,7 @@
 		inline,
 		plaintext,
 		label,
+		placeholder,
 		leafKey,
 		onFocus,
 		onCaretMove,
@@ -57,6 +60,7 @@
 			inline,
 			plaintext,
 			label,
+			placeholder,
 			onFocus,
 			onCaretMove
 		});
@@ -90,5 +94,17 @@
 	   ring and the preview active box — no added box (the editor↔preview address). */
 	.qm-prose:focus-within {
 		border-color: var(--qm-focus-ring, #2563eb);
+	}
+	/* Empty-leaf ghost (issue #58 §9): the resolved `default:` as dim/italic ghost,
+	   matching the scalar `--qm-ghost` treatment (AESTHETIC §"secondary text
+	   recedes"). Rendered from a node decoration's data attr so it stays out of the
+	   document; `float`/`height:0` keep it from displacing the caret. */
+	.qm-prose :global(.ProseMirror .qm-prose-placeholder::before) {
+		content: attr(data-placeholder);
+		color: var(--qm-ghost, #9a9a9a);
+		font-style: italic;
+		float: left;
+		height: 0;
+		pointer-events: none;
 	}
 </style>
