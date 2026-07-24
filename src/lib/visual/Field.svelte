@@ -31,7 +31,7 @@
 	interface Props {
 		field: FieldModel;
 		value: unknown;
-		/** This field's resolved provenance row (FIELD_PROVENANCE) — the ghost's
+		/** This field's resolved provenance row (FIELD_PROVENANCE → #64) — the ghost's
 		 * source. Feeds the placeholder / fallback only, never `value`. */
 		provenance?: ResolvedField;
 		doc: Document;

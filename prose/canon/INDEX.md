@@ -1,8 +1,8 @@
 # Quillmark Editor Canon Index
 
 Canonical documentation for the `@quillmark/editor` package — the settled systems,
-describing what *is* and pointing into the code. Promoted from
-[`designs/`](../designs/INDEX.md) as each surface shipped (Phases 1–5).
+describing what *is* and pointing into the code. Promoted from in-flight design
+work as each surface shipped (Phases 1–5).
 
 A thin overview, the two headline surfaces with their interaction and visual
 doctrine, and the supporting docs for the shared substrate:
@@ -16,6 +16,6 @@ doctrine, and the supporting docs for the shared substrate:
 - [CODEC.md](CODEC.md) — content (`Content`) ↔ ProseMirror.
 - [DOCUMENT_MODEL.md](DOCUMENT_MODEL.md) — boundary ledger: the exact `@quillmark/wasm` surface V1 consumes, its canon homes, and stability. Not a model doc — the `Document` is quillmark's.
 
-Deferred and not-yet-designed work is named in [`designs/`](../designs/INDEX.md).
+Deferred and not-yet-designed work is tracked as GitHub issues.
 The `--qm-*` theming baseline is catalogued in the package's
 [`THEMING.md`](../../THEMING.md).

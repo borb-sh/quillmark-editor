@@ -58,7 +58,7 @@ export interface CardModel {
 	values: Record<string, unknown>;
 	/**
 	 * Field name → its resolved provenance row (`{ value, source }`), parallel to
-	 * `values` (FIELD_PROVENANCE). The channel that feeds chrome — the ghosted
+	 * `values` (FIELD_PROVENANCE → #64). The channel that feeds chrome — the ghosted
 	 * `default:` and any authored/default/zero affordance — NEVER the control
 	 * value. Empty when `quill.resolve` is unavailable.
 	 */
@@ -117,7 +117,7 @@ export function ghostDefault(row: ResolvedField | undefined): unknown {
  * #58 §9), or undefined when the body is authored / has no default. The body row
  * is `resolve`'s `body` sibling (a `ResolvedField`, never a `fields` row); a
  * richtext body resolves to a text render — the correct thing to display as a
- * placeholder (FIELD_PROVENANCE). Mirrors the scalar `defaultStr` derivation. */
+ * placeholder (FIELD_PROVENANCE → #64). Mirrors the scalar `defaultStr` derivation. */
 export function bodyGhostText(body: ResolvedField | null | undefined): string | undefined {
 	const ghost = ghostDefault(body ?? undefined);
 	return ghost != null && typeof ghost !== 'object' ? String(ghost) : undefined;

@@ -375,7 +375,7 @@
 		const schema = quill.schema;
 		const main = doc.main; // allocate once
 		const cards = doc.cards; // allocate once
-		// The provenance channel (FIELD_PROVENANCE): one whole-doc resolve per
+		// The provenance channel (FIELD_PROVENANCE → #64): one whole-doc resolve per
 		// derive, feeding the ghosted `default:` only. Guarded — provenance is
 		// chrome, so a resolve failure degrades to no ghosts, never a blank form.
 		let resolved: Resolved | undefined;

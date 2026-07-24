@@ -6,7 +6,7 @@
   nested prose/array/object properties render a placeholder rather than recurse.
 
   A property's ghosted `default:` is the static schema `sub.default`, not the
-  resolved provenance the top-level ghosts read (FIELD_PROVENANCE) — `resolve`
+  resolved provenance the top-level ghosts read (FIELD_PROVENANCE → #64) — `resolve`
   carries no per-property row (an object field resolves as one row whose value is
   the whole object). Thread it through `ghostDefault` once resolve exposes
   per-property provenance.

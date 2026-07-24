@@ -6,8 +6,7 @@ SvelteKit lib/app repo: `src/lib` → `svelte-package` → the published package
 
 Start at [`prose/canon/INDEX.md`](prose/canon/INDEX.md) — the settled systems that
 describe V1 (**Phases 1–5 have shipped**). Deferred and not-yet-designed work is
-named in [`prose/designs/INDEX.md`](prose/designs/INDEX.md) and tracked as GitHub
-issues. Every canon doc follows the spine documented in
+tracked as GitHub issues. Every canon doc follows the spine documented in
 [`prose/README.md`](prose/README.md) (`> **Implementation**:` folder anchor +
 `## TL;DR`); `npm run check:canon` gates it.
 
