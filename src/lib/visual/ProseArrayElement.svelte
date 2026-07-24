@@ -72,9 +72,15 @@
 		background: var(--qm-field-bg, #fff);
 		min-height: 1.5rem;
 	}
+	/* Caret-primary, matching ProseField: the contenteditable outline is dropped
+	   and the active element is cued by the wrapper border tint below, not a ring
+	   (SURFACES §Focus). */
 	.qm-array-prose :global(.ProseMirror) {
 		outline: none;
 		white-space: pre-wrap;
 		word-wrap: break-word;
+	}
+	.qm-array-prose:focus-within {
+		border-color: var(--qm-focus-ring, #2563eb);
 	}
 </style>

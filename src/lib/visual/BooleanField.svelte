@@ -38,4 +38,9 @@
 		width: 1rem;
 		height: 1rem;
 	}
+	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */
+	.qm-check:focus-visible {
+		outline: 2px solid var(--qm-focus-ring, #2563eb);
+		outline-offset: 1px;
+	}
 </style>

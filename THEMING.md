@@ -62,11 +62,16 @@ the two dials below.
 
 ### Field & prose leaf
 
-| Token               | Default   | What it colors                           |
-| ------------------- | --------- | ---------------------------------------- |
-| `--qm-field-bg`     | `#fff`    | A field control / prose-leaf background. |
-| `--qm-diag-error`   | `#c5221f` | An `error` inline diagnostic.            |
-| `--qm-diag-warning` | `#b25000` | A `warning` inline diagnostic.           |
+| Token               | Default   | What it colors                                                       |
+| ------------------- | --------- | -------------------------------------------------------------------- |
+| `--qm-field-bg`     | `#fff`    | A field control / prose-leaf background.                             |
+| `--qm-focus-ring`   | `#2563eb` | A focused scalar control's ring, and the active prose leaf's border. |
+| `--qm-diag-error`   | `#c5221f` | An `error` inline diagnostic.                                        |
+| `--qm-diag-warning` | `#b25000` | A `warning` inline diagnostic.                                       |
+
+`--qm-focus-ring` defaults to the same hue as the preview overlay's active-box
+ring (`--qm-field-ring-active`), so the same field reads as active with one hue
+across the editor and the preview; override it to split the two.
 
 ### Preview overlay
 
