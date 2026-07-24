@@ -24,7 +24,7 @@ never onto the default branch.
 | 71 | ephemeral tips card (`$ext.editor.tips`) | projection | no | **reopens** | open |
 | 74 | unified light/dark token surface | style | no | amends `THEMING.md` | open |
 | 76 | styled control variants / control-slot hooks | projection | no | no | open |
-| 57 | document-level history (card-delete undo) | projection | **maybe** | amends | open |
+| 57 | document-level history (card-delete undo) | projection | no | amends | open |
 | 16 | island/table editing | codec + projection | maybe | no | open |
 
 **Axis** is the file cluster a change contends for, and it drives the schedule
@@ -72,12 +72,13 @@ was the alternative; it front-loads the largest design surface before any easy
 win lands. The isolated axes mean #74 starts concurrently regardless, so leading
 with it buys little.
 
-## Open questions
+## Settled questions
 
-Per-issue forks land as siblings as each is taken up:
-[`74-76-styling-extension.md`](74-76-styling-extension.md). Risks per issue —
-what is retired, by what evidence, and what remains — in
-[`RISKS.md`](RISKS.md). Cross-cutting ones:
+Nothing is open. Every fork is decided and every risk either retired by evidence
+or carrying a settled mitigation — per-issue in
+[`74-76-styling-extension.md`](74-76-styling-extension.md) and
+[`RISKS.md`](RISKS.md), cross-cutting below. Each issue starts from a decision,
+not a deliberation.
 
 - **One styling-extension story — settled.** #74's "hooks beyond tokens" and
   #76's control-slot mechanism were the same question, answered jointly in
@@ -86,10 +87,11 @@ what is retired, by what evidence, and what remains — in
   from five dials by `color-mix` in oklab, so dark mode is a two-value swap;
   `check:theme` gates the drift; `boolean` → Switch ships as the one styled
   variant. No calls open.
-- **Canon reopenings.** #71 reopens the "no tips surface in V1" stance
-  (`VISUAL_EDITOR.md:80`, `VISUAL_EDITOR_UIUX.md:94`); #75 already amended the
-  must_fill-as-diagnostic-only stance. Both edit the same canon neighbourhood —
-  the amendments should read as one voice, not two patches.
+- **Canon reopenings — one voice.** #71 reopens the "no tips surface in V1"
+  stance (`VISUAL_EDITOR.md:80`, `VISUAL_EDITOR_UIUX.md:94`); #75 already amended
+  the must_fill-as-diagnostic-only stance. Both edit the same neighbourhood, so
+  #71's amendment rewrites the guidance paragraph whole rather than patching
+  around #75's edit.
 - **Boundary asks — none.** #57 was the only candidate; `toJson` / `loadJson` /
   `clone` already carry snapshot-and-restore, so no upstream ask is needed
   ([`RISKS.md`](RISKS.md)). Nothing in the remaining set touches the WASM

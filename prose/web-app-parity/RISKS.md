@@ -1,8 +1,19 @@
 # Risk register — remaining scheduled work
 
 What could invalidate the plan for each open issue, what is retired and by what
-evidence, and what remains. Probed against the installed boundary and a green
-suite (180 tests), not inferred from issue bodies.
+evidence, and how the rest is answered. Probed against the installed boundary and
+a green suite (180 tests), not inferred from issue bodies. Nothing here is left
+as a proposal — each live risk carries a settled mitigation, so an issue starts
+by implementing rather than deciding.
+
+| Issue | Risk | State |
+|---|---|---|
+| 74 | Rungs unreachable in `preview/` + `source/` | **Live** — four mint roots, lint-enforced |
+| 71 | Clearing tips destroys card titles | **Live** — merge-write, never `removeExtNamespace` |
+| 57 | Needs a WASM undo primitive | Retired — `toJson` / `loadJson` / `clone` |
+| 70 | Codec loses nesting on indent/outdent | Retired — 8 shapes round-trip, now tested |
+| 76 | Styled variants owe a11y from scratch | Retired — bits-ui covers every `ControlKind` |
+| 16 | Island authoring unscoped | Open by design; the tail |
 
 ## #74 — the settled design breaks on two surfaces
 
@@ -24,7 +35,7 @@ style is a scoped Svelte `<style>`. `/preview` imports no editor-side code, so i
 cannot reach a block owned by `visual/`. `core/` is the one module both already
 import, but it is pure logic and carries no styling today.
 
-**Mitigation — four mint roots, not two.** The doctrine is already *one mint per
+**Settled — four mint roots, not two.** The doctrine is already *one mint per
 detached root*: `FormatPopover` mints its own copy precisely because it portals
 out of the editor subtree (`check-geometry.mjs` header). `Preview` and
 `SourceView` are detached roots by the same test, so minting there is consistent
@@ -32,10 +43,7 @@ with the rule rather than the drift the rule prevents. The duplication is real;
 `check:theme` neutralizes it by asserting the derivation block is **byte-identical
 across all four roots** — turning copy-drift into a lint failure. `check:geometry`
 already enumerates permitted mint roots, so the enumeration extends rather than
-appears.
-
-**Consequence.** #74 grows a fourth deliverable beyond the three in the note:
-extend the mint roots and their lint. Scope grows; direction holds.
+appears. Folded into the design as §Settled 1b; #74 carries four deliverables.
 
 ## #57 — the boundary ask is unnecessary
 
@@ -53,14 +61,16 @@ It does not. The published boundary already carries the whole mechanism:
 failed restore cannot corrupt state. No undo/redo/history verb exists — and none
 is needed.
 
-**Residual, both editor-side:** snapshot granularity (a whole-document snapshot
-per structural op — coarse but correct, and fine at memo scale), and how a
-structural stack interleaves with the per-leaf PM histories so Ctrl-Z keeps one
-meaning. Materially smaller than the issue assumes.
+**What is left is #57's own design, not a risk to it:** snapshot granularity (a
+whole-document snapshot per structural op — coarse but correct, and fine at memo
+scale) and how a structural stack interleaves with the per-leaf PM histories so
+Ctrl-Z keeps one meaning. Both are editor-side and settle when #57 is taken up;
+neither can invalidate the approach the way a missing primitive would have.
 
-**Schedule note.** #57 sat last partly for boundary lead time. That reason is
-gone; it stays last only because it contends for the same projection files as
-#71/#76, which is a weaker constraint. It could move if undo becomes urgent.
+**Settled — #57 stays last in the chain.** It sat there partly for boundary lead
+time, and that reason is gone. It stays on file contention alone: it rewrites the
+structure mutators #71 and #76 build on, so going earlier means the other two
+rebase onto a moved floor. The position is unchanged; only its justification is.
 
 ## #70 — retired empirically
 
@@ -71,8 +81,13 @@ bullet and bullet-in-ordered, multi-paragraph items, an item carrying a nested
 list plus a trailing paragraph, sibling splits from outdenting a middle item,
 ordinal resets, and a deep mixed shape. All pass unchanged.
 
-The codec needs no work for #70. **Residual:** Tab precedence against the
-deferred structural keymap — a decision, not an unknown.
+The codec needs no work for #70.
+
+**Settled — Tab precedence.** In a list item, `Tab`/`Shift-Tab` indent and
+outdent; everywhere else Tab is unbound and stays available to the deferred
+structural keymap. The list binding returns false when the selection is not in a
+list, so ProseMirror falls through — the later field-navigation Tab layers over
+it without either side knowing about the other, which is what keeps #70 additive.
 
 ## #71 — a namespace hazard that destroys card titles
 
@@ -83,9 +98,13 @@ deferred structural keymap — a decision, not an unknown.
 "dismissing the last tip clears the channel". It is the wrong one: `tips` is a
 **sibling key of `title`** inside the same `editor` namespace, and card rename
 stores `$ext.editor.title` there (`VisualEditor.svelte:269`). Removing the
-namespace silently destroys every renamed card's title. Clearing tips must be a
-merge-write that drops only the `tips` key — which is what the issue body says,
-and precisely what a reader reaching for the obvious verb would get wrong.
+namespace silently destroys every renamed card's title.
+
+**Settled — clearing is a merge-write.** Dismissal reads the `editor` namespace,
+drops the `tips` key, and stores the remainder — the title path's own shape.
+`removeExtNamespace` is not used for tips at any point. A test asserts a renamed
+card keeps its title across a full dismiss, since this fails silently and only on
+documents that have both.
 
 ## #76 — retired
 

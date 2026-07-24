@@ -199,10 +199,23 @@ rungs are exactly mid-tone. The fifteen flat `--qm-*` tokens keep working,
 defaulting to their rung and overriding it when set: no consumer breaks, and
 THEMING.md's "stable, layered over, not replaced" promise holds literally.
 
-**2. `check:theme` — in scope for #74.** Two rules, mirroring its siblings: no
-bare color / shadow / opacity literal outside a `var()` fallback, and every
-consumed `--qm-*` documented in THEMING.md. Without it the ten literals grow
-back, and `--qm-required` proves drift is already live.
+**1b. The derivation is minted in four roots.** A flat token defaulting to its
+rung is only correct where the rung exists, and the private scale is minted in
+`VisualEditor` and `FormatPopover` alone — `preview/` and `source/` see no
+`--_qm-*` and do not descend from the editor's root, so the painted page would
+resolve no background at all ([`RISKS.md`](RISKS.md)). `Preview` and `SourceView`
+therefore mint the block too, as detached roots three and four. This follows the
+standing rule rather than bending it: FormatPopover already mints its own copy
+because it portals out of the editor subtree. Four copies is the cost of a
+package that ships no CSS file and forbids `/preview` importing editor code;
+rule 3 of `check:theme` is what keeps the cost from becoming drift.
+
+**2. `check:theme` — in scope for #74.** Three rules, mirroring its siblings:
+no bare color / shadow / opacity literal outside a `var()` fallback; every
+consumed `--qm-*` documented in THEMING.md; and the derivation block
+**byte-identical across the four mint roots**, which is what makes 1b safe.
+Without the first two the ten literals grow back and `--qm-required` shows drift
+is already live; without the third, four copies drift apart silently.
 
 **3. Ship `boolean` → Switch on bits-ui.** One variant, to exercise the slot
 contract from inside the package before anyone outside depends on it.
@@ -220,3 +233,6 @@ structure. The `qm-*` classes stay non-contractual.
   documented escape hatch for consumers who want a shadow unrelated to their ink.
 - THEMING.md grows a "Dials" section above the existing tables; the tables stay
   and are re-described as overrides over rungs.
+- #74 carries four deliverables, not three: the dials and their derivation, the
+  ten literals plus the ratio tokens, `check:theme`, and the two new mint roots.
+  The last is what makes dark mode reach the preview and source surfaces at all.
