@@ -485,9 +485,9 @@
 	<!-- Cards always render (issue #72). The ADD affordance is gated on the schema
 	     declaring `card_kinds` — nothing to seed otherwise — but a card already in the
 	     document shows regardless of its kind: a kind with no schema (foreign, or a
-	     schema with no `card_kinds` at all) degrades to a recovery shell inside <Card>
-	     (retype + delete), never gated away, so its content is neither dropped nor
-	     trapped. Supersedes the earlier gate that hid the whole region (issue #21). -->
+	     schema with no `card_kinds` at all, the case issue #21 tracks) degrades to a
+	     recovery shell inside <Card> (retype + delete), never gated away, so its content
+	     is neither dropped nor trapped. -->
 	{#if kinds.length}
 		{@render addAffordance(0, model.cards.length === 0)}
 	{/if}

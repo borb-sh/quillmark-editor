@@ -54,9 +54,7 @@
 		>{fallback != null && fallback !== '' ? fallback : '—'}</option
 	>
 	{#each values as v (v)}
-		<option value={v} disabled={optionAllowed ? !optionAllowed(v) : false}
-			>{v === '' ? '—' : v}</option
-		>
+		<option value={v} disabled={optionAllowed?.(v) === false}>{v === '' ? '—' : v}</option>
 	{/each}
 </select>
 

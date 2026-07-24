@@ -14,6 +14,7 @@
 	import type { CardModel, FieldModel } from './structure.js';
 	import { packRows, humanize, initialExpandedGroup } from './structure.js';
 	import Field from './Field.svelte';
+	import FieldLabel from './FieldLabel.svelte';
 	import ProseField from './ProseField.svelte';
 	import CardControls from './CardControls.svelte';
 	import DiagnosticList from './DiagnosticList.svelte';
@@ -166,9 +167,7 @@
 							data-testid={`card-retype-${index}`}
 							onchange={(e) => ops.retype((e.currentTarget as HTMLSelectElement).value)}
 						>
-							{#each kinds as k (k)}
-								<option value={k}>{humanize(k)}</option>
-							{/each}
+							{@render kindOptions()}
 						</select>
 					{:else}
 						<!-- Degenerate retype (one declared kind): still wired to setCardKind. -->
@@ -233,7 +232,7 @@
 
 			{#if card.hasBody}
 				<div class="qm-body-leaf">
-					<span class="qm-field-label">Body</span>
+					<FieldLabel label="Body" />
 					<ProseField
 						{doc}
 						addr={ops.makeAddr(undefined)}
@@ -314,9 +313,7 @@
 					}}
 				>
 					<option value="" disabled selected>Choose a type…</option>
-					{#each kinds as k (k)}
-						<option value={k}>{humanize(k)}</option>
-					{/each}
+					{@render kindOptions()}
 				</select>
 			</label>
 		{:else}
@@ -325,6 +322,14 @@
 			</p>
 		{/if}
 	</div>
+{/snippet}
+
+<!-- The declared card kinds as `<option>`s — shared by the header retype select and
+     the recovery shell's retype (issue #72), so one humanized option list feeds both. -->
+{#snippet kindOptions()}
+	{#each kinds as k (k)}
+		<option value={k}>{humanize(k)}</option>
+	{/each}
 {/snippet}
 
 <style>
@@ -505,11 +510,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space);
-	}
-	.qm-field-label {
-		font-size: var(--_qm-text-label);
-		font-weight: var(--_qm-weight-label);
-		color: var(--qm-label, #555);
 	}
 	/* Recovery shell (issue #72): a receding, dashed-edge card marking an un-schemable
 	   card — visibly distinct from a normal card, but not alarming; the content behind

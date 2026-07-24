@@ -1,12 +1,11 @@
 <!--
-  A field's label plus its guidance chrome (issue #75). Two label decorations, both
-  non-gating:
+  A field's label plus its guidance chrome (issue #75). Two non-gating label
+  decorations:
     • a persistent required `*` (issue #75a) when the field has no `default:` — the
-      "Unendorsed"/must_fill set (DOCUMENT_MODEL: no separate `required` axis). The
-      glyph is `aria-hidden`; the accessible name says "required" so a screen reader
-      announces it once, not as punctuation;
-    • the `description` (issue #75b) as an info marker — a native `title` tooltip (the
-      card / array controls' convention) with the text on `aria-label` to announce.
+      "Unendorsed"/must_fill set (DOCUMENT_MODEL: no separate `required` axis). Its
+      accessible name is "required", so a screen reader announces the word, not the glyph;
+    • the `description` (issue #75b) as an info marker: a `title` tooltip on hover, the
+      text also on `aria-label` (role="img") so a screen reader announces it.
   Shared by {@link Field} (scalars, object, prose) and {@link ArrayField} so every
   control's label decorates the same way.
 -->
@@ -30,8 +29,7 @@
 		<span
 			class="qm-field-required"
 			aria-label="required"
-			data-testid={testid ? `required-${testid}` : undefined}
-			><span aria-hidden="true">*</span></span
+			data-testid={testid ? `required-${testid}` : undefined}>*</span
 		>
 	{/if}
 	{#if description}
