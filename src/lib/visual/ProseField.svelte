@@ -78,12 +78,17 @@
 		background: var(--qm-field-bg, #fff);
 		min-height: 1.6rem;
 	}
+	/* The caret is the prose leaf's focus indicator, not a ring — a ring around a
+	   contenteditable reads as the form chrome AESTHETIC strips. So the outline is
+	   dropped; the active leaf is cued by the wrapper border tint below (SURFACES §Focus). */
 	.qm-prose :global(.ProseMirror) {
 		outline: none;
 		white-space: pre-wrap;
 		word-wrap: break-word;
 	}
-	.qm-prose :global(.ProseMirror:focus) {
-		outline: none;
+	/* Active-leaf cue: tint the hairline to the focus hue, shared with the scalar
+	   ring and the preview active box — no added box (the editor↔preview address). */
+	.qm-prose:focus-within {
+		border-color: var(--qm-focus-ring, #2563eb);
 	}
 </style>
