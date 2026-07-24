@@ -64,8 +64,8 @@ theming pass, [`THEMING.md`](../../THEMING.md)).
 ## Focus and active state
 
 A surface a caret or selection can land on shows it, within the monochrome
-palette — but a **form control** and a **prose leaf** are not the same case, and
-one focus rule for both is the error [#45] made:
+palette — but a **form control** and a **prose leaf** are not the same focus
+case, and one rule for both is the conflation [#45] resolves:
 
 - **Scalar controls draw a tokenized ring.** A focused `TextField` / `NumberField`
   / `EnumField` / `DateField` (and the array JSON control) shows a
@@ -74,7 +74,7 @@ one focus rule for both is the error [#45] made:
   without a visible replacement.
 - **A prose leaf keeps the caret as its focus indicator.** The blinking caret is
   the editor convention for a text-editing region — Google Docs, Notion, every
-  ProseMirror surface — and a ring around a big `contenteditable` reads as the form
+  ProseMirror surface — and a ring around a `contenteditable` reads as the form
   chrome the AESTHETIC rule strips, not as paper. So the leaf clears its
   contenteditable outline deliberately; the caret *is* the replacement, and the
   active leaf is cued quietly by tinting its wrapper hairline to `--qm-focus-ring`

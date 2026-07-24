@@ -78,19 +78,16 @@
 		background: var(--qm-field-bg, #fff);
 		min-height: 1.6rem;
 	}
-	/* The caret is the prose leaf's primary focus indicator — the editor
-	   convention (Google Docs, Notion, every ProseMirror surface); a ring around a
-	   text-editing region reads as form chrome the AESTHETIC rule strips. So the
-	   contenteditable's own outline is dropped, and the active leaf is cued quietly
-	   by the wrapper border below, not by a heavy ring (SURFACES §Focus). */
+	/* The caret is the prose leaf's focus indicator, not a ring — a ring around a
+	   contenteditable reads as the form chrome AESTHETIC strips. So the outline is
+	   dropped; the active leaf is cued by the wrapper border tint below (SURFACES §Focus). */
 	.qm-prose :global(.ProseMirror) {
 		outline: none;
 		white-space: pre-wrap;
 		word-wrap: break-word;
 	}
-	/* Active-leaf cue: tint the existing hairline to the focus hue — one hue with
-	   the scalar controls' ring and the preview active box — so the live leaf reads
-	   at a glance without adding a box (the editor↔preview active address). */
+	/* Active-leaf cue: tint the hairline to the focus hue, shared with the scalar
+	   ring and the preview active box — no added box (the editor↔preview address). */
 	.qm-prose:focus-within {
 		border-color: var(--qm-focus-ring, #2563eb);
 	}

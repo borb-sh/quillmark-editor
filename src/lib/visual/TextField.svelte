@@ -53,8 +53,7 @@
 		font: inherit;
 		background: var(--qm-field-bg, #fff);
 	}
-	/* Themed focus ring in place of the raw UA outline — one hue with the prose
-	   leaf's active border and the preview active box (SURFACES §Focus). */
+	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */
 	.qm-input:focus-visible {
 		outline: 2px solid var(--qm-focus-ring, #2563eb);
 		outline-offset: 1px;
