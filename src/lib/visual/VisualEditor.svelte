@@ -22,11 +22,12 @@
   once per derive.
 -->
 <script lang="ts">
-	import { isQuillmarkError } from '../core/index.js';
+	import { isQuillmarkError, MAIN_CARD_ADDR } from '../core/index.js';
 	import type {
 		Document,
 		Quill,
 		Addr,
+		CardAddr,
 		Diagnostic,
 		ContentHit,
 		Resolved,
@@ -59,7 +60,9 @@
 		type FieldKey,
 		type RoutedDiagnostic
 	} from './diagnostics.js';
+	import { tipsChannel, extWithoutTips } from './tips.js';
 	import Card from './Card.svelte';
+	import TipsCard from './TipsCard.svelte';
 	import FormatPopover from './FormatPopover.svelte';
 
 	/**
@@ -286,6 +289,18 @@
 		doc.storeExtNamespace({ card: i }, 'editor', { ...existing, title });
 		bump();
 	}
+	/**
+	 * Clear the tips channel (issue #71) — the dismissal write, and the ONLY write
+	 * tips make. Reads the `editor` namespace, drops `tips`, stores the remainder:
+	 * the title path's own shape, for the same reason. `removeExtNamespace` would
+	 * take the sibling `title` with it. Addressed by `CardAddr` (absent `card` =
+	 * main) rather than by stable id, since the channel is not card-identity state.
+	 */
+	function clearTips(addr: CardAddr): void {
+		const existing = (doc.getExtNamespace(addr, 'editor') ?? {}) as Record<string, unknown>;
+		doc.storeExtNamespace(addr, 'editor', extWithoutTips(existing));
+		bump();
+	}
 
 	// ── Addressing + per-card op bundle ─────────────────────────────────────────
 	/** A LIVE card address: `card` is a getter, so a reorder re-targets in place. */
@@ -375,7 +390,7 @@
 		const sections = cardSchema
 			? groupSections(fields, groupOrder(cardSchema), (g) => groupLabel(cardSchema, g))
 			: [];
-		const extEditor = card.ext?.editor as { title?: string } | undefined;
+		const extEditor = card.ext?.editor as { title?: string; tips?: unknown } | undefined;
 		return {
 			id,
 			isMain,
@@ -384,6 +399,9 @@
 			// `main` always resolves `schema.main`, so it is never unschemable.
 			unschemable: !isMain && !cardSchema,
 			titleOverride: extEditor?.title ?? '',
+			// The tips channel rides the SAME `$ext` snapshot as the title, so reading
+			// it costs no extra boundary call (issue #71).
+			tips: tipsChannel(extEditor?.tips),
 			titlePlaceholder: cardTitle(cardSchema, kind, values, undefined),
 			values,
 			provenance: provenanceMap(resolvedFields),
@@ -481,6 +499,15 @@
 		{register}
 		{unregister}
 	/>
+
+	<!-- The tips card (issue #71): a fixed slot after `main`, ahead of the cards, so
+	     document-level guidance reads as document-level and never displaces a field.
+	     Absent when the channel is empty — which is what dismissal makes it, so the
+	     card leaves for good. `main` only in V1, though `CardModel.tips` is populated
+	     for every card (VISUAL_EDITOR §"Card operations"). -->
+	{#if model.main.tips.length}
+		<TipsCard tips={model.main.tips} onDismiss={() => clearTips(MAIN_CARD_ADDR)} />
+	{/if}
 
 	<!-- Cards always render (issue #72). The ADD affordance is gated on the schema
 	     declaring `card_kinds` — nothing to seed otherwise — but a card already in the

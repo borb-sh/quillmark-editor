@@ -72,6 +72,15 @@ export interface CardModel {
 	unschemable: boolean;
 	/** Raw `$ext.editor.title` override (composable cards). */
 	titleOverride: string;
+	/**
+	 * The narrowed `$ext.editor.tips` channel (issue #71) — authoring hints a quill
+	 * or consumer seeds, which the editor renders as a dismissable card and never
+	 * writes to. Populated for EVERY card (main included) because the `$ext` snapshot
+	 * the derive already holds makes the read free; V1 renders the channel on `main`
+	 * only (VISUAL_EDITOR §"Card operations"). `[]` when the channel is absent or
+	 * unusable — never gates, never reaches the backend.
+	 */
+	tips: string[];
 	/** Schema-resolved title used as the rename placeholder (composable cards). */
 	titlePlaceholder: string;
 	/** Field name → current stored value (absent fields missing). */
