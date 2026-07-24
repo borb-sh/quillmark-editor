@@ -58,8 +58,8 @@ export interface FieldController {
 	/** The current stored content for this addr (for tests / reconcile). */
 	getContent(): Content;
 	/**
-	 * Insert an identity anchor `id` at USV `pos` (issue #43) — the seam the six
-	 * formatting marks have and `anchor` lacked. Zero-width; it folds into the
+	 * Insert an identity anchor `id` at USV `pos` (issue #43) — the seam that gives
+	 * `anchor` the toggle the six formatting marks have. Zero-width; it folds into the
 	 * plugin's position set and commits through the mark-diff `anchor` op, so it
 	 * survives later edits like any anchor. The id is caller-supplied and must be
 	 * unique + invariant (the 0.97 anchor-id policy); a duplicate id is a no-op.
@@ -226,10 +226,12 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		}
 	}
 
+	/** The anchors the plugin currently holds (PM coords); `[]` before the first apply. */
+	const heldAnchors = (): AnchorPos[] => anchorKey.getState(view.state) ?? [];
+
 	/** Anchor positions in the CURRENT (new) doc, as USV. */
 	function readAnchorsUsv(newDoc: PMNode): AnchorPos[] {
-		const anchors = anchorKey.getState(view.state) ?? [];
-		return anchors.map((a) => ({ id: a.id, pos: pmToUsv(newDoc, index, a.pos) }));
+		return heldAnchors().map((a) => ({ id: a.id, pos: pmToUsv(newDoc, index, a.pos) }));
 	}
 
 	const controller: FieldController = {
@@ -262,8 +264,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		},
 		insertAnchor(id: string, pos: number): void {
 			if (plaintext) return; // a plaintext field carries no marks (§Inline mode)
-			const held = anchorKey.getState(view.state) ?? [];
-			if (held.some((a) => a.id === id)) return; // ids are unique + invariant (0.97 policy)
+			if (heldAnchors().some((a) => a.id === id)) return; // ids are unique + invariant (0.97 policy)
 			// An anchor commits through `applyChange` (present field); a still-unset
 			// default-only field is materialized first, else the commit's create-branch
 			// `install` — value semantics — would drop the just-added anchor.
@@ -273,13 +274,11 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		},
 		removeAnchor(id: string): void {
 			if (plaintext) return;
-			const held = anchorKey.getState(view.state) ?? [];
-			if (!held.some((a) => a.id === id)) return; // absent — nothing to commit
+			if (!heldAnchors().some((a) => a.id === id)) return; // absent — nothing to commit
 			view.dispatch(view.state.tr.setMeta(anchorKey, { op: 'remove', id } as AnchorEdit));
 		},
 		anchorsInRange(from: number, to: number): string[] {
-			const held = anchorKey.getState(view.state) ?? [];
-			return held
+			return heldAnchors()
 				.filter((a) => {
 					const u = pmToUsv(view.state.doc, index, a.pos);
 					return u >= from && u <= to;

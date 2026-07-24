@@ -102,7 +102,8 @@
 		const insidePopover =
 			!!contentEl && !!document.activeElement && contentEl.contains(document.activeElement);
 		if (insidePopover) return; // interacting with the popover itself (e.g. the link input) — leave state as-is
-		const view = activeLeafView();
+		const leaf = getActiveLeaf();
+		const view = (leaf as LeafWithView | undefined)?.view;
 		if (!view || !view.hasFocus() || view.state.selection.empty) {
 			open = false;
 			linkPromptOpen = false;
@@ -124,7 +125,6 @@
 		}
 		// `anchor` is a decoration, not a PM mark (CODEC §Marks): its active state is
 		// whether the selection covers an identity anchor, read off the leaf in USV.
-		const leaf = getActiveLeaf();
 		if (leaf) {
 			const sel = leaf.selectionRange();
 			marks.anchor = leaf.anchorsInRange(sel.from, sel.to).length > 0;
