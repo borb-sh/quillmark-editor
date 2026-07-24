@@ -537,9 +537,9 @@
 		/* Type rhythm (SURFACES §Rhythm, THEMING §"Base — typography & text"). Two
 		   public dials — --qm-font-size (body anchor), --qm-font-scale (ramp ratio)
 		   — derive the closed rung set every surface reads: a step up (title) and two
-		   down (label, meta), replacing the ~8 ad-hoc sizes the study counted. Weight
-		   is a fixed convention, not a dial: label 600, secondary 500. Minted here and
-		   re-minted on FormatPopover (portals out of this root), gated by check:type. */
+		   down (label, meta). Weight is a fixed convention, not a dial: label 600,
+		   secondary 500. Minted here and re-minted on FormatPopover (portals out of
+		   this root), gated by check:type. */
 		--_qm-text-body: var(--qm-font-size, 0.875rem);
 		--_qm-text-title: calc(var(--_qm-text-body) * var(--qm-font-scale, 1.125));
 		--_qm-text-label: calc(var(--_qm-text-body) / var(--qm-font-scale, 1.125));

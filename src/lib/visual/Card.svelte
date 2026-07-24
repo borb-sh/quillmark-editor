@@ -73,7 +73,7 @@
 
 	// Inline-editable title (issue #58 §8): select-all on entry so a title reads as
 	// text you replace, and Enter/Escape as commit/revert. Rename stays LIVE on
-	// input (unchanged) — `titleAtFocus` is the pre-edit value Escape rolls back to.
+	// input — `titleAtFocus` is the pre-edit value Escape rolls back to.
 	let titleAtFocus = '';
 	function onTitleFocus(e: FocusEvent): void {
 		titleAtFocus = localTitle;
@@ -358,10 +358,9 @@
 		flex-direction: column;
 		gap: var(--_qm-space-2);
 	}
-	/* Group accordion (issue #60, VISUAL_EDITOR_UIUX §Fields). The header repurposes
-	   the old `.qm-section-label` treatment (uppercase meta rule) as a toggle; the
-	   panel slides via a 0fr↔1fr grid row so the height animates without a magic
-	   max-height. */
+	/* Group accordion (issue #60, VISUAL_EDITOR_UIUX §Fields). The header carries the
+	   uppercase meta-label treatment as a toggle; the panel slides via a 0fr↔1fr grid
+	   row so the height animates without a magic max-height. */
 	.qm-group {
 		display: flex;
 		flex-direction: column;
