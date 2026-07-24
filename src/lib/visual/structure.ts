@@ -28,6 +28,9 @@ export interface FieldModel {
 	compact: boolean;
 	/** Display label — `ui.title` when set, else the humanized field name. */
 	label: string;
+	/** Schema `description` — authoring help rendered beside the label (issue #75b),
+	 * undefined when the field declares none. Chrome-only; never gates. */
+	description: string | undefined;
 	/** Prose-leaf flags (only meaningful when `control === 'prose'` / array items). */
 	inline: boolean;
 	plaintext: boolean;
@@ -183,6 +186,7 @@ export function fieldModels(cardSchema: QuillCardSchema): FieldModel[] {
 		group: schema.ui?.group,
 		compact: !!schema.ui?.compact,
 		label: schema.ui?.title ?? humanize(name),
+		description: schema.description,
 		inline: !!schema.inline,
 		plaintext: schema.type === 'plaintext'
 	}));

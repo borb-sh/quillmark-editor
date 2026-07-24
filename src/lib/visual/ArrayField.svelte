@@ -19,18 +19,21 @@
 	import X from '@lucide/svelte/icons/x';
 	import TextField from './TextField.svelte';
 	import ProseArrayElement from './ProseArrayElement.svelte';
+	import FieldLabel from './FieldLabel.svelte';
 
 	interface Props {
 		value: unknown[] | undefined;
 		items: QuillFieldSchema | undefined;
 		/** Accessible-name prefix for the element controls (`label` + 1-based index). */
 		label?: string;
+		/** Schema `description` — the label's help affordance (issue #75b). */
+		description?: string;
 		onCommit: (arr: unknown[]) => void;
 		/** A prose element gained focus — joins the field in the focus federation. */
 		onFocusEl?: () => void;
 		testid?: string;
 	}
-	let { value, items, label, onCommit, onFocusEl, testid }: Props = $props();
+	let { value, items, label, description, onCommit, onFocusEl, testid }: Props = $props();
 
 	const control = $derived(elementControl(items));
 	const plaintext = $derived(items?.type === 'plaintext');
@@ -79,7 +82,7 @@
 <div class="qm-array" data-testid={testid}>
 	<div class="qm-array-header">
 		{#if label != null}
-			<span class="qm-field-label">{label}</span>
+			<FieldLabel {label} {description} {testid} />
 		{:else}
 			<span></span>
 		{/if}
@@ -147,11 +150,6 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--_qm-space-2);
-	}
-	.qm-field-label {
-		font-size: var(--_qm-text-label);
-		font-weight: var(--_qm-weight-label);
-		color: var(--qm-label, #555);
 	}
 	.qm-array-row {
 		display: flex;

@@ -27,6 +27,7 @@
 	import ArrayField from './ArrayField.svelte';
 	import ObjectField from './ObjectField.svelte';
 	import DiagnosticList from './DiagnosticList.svelte';
+	import FieldLabel from './FieldLabel.svelte';
 
 	interface Props {
 		field: FieldModel;
@@ -72,7 +73,7 @@
 
 <div class="qm-field" class:compact={field.compact}>
 	{#if field.control !== 'array'}
-		<span class="qm-field-label">{field.label}</span>
+		<FieldLabel label={field.label} description={field.description} {testid} />
 	{/if}
 	<div class="qm-field-control">
 		{#if field.control === 'prose'}
@@ -127,6 +128,7 @@
 				value={value as unknown[] | undefined}
 				items={field.schema.items}
 				label={field.label}
+				description={field.description}
 				onCommit={onCommitScalar}
 				onFocusEl={() => onFocus?.(proseAddr)}
 				{testid}
@@ -163,10 +165,5 @@
 	}
 	.qm-field.compact {
 		flex: 1 1 12rem;
-	}
-	.qm-field-label {
-		font-size: var(--_qm-text-label);
-		font-weight: var(--_qm-weight-label);
-		color: var(--qm-label, #555);
 	}
 </style>
