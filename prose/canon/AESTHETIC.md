@@ -28,7 +28,9 @@ overrides to its brand without fighting baked-in decoration.
   box (`--qm-field-ring-active`) — never ornament.
 - **Icons encode identity or function — never decoration.** A control's glyph
   names its action: reorder, delete, a formatting mark. An icon that dresses a
-  label or a section heading, doing a job a word already does, is cut.
+  label or a section heading, doing a job a word already does, is cut. The set is
+  Lucide (`@lucide/svelte`, à la carte per-icon imports); a stroke glyph inherits
+  `currentColor`, so it re-tints with the surface's text token, no fill.
 - **Strip redundancy.** Prefer removing chrome to adding it — a heading that
   restates the field beneath it, a divider whitespace already implies, a label the
   control already speaks. The card stack is the document's structure; it needs no

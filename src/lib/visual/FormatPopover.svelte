@@ -45,6 +45,14 @@
 	import type { EditorView } from 'prosemirror-view';
 	import type { MarkType } from 'prosemirror-model';
 	import { Popover } from 'bits-ui';
+	import type { Component } from 'svelte';
+	import Bold from '@lucide/svelte/icons/bold';
+	import Italic from '@lucide/svelte/icons/italic';
+	import Underline from '@lucide/svelte/icons/underline';
+	import Strikethrough from '@lucide/svelte/icons/strikethrough';
+	import Code from '@lucide/svelte/icons/code';
+	import Link from '@lucide/svelte/icons/link';
+	import Hash from '@lucide/svelte/icons/hash';
 	import type { FieldController } from '../core/codec/index.js';
 
 	type LeafWithView = FieldController & { view?: EditorView };
@@ -55,14 +63,16 @@
 	}
 	let { getActiveLeaf }: Props = $props();
 
-	/** The six content formatting marks (VISUAL_EDITOR_UIUX §Formatting); `anchor` is a 7th, separately rendered disabled (see the button below). */
-	const MARKS: { name: string; label: string; title: string }[] = [
-		{ name: 'strong', label: 'B', title: 'Bold (Mod-B)' },
-		{ name: 'em', label: 'I', title: 'Emphasis (Mod-I)' },
-		{ name: 'underline', label: 'U', title: 'Underline (Mod-U)' },
-		{ name: 'strike', label: 'S', title: 'Strikethrough' },
-		{ name: 'code', label: '<>', title: 'Code' },
-		{ name: 'link', label: 'Link', title: 'Link' }
+	/** Mark size — the shared control-glyph rule for the popover icons (AESTHETIC §Icons). */
+	const GLYPH = 15;
+	/** The six content formatting marks (VISUAL_EDITOR_UIUX §Formatting); `anchor` is a 7th, separately rendered disabled (see the button below). Each carries its Lucide glyph — the icon *is* the label (AESTHETIC §Icons: a glyph names its action). */
+	const MARKS: { name: string; icon: Component; title: string }[] = [
+		{ name: 'strong', icon: Bold, title: 'Bold (Mod-B)' },
+		{ name: 'em', icon: Italic, title: 'Emphasis (Mod-I)' },
+		{ name: 'underline', icon: Underline, title: 'Underline (Mod-U)' },
+		{ name: 'strike', icon: Strikethrough, title: 'Strikethrough' },
+		{ name: 'code', icon: Code, title: 'Code' },
+		{ name: 'link', icon: Link, title: 'Link' }
 	];
 
 	let open = $state(false);
@@ -208,6 +218,7 @@
 			<Popover.Content
 				customAnchor={anchor}
 				side="top"
+				align="center"
 				sideOffset={8}
 				trapFocus={false}
 				onOpenAutoFocus={(e: Event) => e.preventDefault()}
@@ -246,14 +257,16 @@
 						     a labelled group is the honest description (issue #19). -->
 						<div class="qm-format-buttons" role="group" aria-label="Formatting">
 							{#each MARKS as m (m.name)}
+								{@const Icon = m.icon}
 								<button
 									type="button"
 									class="qm-mark-btn"
 									class:active={activeMarks[m.name]}
 									title={m.title}
+									aria-label={m.title}
 									data-testid={`mark-${m.name}`}
 									onmousedown={keepFocus}
-									onclick={() => toggle(m.name)}>{m.label}</button
+									onclick={() => toggle(m.name)}><Icon size={GLYPH} /></button
 								>
 							{/each}
 							<button
@@ -261,7 +274,8 @@
 								class="qm-mark-btn"
 								disabled
 								title="Anchor identity marks are decoration-only in the codec — adding one at an arbitrary selection needs a codec seam field.ts does not expose yet (prose/quillmark-issues/0003). Deferred past Phase 4b."
-								data-testid="mark-anchor">#</button
+								aria-label="Anchor (deferred)"
+								data-testid="mark-anchor"><Hash size={GLYPH} /></button
 							>
 						</div>
 					{/if}
@@ -282,25 +296,56 @@
 		--_qm-space: var(--qm-space, 0.25rem);
 		--_qm-space-half: calc(var(--_qm-space) / 2);
 		--_qm-space-2: calc(var(--_qm-space) * 2);
+		/* Type scale, re-minted here for the same portal reason as the geometry rungs
+		   above (THEMING §"Base — typography & text"); this surface reads only body. */
+		--_qm-text-body: var(--qm-font-size, 0.875rem);
 
 		display: flex;
-		background: var(--qm-popover-bg, #fff);
+		/* Translucent pill over the content (VISUAL_EDITOR_UIUX §Formatting): the
+		   theme bg mixed toward transparent + a backdrop blur, so the page reads
+		   faintly through it — the one floating surface earns the lift (SURFACES
+		   §Elevation). A consumer's opaque --qm-popover-bg still tints the mix. */
+		background: color-mix(in srgb, var(--qm-popover-bg, #fff) 82%, transparent);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
 		border: 1px solid var(--qm-border, #d4d4d4);
 		border-radius: var(--_qm-radius);
-		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
 		padding: var(--_qm-space);
+		/* Scale-in on mount; the {#if open} guard mounts fresh each raise, so the
+		   keyframe runs once per appearance. Animates the inner pill only — never the
+		   outer floating-ui wrapper, whose transform positions it. */
+		animation: qm-pop-in 0.12s ease-out;
+	}
+	@keyframes qm-pop-in {
+		from {
+			opacity: 0;
+			transform: scale(0.94);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.qm-format-popover {
+			animation: none;
+		}
 	}
 	.qm-format-buttons {
 		display: flex;
 		gap: var(--_qm-space-half);
 	}
 	.qm-mark-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		border: 1px solid transparent;
 		background: transparent;
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
 		font: inherit;
-		font-size: 0.78rem;
+		font-size: var(--_qm-text-body);
 		line-height: 1;
 		padding: var(--_qm-space) var(--_qm-space-2);
 		color: var(--qm-text, #1a1a1a);
@@ -323,7 +368,7 @@
 	}
 	.qm-link-input {
 		font: inherit;
-		font-size: 0.78rem;
+		font-size: var(--_qm-text-body);
 		padding: var(--_qm-space) var(--_qm-space-2);
 		border: 1px solid var(--qm-border, #d4d4d4);
 		border-radius: var(--_qm-radius-inner);

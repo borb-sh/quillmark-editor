@@ -16,6 +16,7 @@
 	import type { Content, QuillFieldSchema } from '../core/index.js';
 	import { emptyContent } from '../core/codec/index.js';
 	import { IdSeq, elementControl } from './structure.js';
+	import X from '@lucide/svelte/icons/x';
 	import TextField from './TextField.svelte';
 	import ProseArrayElement from './ProseArrayElement.svelte';
 
@@ -129,7 +130,7 @@
 				class="qm-mini qm-remove"
 				title="Remove"
 				data-testid={testid ? `${testid}-remove-${k}` : undefined}
-				onclick={() => remove(k)}>✕</button
+				onclick={() => remove(k)}><X size={14} /></button
 			>
 		</div>
 	{/each}
@@ -148,8 +149,8 @@
 		gap: var(--_qm-space-2);
 	}
 	.qm-field-label {
-		font-size: 0.75rem;
-		font-weight: 600;
+		font-size: var(--_qm-text-label);
+		font-weight: var(--_qm-weight-label);
 		color: var(--qm-label, #555);
 	}
 	.qm-array-row {
@@ -161,11 +162,13 @@
 		flex: 1;
 	}
 	.qm-mini {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		border: 1px solid var(--qm-border, #d4d4d4);
 		background: var(--qm-field-bg, #fff);
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
-		font-size: 0.7rem;
 		line-height: 1;
 		padding: var(--_qm-space-half) var(--_qm-space);
 	}
@@ -193,6 +196,19 @@
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
 		padding: var(--_qm-space) var(--_qm-space-2);
-		font-size: 0.85rem;
+		font-size: var(--_qm-text-body);
+		/* Recede until engaged (issue #58 §6): the sole foot add rests dim — like the
+		   card stack's last trigger — and surfaces on hover of the field or on focus. */
+		opacity: 0.35;
+		transition: opacity 120ms ease;
+	}
+	.qm-array:hover .qm-add-el,
+	.qm-add-el:focus-visible {
+		opacity: 1;
+	}
+	@media (hover: none) {
+		.qm-add-el {
+			opacity: 0.5;
+		}
 	}
 </style>

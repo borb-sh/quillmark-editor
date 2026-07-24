@@ -6,6 +6,10 @@
   reveal of `.qm-card-reorder` is owned by the parent card's CSS.
 -->
 <script lang="ts">
+	import ChevronUp from '@lucide/svelte/icons/chevron-up';
+	import ChevronDown from '@lucide/svelte/icons/chevron-down';
+	import X from '@lucide/svelte/icons/x';
+
 	interface Props {
 		isFirst: boolean;
 		isLast: boolean;
@@ -15,6 +19,9 @@
 		testidPrefix?: string;
 	}
 	let { isFirst, isLast, onMoveUp, onMoveDown, onDelete, testidPrefix }: Props = $props();
+
+	/** Control-glyph size — the shared rule for the reorder/delete icons (AESTHETIC §Icons). */
+	const GLYPH = 14;
 </script>
 
 <div class="qm-card-controls">
@@ -25,7 +32,7 @@
 			title="Move up"
 			disabled={isFirst}
 			data-testid={testidPrefix ? `${testidPrefix}-up` : undefined}
-			onclick={onMoveUp}>▲</button
+			onclick={onMoveUp}><ChevronUp size={GLYPH} /></button
 		>
 		<button
 			type="button"
@@ -33,7 +40,7 @@
 			title="Move down"
 			disabled={isLast}
 			data-testid={testidPrefix ? `${testidPrefix}-down` : undefined}
-			onclick={onMoveDown}>▼</button
+			onclick={onMoveDown}><ChevronDown size={GLYPH} /></button
 		>
 	</div>
 	<button
@@ -41,7 +48,7 @@
 		class="qm-ctrl qm-card-delete"
 		title="Delete card"
 		data-testid={testidPrefix ? `${testidPrefix}-delete` : undefined}
-		onclick={onDelete}>✕</button
+		onclick={onDelete}><X size={GLYPH} /></button
 	>
 </div>
 
@@ -58,11 +65,13 @@
 		transition: opacity 0.12s ease;
 	}
 	.qm-ctrl {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		border: 1px solid var(--qm-border, #d4d4d4);
 		background: var(--qm-field-bg, #fff);
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
-		font-size: 0.7rem;
 		line-height: 1;
 		padding: var(--_qm-space-half) var(--_qm-space);
 		color: #444;

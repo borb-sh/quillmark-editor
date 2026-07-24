@@ -46,6 +46,8 @@
 		humanize,
 		provenanceMap,
 		provenanceByCardIndex,
+		bodyByCardIndex,
+		bodyGhostText,
 		type CardModel
 	} from './structure.js';
 	import {
@@ -343,7 +345,8 @@
 			ext?: Record<string, unknown>;
 		},
 		cardSchema: Parameters<typeof fieldModels>[0] | undefined,
-		resolvedFields: ResolvedField[]
+		resolvedFields: ResolvedField[],
+		resolvedBody: ResolvedField | null
 	): CardModel {
 		const values: Record<string, unknown> = {};
 		for (const p of card.payloadItems)
@@ -362,7 +365,8 @@
 			values,
 			provenance: provenanceMap(resolvedFields),
 			sections,
-			hasBody: bodyEnabled(cardSchema)
+			hasBody: bodyEnabled(cardSchema),
+			bodyGhost: bodyGhostText(resolvedBody)
 		};
 	}
 
@@ -371,7 +375,7 @@
 		const schema = quill.schema;
 		const main = doc.main; // allocate once
 		const cards = doc.cards; // allocate once
-		// The provenance channel (FIELD_PROVENANCE): one whole-doc resolve per
+		// The provenance channel (FIELD_PROVENANCE → #64): one whole-doc resolve per
 		// derive, feeding the ghosted `default:` only. Guarded — provenance is
 		// chrome, so a resolve failure degrades to no ghosts, never a blank form.
 		let resolved: Resolved | undefined;
@@ -381,8 +385,17 @@
 			console.error('[quillmark/editor] quill.resolve failed; ghosts fall back to none', e);
 		}
 		const byCard = provenanceByCardIndex(resolved);
+		const bodyByCard = bodyByCardIndex(resolved);
 		return {
-			main: buildCard('main', true, 'main', main, schema.main, resolved?.main.fields ?? []),
+			main: buildCard(
+				'main',
+				true,
+				'main',
+				main,
+				schema.main,
+				resolved?.main.fields ?? [],
+				resolved?.main.body ?? null
+			),
 			cards: cards.map((c, i) =>
 				buildCard(
 					cardIds[i] ?? `orphan${i}`,
@@ -390,7 +403,8 @@
 					c.kind,
 					c,
 					schema.card_kinds?.[c.kind],
-					byCard.get(i) ?? []
+					byCard.get(i) ?? [],
+					bodyByCard.get(i) ?? null
 				)
 			)
 		};
@@ -451,7 +465,7 @@
 	     never hits it); if it becomes reachable, render the list with add/retype
 	     disabled rather than gating the whole thing away. -->
 	{#if kinds.length}
-		{@render addAffordance(0)}
+		{@render addAffordance(0, model.cards.length === 0)}
 		{#each model.cards as c, i (c.id)}
 			<Card
 				card={c}
@@ -467,15 +481,15 @@
 				{register}
 				{unregister}
 			/>
-			{@render addAffordance(i + 1)}
+			{@render addAffordance(i + 1, i === model.cards.length - 1)}
 		{/each}
 	{/if}
 </div>
 
 <FormatPopover {getActiveLeaf} />
 
-{#snippet addAffordance(atIndex: number)}
-	<div class="qm-add-card">
+{#snippet addAffordance(atIndex: number, isLast: boolean)}
+	<div class="qm-add-card" class:is-last={isLast}>
 		{#if kinds.length === 1}
 			<button
 				type="button"
@@ -520,6 +534,19 @@
 		--_qm-space-3: calc(var(--_qm-space) * 3);
 		--_qm-space-4: calc(var(--_qm-space) * 4);
 
+		/* Type rhythm (SURFACES §Rhythm, THEMING §"Base — typography & text"). Two
+		   public dials — --qm-font-size (body anchor), --qm-font-scale (ramp ratio)
+		   — derive the closed rung set every surface reads: a step up (title) and two
+		   down (label, meta). Weight is a fixed convention, not a dial: label 600,
+		   secondary 500. Minted here and re-minted on FormatPopover (portals out of
+		   this root), gated by check:type. */
+		--_qm-text-body: var(--qm-font-size, 0.875rem);
+		--_qm-text-title: calc(var(--_qm-text-body) * var(--qm-font-scale, 1.125));
+		--_qm-text-label: calc(var(--_qm-text-body) / var(--qm-font-scale, 1.125));
+		--_qm-text-meta: calc(var(--_qm-text-label) / var(--qm-font-scale, 1.125));
+		--_qm-weight-label: 600;
+		--_qm-weight-soft: 500;
+
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
@@ -535,10 +562,34 @@
 		background: transparent;
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
-		padding: var(--_qm-space) var(--_qm-space-4);
-		font-size: 0.82rem;
+		padding: var(--_qm-space-half) var(--_qm-space-4);
+		font-size: var(--_qm-text-body);
 		color: #555;
 		list-style: none;
+		/* Recede until engaged (issue #58 §6; AESTHETIC §"minimal UI"): each gap's
+		   trigger is invisible at rest and surfaces on hover or keyboard focus, so the
+		   stack reads as content, not a toolbar per gap. The LAST gap keeps a dim
+		   label — exactly one entry point stays visible. Opacity (not display) so the
+		   pill reserves its height and the row does not jump on reveal. */
+		opacity: 0;
+		transition: opacity 120ms ease;
+	}
+	.qm-add-card:hover .qm-add-btn,
+	.qm-add-btn:focus-visible {
+		opacity: 1;
+	}
+	.qm-add-card.is-last .qm-add-btn {
+		opacity: 0.35;
+	}
+	.qm-add-card.is-last:hover .qm-add-btn,
+	.qm-add-card.is-last .qm-add-btn:focus-visible {
+		opacity: 1;
+	}
+	/* Touch has no hover — keep a faint always-on affordance so add stays reachable. */
+	@media (hover: none) {
+		.qm-add-btn {
+			opacity: 0.3;
+		}
 	}
 	.qm-add-btn:hover {
 		border-color: #9a9a9a;

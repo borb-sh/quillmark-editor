@@ -8,10 +8,11 @@
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import type { Document, Addr, Diagnostic } from '../core/index.js';
 	import type { FieldController } from '../core/codec/index.js';
-	import type { CardModel } from './structure.js';
-	import { packRows, humanize } from './structure.js';
+	import type { CardModel, FieldModel } from './structure.js';
+	import { packRows, humanize, initialExpandedGroup } from './structure.js';
 	import Field from './Field.svelte';
 	import ProseField from './ProseField.svelte';
 	import CardControls from './CardControls.svelte';
@@ -69,22 +70,84 @@
 			if (incoming !== localTitle) localTitle = incoming;
 		});
 	});
+
+	// Inline-editable title (issue #58 §8): select-all on entry so a title reads as
+	// text you replace, and Enter/Escape as commit/revert. Rename stays LIVE on
+	// input — `titleAtFocus` is the pre-edit value Escape rolls back to.
+	let titleAtFocus = '';
+	function onTitleFocus(e: FocusEvent): void {
+		titleAtFocus = localTitle;
+		(e.currentTarget as HTMLInputElement).select();
+	}
+	// A mouse press on an UNFOCUSED title would place a caret on mouseup, collapsing
+	// the focus-time select-all. Take focus manually and suppress that caret so a
+	// click-to-enter selects all too; a press while already focused stays normal, so
+	// clicking mid-title to place the caret still works.
+	function onTitleMousedown(e: MouseEvent): void {
+		const el = e.currentTarget as HTMLInputElement;
+		if (document.activeElement !== el) {
+			e.preventDefault();
+			el.focus();
+		}
+	}
+	function onTitleKeydown(e: KeyboardEvent): void {
+		const el = e.currentTarget as HTMLInputElement;
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			el.blur(); // commit — the live value already persisted on input
+		} else if (e.key === 'Escape') {
+			e.preventDefault();
+			if (localTitle !== titleAtFocus) {
+				localTitle = titleAtFocus;
+				ops.rename(titleAtFocus); // roll back the live edits
+			}
+			el.blur();
+		}
+	}
+
+	// Group accordion (issue #60). Ungrouped fields (`group == null`) render above,
+	// always visible; grouped sections collapse into a one-open-at-a-time accordion.
+	const ungrouped = $derived(card.sections.filter((s) => s.group == null));
+	const grouped = $derived(card.sections.filter((s) => s.group != null));
+
+	// Ephemeral session state — the open group's id (`null` = all collapsed). Seeded
+	// ONCE from the card's shape (structure.initialExpandedGroup); Card is keyed by
+	// stable id, so this survives the VisualEditor re-derive that reassigns `card`
+	// and resets only on a remount (reload). It is NOT reconciled to later section
+	// changes — a retype is the one reshape, and it reads fine to keep the user's
+	// open group where it still exists.
+	// svelte-ignore state_referenced_locally
+	let expanded = $state<string | null>(initialExpandedGroup(card.sections, card.hasBody));
+	/** Toggle a group: open it (closing any other), or collapse it if already open. */
+	function toggleGroup(group: string): void {
+		expanded = expanded === group ? null : group;
+	}
 </script>
 
 <section class="qm-card" class:qm-main={card.isMain} class:qm-active={active}>
 	{#if !card.isMain}
 		<header class="qm-card-header">
-			<input
-				class="qm-card-title"
-				value={localTitle}
-				placeholder={card.titlePlaceholder}
-				aria-label="Card title"
-				data-testid={`card-title-${index}`}
-				oninput={(e) => {
-					localTitle = (e.currentTarget as HTMLInputElement).value;
-					ops.rename(localTitle);
-				}}
-			/>
+			<!-- Autosize: the sizer span's ::after mirrors the text and dictates the grid
+			     cell width, so the overlaid input grows with content and reads as text,
+			     not a persistent box (issue #58 §8). `data-value` falls back to the
+			     placeholder so an empty title still reserves its resolved-title width. -->
+			<span class="qm-card-title-sizer" data-value={localTitle || card.titlePlaceholder}>
+				<input
+					class="qm-card-title"
+					value={localTitle}
+					placeholder={card.titlePlaceholder}
+					aria-label="Card title"
+					size="1"
+					data-testid={`card-title-${index}`}
+					onmousedown={onTitleMousedown}
+					onfocus={onTitleFocus}
+					onkeydown={onTitleKeydown}
+					oninput={(e) => {
+						localTitle = (e.currentTarget as HTMLInputElement).value;
+						ops.rename(localTitle);
+					}}
+				/>
+			</span>
 			<div class="qm-card-header-right">
 				{#if kinds.length > 1}
 					<select
@@ -120,32 +183,41 @@
 	{/if}
 
 	<div class="qm-card-body">
-		{#each card.sections as section (section.group ?? '_ungrouped')}
+		<!-- Ungrouped fields render above the accordion, always visible (issue #60):
+		     a label-less section has no header to toggle, and these read as the card's
+		     primary fields. -->
+		{#each ungrouped as section (section.group ?? '_ungrouped')}
 			<div class="qm-section">
-				{#if section.label}
-					<div class="qm-section-label">{section.label}</div>
-				{/if}
 				{#each packRows(section.fields) as row, ri (ri)}
-					<div class="qm-row" class:packed={row.length > 1}>
-						{#each row as f (f.name)}
-							<Field
-								field={f}
-								value={card.values[f.name]}
-								provenance={card.provenance[f.name]}
-								{doc}
-								proseAddr={ops.makeAddr(f.name)}
-								leafKey={ops.leafKey(f.name)}
-								onCommitScalar={(v) => ops.commit(f.name, v)}
-								{onFocus}
-								{onCaretMove}
-								{register}
-								{unregister}
-								diagnostics={ops.diagFor(f.name)}
-								testid={`${base}-${f.name}`}
-							/>
+					{@render fieldRow(row)}
+				{/each}
+			</div>
+		{/each}
+
+		<!-- Group accordion (issue #60): each `ui.group` is a collapsible section,
+		     one open at a time. The header toggles; the panel slides via a
+		     0fr↔1fr grid row (200ms); an open section colors its chevron and left
+		     rule to the active hue. -->
+		{#each grouped as section (section.group)}
+			{@const isOpen = expanded === section.group}
+			<div class="qm-group" class:qm-open={isOpen}>
+				<button
+					type="button"
+					class="qm-group-header"
+					aria-expanded={isOpen}
+					data-testid={`group-${base}-${section.group}`}
+					onclick={() => toggleGroup(section.group as string)}
+				>
+					<ChevronRight class="qm-group-chevron" size={14} />
+					<span class="qm-group-label">{section.label}</span>
+				</button>
+				<div class="qm-group-panel">
+					<div class="qm-group-panel-inner">
+						{#each packRows(section.fields) as row, ri (ri)}
+							{@render fieldRow(row)}
 						{/each}
 					</div>
-				{/each}
+				</div>
 			</div>
 		{/each}
 
@@ -156,6 +228,7 @@
 					{doc}
 					addr={ops.makeAddr(undefined)}
 					label="Body"
+					placeholder={card.bodyGhost}
 					leafKey={ops.leafKey(undefined)}
 					{onFocus}
 					{onCaretMove}
@@ -168,6 +241,30 @@
 		{/if}
 	</div>
 </section>
+
+<!-- One packed row of fields — shared by the ungrouped block and the accordion
+     panels so both render a group's fields identically (issue #60). -->
+{#snippet fieldRow(row: FieldModel[])}
+	<div class="qm-row" class:packed={row.length > 1}>
+		{#each row as f (f.name)}
+			<Field
+				field={f}
+				value={card.values[f.name]}
+				provenance={card.provenance[f.name]}
+				{doc}
+				proseAddr={ops.makeAddr(f.name)}
+				leafKey={ops.leafKey(f.name)}
+				onCommitScalar={(v) => ops.commit(f.name, v)}
+				{onFocus}
+				{onCaretMove}
+				{register}
+				{unregister}
+				diagnostics={ops.diagFor(f.name)}
+				testid={`${base}-${f.name}`}
+			/>
+		{/each}
+	</div>
+{/snippet}
 
 <style>
 	.qm-card {
@@ -201,15 +298,39 @@
 	.qm-card.qm-active :global(.qm-card-reorder) {
 		opacity: 1;
 	}
+	/* Autosize sizer (issue #58 §8): an inline-grid whose ::after mirrors the text
+	   into the single cell, so the overlaid input tracks its content width. Bounded
+	   to the header's free space (`min-width: 0` + `max-width: 100%`); the header's
+	   space-between keeps the controls right-aligned. The input inherits the type
+	   tokens (`font: inherit`) so the mirror and the input measure alike. */
+	.qm-card-title-sizer {
+		display: inline-grid;
+		align-items: center;
+		min-width: 0;
+		max-width: 100%;
+		font-size: var(--_qm-text-title);
+		font-weight: var(--_qm-weight-label);
+		font-family: inherit;
+	}
+	.qm-card-title-sizer::after {
+		content: attr(data-value) ' ';
+		grid-area: 1 / 1;
+		visibility: hidden;
+		white-space: pre;
+		min-width: 2ch;
+		/* Match the input's box model so the mirror and the input measure alike. */
+		padding: var(--_qm-space);
+		border: 1px solid transparent;
+	}
 	.qm-card-title {
-		flex: 1;
-		font-size: 1rem;
-		font-weight: 600;
+		grid-area: 1 / 1;
+		width: 100%;
+		min-width: 0;
+		font: inherit;
 		border: 1px solid transparent;
 		border-radius: var(--_qm-radius-inner);
 		padding: var(--_qm-space);
 		background: transparent;
-		font-family: inherit;
 	}
 	.qm-card-title:hover,
 	.qm-card-title:focus {
@@ -219,7 +340,7 @@
 	}
 	.qm-retype,
 	.qm-retype-btn {
-		font-size: 0.72rem;
+		font-size: var(--_qm-text-meta);
 		border: 1px solid var(--qm-border, #d4d4d4);
 		border-radius: var(--_qm-radius-inner);
 		background: var(--qm-field-bg, #fff);
@@ -237,13 +358,77 @@
 		flex-direction: column;
 		gap: var(--_qm-space-2);
 	}
-	.qm-section-label {
-		font-size: 0.68rem;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
+	/* Group accordion (issue #60, VISUAL_EDITOR_UIUX §Fields). The header carries the
+	   uppercase meta-label treatment as a toggle; the panel slides via a 0fr↔1fr grid
+	   row so the height animates without a magic max-height. */
+	.qm-group {
+		display: flex;
+		flex-direction: column;
+	}
+	.qm-group-header {
+		display: flex;
+		align-items: center;
+		gap: var(--_qm-space);
+		width: 100%;
+		border: none;
+		background: transparent;
+		padding: 0 0 var(--_qm-space-half) 0;
+		cursor: pointer;
 		color: var(--qm-section-label, #8a8a8a);
 		border-bottom: 1px solid var(--qm-border, #ececec);
-		padding-bottom: var(--_qm-space-half);
+		text-align: left;
+	}
+	.qm-group-label {
+		font-size: var(--_qm-text-meta);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		font-weight: var(--_qm-weight-soft);
+	}
+	/* Chevron: rotates 90° and takes the active hue when its section is open. */
+	.qm-group-header :global(.qm-group-chevron) {
+		flex-shrink: 0;
+		transition:
+			transform 200ms ease,
+			color 200ms ease;
+	}
+	.qm-group.qm-open .qm-group-header {
+		color: var(--qm-focus-ring, #2563eb);
+	}
+	.qm-group.qm-open .qm-group-header :global(.qm-group-chevron) {
+		transform: rotate(90deg);
+	}
+	/* Sliding panel: the grid track goes 0fr→1fr; the inner clips at min-height 0.
+	   An open panel gains an accent left rule. */
+	.qm-group-panel {
+		display: grid;
+		grid-template-rows: 0fr;
+		transition: grid-template-rows 200ms ease;
+	}
+	.qm-group.qm-open .qm-group-panel {
+		grid-template-rows: 1fr;
+	}
+	.qm-group-panel-inner {
+		display: flex;
+		flex-direction: column;
+		gap: var(--_qm-space-2);
+		min-height: 0;
+		overflow: hidden;
+		padding: var(--_qm-space-2) 0 0 0;
+		border-left: 2px solid transparent;
+		transition:
+			padding-left 200ms ease,
+			border-color 200ms ease;
+	}
+	.qm-group.qm-open .qm-group-panel-inner {
+		padding-left: var(--_qm-space-3);
+		border-left-color: var(--qm-focus-ring, #2563eb);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.qm-group-panel,
+		.qm-group-panel-inner,
+		.qm-group-header :global(.qm-group-chevron) {
+			transition: none;
+		}
 	}
 	.qm-row {
 		display: flex;
@@ -261,8 +446,8 @@
 		gap: var(--_qm-space);
 	}
 	.qm-field-label {
-		font-size: 0.75rem;
-		font-weight: 600;
+		font-size: var(--_qm-text-label);
+		font-weight: var(--_qm-weight-label);
 		color: var(--qm-label, #555);
 	}
 </style>

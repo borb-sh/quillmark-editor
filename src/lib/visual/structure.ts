@@ -58,13 +58,19 @@ export interface CardModel {
 	values: Record<string, unknown>;
 	/**
 	 * Field name → its resolved provenance row (`{ value, source }`), parallel to
-	 * `values` (FIELD_PROVENANCE). The channel that feeds chrome — the ghosted
+	 * `values` (FIELD_PROVENANCE → #64). The channel that feeds chrome — the ghosted
 	 * `default:` and any authored/default/zero affordance — NEVER the control
 	 * value. Empty when `quill.resolve` is unavailable.
 	 */
 	provenance: Record<string, ResolvedField>;
 	sections: GroupSection[];
 	hasBody: boolean;
+	/**
+	 * The empty-body ghost — the resolved body `default:` as placeholder text
+	 * (issue #58 §9), or undefined when the body is authored / has no default.
+	 * The body prose leaf ghosts it exactly as scalars ghost their `default:`.
+	 */
+	bodyGhost?: string;
 }
 
 /**
@@ -90,11 +96,36 @@ export function provenanceByCardIndex(
 	return new Map((resolved?.cards ?? []).map((c) => [c.index, c.fields]));
 }
 
+/**
+ * Composable cards' resolved BODY rows keyed by document index — the `body`
+ * sibling `resolve` hangs off each card (issue #58 §9), parallel to
+ * {@link provenanceByCardIndex}'s `fields`. Empty map (→ no body ghost) when
+ * `resolved` is absent.
+ */
+export function bodyByCardIndex(resolved: Resolved | undefined): Map<number, ResolvedField | null> {
+	return new Map((resolved?.cards ?? []).map((c) => [c.index, c.body]));
+}
+
 /** The ghost a field shows when unset: the resolved `default:` value the render
  * would use (`source === 'default'`), else undefined — an `authored` field shows
  * its value, a `zero` field has no default to ghost. */
 export function ghostDefault(row: ResolvedField | undefined): unknown {
 	return row?.source === 'default' ? row.value : undefined;
+}
+
+/** A ghost value's string form, or undefined for null/object (only text ghosts render a placeholder). */
+export function stringifyGhost(ghost: unknown): string | undefined {
+	return ghost != null && typeof ghost !== 'object' ? String(ghost) : undefined;
+}
+
+/** The empty-body ghost: the resolved body `default:` as placeholder text (issue
+ * #58 §9), or undefined when the body is authored / has no default. The body row
+ * is `resolve`'s `body` sibling (a `ResolvedField`, never a `fields` row); a
+ * richtext body resolves to a text render — the correct thing to display as a
+ * placeholder (FIELD_PROVENANCE → #64). Field's `defaultStr` derives from the
+ * same {@link stringifyGhost}. */
+export function bodyGhostText(body: ResolvedField | null | undefined): string | undefined {
+	return stringifyGhost(ghostDefault(body ?? undefined));
 }
 
 /** The control an array's ELEMENTS render as, from `items.type`. */
@@ -214,6 +245,23 @@ export function groupSections(
 		emitted.add(f.group);
 	}
 	return sections;
+}
+
+/**
+ * The group section a card's accordion opens on first mount (issue #60), or
+ * `null` for all-collapsed. Ungrouped fields render outside the accordion, so
+ * only `group != null` sections count. The rule keeps exactly one section's
+ * worth of fields visible when the card would otherwise read empty:
+ *   • one group → open it (the sole-group auto-expand, even with a body);
+ *   • many groups + a body leaf → all collapsed (the body carries the card);
+ *   • many groups + no body → open the first (nothing else fills the card).
+ * State is ephemeral session state the Card owns; this only seeds it.
+ */
+export function initialExpandedGroup(sections: GroupSection[], hasBody: boolean): string | null {
+	const grouped = sections.filter((s) => s.group != null);
+	if (grouped.length === 0) return null;
+	if (grouped.length === 1) return grouped[0].group ?? null;
+	return hasBody ? null : (grouped[0].group ?? null);
 }
 
 /**

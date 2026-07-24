@@ -1,4 +1,4 @@
-// The provenance channel (FIELD_PROVENANCE): `quill.resolve(doc)` mapped to the
+// The provenance channel (FIELD_PROVENANCE → #64): `quill.resolve(doc)` mapped to the
 // editor's name-keyed `provenance` map and the ghosted `default:` it feeds. The
 // pure helpers are unit-tested; the resolve behavior is asserted against the REAL
 // usaf_memo schema, so the authored↔default flip the ghost turns on is pinned to
@@ -6,7 +6,13 @@
 import { describe, it, expect } from 'vitest';
 import { Quill } from '$lib/core';
 import type { ResolvedField, Resolved } from '$lib/core';
-import { provenanceMap, provenanceByCardIndex, ghostDefault } from '$lib/visual/structure';
+import {
+	provenanceMap,
+	provenanceByCardIndex,
+	bodyByCardIndex,
+	bodyGhostText,
+	ghostDefault
+} from '$lib/visual/structure';
 import { loadFixtureTree } from '../helpers/fixtures.js';
 
 let cached: Quill | undefined;
@@ -58,6 +64,37 @@ describe('ghostDefault', () => {
 		expect(ghostDefault(row('a', 'A', 'authored'))).toBeUndefined();
 		expect(ghostDefault(row('a', '', 'zero'))).toBeUndefined();
 		expect(ghostDefault(undefined)).toBeUndefined();
+	});
+});
+
+describe('bodyByCardIndex (issue #58 §9)', () => {
+	const resolved = {
+		main: { fields: [], body: row('body', 'M', 'default') },
+		cards: [
+			{ kind: 'k', index: 0, fields: [], body: row('body', 'B0', 'default') },
+			{ kind: 'k', index: 2, fields: [], body: null }
+		]
+	} as unknown as Resolved;
+	it('keys card body rows by document index', () => {
+		const byCard = bodyByCardIndex(resolved);
+		expect(byCard.get(0)?.value).toBe('B0');
+		expect(byCard.get(2)).toBeNull();
+	});
+	it('is empty for an absent resolve', () => {
+		expect(bodyByCardIndex(undefined).size).toBe(0);
+	});
+});
+
+describe('bodyGhostText (issue #58 §9)', () => {
+	it('renders a default-sourced body as placeholder text, nothing otherwise', () => {
+		expect(bodyGhostText(row('body', 'Write it here', 'default'))).toBe('Write it here');
+		expect(bodyGhostText(row('body', 'authored body', 'authored'))).toBeUndefined();
+		expect(bodyGhostText(row('body', '', 'zero'))).toBeUndefined();
+		expect(bodyGhostText(null)).toBeUndefined();
+		expect(bodyGhostText(undefined)).toBeUndefined();
+	});
+	it('does not ghost an object-shaped default (only text renders as a placeholder)', () => {
+		expect(bodyGhostText(row('body', { lines: [] }, 'default'))).toBeUndefined();
 	});
 });
 

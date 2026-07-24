@@ -93,7 +93,7 @@ export type {
 // Resolved-value view (`quill.resolve(doc)`) — value + provenance per declared
 // field. The form reads AUTHORED values (`values`), not this render projection;
 // the VisualEditor consumes `resolve` on a parallel channel for provenance only —
-// the ghosted `default:` and the `FieldSource` rung (FIELD_PROVENANCE), never the
+// the ghosted `default:` and the `FieldSource` rung (FIELD_PROVENANCE → #64), never the
 // control value.
 export type {
 	FieldSource,

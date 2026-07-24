@@ -17,7 +17,7 @@
 	import type { Document, Addr, Diagnostic, ResolvedField } from '../core/index.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import type { FieldModel } from './structure.js';
-	import { enumValues, ghostDefault } from './structure.js';
+	import { enumValues, ghostDefault, stringifyGhost } from './structure.js';
 	import ProseField from './ProseField.svelte';
 	import TextField from './TextField.svelte';
 	import EnumField from './EnumField.svelte';
@@ -31,7 +31,7 @@
 	interface Props {
 		field: FieldModel;
 		value: unknown;
-		/** This field's resolved provenance row (FIELD_PROVENANCE) — the ghost's
+		/** This field's resolved provenance row (FIELD_PROVENANCE → #64) — the ghost's
 		 * source. Feeds the placeholder / fallback only, never `value`. */
 		provenance?: ResolvedField;
 		doc: Document;
@@ -67,9 +67,7 @@
 	// fallbacks); `defaultStr` its string form (the text placeholder). An
 	// object-valued default does not ghost.
 	const ghost = $derived(ghostDefault(provenance));
-	const defaultStr = $derived(
-		ghost != null && typeof ghost !== 'object' ? String(ghost) : undefined
-	);
+	const defaultStr = $derived(stringifyGhost(ghost));
 </script>
 
 <div class="qm-field" class:compact={field.compact}>
@@ -167,8 +165,8 @@
 		flex: 1 1 12rem;
 	}
 	.qm-field-label {
-		font-size: 0.75rem;
-		font-weight: 600;
+		font-size: var(--_qm-text-label);
+		font-weight: var(--_qm-weight-label);
 		color: var(--qm-label, #555);
 	}
 </style>

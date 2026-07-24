@@ -59,6 +59,13 @@ popover over the active leaf: `strong`, `emph`, `underline`, `strike`, `code`,
 to ride an accessory bar above the keyboard (a popover fights the OS selection
 handles) — the touch bar is deferred (§Open).
 
+The popover is a translucent, backdrop-blurred pill (SURFACES §Elevation — the one
+floating surface earns the lift), top-center over the selection and flipping below
+when it nears the viewport top, scaling in on each raise. Each mark is a Lucide
+glyph, the icon naming its action (AESTHETIC §Icons) — bold, italic, underline,
+strikethrough, code, link — with `anchor` shown disabled (its codec seam is
+deferred, #43).
+
 **Input rules — typist shorthand, no chrome.** `**`, `*`, `~~`, `` ` ``, `# `,
 `- `, `1. `, `> `, and a ` ``` ` code fence. These cover the marks and the block
 shorthands (headings, lists, quote, code); underline is keymap-only (`Mod-u`), and
@@ -75,6 +82,9 @@ is a separate concern (the island controls), not gated by this.
 
 - **Field form** — the schema's fields as controls, laid out from `ui` hints.
   Layout density carries web-app's system: `ui.group`/`ui.compact` drive columns.
+  `ui.group` sections are a collapsible accordion — one open at a time, the sole
+  group (or, body-less, the first) auto-expanded; ungrouped fields stay above it,
+  always visible.
 - **Prose leaf** — the body and each rich field as an inline WYSIWYG surface.
 - **Per-field state** — focus, inline diagnostics, and a ghosted `default:`
   placeholder (never written back — it lives in the schema). A `!must_fill`

@@ -6,7 +6,7 @@
   nested prose/array/object properties render a placeholder rather than recurse.
 
   A property's ghosted `default:` is the static schema `sub.default`, not the
-  resolved provenance the top-level ghosts read (FIELD_PROVENANCE) — `resolve`
+  resolved provenance the top-level ghosts read (FIELD_PROVENANCE → #64) — `resolve`
   carries no per-property row (an object field resolves as one row whose value is
   the whole object). Thread it through `ghostDefault` once resolve exposes
   per-property provenance.
@@ -110,11 +110,14 @@
 		gap: var(--_qm-space-half);
 	}
 	.qm-object-label {
-		font-size: 0.75rem;
+		font-size: var(--_qm-text-label);
+		/* Soft (500), a rung under the top-level field label's 600: a nested object
+		   prop reads as secondary. Resolves the label-weight disagreement (#61). */
+		font-weight: var(--_qm-weight-soft);
 		color: var(--qm-label, #555);
 	}
 	.qm-unsupported {
-		font-size: 0.8rem;
+		font-size: var(--_qm-text-body);
 		color: #999;
 		font-style: italic;
 	}
