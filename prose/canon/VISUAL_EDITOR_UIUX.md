@@ -82,6 +82,9 @@ is a separate concern (the island controls), not gated by this.
 
 - **Field form** — the schema's fields as controls, laid out from `ui` hints.
   Layout density carries web-app's system: `ui.group`/`ui.compact` drive columns.
+  `ui.group` sections are a collapsible accordion — one open at a time, the sole
+  group (or, body-less, the first) auto-expanded; ungrouped fields stay above it,
+  always visible.
 - **Prose leaf** — the body and each rich field as an inline WYSIWYG surface.
 - **Per-field state** — focus, inline diagnostics, and a ghosted `default:`
   placeholder (never written back — it lives in the schema). A `!must_fill`

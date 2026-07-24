@@ -8,10 +8,11 @@
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import type { Document, Addr, Diagnostic } from '../core/index.js';
 	import type { FieldController } from '../core/codec/index.js';
-	import type { CardModel } from './structure.js';
-	import { packRows, humanize } from './structure.js';
+	import type { CardModel, FieldModel } from './structure.js';
+	import { packRows, humanize, initialExpandedGroup } from './structure.js';
 	import Field from './Field.svelte';
 	import ProseField from './ProseField.svelte';
 	import CardControls from './CardControls.svelte';
@@ -103,6 +104,24 @@
 			el.blur();
 		}
 	}
+
+	// Group accordion (issue #60). Ungrouped fields (`group == null`) render above,
+	// always visible; grouped sections collapse into a one-open-at-a-time accordion.
+	const ungrouped = $derived(card.sections.filter((s) => s.group == null));
+	const grouped = $derived(card.sections.filter((s) => s.group != null));
+
+	// Ephemeral session state — the open group's id (`null` = all collapsed). Seeded
+	// ONCE from the card's shape (structure.initialExpandedGroup); Card is keyed by
+	// stable id, so this survives the VisualEditor re-derive that reassigns `card`
+	// and resets only on a remount (reload). It is NOT reconciled to later section
+	// changes — a retype is the one reshape, and it reads fine to keep the user's
+	// open group where it still exists.
+	// svelte-ignore state_referenced_locally
+	let expanded = $state<string | null>(initialExpandedGroup(card.sections, card.hasBody));
+	/** Toggle a group: open it (closing any other), or collapse it if already open. */
+	function toggleGroup(group: string): void {
+		expanded = expanded === group ? null : group;
+	}
 </script>
 
 <section class="qm-card" class:qm-main={card.isMain} class:qm-active={active}>
@@ -164,32 +183,41 @@
 	{/if}
 
 	<div class="qm-card-body">
-		{#each card.sections as section (section.group ?? '_ungrouped')}
+		<!-- Ungrouped fields render above the accordion, always visible (issue #60):
+		     a label-less section has no header to toggle, and these read as the card's
+		     primary fields. -->
+		{#each ungrouped as section (section.group ?? '_ungrouped')}
 			<div class="qm-section">
-				{#if section.label}
-					<div class="qm-section-label">{section.label}</div>
-				{/if}
 				{#each packRows(section.fields) as row, ri (ri)}
-					<div class="qm-row" class:packed={row.length > 1}>
-						{#each row as f (f.name)}
-							<Field
-								field={f}
-								value={card.values[f.name]}
-								provenance={card.provenance[f.name]}
-								{doc}
-								proseAddr={ops.makeAddr(f.name)}
-								leafKey={ops.leafKey(f.name)}
-								onCommitScalar={(v) => ops.commit(f.name, v)}
-								{onFocus}
-								{onCaretMove}
-								{register}
-								{unregister}
-								diagnostics={ops.diagFor(f.name)}
-								testid={`${base}-${f.name}`}
-							/>
+					{@render fieldRow(row)}
+				{/each}
+			</div>
+		{/each}
+
+		<!-- Group accordion (issue #60): each `ui.group` is a collapsible section,
+		     one open at a time. The header toggles; the panel slides via a
+		     0fr↔1fr grid row (200ms); an open section colors its chevron and left
+		     rule to the active hue. -->
+		{#each grouped as section (section.group)}
+			{@const isOpen = expanded === section.group}
+			<div class="qm-group" class:qm-open={isOpen}>
+				<button
+					type="button"
+					class="qm-group-header"
+					aria-expanded={isOpen}
+					data-testid={`group-${base}-${section.group}`}
+					onclick={() => toggleGroup(section.group as string)}
+				>
+					<ChevronRight class="qm-group-chevron" size={14} />
+					<span class="qm-group-label">{section.label}</span>
+				</button>
+				<div class="qm-group-panel">
+					<div class="qm-group-panel-inner">
+						{#each packRows(section.fields) as row, ri (ri)}
+							{@render fieldRow(row)}
 						{/each}
 					</div>
-				{/each}
+				</div>
 			</div>
 		{/each}
 
@@ -213,6 +241,30 @@
 		{/if}
 	</div>
 </section>
+
+<!-- One packed row of fields — shared by the ungrouped block and the accordion
+     panels so both render a group's fields identically (issue #60). -->
+{#snippet fieldRow(row: FieldModel[])}
+	<div class="qm-row" class:packed={row.length > 1}>
+		{#each row as f (f.name)}
+			<Field
+				field={f}
+				value={card.values[f.name]}
+				provenance={card.provenance[f.name]}
+				{doc}
+				proseAddr={ops.makeAddr(f.name)}
+				leafKey={ops.leafKey(f.name)}
+				onCommitScalar={(v) => ops.commit(f.name, v)}
+				{onFocus}
+				{onCaretMove}
+				{register}
+				{unregister}
+				diagnostics={ops.diagFor(f.name)}
+				testid={`${base}-${f.name}`}
+			/>
+		{/each}
+	</div>
+{/snippet}
 
 <style>
 	.qm-card {
@@ -306,13 +358,78 @@
 		flex-direction: column;
 		gap: var(--_qm-space-2);
 	}
-	.qm-section-label {
+	/* Group accordion (issue #60, VISUAL_EDITOR_UIUX §Fields). The header repurposes
+	   the old `.qm-section-label` treatment (uppercase meta rule) as a toggle; the
+	   panel slides via a 0fr↔1fr grid row so the height animates without a magic
+	   max-height. */
+	.qm-group {
+		display: flex;
+		flex-direction: column;
+	}
+	.qm-group-header {
+		display: flex;
+		align-items: center;
+		gap: var(--_qm-space);
+		width: 100%;
+		border: none;
+		background: transparent;
+		padding: 0 0 var(--_qm-space-half) 0;
+		cursor: pointer;
+		color: var(--qm-section-label, #8a8a8a);
+		border-bottom: 1px solid var(--qm-border, #ececec);
+		text-align: left;
+	}
+	.qm-group-label {
 		font-size: var(--_qm-text-meta);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		color: var(--qm-section-label, #8a8a8a);
-		border-bottom: 1px solid var(--qm-border, #ececec);
-		padding-bottom: var(--_qm-space-half);
+		font-weight: var(--_qm-weight-soft);
+	}
+	/* Chevron: rotates 90° and takes the active hue when its section is open. */
+	.qm-group-header :global(.qm-group-chevron) {
+		flex-shrink: 0;
+		transition:
+			transform 200ms ease,
+			color 200ms ease;
+	}
+	.qm-group.qm-open .qm-group-header {
+		color: var(--qm-focus-ring, #2563eb);
+	}
+	.qm-group.qm-open .qm-group-header :global(.qm-group-chevron) {
+		transform: rotate(90deg);
+	}
+	/* Sliding panel: the grid track goes 0fr→1fr; the inner clips at min-height 0.
+	   An open panel gains an accent left rule. */
+	.qm-group-panel {
+		display: grid;
+		grid-template-rows: 0fr;
+		transition: grid-template-rows 200ms ease;
+	}
+	.qm-group.qm-open .qm-group-panel {
+		grid-template-rows: 1fr;
+	}
+	.qm-group-panel-inner {
+		display: flex;
+		flex-direction: column;
+		gap: var(--_qm-space-2);
+		min-height: 0;
+		overflow: hidden;
+		padding: var(--_qm-space-2) 0 0 0;
+		border-left: 2px solid transparent;
+		transition:
+			padding-left 200ms ease,
+			border-color 200ms ease;
+	}
+	.qm-group.qm-open .qm-group-panel-inner {
+		padding-left: var(--_qm-space-3);
+		border-left-color: var(--qm-focus-ring, #2563eb);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.qm-group-panel,
+		.qm-group-panel-inner,
+		.qm-group-header :global(.qm-group-chevron) {
+			transition: none;
+		}
 	}
 	.qm-row {
 		display: flex;
