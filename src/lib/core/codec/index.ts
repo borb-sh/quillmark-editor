@@ -18,9 +18,9 @@ export { pmToContent, lower, diffToBundle, insertReintroducesIslandSlot } from '
 export { usvToPM, pmToUsv, buildLineIndex } from './positions.js';
 export type { LineIndex } from './positions.js';
 
-// Marks + islands (the algebra and node bridge).
+// Marks + islands (the algebra and node bridge). The anchor guard the codec reads
+// is the boundary's own `isAnchorMark` (re-exported from `/core`), not a local twin.
 export {
-	isAnchor,
 	pmMarkFromContent,
 	contentDescriptorFromPM,
 	markKey,

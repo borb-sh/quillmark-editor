@@ -15,7 +15,7 @@
 // throws `IslandSlotInInsert`, so `insertReintroducesIslandSlot` flags it for the
 // field's `install` fallback.
 import type { Mark, Node as PMNode } from 'prosemirror-model';
-import { mapPos } from '../index.js';
+import { mapPos, isAnchorMark, isLinkMark } from '../index.js';
 import type {
 	ChangeBundle,
 	Delta,
@@ -452,8 +452,8 @@ interface FormattingGroup {
 }
 
 function descriptorOf(m: ContentMark): Record<string, unknown> {
-	if (m.type === 'link') return { type: 'link', url: (m as { url: string }).url };
-	if ('attrs' in m && m.type !== 'anchor')
+	if (isLinkMark(m)) return { type: 'link', url: m.url };
+	if ('attrs' in m && !isAnchorMark(m))
 		return { type: m.type, attrs: (m as { attrs: unknown }).attrs };
 	return { type: m.type };
 }
@@ -465,7 +465,7 @@ function groupFormatting(
 ): Map<string, FormattingGroup> {
 	const groups = new Map<string, FormattingGroup>();
 	for (const m of marks) {
-		if (m.type === 'anchor') continue;
+		if (isAnchorMark(m)) continue;
 		const descriptor = descriptorOf(m);
 		const key = markKey(descriptor);
 		let g = groups.get(key);

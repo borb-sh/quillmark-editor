@@ -10,8 +10,9 @@
 import type { Mark, Node as PMNode, Schema } from 'prosemirror-model';
 import type { Content, ContentContainer, ContentLine, ContentMark } from '@quillmark/wasm';
 import { ISLAND_SLOT } from './islands.js';
-import { isAnchor, markKey, pmMarkFromContent } from './marks.js';
+import { markKey, pmMarkFromContent } from './marks.js';
 import { isInlineSchema } from './schema.js';
+import { isAnchorMark } from '../index.js';
 
 /** Code points of `s` (USV units) — the iteration granularity the content speaks. */
 export function codePoints(s: string): string[] {
@@ -49,7 +50,7 @@ export function decode(rt: Content, schema: Schema, opts: DecodeOpts = {}): PMNo
 		starts.push(acc);
 		acc += usvLength(lineTexts[i]) + 1; // +1 for the `\n` boundary
 	}
-	const marks = opts.plaintext ? [] : rt.marks.filter((m) => !isAnchor(m));
+	const marks = opts.plaintext ? [] : rt.marks.filter((m) => !isAnchorMark(m));
 	const cursor: IslandCursor = { i: 0, rt };
 
 	if (isInlineSchema(schema)) {

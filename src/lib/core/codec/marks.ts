@@ -7,20 +7,16 @@
 // encode.ts. `emph` is the content name; `em` the PM name — the one asymmetry.
 import type { Mark, Schema } from 'prosemirror-model';
 import type { ContentMark } from '@quillmark/wasm';
+import { isAnchorMark, isLinkMark } from '../index.js';
 
 /** Content formatting types that map 1:1 to a same-named PM mark. */
 const PLAIN_FORMATTING = new Set(['strong', 'underline', 'strike', 'code']);
 
-/** Is this content mark an identity anchor (zero-width handle, → a decoration)? */
-export function isAnchor(m: ContentMark): m is ContentMark & { type: 'anchor'; id: string } {
-	return m.type === 'anchor';
-}
-
 /** A PM mark from a content formatting/unknown mark, or `null` for an anchor. */
 export function pmMarkFromContent(schema: Schema, m: ContentMark): Mark | null {
-	if (isAnchor(m)) return null;
+	if (isAnchorMark(m)) return null;
 	if (m.type === 'emph') return schema.marks.em.create();
-	if (m.type === 'link') return schema.marks.link.create({ href: (m as { url: string }).url });
+	if (isLinkMark(m)) return schema.marks.link.create({ href: m.url });
 	if (PLAIN_FORMATTING.has(m.type)) return schema.marks[m.type].create();
 	// Anything else is an unknown mark: inert, renders nothing, round-trips verbatim.
 	return schema.marks.unknown.create({
@@ -69,6 +65,6 @@ export interface AnchorPos {
  */
 export function anchorsFromContent(rt: { marks: ContentMark[] }): AnchorPos[] {
 	const out: AnchorPos[] = [];
-	for (const m of rt.marks) if (isAnchor(m)) out.push({ id: m.id, pos: m.start });
+	for (const m of rt.marks) if (isAnchorMark(m)) out.push({ id: m.id, pos: m.start });
 	return out;
 }

@@ -38,7 +38,13 @@ export {
 	mapPos,
 	parseDocPath,
 	formatDocPath,
-	isQuillmarkError
+	isQuillmarkError,
+	// Open-set discriminant guards (0.97): the `ContentMark` union carries a
+	// residual `{ type: string }` arm, so a bare `type ===` never narrows the
+	// payload — these are the checked narrowing the codec reads off the boundary
+	// instead of re-deriving (anchor id, link url).
+	isAnchorMark,
+	isLinkMark
 } from '@quillmark/wasm';
 
 // ── Boundary types ──────────────────────────────────────────────────────────
