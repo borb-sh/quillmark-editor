@@ -57,24 +57,53 @@ export interface FieldController {
 	focus(): void;
 	/** The current stored content for this addr (for tests / reconcile). */
 	getContent(): Content;
+	/**
+	 * Insert an identity anchor `id` at USV `pos` (issue #43) — the seam that gives
+	 * `anchor` the toggle the six formatting marks have. Zero-width; it folds into the
+	 * plugin's position set and commits through the mark-diff `anchor` op, so it
+	 * survives later edits like any anchor. The id is caller-supplied and must be
+	 * unique + invariant (the 0.97 anchor-id policy); a duplicate id is a no-op.
+	 */
+	insertAnchor(id: string, pos: number): void;
+	/** Remove the identity anchor `id` (the inverse of {@link insertAnchor}); a no-op if absent. */
+	removeAnchor(id: string): void;
+	/** Ids of the anchors within USV range `[from, to]` — a selection's anchor state. */
+	anchorsInRange(from: number, to: number): string[];
+	/** The current PM selection as a USV `{ from, to }` range (the boundary currency). */
+	selectionRange(): { from: number; to: number };
 	destroy(): void;
 }
 
 const anchorKey = new PluginKey<AnchorPos[]>('quill-anchors');
 
-/** Plugin-held anchor positions (PM coords), mapped through every edit's `StepMap`. */
+/** An anchor mutation carried on a transaction's `anchorKey` meta — the seam that
+ * folds a new identity anchor (or a removal) into the plugin's position set, so
+ * the next commit lowers it through the mark diff exactly as a toggled formatting
+ * mark does (issue #43). Ids are caller-supplied, unique, invariant (the 0.97
+ * anchor-id policy); `pos` is a PM position. */
+type AnchorEdit = { op: 'add'; id: string; pos: number } | { op: 'remove'; id: string };
+
+/** Plugin-held anchor positions (PM coords), mapped through every edit's `StepMap`
+ * and mutated by an {@link AnchorEdit} meta (an insert/remove at a selection). */
 function anchorPlugin(seed: AnchorPos[]): Plugin<AnchorPos[]> {
 	return new Plugin<AnchorPos[]>({
 		key: anchorKey,
 		state: {
 			init: () => seed,
-			apply: (tr, anchors) =>
-				tr.docChanged ? anchors.map((a) => ({ id: a.id, pos: tr.mapping.map(a.pos) })) : anchors
+			apply: (tr, anchors) => {
+				let next = tr.docChanged
+					? anchors.map((a) => ({ id: a.id, pos: tr.mapping.map(a.pos) }))
+					: anchors;
+				const edit = tr.getMeta(anchorKey) as AnchorEdit | undefined;
+				if (edit?.op === 'add') next = [...next, { id: edit.id, pos: edit.pos }];
+				else if (edit?.op === 'remove') next = next.filter((a) => a.id !== edit.id);
+				return next;
+			}
 		}
 	});
 }
 
-/** Read the leaf's raw stored `Content` for `addr` — the unified `doc.get(addr)`
+/** Read the leaf's raw stored `Content` for `addr` — the unified `doc.getStored(addr)`
  * read (DOCUMENT_MODEL): a field value, or the body `Content` when `addr.field` is
  * absent, without materializing the whole card. Reads are total over the field
  * axis, so an absent field — a default-only richtext field (e.g. `tag_line`, no
@@ -83,7 +112,7 @@ function anchorPlugin(seed: AnchorPos[]): Plugin<AnchorPos[]> {
  * `addr.card` throws, unreachable here: a removed card unmounts its keyed leaf
  * before a stale index is read. */
 function readLeaf(doc: Document, addr: Addr): Content {
-	return (doc.get(addr) as Content | undefined) ?? emptyContent();
+	return (doc.getStored(addr) as Content | undefined) ?? emptyContent();
 }
 
 /** The canonical empty `Content` — one empty `para` line. The zero value a prose
@@ -92,10 +121,10 @@ export function emptyContent(): Content {
 	return { text: '', lines: [{ containers: [], kind: 'para' }], marks: [], islands: [] };
 }
 
-/** Whether the leaf's field currently holds a stored value — `doc.get` is total, so
+/** Whether the leaf's field currently holds a stored value — `doc.getStored` is total, so
  * an unset field reads `undefined`; a body always reads its `Content` (present). */
 function leafPresent(doc: Document, addr: Addr): boolean {
-	return doc.get(addr) !== undefined;
+	return doc.getStored(addr) !== undefined;
 }
 
 export function createField(opts: CreateFieldOpts): FieldController {
@@ -123,7 +152,10 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			view.updateState(next); // (a) optimistic
 			index = buildLineIndex(next.doc);
 
-			if (tr.docChanged) {
+			// Commit a content edit OR an anchor mutation. An anchor insert/remove is
+			// zero-width, so `docChanged` is false — the `anchorKey` meta is what
+			// routes it through the same commit path (the diff emits the anchor op).
+			if (tr.docChanged || tr.getMeta(anchorKey)) {
 				commitEdit(oldRt, next.doc);
 			}
 			// (d) caret — for both structural and selection-only changes.
@@ -194,10 +226,12 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		}
 	}
 
+	/** The anchors the plugin currently holds (PM coords); `[]` before the first apply. */
+	const heldAnchors = (): AnchorPos[] => anchorKey.getState(view.state) ?? [];
+
 	/** Anchor positions in the CURRENT (new) doc, as USV. */
 	function readAnchorsUsv(newDoc: PMNode): AnchorPos[] {
-		const anchors = anchorKey.getState(view.state) ?? [];
-		return anchors.map((a) => ({ id: a.id, pos: pmToUsv(newDoc, index, a.pos) }));
+		return heldAnchors().map((a) => ({ id: a.id, pos: pmToUsv(newDoc, index, a.pos) }));
 	}
 
 	const controller: FieldController = {
@@ -227,6 +261,36 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		},
 		getContent(): Content {
 			return readLeaf(doc, addr);
+		},
+		insertAnchor(id: string, pos: number): void {
+			if (plaintext) return; // a plaintext field carries no marks (§Inline mode)
+			if (heldAnchors().some((a) => a.id === id)) return; // ids are unique + invariant (0.97 policy)
+			// An anchor commits through `applyChange` (present field); a still-unset
+			// default-only field is materialized first, else the commit's create-branch
+			// `install` — value semantics — would drop the just-added anchor.
+			if (!leafPresent(doc, addr)) doc.install(addr, reconciler.last as Content);
+			const pm = usvToPM(view.state.doc, index, pos);
+			view.dispatch(view.state.tr.setMeta(anchorKey, { op: 'add', id, pos: pm } as AnchorEdit));
+		},
+		removeAnchor(id: string): void {
+			if (plaintext) return;
+			if (!heldAnchors().some((a) => a.id === id)) return; // absent — nothing to commit
+			view.dispatch(view.state.tr.setMeta(anchorKey, { op: 'remove', id } as AnchorEdit));
+		},
+		anchorsInRange(from: number, to: number): string[] {
+			return heldAnchors()
+				.filter((a) => {
+					const u = pmToUsv(view.state.doc, index, a.pos);
+					return u >= from && u <= to;
+				})
+				.map((a) => a.id);
+		},
+		selectionRange(): { from: number; to: number } {
+			const { from, to } = view.state.selection;
+			return {
+				from: pmToUsv(view.state.doc, index, from),
+				to: pmToUsv(view.state.doc, index, to)
+			};
 		},
 		destroy(): void {
 			view.destroy();

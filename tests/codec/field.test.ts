@@ -36,13 +36,13 @@ describe('createField over a real usaf_memo leaf', () => {
 			inline: true,
 			onCaretMove: (_addr, pos) => caret.push(pos)
 		});
-		const before = (doc.get('subject') as { text: string }).text;
+		const before = (doc.getStored('subject') as { text: string }).text;
 		const view = viewOf(field);
 		// Place the caret after the first char (USV 1), then type "X" there —
 		// the caret advances to USV 2 as real typing would.
 		field.setCaret(1);
 		view.dispatch(view.state.tr.insertText('X', view.state.selection.head));
-		const after = (doc.get('subject') as { text: string }).text;
+		const after = (doc.getStored('subject') as { text: string }).text;
 		expect(after).not.toBe(before);
 		expect(after[0]).toBe(before[0]);
 		expect(after[1]).toBe('X');
@@ -117,7 +117,7 @@ describe('field-level reconciliation', () => {
 				delta: {
 					ops: [
 						{ insert: 'EXT ' },
-						{ retain: (doc.get('subject') as { text: string }).text.length }
+						{ retain: (doc.getStored('subject') as { text: string }).text.length }
 					]
 				}
 			}
@@ -153,7 +153,7 @@ describe('plaintext fields mount no markdown input rules', () => {
 		view.dispatch(view.state.tr.insertText('**x*', 1)); // literal; the closing `*` fires the rule
 		expect(fireClosingStar(view)).toBeFalsy(); // no input-rules plugin → not intercepted
 		view.dispatch(view.state.tr.insertText('*', view.state.selection.head));
-		const rt = doc.get('tag_line') as { text: string; marks: unknown[] };
+		const rt = doc.getStored('tag_line') as { text: string; marks: unknown[] };
 		expect(rt.text).toBe('**x**');
 		expect(rt.marks).toHaveLength(0);
 		field.destroy();
@@ -170,7 +170,7 @@ describe('plaintext fields mount no markdown input rules', () => {
 		const view = viewOf(field);
 		view.dispatch(view.state.tr.insertText('**x*', 1));
 		expect(fireClosingStar(view)).toBe(true); // the rule intercepts and transforms
-		const rt = doc.get('tag_line') as { text: string; marks: { type: string }[] };
+		const rt = doc.getStored('tag_line') as { text: string; marks: { type: string }[] };
 		expect(rt.text).toBe('x');
 		expect(rt.marks.some((m) => m.type === 'strong')).toBe(true);
 		field.destroy();
@@ -181,7 +181,7 @@ describe('createField over an ABSENT declared richtext field', () => {
 	it('installs on the first edit (applyChange throws on absent), then applyChanges', () => {
 		const doc = quill().seedDocument();
 		// `tag_line` is `default:`-only, so it is absent from the seed.
-		expect(doc.get('tag_line')).toBeUndefined();
+		expect(doc.getStored('tag_line')).toBeUndefined();
 		const field = createField({
 			doc,
 			addr: { field: 'tag_line' },
@@ -191,11 +191,11 @@ describe('createField over an ABSENT declared richtext field', () => {
 		const view = viewOf(field);
 		// First edit → the codec installs the field (creating it).
 		view.dispatch(view.state.tr.insertText('Motto', 1));
-		expect((doc.get('tag_line') as { text: string } | undefined)?.text).toBe('Motto');
+		expect((doc.getStored('tag_line') as { text: string } | undefined)?.text).toBe('Motto');
 		// Second edit → the field is now present, so it lowers to applyChange and lands.
 		field.setCaret(5);
 		view.dispatch(view.state.tr.insertText('!', view.state.selection.head));
-		expect((doc.get('tag_line') as { text: string }).text).toBe('Motto!');
+		expect((doc.getStored('tag_line') as { text: string }).text).toBe('Motto!');
 		field.destroy();
 	});
 });
@@ -214,6 +214,58 @@ describe('field install-fallback for an un-lowerable structural edit', () => {
 		const body = doc.main.body;
 		expect(body.lines.some((l) => l.continues)).toBe(true);
 		expect(contentEqual(body, normalize(pmToContent(view.state.doc)))).toBe(true);
+		field.destroy();
+	});
+});
+
+describe('anchor insertion (issue #43)', () => {
+	/** The `anchor` identity marks of the stored body content. */
+	function bodyAnchors(doc: Document): { id: string; start: number; end: number }[] {
+		return doc.main.body.marks.filter((m) => m.type === 'anchor') as {
+			id: string;
+			start: number;
+			end: number;
+		}[];
+	}
+
+	it('inserts a caller-supplied identity anchor that persists in the content', () => {
+		const doc = quill().seedDocument();
+		const field = createField({ doc, addr: {}, container: mount() });
+		field.insertAnchor('a1', 3);
+		const anchors = bodyAnchors(doc);
+		expect(anchors).toHaveLength(1);
+		expect(anchors[0]).toMatchObject({ id: 'a1', start: 3, end: 3 }); // zero-width
+		field.destroy();
+	});
+
+	it('a duplicate id is a no-op; removeAnchor drops the anchor', () => {
+		const doc = quill().seedDocument();
+		const field = createField({ doc, addr: {}, container: mount() });
+		field.insertAnchor('a1', 3);
+		field.insertAnchor('a1', 5); // same id → ignored (unique + invariant, 0.97 policy)
+		expect(bodyAnchors(doc)).toHaveLength(1);
+		field.removeAnchor('a1');
+		expect(bodyAnchors(doc)).toHaveLength(0);
+		field.destroy();
+	});
+
+	it('the anchor rebases through a later text edit — it survives like a mark', () => {
+		const doc = quill().seedDocument();
+		const field = createField({ doc, addr: {}, container: mount() });
+		field.insertAnchor('a1', 5);
+		const view = viewOf(field);
+		// Insert two chars at the very start (PM 1 = USV 0): the anchor shifts by 2.
+		view.dispatch(view.state.tr.insertText('XY', 1));
+		expect(bodyAnchors(doc)).toMatchObject([{ id: 'a1', start: 7 }]);
+		field.destroy();
+	});
+
+	it('anchorsInRange reports coverage for the popover active state', () => {
+		const doc = quill().seedDocument();
+		const field = createField({ doc, addr: {}, container: mount() });
+		field.insertAnchor('a1', 4);
+		expect(field.anchorsInRange(0, 10)).toEqual(['a1']);
+		expect(field.anchorsInRange(0, 3)).toEqual([]);
 		field.destroy();
 	});
 });
@@ -251,7 +303,7 @@ describe('empty-leaf ghost placeholder (issue #58 §9)', () => {
 		const field = createField({ doc, addr: { field: 'tag_line' }, container, inline: true });
 		expect(container.querySelector('.qm-prose-placeholder')).toBeNull();
 		// The ghost is decoration-only: the stored content stays absent (unset).
-		expect(doc.get('tag_line')).toBeUndefined();
+		expect(doc.getStored('tag_line')).toBeUndefined();
 		field.destroy();
 	});
 });

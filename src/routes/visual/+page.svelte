@@ -56,21 +56,21 @@
 		const doc = docHandle;
 		if (!doc) return '{}';
 		const obj = {
-			subject: (doc.get('subject') as Content | undefined)?.text ?? '',
-			subjectMarks: (doc.get('subject') as Content | undefined)?.marks ?? [],
-			tag_line: (doc.get('tag_line') as Content | undefined)?.text ?? '',
-			body: (doc.get({}) as Content).text,
-			font_size: doc.get('font_size') ?? null,
-			classification: doc.get('classification') ?? null,
-			letterhead_seal: doc.get('letterhead_seal') ?? null,
-			date: doc.get('date') ?? null,
-			memo_for: doc.get('memo_for') ?? [],
-			references: ((doc.get('references') as Content[] | undefined) ?? []).map((r) => r.text),
+			subject: (doc.getStored('subject') as Content | undefined)?.text ?? '',
+			subjectMarks: (doc.getStored('subject') as Content | undefined)?.marks ?? [],
+			tag_line: (doc.getStored('tag_line') as Content | undefined)?.text ?? '',
+			body: (doc.getStored({}) as Content).text,
+			font_size: doc.getStored('font_size') ?? null,
+			classification: doc.getStored('classification') ?? null,
+			letterhead_seal: doc.getStored('letterhead_seal') ?? null,
+			date: doc.getStored('date') ?? null,
+			memo_for: doc.getStored('memo_for') ?? [],
+			references: ((doc.getStored('references') as Content[] | undefined) ?? []).map((r) => r.text),
 			cardCount: doc.cardCount,
 			cards: doc.cards.map((c, i) => ({
 				kind: c.kind,
 				title: (c.ext?.editor as { title?: string } | undefined)?.title ?? null,
-				from: doc.get({ card: i, field: 'from' }) ?? null,
+				from: doc.getStored({ card: i, field: 'from' }) ?? null,
 				body: c.body.text
 			}))
 		};

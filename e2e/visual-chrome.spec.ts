@@ -127,11 +127,29 @@ test.describe('visual editor chrome — formatting popover', () => {
 			.toEqual([{ start: 0, end: 8, type: 'link', url: 'https://example.com' }]);
 	});
 
-	test('the anchor button is present but disabled (deferred codec seam)', async ({ page }) => {
+	test('the anchor button toggles an identity anchor over the selection (issue #43)', async ({
+		page
+	}) => {
 		await replaceProse(page, 'prose-main-subject', 'ANCHORTEST');
-		await selectAll(page, 'prose-main-subject');
-		await expect(page.getByTestId('format-popover')).toBeVisible();
-		await expect(page.getByTestId('mark-anchor')).toBeDisabled();
+		// The popover's raise is rAF-deferred (see FormatPopover §SELECTION
+		// OBSERVATION); re-assert the selection until it settles, so this gate never
+		// races the sync when the test runs after a heavier sibling.
+		await expect(async () => {
+			await selectAll(page, 'prose-main-subject');
+			await expect(page.getByTestId('format-popover')).toBeVisible({ timeout: 1000 });
+		}).toPass({ timeout: 15_000 });
+		const anchor = page.getByTestId('mark-anchor');
+		await expect(anchor).toBeEnabled();
+		const anchors = async () =>
+			(await readDump(page)).subjectMarks.filter((m) => m.type === 'anchor');
+		// Toggle on: a zero-width identity anchor lands at the selection start.
+		await anchor.click();
+		await expect.poll(anchors).toHaveLength(1);
+		await expect(anchor).toHaveClass(/active/);
+		// Toggle off: the selection survives the swallowed mousedown, so a second
+		// click removes the anchor it now covers.
+		await anchor.click();
+		await expect.poll(anchors).toHaveLength(0);
 	});
 
 	test('clicking back into the editor while the popover is open still moves the caret (no focus trap)', async ({

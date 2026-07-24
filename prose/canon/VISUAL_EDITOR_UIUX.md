@@ -53,8 +53,10 @@ split leaves the position surface a place to land later without disturbing marks
 
 **Marks — selection popover.** A non-empty selection in a prose leaf raises a
 popover over the active leaf: `strong`, `emph`, `underline`, `strike`, `code`,
-`link`, plus `anchor` identity. It emits PM transactions the codec lowers to
-`markOps`. A keymap mirrors the core marks (`Mod-b`/`i`/`u`) for keyboard;
+`link`, plus `anchor` identity. The six formatting marks emit PM `toggleMark`
+transactions the codec lowers to `markOps`; `anchor` is a decoration (not a PM
+mark), toggled through the `FieldController.insertAnchor` / `removeAnchor` seam
+and lowered to an `anchor` op (CODEC §Marks). A keymap mirrors the core marks (`Mod-b`/`i`/`u`) for keyboard;
 `strike`/`code`/`link` stay toolbar-only in V1. On touch, the same marks are meant
 to ride an accessory bar above the keyboard (a popover fights the OS selection
 handles) — the touch bar is deferred (§Open).
@@ -63,8 +65,8 @@ The popover is a translucent, backdrop-blurred pill (SURFACES §Elevation — th
 floating surface earns the lift), top-center over the selection and flipping below
 when it nears the viewport top, scaling in on each raise. Each mark is a Lucide
 glyph, the icon naming its action (AESTHETIC §Icons) — bold, italic, underline,
-strikethrough, code, link — with `anchor` shown disabled (its codec seam is
-deferred, #43).
+strikethrough, code, link — with `anchor` a 7th, toggling an identity handle
+over the selection (its codec seam ships: `FieldController.insertAnchor`, #43).
 
 **Input rules — typist shorthand, no chrome.** `**`, `*`, `~~`, `` ` ``, `# `,
 `- `, `1. `, `> `, and a ` ``` ` code fence. These cover the marks and the block
@@ -121,6 +123,7 @@ Debug-only, per [ARCHITECTURE.md](ARCHITECTURE.md) — not an editable dual mode
 - **Insert surface (post-V1)** — the deferred position anchor: gutter affordance,
   menu, slash command, and table/island authoring.
 - **Formatting reach (post-V1)** — the touch accessory bar and keymap shortcuts
-  for `strike` / `code` / `link` (only `Mod-b`/`i`/`u` bind today); the popover's
-  `anchor` button awaits a codec anchor-insert seam (a `FieldController.insertAnchor`
-  verb — anchors are editor-side decorations, not WASM marks).
+  for `strike` / `code` / `link` (only `Mod-b`/`i`/`u` bind today). The popover's
+  `anchor` button ships (§Formatting): it mints a unique id and toggles an identity
+  handle over the selection through `FieldController.insertAnchor`. The chrome that
+  makes an anchor *useful* — comment-thread UX bound to the handle — is post-V1.
