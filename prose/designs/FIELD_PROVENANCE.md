@@ -105,12 +105,13 @@ it reads `source` off the `provenance` map already on `CardModel`, no new derive
 
 ## Open questions
 
-- **Body and nested defaults stay on their own paths.** `resolve` keys the card
-  body as a sibling `body: ResolvedField | null` (not a `$body` row — the
-  runtime.d.ts prose comment is stale), and object sub-properties / array elements
-  are not individual rows. The scalar ghost needs none of these, so the body prose
-  leaf keeps its raw read and `ObjectField` keeps its schema-default sub-ghosts;
-  wiring provenance into either waits on its own affordance.
+- **Nested defaults stay on their own paths.** `resolve` keys the card body as a
+  sibling `body: ResolvedField | null` (not a `$body` row — the runtime.d.ts prose
+  comment is stale), and object sub-properties / array elements are not individual
+  rows. The body prose leaf now ghosts that `body` row as its empty-leaf
+  placeholder (issue #58 §9, `bodyGhostText` → the codec's placeholder decoration);
+  `ObjectField` still keeps its schema-default sub-ghosts and array elements wait on
+  their own affordance.
 - **When to compute.** One whole-doc `resolve` per derive today; a narrower
   single-field query if the boundary later exposes one.
 - **Affordance scope.** The ghost is the first consumer; a full

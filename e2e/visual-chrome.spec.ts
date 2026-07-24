@@ -178,6 +178,64 @@ test.describe('visual editor chrome — formatting popover', () => {
 	});
 });
 
+test.describe('visual editor chrome — polish (issue #58)', () => {
+	test.beforeEach(async ({ page }) => {
+		await page.goto('/visual');
+		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
+	});
+
+	const opacityOf = (page: Page, testid: string) =>
+		page.getByTestId(testid).evaluate((el) => getComputedStyle(el).opacity);
+
+	// §6 — the add triggers recede: invisible at rest, one dim label on the last gap,
+	// and they reveal on hover. Opacity (not display) so clicks still land.
+	test('(§6) add triggers recede at rest; only the last shows a dim label; hover reveals', async ({
+		page
+	}) => {
+		expect((await readDump(page)).cardCount).toBe(1); // one interior gap + the last gap
+		expect(await opacityOf(page, 'add-card-0')).toBe('0'); // interior: invisible at rest
+		expect(await opacityOf(page, 'add-card-1')).toBe('0.35'); // last: dim, always visible
+		await page.getByTestId('add-card-0').hover();
+		await expect.poll(() => opacityOf(page, 'add-card-0')).toBe('1');
+	});
+
+	// §8 — focusing the title selects all, so typing replaces it rather than appending.
+	test('(§8) focusing the title selects all so a keystroke replaces the whole title', async ({
+		page
+	}) => {
+		await page.getByTestId('card-title-0').fill('Base Title');
+		await expect.poll(async () => (await readDump(page)).cards[0].title).toBe('Base Title');
+		await page.getByTestId('card-title-0').blur(); // fill left it focused — reset for a real entry
+		await page.getByTestId('card-title-0').focus(); // entry → select-all (no mouse caret)
+		await page.keyboard.type('Z');
+		await expect.poll(async () => (await readDump(page)).cards[0].title).toBe('Z');
+	});
+
+	// §8 — Escape rolls the live edits back to the value the title held on entry.
+	test('(§8) Escape reverts an in-progress title edit to the pre-edit value', async ({ page }) => {
+		await page.getByTestId('card-title-0').fill('Keep Me');
+		await expect.poll(async () => (await readDump(page)).cards[0].title).toBe('Keep Me');
+		await page.getByTestId('card-title-0').blur(); // fill left it focused — reset for a real entry
+		await page.getByTestId('card-title-0').focus(); // captures the revert baseline + select-all
+		await page.keyboard.type('scratch'); // select-all replace → live-commits 'scratch'
+		await expect.poll(async () => (await readDump(page)).cards[0].title).toBe('scratch');
+		await page.keyboard.press('Escape');
+		await expect.poll(async () => (await readDump(page)).cards[0].title).toBe('Keep Me');
+	});
+
+	// §8 — the title is an autosize sizer that grows with its content, not a fixed box.
+	test('(§8) the title width tracks its content via the hidden sizer', async ({ page }) => {
+		const width = () =>
+			page
+				.getByTestId('card-title-0')
+				.evaluate((el) => (el as HTMLElement).getBoundingClientRect().width);
+		await page.getByTestId('card-title-0').fill('Ab');
+		const short = await width();
+		await page.getByTestId('card-title-0').fill('Abcdefghijklmnop');
+		expect(await width()).toBeGreaterThan(short);
+	});
+});
+
 test.describe('visual editor chrome — diagnostics routing', () => {
 	test.beforeEach(async ({ page }) => {
 		await page.goto('/visual');

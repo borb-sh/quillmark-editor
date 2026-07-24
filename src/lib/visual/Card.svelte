@@ -69,22 +69,66 @@
 			if (incoming !== localTitle) localTitle = incoming;
 		});
 	});
+
+	// Inline-editable title (issue #58 §8): select-all on entry so a title reads as
+	// text you replace, and Enter/Escape as commit/revert. Rename stays LIVE on
+	// input (unchanged) — `titleAtFocus` is the pre-edit value Escape rolls back to.
+	let titleAtFocus = '';
+	function onTitleFocus(e: FocusEvent): void {
+		titleAtFocus = localTitle;
+		(e.currentTarget as HTMLInputElement).select();
+	}
+	// A mouse press on an UNFOCUSED title would place a caret on mouseup, collapsing
+	// the focus-time select-all. Take focus manually and suppress that caret so a
+	// click-to-enter selects all too; a press while already focused stays normal, so
+	// clicking mid-title to place the caret still works.
+	function onTitleMousedown(e: MouseEvent): void {
+		const el = e.currentTarget as HTMLInputElement;
+		if (document.activeElement !== el) {
+			e.preventDefault();
+			el.focus();
+		}
+	}
+	function onTitleKeydown(e: KeyboardEvent): void {
+		const el = e.currentTarget as HTMLInputElement;
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			el.blur(); // commit — the live value already persisted on input
+		} else if (e.key === 'Escape') {
+			e.preventDefault();
+			if (localTitle !== titleAtFocus) {
+				localTitle = titleAtFocus;
+				ops.rename(titleAtFocus); // roll back the live edits
+			}
+			el.blur();
+		}
+	}
 </script>
 
 <section class="qm-card" class:qm-main={card.isMain} class:qm-active={active}>
 	{#if !card.isMain}
 		<header class="qm-card-header">
-			<input
-				class="qm-card-title"
-				value={localTitle}
-				placeholder={card.titlePlaceholder}
-				aria-label="Card title"
-				data-testid={`card-title-${index}`}
-				oninput={(e) => {
-					localTitle = (e.currentTarget as HTMLInputElement).value;
-					ops.rename(localTitle);
-				}}
-			/>
+			<!-- Autosize: the sizer span's ::after mirrors the text and dictates the grid
+			     cell width, so the overlaid input grows with content and reads as text,
+			     not a persistent box (issue #58 §8). `data-value` falls back to the
+			     placeholder so an empty title still reserves its resolved-title width. -->
+			<span class="qm-card-title-sizer" data-value={localTitle || card.titlePlaceholder}>
+				<input
+					class="qm-card-title"
+					value={localTitle}
+					placeholder={card.titlePlaceholder}
+					aria-label="Card title"
+					size="1"
+					data-testid={`card-title-${index}`}
+					onmousedown={onTitleMousedown}
+					onfocus={onTitleFocus}
+					onkeydown={onTitleKeydown}
+					oninput={(e) => {
+						localTitle = (e.currentTarget as HTMLInputElement).value;
+						ops.rename(localTitle);
+					}}
+				/>
+			</span>
 			<div class="qm-card-header-right">
 				{#if kinds.length > 1}
 					<select
@@ -156,6 +200,7 @@
 					{doc}
 					addr={ops.makeAddr(undefined)}
 					label="Body"
+					placeholder={card.bodyGhost}
 					leafKey={ops.leafKey(undefined)}
 					{onFocus}
 					{onCaretMove}
@@ -201,15 +246,38 @@
 	.qm-card.qm-active :global(.qm-card-reorder) {
 		opacity: 1;
 	}
-	.qm-card-title {
-		flex: 1;
+	/* Autosize sizer (issue #58 §8): an inline-grid whose ::after mirrors the text
+	   into the single cell, so the overlaid input tracks its content width. Bounded
+	   to the header's free space (`min-width: 0` + `max-width: 100%`); the header's
+	   space-between keeps the controls right-aligned. */
+	.qm-card-title-sizer {
+		display: inline-grid;
+		align-items: center;
+		min-width: 0;
+		max-width: 100%;
 		font-size: 1rem;
 		font-weight: 600;
+		font-family: inherit;
+	}
+	.qm-card-title-sizer::after {
+		content: attr(data-value) ' ';
+		grid-area: 1 / 1;
+		visibility: hidden;
+		white-space: pre;
+		min-width: 2ch;
+		/* Match the input's box model so the mirror and the input measure alike. */
+		padding: var(--_qm-space);
+		border: 1px solid transparent;
+	}
+	.qm-card-title {
+		grid-area: 1 / 1;
+		width: 100%;
+		min-width: 0;
+		font: inherit;
 		border: 1px solid transparent;
 		border-radius: var(--_qm-radius-inner);
 		padding: var(--_qm-space);
 		background: transparent;
-		font-family: inherit;
 	}
 	.qm-card-title:hover,
 	.qm-card-title:focus {

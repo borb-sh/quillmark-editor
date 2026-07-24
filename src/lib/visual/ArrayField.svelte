@@ -194,5 +194,18 @@
 		cursor: pointer;
 		padding: var(--_qm-space) var(--_qm-space-2);
 		font-size: 0.85rem;
+		/* Recede until engaged (issue #58 §6): the sole foot add rests dim — like the
+		   card stack's last trigger — and surfaces on hover of the field or on focus. */
+		opacity: 0.35;
+		transition: opacity 120ms ease;
+	}
+	.qm-array:hover .qm-add-el,
+	.qm-add-el:focus-visible {
+		opacity: 1;
+	}
+	@media (hover: none) {
+		.qm-add-el {
+			opacity: 0.5;
+		}
 	}
 </style>

@@ -16,7 +16,7 @@ import { keymap } from 'prosemirror-keymap';
 import type { Node as PMNode, Schema } from 'prosemirror-model';
 import { EditorState, Plugin, PluginKey, Selection, type Command } from 'prosemirror-state';
 import { splitListItem } from 'prosemirror-schema-list';
-import { EditorView } from 'prosemirror-view';
+import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
 import type { Document, Content, Addr } from '../index.js';
 import { decode } from './decode.js';
 import { usvToPM, pmToUsv, buildLineIndex, type LineIndex } from './positions.js';
@@ -39,6 +39,10 @@ export interface CreateFieldOpts {
 	noInputRules?: boolean;
 	/** Accessible name → `aria-label` on the `contenteditable` (the visual label is a sibling it can't reference). */
 	label?: string;
+	/** Ghost text shown on the empty leaf — the resolved `default:` a body ghosts
+	 * (VISUAL_EDITOR_UIUX §Fields). Captured at mount (a schema default is stable);
+	 * an empty/absent string adds no placeholder. */
+	placeholder?: string;
 	onFocus?(addr: Addr): void;
 	/** Fired with the new USV caret after an edit or a selection move. */
 	onCaretMove?(addr: Addr, pos: number): void;
@@ -148,6 +152,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 				inline,
 				plaintext,
 				noInputRules: opts.noInputRules,
+				placeholder: opts.placeholder,
 				afterHistory: [anchorPlugin(seededAnchors)]
 			})
 		});
@@ -249,13 +254,47 @@ export function createField(opts: CreateFieldOpts): FieldController {
  */
 export function proseLeafPlugins(
 	schema: Schema,
-	opts: { inline: boolean; plaintext: boolean; noInputRules?: boolean; afterHistory?: Plugin[] }
+	opts: {
+		inline: boolean;
+		plaintext: boolean;
+		noInputRules?: boolean;
+		placeholder?: string;
+		afterHistory?: Plugin[];
+	}
 ): Plugin[] {
 	const list: Plugin[] = [history(), ...(opts.afterHistory ?? [])];
 	if (!opts.noInputRules && !opts.plaintext) list.push(inputRulesPlugin(schema));
 	list.push(keymap(editorKeymap(schema, opts.inline, opts.plaintext)));
 	list.push(keymap(baseKeymap));
+	if (opts.placeholder) list.push(placeholderPlugin(opts.placeholder));
 	return list;
+}
+
+/**
+ * The empty-leaf ghost placeholder (VISUAL_EDITOR_UIUX §Fields; issue #58 §9). A
+ * node decoration stamps the sole empty textblock with a class + the ghost text,
+ * which CSS renders via `::before { content: attr(data-placeholder) }` — so the
+ * text never enters the document, the caret path, or a `pmToContent` export. It
+ * vanishes the instant the leaf holds any content (the emptiness test fails).
+ */
+function placeholderPlugin(text: string): Plugin {
+	return new Plugin({
+		props: {
+			decorations(state) {
+				const { doc } = state;
+				const first = doc.firstChild;
+				const empty =
+					doc.childCount === 1 && !!first && first.isTextblock && first.content.size === 0;
+				if (!empty) return null;
+				return DecorationSet.create(doc, [
+					Decoration.node(0, first.nodeSize, {
+						class: 'qm-prose-placeholder',
+						'data-placeholder': text
+					})
+				]);
+			}
+		}
+	});
 }
 
 /** The field's keymap: history, mark toggles, list Enter; Enter suppressed inline. */
