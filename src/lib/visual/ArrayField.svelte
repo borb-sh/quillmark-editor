@@ -16,6 +16,7 @@
 	import type { Content, QuillFieldSchema } from '../core/index.js';
 	import { emptyContent } from '../core/codec/index.js';
 	import { IdSeq, elementControl } from './structure.js';
+	import X from '@lucide/svelte/icons/x';
 	import TextField from './TextField.svelte';
 	import ProseArrayElement from './ProseArrayElement.svelte';
 
@@ -129,7 +130,7 @@
 				class="qm-mini qm-remove"
 				title="Remove"
 				data-testid={testid ? `${testid}-remove-${k}` : undefined}
-				onclick={() => remove(k)}>✕</button
+				onclick={() => remove(k)}><X size={14} /></button
 			>
 		</div>
 	{/each}
@@ -161,11 +162,13 @@
 		flex: 1;
 	}
 	.qm-mini {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		border: 1px solid var(--qm-border, #d4d4d4);
 		background: var(--qm-field-bg, #fff);
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
-		font-size: var(--_qm-text-meta);
 		line-height: 1;
 		padding: var(--_qm-space-half) var(--_qm-space);
 	}

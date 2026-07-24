@@ -59,6 +59,13 @@ popover over the active leaf: `strong`, `emph`, `underline`, `strike`, `code`,
 to ride an accessory bar above the keyboard (a popover fights the OS selection
 handles) — the touch bar is deferred (§Open).
 
+The popover is a translucent, backdrop-blurred pill (SURFACES §Elevation — the one
+floating surface earns the lift), top-center over the selection and flipping below
+when it nears the viewport top, scaling in on each raise. Each mark is a Lucide
+glyph, the icon naming its action (AESTHETIC §Icons) — bold, italic, underline,
+strikethrough, code, link — with `anchor` shown disabled (its codec seam is
+deferred, #43).
+
 **Input rules — typist shorthand, no chrome.** `**`, `*`, `~~`, `` ` ``, `# `,
 `- `, `1. `, `> `, and a ` ``` ` code fence. These cover the marks and the block
 shorthands (headings, lists, quote, code); underline is keymap-only (`Mod-u`), and

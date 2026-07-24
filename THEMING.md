@@ -103,11 +103,13 @@ the overlay entirely with `<Preview overlays={false}>`; restyle it with:
 
 ### Formatting popover
 
-The selection-mark popover (VISUAL_EDITOR_UIUX §Formatting).
+The selection-mark popover (VISUAL_EDITOR_UIUX §Formatting) — a translucent pill:
+`--qm-popover-bg` is mixed toward transparent (~82%) behind a backdrop blur, so an
+opaque override still tints the mix.
 
 | Token                    | Default   | What it colors                                |
 | ------------------------ | --------- | --------------------------------------------- |
-| `--qm-popover-bg`        | `#fff`    | The popover background.                       |
+| `--qm-popover-bg`        | `#fff`    | The popover fill (mixed translucent + blur).  |
 | `--qm-popover-hover`     | `#f0f0f0` | A hovered mark button.                        |
 | `--qm-popover-active-bg` | `#1a1a1a` | An active (applied) mark button's background. |
 | `--qm-popover-active-fg` | `#fff`    | An active mark button's foreground.           |
