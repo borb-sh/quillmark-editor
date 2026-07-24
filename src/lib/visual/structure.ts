@@ -53,6 +53,14 @@ export interface CardModel {
 	id: string;
 	isMain: boolean;
 	kind: string;
+	/**
+	 * The card's `kind` has no projectable schema (issue #72) — a foreign kind under
+	 * a schema that declares others, or a card under a schema with no `card_kinds` at
+	 * all. Such a card renders a RECOVERY SHELL (humanized title + retype + delete)
+	 * instead of a field list, so its content is never dropped or trapped: retyping
+	 * to a declared kind re-projects it, delete removes it. Always `false` for `main`.
+	 */
+	unschemable: boolean;
 	/** Raw `$ext.editor.title` override (composable cards). */
 	titleOverride: string;
 	/** Schema-resolved title used as the rename placeholder (composable cards). */

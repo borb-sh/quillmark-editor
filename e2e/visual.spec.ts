@@ -221,4 +221,33 @@ test.describe('visual editor', () => {
 		await page.getByTestId('card-title-0').fill('My Endorsement');
 		await expect.poll(async () => (await readDump(page)).cards[0].title).toBe('My Endorsement');
 	});
+
+	test('(k) an un-schemable card renders a recovery shell; retype re-projects it (issue #72)', async ({
+		page
+	}) => {
+		// `?foreign` seeds a card whose kind the schema can't project (see the route).
+		await page.goto('/visual?foreign=1');
+		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
+
+		// The foreign card is VISIBLE as a recovery shell — not dropped, not gated away.
+		const recovery = page.locator('[data-testid^="card-recovery-"]');
+		await expect(recovery).toHaveCount(1);
+		await expect(recovery).toContainText('Unrecognized card type');
+		await expect(recovery).toContainText('legacy_kind');
+		// Its content is still in the Document (the whole point — no data trap).
+		const foreign = (await readDump(page)).cards.find((c) => c.kind === 'legacy_kind');
+		expect(foreign?.body).toContain('Trapped legacy body');
+
+		// Retype to a declared kind → the shell is gone and the body is preserved under
+		// the new kind (setCardKind keeps payload + body).
+		await page.locator('[data-testid^="recovery-retype-"]').selectOption('indorsement');
+		await expect(page.locator('[data-testid^="card-recovery-"]')).toHaveCount(0);
+		await expect
+			.poll(async () =>
+				(await readDump(page)).cards.some(
+					(c) => c.kind === 'indorsement' && c.body.includes('Trapped legacy body')
+				)
+			)
+			.toBe(true);
+	});
 });

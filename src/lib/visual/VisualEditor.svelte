@@ -380,6 +380,9 @@
 			id,
 			isMain,
 			kind,
+			// No schema for this kind → a recovery shell, not a field list (issue #72).
+			// `main` always resolves `schema.main`, so it is never unschemable.
+			unschemable: !isMain && !cardSchema,
 			titleOverride: extEditor?.title ?? '',
 			titlePlaceholder: cardTitle(cardSchema, kind, values, undefined),
 			values,
@@ -479,31 +482,34 @@
 		{unregister}
 	/>
 
-	<!-- Cards render only when the schema declares `card_kinds`. Edge case (issue
-	     #21): a document carrying cards under a schema with none shows them
-	     nowhere — no list, no delete affordance. Left as-is (the reference fixture
-	     never hits it); if it becomes reachable, render the list with add/retype
-	     disabled rather than gating the whole thing away. -->
+	<!-- Cards always render (issue #72). The ADD affordance is gated on the schema
+	     declaring `card_kinds` — nothing to seed otherwise — but a card already in the
+	     document shows regardless of its kind: a kind with no schema (foreign, or a
+	     schema with no `card_kinds` at all) degrades to a recovery shell inside <Card>
+	     (retype + delete), never gated away, so its content is neither dropped nor
+	     trapped. Supersedes the earlier gate that hid the whole region (issue #21). -->
 	{#if kinds.length}
 		{@render addAffordance(0, model.cards.length === 0)}
-		{#each model.cards as c, i (c.id)}
-			<Card
-				card={c}
-				{doc}
-				index={i}
-				isFirst={i === 0}
-				isLast={i === model.cards.length - 1}
-				active={activeCardId === c.id}
-				{kinds}
-				ops={opsFor(c.id, false)}
-				onFocus={handleFocus}
-				onCaretMove={handleCaret}
-				{register}
-				{unregister}
-			/>
-			{@render addAffordance(i + 1, i === model.cards.length - 1)}
-		{/each}
 	{/if}
+	{#each model.cards as c, i (c.id)}
+		<Card
+			card={c}
+			{doc}
+			index={i}
+			isFirst={i === 0}
+			isLast={i === model.cards.length - 1}
+			active={activeCardId === c.id}
+			{kinds}
+			ops={opsFor(c.id, false)}
+			onFocus={handleFocus}
+			onCaretMove={handleCaret}
+			{register}
+			{unregister}
+		/>
+		{#if kinds.length}
+			{@render addAffordance(i + 1, i === model.cards.length - 1)}
+		{/if}
+	{/each}
 </div>
 
 <FormatPopover {getActiveLeaf} />

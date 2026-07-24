@@ -98,7 +98,7 @@
 				// Dynamic: keep WASM's top-level await out of the route module so
 				// Safari/dev doesn't TDZ on Kit's `component` export (#7805).
 				// VisualEditor pulls the codec → `mapPos`, so it rides the same import.
-				const [{ Quill, init }, visual] = await Promise.all([
+				const [{ Quill, Document, init }, visual] = await Promise.all([
 					import('$lib/core'),
 					import('$lib/visual')
 				]);
@@ -106,6 +106,13 @@
 				const tree = await loadUsafMemoTree();
 				const quill = Quill.fromTree(tree);
 				const doc = quill.seedDocument();
+				// Issue #72 e2e seed: a card whose `kind` the schema can't project (as a
+				// document predating a schema change would carry). `Document.insertCard`
+				// is schema-agnostic, so it can hold a foreign kind the Quill-bound writer
+				// would reject — the exact un-schemable case the recovery shell handles.
+				if (new URLSearchParams(window.location.search).has('foreign')) {
+					doc.insertCard(Document.makeCard('legacy_kind', {}, 'Trapped legacy body.'));
+				}
 				if (cancelled) {
 					doc.free();
 					quill.free();
