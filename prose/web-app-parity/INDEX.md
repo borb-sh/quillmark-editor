@@ -75,7 +75,9 @@ with it buys little.
 ## Open questions
 
 Per-issue forks land as siblings as each is taken up:
-[`74-76-styling-extension.md`](74-76-styling-extension.md). Cross-cutting ones:
+[`74-76-styling-extension.md`](74-76-styling-extension.md). Risks per issue —
+what is retired, by what evidence, and what remains — in
+[`RISKS.md`](RISKS.md). Cross-cutting ones:
 
 - **One styling-extension story — settled.** #74's "hooks beyond tokens" and
   #76's control-slot mechanism were the same question, answered jointly in
@@ -88,10 +90,10 @@ Per-issue forks land as siblings as each is taken up:
   (`VISUAL_EDITOR.md:80`, `VISUAL_EDITOR_UIUX.md:94`); #75 already amended the
   must_fill-as-diagnostic-only stance. Both edit the same canon neighbourhood —
   the amendments should read as one voice, not two patches.
-- **Boundary asks.** #57 is the only open issue that may need a `Document` /
-  `DocumentWriter` primitive. The editor consumes the published `@quillmark/wasm`,
-  so that is an upstream ask with its own lead time — surface it early if the
-  design lands on it.
+- **Boundary asks — none.** #57 was the only candidate; `toJson` / `loadJson` /
+  `clone` already carry snapshot-and-restore, so no upstream ask is needed
+  ([`RISKS.md`](RISKS.md)). Nothing in the remaining set touches the WASM
+  boundary.
 
 ## Issue hygiene
 
