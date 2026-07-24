@@ -21,7 +21,7 @@ never onto the default branch.
 | 72 | recovery shell for un-schemable cards | projection | no | — | landed |
 | 75 | per-field guidance (required marker, description) | projection | no | amended | landed |
 | 70 | list-editing commands | codec | no | no | open |
-| 71 | ephemeral tips card (`$ext.editor.tips`) | projection | no | **reopens** | open |
+| 71 | ephemeral tips card (`$ext.editor.tips`) | projection | no | reopened + amended | landed |
 | 74 | unified light/dark token surface | style | no | amends `THEMING.md` | open |
 | 76 | styled control variants / control-slot hooks | projection | no | no | open |
 | 57 | document-level history (card-delete undo) | projection | no | amends | open |
@@ -39,6 +39,17 @@ more than size does:
 #73, #72, #75 — chrome and projection only, no boundary change. They share a new
 `FieldLabel.svelte`, un-gate the card loop, and thread an `enumOptionAllowed`
 predicate through the `CardOps` bundle. Everything below stacks on that.
+
+#71 lands on top: `tips.ts` (channel narrowing + the markdown render), a
+`TipsCard.svelte` rendered from a fixed slot after `main`, `CardModel.tips` off the
+`$ext` snapshot the derive already holds, and a `clearTips` merge-write beside the
+rename it mirrors. Canon reopened as scheduled — VISUAL_EDITOR §"Card operations"
+carries the channel, VISUAL_EDITOR_UIUX gains §"Tips card", and both guidance
+paragraphs were rewritten whole rather than patched around #75. Four open
+questions were closed by the build: placement (read every card, render `main`),
+authoring (seed-only — the editor never adds a tip), position (fixed slot after
+`main`), and the cursor (local, so exactly one write happens, at dismissal). No new
+`--qm-*` token, so #74 inherits nothing from it.
 
 ## Schedule
 
@@ -87,11 +98,10 @@ not a deliberation.
   from five dials by `color-mix` in oklab, so dark mode is a two-value swap;
   `check:theme` gates the drift; `boolean` → Switch ships as the one styled
   variant. No calls open.
-- **Canon reopenings — one voice.** #71 reopens the "no tips surface in V1"
-  stance (`VISUAL_EDITOR.md:80`, `VISUAL_EDITOR_UIUX.md:94`); #75 already amended
-  the must_fill-as-diagnostic-only stance. Both edit the same neighbourhood, so
-  #71's amendment rewrites the guidance paragraph whole rather than patching
-  around #75's edit.
+- **Canon reopenings — one voice.** Done: #71 reopened the "no tips surface in V1"
+  stance where #75 had just amended the must_fill-as-diagnostic-only one. Both
+  paragraphs were rewritten whole, landing on one line — guidance is per-field or
+  document-level, and a field never carries a tips surface.
 - **Boundary asks — none.** #57 was the only candidate; `toJson` / `loadJson` /
   `clone` already carry snapshot-and-restore, so no upstream ask is needed
   ([`RISKS.md`](RISKS.md)). Nothing in the remaining set touches the WASM

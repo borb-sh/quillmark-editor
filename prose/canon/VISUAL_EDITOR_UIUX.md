@@ -45,6 +45,29 @@ selector.
 Drag reorder is not carried in V1: the interaction cost (threshold, drop targets,
 keyboard and touch parity) buys only what the buttons already do.
 
+## Tips card
+
+An **ephemeral** block in the stack, fed by `$ext.editor.tips` (issue #71) — the
+one guidance surface that is not attached to a field. It sits in a fixed slot after
+`main`, ahead of the cards, so document-level hints read as document-level and
+never displace a control.
+
+One tip at a time, with an advance and a dismiss; both exits clear the channel, so
+the card leaves and does not return. Content is **inline markdown** through the
+codec's own decode and node `toDOM` — a tip is written in the body's mark
+vocabulary rather than by a second renderer that would drift from it — under the
+inline schema, so every tip is one paragraph and advancing cannot reshape the block.
+
+The cursor is **local**, not the channel: advancing writes nothing. A per-tip write
+would round-trip the boundary and dirty the document on what is a read gesture, so
+exactly one write happens, at dismissal. That write is the trade the surface makes
+plain — a dismissal persists in `$ext`, which is what "does not reappear" costs.
+
+Visually it is in-flow like every other block (SURFACES §Elevation): one hairline,
+no lift, no new token. It recedes by tone and type — the label rung in the muted
+label colour (AESTHETIC §"Secondary text recedes") — so it reads as guidance beside
+the fields rather than as another one.
+
 ## Formatting
 
 Formatting splits by what an action anchors to: a **selection** (marks) or a
@@ -93,8 +116,9 @@ is a separate concern (the island controls), not gated by this.
   `*` on no-`default:` (Unendorsed) fields, and the field's `description:` as a
   label tooltip (issue #75). A `!must_fill` marker also surfaces as a routed
   `validate()` warning among those diagnostics — the `*` states required-ness, the
-  warning reports unmet-ness; `example:` still gets no dedicated nudge or tips
-  surface in V1.
+  warning reports unmet-ness; `example:` still gets no dedicated nudge. No field
+  carries a tips surface: guidance that is not about one field belongs to the
+  document, and rides the tips card (§"Tips card").
 - **Array fields** — a repeater: one control per element (text / prose / minimal
   JSON by `items.type`), a per-row delete, an add affordance at the foot. No
   element reorder — rows hold entry order, and the array commits by value, so a

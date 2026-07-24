@@ -16,6 +16,7 @@ interface Dump {
 	date: string | null;
 	memo_for: string[];
 	references: string[];
+	mainExtEditor: Record<string, unknown> | null;
 	cardCount: number;
 	cards: { kind: string; title: string | null; from: string | null; body: string }[];
 }
@@ -263,5 +264,51 @@ test.describe('visual editor', () => {
 				)
 			)
 			.toBe(true);
+	});
+
+	test('(l) the tips card rotates, renders markdown, and dismissal clears the channel (issue #71)', async ({
+		page
+	}) => {
+		// `?tips` seeds `$ext.editor.tips` with three tips (see the route) — the
+		// channel a quill or consumer supplies; nothing in the schema declares it.
+		await page.goto('/visual?tips=1');
+		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
+
+		const card = page.getByTestId('tips-card');
+		await expect(card).toBeVisible();
+		await expect(page.getByTestId('tips-count')).toHaveText('1 of 3');
+		// Inline markdown, rendered as the body renders it — a `strong` element, not
+		// the literal asterisks.
+		await expect(page.getByTestId('tips-body').locator('strong')).toHaveText('Tab');
+
+		// Advance: the tip swaps, the count follows, and NOTHING is written — reading
+		// a tip must not dirty the document.
+		await page.getByTestId('tips-next').click();
+		await expect(page.getByTestId('tips-count')).toHaveText('2 of 3');
+		await expect(page.getByTestId('tips-body').locator('code')).toHaveText('npm run dev');
+		expect((await readDump(page)).mainExtEditor?.tips).toHaveLength(3);
+
+		// Advancing past the last tip clears the channel: the card goes, and the
+		// Document — not just the DOM — no longer carries `tips`.
+		await page.getByTestId('tips-next').click();
+		await expect(page.getByTestId('tips-count')).toHaveText('3 of 3');
+		await page.getByTestId('tips-next').click();
+		await expect(card).toHaveCount(0);
+		await expect.poll(async () => (await readDump(page)).mainExtEditor?.tips).toBeUndefined();
+	});
+
+	test('(m) dismissing tips leaves a renamed card its title (issue #71)', async ({ page }) => {
+		// The silent hazard: `tips` and `title` are sibling keys of one `editor`
+		// namespace, so a namespace-removing clear would destroy the rename. Only a
+		// document carrying BOTH can catch it — so this test makes one.
+		await page.goto('/visual?tips=1');
+		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
+
+		await page.getByTestId('card-title-0').fill('Kept Title');
+		await expect.poll(async () => (await readDump(page)).cards[0].title).toBe('Kept Title');
+
+		await page.getByTestId('tips-dismiss').click();
+		await expect(page.getByTestId('tips-card')).toHaveCount(0);
+		expect((await readDump(page)).cards[0].title).toBe('Kept Title');
 	});
 });

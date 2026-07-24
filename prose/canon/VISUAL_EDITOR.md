@@ -82,8 +82,11 @@ required field has no default to ghost. An unfilled marker still surfaces as a
 routed `validate()` warning (§Diagnostics) — the `*` states required-ness, the
 warning reports unmet-ness. A field's `description:` rides its label as a tooltip
 (issue #75b); `example:` reaches the editor only through the seed cascade
-(§"Card operations") — no other per-field tips surface in V1 (VISUAL_EDITOR_UIUX
-§Fields). Nothing gates — an incomplete document edits and renders fine (canon:
+(§"Card operations"). Guidance is per-field **or** document-level, never a third
+thing hanging off a field: no field carries a tips surface of its own, and
+document-level hints ride the `$ext.editor.tips` card instead (§"Card operations",
+issue #71) — a chrome channel, not a schema key, so it makes no claim about any one
+field (VISUAL_EDITOR_UIUX §Fields, §"Tips card"). Nothing gates — an incomplete document edits and renders fine (canon:
 `SCHEMAS.md` zero-fill render). Completeness is a read of `quill.validate(doc)`,
 not a gate.
 
@@ -153,6 +156,14 @@ edits is the leaf's PM `StepMap`, not a re-hydrate.
 - **Rename** — `$ext.editor.title`, editor state that never reaches the backend
   (canon: `CARDS.md`). The editor holds the `editor` namespace and writes it whole
   via `setCardExtNamespace` (the namespace is the write unit).
+- **Tips** — `$ext.editor.tips`, a sibling key of `title` in that same namespace
+  (issue #71): a list of authoring hints a quill or consumer **seeds**, which the
+  editor renders as a dismissable card and never adds to. `CardModel.tips` narrows
+  the channel for every card — the read rides the `$ext` snapshot the derive already
+  holds — and V1 renders `main` only, a fixed slot after it. Dismissal clears the
+  channel with a **merge**-write (read the namespace, drop `tips`, store the
+  remainder), because the namespace is the write unit and a namespace-removing clear
+  takes the sibling `title` with it. Never gates, never renders, absent when empty.
 
 ## Focus and the preview bridge
 

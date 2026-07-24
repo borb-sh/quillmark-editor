@@ -124,7 +124,11 @@
 				// default view stays the plain card stack.
 				if (params.has('tips')) {
 					doc.storeExtNamespace(MAIN_CARD_ADDR, 'editor', {
-						tips: ['Press **Tab** to move on.', 'Try `# ` for a heading.', 'Last one.']
+						tips: [
+							'Press **Tab** to move on.',
+							'Run `npm run dev` for the playground.',
+							'Last one — dismissing clears the channel.'
+						]
 					});
 				}
 				if (cancelled) {
