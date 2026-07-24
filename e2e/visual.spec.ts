@@ -51,6 +51,20 @@ test.describe('visual editor', () => {
 		await expect(page.getByTestId('active-addr')).toContainText('"field":"subject"');
 	});
 
+	test('(a2) a no-default field shows a required marker; a defaulted field does not (issue #75a)', async ({
+		page
+	}) => {
+		// `subject` declares no `default:` (Unendorsed) → a persistent `*`; the marker is
+		// present regardless of its accordion group's open state, so assert on DOM count.
+		await expect(page.getByTestId('required-main-subject')).toHaveCount(1);
+		await expect(page.getByTestId('required-main-subject')).toHaveAttribute(
+			'aria-label',
+			'required'
+		);
+		// `letterhead_title` carries a `default:` → not required, no marker.
+		await expect(page.getByTestId('required-main-letterhead_title')).toHaveCount(0);
+	});
+
 	test('(b) editing the body prose commits to the main body', async ({ page }) => {
 		const before = (await readDump(page)).body;
 		const el = pm(page, 'prose-main-body');

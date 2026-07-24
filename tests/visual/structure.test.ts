@@ -156,6 +156,17 @@ describe('against the real usaf_memo schema', () => {
 		expect(byName.memo_from.description).toMatch(/office symbol/i);
 	});
 
+	it('marks a no-default field required, a defaulted field not (issue #75a)', () => {
+		const schema = quill().schema;
+		const byName = Object.fromEntries(fieldModels(schema.main).map((m) => [m.name, m]));
+		// No `default:` → required (Unendorsed); a declared `default:` (incl. `""`/`[]`)
+		// → not required. `subject`/`memo_for` declare none; `memo_from`/`letterhead_title` do.
+		expect(byName.subject.required).toBe(true);
+		expect(byName.memo_for.required).toBe(true);
+		expect(byName.memo_from.required).toBe(false);
+		expect(byName.letterhead_title.required).toBe(false);
+	});
+
 	it('reads group order from the typed ui.groups registry', () => {
 		const schema = quill().schema;
 		expect(groupOrder(schema.main)).toEqual([

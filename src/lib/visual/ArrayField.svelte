@@ -26,6 +26,8 @@
 		items: QuillFieldSchema | undefined;
 		/** Accessible-name prefix for the element controls (`label` + 1-based index). */
 		label?: string;
+		/** No-default field → a persistent required `*` on the label (issue #75a). */
+		required?: boolean;
 		/** Schema `description` — the label's help affordance (issue #75b). */
 		description?: string;
 		onCommit: (arr: unknown[]) => void;
@@ -33,7 +35,7 @@
 		onFocusEl?: () => void;
 		testid?: string;
 	}
-	let { value, items, label, description, onCommit, onFocusEl, testid }: Props = $props();
+	let { value, items, label, required, description, onCommit, onFocusEl, testid }: Props = $props();
 
 	const control = $derived(elementControl(items));
 	const plaintext = $derived(items?.type === 'plaintext');
@@ -82,7 +84,7 @@
 <div class="qm-array" data-testid={testid}>
 	<div class="qm-array-header">
 		{#if label != null}
-			<FieldLabel {label} {description} {testid} />
+			<FieldLabel {label} {required} {description} {testid} />
 		{:else}
 			<span></span>
 		{/if}

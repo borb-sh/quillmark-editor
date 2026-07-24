@@ -77,7 +77,12 @@
 
 <div class="qm-field" class:compact={field.compact}>
 	{#if field.control !== 'array'}
-		<FieldLabel label={field.label} description={field.description} {testid} />
+		<FieldLabel
+			label={field.label}
+			required={field.required}
+			description={field.description}
+			{testid}
+		/>
 	{/if}
 	<div class="qm-field-control">
 		{#if field.control === 'prose'}
@@ -133,6 +138,7 @@
 				value={value as unknown[] | undefined}
 				items={field.schema.items}
 				label={field.label}
+				required={field.required}
 				description={field.description}
 				onCommit={onCommitScalar}
 				onFocusEl={() => onFocus?.(proseAddr)}

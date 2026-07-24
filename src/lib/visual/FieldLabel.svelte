@@ -1,26 +1,39 @@
 <!--
-  A field's label plus its optional description affordance (issue #75b). The
-  description is the schema field's `description` text, surfaced as an info marker
-  beside the label — a native `title` tooltip (the same convention the card / array
-  controls use) with the text also on `aria-label` so a screen reader announces it.
-  Chrome only: it never gates and carries no required marker (issue #75a is a
-  separate stance decision). Shared by {@link Field} (scalars, object, prose) and
-  {@link ArrayField} so every control's label surfaces its description the same way.
+  A field's label plus its guidance chrome (issue #75). Two label decorations, both
+  non-gating:
+    • a persistent required `*` (issue #75a) when the field has no `default:` — the
+      "Unendorsed"/must_fill set (DOCUMENT_MODEL: no separate `required` axis). The
+      glyph is `aria-hidden`; the accessible name says "required" so a screen reader
+      announces it once, not as punctuation;
+    • the `description` (issue #75b) as an info marker — a native `title` tooltip (the
+      card / array controls' convention) with the text on `aria-label` to announce.
+  Shared by {@link Field} (scalars, object, prose) and {@link ArrayField} so every
+  control's label decorates the same way.
 -->
 <script lang="ts">
 	import Info from '@lucide/svelte/icons/info';
 
 	interface Props {
 		label: string;
+		/** No-default field → a persistent required `*` (issue #75a). */
+		required?: boolean;
 		/** Schema `description`, or undefined — the affordance renders only when set. */
 		description?: string;
 		testid?: string;
 	}
-	let { label, description, testid }: Props = $props();
+	let { label, required, description, testid }: Props = $props();
 </script>
 
 <span class="qm-field-label">
-	{label}
+	<span>{label}</span>
+	{#if required}
+		<span
+			class="qm-field-required"
+			aria-label="required"
+			data-testid={testid ? `required-${testid}` : undefined}
+			><span aria-hidden="true">*</span></span
+		>
+	{/if}
 	{#if description}
 		<span
 			class="qm-field-hint"
@@ -40,6 +53,14 @@
 		font-size: var(--_qm-text-label);
 		font-weight: var(--_qm-weight-label);
 		color: var(--qm-label, #555);
+	}
+	/* Required marker: a quiet accent glyph, not an alarm — required-ness is guidance,
+	   the document still edits and renders unmet. */
+	.qm-field-required {
+		display: inline-flex;
+		align-items: center;
+		color: var(--qm-required, #b3261e);
+		line-height: 1;
 	}
 	/* The info marker recedes to the label's muted tone; the tooltip carries the text. */
 	.qm-field-hint {

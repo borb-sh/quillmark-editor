@@ -88,10 +88,13 @@ is a separate concern (the island controls), not gated by this.
   group (or, body-less, the first) auto-expanded; ungrouped fields stay above it,
   always visible.
 - **Prose leaf** — the body and each rich field as an inline WYSIWYG surface.
-- **Per-field state** — focus, inline diagnostics, and a ghosted `default:`
-  placeholder (never written back — it lives in the schema). A `!must_fill`
-  marker surfaces only as a routed `validate()` warning among those diagnostics;
-  no dedicated nudge and no tips surface (`example:`) in V1.
+- **Per-field state** — focus, inline diagnostics, a ghosted `default:`
+  placeholder (never written back — it lives in the schema), a persistent required
+  `*` on no-`default:` (Unendorsed) fields, and the field's `description:` as a
+  label tooltip (issue #75). A `!must_fill` marker also surfaces as a routed
+  `validate()` warning among those diagnostics — the `*` states required-ness, the
+  warning reports unmet-ness; `example:` still gets no dedicated nudge or tips
+  surface in V1.
 - **Array fields** — a repeater: one control per element (text / prose / minimal
   JSON by `items.type`), a per-row delete, an add affordance at the foot. No
   element reorder — rows hold entry order, and the array commits by value, so a

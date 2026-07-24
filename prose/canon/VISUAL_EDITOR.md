@@ -75,9 +75,14 @@ interpolated with live values — overridden per instance by `$ext.editor.title`
 
 **The editor projects the commitment ladder.** Per field: show the authored value;
 else ghost the `default:` as placeholder (never written back — it lives in the
-schema). A `!must_fill` marker surfaces as a routed `validate()` warning
-(§Diagnostics); `example:` reaches the editor only through the seed cascade
-(§"Card operations") — no per-field tips surface in V1 (VISUAL_EDITOR_UIUX
+schema). A no-`default:` field is **required** (Unendorsed — its seed carries a
+`!must_fill` marker; no separate `required` axis, canon `DOCUMENT_MODEL.md`): the
+label shows a persistent `*` (issue #75a), complementary to the ghost since a
+required field has no default to ghost. An unfilled marker still surfaces as a
+routed `validate()` warning (§Diagnostics) — the `*` states required-ness, the
+warning reports unmet-ness. A field's `description:` rides its label as a tooltip
+(issue #75b); `example:` reaches the editor only through the seed cascade
+(§"Card operations") — no other per-field tips surface in V1 (VISUAL_EDITOR_UIUX
 §Fields). Nothing gates — an incomplete document edits and renders fine (canon:
 `SCHEMAS.md` zero-fill render). Completeness is a read of `quill.validate(doc)`,
 not a gate.
