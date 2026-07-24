@@ -148,8 +148,8 @@
 		gap: var(--_qm-space-2);
 	}
 	.qm-field-label {
-		font-size: 0.75rem;
-		font-weight: 600;
+		font-size: var(--_qm-text-label);
+		font-weight: var(--_qm-weight-label);
 		color: var(--qm-label, #555);
 	}
 	.qm-array-row {
@@ -165,7 +165,7 @@
 		background: var(--qm-field-bg, #fff);
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
-		font-size: 0.7rem;
+		font-size: var(--_qm-text-meta);
 		line-height: 1;
 		padding: var(--_qm-space-half) var(--_qm-space);
 	}
@@ -193,6 +193,6 @@
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
 		padding: var(--_qm-space) var(--_qm-space-2);
-		font-size: 0.85rem;
+		font-size: var(--_qm-text-body);
 	}
 </style>

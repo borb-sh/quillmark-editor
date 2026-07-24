@@ -282,6 +282,9 @@
 		--_qm-space: var(--qm-space, 0.25rem);
 		--_qm-space-half: calc(var(--_qm-space) / 2);
 		--_qm-space-2: calc(var(--_qm-space) * 2);
+		/* Type scale, re-minted here for the same portal reason as the geometry rungs
+		   above (THEMING §"Base — typography & text"); this surface reads only body. */
+		--_qm-text-body: var(--qm-font-size, 0.875rem);
 
 		display: flex;
 		background: var(--qm-popover-bg, #fff);
@@ -300,7 +303,7 @@
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
 		font: inherit;
-		font-size: 0.78rem;
+		font-size: var(--_qm-text-body);
 		line-height: 1;
 		padding: var(--_qm-space) var(--_qm-space-2);
 		color: var(--qm-text, #1a1a1a);
@@ -323,7 +326,7 @@
 	}
 	.qm-link-input {
 		font: inherit;
-		font-size: 0.78rem;
+		font-size: var(--_qm-text-body);
 		padding: var(--_qm-space) var(--_qm-space-2);
 		border: 1px solid var(--qm-border, #d4d4d4);
 		border-radius: var(--_qm-radius-inner);

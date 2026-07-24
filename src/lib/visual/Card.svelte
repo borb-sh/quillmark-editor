@@ -203,8 +203,8 @@
 	}
 	.qm-card-title {
 		flex: 1;
-		font-size: 1rem;
-		font-weight: 600;
+		font-size: var(--_qm-text-title);
+		font-weight: var(--_qm-weight-label);
 		border: 1px solid transparent;
 		border-radius: var(--_qm-radius-inner);
 		padding: var(--_qm-space);
@@ -219,7 +219,7 @@
 	}
 	.qm-retype,
 	.qm-retype-btn {
-		font-size: 0.72rem;
+		font-size: var(--_qm-text-meta);
 		border: 1px solid var(--qm-border, #d4d4d4);
 		border-radius: var(--_qm-radius-inner);
 		background: var(--qm-field-bg, #fff);
@@ -238,7 +238,7 @@
 		gap: var(--_qm-space-2);
 	}
 	.qm-section-label {
-		font-size: 0.68rem;
+		font-size: var(--_qm-text-meta);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		color: var(--qm-section-label, #8a8a8a);
@@ -261,8 +261,8 @@
 		gap: var(--_qm-space);
 	}
 	.qm-field-label {
-		font-size: 0.75rem;
-		font-weight: 600;
+		font-size: var(--_qm-text-label);
+		font-weight: var(--_qm-weight-label);
 		color: var(--qm-label, #555);
 	}
 </style>

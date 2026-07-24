@@ -31,7 +31,7 @@
 		gap: var(--_qm-space-half);
 	}
 	.qm-diag-line {
-		font-size: 0.72rem;
+		font-size: var(--_qm-text-meta);
 		color: var(--qm-diag-warning, #b25000);
 	}
 	.qm-diag-line[data-severity='error'] {

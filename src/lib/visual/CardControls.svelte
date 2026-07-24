@@ -62,7 +62,7 @@
 		background: var(--qm-field-bg, #fff);
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
-		font-size: 0.7rem;
+		font-size: var(--_qm-text-meta);
 		line-height: 1;
 		padding: var(--_qm-space-half) var(--_qm-space);
 		color: #444;

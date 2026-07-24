@@ -520,6 +520,19 @@
 		--_qm-space-3: calc(var(--_qm-space) * 3);
 		--_qm-space-4: calc(var(--_qm-space) * 4);
 
+		/* Type rhythm (SURFACES §Rhythm, THEMING §"Base — typography & text"). Two
+		   public dials — --qm-font-size (body anchor), --qm-font-scale (ramp ratio)
+		   — derive the closed rung set every surface reads: a step up (title) and two
+		   down (label, meta), replacing the ~8 ad-hoc sizes the study counted. Weight
+		   is a fixed convention, not a dial: label 600, secondary 500. Minted here and
+		   re-minted on FormatPopover (portals out of this root), gated by check:type. */
+		--_qm-text-body: var(--qm-font-size, 0.875rem);
+		--_qm-text-title: calc(var(--_qm-text-body) * var(--qm-font-scale, 1.125));
+		--_qm-text-label: calc(var(--_qm-text-body) / var(--qm-font-scale, 1.125));
+		--_qm-text-meta: calc(var(--_qm-text-label) / var(--qm-font-scale, 1.125));
+		--_qm-weight-label: 600;
+		--_qm-weight-soft: 500;
+
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
@@ -536,7 +549,7 @@
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
 		padding: var(--_qm-space) var(--_qm-space-4);
-		font-size: 0.82rem;
+		font-size: var(--_qm-text-body);
 		color: #555;
 		list-style: none;
 	}

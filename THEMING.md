@@ -40,6 +40,20 @@ tints, control edges) are not yet tokenized and fall under that deferred pass.
 | `--qm-ghost`         | `#9a9a9a`                              | The ghosted `default:` placeholder (never written back).   |
 | `--qm-border`        | neutral grey                           | The shared chrome border across cards, fields, and leaves. |
 
+Two dials set the type ramp the same way the geometry dials set shape (below):
+`--qm-font-size` anchors the body size, `--qm-font-scale` is the ratio between
+rungs. They derive a small closed private scale — `--_qm-text-title` (a step up),
+`--_qm-text-body`, `--_qm-text-label`, `--_qm-text-meta` (two steps down) — plus a
+fixed weight convention `--_qm-weight-label` (`600`, card titles & field labels) /
+`--_qm-weight-soft` (`500`, a nested object prop's secondary label). Every surface
+reads a rung, never a size literal; `npm run check:type` gates it. The privates are
+internal, not a contract; set only the two dials below.
+
+| Token             | Default    | What it sizes                                                                    |
+| ----------------- | ---------- | -------------------------------------------------------------------------------- |
+| `--qm-font-size`  | `0.875rem` | Body text — the anchor the ramp derives up (title) and down (label/meta) from.   |
+| `--qm-font-scale` | `1.125`    | Ratio between adjacent rungs. Raise it for more size contrast, lower to flatten. |
+
 ### Geometry
 
 Two dials set the surface's shape and density (SURFACES §Rhythm). Each derives a
