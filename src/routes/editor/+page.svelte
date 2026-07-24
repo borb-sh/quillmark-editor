@@ -82,6 +82,67 @@
 	let lastChange = $state<ChangeSet | undefined>();
 	let showSource = $state(false);
 
+	// ── Split resizer (playground reference) ─────────────────────────────────────
+	// The editor|preview divider: a 3px line thickening to 5.5px on hover/drag with
+	// an ellipsis grip. A press only becomes a drag past a small dead-zone (swallows
+	// click-jitter), the ratio clamps to 30–70% so neither pane collapses, and the
+	// body takes a cursor/user-select lock for the drag so it reads as one gesture
+	// and no text selects under the pointer. Playground-only; the split shell is the
+	// consumer's per ARCHITECTURE §Playground.
+	let shellEl: HTMLDivElement | undefined = $state();
+	let splitPct = $state(50);
+	let dragging = $state(false);
+	const SPLIT_MIN = 30;
+	const SPLIT_MAX = 70;
+	const DEAD_ZONE = 3; // px moved before a press engages as a drag
+	const clampSplit = (pct: number): number => Math.min(SPLIT_MAX, Math.max(SPLIT_MIN, pct));
+
+	function onResizerPointerDown(e: PointerEvent): void {
+		if (!shellEl) return;
+		e.preventDefault();
+		const target = e.currentTarget as HTMLElement;
+		const width = shellEl.getBoundingClientRect().width;
+		const startX = e.clientX;
+		const startPct = splitPct;
+		let engaged = false;
+		target.setPointerCapture(e.pointerId);
+
+		const move = (ev: PointerEvent): void => {
+			const dx = ev.clientX - startX;
+			if (!engaged) {
+				if (Math.abs(dx) < DEAD_ZONE) return; // dead-zone: ignore click-jitter
+				engaged = true;
+				dragging = true;
+				document.body.style.cursor = 'col-resize';
+				document.body.style.userSelect = 'none';
+			}
+			splitPct = clampSplit(startPct + (dx / width) * 100);
+		};
+		const up = (ev: PointerEvent): void => {
+			target.releasePointerCapture?.(ev.pointerId);
+			target.removeEventListener('pointermove', move);
+			target.removeEventListener('pointerup', up);
+			if (engaged) {
+				dragging = false;
+				document.body.style.cursor = '';
+				document.body.style.userSelect = '';
+			}
+		};
+		target.addEventListener('pointermove', move);
+		target.addEventListener('pointerup', up);
+	}
+
+	function onResizerKeyDown(e: KeyboardEvent): void {
+		let next = splitPct;
+		if (e.key === 'ArrowLeft') next -= 2;
+		else if (e.key === 'ArrowRight') next += 2;
+		else if (e.key === 'Home') next = SPLIT_MIN;
+		else if (e.key === 'End') next = SPLIT_MAX;
+		else return;
+		e.preventDefault();
+		splitPct = clampSplit(next);
+	}
+
 	let toFree: Array<{ free(): void }> = [];
 
 	// ── Debounced recompile ─────────────────────────────────────────────────────
@@ -223,7 +284,11 @@
 			>
 		</div>
 
-		<div class="shell">
+		<div
+			class="shell"
+			bind:this={shellEl}
+			style="grid-template-columns: minmax(0, {splitPct}fr) 11px minmax(0, {100 - splitPct}fr)"
+		>
 			<section class="editor-pane" aria-label="Visual editor">
 				{#if VisualEditor && docHandle && quillHandle}
 					<VisualEditor
@@ -237,6 +302,25 @@
 					/>
 				{/if}
 			</section>
+			<!-- A focusable role="separator" with aria-valuenow + arrow-key handling is
+			     the WAI-ARIA window-splitter pattern; the a11y lint is conservative here. -->
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+			<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+			<div
+				class="resizer"
+				class:dragging
+				role="separator"
+				aria-orientation="vertical"
+				aria-label="Resize editor and preview panes"
+				aria-valuemin={SPLIT_MIN}
+				aria-valuemax={SPLIT_MAX}
+				aria-valuenow={Math.round(splitPct)}
+				tabindex="0"
+				onpointerdown={onResizerPointerDown}
+				onkeydown={onResizerKeyDown}
+			>
+				<span class="grip" aria-hidden="true">⋮</span>
+			</div>
 			<section class="preview-pane" aria-label="Live preview">
 				{#if session}
 					<Preview bind:this={previewRef} {session} onCaretPick={handleCaretPick} />
@@ -297,15 +381,15 @@
 	.bridge-state button {
 		font-size: 0.72rem;
 		padding: 0.2rem 0.5rem;
-		border: 1px solid #d5d5d5;
+		border: 1px solid var(--qm-border, #d5d5d5);
 		border-radius: 5px;
 		background: #fafafa;
 		cursor: pointer;
 	}
 	.shell {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-		gap: 1rem;
+		/* grid-template-columns is set inline from `splitPct` — the middle track
+		   holds the resizer, the two side tracks are the panes. */
 		align-items: start;
 		height: 72vh;
 	}
@@ -314,32 +398,79 @@
 		height: 100%;
 		overflow: auto;
 		padding: 0.5rem;
-		border: 1px solid #e2e2e2;
-		border-radius: 8px;
-		background: #fff;
+		border: 1px solid var(--qm-border, #e2e2e2);
+		border-radius: var(--qm-radius, 8px);
+		background: var(--qm-main-bg, #fff);
 	}
 	.preview-pane {
 		min-width: 0;
 		height: 100%;
-		border: 1px solid #ccc;
-		border-radius: 8px;
+		border: 1px solid var(--qm-border, #ccc);
+		border-radius: var(--qm-radius, 8px);
 		overflow: hidden;
-		background: #f7f7f7;
+		background: var(--qm-card-bg, #f7f7f7);
+	}
+	/* Reference resizer — a hairline in an 11px hit track, thickening on
+	   hover/drag, with an ellipsis grip that fades in over the line. */
+	.resizer {
+		position: relative;
+		align-self: stretch;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: col-resize;
+		touch-action: none; /* pointer drag owns the gesture, not scroll/pan */
+	}
+	.resizer::before {
+		content: '';
+		width: 3px;
+		height: 100%;
+		border-radius: 999px;
+		background: var(--qm-border, #d7dee8);
+		transition:
+			width 0.1s ease,
+			background-color 0.1s ease;
+	}
+	.resizer:hover::before,
+	.resizer:focus-visible::before,
+	.resizer.dragging::before {
+		width: 5.5px;
+		background: var(--qm-border-strong, #b6bfce);
+	}
+	.resizer:focus-visible {
+		outline: none;
+	}
+	.grip {
+		position: absolute;
+		font-size: 0.8rem;
+		line-height: 1;
+		color: var(--qm-ghost, #9a9a9a);
+		background: var(--qm-main-bg, #fff);
+		padding: 0.15rem 0;
+		border-radius: 999px;
+		opacity: 0;
+		transition: opacity 0.1s ease;
+		pointer-events: none;
+	}
+	.resizer:hover .grip,
+	.resizer:focus-visible .grip,
+	.resizer.dragging .grip {
+		opacity: 1;
 	}
 	.source-drawer {
 		margin-top: 1rem;
-		border: 1px solid #e2e2e2;
-		border-radius: 8px;
+		border: 1px solid var(--qm-border, #e2e2e2);
+		border-radius: var(--qm-radius, 8px);
 		overflow: hidden;
 	}
 	.drawer-label {
 		font-size: 0.68rem;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		color: #8a8a8a;
+		color: var(--qm-section-label, #8a8a8a);
 		padding: 0.4rem 0.6rem;
 		background: #f3f3f3;
-		border-bottom: 1px solid #e2e2e2;
+		border-bottom: 1px solid var(--qm-border, #e2e2e2);
 	}
 	.source-host {
 		height: 22rem;
