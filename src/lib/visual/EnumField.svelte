@@ -64,6 +64,12 @@
 		font: inherit;
 		background: var(--qm-field-bg, #fff);
 	}
+	/* Themed focus ring in place of the raw UA outline — one hue with the prose
+	   leaf's active border and the preview active box (SURFACES §Focus). */
+	.qm-select:focus-visible {
+		outline: 2px solid var(--qm-focus-ring, #2563eb);
+		outline-offset: 1px;
+	}
 	/* Shown-never-written: the closed control reads muted while unset, matching the
 	   ghosted placeholder the text/number controls show. */
 	.qm-select.ghosted {

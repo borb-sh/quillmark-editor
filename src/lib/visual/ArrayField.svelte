@@ -182,6 +182,11 @@
 		font-family: ui-monospace, monospace;
 		min-height: 2.5rem;
 	}
+	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */
+	.qm-json:focus-visible {
+		outline: 2px solid var(--qm-focus-ring, #2563eb);
+		outline-offset: 1px;
+	}
 	.qm-add-el {
 		border: 1px dashed var(--qm-border, #b8b8b8);
 		background: transparent;

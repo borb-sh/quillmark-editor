@@ -25,10 +25,12 @@ The card is the container; nothing inside it is a second box.
   `--qm-main-bg`) carries one quiet edge — a single hairline or a soft shadow, not
   both — and one `--qm-border` value, not a different grey per card. It is the only
   container in the column.
-- **Fields and the body sit chromeless inside the card.** A scalar control shows
-  its value, not a frame; the body prose leaf is text on the card surface, set off
-  from the fields above it by whitespace or a single hairline, never its own
-  bordered box. Boxes-inside-boxes is the density the monochrome rule
+- **Fields and the body sit quiet inside the card.** A scalar control and a prose
+  leaf each carry one hairline — the shared `--qm-border` at one radius (§"The
+  shared recipe") — and nothing heavier: no fill, no shadow, no frame within the
+  frame. The single hairline is the floor a control needs to read as editable and
+  to host its focus ring (§"Focus and active state"); a *second* box inside it —
+  a nested border, a filled panel — is the density the monochrome rule
   (AESTHETIC.md) removes.
 - **The selection popover is the one floating surface.** With nothing behind it, it
   earns the lift the cards do without: `--qm-popover-bg`, a hairline, and a shadow
@@ -62,15 +64,33 @@ theming pass, [`THEMING.md`](../../THEMING.md)).
 ## Focus and active state
 
 A surface a caret or selection can land on shows it, within the monochrome
-palette. Doctrine: a focused field or prose leaf draws a ring rather than
-clearing the native outline with nothing in its place. Today the scalar controls
-keep the native outline and the prose leaf clears it with no replacement — that
-gap, and the missing editor-side focus token, are
-[#45](https://github.com/borb-sh/quillmark-editor/issues/45). The active card is
-set apart from its neighbors (the `active` state that pins the reorder chevrons,
-VISUAL_EDITOR_UIUX §"Card stack"). The one non-neutral load-bearing hue shipped
-is the preview overlay's active field box (`--qm-field-ring-active` — THEMING
-§"Preview overlay"), so the focused target reads at a glance.
+palette — but a **form control** and a **prose leaf** are not the same case, and
+one focus rule for both is the error [#45] made:
+
+- **Scalar controls draw a tokenized ring.** A focused `TextField` / `NumberField`
+  / `EnumField` / `DateField` (and the array JSON control) shows a
+  `--qm-focus-ring` outline in place of the raw UA default — themed, and consistent
+  across the controls. Invariant: never clear a form control's native outline
+  without a visible replacement.
+- **A prose leaf keeps the caret as its focus indicator.** The blinking caret is
+  the editor convention for a text-editing region — Google Docs, Notion, every
+  ProseMirror surface — and a ring around a big `contenteditable` reads as the form
+  chrome the AESTHETIC rule strips, not as paper. So the leaf clears its
+  contenteditable outline deliberately; the caret *is* the replacement, and the
+  active leaf is cued quietly by tinting its wrapper hairline to `--qm-focus-ring`
+  (`:focus-within`), not by a heavy ring.
+
+One hue carries "active" across the panes: `--qm-focus-ring` defaults to the
+preview overlay's active-box hue (`--qm-field-ring-active` — THEMING §"Preview
+overlay"), so a field reads as focused with the same color in the editor and in
+the preview (the editor↔preview active address, VISUAL_EDITOR_UIUX §"Editor↔
+preview"). The active *card* is set apart separately — the `active` state that
+pins the reorder chevrons (VISUAL_EDITOR_UIUX §"Card stack").
+
+Buttons (reorder, delete, mark, add) keep the UA `:focus-visible` ring — already
+an accessible indicator; theming them is deferred, not part of [#45].
+
+[#45]: https://github.com/borb-sh/quillmark-editor/issues/45
 
 ## Preventing drift
 
