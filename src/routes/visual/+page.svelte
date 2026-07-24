@@ -28,6 +28,15 @@
 	let lastAddr = $state('none');
 	let dumpTick = $state(0);
 	let externalDiagnostics = $state<Diagnostic[]>([]);
+	// A consumer enum-policy stand-in (issue #73): once armed, forbid `CUI` on the
+	// main `classification` field so e2e can prove the option renders disabled
+	// without the stored value or the schema changing.
+	let restrictEnums = $state(false);
+	const enumOptionAllowed = $derived(
+		restrictEnums
+			? (addr: Addr, value: string) => !(addr.field === 'classification' && value === 'CUI')
+			: undefined
+	);
 
 	let toFree: Array<{ free(): void }> = [];
 
@@ -143,6 +152,7 @@
 						onCaretMove={() => refresh()}
 						onChange={refresh}
 						diagnostics={externalDiagnostics}
+						{enumOptionAllowed}
 					/>
 				{/if}
 			</div>
@@ -151,6 +161,11 @@
 				<pre data-testid="active-addr">{lastAddr}</pre>
 				<button type="button" data-testid="inject-diagnostics" onclick={injectDiagnostics}
 					>Inject test diagnostics</button
+				>
+				<button
+					type="button"
+					data-testid="toggle-enum-policy"
+					onclick={() => (restrictEnums = !restrictEnums)}>Toggle enum policy (forbid CUI)</button
 				>
 				<div class="state-label">doc state</div>
 				<pre data-testid="doc-json">{dump}</pre>

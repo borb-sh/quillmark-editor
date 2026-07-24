@@ -67,6 +67,24 @@ test.describe('visual editor', () => {
 		await expect.poll(async () => (await readDump(page)).letterhead_seal).toBe('dod');
 	});
 
+	test('(c2) a consumer enum policy DISABLES a forbidden option without mutating a stored value (issue #73)', async ({
+		page
+	}) => {
+		const opt = (value: string) =>
+			page.getByTestId('main-classification').locator(`option[value="${value}"]`);
+		// Author CUI first, then arm the policy that forbids it: the stored value is
+		// untouched (still CUI) and the option renders disabled, not stripped.
+		await page.getByTestId('main-classification').selectOption('CUI');
+		await expect.poll(async () => (await readDump(page)).classification).toBe('CUI');
+		await page.getByTestId('toggle-enum-policy').click();
+		await expect(opt('CUI')).toBeDisabled();
+		await expect(opt('UNCLASSIFIED')).toBeEnabled();
+		expect((await readDump(page)).classification).toBe('CUI');
+		// Disarm: the option is offerable again.
+		await page.getByTestId('toggle-enum-policy').click();
+		await expect(opt('CUI')).toBeEnabled();
+	});
+
 	test('(d) editing a number (font_size) and a date (date) commits', async ({ page }) => {
 		// Number/date commit at `change` (blur/Enter), not per keystroke (issue #13) —
 		// so the assertion follows a blur, mirroring a real settle.

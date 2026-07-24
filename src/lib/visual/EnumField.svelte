@@ -19,9 +19,13 @@
 		/** Accessible name — the visual label is a bare span the select can't reference. */
 		label?: string;
 		onCommit: (v: string | undefined) => void;
+		/** Consumer policy (issue #73): `false` disables an option so it can't be picked.
+		 * A disallowed value already authored stays SELECTED and visible (disabled), never
+		 * stripped or mutated. The UNSET sentinel is exempt — clear-to-default always works. */
+		optionAllowed?: (value: string) => boolean;
 		testid?: string;
 	}
-	let { value, values, fallback, label, onCommit, testid }: Props = $props();
+	let { value, values, fallback, label, onCommit, optionAllowed, testid }: Props = $props();
 
 	// The sentinel's option value — a namespaced marker that no schema-authored
 	// enum member would ever be (`values` are classification markings, seal ids, and
@@ -50,7 +54,9 @@
 		>{fallback != null && fallback !== '' ? fallback : '—'}</option
 	>
 	{#each values as v (v)}
-		<option value={v}>{v === '' ? '—' : v}</option>
+		<option value={v} disabled={optionAllowed ? !optionAllowed(v) : false}
+			>{v === '' ? '—' : v}</option
+		>
 	{/each}
 </select>
 

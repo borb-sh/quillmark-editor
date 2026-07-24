@@ -28,6 +28,8 @@
 		retype: (kind: string) => void;
 		rename: (title: string) => void;
 		diagFor: (field?: string) => Diagnostic[] | undefined;
+		/** Consumer enum-option policy for a field (issue #73); true when no hook set. */
+		enumAllowed: (field: string, value: string) => boolean;
 	}
 
 	interface Props {
@@ -255,6 +257,7 @@
 				proseAddr={ops.makeAddr(f.name)}
 				leafKey={ops.leafKey(f.name)}
 				onCommitScalar={(v) => ops.commit(f.name, v)}
+				optionAllowed={(v) => ops.enumAllowed(f.name, v)}
 				{onFocus}
 				{onCaretMove}
 				{register}

@@ -84,8 +84,24 @@
 		 * and local commit errors (VISUAL_EDITOR §Diagnostics).
 		 */
 		diagnostics?: Diagnostic[];
+		/**
+		 * Consumer policy hook (issue #73): given a field `addr` and an enum option,
+		 * return `false` to mark that option unavailable. A disallowed option renders
+		 * DISABLED (never stripped), so an already-authored value stays visible and its
+		 * stored payload is untouched — the schema is unchanged, this is runtime policy.
+		 * Absent → every schema option is offered (the default, zero behavior change).
+		 */
+		enumOptionAllowed?: (addr: Addr, value: string) => boolean;
 	}
-	let { doc, quill, onActiveAddrChange, onCaretMove, onChange, diagnostics }: Props = $props();
+	let {
+		doc,
+		quill,
+		onActiveAddrChange,
+		onCaretMove,
+		onChange,
+		diagnostics,
+		enumOptionAllowed
+	}: Props = $props();
 
 	// ── Reactivity + session identity ───────────────────────────────────────────
 	let revision = $state(0);
@@ -331,7 +347,11 @@
 			remove: () => removeCardById(id),
 			retype: (kind: string) => retypeCardById(id, kind),
 			rename: (title: string) => renameCardById(id, title),
-			diagFor: (field?: string) => diagFor(id, isMain, field)
+			diagFor: (field?: string) => diagFor(id, isMain, field),
+			// Bind the consumer policy hook to this field's resolved addr (issue #73);
+			// no hook → every option allowed.
+			enumAllowed: (field: string, value: string) =>
+				enumOptionAllowed?.(makeAddr(id, isMain, field), value) ?? true
 		};
 	}
 

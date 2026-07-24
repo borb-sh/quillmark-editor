@@ -40,6 +40,9 @@
 		proseAddr: Addr;
 		leafKey: string;
 		onCommitScalar: (value: unknown) => void;
+		/** Enum-option policy (issue #73): `false` disables that option. Only the enum
+		 * control reads it; other controls ignore it. */
+		optionAllowed?: (value: string) => boolean;
 		onFocus?: (addr: Addr) => void;
 		onCaretMove?: (addr: Addr, pos: number) => void;
 		register?: (key: string, controller: FieldController) => void;
@@ -55,6 +58,7 @@
 		proseAddr,
 		leafKey,
 		onCommitScalar,
+		optionAllowed,
 		onFocus,
 		onCaretMove,
 		register,
@@ -97,6 +101,7 @@
 				fallback={ghost as string | undefined}
 				label={field.label}
 				onCommit={onCommitScalar}
+				{optionAllowed}
 				{testid}
 			/>
 		{:else if field.control === 'number'}
