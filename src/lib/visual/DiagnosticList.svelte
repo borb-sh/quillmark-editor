@@ -28,7 +28,7 @@
 	.qm-diag-list {
 		display: flex;
 		flex-direction: column;
-		gap: 0.1rem;
+		gap: var(--_qm-space-half);
 	}
 	.qm-diag-line {
 		font-size: 0.72rem;

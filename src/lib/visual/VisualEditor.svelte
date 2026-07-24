@@ -507,9 +507,22 @@
 
 <style>
 	.qm-editor {
+		/* Geometry rhythm (SURFACES §Rhythm, THEMING §Geometry). Two public dials —
+		   --qm-radius, --qm-space — derive the closed private scale every interior
+		   surface reads; overriding a dial rescales the whole surface from one edit.
+		   Re-declared on each DETACHED root (FormatPopover portals out of this
+		   subtree, so it carries its own copy) — the one place a value is minted. */
+		--_qm-radius: var(--qm-radius, 8px);
+		--_qm-radius-inner: calc(var(--_qm-radius) / 2);
+		--_qm-space: var(--qm-space, 0.25rem);
+		--_qm-space-half: calc(var(--_qm-space) / 2);
+		--_qm-space-2: calc(var(--_qm-space) * 2);
+		--_qm-space-3: calc(var(--_qm-space) * 3);
+		--_qm-space-4: calc(var(--_qm-space) * 4);
+
 		display: flex;
 		flex-direction: column;
-		gap: 0.6rem;
+		gap: var(--_qm-space-2);
 		font-family: var(--qm-font, ui-sans-serif, system-ui, sans-serif);
 		color: var(--qm-text, #1a1a1a);
 	}
@@ -520,9 +533,9 @@
 	.qm-add-btn {
 		border: 1px dashed var(--qm-border, #c4c4c4);
 		background: transparent;
-		border-radius: 6px;
+		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
-		padding: 0.25rem 0.9rem;
+		padding: var(--_qm-space) var(--_qm-space-4);
 		font-size: 0.82rem;
 		color: #555;
 		list-style: none;
@@ -536,7 +549,7 @@
 	}
 	.qm-add-kinds {
 		display: flex;
-		gap: 0.3rem;
-		margin-top: 0.3rem;
+		gap: var(--_qm-space);
+		margin-top: var(--_qm-space);
 	}
 </style>

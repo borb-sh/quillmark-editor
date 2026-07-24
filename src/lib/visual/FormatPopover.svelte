@@ -273,26 +273,36 @@
 
 <style>
 	.qm-format-popover {
+		/* Re-declares the geometry scale (SURFACES §Rhythm, THEMING §Geometry): this
+		   surface PORTALS to document.body, outside .qm-editor, so it inherits the
+		   public dials but not the derived scale — it mints the private tier here,
+		   the popover being a container it reads the base radius, not the inner. */
+		--_qm-radius: var(--qm-radius, 8px);
+		--_qm-radius-inner: calc(var(--_qm-radius) / 2);
+		--_qm-space: var(--qm-space, 0.25rem);
+		--_qm-space-half: calc(var(--_qm-space) / 2);
+		--_qm-space-2: calc(var(--_qm-space) * 2);
+
 		display: flex;
 		background: var(--qm-popover-bg, #fff);
 		border: 1px solid var(--qm-border, #d4d4d4);
-		border-radius: 6px;
+		border-radius: var(--_qm-radius);
 		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-		padding: 0.25rem;
+		padding: var(--_qm-space);
 	}
 	.qm-format-buttons {
 		display: flex;
-		gap: 0.15rem;
+		gap: var(--_qm-space-half);
 	}
 	.qm-mark-btn {
 		border: 1px solid transparent;
 		background: transparent;
-		border-radius: 4px;
+		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
 		font: inherit;
 		font-size: 0.78rem;
 		line-height: 1;
-		padding: 0.35rem 0.55rem;
+		padding: var(--_qm-space) var(--_qm-space-2);
 		color: var(--qm-text, #1a1a1a);
 	}
 	.qm-mark-btn:hover:not(:disabled) {
@@ -308,15 +318,15 @@
 	}
 	.qm-link-prompt {
 		display: flex;
-		gap: 0.25rem;
+		gap: var(--_qm-space);
 		align-items: center;
 	}
 	.qm-link-input {
 		font: inherit;
 		font-size: 0.78rem;
-		padding: 0.3rem 0.45rem;
+		padding: var(--_qm-space) var(--_qm-space-2);
 		border: 1px solid var(--qm-border, #d4d4d4);
-		border-radius: 4px;
+		border-radius: var(--_qm-radius-inner);
 		min-width: 12rem;
 	}
 </style>

@@ -172,12 +172,14 @@
 <style>
 	.qm-card {
 		border: 1px solid var(--qm-border, #e2e2e2);
-		border-radius: 8px;
-		padding: 0.85rem 1rem;
+		border-radius: var(--_qm-radius);
+		/* Uniform inset on every side (SURFACES §Rhythm) — a body-shown and a
+		   body-hidden card stay symmetric, every left edge on one gutter. */
+		padding: var(--_qm-space-4);
 		background: var(--qm-card-bg, #fafafa);
 		display: flex;
 		flex-direction: column;
-		gap: 0.7rem;
+		gap: var(--_qm-space-3);
 	}
 	.qm-card.qm-main {
 		background: var(--qm-main-bg, #fff);
@@ -186,12 +188,12 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 0.6rem;
+		gap: var(--_qm-space-2);
 	}
 	.qm-card-header-right {
 		display: flex;
 		align-items: center;
-		gap: 0.4rem;
+		gap: var(--_qm-space-2);
 	}
 	/* Reveal the reorder chevrons on hover or while active (CardControls owns the
 	   default hidden state). */
@@ -204,8 +206,8 @@
 		font-size: 1rem;
 		font-weight: 600;
 		border: 1px solid transparent;
-		border-radius: 4px;
-		padding: 0.2rem 0.35rem;
+		border-radius: var(--_qm-radius-inner);
+		padding: var(--_qm-space);
 		background: transparent;
 		font-family: inherit;
 	}
@@ -219,21 +221,21 @@
 	.qm-retype-btn {
 		font-size: 0.72rem;
 		border: 1px solid var(--qm-border, #d4d4d4);
-		border-radius: 4px;
+		border-radius: var(--_qm-radius-inner);
 		background: var(--qm-field-bg, #fff);
-		padding: 0.18rem 0.4rem;
+		padding: var(--_qm-space-half) var(--_qm-space-2);
 		cursor: pointer;
 		color: #555;
 	}
 	.qm-card-body {
 		display: flex;
 		flex-direction: column;
-		gap: 0.7rem;
+		gap: var(--_qm-space-3);
 	}
 	.qm-section {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: var(--_qm-space-2);
 	}
 	.qm-section-label {
 		font-size: 0.68rem;
@@ -241,12 +243,12 @@
 		letter-spacing: 0.05em;
 		color: var(--qm-section-label, #8a8a8a);
 		border-bottom: 1px solid var(--qm-border, #ececec);
-		padding-bottom: 0.15rem;
+		padding-bottom: var(--_qm-space-half);
 	}
 	.qm-row {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: var(--_qm-space-2);
 	}
 	.qm-row.packed {
 		flex-direction: row;
@@ -256,7 +258,7 @@
 	.qm-body-leaf {
 		display: flex;
 		flex-direction: column;
-		gap: 0.2rem;
+		gap: var(--_qm-space);
 	}
 	.qm-field-label {
 		font-size: 0.75rem;

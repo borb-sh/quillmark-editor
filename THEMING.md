@@ -40,6 +40,19 @@ tints, control edges) are not yet tokenized and fall under that deferred pass.
 | `--qm-ghost`         | `#9a9a9a`                              | The ghosted `default:` placeholder (never written back).   |
 | `--qm-border`        | neutral grey                           | The shared chrome border across cards, fields, and leaves. |
 
+### Geometry
+
+Two dials set the surface's shape and density (SURFACES §Rhythm). Each derives a
+small closed private scale — `--_qm-radius`/`--_qm-radius-inner` and the
+`--_qm-space-*` rungs — that every interior control reads, so one override
+rescales the whole surface. The privates are internal, not a contract; set only
+the two dials below.
+
+| Token         | Default   | What it sizes                                                                 |
+| ------------- | --------- | ----------------------------------------------------------------------------- |
+| `--qm-radius` | `8px`     | Card & popover corner. Interior controls derive a tighter tier (half).        |
+| `--qm-space`  | `0.25rem` | Spacing base. Gaps and insets are `half`/`1×`/`2×`/`3×`/`4×` multiples of it. |
+
 ### Card chrome
 
 | Token          | Default   | What it colors                  |

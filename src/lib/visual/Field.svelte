@@ -159,7 +159,7 @@
 	.qm-field {
 		display: flex;
 		flex-direction: column;
-		gap: 0.2rem;
+		gap: var(--_qm-space);
 		flex: 1 1 auto;
 		min-width: 0;
 	}
