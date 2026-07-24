@@ -1,0 +1,116 @@
+# web-app-parity — working notes
+
+Bench notes for the `web-app-parity` branch (PR #77), which integrates the 70+
+issue set. Holds the schedule, the design forks, and the open questions until
+each lands; a shipped decision promotes into `canon/` and its entry here goes.
+Retired with the branch.
+
+Not a durable tier. `prose/README.md` names two (`canon/`, `inspiration/`) and
+tracks deferred work as GitHub issues; these notes sit between the issue and the
+canon amendment, and `npm run check:canon` does not scan them — no spine
+required.
+
+## Ledger
+
+`web-app-parity` is the trunk. Each issue branches off it and integrates back,
+never onto the default branch.
+
+| # | Scope | Axis | Boundary | Canon | State |
+|---|---|---|---|---|---|
+| 73 | consumer enum-option policy hook | projection | no | — | landed |
+| 72 | recovery shell for un-schemable cards | projection | no | — | landed |
+| 75 | per-field guidance (required marker, description) | projection | no | amended | landed |
+| 70 | list-editing commands | codec | no | no | open |
+| 71 | ephemeral tips card (`$ext.editor.tips`) | projection | no | **reopens** | open |
+| 74 | unified light/dark token surface | style | no | amends `THEMING.md` | open |
+| 76 | styled control variants / control-slot hooks | projection | no | no | open |
+| 57 | document-level history (card-delete undo) | projection | **maybe** | amends | open |
+| 16 | island/table editing | codec + projection | maybe | no | open |
+
+**Axis** is the file cluster a change contends for, and it drives the schedule
+more than size does:
+
+- **codec** — `src/lib/core/codec/` (`field.ts` keymap, `inputrules.ts`, `schema.ts`)
+- **projection** — `src/lib/visual/` (`VisualEditor.svelte`, `Field.svelte`, `structure.ts`)
+- **style** — `THEMING.md` plus the surfaces' CSS
+
+## Landed in #77
+
+#73, #72, #75 — chrome and projection only, no boundary change. They share a new
+`FieldLabel.svelte`, un-gate the card loop, and thread an `enumOptionAllowed`
+predicate through the `CardOps` bundle. Everything below stacks on that.
+
+## Schedule
+
+Two isolated axes run alongside one serialized chain:
+
+```
+web-app-parity (#77, trunk)
+ ├─ #70  list editing         ┐ isolated axes — concurrent with the chain
+ ├─ #74  theming / dark tokens┘
+ └─ chain (all contend for VisualEditor / Field / structure — serialize)
+      #71  tips card  →  #76  control-slot hooks  →  #57  document undo
+ #16  island/table editing — tail
+```
+
+- **#70 and #74 are isolated.** #70 lives in the leaf keymap and input rules;
+  #74 in tokens and CSS. Neither touches the projection layer, so both run
+  concurrently with the chain and with each other.
+- **#71 → #76 → #57 serialize.** All three edit the same three projection files,
+  two of which #77 just rewrote. Running them concurrently buys nothing and
+  costs merge conflicts on fresh code.
+- **#74 gates #76's design, not its code.** The two must resolve to one
+  styling-extension story (per the #74 comment), so #74's hook decision precedes
+  #76's build. Their files never collide.
+- **#57 last in the chain.** It rewrites the structure mutators the other two
+  build on, and may carry a WASM-boundary ask that lengthens its lead time.
+- **#16 is the tail.** Most deferrable; the only item that plausibly slips past
+  V1.
+
+**Ordering call — open.** The above is quick-wins-first. The alternative is
+parity-first: #74/#76 lead, on the argument that dark mode is what blocks *full*
+web-app parity and this is the parity branch. Trade: higher impact, but the
+largest design surface front-loads before any easy win lands.
+
+## Open questions
+
+Per-issue forks land as siblings (`70-list-editing.md`, …) as each is taken up.
+Cross-cutting ones:
+
+- **One styling-extension story.** #74's "hooks beyond tokens" and #76's
+  control-slot mechanism are the same question. Deciding them apart yields two
+  parallel extension APIs.
+- **Canon reopenings.** #71 reopens the "no tips surface in V1" stance
+  (`VISUAL_EDITOR.md:80`, `VISUAL_EDITOR_UIUX.md:94`); #75 already amended the
+  must_fill-as-diagnostic-only stance. Both edit the same canon neighbourhood —
+  the amendments should read as one voice, not two patches.
+- **Boundary asks.** #57 is the only open issue that may need a `Document` /
+  `DocumentWriter` primitive. The editor consumes the published `@quillmark/wasm`,
+  so that is an upstream ask with its own lead time — surface it early if the
+  design lands on it.
+
+## Issue hygiene
+
+Found while scheduling; the issue bodies are stale on these points.
+
+- **#16** — `prosemirror-tables` is no longer in `package.json`, so the "drop the
+  pin until it's consumed" rider is already satisfied. The dead-dependency
+  framing in the body no longer holds.
+- **#57** — references `prose/designs/INDEX.md`. No such tier exists;
+  `prose/README.md` retired the plan tiers, and deferred designs are GitHub
+  issues. Its "Cross-leaf coordination" pointer needs rehoming.
+- **#72** — the body's case (A) predicted a throw from the ungated
+  `cardSchema.fields` read; the landed fix un-gates the card loop instead, so
+  #21's whole-region gate is superseded rather than guarded.
+
+## Findings
+
+- **`bits-ui` is already a dependency**, consumed only for `Popover`
+  (`FormatPopover.svelte:47`). It ships headless `Select`, `Checkbox`, `Switch`,
+  and date primitives. #76 weighs styled variants against "the a11y burden the
+  native controls get for free" — that burden is smaller than the issue assumes,
+  since the precedent for consuming a headless primitive is set and the a11y
+  comes with it. This strengthens option (2) relative to the issue's own
+  recommendation of (1).
+- **#70's groundwork holds**: `prosemirror-schema-list` is a live dependency and
+  `list_item` is `block+`, so nesting is representable without a schema change.
