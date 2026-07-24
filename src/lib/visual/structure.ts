@@ -243,6 +243,23 @@ export function groupSections(
 }
 
 /**
+ * The group section a card's accordion opens on first mount (issue #60), or
+ * `null` for all-collapsed. Ungrouped fields render outside the accordion, so
+ * only `group != null` sections count. The rule keeps exactly one section's
+ * worth of fields visible when the card would otherwise read empty:
+ *   • one group → open it (the sole-group auto-expand, even with a body);
+ *   • many groups + a body leaf → all collapsed (the body carries the card);
+ *   • many groups + no body → open the first (nothing else fills the card).
+ * State is ephemeral session state the Card owns; this only seeds it.
+ */
+export function initialExpandedGroup(sections: GroupSection[], hasBody: boolean): string | null {
+	const grouped = sections.filter((s) => s.group != null);
+	if (grouped.length === 0) return null;
+	if (grouped.length === 1) return grouped[0].group ?? null;
+	return hasBody ? null : (grouped[0].group ?? null);
+}
+
+/**
  * Pack a section's fields into rows: a run of consecutive `compact` fields shares
  * one row; a non-compact field is its own row. `ui.compact` is the density hint
  * carried from web-app.
