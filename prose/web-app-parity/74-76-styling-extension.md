@@ -6,6 +6,9 @@ is what the #74 comment warns against. One answer, in two halves:
 
 > **Tokens own appearance. Slots own structure. There is no third mechanism.**
 
+Settled — see §Settled for the five dials, the `check:theme` gate, the one
+styled variant, and the declined hooks.
+
 `part`/class hooks — #74's "hooks beyond tokens", and the reason the `qm-*`
 classes are "built on sand" in #76 — are **declined** under this. A class
 contract freezes internal DOM shape; the slot is the supported way to own pixels
@@ -157,16 +160,63 @@ Pure (1) leaves the slot API unexercised until someone outside uses it; pure (2)
 takes on a control library. The hybrid validates the contract at one control's
 cost.
 
-## Calls for you
+## Settled
 
-1. **Semantic color rungs, or stay flat?** Rungs are the coherent answer and
-   match the house pattern, but they are the larger change and the one that most
-   shapes what a consumer writes.
-2. **`check:theme` in scope for #74, or a follow-up?** Recommend in-scope —
-   without it the ten literals come back, and `--qm-required` shows drift is
-   already happening.
-3. **The one styled variant (boolean → Switch), or slots only?** Recommend
-   shipping it, to exercise the contract from inside.
-4. **Declining `part`/class hooks** — confirm. It is the load-bearing half of
-   "one styling story"; if hooks are wanted after all, #76's slot design changes
-   shape.
+**1. Semantic rungs — adopted, as dials, not a flat set.**
+
+Color is not a scalar ramp, so it does not derive from two numbers the way
+geometry and type do. It derives from **three dials plus two status hues**:
+
+| Dial | Role |
+|---|---|
+| `--qm-bg` | Base surface. |
+| `--qm-fg` | Base ink. |
+| `--qm-accent` | Focus rings, active marks, the preview's active box. |
+| `--qm-danger` | Errors, the required marker, the delete glyph. |
+| `--qm-warning` | Warning diagnostics. |
+
+The private scale derives by `color-mix` between the two poles — surfaces step
+from `bg` toward `fg`, ink steps from `fg` toward `bg`:
+
+```
+--_qm-surface        = bg
+--_qm-surface-raised = mix(bg, fg, 2%)     card / gutter
+--_qm-surface-hover  = mix(bg, fg, 6%)
+--_qm-border         = mix(bg, fg, 17%)
+--_qm-ink            = fg                  body
+--_qm-ink-label      = mix(fg, bg, 35%)    labels
+--_qm-ink-meta       = mix(fg, bg, 45%)    section labels
+--_qm-ink-ghost      = mix(fg, bg, 60%)    the shown-never-written default
+```
+
+The ink rungs mirror the existing type rungs (body / label / meta), so a
+component reads `--_qm-text-label` and `--_qm-ink-label` from the same mental
+model. **Dark mode is then a two-value swap**, which is the whole point.
+
+`color-mix` is already proven in this codebase (`FormatPopover.svelte:337`).
+Mix in **oklab**, not sRGB — sRGB mixing muddies mid-tones and the label/meta
+rungs are exactly mid-tone. The fifteen flat `--qm-*` tokens keep working,
+defaulting to their rung and overriding it when set: no consumer breaks, and
+THEMING.md's "stable, layered over, not replaced" promise holds literally.
+
+**2. `check:theme` — in scope for #74.** Two rules, mirroring its siblings: no
+bare color / shadow / opacity literal outside a `var()` fallback, and every
+consumed `--qm-*` documented in THEMING.md. Without it the ten literals grow
+back, and `--qm-required` proves drift is already live.
+
+**3. Ship `boolean` → Switch on bits-ui.** One variant, to exercise the slot
+contract from inside the package before anyone outside depends on it.
+
+**4. `part`/class hooks — declined.** Tokens for appearance, slots for
+structure. The `qm-*` classes stay non-contractual.
+
+## Consequences
+
+- The mode-fragile set collapses under the dials: shadows become
+  `mix(fg, transparent)` rather than black, so they invert for free. Blur radius,
+  the 82% mix, and the `0.3/0.35/0.5` opacity ladder still need their own tokens
+  — they are ratios, not colors, and no palette fixes them.
+- `--qm-page-shadow` and `--qm-field-ring` keep their literal defaults as the
+  documented escape hatch for consumers who want a shadow unrelated to their ink.
+- THEMING.md grows a "Dials" section above the existing tables; the tables stay
+  and are re-described as overrides over rungs.

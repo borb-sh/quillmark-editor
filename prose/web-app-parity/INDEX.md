@@ -77,10 +77,13 @@ with it buys little.
 Per-issue forks land as siblings as each is taken up:
 [`74-76-styling-extension.md`](74-76-styling-extension.md). Cross-cutting ones:
 
-- **One styling-extension story.** #74's "hooks beyond tokens" and #76's
-  control-slot mechanism are the same question — answered jointly in
-  `74-76-styling-extension.md`: tokens own appearance, slots own structure,
-  `part`/class hooks declined. Four calls open there.
+- **One styling-extension story — settled.** #74's "hooks beyond tokens" and
+  #76's control-slot mechanism were the same question, answered jointly in
+  [`74-76-styling-extension.md`](74-76-styling-extension.md): tokens own
+  appearance, slots own structure, `part`/class hooks declined. Colour derives
+  from five dials by `color-mix` in oklab, so dark mode is a two-value swap;
+  `check:theme` gates the drift; `boolean` → Switch ships as the one styled
+  variant. No calls open.
 - **Canon reopenings.** #71 reopens the "no tips surface in V1" stance
   (`VISUAL_EDITOR.md:80`, `VISUAL_EDITOR_UIUX.md:94`); #75 already amended the
   must_fill-as-diagnostic-only stance. Both edit the same canon neighbourhood —
