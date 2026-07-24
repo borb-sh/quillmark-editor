@@ -55,11 +55,15 @@ body — are separated by one gap, not per-region margins that drift. Pick from 
 scale; an in-between value is a review smell.
 
 **Radius.** One radius base with at most a small derived step, by surface
-weight — the card one tier, its interior controls a tighter one — not a free choice
-per component. Four unrelated radii is drift, not a scale. Neither radius nor
-spacing is tokenized yet — the values are literals in component styles
-([#46](https://github.com/borb-sh/quillmark-editor/issues/46); the deferred
-theming pass, [`THEMING.md`](../../THEMING.md)).
+weight — the card (and popover) one tier, interior controls a tighter one — not a
+free choice per component. Four unrelated radii is drift, not a scale.
+
+**The scale in code.** Both are tokenized (THEMING §Geometry). Two public dials —
+`--qm-radius`, `--qm-space` — derive a closed private scale (`--_qm-radius`/
+`-inner`; `--_qm-space`/`-half`/`-2`/`-3`/`-4`) minted ONCE per detached root
+(`.qm-editor`; `FormatPopover` re-declares it, portaling out of that subtree). A
+component reads a rung, never a literal — `npm run check:geometry` gates it, so an
+in-between value fails CI, not just review.
 
 ## Focus and active state
 

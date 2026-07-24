@@ -67,8 +67,8 @@
 	.qm-array-prose {
 		flex: 1;
 		border: 1px solid var(--qm-border, #d4d4d4);
-		border-radius: 4px;
-		padding: 0.3rem 0.45rem;
+		border-radius: var(--_qm-radius-inner);
+		padding: var(--_qm-space) var(--_qm-space-2);
 		background: var(--qm-field-bg, #fff);
 		min-height: 1.5rem;
 	}

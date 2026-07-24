@@ -58,9 +58,9 @@
 	.qm-select {
 		width: 100%;
 		box-sizing: border-box;
-		padding: 0.3rem 0.45rem;
+		padding: var(--_qm-space) var(--_qm-space-2);
 		border: 1px solid var(--qm-border, #d4d4d4);
-		border-radius: 4px;
+		border-radius: var(--_qm-radius-inner);
 		font: inherit;
 		background: var(--qm-field-bg, #fff);
 	}

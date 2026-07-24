@@ -139,13 +139,13 @@
 	.qm-array {
 		display: flex;
 		flex-direction: column;
-		gap: 0.35rem;
+		gap: var(--_qm-space);
 	}
 	.qm-array-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 0.5rem;
+		gap: var(--_qm-space-2);
 	}
 	.qm-field-label {
 		font-size: 0.75rem;
@@ -155,7 +155,7 @@
 	.qm-array-row {
 		display: flex;
 		align-items: flex-start;
-		gap: 0.3rem;
+		gap: var(--_qm-space);
 	}
 	.qm-array-input {
 		flex: 1;
@@ -163,11 +163,11 @@
 	.qm-mini {
 		border: 1px solid var(--qm-border, #d4d4d4);
 		background: var(--qm-field-bg, #fff);
-		border-radius: 3px;
+		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
 		font-size: 0.7rem;
 		line-height: 1;
-		padding: 0.15rem 0.3rem;
+		padding: var(--_qm-space-half) var(--_qm-space);
 	}
 	.qm-mini:disabled {
 		opacity: 0.35;
@@ -190,9 +190,9 @@
 	.qm-add-el {
 		border: 1px dashed var(--qm-border, #b8b8b8);
 		background: transparent;
-		border-radius: 4px;
+		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
-		padding: 0.2rem 0.6rem;
+		padding: var(--_qm-space) var(--_qm-space-2);
 		font-size: 0.85rem;
 	}
 </style>

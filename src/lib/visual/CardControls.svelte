@@ -49,22 +49,22 @@
 	.qm-card-controls {
 		display: flex;
 		align-items: center;
-		gap: 0.25rem;
+		gap: var(--_qm-space);
 	}
 	.qm-card-reorder {
 		display: flex;
-		gap: 0.15rem;
+		gap: var(--_qm-space-half);
 		opacity: 0;
 		transition: opacity 0.12s ease;
 	}
 	.qm-ctrl {
 		border: 1px solid var(--qm-border, #d4d4d4);
 		background: var(--qm-field-bg, #fff);
-		border-radius: 3px;
+		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
 		font-size: 0.7rem;
 		line-height: 1;
-		padding: 0.18rem 0.32rem;
+		padding: var(--_qm-space-half) var(--_qm-space);
 		color: #444;
 	}
 	.qm-ctrl:disabled {

@@ -100,14 +100,14 @@
 	.qm-object {
 		display: flex;
 		flex-direction: column;
-		gap: 0.4rem;
+		gap: var(--_qm-space-2);
 		border-left: 2px solid var(--qm-border, #e0e0e0);
-		padding-left: 0.6rem;
+		padding-left: var(--_qm-space-2);
 	}
 	.qm-object-prop {
 		display: flex;
 		flex-direction: column;
-		gap: 0.15rem;
+		gap: var(--_qm-space-half);
 	}
 	.qm-object-label {
 		font-size: 0.75rem;
