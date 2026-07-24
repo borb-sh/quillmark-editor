@@ -74,7 +74,7 @@ function anchorPlugin(seed: AnchorPos[]): Plugin<AnchorPos[]> {
 	});
 }
 
-/** Read the leaf's raw stored `Content` for `addr` — the unified `doc.get(addr)`
+/** Read the leaf's raw stored `Content` for `addr` — the unified `doc.getStored(addr)`
  * read (DOCUMENT_MODEL): a field value, or the body `Content` when `addr.field` is
  * absent, without materializing the whole card. Reads are total over the field
  * axis, so an absent field — a default-only richtext field (e.g. `tag_line`, no
@@ -83,7 +83,7 @@ function anchorPlugin(seed: AnchorPos[]): Plugin<AnchorPos[]> {
  * `addr.card` throws, unreachable here: a removed card unmounts its keyed leaf
  * before a stale index is read. */
 function readLeaf(doc: Document, addr: Addr): Content {
-	return (doc.get(addr) as Content | undefined) ?? emptyContent();
+	return (doc.getStored(addr) as Content | undefined) ?? emptyContent();
 }
 
 /** The canonical empty `Content` — one empty `para` line. The zero value a prose
@@ -92,10 +92,10 @@ export function emptyContent(): Content {
 	return { text: '', lines: [{ containers: [], kind: 'para' }], marks: [], islands: [] };
 }
 
-/** Whether the leaf's field currently holds a stored value — `doc.get` is total, so
+/** Whether the leaf's field currently holds a stored value — `doc.getStored` is total, so
  * an unset field reads `undefined`; a body always reads its `Content` (present). */
 function leafPresent(doc: Document, addr: Addr): boolean {
-	return doc.get(addr) !== undefined;
+	return doc.getStored(addr) !== undefined;
 }
 
 export function createField(opts: CreateFieldOpts): FieldController {
