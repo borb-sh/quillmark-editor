@@ -183,8 +183,13 @@ onto the content and narrowed to one field. Caret continuity across the editor's
 
 - **anchors are decorations, not a document mark.** Plugin-held positions keyed by
   id, mapped through `tr.mapping` and lowered to `anchor` ops — the split that
-  keeps identity off PM's mark mechanism. A move into the document proper waits on
-  comment-thread UX that needs it.
+  keeps identity off PM's mark mechanism. A selection mints one through the field
+  seam `insertAnchor(id, pos)` / `removeAnchor(id)`: a zero-width edit carried on an
+  `anchorKey` meta that folds into the plugin set and commits through the same
+  mark diff a formatting toggle does. The id is caller-supplied — unique, invariant
+  — per the `@quillmark/wasm` 0.97 anchor-id policy (a duplicate is a no-op); issue
+  #43. A move into the document proper — and the comment-thread UX that gives an
+  anchor visible chrome — waits past V1.
 - **island props are typed at the boundary** (`@quillmark/wasm` 0.96.0): the
   `ContentIsland.props` union pins `TableProps` for `table` and `ImageProps` for
   `image` (`TableCell` the cell shape), so the codec reads the shape off the
