@@ -67,19 +67,20 @@ web-app-parity (#77, trunk)
 - **#16 is the tail.** Most deferrable; the only item that plausibly slips past
   V1.
 
-**Ordering call — open.** The above is quick-wins-first. The alternative is
-parity-first: #74/#76 lead, on the argument that dark mode is what blocks *full*
-web-app parity and this is the parity branch. Trade: higher impact, but the
-largest design surface front-loads before any easy win lands.
+**Ordering — settled: quick-wins-first**, as drawn. Parity-first (#74/#76 lead)
+was the alternative; it front-loads the largest design surface before any easy
+win lands. The isolated axes mean #74 starts concurrently regardless, so leading
+with it buys little.
 
 ## Open questions
 
-Per-issue forks land as siblings (`70-list-editing.md`, …) as each is taken up.
-Cross-cutting ones:
+Per-issue forks land as siblings as each is taken up:
+[`74-76-styling-extension.md`](74-76-styling-extension.md). Cross-cutting ones:
 
 - **One styling-extension story.** #74's "hooks beyond tokens" and #76's
-  control-slot mechanism are the same question. Deciding them apart yields two
-  parallel extension APIs.
+  control-slot mechanism are the same question — answered jointly in
+  `74-76-styling-extension.md`: tokens own appearance, slots own structure,
+  `part`/class hooks declined. Four calls open there.
 - **Canon reopenings.** #71 reopens the "no tips surface in V1" stance
   (`VISUAL_EDITOR.md:80`, `VISUAL_EDITOR_UIUX.md:94`); #75 already amended the
   must_fill-as-diagnostic-only stance. Both edit the same canon neighbourhood —
@@ -102,6 +103,9 @@ Found while scheduling; the issue bodies are stale on these points.
 - **#72** — the body's case (A) predicted a throw from the ungated
   `cardSchema.fields` read; the landed fix un-gates the card loop instead, so
   #21's whole-region gate is superseded rather than guarded.
+- **#75 (landed here)** — introduced `--qm-required` (`FieldLabel.svelte:60`)
+  without a THEMING.md entry. Folded into #74's scope; the proposed `check:theme`
+  is what stops the next one.
 
 ## Findings
 
@@ -114,3 +118,7 @@ Found while scheduling; the issue bodies are stale on these points.
   recommendation of (1).
 - **#70's groundwork holds**: `prosemirror-schema-list` is a live dependency and
   `list_item` is `block+`, so nesting is representable without a schema change.
+- **Color is the unguarded axis.** Geometry and type each pair public dials with
+  a derived private scale and a lint (`check:geometry`, `check:type`); color has
+  fifteen flat literals and no gate. That asymmetry — not dark mode as such — is
+  what #74 is really about.
