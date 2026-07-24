@@ -167,8 +167,8 @@
 		flex: 1 1 12rem;
 	}
 	.qm-field-label {
-		font-size: 0.75rem;
-		font-weight: 600;
+		font-size: var(--_qm-text-label);
+		font-weight: var(--_qm-weight-label);
 		color: var(--qm-label, #555);
 	}
 </style>

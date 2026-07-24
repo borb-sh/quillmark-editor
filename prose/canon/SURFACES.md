@@ -58,12 +58,21 @@ scale; an in-between value is a review smell.
 weight — the card (and popover) one tier, interior controls a tighter one — not a
 free choice per component. Four unrelated radii is drift, not a scale.
 
-**The scale in code.** Both are tokenized (THEMING §Geometry). Two public dials —
-`--qm-radius`, `--qm-space` — derive a closed private scale (`--_qm-radius`/
-`-inner`; `--_qm-space`/`-half`/`-2`/`-3`/`-4`) minted ONCE per detached root
-(`.qm-editor`; `FormatPopover` re-declares it, portaling out of that subtree). A
-component reads a rung, never a literal — `npm run check:geometry` gates it, so an
-in-between value fails CI, not just review.
+**Type.** One closed ramp, not a per-component size. A body anchor and a ratio
+derive four rungs — title (card title), body (inputs, add affordances), label
+(field labels), meta (section labels, diagnostics, mini controls) — with weight a
+fixed convention over them (label `600`, a nested object prop's secondary label
+`500`), not per-file. The ~8 ad-hoc sizes the study counted collapse to the four;
+an in-between size is the drift this prevents.
+
+**The scale in code.** All three are tokenized (THEMING §"Base — typography &
+text", §Geometry). Public dials — `--qm-radius`, `--qm-space`, and the type pair
+`--qm-font-size` / `--qm-font-scale` — derive closed private scales (`--_qm-radius`/
+`-inner`; `--_qm-space`/`-half`/`-2`/`-3`/`-4`; `--_qm-text-title`/`-body`/`-label`/
+`-meta` and `--_qm-weight-label`/`-soft`) minted ONCE per detached root
+(`.qm-editor`; `FormatPopover` re-declares them, portaling out of that subtree). A
+component reads a rung, never a literal — `npm run check:geometry` and
+`check:type` gate it, so an in-between value fails CI, not just review.
 
 ## Focus and active state
 

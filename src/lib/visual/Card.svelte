@@ -249,14 +249,15 @@
 	/* Autosize sizer (issue #58 §8): an inline-grid whose ::after mirrors the text
 	   into the single cell, so the overlaid input tracks its content width. Bounded
 	   to the header's free space (`min-width: 0` + `max-width: 100%`); the header's
-	   space-between keeps the controls right-aligned. */
+	   space-between keeps the controls right-aligned. The input inherits the type
+	   tokens (`font: inherit`) so the mirror and the input measure alike. */
 	.qm-card-title-sizer {
 		display: inline-grid;
 		align-items: center;
 		min-width: 0;
 		max-width: 100%;
-		font-size: 1rem;
-		font-weight: 600;
+		font-size: var(--_qm-text-title);
+		font-weight: var(--_qm-weight-label);
 		font-family: inherit;
 	}
 	.qm-card-title-sizer::after {
@@ -287,7 +288,7 @@
 	}
 	.qm-retype,
 	.qm-retype-btn {
-		font-size: 0.72rem;
+		font-size: var(--_qm-text-meta);
 		border: 1px solid var(--qm-border, #d4d4d4);
 		border-radius: var(--_qm-radius-inner);
 		background: var(--qm-field-bg, #fff);
@@ -306,7 +307,7 @@
 		gap: var(--_qm-space-2);
 	}
 	.qm-section-label {
-		font-size: 0.68rem;
+		font-size: var(--_qm-text-meta);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		color: var(--qm-section-label, #8a8a8a);
@@ -329,8 +330,8 @@
 		gap: var(--_qm-space);
 	}
 	.qm-field-label {
-		font-size: 0.75rem;
-		font-weight: 600;
+		font-size: var(--_qm-text-label);
+		font-weight: var(--_qm-weight-label);
 		color: var(--qm-label, #555);
 	}
 </style>
