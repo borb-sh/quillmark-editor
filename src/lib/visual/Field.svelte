@@ -17,7 +17,7 @@
 	import type { Document, Addr, Diagnostic, ResolvedField } from '../core/index.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import type { FieldModel } from './structure.js';
-	import { enumValues, ghostDefault } from './structure.js';
+	import { enumValues, ghostDefault, stringifyGhost } from './structure.js';
 	import ProseField from './ProseField.svelte';
 	import TextField from './TextField.svelte';
 	import EnumField from './EnumField.svelte';
@@ -67,9 +67,7 @@
 	// fallbacks); `defaultStr` its string form (the text placeholder). An
 	// object-valued default does not ghost.
 	const ghost = $derived(ghostDefault(provenance));
-	const defaultStr = $derived(
-		ghost != null && typeof ghost !== 'object' ? String(ghost) : undefined
-	);
+	const defaultStr = $derived(stringifyGhost(ghost));
 </script>
 
 <div class="qm-field" class:compact={field.compact}>

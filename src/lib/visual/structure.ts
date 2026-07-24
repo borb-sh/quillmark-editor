@@ -113,14 +113,19 @@ export function ghostDefault(row: ResolvedField | undefined): unknown {
 	return row?.source === 'default' ? row.value : undefined;
 }
 
+/** A ghost value's string form, or undefined for null/object (only text ghosts render a placeholder). */
+export function stringifyGhost(ghost: unknown): string | undefined {
+	return ghost != null && typeof ghost !== 'object' ? String(ghost) : undefined;
+}
+
 /** The empty-body ghost: the resolved body `default:` as placeholder text (issue
  * #58 §9), or undefined when the body is authored / has no default. The body row
  * is `resolve`'s `body` sibling (a `ResolvedField`, never a `fields` row); a
  * richtext body resolves to a text render — the correct thing to display as a
- * placeholder (FIELD_PROVENANCE → #64). Mirrors the scalar `defaultStr` derivation. */
+ * placeholder (FIELD_PROVENANCE → #64). Field's `defaultStr` derives from the
+ * same {@link stringifyGhost}. */
 export function bodyGhostText(body: ResolvedField | null | undefined): string | undefined {
-	const ghost = ghostDefault(body ?? undefined);
-	return ghost != null && typeof ghost !== 'object' ? String(ghost) : undefined;
+	return stringifyGhost(ghostDefault(body ?? undefined));
 }
 
 /** The control an array's ELEMENTS render as, from `items.type`. */
