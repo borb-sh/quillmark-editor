@@ -535,7 +535,6 @@
 	}
 	.qm-recovery-note code {
 		font-family: ui-monospace, monospace;
-		font-size: 0.92em;
 	}
 	.qm-recovery-muted {
 		color: var(--qm-ghost, #9a9a9a);
