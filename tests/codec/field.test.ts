@@ -218,6 +218,58 @@ describe('field install-fallback for an un-lowerable structural edit', () => {
 	});
 });
 
+describe('anchor insertion (issue #43)', () => {
+	/** The `anchor` identity marks of the stored body content. */
+	function bodyAnchors(doc: Document): { id: string; start: number; end: number }[] {
+		return doc.main.body.marks.filter((m) => m.type === 'anchor') as {
+			id: string;
+			start: number;
+			end: number;
+		}[];
+	}
+
+	it('inserts a caller-supplied identity anchor that persists in the content', () => {
+		const doc = quill().seedDocument();
+		const field = createField({ doc, addr: {}, container: mount() });
+		field.insertAnchor('a1', 3);
+		const anchors = bodyAnchors(doc);
+		expect(anchors).toHaveLength(1);
+		expect(anchors[0]).toMatchObject({ id: 'a1', start: 3, end: 3 }); // zero-width
+		field.destroy();
+	});
+
+	it('a duplicate id is a no-op; removeAnchor drops the anchor', () => {
+		const doc = quill().seedDocument();
+		const field = createField({ doc, addr: {}, container: mount() });
+		field.insertAnchor('a1', 3);
+		field.insertAnchor('a1', 5); // same id → ignored (unique + invariant, 0.97 policy)
+		expect(bodyAnchors(doc)).toHaveLength(1);
+		field.removeAnchor('a1');
+		expect(bodyAnchors(doc)).toHaveLength(0);
+		field.destroy();
+	});
+
+	it('the anchor rebases through a later text edit — it survives like a mark', () => {
+		const doc = quill().seedDocument();
+		const field = createField({ doc, addr: {}, container: mount() });
+		field.insertAnchor('a1', 5);
+		const view = viewOf(field);
+		// Insert two chars at the very start (PM 1 = USV 0): the anchor shifts by 2.
+		view.dispatch(view.state.tr.insertText('XY', 1));
+		expect(bodyAnchors(doc)).toMatchObject([{ id: 'a1', start: 7 }]);
+		field.destroy();
+	});
+
+	it('anchorsInRange reports coverage for the popover active state', () => {
+		const doc = quill().seedDocument();
+		const field = createField({ doc, addr: {}, container: mount() });
+		field.insertAnchor('a1', 4);
+		expect(field.anchorsInRange(0, 10)).toEqual(['a1']);
+		expect(field.anchorsInRange(0, 3)).toEqual([]);
+		field.destroy();
+	});
+});
+
 describe('empty-leaf ghost placeholder (issue #58 §9)', () => {
 	it('stamps the empty leaf with the ghost text, and drops it once typed', () => {
 		const doc = quill().seedDocument();

@@ -65,7 +65,7 @@
 
 	/** Mark size — the shared control-glyph rule for the popover icons (AESTHETIC §Icons). */
 	const GLYPH = 15;
-	/** The six content formatting marks (VISUAL_EDITOR_UIUX §Formatting); `anchor` is a 7th, separately rendered disabled (see the button below). Each carries its Lucide glyph — the icon *is* the label (AESTHETIC §Icons: a glyph names its action). */
+	/** The six content formatting marks (VISUAL_EDITOR_UIUX §Formatting); `anchor` is a 7th, rendered separately (a decoration toggle, not a PM `toggleMark` — see the button below). Each carries its Lucide glyph — the icon *is* the label (AESTHETIC §Icons: a glyph names its action). */
 	const MARKS: { name: string; icon: Component; title: string }[] = [
 		{ name: 'strong', icon: Bold, title: 'Bold (Mod-B)' },
 		{ name: 'em', icon: Italic, title: 'Emphasis (Mod-I)' },
@@ -121,6 +121,13 @@
 		for (const m of MARKS) {
 			const type = view.state.schema.marks[m.name];
 			marks[m.name] = !!type && view.state.doc.rangeHasMark(from, to, type);
+		}
+		// `anchor` is a decoration, not a PM mark (CODEC §Marks): its active state is
+		// whether the selection covers an identity anchor, read off the leaf in USV.
+		const leaf = getActiveLeaf();
+		if (leaf) {
+			const sel = leaf.selectionRange();
+			marks.anchor = leaf.anchorsInRange(sel.from, sel.to).length > 0;
 		}
 		activeMarks = marks;
 		open = true;
@@ -190,6 +197,26 @@
 			return;
 		}
 		toggleMark(type)(view.state, view.dispatch);
+		view.focus();
+		sync();
+	}
+
+	/**
+	 * Toggle an identity anchor over the selection (issue #43) — the `anchor`
+	 * button's answer to a formatting toggle. If the selection already covers
+	 * anchors, remove them; else insert one at its start with a freshly-minted
+	 * unique id (the caller-supplied, invariant id the 0.97 policy settles).
+	 * Zero-width and glyph-less (CODEC §Marks) — the identity handle persists in
+	 * the content, its chrome awaiting comment-thread UX.
+	 */
+	function toggleAnchor(): void {
+		const leaf = getActiveLeaf();
+		const view = activeLeafView();
+		if (!leaf || !view || view.state.selection.empty) return;
+		const { from, to } = leaf.selectionRange();
+		const covered = leaf.anchorsInRange(from, to);
+		if (covered.length) covered.forEach((id) => leaf.removeAnchor(id));
+		else leaf.insertAnchor(crypto.randomUUID(), from);
 		view.focus();
 		sync();
 	}
@@ -272,10 +299,12 @@
 							<button
 								type="button"
 								class="qm-mark-btn"
-								disabled
-								title="Anchor identity marks are decoration-only in the codec — adding one at an arbitrary selection needs a codec seam field.ts does not expose yet (prose/quillmark-issues/0003). Deferred past Phase 4b."
-								aria-label="Anchor (deferred)"
-								data-testid="mark-anchor"><Hash size={GLYPH} /></button
+								class:active={activeMarks.anchor}
+								title="Anchor — an identity handle over the selection"
+								aria-label="Anchor"
+								data-testid="mark-anchor"
+								onmousedown={keepFocus}
+								onclick={toggleAnchor}><Hash size={GLYPH} /></button
 							>
 						</div>
 					{/if}
