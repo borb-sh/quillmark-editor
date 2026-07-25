@@ -13,9 +13,9 @@ npm install @quillmark/editor
 ```
 
 `svelte@^5` is a peer dependency; `@quillmark/wasm` comes as a dependency. The
-heavy libraries (ProseMirror, CodeMirror, the canvas paint loop) live in the
-vanilla-TS cores, so the Svelte wrappers stay thin and a non-Svelte consumer
-wraps a core in a few lines.
+heavy machinery (ProseMirror, the canvas paint loop) lives in the vanilla-TS
+cores, so the Svelte wrappers stay thin and a non-Svelte consumer wraps a core in
+a few lines.
 
 ## Subpaths
 

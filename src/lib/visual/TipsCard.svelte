@@ -98,7 +98,7 @@
 		margin: 0;
 	}
 	.qm-tips-body :global(code) {
-		font-family: ui-monospace, monospace;
+		font-family: var(--_qm-font-mono);
 	}
 	.qm-tips-body :global(a) {
 		color: inherit;

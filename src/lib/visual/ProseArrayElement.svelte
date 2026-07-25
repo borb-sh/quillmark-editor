@@ -77,8 +77,6 @@
 	   (SURFACES §Focus). */
 	.qm-array-prose :global(.ProseMirror) {
 		outline: none;
-		white-space: pre-wrap;
-		word-wrap: break-word;
 	}
 	.qm-array-prose:focus-within {
 		border-color: var(--_qm-accent);

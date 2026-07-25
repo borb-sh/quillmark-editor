@@ -56,9 +56,7 @@
 		"test:e2e": "playwright test",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:canon": "node scripts/check-canon.mjs",
-		"check:geometry": "node scripts/check-geometry.mjs",
-		"check:type": "node scripts/check-type.mjs",
-		"check:theme": "node scripts/check-theme.mjs",
+		"check:style": "node scripts/check-style.mjs",
 		"format": "prettier --write .",
 		"lint": "prettier --check ."
 	},
@@ -66,12 +64,7 @@
 		"svelte": "^5.0.0"
 	},
 	"dependencies": {
-		"@codemirror/lang-markdown": "6.4.0",
-		"@codemirror/language": "6.11.3",
-		"@codemirror/state": "6.5.2",
-		"@codemirror/view": "6.38.6",
 		"@internationalized/date": "^3.12.2",
-		"@lezer/highlight": "1.2.1",
 		"@lucide/svelte": "^1.26.0",
 		"@quillmark/wasm": "0.97.0",
 		"bits-ui": "^2.0.0",

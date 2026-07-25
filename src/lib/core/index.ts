@@ -1,3 +1,10 @@
+// The theme derivation — the public dials → the private `--_qm-*` scale, applied
+// to every `data-qm-root` element. Imported HERE because `core/` is the one module
+// both `preview/` and `visual/` already pull, so a consumer cannot forget it and
+// the derivation is minted once rather than re-declared per detached root
+// (THEMING.md).
+import './theme.css';
+
 // `@quillmark/editor/core` — the vanilla-TS substrate seam.
 //
 // This is the one boundary the rest of the package (and a vanilla consumer)
@@ -8,13 +15,6 @@
 // core (Phase 2's `createPreview`) grow here as their phases land.
 
 export { init } from './lifecycle.js';
-
-// ── Theme derivation ────────────────────────────────────────────────────────
-// The ten public dials → the private `--_qm-*` scale, as a `style`-attribute
-// string. Lives here because `core/` is the one module both `preview/` and
-// `visual/` already import, so the derivation is minted once rather than
-// re-declared per detached root (THEMING.md).
-export { QM_THEME } from './theme.js';
 
 // ── Handles + engine (values) ───────────────────────────────────────────────
 // Re-exported verbatim from the canonical runtime; the editor holds the raw

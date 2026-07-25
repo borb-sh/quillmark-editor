@@ -1,0 +1,132 @@
+/* The one derivation — public dials in, a closed private scale out (THEMING.md;
+   SURFACES §"Preventing drift": a component reads a rung, it does not mint a
+   value). Colour, geometry and type are all derived here, so all three are minted
+   in ONE place instead of once per detached root.
+
+   TRANSPORT: a stylesheet, side-effect imported by `core/index.ts` and applied to
+   every element marked `data-qm-root`. The package imports it itself, so there is
+   no `import './theme.css'` for a consumer to forget. A stylesheet rather than an
+   inline `style` attribute is what buys the four things an attribute cannot carry:
+   a shipped dark default (`@media`), a cascade layer consumer CSS beats without
+   `!important`, real properties on the root rule (`font-family`, `color-scheme`)
+   that every root then inherits, and a free `style` attribute for the consumer.
+
+   Every value stays a `var()` reference, so the dials resolve against the CASCADE
+   at each root: a consumer's `[data-theme="dark"]` ancestor rule flows in
+   unchanged, `prefers-color-scheme` needs no JS, and `color-mix` runs at paint
+   time. The rungs are declared ON the root, so they are reachable only by a rule
+   targeting it — THEMING.md §"What is deliberately not public" states the terms.
+
+   `@property` is absent because it cannot work here: an `initial-value` must be
+   computationally independent, which `rem` is not, so registering `--qm-space` or
+   `--qm-font-size` is invalid CSS and drops silently. A unitless dial poisons the
+   `calc()` chain unguarded. */
+
+@layer qm.scale, qm.chrome;
+
+@layer qm.scale {
+	:where([data-qm-root]) {
+		/* ── Poles ───────────────────────────────────────────────────────────────
+		   Each dial's default, stated ONCE. Every rung below reads a pole, never a
+		   dial, so the dark block retunes two declarations rather than fifteen — and
+		   a consumer's ancestor value still wins in both schemes, which it would not
+		   if the dark block set `--qm-bg` on the root instead. */
+		--_qm-bg: var(--qm-bg, #fff);
+		--_qm-fg: var(--qm-fg, #1a1a1a);
+		--_qm-accent: var(--qm-accent, #2563eb);
+		--_qm-danger: var(--qm-danger, #c5221f);
+		--_qm-warning: var(--qm-warning, #b25000);
+		--_qm-font: var(--qm-font, ui-sans-serif, system-ui, sans-serif);
+		--_qm-font-mono: var(--qm-font-mono, ui-monospace, monospace);
+
+		/* ── Colour ──────────────────────────────────────────────────────────────
+		   Surfaces step bg → fg, ink steps fg → bg, mixed in oklab — sRGB muddies
+		   the mid-tones and the label/meta/border rungs are exactly mid-tone. So
+		   inverting the poles inverts the scale. The percentages are calibrated to
+		   the light-mode literals they stand in for (2% ≈ #fafafa, 17% ≈ #d4d4d4,
+		   35% ≈ #555). */
+		--_qm-surface: var(--_qm-bg);
+		--_qm-surface-raised: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 2%);
+		--_qm-surface-hover: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 6%);
+		--_qm-border: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 17%);
+		--_qm-border-strong: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 40%);
+		--_qm-ink: var(--_qm-fg);
+		--_qm-ink-label: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 35%);
+		--_qm-ink-meta: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 45%);
+		--_qm-ink-ghost: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 60%);
+		--_qm-accent-soft: color-mix(in oklab, var(--_qm-accent) 55%, transparent);
+
+		/* ── Ratios and effects ──────────────────────────────────────────────────
+		   No palette fixes these, so they are their own rungs. Shadows mix from the
+		   INK pole rather than black, so they track the palette instead of turning
+		   into a smudge on a dark surface. */
+		--_qm-blur: 8px;
+		--_qm-shadow-page: 0 1px 4px color-mix(in oklab, var(--_qm-fg) 20%, transparent);
+		--_qm-shadow-popover: 0 4px 16px color-mix(in oklab, var(--_qm-fg) 14%, transparent);
+		/* The popover's translucency: the raised surface mixed toward transparent, so
+		   the page reads faintly through the pill (SURFACES §Elevation). */
+		--_qm-surface-popover: color-mix(in oklab, var(--_qm-surface-raised) 82%, transparent);
+		/* The recede ladder: a hover-revealed or disabled affordance at rest, and a
+		   muted one. Opacity recedes toward whatever is behind, so these invert
+		   correctly given the element's own colour is a rung. */
+		--_qm-opacity-idle: 0.35;
+		--_qm-opacity-muted: 0.5;
+
+		/* ── Focus (SURFACES §Focus) ─────────────────────────────────────────────
+		   The ring is one rule stated once, as a whole `outline` value, so the six
+		   controls that draw it duplicate a token read rather than a value. */
+		--_qm-ring-width: 1px; /* the preview overlay's idle field box */
+		--_qm-ring-width-active: 2px;
+		--_qm-ring-focus: var(--_qm-ring-width-active) solid var(--_qm-accent);
+		--_qm-ring-offset: 1px;
+
+		/* ── Geometry (SURFACES §Rhythm) ─────────────────────────────────────────*/
+		--_qm-radius: var(--qm-radius, 8px);
+		--_qm-radius-inner: calc(var(--_qm-radius) / 2);
+		/* A fully-rounded end cap — a shape tier, not a step on the radius ramp, so
+		   it does not derive from the dial: a pill stays a pill at any radius. */
+		--_qm-radius-pill: 999px;
+		--_qm-space: var(--qm-space, 0.25rem);
+		--_qm-space-half: calc(var(--_qm-space) / 2);
+		--_qm-space-2: calc(var(--_qm-space) * 2);
+		--_qm-space-3: calc(var(--_qm-space) * 3);
+		--_qm-space-4: calc(var(--_qm-space) * 4);
+
+		/* ── Type ────────────────────────────────────────────────────────────────
+		   `--qm-font-size` anchors the body rung; 1.125 is the ratio between adjacent
+		   rungs — a step up (title) and two down (label, meta). The ratio and the
+		   weights are fixed conventions, not dials: no consumer tunes a typographic
+		   ratio, and a dial nobody turns is a name every reader still holds. */
+		--_qm-text-body: var(--qm-font-size, 0.875rem);
+		--_qm-text-title: calc(var(--_qm-text-body) * 1.125);
+		--_qm-text-label: calc(var(--_qm-text-body) / 1.125);
+		--_qm-text-meta: calc(var(--_qm-text-label) / 1.125);
+		--_qm-weight-label: 600;
+		--_qm-weight-soft: 500;
+
+		/* ── The baseline every root inherits ────────────────────────────────────
+		   Real properties, not only custom ones — the thing an inline attribute
+		   could carry but never did, which is why `--qm-font` reached one root of
+		   five. `color-scheme` makes native chrome (scrollbars, the date picker, the
+		   caret) follow the palette; `light dark` is right while the palette tracks
+		   the OS, and a consumer that PINS a palette pins this too, on the root.
+
+		   Deliberately NOT `font-size`. A root-level body size would restyle every
+		   surface that currently inherits the page's — including the prose leaves,
+		   whose line box the caret and the click-to-place-caret path are measured
+		   against. Components that want the rung read it; the roots do not impose
+		   one. */
+		font-family: var(--_qm-font);
+		color: var(--_qm-ink);
+		color-scheme: light dark;
+	}
+
+	/* The shipped dark default. Retunes the poles only; a consumer that sets a dial
+	   on any ancestor still wins here, because these are fallbacks, not overrides. */
+	@media (prefers-color-scheme: dark) {
+		:where([data-qm-root]) {
+			--_qm-bg: var(--qm-bg, #14171c);
+			--_qm-fg: var(--qm-fg, #e8eaed);
+		}
+	}
+}

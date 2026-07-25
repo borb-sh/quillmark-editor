@@ -1,9 +1,9 @@
 // The `/preview` reserved-package invariant, enforced (ARCHITECTURE §Packaging):
 // the `/preview` subpath imports no editor-side code,
 // so the eventual `@quillmark/preview` promotion is a re-export, not a refactor.
-// "Editor-side" is concretely the heavy libraries a viewer-only consumer must not
-// pull — ProseMirror and CodeMirror — plus the codec and the `/visual`/`/source`
-// surfaces that reach them.
+// "Editor-side" is concretely the heavy library a viewer-only consumer must not
+// pull — ProseMirror — plus the codec and the `/visual`/`/source` surfaces, which
+// are editor surfaces whether or not they carry weight of their own.
 //
 // A direct-import scan is not enough: preview importing the `/core` barrel, which
 // in a later phase re-exports the codec, would slip ProseMirror in transitively.
@@ -19,10 +19,9 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const LIB = resolve(HERE, '..', 'src', 'lib');
 const PREVIEW = join(LIB, 'preview');
 
-// A viewer-only consumer must pull neither editor library, nor the codec /
-// editor surfaces that depend on them.
-const FORBIDDEN_EXTERNAL =
-	/^(prosemirror-|@codemirror\/|codemirror$|@quillmark\/editor\/(visual|source))/;
+// A viewer-only consumer must pull neither the editor library, nor the codec /
+// editor surfaces that depend on it.
+const FORBIDDEN_EXTERNAL = /^(prosemirror-|@quillmark\/editor\/(visual|source))/;
 
 // Every import/export-from/dynamic-import specifier in an ESM/Svelte source.
 function specifiersOf(file: string): string[] {
@@ -87,7 +86,7 @@ describe('/preview reserved-package boundary', () => {
 		expect(existsSync(join(PREVIEW, 'index.ts'))).toBe(true);
 	});
 
-	it('never reaches ProseMirror / CodeMirror or the editor surfaces (transitively)', () => {
+	it('never reaches ProseMirror or the editor surfaces (transitively)', () => {
 		const seen = new Set<string>();
 		const violations: string[] = [];
 		const walk = (file: string): void => {

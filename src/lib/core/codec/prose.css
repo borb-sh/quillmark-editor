@@ -1,0 +1,16 @@
+/* ProseMirror's own base stylesheet is imported beside this one (`codec/index.ts`)
+   — the structural rules a view needs to render at all: `white-space:
+   break-spaces`, `li { position: relative }` for list markers, the
+   hidden-selection and separator-image guards. It is imported whole; the rules are
+   interdependent and which ones a given schema needs is not visible from here.
+
+   It also carries one hard-coded hue, twice: a `#8cf` node-selection outline that
+   answers to no dial. Retinted here rather than in `theme.css` because a layered
+   rule loses to that unlayered stylesheet — equal specificity and a later import
+   is what wins. */
+.ProseMirror-selectednode {
+	outline: var(--_qm-ring-width-active) solid var(--_qm-accent);
+}
+li.ProseMirror-selectednode::after {
+	border: var(--_qm-ring-width-active) solid var(--_qm-accent);
+}

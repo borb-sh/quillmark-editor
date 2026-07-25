@@ -8,10 +8,16 @@ Long-form project documentation, in tiers by maturity:
 - **`inspiration/`** — prior-art studies and source material that steer the
   editor's direction; not canon and not a plan. Start at
   [`inspiration/INDEX.md`](inspiration/INDEX.md).
+- **`plans/`** — a designed-but-unbuilt rework, held as a handover: the target
+  shape, the ordered work items, and the costs to accept. One file per rework,
+  retired when its last item lands, so the tier is empty between reworks.
+  Describes *what replaces what is*, so canon never links into it and
+  `check:canon` does not scan it.
 
-Deferred and not-yet-designed work is tracked as GitHub issues, not a docs tier —
-each proposal is designed fresh when scheduled, then promoted to `canon/` on ship.
-A branch integrating a set of those issues may carry a scratch tier named for it
+Deferred and not-yet-designed work is tracked as GitHub issues — each proposal is
+designed fresh when scheduled, written down as a `plans/` handover only if it is
+large enough to outlive one sitting, then promoted to `canon/` on ship. A branch
+integrating a set of those issues may carry a scratch tier named for it
 (`web-app-parity/`) holding the schedule and unsettled forks; it is retired with
 the branch and `check:canon` does not scan it.
 

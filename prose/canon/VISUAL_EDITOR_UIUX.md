@@ -25,7 +25,7 @@ top-to-bottom down one column; the document's structure is the page's structure.
 direct manipulation, the caret bridge, per-field state, against a bare built-in
 visual opinion, so a consumer restyles to its brand without fighting baked-in
 design. Structure and behavior live in the primitives (bits-ui's headless base);
-appearance is a themeable surface with a neutral, overridable baseline — ten
+appearance is a themeable surface with a neutral, overridable baseline — the
 `--qm-*` dials deriving a closed private scale ([`THEMING.md`](../../THEMING.md)).
 Every control is styled off that scale, including the three whose native form is
 UA-owned shadow DOM (enum, boolean, date), so the palette has no holes.
@@ -143,8 +143,10 @@ live at the consumer layer (the playground wires both).
 ## Source view
 
 Debug-only, per [ARCHITECTURE.md](ARCHITECTURE.md) — not an editable dual mode. The
-`@quillmark/editor/source` surface is a read-only CodeMirror mirror of
+`@quillmark/editor/source` surface is a read-only text mirror of
 `Document.toMarkdown()`, the whole-document serialize the layer federation deletes.
+Monospace text in a `<pre>`, no syntax highlighting: a surface with no caret earns
+no editor library, so `/source` ships dependency-free.
 
 ## Open
 

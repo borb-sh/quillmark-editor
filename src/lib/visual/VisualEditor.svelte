@@ -22,7 +22,7 @@
   once per derive.
 -->
 <script lang="ts">
-	import { isQuillmarkError, MAIN_CARD_ADDR, QM_THEME } from '../core/index.js';
+	import { isQuillmarkError, MAIN_CARD_ADDR } from '../core/index.js';
 	import type {
 		Document,
 		Quill,
@@ -96,6 +96,12 @@
 		 * Absent → every schema option is offered (the default, zero behavior change).
 		 */
 		enumOptionAllowed?: (addr: Addr, value: string) => boolean;
+		/** Appended to the root's own class — the surface is a mounted element the
+		 *  consumer positions, so it needs a handle for layout it owns. */
+		class?: string;
+		/** Merged onto the root. Free because the derivation moved off this attribute
+		 *  and onto `data-qm-root` (core/theme.css). */
+		style?: string;
 	}
 	let {
 		doc,
@@ -104,7 +110,9 @@
 		onCaretMove,
 		onChange,
 		diagnostics,
-		enumOptionAllowed
+		enumOptionAllowed,
+		class: className,
+		style
 	}: Props = $props();
 
 	// ── Reactivity + session identity ───────────────────────────────────────────
@@ -479,7 +487,7 @@
 	}
 </script>
 
-<div class="qm-editor" style={QM_THEME}>
+<div class="qm-editor {className ?? ''}" {style} data-qm-root>
 	<Card
 		card={model.main}
 		{doc}
@@ -567,14 +575,14 @@
 {/snippet}
 
 <style>
-	/* The private scale arrives as `style={QM_THEME}` on the root element above —
-	   this is a DETACHED root, one of those the derivation is set on (core/theme.ts).
-	   Nothing here mints; `check:theme` enforces that. */
+	/* The private scale lands via `data-qm-root` on the root element above — this is
+	   a DETACHED root, one of those core/theme.css applies the derivation to. The
+	   root rule also carries the baseline font and colour, so nothing here restates
+	   them. Nothing here mints; `check:style` enforces that. */
 	.qm-editor {
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
-		font-family: var(--qm-font, ui-sans-serif, system-ui, sans-serif);
 		color: var(--_qm-ink);
 	}
 	.qm-add-card {

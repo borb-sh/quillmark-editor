@@ -15,7 +15,6 @@
 <script lang="ts">
 	import { Select } from 'bits-ui';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
-	import { QM_THEME } from '../core/index.js';
 	import { syncedLocal } from './synced.svelte.js';
 
 	interface Props {
@@ -51,9 +50,14 @@
 	const ghostText = $derived(dash(fallback));
 	/** What the closed trigger shows — the pick, or the ghosted default while unset. */
 	const shown = $derived(unset ? ghostText : dash(local.value));
+
+	/** The root to portal INTO — `document.body` would escape the consumer's dials
+	 *  along with the editor's subtree. `undefined` falls back to bits-ui's default. */
+	let wrapEl = $state<HTMLElement | undefined>(undefined);
+	const portalTarget = $derived(wrapEl?.closest<HTMLElement>('[data-qm-root]') ?? undefined);
 </script>
 
-<span class="qm-select-wrap">
+<span class="qm-select-wrap" bind:this={wrapEl}>
 	<!-- `allowDeselect={false}`: the UNSET sentinel is the clear-to-default
 	     affordance, so the primitive's own deselect must stay off. It reports a
 	     deselect as `''` — INDISTINGUISHABLE from picking the empty-string enum
@@ -79,14 +83,15 @@
 			{shown}
 			<ChevronDown size={14} aria-hidden="true" />
 		</Select.Trigger>
-		<Select.Portal>
+		<Select.Portal to={portalTarget}>
 			<Select.Content sideOffset={4}>
-				<!-- The list PORTALS to document.body, outside the editor root, so it
-				     carries the derivation like FormatPopover does. The pill is this
+				<!-- The list PORTALS out of the trigger's DOM but INTO the nearest
+				     `[data-qm-root]`, and carries the marker itself, like FormatPopover.
+				     The pill is this
 				     element (not the primitive's) because scoped CSS keys off which
 				     component OWNS the markup: a `class` passed to a primitive is a
 				     plain string and never picks up the scoping hash. -->
-				<div class="qm-select-content" style={QM_THEME}>
+				<div class="qm-select-content" data-qm-root>
 					<Select.Viewport>
 						<Select.Item class="qm-select-item" value={UNSET} label={ghostText}>
 							<span class="qm-select-ghost">{ghostText}</span>
