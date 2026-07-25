@@ -183,9 +183,8 @@ function groupBlocks(
 				break;
 			}
 			default: {
-				// An unknown container variant: emit the leaf as a bare block, dropping
-				// the nesting it asked for, and SAY so. Losing the container visibly
-				// beats fabricating a list the document never carried.
+				// An unknown container variant: emit the leaf as a bare block and warn.
+				// Dropping the nesting audibly beats fabricating a list.
 				console.warn(
 					'[quillmark/editor] unknown ContentContainer; decoding without it:',
 					(here as { container: string }).container

@@ -213,10 +213,10 @@ Editing chrome is thin and **per-leaf**; structural chrome is Svelte in the shel
   structural keymap owns field navigation outright. A body is a document: Tab is
   structural, bound as a *chain* two surfaces prepend to under the same rule — a
   `code_block` takes literal indentation, an island takes cell traversal. Outside
-  all of them every link declines and the key is not swallowed, so a body still
-  has a keyboard exit. Cleanup is command-local (the primitives join the boundary
-  they open); a global pass would fuse adjacent same-type lists, and an ordinal
-  decrease is exactly how `Content` marks that boundary.
+  all of them every link declines and the key is not swallowed, leaving the body a
+  keyboard exit. Cleanup is command-local (the primitives join the boundary they
+  open); a global pass would fuse adjacent same-type lists, and an ordinal decrease
+  is how `Content` marks that boundary.
 - **Tables / islands** — driven from the PM model (a `CellSelection`,
   decorations), not reconstructed from DOM geometry. An island is one PM leaf node
   over one content `U+FFFC` slot ([CODEC.md](CODEC.md) §Islands).

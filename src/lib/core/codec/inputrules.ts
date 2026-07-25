@@ -57,12 +57,11 @@ function markInputRule(regexp: RegExp, markType: MarkType, delimLen: number): In
  * `heading` being wrapped becomes a `paragraph` first.
  *
  * `list_item` is `block+`, so `list_item > heading` is *representable* and a bare
- * wrap mints it — a shape no quill renders. The reference quill derives an item's
+ * wrap mints it — a shape no quill renders: the reference quill derives an item's
  * numbering and indent from the container path and typesets the item's blocks as
- * body paragraphs (`usaf_memo`'s `render-body`); a heading there resolves to
- * nothing. The list shorthands are the only way to start a list, so this is the
- * only place the shape can enter through them (the `# ` rule is guarded on its
- * own side, in {@link markdownInputRules}).
+ * body paragraphs (`usaf_memo`'s `render-body`), where a heading resolves to
+ * nothing. This is the wrap-side route into that shape; the `# ` rule guards the
+ * other, in {@link markdownInputRules}.
  */
 function listWrappingRule(
 	regexp: RegExp,
@@ -115,11 +114,9 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 	// Block shorthands (only where the schema has the node — the inline schema
 	// omits them, so this stays a no-op there).
 	if (schema.nodes.heading) {
-		// `textblockTypeInputRule`'s body plus one guard: `# ` inside a list item is
-		// the other route to `list_item > heading`, the unrenderable shape
-		// {@link listWrappingRule} normalizes away on the wrap side. Returning null
-		// declines the rule, so the shorthand stays literal text in an item rather
-		// than minting the shape.
+		// `textblockTypeInputRule`'s body plus one guard: inside a list item, `# `
+		// declines (null) and stays literal text, rather than minting the unrenderable
+		// `list_item > heading` {@link listWrappingRule} normalizes away on the wrap side.
 		const heading = schema.nodes.heading;
 		const item = schema.nodes.list_item;
 		rules.push(

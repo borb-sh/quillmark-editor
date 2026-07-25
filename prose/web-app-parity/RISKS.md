@@ -80,15 +80,15 @@ The list keys ship: `codec/lists.ts` plus the `editorKeymap` fork, canon in
 VISUAL_EDITOR §Chrome ("List keys"). The Tab role fork and the chain mechanism
 promoted with them; `code_block`'s literal-indent link is issue #84.
 
-Two facts the build turned up, both now locked in tests rather than prose:
+Two facts hold the design up, both locked in tests rather than prose:
 
 - **Adjacent same-type lists are representable and the upstream normalizer keeps
-  them.** An ordinal decrease is the boundary (`[0, 1, 0]` survives `install`
-  verbatim and re-decodes to two lists). So the issue's "adjacent same-type lists
-  join" cleanup is a *choice*, not a repair — and a global one would silently
-  renumber an imported `1, 2, 1`. Cleanup is command-local instead; the
-  primitives already join the boundary they open. Markdown cannot spell the shape,
-  which is why the eight round-trip cases were blind to it.
+  them.** An ordinal decrease is the boundary — `[0, 1, 0]` survives `install`
+  verbatim and re-decodes to two lists. So the issue's "adjacent same-type lists
+  join" cleanup is a *choice*, not a repair, and a global one renumbers an
+  imported `1, 2, 1`. Cleanup is command-local instead; the primitives join the
+  boundary they open. Markdown has no spelling for the shape, so the eight
+  round-trip cases cannot reach it.
 - **`list_item > heading` is representable and renders as nothing.** Both input-rule
   routes into it are closed rather than documented.
 
