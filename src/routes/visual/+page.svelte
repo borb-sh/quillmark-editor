@@ -118,7 +118,7 @@
 				if (params.has('foreign')) {
 					doc.insertCard(Document.makeCard('legacy_kind', {}, 'Trapped legacy body.'));
 				}
-				// Issue #71 e2e seed: the tips channel a quill or consumer would seed. The
+				// Issue #71 e2e seed: the tips channel a quill or consumer supplies. The
 				// reference quill declares none — tips are `$ext`, not schema — so the
 				// playground stands in for the seeding consumer, off by default so the
 				// default view stays the plain card stack.

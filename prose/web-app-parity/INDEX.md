@@ -43,13 +43,13 @@ predicate through the `CardOps` bundle. Everything below stacks on that.
 #71 lands on top: `tips.ts` (channel narrowing + the markdown render), a
 `TipsCard.svelte` rendered from a fixed slot after `main`, `CardModel.tips` off the
 `$ext` snapshot the derive already holds, and a `clearTips` merge-write beside the
-rename it mirrors. Canon reopened as scheduled — VISUAL_EDITOR §"Card operations"
+rename it mirrors. Canon reopened as scheduled: VISUAL_EDITOR §"Card operations"
 carries the channel, VISUAL_EDITOR_UIUX gains §"Tips card", and both guidance
-paragraphs were rewritten whole rather than patched around #75. Four open
-questions were closed by the build: placement (read every card, render `main`),
-authoring (seed-only — the editor never adds a tip), position (fixed slot after
-`main`), and the cursor (local, so exactly one write happens, at dismissal). No new
-`--qm-*` token, so #74 inherits nothing from it.
+paragraphs are rewritten whole rather than patched around #75. Four forks settle —
+placement (narrow every card, render `main`), authoring (seed-only; the editor
+never adds a tip), position (a fixed slot after `main`), and the cursor (local, so
+exactly one write happens, at dismissal). No new `--qm-*` token, so #74 inherits
+nothing from it.
 
 ## Schedule
 

@@ -53,15 +53,15 @@ one guidance surface that is not attached to a field. It sits in a fixed slot af
 never displace a control.
 
 One tip at a time, with an advance and a dismiss; both exits clear the channel, so
-the card leaves and does not return. Content is **inline markdown** through the
-codec's own decode and node `toDOM` — a tip is written in the body's mark
-vocabulary rather than by a second renderer that would drift from it — under the
-inline schema, so every tip is one paragraph and advancing cannot reshape the block.
+the card leaves and does not return. Content is **inline markdown**, rendered
+through the codec's own decode and node `toDOM` — a tip is written in the body's
+mark vocabulary rather than by a second renderer that would drift from it. The
+inline schema makes every tip one paragraph, so advancing cannot reshape the block.
 
 The cursor is **local**, not the channel: advancing writes nothing. A per-tip write
 would round-trip the boundary and dirty the document on what is a read gesture, so
-exactly one write happens, at dismissal. That write is the trade the surface makes
-plain — a dismissal persists in `$ext`, which is what "does not reappear" costs.
+exactly one write happens, at dismissal. A dismissal therefore persists in `$ext` —
+what "does not reappear" costs.
 
 Visually it is in-flow like every other block (SURFACES §Elevation): one hairline,
 no lift, no new token. It recedes by tone and type — the label rung in the muted

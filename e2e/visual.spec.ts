@@ -289,7 +289,7 @@ test.describe('visual editor', () => {
 		expect((await readDump(page)).mainExtEditor?.tips).toHaveLength(3);
 
 		// Advancing past the last tip clears the channel: the card goes, and the
-		// Document — not just the DOM — no longer carries `tips`.
+		// Document — not just the DOM — carries no `tips`.
 		await page.getByTestId('tips-next').click();
 		await expect(page.getByTestId('tips-count')).toHaveText('3 of 3');
 		await page.getByTestId('tips-next').click();

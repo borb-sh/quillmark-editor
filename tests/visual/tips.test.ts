@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-// The tips channel (issue #71): the narrowing the card derive feeds `CardModel.tips`,
-// the markdown render the card paints, and — the one that matters — that clearing
-// the channel is a MERGE-write which leaves the `title` sibling in the same `editor`
-// namespace intact. That last failure is silent and only reachable on a document
+// The tips channel (issue #71): the narrowing that feeds `CardModel.tips`, the
+// markdown render the card paints, and the load-bearing one — that clearing the
+// channel is a MERGE-write, leaving the `title` sibling in the same `editor`
+// namespace intact. That failure is silent and only reachable on a document
 // carrying both keys, so it is asserted against a real `Document`, not a stub.
 import { describe, it, expect, beforeAll } from 'vitest';
 import { init, Quill, Document, MAIN_CARD_ADDR } from '$lib/core';
