@@ -152,7 +152,8 @@ function groupBlocks(
 				let prevOrd = here.ordinal;
 				while (j < leaves.length) {
 					const c = atDepth(leaves[j], depth);
-					if (!c || c.container !== 'list_item' || c.ordered !== ordered || c.start !== start) break;
+					if (!c || c.container !== 'list_item' || c.ordered !== ordered || c.start !== start)
+						break;
 					// An ordinal reset is an ADJACENT SIBLING list (content preserves the
 					// shape) — merging it here would re-encode `[0,1,0]` as `[0,1,2]`,
 					// breaking the decode round-trip on the first edit.

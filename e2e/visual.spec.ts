@@ -355,4 +355,41 @@ test.describe('visual editor', () => {
 		await expect(page.getByTestId('tips-card')).toHaveCount(0);
 		expect((await readDump(page)).cards[0].title).toBe('Kept Title');
 	});
+
+	test('(n) list keys indent, exit, and merge through the real keymap (issue #70)', async ({
+		page
+	}) => {
+		// The browser tier is where key DELIVERY is provable: Tab reaches the leaf
+		// rather than moving focus, Shift-Tab survives the modifier, and each press
+		// COMMITS (the dump is the Document, not the DOM).
+		const el = pm(page, 'prose-main-body');
+		await el.click();
+		await page.keyboard.press('ControlOrMeta+a');
+		await page.keyboard.type('- one');
+		await page.keyboard.press('Enter');
+		await page.keyboard.type('two');
+		// Tab indents rather than leaving the leaf — the focus check is the point.
+		await page.keyboard.press('Tab');
+		await expect(el).toBeFocused();
+		await expect.poll(async () => (await readDump(page)).body).toMatch(/one[\s\S]*two/);
+		await expect(el.locator('ul ul li')).toHaveText('two');
+
+		// Shift-Tab puts it back at the outer level.
+		await page.keyboard.press('Shift+Tab');
+		await expect(el.locator('ul ul')).toHaveCount(0);
+		await expect(el.locator('ul > li')).toHaveCount(2);
+
+		// Enter opens a third, empty item; Backspace at its start merges it back.
+		await page.keyboard.press('Enter');
+		await expect(el.locator('ul > li')).toHaveCount(3);
+		await page.keyboard.press('Backspace');
+		await expect(el.locator('ul > li')).toHaveCount(2);
+
+		// Enter on an empty item exits the list into a paragraph instead of adding
+		// a fourth one — two presses: one to open the empty item, one to leave.
+		await page.keyboard.press('Enter');
+		await page.keyboard.press('Enter');
+		await expect(el.locator('ul > li')).toHaveCount(2);
+		await expect(el.locator('p:not(li p)')).toHaveCount(1);
+	});
 });

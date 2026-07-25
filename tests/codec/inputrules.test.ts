@@ -139,9 +139,7 @@ describe('the heading/list shorthands never mint a heading inside an item', () =
 		// Back to the block start, then the list shorthand.
 		view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 1)));
 		type(view, '- ');
-		expect(view.state.doc.toString()).toBe(
-			'doc(bullet_list(list_item(paragraph("title"))))'
-		);
+		expect(view.state.doc.toString()).toBe('doc(bullet_list(list_item(paragraph("title"))))');
 		view.destroy();
 	});
 
@@ -150,9 +148,7 @@ describe('the heading/list shorthands never mint a heading inside an item', () =
 		type(view, '- item');
 		view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 3)));
 		type(view, '# ');
-		expect(view.state.doc.toString()).toBe(
-			'doc(bullet_list(list_item(paragraph("# item"))))'
-		);
+		expect(view.state.doc.toString()).toBe('doc(bullet_list(list_item(paragraph("# item"))))');
 		view.destroy();
 	});
 

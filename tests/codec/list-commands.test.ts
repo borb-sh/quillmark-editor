@@ -207,7 +207,11 @@ describe('Enter', () => {
 
 describe('Backspace', () => {
 	it('at the start of a non-first item, merges its text into the previous item', () => {
-		expectPress(startOf('- a\n- b', 1), 'Backspace', 'doc(bullet_list(list_item(paragraph("ab"))))');
+		expectPress(
+			startOf('- a\n- b', 1),
+			'Backspace',
+			'doc(bullet_list(list_item(paragraph("ab"))))'
+		);
 	});
 
 	it('at the start of the first item, lifts out of the list', () => {

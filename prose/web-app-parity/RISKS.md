@@ -11,7 +11,7 @@ by implementing rather than deciding.
 | 74 | Rungs unreachable in `preview/` + `source/` | Retired — one derivation in `core/`, set on four roots |
 | 71 | Clearing tips destroys card titles | Retired — merge-write shipped, hazard tested |
 | 57 | Needs a WASM undo primitive | Retired — `toJson` / `loadJson` / `clone` |
-| 70 | Codec loses nesting on indent/outdent | Retired — 8 shapes round-trip, now tested |
+| 70 | Codec loses nesting on indent/outdent | Retired — 8 shapes round-trip; keys landed |
 | 76 | Styled variants owe a11y from scratch | Retired — bits-ui covers the three UA-owned kinds |
 | 16 | Island authoring unscoped | Open by design; the tail |
 
@@ -74,35 +74,23 @@ time, and that reason is gone. It stays on file contention alone: it rewrites th
 structure mutators #71 and #76 build on, so going earlier means the other two
 rebase onto a moved floor. The position is unchanged; only its justification is.
 
-## #70 — retired empirically
+## #70 — landed
 
-Nesting was *decodable* (one two-level case in the existing suite), but
-indent/outdent only works if the shapes it produces **round-trip**. Eight now do,
-locked in `tests/codec/list-shapes.test.ts`: three-level bullets, ordered-in-
-bullet and bullet-in-ordered, multi-paragraph items, an item carrying a nested
-list plus a trailing paragraph, sibling splits from outdenting a middle item,
-ordinal resets, and a deep mixed shape. All pass unchanged.
+The list keys ship: `codec/lists.ts` plus the `editorKeymap` fork, canon in
+VISUAL_EDITOR §Chrome ("List keys"). The Tab role fork and the chain mechanism
+promoted with them; `code_block`'s literal-indent link is issue #84.
 
-The codec needs no work for #70.
+Two facts the build turned up, both now locked in tests rather than prose:
 
-**Settled — Tab forks on leaf role, not caret position.** The surface decides
-Tab's meaning, not the node under the cursor. An `inline` / `plaintext` leaf is a
-form field: Tab stays unbound, so the deferred structural keymap owns field
-navigation outright. A block-schema body is a document: Tab is structural —
-`sinkListItem` / `liftListItem` in a list item, inert elsewhere — and `Escape`
-blurs the leaf as the exit to the shell. The fork lands on the branch
-`editorKeymap` already draws (`field.ts:380`), so #70 stays additive.
-
-Forking on caret position instead — Tab indents in a list, falls through to field
-navigation everywhere else — makes one key structurally edit or navigate
-depending on where in a paragraph the caret sits. The role fork costs a real
-affordance (a caret in a body paragraph cannot Tab to the next field; Notion pays
-this too) and buys a key that never means two things in one surface, plus a
-deterministic keyboard exit that a positional fork cannot offer.
-
-Two surfaces own Tab locally under the same rule: `code_block` takes literal
-indentation, and an island takes cell traversal when #16 lands. Bind the body's
-Tab as a chain so each prepends a link rather than rewriting the binding.
+- **Adjacent same-type lists are representable and the upstream normalizer keeps
+  them.** An ordinal decrease is the boundary (`[0, 1, 0]` survives `install`
+  verbatim and re-decodes to two lists). So the issue's "adjacent same-type lists
+  join" cleanup is a *choice*, not a repair — and a global one would silently
+  renumber an imported `1, 2, 1`. Cleanup is command-local instead; the
+  primitives already join the boundary they open. Markdown cannot spell the shape,
+  which is why the eight round-trip cases were blind to it.
+- **`list_item > heading` is representable and renders as nothing.** Both input-rule
+  routes into it are closed rather than documented.
 
 **Settled — lists are the indent primitive; no generic indent container.**
 `Content` carries horizontal offset only as `containers` (`list_item`, `quote`),

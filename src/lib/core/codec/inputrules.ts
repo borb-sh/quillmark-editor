@@ -147,7 +147,9 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 	// there is no toggle command and no toolbar affordance, so `- ` / `1. ` at the
 	// start of a block is how one begins, here or nested inside an item.
 	if (schema.nodes.bullet_list && schema.nodes.paragraph) {
-		rules.push(listWrappingRule(/^\s*([-+*])\s$/, schema.nodes.bullet_list, schema.nodes.paragraph));
+		rules.push(
+			listWrappingRule(/^\s*([-+*])\s$/, schema.nodes.bullet_list, schema.nodes.paragraph)
+		);
 	}
 	if (schema.nodes.ordered_list && schema.nodes.paragraph) {
 		rules.push(
