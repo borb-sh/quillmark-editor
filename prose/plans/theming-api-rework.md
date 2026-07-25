@@ -13,14 +13,15 @@
 The derivation math is right and stays. Everything wrong with the theming API
 traces to one choice — **the scale is a JS string applied as an inline `style`
 attribute** (`core/theme.ts`) — and replacing that transport with a real
-stylesheet the library imports itself unlocks six fixes at once: a shipped dark
-default, `@layer` precedence for consumer overrides, `@property` type-checking,
-`font-family` reaching every root, the freed `style` attribute, and the collapse
+stylesheet the library imports itself unlocks five fixes at once: a shipped dark
+default, `@layer` precedence for consumer overrides, `font-family` and
+`color-scheme` reaching every root, the freed `style` attribute, and the collapse
 of the repeated `var(--qm-bg, #fff)` fallbacks.
 
 Two dependency-owned surfaces (CodeMirror's highlight style, ProseMirror's base
-stylesheet) are themed surfaces the lints structurally cannot see; they land as
-their own work items.
+stylesheet) are themed surfaces the lints structurally cannot see, and the two
+portaled surfaces never see a pane-scoped dial at all. Each lands as its own work
+item.
 
 ## Why
 
@@ -28,7 +29,7 @@ Evidence, all current as of this branch:
 
 | Finding | Evidence |
 |---|---|
-| The transport cannot express `@media`, `@layer`, or `@property`. `THEMING.md` hands dark mode to the consumer as homework because an inline attribute has no other option. | `core/theme.ts:6-13` |
+| The transport cannot express `@media` or `@layer`. `THEMING.md` hands dark mode to the consumer as homework because an inline attribute has no other option. | `core/theme.ts:6-13` |
 | `--qm-font` is one of ten dials and reaches one of five roots. The two portaled surfaces render at `document.body`'s font; the preview and source view set no family. | `VisualEditor.svelte:577` is the only `font-family: var(--qm-font, …)` |
 | Three mono literals are un-tokenized, and `check:type` cannot see them — `font-family` is explicitly out of its scope. | `Card.svelte:537`, `TipsCard.svelte:101`, `ArrayField.svelte:185` |
 | Nothing sets `color-scheme`, so a dark editor keeps light native scrollbars, date picker, and caret. | absent from `SCALE` |
@@ -224,11 +225,11 @@ narrow widths, and near the viewport edge.
 **W7 — Root passthrough.** With `style` freed, give the three mounted roots
 `class` and `style` props. Small, and the reason W1 is worth doing beyond theming.
 
-**W8 — Canon.** Rewrite `THEMING.md`, `SURFACES.md` §"The scale in code",
-`AESTHETIC.md` §"Neutral baseline", `ARCHITECTURE.md` §Theming, and
-`VISUAL_EDITOR_UIUX.md` §"Complex UX, minimal UI" — each names "ten dials" and/or
-`core/theme.ts` applied as a `style` attribute. Per `CLAUDE.md`, this lands in the
-same commit as the code it describes, not after. Retire this plan file.
+**W8 — Canon.** Five files name "ten dials" and/or `core/theme.ts` applied as a
+`style` attribute, and are false the moment W1 lands. The replacement prose is
+written out in §"The canon rewrite (W8)" — drop it in rather than re-deriving it.
+Per `CLAUDE.md` this lands in the **same commit** as the code it describes, not
+after; retire this plan file in that commit.
 
 ## Probed
 
@@ -271,3 +272,160 @@ e2e root walk. This is a transport-and-composition change, not a redesign.
   load-bearing today. `--qm-color-scheme` is the weaker of the two — it is
   arguably the consumer's job — and is the one to re-argue before W2 lands.
 - **The scale stops being introspectable from JS.** Nothing reads it today.
+
+## The canon rewrite (W8)
+
+Drop-in prose for every doc the rework falsifies, written against the finished
+state (all of W1–W7 landed). It lands in the **same commit** as the code, per
+`CLAUDE.md` — canon that describes an unbuilt design is worse rot than canon that
+describes an old one. Retire this file in that commit.
+
+Five files. `INDEX.md` needs no change: it points at `THEMING.md` without naming a
+count or a mechanism.
+
+Check both directions after: `check:theme` rule 2 covers `prose/canon/**` once W3
+lands, so a dial named in canon must be one of the eleven, and `--qm-font-scale`
+surviving anywhere fails CI.
+
+### `THEMING.md` — replace the whole file
+
+````markdown
+# Theming
+
+`@quillmark/editor` ships **complex UX over a thin skin** (VISUAL_EDITOR_UIUX
+§"Complex UX, minimal UI"): the surfaces carry the behavior — direct
+manipulation, the caret bridge, per-field state — against a neutral, overridable
+visual baseline a consumer restyles to its brand without fighting baked-in
+design.
+
+The whole contract is **eleven CSS custom properties**. They are dials, not a
+palette: each derives a closed private scale (`--_qm-*`) that every component
+reads, so one override rescales or recolors the whole surface. Set them on any
+ancestor of a mounted surface — the app, or one pane:
+
+```css
+.my-editor {
+	--qm-bg: #fff;
+	--qm-fg: #10233b;
+	--qm-accent: #6d28d9;
+	--qm-font: 'Inter', system-ui, sans-serif;
+}
+```
+
+## The dials
+
+| Token              | Default                                | What it sets                                                                   |
+| ------------------ | -------------------------------------- | ------------------------------------------------------------------------------ |
+| `--qm-bg`          | `#fff`                                 | Base surface. Cards, fields, the painted page, and the popover step off it.    |
+| `--qm-fg`          | `#1a1a1a`                              | Base ink. Body text, labels, borders, and shadows step off it.                 |
+| `--qm-accent`      | `#2563eb`                              | Focus rings, active marks, the preview's active field box.                     |
+| `--qm-danger`      | `#c5221f`                              | Error diagnostics, the required marker, the delete glyph.                       |
+| `--qm-warning`     | `#b25000`                              | Warning diagnostics.                                                            |
+| `--qm-color-scheme`| `light dark`                           | Native UI — scrollbars, the date picker, the caret. Pin it if you pin a palette.|
+| `--qm-font`        | `ui-sans-serif, system-ui, sans-serif` | The editor surface's font family.                                              |
+| `--qm-font-mono`   | `ui-monospace, monospace`              | The monospace face — the JSON array control, the tips card, the title mirror.  |
+| `--qm-font-size`   | `0.875rem`                             | Body text — the anchor the ramp derives up (title) and down (label/meta) from. |
+| `--qm-radius`      | `8px`                                  | Card & popover corner. Interior controls derive a tighter tier (half).         |
+| `--qm-space`       | `0.25rem`                              | Spacing base. Gaps and insets are `half`/`1×`/`2×`/`3×`/`4×` multiples of it.  |
+
+Give a length dial a length. `--qm-space: 4` parses as a valid custom property but
+poisons every `calc()` that reads it, collapsing the surface's padding to zero —
+CSS registration cannot guard a `rem`-defaulted dial, so nothing catches this but
+you.
+
+## Dark mode is a two-value swap
+
+Surfaces step `bg → fg` and ink steps `fg → bg`, mixed in **oklab** — so
+inverting the two poles inverts the whole scale, including borders, the popover's
+translucent fill, the source view's syntax colours, and the page shadow (which
+mixes from the ink pole rather than from black, and so does not become a smudge on
+a dark surface).
+
+The package ships a dark default under `prefers-color-scheme: dark`; a consumer
+that sets the poles wins over it in both schemes, so a fixed palette stays fixed:
+
+```css
+@media (prefers-color-scheme: dark) {
+	.my-editor {
+		--qm-bg: #14171c;
+		--qm-fg: #e8eaed;
+	}
+}
+```
+
+No JS runs: the derivation is emitted as `var()` references, so an ancestor rule
+or a media query resolves through the cascade at paint time. There is no `dark`
+prop and no mode toggle in the package — the consumer's palette decides.
+
+## What is deliberately not public
+
+The derived scale — surface / border / ink rungs, the blur radius, the popover's
+translucency ratio, the recede-opacity ladder, the overlay ring widths — is
+**internal** (`--_qm-*`, minted in `core/`). It is not a contract: a rung can be
+re-tuned or renamed without notice. It is minted on the root element itself, so an
+ancestor declaration does not reach it; a rule targeting `[data-qm-root]` does, and
+is unsupported on the same terms.
+
+A knob is promotable to a dial the day a real consumer needs it — a public token is
+a permanent promise, so the surface stays the minimum that makes a palette swap
+work.
+
+## Requirements
+
+`@layer` and `color-mix()` — Baseline since 2022 and 2023. The stylesheet is
+imported by the package itself; there is no CSS file to remember.
+
+`npm run check:theme` gates all of it: no component may mint a colour, shadow, or
+opacity literal; nothing outside the derivation may define a `--_qm-*`; and the
+consumed dial set must match this document and `prose/canon/` exactly, in both
+directions.
+````
+
+### `prose/canon/ARCHITECTURE.md` §Theming — replace the first paragraph
+
+```markdown
+The surfaces carry the behavior against a neutral, overridable baseline — eleven
+`--qm-*` dials a consumer overrides on any ancestor (VISUAL_EDITOR_UIUX §"Complex
+UX, minimal UI"), deriving the private `--_qm-*` scale every component reads. The
+contract is the package's [`THEMING.md`](../../THEMING.md); the derivation is a
+stylesheet in `core/`, imported by the one module both `preview/` and `visual/`
+already pull, and applied wherever a `data-qm-root` marker sits. A stylesheet
+rather than an inline attribute is what lets the scale carry a shipped dark
+default, a precedence layer consumer CSS beats without `!important`, and the
+baseline `font-family` every root inherits.
+```
+
+### `prose/canon/VISUAL_EDITOR_UIUX.md` §"Complex UX, minimal UI" — one clause
+
+```markdown
+appearance is a themeable surface with a neutral, overridable baseline — eleven
+`--qm-*` dials deriving a closed private scale ([`THEMING.md`](../../THEMING.md)).
+```
+
+### `prose/canon/SURFACES.md` §"The scale in code" — replace the paragraph
+
+```markdown
+**The scale in code.** All three axes are public dials deriving a closed private
+scale ([`THEMING.md`](../../THEMING.md)) — geometry (`--qm-radius`, `--qm-space`),
+type (`--qm-font-size`), and colour (`--qm-bg`, `--qm-fg`, and the three status
+hues, which step surfaces `bg → fg` and ink `fg → bg` in oklab). The derivation is
+minted ONCE, as a stylesheet in `core/` the package imports itself, and applies to
+every element marked `data-qm-root` — the editor, the portaled popover and select
+list, the preview, and the source view, none of which descend from the others. The
+root rule carries the baseline `font-family`, `color`, and `color-scheme` too, so a
+new root inherits the type and native-UI baseline by carrying the marker rather
+than by remembering a declaration. Component chrome sits in a cascade layer beneath
+consumer CSS. A component reads a rung, never a literal; `check:geometry`,
+`check:type`, and `check:theme` gate it, so an in-between value fails CI, not just
+review.
+```
+
+Note the type axis loses `--qm-font-scale`: the ratio between adjacent rungs is a
+private constant, not a dial.
+
+### `prose/canon/AESTHETIC.md` §"Neutral baseline" — one clause
+
+```markdown
+monochrome-and-whitespace hierarchy. The surface is eleven dials deriving a closed
+private scale, so a restyle is a handful of values and dark mode is two of them
+```
