@@ -127,53 +127,71 @@ function groupBlocks(
 			continue;
 		}
 		const here = path[depth];
-		if (here.container === 'quote') {
-			let j = i + 1;
-			while (j < leaves.length && atDepth(leaves[j], depth)?.container === 'quote') j++;
-			out.push(
-				schema.nodes.blockquote.create(
-					null,
-					groupBlocks(schema, leaves.slice(i, j), depth + 1, marks, cursor)
-				)
-			);
-			i = j;
-		} else {
-			// A list: gather the maximal run of sibling `list_item` leaves at this
-			// depth (same ordered/start), then split it into items by `ordinal`.
-			const ordered = here.ordered;
-			const start = here.start;
-			let j = i + 1;
-			let prevOrd = (here as { ordinal: number }).ordinal;
-			while (j < leaves.length) {
-				const c = atDepth(leaves[j], depth);
-				if (!c || c.container !== 'list_item' || c.ordered !== ordered || c.start !== start) break;
-				// An ordinal reset is an ADJACENT SIBLING list (content preserves the
-				// shape) — merging it here would re-encode `[0,1,0]` as `[0,1,2]`,
-				// breaking the decode round-trip on the first edit.
-				const ord = (c as { ordinal: number }).ordinal;
-				if (ord < prevOrd) break;
-				prevOrd = ord;
-				j++;
-			}
-			const run = leaves.slice(i, j);
-			const items: PMNode[] = [];
-			let k = 0;
-			while (k < run.length) {
-				const ord = (atDepth(run[k], depth) as { ordinal: number }).ordinal;
-				let l = k + 1;
-				while (l < run.length && (atDepth(run[l], depth) as { ordinal: number }).ordinal === ord)
-					l++;
-				items.push(
-					schema.nodes.list_item.create(
+		// An explicit switch, mirroring `encode.ts`'s: `ContentContainer` is a tagged
+		// union, so a third variant is additive upstream. An `else`-is-a-list default
+		// would decode one SILENTLY as a list; the default below degrades visibly.
+		switch (here.container) {
+			case 'quote': {
+				let j = i + 1;
+				while (j < leaves.length && atDepth(leaves[j], depth)?.container === 'quote') j++;
+				out.push(
+					schema.nodes.blockquote.create(
 						null,
-						groupBlocks(schema, run.slice(k, l), depth + 1, marks, cursor)
+						groupBlocks(schema, leaves.slice(i, j), depth + 1, marks, cursor)
 					)
 				);
-				k = l;
+				i = j;
+				break;
 			}
-			const listType = ordered ? schema.nodes.ordered_list : schema.nodes.bullet_list;
-			out.push(listType.create(ordered ? { start } : null, items));
-			i = j;
+			case 'list_item': {
+				// Gather the maximal run of sibling `list_item` leaves at this depth
+				// (same ordered/start), then split it into items by `ordinal`.
+				const ordered = here.ordered;
+				const start = here.start;
+				let j = i + 1;
+				let prevOrd = here.ordinal;
+				while (j < leaves.length) {
+					const c = atDepth(leaves[j], depth);
+					if (!c || c.container !== 'list_item' || c.ordered !== ordered || c.start !== start) break;
+					// An ordinal reset is an ADJACENT SIBLING list (content preserves the
+					// shape) — merging it here would re-encode `[0,1,0]` as `[0,1,2]`,
+					// breaking the decode round-trip on the first edit.
+					if (c.ordinal < prevOrd) break;
+					prevOrd = c.ordinal;
+					j++;
+				}
+				const run = leaves.slice(i, j);
+				const items: PMNode[] = [];
+				let k = 0;
+				while (k < run.length) {
+					const ord = (atDepth(run[k], depth) as { ordinal: number }).ordinal;
+					let l = k + 1;
+					while (l < run.length && (atDepth(run[l], depth) as { ordinal: number }).ordinal === ord)
+						l++;
+					items.push(
+						schema.nodes.list_item.create(
+							null,
+							groupBlocks(schema, run.slice(k, l), depth + 1, marks, cursor)
+						)
+					);
+					k = l;
+				}
+				const listType = ordered ? schema.nodes.ordered_list : schema.nodes.bullet_list;
+				out.push(listType.create(ordered ? { start } : null, items));
+				i = j;
+				break;
+			}
+			default: {
+				// An unknown container variant: emit the leaf as a bare block, dropping
+				// the nesting it asked for, and SAY so. Losing the container visibly
+				// beats fabricating a list the document never carried.
+				console.warn(
+					'[quillmark/editor] unknown ContentContainer; decoding without it:',
+					(here as { container: string }).container
+				);
+				out.push(makeLeaf(schema, leaves[i], marks, cursor));
+				i++;
+			}
 		}
 	}
 	return out;

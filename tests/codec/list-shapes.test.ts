@@ -4,6 +4,7 @@
 // editing in issue #70 is additive only while these hold, so they are the
 // invariant it builds on.
 import { describe, it, expect } from 'vitest';
+import type { Attrs } from 'prosemirror-model';
 import { decode, pmToContent, blockSchema } from '$lib/core/codec';
 import type { Content } from '$lib/core';
 import { md, normalize, contentEqual } from './_util.js';
@@ -33,6 +34,37 @@ describe('list shapes round-trip', () => {
 	for (const [name, rt] of Object.entries(cases)) {
 		it(name, () => {
 			expect(contentEqual(reContent(rt), normalize(rt)), name).toBe(true);
+		});
+	}
+});
+
+// Two adjacent lists of the SAME type — the shape the cleanup invariant must not
+// fuse (`lists.ts` §cleanup). Markdown has no spelling for it (a blank line between
+// two bullet runs makes one loose list), so it cannot come from `md()` and every
+// case above is blind to it. An ordinal DECREASE is the boundary: `decode` breaks
+// its run on one, and the upstream normalizer stores it verbatim.
+describe('adjacent same-type lists keep their boundary', () => {
+	const item = (t: string) =>
+		blockSchema.nodes.list_item.create(
+			null,
+			blockSchema.nodes.paragraph.create(null, blockSchema.text(t))
+		);
+	const pair = (listType: 'bullet_list' | 'ordered_list', attrs: Attrs | null) =>
+		blockSchema.nodes.doc.create(null, [
+			blockSchema.nodes[listType].create(attrs, [item('a'), item('b')]),
+			blockSchema.nodes[listType].create(attrs, [item('c')])
+		]);
+
+	for (const [name, doc] of Object.entries({
+		bullet: pair('bullet_list', null),
+		ordered: pair('ordered_list', { start: 1 })
+	})) {
+		it(`${name}: the ordinal reset survives the normalizer and re-decodes to two`, () => {
+			const stored = normalize(pmToContent(doc));
+			expect(stored.lines.map((l) => (l.containers[0] as { ordinal: number }).ordinal)).toEqual([
+				0, 1, 0
+			]);
+			expect(decode(stored, blockSchema).childCount).toBe(2);
 		});
 	}
 });

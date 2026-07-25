@@ -15,7 +15,6 @@ import { history, redo, undo } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
 import type { Node as PMNode, Schema } from 'prosemirror-model';
 import { EditorState, Plugin, PluginKey, Selection, type Command } from 'prosemirror-state';
-import { splitListItem } from 'prosemirror-schema-list';
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
 import type { Document, Content, Addr } from '../index.js';
 import { decode } from './decode.js';
@@ -24,6 +23,7 @@ import { lower, pmToContent, insertReintroducesIslandSlot } from './encode.js';
 import { anchorsFromContent, type AnchorPos } from './marks.js';
 import { createReconciler, type Reconciler } from './reconcile.js';
 import { inputRulesPlugin } from './inputrules.js';
+import { listKeymap } from './lists.js';
 import { blockSchema, inlineSchema } from './schema.js';
 
 /** Options for {@link createField}. */
@@ -361,7 +361,15 @@ function placeholderPlugin(text: string): Plugin {
 	});
 }
 
-/** The field's keymap: history, mark toggles, list Enter; Enter suppressed inline. */
+/**
+ * The field's keymap: history, mark toggles, and the list structure keys; Enter
+ * suppressed inline.
+ *
+ * Tab forks on the leaf's ROLE, not on the caret's position. An inline/plaintext
+ * leaf is a form field: Tab stays unbound, so the deferred structural keymap owns
+ * field navigation outright. A block-schema body is a document: Tab is structural
+ * (`lists.ts`). One key never means two things within one surface.
+ */
 function editorKeymap(
 	schema: Schema,
 	inline: boolean,
@@ -380,9 +388,9 @@ function editorKeymap(
 	if (inline) {
 		// One textblock only: swallow Enter so no second block is attempted.
 		map['Enter'] = () => true;
-	} else if (schema.nodes.list_item) {
-		// Prefer splitting the list item; fall through to baseKeymap otherwise.
-		map['Enter'] = splitListItem(schema.nodes.list_item);
+	} else {
+		// Each binding falls through to `baseKeymap` when no list is in play.
+		Object.assign(map, listKeymap(schema));
 	}
 	return map;
 }
