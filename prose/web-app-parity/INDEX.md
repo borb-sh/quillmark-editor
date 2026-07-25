@@ -20,7 +20,7 @@ never onto the default branch.
 | 73 | consumer enum-option policy hook | projection | no | — | landed |
 | 72 | recovery shell for un-schemable cards | projection | no | — | landed |
 | 75 | per-field guidance (required marker, description) | projection | no | amended | landed |
-| 70 | list-editing commands | codec | no | no | open |
+| 70 | list-editing commands | codec | no | amends | open |
 | 71 | ephemeral tips card (`$ext.editor.tips`) | projection | no | reopened + amended | landed |
 | 74 | unified light/dark token surface | style | no | amends `THEMING.md` | open |
 | 76 | styled control variants / control-slot hooks | projection | no | no | open |
