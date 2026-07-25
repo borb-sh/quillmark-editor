@@ -200,7 +200,23 @@ Editing chrome is thin and **per-leaf**; structural chrome is Svelte in the shel
 - **Input rules** — the markdown shorthands (`**`, `*`, `~~`, `` ` ``, `# `, `- `,
   `1. `, `> `, and a ` ``` ` code fence) are PM input rules producing ordinary
   transactions; markdown is an input *shorthand*, never the stored form. No
-  table-entry rule (island authoring deferred).
+  table-entry rule (island authoring deferred). `- ` / `1. ` are the only way to
+  START a list — there is no toggle command and no toolbar affordance — so they
+  normalize a heading they wrap, and `# ` declines inside an item: `list_item` is
+  `block+`, making `list_item > heading` representable and unrenderable.
+- **List keys** — a body leaf's structural keymap (`codec/lists.ts`): `Tab` /
+  `Shift-Tab` change an item's nesting depth, `Enter` splits an item, exits an
+  empty one (one level per press), and opens a paragraph above a list's first
+  item, `Backspace` at an item's start merges into the previous item or lifts at
+  the list's start. **Tab forks on the leaf's role, not the caret's position.** An
+  inline/plaintext leaf is a form field: Tab stays unbound, so the deferred
+  structural keymap owns field navigation outright. A body is a document: Tab is
+  structural, bound as a *chain* two surfaces prepend to under the same rule — a
+  `code_block` takes literal indentation, an island takes cell traversal. Outside
+  all of them every link declines and the key is not swallowed, leaving the body a
+  keyboard exit. Cleanup is command-local (the primitives join the boundary they
+  open); a global pass would fuse adjacent same-type lists, and an ordinal decrease
+  is how `Content` marks that boundary.
 - **Tables / islands** — driven from the PM model (a `CellSelection`,
   decorations), not reconstructed from DOM geometry. An island is one PM leaf node
   over one content `U+FFFC` slot ([CODEC.md](CODEC.md) §Islands).
@@ -290,4 +306,8 @@ interface FieldController {
 - **Structural keymap** — Enter-at-end-of-body to add a card, Tab between fields:
   navigation crossing leaf boundaries no single PM keymap owns. Deferred; it lands
   as a shell keymap over `activeAddr`, alongside the deferred insert surface
-  (VISUAL_EDITOR_UIUX §Open).
+  (VISUAL_EDITOR_UIUX §Open). Tab is already taken inside a body (§Chrome, "List
+  keys"), so field navigation reaches the inline/plaintext leaves and the body's
+  unhandled Tab; what a body's keyboard exit should be — Escape blurs to the shell
+  is the candidate, and it contends with the format popover's close and the card
+  rename's revert — settles here rather than in the leaf.

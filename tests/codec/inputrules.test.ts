@@ -4,7 +4,7 @@
 // browser drives it: per-char through `handleTextInput` (the inputrules plugin's
 // entry), falling back to a plain insert when no rule claims the char.
 import { describe, it, expect } from 'vitest';
-import { EditorState } from 'prosemirror-state';
+import { EditorState, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { blockSchema, inputRulesPlugin } from '$lib/core/codec';
 
@@ -123,6 +123,40 @@ describe('mark input rules fire with exact positions', () => {
 				[' c', []]
 			]
 		});
+		view.destroy();
+	});
+});
+
+// `list_item` is `block+`, so `list_item > heading` is representable — and renders
+// as nothing (the reference quill typesets an item's blocks as body paragraphs).
+// Both routes into the shape are closed: the list shorthands normalize a heading
+// they wrap, and `# ` declines inside an item.
+describe('the heading/list shorthands never mint a heading inside an item', () => {
+	it('`- ` typed in a heading wraps it as a PARAGRAPH item', () => {
+		const view = mountView();
+		type(view, '## title');
+		expect(view.state.doc.toString()).toBe('doc(heading("title"))');
+		// Back to the block start, then the list shorthand.
+		view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 1)));
+		type(view, '- ');
+		expect(view.state.doc.toString()).toBe('doc(bullet_list(list_item(paragraph("title"))))');
+		view.destroy();
+	});
+
+	it('`# ` inside a list item stays literal text', () => {
+		const view = mountView();
+		type(view, '- item');
+		view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 3)));
+		type(view, '# ');
+		expect(view.state.doc.toString()).toBe('doc(bullet_list(list_item(paragraph("# item"))))');
+		view.destroy();
+	});
+
+	it('`# ` outside a list still makes a heading', () => {
+		const view = mountView();
+		type(view, '### deep');
+		expect(view.state.doc.toString()).toBe('doc(heading("deep"))');
+		expect(view.state.doc.child(0).attrs.level).toBe(3);
 		view.destroy();
 	});
 });

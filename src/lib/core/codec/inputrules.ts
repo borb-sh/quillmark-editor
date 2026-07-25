@@ -10,7 +10,8 @@ import {
 	textblockTypeInputRule,
 	wrappingInputRule
 } from 'prosemirror-inputrules';
-import type { MarkType, Schema } from 'prosemirror-model';
+import type { Attrs, MarkType, Node as PMNode, NodeType, Schema } from 'prosemirror-model';
+import { canJoin, findWrapping } from 'prosemirror-transform';
 import type { EditorState, Plugin, Transaction } from 'prosemirror-state';
 
 /**
@@ -51,6 +52,54 @@ function markInputRule(regexp: RegExp, markType: MarkType, delimLen: number): In
 	);
 }
 
+/**
+ * `wrappingInputRule` (whose body this mirrors), plus one normalization: a
+ * `heading` being wrapped becomes a `paragraph` first.
+ *
+ * `list_item` is `block+`, so `list_item > heading` is *representable* and a bare
+ * wrap mints it — a shape no quill renders: the reference quill derives an item's
+ * numbering and indent from the container path and typesets the item's blocks as
+ * body paragraphs (`usaf_memo`'s `render-body`), where a heading resolves to
+ * nothing. This is the wrap-side route into that shape; the `# ` rule guards the
+ * other, in {@link markdownInputRules}.
+ */
+function listWrappingRule(
+	regexp: RegExp,
+	listType: NodeType,
+	paragraph: NodeType,
+	getAttrs?: (match: RegExpMatchArray) => Attrs | null,
+	joinPredicate?: (match: RegExpMatchArray, node: PMNode) => boolean
+): InputRule {
+	return new InputRule(
+		regexp,
+		(state: EditorState, match: RegExpMatchArray, start: number, end: number) => {
+			const attrs = getAttrs ? getAttrs(match) : null;
+			const tr = state.tr.delete(start, end);
+			// Positions survive the retype: same content, same size.
+			if (tr.doc.resolve(start).parent.type !== paragraph) {
+				tr.setBlockType(start, start, paragraph);
+			}
+			const $start = tr.doc.resolve(start);
+			const range = $start.blockRange();
+			const wrapping = range && findWrapping(range, listType, attrs);
+			if (!range || !wrapping) return null;
+			tr.wrap(range, wrapping);
+			// Join a preceding list of the same type — the one boundary this rule
+			// itself opens (`lists.ts` §cleanup: command-local, never a global pass).
+			const before = tr.doc.resolve(start - 1).nodeBefore;
+			if (
+				before &&
+				before.type === listType &&
+				canJoin(tr.doc, start - 1) &&
+				(!joinPredicate || joinPredicate(match, before))
+			) {
+				tr.join(start - 1);
+			}
+			return tr;
+		}
+	);
+}
+
 /** The full markdown-shorthand rule set for a block schema. */
 export function markdownInputRules(schema: Schema): InputRule[] {
 	const rules: InputRule[] = [];
@@ -65,23 +114,46 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 	// Block shorthands (only where the schema has the node — the inline schema
 	// omits them, so this stays a no-op there).
 	if (schema.nodes.heading) {
+		// `textblockTypeInputRule`'s body plus one guard: inside a list item, `# `
+		// declines (null) and stays literal text, rather than minting the unrenderable
+		// `list_item > heading` {@link listWrappingRule} normalizes away on the wrap side.
+		const heading = schema.nodes.heading;
+		const item = schema.nodes.list_item;
 		rules.push(
-			textblockTypeInputRule(/^(#{1,6})\s$/, schema.nodes.heading, (match) => ({
-				level: match[1].length
-			}))
+			new InputRule(
+				/^(#{1,6})\s$/,
+				(state: EditorState, match: RegExpMatchArray, start: number, end: number) => {
+					const $start = state.doc.resolve(start);
+					for (let d = $start.depth; d > 0; d--) {
+						if (item && $start.node(d).type === item) return null;
+					}
+					if (!$start.node(-1).canReplaceWith($start.index(-1), $start.indexAfter(-1), heading)) {
+						return null;
+					}
+					return state.tr
+						.delete(start, end)
+						.setBlockType(start, start, heading, { level: match[1].length });
+				}
+			)
 		);
 	}
 	if (schema.nodes.code_block) {
 		rules.push(textblockTypeInputRule(/^```$/, schema.nodes.code_block));
 	}
-	if (schema.nodes.bullet_list) {
-		rules.push(wrappingInputRule(/^\s*([-+*])\s$/, schema.nodes.bullet_list));
-	}
-	if (schema.nodes.ordered_list) {
+	// The list shorthands are the ONLY entry point that starts a list (issue #70):
+	// there is no toggle command and no toolbar affordance, so `- ` / `1. ` at the
+	// start of a block is how one begins, here or nested inside an item.
+	if (schema.nodes.bullet_list && schema.nodes.paragraph) {
 		rules.push(
-			wrappingInputRule(
+			listWrappingRule(/^\s*([-+*])\s$/, schema.nodes.bullet_list, schema.nodes.paragraph)
+		);
+	}
+	if (schema.nodes.ordered_list && schema.nodes.paragraph) {
+		rules.push(
+			listWrappingRule(
 				/^(\d+)\.\s$/,
 				schema.nodes.ordered_list,
+				schema.nodes.paragraph,
 				(match) => ({ start: +match[1] }),
 				(match, node) => node.childCount + (node.attrs.start as number) === +match[1]
 			)
