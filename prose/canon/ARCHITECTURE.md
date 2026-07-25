@@ -15,14 +15,14 @@ is the playground.
 TS-first, zero `.js`. Two layers:
 
 - **Vanilla TS core** — no framework: the `@quillmark/wasm` + quiver boundary,
-  document model, codec, ProseMirror + CodeMirror integration, and the preview
-  paint loop. Pure `.ts`; ships framework-free `.d.ts`.
+  document model, codec, ProseMirror integration, the preview paint loop, and the
+  source mirror. Pure `.ts`; ships framework-free `.d.ts`.
 - **Svelte + bits-ui chrome** — `.svelte` components (`<script lang="ts">`) for
   toolbars, the schema-driven metadata form, and the split-pane shell;
   `.svelte.ts` modules for shared reactive logic.
 
-The heavy libraries (ProseMirror, CodeMirror, canvas paint) are already
-framework-agnostic, so the core carries the substance and the chrome stays thin.
+The heavy machinery (ProseMirror, canvas paint) is already framework-agnostic, so
+the core carries the substance and the chrome stays thin.
 Svelte earns its place in the stateful UI; a vanilla-core consumer wraps a mount
 API in a few lines.
 
@@ -33,7 +33,7 @@ API in a few lines.
 Not split into `@quillmark/preview` etc.
 
 Subpaths, not separate packages, because the thing a split would buy — a
-preview-only consumer not pulling ProseMirror/CodeMirror — is a dependency-graph
+preview-only consumer not pulling ProseMirror — is a dependency-graph
 concern that subpath entries already solve: each subpath is its own module root,
 so a bundler pulls only what the imported entry reaches. The one thing separate
 packages add, independent versioning, is a cost here: the surfaces share a

@@ -86,17 +86,17 @@ test.describe('editor shell', () => {
 		await page.getByTestId('toggle-source').click();
 		await expect(page.getByTestId('source-drawer')).toBeVisible();
 
-		const cmContent = page.locator('.qm-source .cm-content');
-		await expect(cmContent).toBeVisible();
+		const mirror = page.locator('.qm-source .qm-source-text');
+		await expect(mirror).toBeVisible();
 		// Canonical Quillmark markdown carries the `$quill:` front-matter header.
-		await expect(cmContent).toContainText('usaf_memo');
+		await expect(mirror).toContainText('usaf_memo');
 
 		// Edit the subject; the source view refreshes on the recompile tick.
 		await pm(page, 'prose-main-subject').click();
 		await page.keyboard.press('ControlOrMeta+a');
 		await page.keyboard.type('SOURCEVIEWEDIT');
 		await expect
-			.poll(async () => (await cmContent.textContent()) ?? '', { timeout: 15_000 })
+			.poll(async () => (await mirror.textContent()) ?? '', { timeout: 15_000 })
 			.toContain('SOURCEVIEWEDIT');
 	});
 

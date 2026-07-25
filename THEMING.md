@@ -62,17 +62,10 @@ No JS runs: the derivation is emitted as `var()` references, so an ancestor rule
 or a media query resolves through the cascade at paint time. There is no `dark`
 prop and no mode toggle in the package — the consumer's palette decides.
 
-Two surfaces sit outside the swap, both because their colour comes from a
-dependency rather than from the scale:
-
-- **The source view's syntax highlighting** is CodeMirror's `defaultHighlightStyle`,
-  whose token hues are tuned for a light background. The view's own chrome
-  (background, gutter, border) inverts; the markdown token colours do not.
-- **Native controls** — scrollbars, the date picker, the caret — follow
-  `color-scheme`, which nothing in the derivation sets. Declare it yourself
-  alongside the poles.
-
-Neither is reachable from the ten dials; both are tracked for the theming rework.
+One surface sits outside the swap. **Native controls** — scrollbars, the date
+picker, the caret — follow `color-scheme`, which nothing in the derivation sets, so
+a dark editor keeps light native chrome. Declare it yourself alongside the poles;
+it is not reachable from the ten dials, and is tracked for the theming rework.
 
 ## What is deliberately not public
 

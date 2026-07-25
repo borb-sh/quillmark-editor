@@ -143,8 +143,10 @@ live at the consumer layer (the playground wires both).
 ## Source view
 
 Debug-only, per [ARCHITECTURE.md](ARCHITECTURE.md) — not an editable dual mode. The
-`@quillmark/editor/source` surface is a read-only CodeMirror mirror of
+`@quillmark/editor/source` surface is a read-only text mirror of
 `Document.toMarkdown()`, the whole-document serialize the layer federation deletes.
+Monospace text in a `<pre>`, no syntax highlighting: a surface with no caret earns
+no editor library, so `/source` ships dependency-free.
 
 ## Open
 
