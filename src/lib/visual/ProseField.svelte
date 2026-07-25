@@ -87,8 +87,6 @@
 	   dropped; the active leaf is cued by the wrapper border tint below (SURFACES §Focus). */
 	.qm-prose :global(.ProseMirror) {
 		outline: none;
-		white-space: pre-wrap;
-		word-wrap: break-word;
 	}
 	/* Active-leaf cue: tint the hairline to the focus hue, shared with the scalar
 	   ring and the preview active box — no added box (the editor↔preview address). */
