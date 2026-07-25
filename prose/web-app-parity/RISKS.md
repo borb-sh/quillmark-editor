@@ -145,7 +145,7 @@ quill whose element is expressible as none of kind/quote/list nesting; authors
 faking offset with one-item lists; or a class-four need, which likely resolves to
 a `verse` kind rather than a container.
 
-**Carried into #70's code.** `decode.ts:115` branches `quote` and treats every
+**Carried into #70's code.** `decode.ts:130` branches `quote` and treats every
 other container as a list in the `else`, so a third variant would decode silently
 as a list. An explicit switch with a defensive default — mirroring
 `encode.ts:178` — turns that into visible degradation, and the file is in #70's
