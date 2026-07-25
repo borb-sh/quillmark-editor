@@ -111,8 +111,8 @@ test.describe('editor shell', () => {
 		// with every rung unresolved — `1px solid var(--_qm-border)` collapses to
 		// `currentColor`, paddings go to zero — and fails here rather than in review.
 		//
-		// `font-family` rides the same rule, so it is the same walk: the dial used to
-		// be applied by one component and reached one root of five.
+		// `font-family` rides the same rule, so it is the same walk — and the same
+		// failure: a root without the marker takes the page's font, not `--qm-font`.
 		const resolves = (selector: string) =>
 			page
 				.locator(selector)

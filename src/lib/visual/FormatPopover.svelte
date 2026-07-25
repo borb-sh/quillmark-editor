@@ -83,11 +83,11 @@
 	let linkPromptOpen = $state(false);
 	let linkValue = $state('');
 	let contentEl = $state<HTMLElement | undefined>(undefined);
-	/** The root to portal INTO. Portalling to `document.body` escapes the editor's
-	 *  subtree and so escapes the consumer's dials with it — a pane-scoped palette
-	 *  never reached this surface. Resolved from the active leaf's own DOM, so the
-	 *  popover lands inside whichever root raised it; `undefined` falls back to
-	 *  bits-ui's default (`document.body`) for a leaf mounted outside any root. */
+	/** The root to portal INTO — `document.body` escapes the editor's subtree and
+	 *  the consumer's dials with it, so a pane-scoped palette misses this surface.
+	 *  Resolved from the active leaf's own DOM, so the popover lands inside whichever
+	 *  root raised it; `undefined` falls back to bits-ui's `document.body` for a leaf
+	 *  mounted outside any root. */
 	let portalTarget = $state<HTMLElement | undefined>(undefined);
 
 	/** A floating-ui `Measurable` virtual anchor over the selection rect — a NEW object each time `rect` changes, so bits-ui's `watch(() => opts.customAnchor.current, …)` sees the change and repositions (a mutated-in-place object would not). */

@@ -14,14 +14,13 @@
    Every value stays a `var()` reference, so the dials resolve against the CASCADE
    at each root: a consumer's `[data-theme="dark"]` ancestor rule flows in
    unchanged, `prefers-color-scheme` needs no JS, and `color-mix` runs at paint
-   time. The rungs are declared ON the root element, so an ancestor declaration
-   does not reach them — a rule targeting `[data-qm-root]` does, and is unsupported
-   on the same terms as any other internal.
+   time. The rungs are declared ON the root, so they are reachable only by a rule
+   targeting it — THEMING.md §"What is deliberately not public" states the terms.
 
-   `@property` is deliberately absent: an `initial-value` must be computationally
-   independent, which `rem` is not, so registering `--qm-space` or `--qm-font-size`
-   is invalid CSS and drops silently. A unitless dial therefore poisons the `calc()`
-   chain with no guard; THEMING.md says so. */
+   `@property` is absent because it cannot work here: an `initial-value` must be
+   computationally independent, which `rem` is not, so registering `--qm-space` or
+   `--qm-font-size` is invalid CSS and drops silently. A unitless dial poisons the
+   `calc()` chain unguarded. */
 
 @layer qm.scale, qm.chrome;
 

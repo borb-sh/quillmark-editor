@@ -12,8 +12,7 @@
 // than one axis:
 //
 //   · `--_qm-*` is DEFINED only in the derivation — what makes one derivation safe
-//     for the roots that each carry its marker — and never twice in one rule, which
-//     a stylesheet will not catch the way a duplicate object key did.
+//     for the roots that each carry its marker — and never twice in one rule.
 //   · The consumed `--qm-*` set EQUALS the set documented in THEMING.md, both
 //     directions: an undocumented dial is drift, a documented-but-dead one is a
 //     promise nothing honors.
@@ -121,15 +120,25 @@ function sources() {
 	return out;
 }
 
+/** Comments blanked, line count preserved so a failure still points at its line. A
+ *  comment is prose, not a declaration: `#8cf` named in one is the hue being
+ *  discussed, not a hue being minted, and a gate that cannot tell them apart
+ *  punishes the writing rather than the styling. */
+function decomment(text) {
+	return text
+		.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ''))
+		.replace(/^[ \t]*\/\/.*$/gm, '');
+}
+
 /** A file's lintable style region and the 1-based line it starts on. In `.svelte`
  *  that is the `<style>` block — script and markup literals (positions, timeouts)
  *  are none of a style gate's business. In `.ts` declarations live in strings
  *  anywhere, so the whole file is the region. */
 function styleRegion(text, file) {
-	if (!file.endsWith('.svelte')) return { style: text, base: 0 };
+	if (!file.endsWith('.svelte')) return { style: decomment(text), base: 0 };
 	const m = text.match(/<style[^>]*>([\s\S]*?)<\/style>/);
 	if (!m) return undefined;
-	return { style: m[1], base: text.slice(0, m.index).split('\n').length };
+	return { style: decomment(m[1]), base: text.slice(0, m.index).split('\n').length };
 }
 
 const errors = [];
@@ -171,10 +180,9 @@ for (const full of files) {
 	});
 }
 
-// A rung defined twice is a silent last-wins drop. The `SCALE` object this replaced
-// got that from the language (a duplicate key is an error); a stylesheet does not,
-// so the check is explicit. The dark block legitimately redeclares the poles, so
-// only duplicates WITHIN one rule block count.
+// A rung defined twice is a silent last-wins drop, and CSS raises nothing for it
+// the way a duplicate object key does — so the check is explicit. The dark block
+// redeclares the poles by design, so only duplicates WITHIN one rule block count.
 {
 	const css = readFileSync(join(ROOT, DERIVATION), 'utf8');
 	for (const [, block] of css.matchAll(/\{([^{}]*)\}/g)) {

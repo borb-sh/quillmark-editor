@@ -80,12 +80,12 @@ type (`--qm-font-size`, with the ratio between rungs a fixed constant), and colo
 ink `fg → bg` in oklab). The derivation is minted ONCE, as a stylesheet in `core/`
 the package imports itself, and applies to every element marked `data-qm-root` —
 the editor, the portaled popover and select list, the preview, and the source view,
-none of which descend from the others. That rule carries the baseline font family
-and colour as well as the rungs, so a root inherits them by carrying the marker
-rather than by restating a declaration. It stops short of a body `font-size`: the
-prose leaves inherit the page's, and the caret is measured against that line box. A
-component reads a rung, never a literal; `check:style` gates all three axes, so an
-in-between value fails CI, not just review.
+none of which descend from the others. That rule carries the baseline font and ink
+too, so a root inherits them by carrying the marker rather than by restating a
+declaration; it stops short of a body `font-size`, which the prose leaves take from
+the page and measure their caret against. A component reads a rung, never a
+literal; `check:style` gates all three axes, so an in-between value fails CI, not
+just review.
 
 ## Focus and active state
 
