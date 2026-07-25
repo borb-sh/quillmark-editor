@@ -4,6 +4,9 @@
 > `THEMING.md`) describes the current API; this describes what replaces it and the
 > order to build it in. Retire this file when the last work item lands, rewriting
 > canon in the same commit.
+>
+> Every mechanism below is probed in Chromium 141 / Svelte 5.56.5 against this
+> repo — §"Probed" records what held and what did not.
 
 ## TL;DR
 
@@ -34,6 +37,7 @@ Evidence, all current as of this branch:
 | `check:theme` rule 2 scans only `THEMING.md`, so the canon docs a reader hits first rotted to 11 dead token names across 17 citations. | `check-theme.mjs:68-70` (rewritten in this branch's canon commit; the gate hole remains) |
 | The rungs are inline styles, near the top of the cascade — a consumer override needs `!important`. | `QM_THEME`, 37 rungs / 2060 bytes, restamped per root |
 | The roots take no `class`/`style` passthrough, because `style` is occupied. | `Preview.svelte:21-28` |
+| A dial scoped to a wrapper around the editor never reaches the two portaled surfaces, which inherit from `<body>`. `THEMING.md`'s "set them on any ancestor" is false for two of five roots. | probed live — §Probed, W6 |
 
 ## The target shape
 
@@ -57,10 +61,6 @@ a public subpath (`THEMING.md` §"What is deliberately not public"), the package
 @layer qm.scale, qm.chrome;
 
 @layer qm.scale {
-  @property --qm-space     { syntax: "<length>"; inherits: true; initial-value: 0.25rem; }
-  @property --qm-radius    { syntax: "<length>"; inherits: true; initial-value: 8px; }
-  @property --qm-font-size { syntax: "<length>"; inherits: true; initial-value: 0.875rem; }
-
   :where([data-qm-root]) {
     /* Resolved poles — each dial's default stated ONCE. */
     --_qm-bg: var(--qm-bg, #fff);
@@ -121,14 +121,28 @@ one size anchor, two geometry.
 `paint.ts:76`) stays a **rung, not a dial** — the first promotion candidate if a
 consumer wants a light page under dark chrome, but not a decision to force at v1.
 
-### 3. Registration, narrowly
+### 3. No `@property` — the idea does not survive probing
 
-`@property` on the three `<length>` dials only, where a bad value silently poisons
-a `calc()`. Deliberately **not** on the colours: a registered property with an
-`initial-value` always resolves, which kills the `var(--qm-bg, …)` fallback the
-shipped dark default depends on. Type-safety and defaulting want opposite things,
-and they want them on disjoint sets — `<length>` dials feed `calc()`, colour dials
-feed `color-mix`, which fails soft.
+`@property` requires an `initial-value` that is **computationally independent**.
+`rem` and `em` are not, so `@property --qm-space { syntax: "<length>";
+initial-value: 0.25rem }` is invalid and the whole rule is dropped **silently** —
+no console error, no partial effect; the dial simply behaves as unregistered.
+`CSS.registerProperty` says it out loud where the at-rule does not:
+`SyntaxError: The initial value provided is not computationally independent.`
+
+Two of the three dials worth registering (`--qm-space` at `0.25rem`,
+`--qm-font-size` at `0.875rem`) default in `rem` deliberately, so they scale with
+the user's font-size preference. Trading that for `px` to buy type-checking is an
+accessibility regression for a lint-shaped benefit. Only `--qm-radius` (`8px`) is
+registrable, and one registered dial out of eleven is not worth the asymmetry —
+worse, it is a trap: changing that default to `0.5rem` later kills the
+registration with no signal.
+
+So the fallback pattern (`var(--qm-space, 0.25rem)`) is used uniformly, resolved
+once into a pole rung. **The residual risk is accepted and unmitigated**: a
+consumer writing `--qm-space: 4` (unitless) poisons the `calc()` chain and
+collapses every padding to `0px`, silently. Document it in `THEMING.md`; there is
+no CSS-level guard.
 
 ### 4. Layering
 
@@ -139,20 +153,24 @@ the only idea worth importing from CM6's theming API, which is otherwise a poor
 fit (it trades away the cascade, needs a public class contract this project
 declines, and injects at runtime).
 
+Layering does **not** open the rungs to an ancestor override, and should not be
+described as if it does. `:where([data-qm-root])` declares each rung *on the root
+element*, and an element's own declaration beats an inherited value at any
+specificity — a consumer's `.my-app { --_qm-border: … }` is simply ignored. The
+escape hatch is targeting the root itself (`.my-app [data-qm-root] { --_qm-border:
+… }`), which is unlayered and does win. That is the right shape: the rungs stay
+non-contractual, and reaching them takes deliberate aim rather than a stray
+ancestor declaration.
+
 ## Work items
 
-Ordered; W0 gates the shape, W1–W3 are the core and land together, W4–W7 are
-independent and can land in any order.
-
-**W0 — Verify `@layer` inside Svelte scoped `<style>`.** Wrap one component's
-rules in `@layer qm.chrome { … }` and confirm the scoping hash still applies to
-selectors inside the at-rule, in both dev and `svelte-package` output. If it does
-not hold, `qm.chrome` is dropped and only `qm.scale` is layered — the scale layer
-is plain CSS in a plain file and is safe either way. **Do this before W1.**
+W1–W3 are the core and land together; W4–W8 are independent and can land in any
+order. The shape-gating question the plan originally opened on (`@layer` inside
+Svelte scoped styles) is answered in §Probed and needs no work item.
 
 **W1 — Transport.** Port `SCALE` to `core/theme.css` with resolved poles,
-`@property`, `@layer qm.scale`, the root property block, and the dark default.
-Delete `core/theme.ts` and the `QM_THEME` export. Swap `style={QM_THEME}` for
+`@layer qm.scale`, the root property block, and the dark default. Delete
+`core/theme.ts` and the `QM_THEME` export. Swap `style={QM_THEME}` for
 `data-qm-root` on `VisualEditor`, `Preview`, `SourceView`, `FormatPopover`, and
 `EnumField`'s listbox. Drop `font-family` from `VisualEditor.svelte:577`.
 *Acceptance*: `e2e/editor.spec.ts:103`'s root walk passes unchanged; the two
@@ -186,14 +204,53 @@ remove the hand-copied `white-space`/`word-wrap` rules from `ProseField.svelte:8
 and `ProseArrayElement.svelte:78`. *Acceptance*: list markers position correctly
 (the dropped `li { position: relative }`), node selection reads in the theme hue.
 
-**W6 — Root passthrough.** With `style` freed, give the three mounted roots
+**W6 — Portal targets.** A live bug, independent of the transport and not fixed
+by it: the two portaled surfaces mount at `document.body`, so they inherit the
+dials from `<body>` — not from the consumer's wrapper around the editor. A
+consumer who themes *one pane* rather than the whole document gets a light popover
+and a light listbox over a dark editor, and `THEMING.md`'s "set them on any
+ancestor of a mounted surface" is false for two of the five roots.
+
+Fix: pass the editor root as the portal target (`bits-ui`'s `Portal` takes
+`to?: Element | string`) so the content descends from `[data-qm-root]` and
+inherits the dials. Probed — see §Probed — including the clipping risk that
+portaling to `body` exists to avoid. Prefer resolving the target from the trigger
+(`closest('[data-qm-root]')`) over a hard-coded `'.qm-editor'`, so a surface
+mounted outside the editor still lands somewhere themed, and fall back to `body`
+when there is no root ancestor. *Acceptance*: a dial set on the editor's wrapper
+reaches both portaled surfaces; both stay unclipped inside the split pane, at
+narrow widths, and near the viewport edge.
+
+**W7 — Root passthrough.** With `style` freed, give the three mounted roots
 `class` and `style` props. Small, and the reason W1 is worth doing beyond theming.
 
-**W7 — Canon.** Rewrite `THEMING.md`, `SURFACES.md` §"The scale in code",
+**W8 — Canon.** Rewrite `THEMING.md`, `SURFACES.md` §"The scale in code",
 `AESTHETIC.md` §"Neutral baseline", `ARCHITECTURE.md` §Theming, and
 `VISUAL_EDITOR_UIUX.md` §"Complex UX, minimal UI" — each names "ten dials" and/or
 `core/theme.ts` applied as a `style` attribute. Per `CLAUDE.md`, this lands in the
 same commit as the code it describes, not after. Retire this plan file.
+
+## Probed
+
+Chromium 141.0.7390.37 (the preinstalled browser), Svelte 5.56.5, this repo's
+`svelte-package`. Each row is a mechanism the plan depends on, run rather than
+reasoned about.
+
+| Assumption | Result |
+|---|---|
+| `@layer` survives Svelte's scoped `<style>` | **Holds.** The hash lands on selectors *inside* the at-rule (`.qm-card.svelte-rrodk0`), and unused-selector detection still works within the layer. `qm.chrome` is safe. |
+| `svelte-package` carries a side-effect CSS import | **Holds.** `dist/core/theme.css` is copied, `import './theme.css';` survives at the head of `dist/core/index.js`, `publint` clean. |
+| Consumer's ancestor dial beats the shipped dark default | **Holds, in both schemes.** With no consumer value: `#fff` light, `#14171c` dark. With `--qm-bg` on an ancestor: the consumer's value in *both*. The resolved-poles pattern is what makes this work — a dark block setting `--qm-bg` on the root would clobber the consumer instead. |
+| Unlayered consumer CSS beats `@layer qm.chrome` | **Holds.** No `!important`, no specificity contest. |
+| `@property` type-checks the `<length>` dials | **Fails.** `rem`/`em` initial values are not computationally independent; the at-rule is dropped silently. Dropped from the plan — §3. |
+| A rung can be overridden from an ancestor | **Fails, by design.** The root's own declaration beats inheritance; only `[data-qm-root]`-targeted rules land — §4. |
+| Portaled surfaces inherit a scoped dial | **Fails — a live bug.** Editor root resolved `rgb(0,0,40)`; the listbox, mounted at `BODY`, resolved `#fff`. W6. |
+| Portaling to the editor root fixes it without clipping | **Holds.** Listbox resolves the consumer's dial, lands over its trigger, no ancestor clips it inside the split pane. |
+
+Probes were run against the playground and discarded; nothing from them is
+committed. The portal case (W6) is worth keeping as an e2e test when it lands —
+`e2e/editor.spec.ts:103` walks the roots for a *resolved* scale, which passes
+today precisely because the portaled roots resolve the **default** scale.
 
 ## What does not change
 
@@ -205,9 +262,11 @@ e2e root walk. This is a transport-and-composition change, not a redesign.
 
 ## Costs to accept, explicitly
 
-- **Browser floor becomes explicit**: `@layer` (2022), `color-mix` (2023),
-  `@property` (2024). All Baseline, but `THEMING.md` should state it rather than
-  let a consumer discover it.
+- **Browser floor becomes explicit**: `@layer` (2022) and `color-mix` (2023), both
+  Baseline. `THEMING.md` should state it rather than let a consumer discover it.
+- **A unitless dial still fails silently** (`--qm-space: 4` → every padding `0px`),
+  since `@property` cannot guard the two `rem`-defaulted dials. Documented, not
+  fixed.
 - **Eleven dials is a larger permanent promise than ten.** Both additions are
   load-bearing today. `--qm-color-scheme` is the weaker of the two — it is
   arguably the consumer's job — and is the one to re-argue before W2 lands.
