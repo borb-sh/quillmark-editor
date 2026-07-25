@@ -165,9 +165,37 @@ ancestor declaration.
 
 ## Work items
 
-W1–W3 are the core and land together; W4–W8 are independent and can land in any
-order. The shape-gating question the plan originally opened on (`@layer` inside
-Svelte scoped styles) is answered in §Probed and needs no work item.
+**W0 lands first and alone.** W1–W3 are the core and land together; W4–W8 are
+independent and can land in any order.
+
+**W0 — Collapse before extending.** Three subtractive changes, each independent of
+the rework and landable today. They exist because the rework's own items would
+otherwise pay a duplication cost instead of removing it — W3 adds rules to a lint
+suite that is over-split, and W8 edits five files to change one number.
+
+- **One gate, not three.** `check-geometry` (28 lines), `check-type` (35), and
+  `check-theme` (85) are the same rule — *read a rung, do not mint a value* — split
+  by CSS property category, and they already share `style-lint.mjs` (92 lines).
+  That split is chronological, not principled: geometry landed with #46, type with
+  #61, colour with #79. Merge them into one `check:style` driven by a
+  property→axis table. 240 lines guarding 852 lines of component CSS is the ratio
+  to bring down, and afterwards W3 is one edit rather than a choice about which
+  script owns the canon scan.
+- **State the dial set once.** The count is asserted in five files — `THEMING.md`
+  (twice), `ARCHITECTURE.md`, `VISUAL_EDITOR_UIUX.md`, `AESTHETIC.md`, and
+  `SURFACES.md`. `THEMING.md` owns it; the others reference the contract without
+  restating its size. Canon naming *individual* dials stays — `SURFACES.md`
+  §Rhythm saying which dials feed which axis is load-bearing, and W3's canon scan
+  keeps those names honest. It is the number that is duplicated, and the number is
+  why a dial change costs five prose edits.
+- **Drop the permanence framing.** `THEMING.md` and `SURFACES.md` §"Preventing
+  drift" justify the minimal surface with "a public token is a permanent promise."
+  The package is `0.0.0` with no consumers, so that cost is not yet real and the
+  doctrine is priced as though it were. Keep the small surface — it is right on its
+  own merits — and state the reason as design economy rather than compatibility.
+
+*Acceptance*: `npm run check:style` replaces three scripts with no loss of
+coverage (every current violation still fails); the dial count appears in one file.
 
 **W1 — Transport.** Port `SCALE` to `core/theme.css` with resolved poles,
 `@layer qm.scale`, the root property block, and the dark default. Delete
@@ -179,13 +207,13 @@ portaled surfaces resolve `--_qm-ink` **and** a non-`body` `font-family`.
 
 **W2 — Dials.** Add `--qm-font-mono` and `--qm-color-scheme`, retire
 `--qm-font-scale` to a constant, tokenize the three mono literals. Rewrite
-`THEMING.md`'s dial table to the eleven. *Acceptance*: `check:theme` rule 2 passes
-in both directions against the new table.
+`THEMING.md`'s dial table to the eleven. *Acceptance*: the dial census passes in
+both directions against the new table.
 
-**W3 — Gates.** Three changes to the lint set:
-- `check:theme` rule 2 scans `prose/canon/**` as well as `THEMING.md`, so a dead
-  token name in canon fails CI. This is what prevents the rot recurring.
-- `check:type` takes `font-family` into scope (its header currently excludes it),
+**W3 — Gate rules.** Three rules added to the single gate W0 leaves behind:
+- The dial census scans `prose/canon/**` as well as `THEMING.md`, so a dead token
+  name in canon fails CI. This is what prevents the rot recurring.
+- `font-family` enters the type axis (currently out of scope by its own header),
   closing the mono literals for good.
 - Moving to CSS loses the `SCALE` object's duplicate-key-is-an-error property.
   Replace it with a duplicate-`--_qm-x`-definition check over `theme.css`. This is
@@ -225,8 +253,11 @@ narrow widths, and near the viewport edge.
 **W7 — Root passthrough.** With `style` freed, give the three mounted roots
 `class` and `style` props. Small, and the reason W1 is worth doing beyond theming.
 
-**W8 — Canon.** Five files name "ten dials" and/or `core/theme.ts` applied as a
-`style` attribute, and are false the moment W1 lands. The replacement prose is
+**W8 — Canon.** After W0 this is `THEMING.md` plus the two paragraphs that
+describe the *mechanism* — `ARCHITECTURE.md` §Theming and `SURFACES.md` §"The
+scale in code", both of which name `core/theme.ts` applied as a `style` attribute
+and are false the moment W1 lands. `VISUAL_EDITOR_UIUX.md` and `AESTHETIC.md`
+carry only the count, so W0 already retired their edits. The replacement prose is
 written out in §"The canon rewrite (W8)" — drop it in rather than re-deriving it.
 Per `CLAUDE.md` this lands in the **same commit** as the code it describes, not
 after; retire this plan file in that commit.
@@ -258,8 +289,9 @@ today precisely because the portaled roots resolve the **default** scale.
 The oklab `bg → fg` / `fg → bg` derivation and its calibrated percentages; the
 rung vocabulary and names; per-root re-derivation (the reason a root marker exists
 at all — rungs minted at `:root` would compute against `:root`'s dials and defeat
-both per-pane theming and an ancestor dark class); the three-gate discipline; the
-e2e root walk. This is a transport-and-composition change, not a redesign.
+both per-pane theming and an ancestor dark class); the gate discipline — one
+script after W0, the same rules; the e2e root walk. This is a
+transport-and-composition change, not a redesign.
 
 ## Costs to accept, explicitly
 
@@ -268,9 +300,12 @@ e2e root walk. This is a transport-and-composition change, not a redesign.
 - **A unitless dial still fails silently** (`--qm-space: 4` → every padding `0px`),
   since `@property` cannot guard the two `rem`-defaulted dials. Documented, not
   fixed.
-- **Eleven dials is a larger permanent promise than ten.** Both additions are
-  load-bearing today. `--qm-color-scheme` is the weaker of the two — it is
-  arguably the consumer's job — and is the one to re-argue before W2 lands.
+- **Eleven dials is a wider surface than ten**, and W0 removes the argument that
+  made width automatically expensive — at `0.0.0` with no consumers, a dial is not
+  yet a permanent promise. The cost is comprehension, not compatibility: every dial
+  is one more thing a reader must hold. `--qm-font-mono` pays for itself against
+  three existing literals; `--qm-color-scheme` is the weaker case — arguably the
+  consumer's job — and is the one to re-argue before W2 lands.
 - **The scale stops being introspectable from JS.** Nothing reads it today.
 
 ## The canon rewrite (W8)
@@ -280,10 +315,14 @@ state (all of W1–W7 landed). It lands in the **same commit** as the code, per
 `CLAUDE.md` — canon that describes an unbuilt design is worse rot than canon that
 describes an old one. Retire this file in that commit.
 
-Five files. `INDEX.md` needs no change: it points at `THEMING.md` without naming a
-count or a mechanism.
+Three files, because W0 already moved the dial count into `THEMING.md` alone: what
+is left in canon is the two paragraphs describing the **mechanism**, which W1
+falsifies. `VISUAL_EDITOR_UIUX.md` and `AESTHETIC.md` are listed below in their
+W0 form — reference, no number — so a reader landing here after W0 sees the state
+to check rather than an edit to make. `INDEX.md` needs no change: it points at
+`THEMING.md` naming neither.
 
-Check both directions after: `check:theme` rule 2 covers `prose/canon/**` once W3
+Check both directions after: the dial census covers `prose/canon/**` once W3
 lands, so a dial named in canon must be one of the eleven, and `--qm-font-scale`
 surviving anywhere fails CI.
 
@@ -375,7 +414,7 @@ work.
 `@layer` and `color-mix()` — Baseline since 2022 and 2023. The stylesheet is
 imported by the package itself; there is no CSS file to remember.
 
-`npm run check:theme` gates all of it: no component may mint a colour, shadow, or
+`npm run check:style` gates all of it: no component may mint a colour, shadow, or
 opacity literal; nothing outside the derivation may define a `--_qm-*`; and the
 consumed dial set must match this document and `prose/canon/` exactly, in both
 directions.
@@ -384,7 +423,7 @@ directions.
 ### `prose/canon/ARCHITECTURE.md` §Theming — replace the first paragraph
 
 ```markdown
-The surfaces carry the behavior against a neutral, overridable baseline — eleven
+The surfaces carry the behavior against a neutral, overridable baseline — the
 `--qm-*` dials a consumer overrides on any ancestor (VISUAL_EDITOR_UIUX §"Complex
 UX, minimal UI"), deriving the private `--_qm-*` scale every component reads. The
 contract is the package's [`THEMING.md`](../../THEMING.md); the derivation is a
@@ -395,10 +434,10 @@ default, a precedence layer consumer CSS beats without `!important`, and the
 baseline `font-family` every root inherits.
 ```
 
-### `prose/canon/VISUAL_EDITOR_UIUX.md` §"Complex UX, minimal UI" — one clause
+### `prose/canon/VISUAL_EDITOR_UIUX.md` §"Complex UX, minimal UI" — W0 form, verify only
 
 ```markdown
-appearance is a themeable surface with a neutral, overridable baseline — eleven
+appearance is a themeable surface with a neutral, overridable baseline — the
 `--qm-*` dials deriving a closed private scale ([`THEMING.md`](../../THEMING.md)).
 ```
 
@@ -415,17 +454,20 @@ list, the preview, and the source view, none of which descend from the others. T
 root rule carries the baseline `font-family`, `color`, and `color-scheme` too, so a
 new root inherits the type and native-UI baseline by carrying the marker rather
 than by remembering a declaration. Component chrome sits in a cascade layer beneath
-consumer CSS. A component reads a rung, never a literal; `check:geometry`,
-`check:type`, and `check:theme` gate it, so an in-between value fails CI, not just
-review.
+consumer CSS. A component reads a rung, never a literal; `check:style` gates all
+three axes, so an in-between value fails CI, not just review.
 ```
+
+`SURFACES.md` §"Preventing drift" also carries the count and the permanence
+clause; W0 replaces that bullet with the design-economy form.
 
 Note the type axis loses `--qm-font-scale`: the ratio between adjacent rungs is a
 private constant, not a dial.
 
-### `prose/canon/AESTHETIC.md` §"Neutral baseline" — one clause
+### `prose/canon/AESTHETIC.md` §"Neutral baseline" — W0 form, verify only
 
 ```markdown
-monochrome-and-whitespace hierarchy. The surface is eleven dials deriving a closed
-private scale, so a restyle is a handful of values and dark mode is two of them
+monochrome-and-whitespace hierarchy. The surface is a small dial set deriving a
+closed private scale, so a restyle is a handful of values and dark mode is two of
+them
 ```
