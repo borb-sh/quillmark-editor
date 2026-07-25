@@ -182,7 +182,7 @@
 	.qm-json {
 		width: 100%;
 		box-sizing: border-box;
-		font-family: ui-monospace, monospace;
+		font-family: var(--_qm-font-mono);
 		min-height: 2.5rem;
 	}
 	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */

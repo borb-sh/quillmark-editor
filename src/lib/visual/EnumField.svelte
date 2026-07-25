@@ -15,7 +15,6 @@
 <script lang="ts">
 	import { Select } from 'bits-ui';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
-	import { QM_THEME } from '../core/index.js';
 	import { syncedLocal } from './synced.svelte.js';
 
 	interface Props {
@@ -86,7 +85,7 @@
 				     element (not the primitive's) because scoped CSS keys off which
 				     component OWNS the markup: a `class` passed to a primitive is a
 				     plain string and never picks up the scoping hash. -->
-				<div class="qm-select-content" style={QM_THEME}>
+				<div class="qm-select-content" data-qm-root>
 					<Select.Viewport>
 						<Select.Item class="qm-select-item" value={UNSET} label={ghostText}>
 							<span class="qm-select-ghost">{ghostText}</span>

@@ -75,13 +75,17 @@ collapse to the four; an in-between size is the drift this prevents.
 
 **The scale in code.** All three axes are public dials deriving a closed private
 scale ([`THEMING.md`](../../THEMING.md)) — geometry (`--qm-radius`, `--qm-space`),
-type (`--qm-font-size`, `--qm-font-scale`), and colour (`--qm-bg`, `--qm-fg`, and
-the three status hues, which step surfaces `bg → fg` and ink `fg → bg` in oklab).
-The derivation is minted ONCE, in `core/`, and applied to each detached root — the
-editor, the portaled popover and select list, the preview, and the source view,
-none of which descend from the others. A component reads a rung, never a literal;
-`check:style` gates all three axes, so an in-between value fails CI, not just
-review.
+type (`--qm-font-size`, with the ratio between rungs a fixed constant), and colour
+(`--qm-bg`, `--qm-fg`, and the three status hues, which step surfaces `bg → fg` and
+ink `fg → bg` in oklab). The derivation is minted ONCE, as a stylesheet in `core/`
+the package imports itself, and applies to every element marked `data-qm-root` —
+the editor, the portaled popover and select list, the preview, and the source view,
+none of which descend from the others. That rule carries the baseline font family
+and colour as well as the rungs, so a root inherits them by carrying the marker
+rather than by restating a declaration. It stops short of a body `font-size`: the
+prose leaves inherit the page's, and the caret is measured against that line box. A
+component reads a rung, never a literal; `check:style` gates all three axes, so an
+in-between value fails CI, not just review.
 
 ## Focus and active state
 

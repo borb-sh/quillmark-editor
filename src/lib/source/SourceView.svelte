@@ -8,7 +8,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createSourceView, type SourceViewController } from './view.js';
-	import { QM_THEME } from '../core/index.js';
 	import type { Document } from '../core/index.js';
 
 	/**
@@ -38,10 +37,10 @@
 	}
 </script>
 
-<div bind:this={containerEl} class="qm-source" style={QM_THEME}></div>
+<div bind:this={containerEl} class="qm-source" data-qm-root></div>
 
 <style>
-	/* A DETACHED root — carries `style={QM_THEME}` (core/theme.ts). The container is
+	/* A DETACHED root — marked `data-qm-root` (core/theme.css). The container is
 	   the scroller; view.ts holds its offset across a refresh. */
 	.qm-source {
 		width: 100%;
@@ -58,7 +57,7 @@
 		margin: 0;
 		padding: var(--_qm-space-2);
 		color: var(--_qm-ink);
-		font-family: ui-monospace, monospace;
+		font-family: var(--_qm-font-mono);
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
 	}

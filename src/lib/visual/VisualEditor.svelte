@@ -22,7 +22,7 @@
   once per derive.
 -->
 <script lang="ts">
-	import { isQuillmarkError, MAIN_CARD_ADDR, QM_THEME } from '../core/index.js';
+	import { isQuillmarkError, MAIN_CARD_ADDR } from '../core/index.js';
 	import type {
 		Document,
 		Quill,
@@ -479,7 +479,7 @@
 	}
 </script>
 
-<div class="qm-editor" style={QM_THEME}>
+<div class="qm-editor" data-qm-root>
 	<Card
 		card={model.main}
 		{doc}
@@ -567,14 +567,14 @@
 {/snippet}
 
 <style>
-	/* The private scale arrives as `style={QM_THEME}` on the root element above —
-	   this is a DETACHED root, one of those the derivation is set on (core/theme.ts).
-	   Nothing here mints; `check:theme` enforces that. */
+	/* The private scale lands via `data-qm-root` on the root element above — this is
+	   a DETACHED root, one of those core/theme.css applies the derivation to. The
+	   root rule also carries the baseline font and colour, so nothing here restates
+	   them. Nothing here mints; `check:style` enforces that. */
 	.qm-editor {
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
-		font-family: var(--qm-font, ui-sans-serif, system-ui, sans-serif);
 		color: var(--_qm-ink);
 	}
 	.qm-add-card {

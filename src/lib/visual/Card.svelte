@@ -534,7 +534,7 @@
 		color: var(--_qm-ink-label);
 	}
 	.qm-recovery-note code {
-		font-family: ui-monospace, monospace;
+		font-family: var(--_qm-font-mono);
 	}
 	.qm-recovery-muted {
 		color: var(--_qm-ink-ghost);

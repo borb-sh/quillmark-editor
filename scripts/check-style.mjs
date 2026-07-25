@@ -32,7 +32,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const LIB = join(ROOT, 'src', 'lib');
-const DERIVATION = 'src/lib/core/theme.ts';
+const DERIVATION = 'src/lib/core/theme.css';
 const THEMING = join(ROOT, 'THEMING.md');
 
 /** A colour literal: hex, or a functional notation that names a colour space. */
@@ -88,7 +88,7 @@ function sources() {
 			const full = join(dir, e.name);
 			if (e.isDirectory()) walk(full);
 			else if (/\.spec\.ts$|\.test\.ts$/.test(e.name)) continue;
-			else if (e.name.endsWith('.svelte') || e.name.endsWith('.ts')) out.push(full);
+			else if (/\.(svelte|ts|css)$/.test(e.name)) out.push(full);
 		}
 	})(LIB);
 	return out;

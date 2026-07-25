@@ -46,7 +46,6 @@
 	import type { MarkType } from 'prosemirror-model';
 	import { Popover } from 'bits-ui';
 	import type { Component } from 'svelte';
-	import { QM_THEME } from '../core/index.js';
 	import Bold from '@lucide/svelte/icons/bold';
 	import Italic from '@lucide/svelte/icons/italic';
 	import Underline from '@lucide/svelte/icons/underline';
@@ -257,7 +256,7 @@
 				<div
 					bind:this={contentEl}
 					class="qm-format-popover"
-					style={QM_THEME}
+					data-qm-root
 					data-testid="format-popover"
 				>
 					{#if linkPromptOpen}
@@ -322,8 +321,8 @@
 
 <style>
 	/* This surface PORTALS to document.body, outside .qm-editor, so it inherits the
-	   public dials but not the derived scale — it carries `style={QM_THEME}` as a
-	   detached root (core/theme.ts) rather than re-declaring the rungs. */
+	   public dials but not the derived scale — it is marked `data-qm-root`, which is
+	   where core/theme.css applies the derivation. */
 	.qm-format-popover {
 		display: flex;
 		/* Translucent pill over the content (VISUAL_EDITOR_UIUX §Formatting): the

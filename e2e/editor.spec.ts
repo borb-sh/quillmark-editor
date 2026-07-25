@@ -100,34 +100,76 @@ test.describe('editor shell', () => {
 			.toContain('SOURCEVIEWEDIT');
 	});
 
-	test('(g) every detached root resolves the derived scale', async ({ page }) => {
-		// The derivation is set per DETACHED root (core/theme.ts) — a subtree that
+	test('(g) every detached root resolves the derived scale and the baseline font', async ({
+		page
+	}) => {
+		// The derivation applies per DETACHED root (core/theme.css) — a subtree that
 		// does not descend from another root, so it inherits the public dials from
 		// the consumer's cascade but none of the rungs. `check:style` gates where
-		// `--_qm-*` is DEFINED; nothing static can gate that a root APPLIES it, so
-		// this walks them. A new root that forgets `style={QM_THEME}` renders with
-		// every rung unresolved — `1px solid var(--_qm-border)` collapses to
+		// `--_qm-*` is DEFINED; nothing static can gate that a root CARRIES the
+		// marker, so this walks them. A new root that forgets `data-qm-root` renders
+		// with every rung unresolved — `1px solid var(--_qm-border)` collapses to
 		// `currentColor`, paddings go to zero — and fails here rather than in review.
+		//
+		// `font-family` rides the same rule, so it is the same walk: the dial used to
+		// be applied by one component and reached one root of five.
 		const resolves = (selector: string) =>
 			page
 				.locator(selector)
 				.first()
 				.evaluate((el) => getComputedStyle(el).getPropertyValue('--_qm-ink').trim());
+		const font = (selector: string) =>
+			page
+				.locator(selector)
+				.first()
+				.evaluate((el) => getComputedStyle(el).fontFamily);
 
 		await page.getByTestId('toggle-source').click();
 		await expect(page.getByTestId('source-drawer')).toBeVisible();
 		for (const root of ['.qm-editor', '.qm-preview', '.qm-source']) {
 			expect(await resolves(root), `${root} carries no derived scale`).not.toBe('');
+			expect(await font(root), `${root} carries no baseline font`).toContain('ui-sans-serif');
 		}
 
 		// The two that PORTAL to document.body, and so escape the editor's subtree.
 		await page.getByTestId('main-classification').click();
 		expect(await resolves('.qm-select-content'), 'the enum listbox').not.toBe('');
+		expect(await font('.qm-select-content'), 'the enum listbox font').toContain('ui-sans-serif');
 		await page.keyboard.press('Escape');
 
 		await pm(page, 'prose-main-subject').click();
 		await page.keyboard.press('ControlOrMeta+a');
 		await expect(page.getByTestId('format-popover')).toBeVisible();
 		expect(await resolves('.qm-format-popover'), 'the format popover').not.toBe('');
+		expect(await font('.qm-format-popover'), 'the popover font').toContain('ui-sans-serif');
+	});
+
+	test('(h) the shipped dark default inverts the scale, and a consumer dial beats it', async ({
+		page
+	}) => {
+		// Dark mode is a two-value swap with no JS: the poles carry the dials as
+		// FALLBACKS, so `prefers-color-scheme` retunes the default while a consumer's
+		// own value still wins. Only a browser can check both halves — a media query
+		// and the cascade are exactly what static analysis cannot see.
+		const surface = () =>
+			page
+				.locator('.qm-editor')
+				.evaluate((el) => getComputedStyle(el).getPropertyValue('--_qm-surface').trim());
+
+		await page.emulateMedia({ colorScheme: 'light' });
+		const light = await surface();
+		await page.emulateMedia({ colorScheme: 'dark' });
+		const dark = await surface();
+		expect(dark, 'the dark default does not differ from light').not.toBe(light);
+
+		// A dial set on an ancestor of the root wins in BOTH schemes.
+		await page
+			.locator('.qm-editor')
+			.evaluate((el) =>
+				(el.parentElement as HTMLElement).style.setProperty('--qm-bg', 'rgb(7, 8, 9)')
+			);
+		expect(await surface(), 'the consumer dial loses to the dark default').toBe('rgb(7, 8, 9)');
+		await page.emulateMedia({ colorScheme: 'light' });
+		expect(await surface(), 'the consumer dial loses in light').toBe('rgb(7, 8, 9)');
 	});
 });
