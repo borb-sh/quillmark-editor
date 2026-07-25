@@ -60,7 +60,8 @@
 		type FieldKey,
 		type RoutedDiagnostic
 	} from './diagnostics.js';
-	import { tipsChannel, extWithoutTips } from './tips.js';
+	import { tipsChannel } from './tips.js';
+	import { patchEditorExt } from './ext.js';
 	import Card from './Card.svelte';
 	import TipsCard from './TipsCard.svelte';
 	import FormatPopover from './FormatPopover.svelte';
@@ -281,24 +282,16 @@
 	function renameCardById(id: string, title: string): void {
 		const i = cardIndexOf(id);
 		if (i < 0) return;
-		// The `editor` namespace is the write unit and it REPLACES on write, so
-		// merge over any existing keys (id-less in V1, but future-proof).
-		// `getExtNamespace` reads just this namespace (i is already validated) rather
-		// than serializing the whole card to fish out one `$ext` slot.
-		const existing = (doc.getExtNamespace({ card: i }, 'editor') ?? {}) as Record<string, unknown>;
-		doc.storeExtNamespace({ card: i }, 'editor', { ...existing, title });
+		patchEditorExt(doc, { card: i }, { title });
 		bump();
 	}
 	/**
 	 * Clear the tips channel (issue #71) — the dismissal write, and the ONLY write
-	 * tips make. Reads the `editor` namespace, drops `tips`, stores the remainder:
-	 * the title path's own shape, for the same reason. `removeExtNamespace` would
-	 * take the sibling `title` with it. Addressed by `CardAddr` (absent `card` =
-	 * main) rather than by stable id, since the channel is not card-identity state.
+	 * tips make. `undefined` drops the key while `title` and any later sibling ride
+	 * through; `ext.ts` holds why that matters.
 	 */
-	function clearTips(addr: CardAddr): void {
-		const existing = (doc.getExtNamespace(addr, 'editor') ?? {}) as Record<string, unknown>;
-		doc.storeExtNamespace(addr, 'editor', extWithoutTips(existing));
+	function dismissTips(): void {
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
 		bump();
 	}
 
@@ -390,7 +383,7 @@
 		const sections = cardSchema
 			? groupSections(fields, groupOrder(cardSchema), (g) => groupLabel(cardSchema, g))
 			: [];
-		const extEditor = card.ext?.editor as { title?: string; tips?: unknown } | undefined;
+		const extEditor = card.ext?.editor as { title?: string } | undefined;
 		return {
 			id,
 			isMain,
@@ -399,9 +392,6 @@
 			// `main` always resolves `schema.main`, so it is never unschemable.
 			unschemable: !isMain && !cardSchema,
 			titleOverride: extEditor?.title ?? '',
-			// The tips channel rides the SAME `$ext` snapshot as the title, so reading
-			// it costs no extra boundary call (issue #71).
-			tips: tipsChannel(extEditor?.tips),
 			titlePlaceholder: cardTitle(cardSchema, kind, values, undefined),
 			values,
 			provenance: provenanceMap(resolvedFields),
@@ -428,6 +418,11 @@
 		const byCard = provenanceByCardIndex(resolved);
 		const bodyByCard = bodyByCardIndex(resolved);
 		return {
+			// Tips are DOCUMENT-level, not a property of the main card (issue #71): they
+			// hang off `main`'s `$ext` because that is where a document-scoped `$ext`
+			// lives, and the model says so at the root rather than making every card
+			// carry a field one card renders.
+			tips: tipsChannel((main.ext?.editor as { tips?: unknown } | undefined)?.tips),
 			main: buildCard(
 				'main',
 				true,
@@ -503,10 +498,9 @@
 	<!-- The tips card (issue #71): a fixed slot after `main`, ahead of the cards, so
 	     document-level guidance reads as document-level and never displaces a field.
 	     Absent when the channel is empty — which is what dismissal makes it, so the
-	     card leaves for good. `main` only in V1, though `CardModel.tips` is populated
-	     for every card (VISUAL_EDITOR §"Card operations"). -->
-	{#if model.main.tips.length}
-		<TipsCard tips={model.main.tips} onDismiss={() => clearTips(MAIN_CARD_ADDR)} />
+	     card leaves for good (VISUAL_EDITOR §"Card operations"). -->
+	{#if model.tips.length}
+		<TipsCard tips={model.tips} onDismiss={dismissTips} />
 	{/if}
 
 	<!-- Cards always render (issue #72). The ADD affordance is gated on the schema

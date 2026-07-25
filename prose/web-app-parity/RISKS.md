@@ -100,19 +100,23 @@ it without either side knowing about the other, which is what keeps #70 additive
 stores `$ext.editor.title` there (`VisualEditor.svelte:269`). Removing the
 namespace silently destroys every renamed card's title.
 
-**Retired — clearing is a merge-write, and it is what shipped.** Dismissal reads the
-`editor` namespace, drops the `tips` key, and stores the remainder — the title
-path's own shape. `removeExtNamespace` is not used for tips at any point.
+**Retired — and structurally, not by convention.** Dismissal patches the `editor`
+namespace: read, drop the `tips` key, store the remainder. `removeExtNamespace` is
+not used for tips at any point. The merge lives in ONE verb — `patchEditorExt`
+(`visual/ext.ts`) — that the rename, the dismissal, and a consumer seeding the
+namespace all call, so a writer cannot express the destroying shape by copying the
+wrong pattern, and key N+1 inherits the rule.
 
 The write semantics the mitigation rests on were probed against 0.97.0 rather than
 inferred: `storeExtNamespace` **replaces** the namespace it targets — storing the
 remainder is therefore what clears the channel, not a no-op merge — while
 preserving sibling namespaces, so another consumer's `$ext` slot is not collateral.
 `doc.main.ext` / `doc.cards[i].ext` expose the whole `$ext` map, which is why the
-read needs no boundary call of its own. Guarded at both tiers: `tests/visual/
-tips.test.ts` asserts the surviving title on the main *and* card write paths, and
-`e2e/visual.spec.ts` (m) proves it through the real chrome, since this fails
-silently and only on documents carrying both keys.
+derive's read needs no boundary call of its own. Guarded at both tiers, and against
+the shipped function rather than a restatement of it: `tests/visual/tips.test.ts`
+calls `patchEditorExt` and asserts the surviving title on the main *and* card
+addresses, and `e2e/visual.spec.ts` (m) proves it through the real chrome — this
+fails silently and only on documents carrying both keys.
 
 ## #76 — retired
 

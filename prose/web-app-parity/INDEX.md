@@ -41,15 +41,20 @@ more than size does:
 predicate through the `CardOps` bundle. Everything below stacks on that.
 
 #71 lands on top: `tips.ts` (channel narrowing + the markdown render), a
-`TipsCard.svelte` rendered from a fixed slot after `main`, `CardModel.tips` off the
-`$ext` snapshot the derive already holds, and a `clearTips` merge-write beside the
-rename it mirrors. Canon reopened as scheduled: VISUAL_EDITOR §"Card operations"
-carries the channel, VISUAL_EDITOR_UIUX gains §"Tips card", and both guidance
-paragraphs are rewritten whole rather than patched around #75. Four forks settle —
-placement (narrow every card, render `main`), authoring (seed-only; the editor
-never adds a tip), position (a fixed slot after `main`), and the cursor (local, so
-exactly one write happens, at dismissal). No new `--qm-*` token, so #74 inherits
-nothing from it.
+`TipsCard.svelte` in a fixed slot after `main`, `model.tips` at the derive's root,
+and `ext.ts` — the one `$ext.editor` write verb both the rename and the dismissal
+go through. Canon reopened as scheduled: VISUAL_EDITOR §"Card operations" carries
+the channel, VISUAL_EDITOR_UIUX gains §"Tips card", and both guidance paragraphs
+are rewritten whole rather than patched around #75. Four forks settle — placement
+(document-level, off `main`'s `$ext`), authoring (seed-only; the editor never adds
+a tip), position (a fixed slot after `main`), and the cursor (local, so exactly one
+write happens, at dismissal). No new `--qm-*` token, so #74 inherits nothing.
+
+**`patchEditorExt` is the reusable half.** #76 and #57 both add editor-side state,
+and the namespace-replacing hazard is now unexpressible rather than documented: a
+new `$ext.editor` key inherits the merge. The codec also gains `renderContent`
+(content → read-only DOM), the door the deferred insert surface and any ghost
+preview would otherwise each re-open with a local serializer.
 
 ## Schedule
 

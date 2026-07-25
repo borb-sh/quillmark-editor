@@ -54,14 +54,17 @@ never displace a control.
 
 One tip at a time, with an advance and a dismiss; both exits clear the channel, so
 the card leaves and does not return. Content is **inline markdown**, rendered
-through the codec's own decode and node `toDOM` — a tip is written in the body's
-mark vocabulary rather than by a second renderer that would drift from it. The
-inline schema makes every tip one paragraph, so advancing cannot reshape the block.
+through the codec's `renderContent` — decode, then the nodes' own `toDOM` — so a tip
+is written in the body's mark vocabulary rather than by a second renderer that would
+drift from it. The inline schema makes every tip one paragraph, so advancing cannot
+reshape the block.
 
 The cursor is **local**, not the channel: advancing writes nothing. A per-tip write
 would round-trip the boundary and dirty the document on what is a read gesture, so
 exactly one write happens, at dismissal. A dismissal therefore persists in `$ext` —
-what "does not reappear" costs.
+what "does not reappear" costs. The tip *string* is derived before the render effect
+reads it, so an unrelated commit elsewhere in the document does not re-parse the tip
+or rebuild its live region.
 
 Visually it is in-flow like every other block (SURFACES §Elevation): one hairline,
 no lift, no new token. It recedes by tone and type — the label rung in the muted

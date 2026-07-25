@@ -15,7 +15,7 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Quill, Document, Addr, Content, Diagnostic } from '$lib/core';
+	import type { Quill, Document, Addr, CardAddr, Content, Diagnostic } from '$lib/core';
 	import { loadUsafMemoTree } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
@@ -25,6 +25,9 @@
 	let VisualEditor = $state<VisualEditorComponent | undefined>();
 	let quillHandle: Quill | undefined = $state();
 	let docHandle: Document | undefined = $state();
+	// `$lib/core` is imported dynamically (WASM top-level await, see onMount), so the
+	// main-card selector is captured there for the reads outside that scope.
+	let mainAddr: CardAddr | undefined = $state();
 	let lastAddr = $state('none');
 	let dumpTick = $state(0);
 	let externalDiagnostics = $state<Diagnostic[]>([]);
@@ -77,8 +80,9 @@
 			references: ((doc.getStored('references') as Content[] | undefined) ?? []).map((r) => r.text),
 			// The tips channel (issue #71) read off the Document, so e2e proves the
 			// DISMISSAL landed as a write and not just as an unmount — and that the
-			// `title` sibling in the same namespace survived it.
-			mainExtEditor: (doc.main.ext?.editor as Record<string, unknown> | undefined) ?? null,
+			// `title` sibling in the same namespace survived it. `getExtNamespace` reads
+			// the one slot rather than serializing the whole main card for it.
+			mainExtEditor: (mainAddr && (doc.getExtNamespace(mainAddr, 'editor') as unknown)) ?? null,
 			cardCount: doc.cardCount,
 			cards: doc.cards.map((c, i) => ({
 				kind: c.kind,
@@ -123,7 +127,9 @@
 				// playground stands in for the seeding consumer, off by default so the
 				// default view stays the plain card stack.
 				if (params.has('tips')) {
-					doc.storeExtNamespace(MAIN_CARD_ADDR, 'editor', {
+					// Through `patchEditorExt`, not a bare `storeExtNamespace` — a consumer
+					// seeding one key must not replace the namespace either.
+					visual.patchEditorExt(doc, MAIN_CARD_ADDR, {
 						tips: [
 							'Press **Tab** to move on.',
 							'Run `npm run dev` for the playground.',
@@ -136,6 +142,7 @@
 					quill.free();
 					return;
 				}
+				mainAddr = MAIN_CARD_ADDR;
 				VisualEditor = visual.VisualEditor;
 				quillHandle = quill;
 				docHandle = doc;

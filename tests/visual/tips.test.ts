@@ -1,12 +1,15 @@
 // @vitest-environment jsdom
-// The tips channel (issue #71): the narrowing that feeds `CardModel.tips`, the
-// markdown render the card paints, and the load-bearing one — that clearing the
-// channel is a MERGE-write, leaving the `title` sibling in the same `editor`
-// namespace intact. That failure is silent and only reachable on a document
-// carrying both keys, so it is asserted against a real `Document`, not a stub.
+// The tips channel (issue #71): the narrowing the derive reads, the markdown render
+// the card paints, and the load-bearing one — that a write to the `editor` namespace
+// carries its sibling keys through, so clearing `tips` leaves `title` standing.
+//
+// These exercise `patchEditorExt` ITSELF, the function the editor calls, not a
+// restatement of it: the invariant fails silently, so a test asserting a hand-copy
+// would keep passing while the shipped write regressed.
 import { describe, it, expect, beforeAll } from 'vitest';
 import { init, Quill, Document, MAIN_CARD_ADDR } from '$lib/core';
-import { tipsChannel, extWithoutTips, renderTip } from '$lib/visual/tips.js';
+import { tipsChannel, renderTip } from '$lib/visual/tips.js';
+import { patchEditorExt } from '$lib/visual/ext.js';
 import { loadFixtureTree } from '../helpers/fixtures.js';
 
 let quill: Quill;
@@ -19,9 +22,9 @@ beforeAll(async () => {
 function editorExt(doc: Document, addr = MAIN_CARD_ADDR): Record<string, unknown> {
 	return (doc.getExtNamespace(addr, 'editor') ?? {}) as Record<string, unknown>;
 }
-/** The dismissal write, exactly as `VisualEditor.clearTips` performs it. */
+/** The dismissal write — the editor's own (`VisualEditor.dismissTips`). */
 function clearTips(doc: Document, addr = MAIN_CARD_ADDR): void {
-	doc.storeExtNamespace(addr, 'editor', extWithoutTips(editorExt(doc, addr)));
+	patchEditorExt(doc, addr, { tips: undefined });
 }
 /** Render one tip and read back its HTML. */
 function html(markdown: string): string {
@@ -74,12 +77,45 @@ describe('renderTip', () => {
 	});
 });
 
-describe('clearing the channel', () => {
-	it('leaves a renamed card its title', () => {
+describe('patchEditorExt', () => {
+	it('carries sibling keys through a patch', () => {
+		// The rename path and the tips path share one namespace, so each write must
+		// leave the other's key standing.
+		const doc = quill.seedDocument();
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: ['a'] });
+		patchEditorExt(doc, MAIN_CARD_ADDR, { title: 'Renamed' });
+		expect(editorExt(doc)).toEqual({ tips: ['a'], title: 'Renamed' });
+	});
+
+	it('drops a key patched to undefined, keeping the rest', () => {
+		const doc = quill.seedDocument();
+		patchEditorExt(doc, MAIN_CARD_ADDR, { title: 'Renamed', tips: ['a', 'b'] });
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
+		expect(editorExt(doc)).toEqual({ title: 'Renamed' });
+	});
+
+	it('preserves sibling namespaces', () => {
+		// Another consumer's `$ext` slot is not collateral.
+		const doc = quill.seedDocument();
+		doc.storeExtNamespace(MAIN_CARD_ADDR, 'other', { keep: 1 });
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: ['x'] });
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
+		expect(doc.main.ext).toEqual({ editor: {}, other: { keep: 1 } });
+	});
+
+	it('is a no-op patch on a document with no `editor` namespace', () => {
+		const doc = quill.seedDocument();
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
+		expect(editorExt(doc)).toEqual({});
+	});
+});
+
+describe('dismissing tips', () => {
+	it('leaves a renamed card its title, on main and on a card', () => {
 		// The hazard `removeExtNamespace` would cause: `tips` and `title` are SIBLING
 		// keys of one namespace, so clearing the channel by removing the namespace
-		// destroys the rename. Asserted on main and on a card, since both write paths
-		// exist.
+		// destroys the rename. Both addresses, since rename writes cards and tips
+		// write main.
 		const doc = quill.seedDocument();
 		const kind = Object.keys(quill.schema.card_kinds ?? {})[0];
 		const card = quill.seedCard(kind, doc.seedOverlay(kind));
@@ -87,33 +123,10 @@ describe('clearing the channel', () => {
 		doc.insertCard(card);
 
 		for (const addr of [MAIN_CARD_ADDR, { card: 0 }]) {
-			doc.storeExtNamespace(addr, 'editor', { title: 'Renamed', tips: ['a', 'b'] });
+			patchEditorExt(doc, addr, { title: 'Renamed', tips: ['a', 'b'] });
 			clearTips(doc, addr);
 			expect(editorExt(doc, addr)).toEqual({ title: 'Renamed' });
+			expect(tipsChannel(editorExt(doc, addr).tips)).toEqual([]);
 		}
-	});
-
-	it('empties the channel the card derive reads', () => {
-		const doc = quill.seedDocument();
-		doc.storeExtNamespace(MAIN_CARD_ADDR, 'editor', { tips: ['only one'] });
-		expect(tipsChannel(editorExt(doc).tips)).toEqual(['only one']);
-		clearTips(doc);
-		expect(tipsChannel(editorExt(doc).tips)).toEqual([]);
-	});
-
-	it('preserves sibling namespaces', () => {
-		// `storeExtNamespace` replaces the namespace it targets and only that one —
-		// another consumer's `$ext` slot is not collateral.
-		const doc = quill.seedDocument();
-		doc.storeExtNamespace(MAIN_CARD_ADDR, 'other', { keep: 1 });
-		doc.storeExtNamespace(MAIN_CARD_ADDR, 'editor', { tips: ['x'] });
-		clearTips(doc);
-		expect(doc.main.ext).toEqual({ editor: {}, other: { keep: 1 } });
-	});
-
-	it('is idempotent on a document that never had tips', () => {
-		const doc = quill.seedDocument();
-		clearTips(doc);
-		expect(tipsChannel(editorExt(doc).tips)).toEqual([]);
 	});
 });

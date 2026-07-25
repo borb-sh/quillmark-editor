@@ -18,28 +18,33 @@
 	interface Props {
 		/** The narrowed channel (`tipsChannel`) — never empty; the parent gates on length. */
 		tips: string[];
-		/** Clear `$ext.editor.tips` — the merge-write that preserves the `title` sibling. */
+		/** Clear `$ext.editor.tips` — the patch-write that preserves the `title` sibling. */
 		onDismiss: () => void;
-		testid?: string;
 	}
-	let { tips, onDismiss, testid }: Props = $props();
+	let { tips, onDismiss }: Props = $props();
 
 	/** Control-glyph size — the shared rule (AESTHETIC §Icons), as CardControls. */
 	const GLYPH = 14;
 
 	let cursor = $state(0);
-	// Clamped, not trusted: the channel is consumer-authored and can be re-seeded
-	// shorter while the card is open, which would otherwise index past the end.
+	// Clamped: the channel is consumer-authored and can be re-seeded shorter while
+	// the card is open, which would otherwise index past the end.
 	const index = $derived(Math.min(cursor, tips.length - 1));
 	const isLast = $derived(index >= tips.length - 1);
+
+	// The tip STRING is derived before the effect reads it, and that is load-bearing.
+	// Reading `tips[index]` inside the effect makes the parent's `model` derive the
+	// dependency — a fresh object every `revision` bump — so the effect would re-run
+	// on every unrelated commit, re-crossing the WASM boundary and rebuilding this
+	// `aria-live` region per keystroke. A derived string short-circuits on `===`.
+	const tip = $derived(tips[index] ?? '');
 
 	// The tip is DOM, not text — `renderTip` returns a fragment the codec's own
 	// `toDOM` built, so it is written in rather than interpolated.
 	let bodyEl: HTMLDivElement | undefined = $state();
 	$effect(() => {
 		const el = bodyEl;
-		const markdown = tips[index] ?? '';
-		if (el) el.replaceChildren(renderTip(markdown));
+		if (el) el.replaceChildren(renderTip(tip));
 	});
 
 	function advance(): void {
@@ -48,7 +53,7 @@
 	}
 </script>
 
-<aside class="qm-tips" aria-label="Editor tips" data-testid={testid ?? 'tips-card'}>
+<aside class="qm-tips" aria-label="Editor tips" data-testid="tips-card">
 	<!-- Advancing swaps the text under a button that keeps focus, so the region
 	     announces rather than the change passing silently. -->
 	<div class="qm-tips-body" aria-live="polite" data-testid="tips-body" bind:this={bodyEl}></div>

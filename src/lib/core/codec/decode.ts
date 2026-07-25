@@ -7,7 +7,7 @@
 // line, block on an `island` line). Anchors are NOT applied here — they are
 // decorations (field.ts). Positions throughout are USV; `Array.from` iterates by
 // code point so an astral char is one unit, never a surrogate half.
-import type { Mark, Node as PMNode, Schema } from 'prosemirror-model';
+import { DOMSerializer, type Mark, type Node as PMNode, type Schema } from 'prosemirror-model';
 import type { Content, ContentContainer, ContentLine, ContentMark } from '@quillmark/wasm';
 import { ISLAND_SLOT } from './islands.js';
 import { markKey, pmMarkFromContent } from './marks.js';
@@ -38,6 +38,21 @@ type IslandCursor = { i: number; rt: Content };
 interface DecodeOpts {
 	/** Strip all marks (a `plaintext` field). */
 	plaintext?: boolean;
+}
+
+/**
+ * A `Content` as READ-ONLY DOM: decode under `schema`, then the nodes' own `toDOM`.
+ * The rendering half of the codec's job with no editing attached — no PM view, no
+ * plugins, no `contenteditable` — for chrome that must show content in the same
+ * mark vocabulary a leaf edits it in (the tips card, VISUAL_EDITOR_UIUX §"Tips
+ * card"). A second renderer over the same content would drift from `decode`; this
+ * cannot.
+ *
+ * `DOMSerializer.fromSchema` memoizes on the schema, so repeat calls build no
+ * serializer.
+ */
+export function renderContent(rt: Content, schema: Schema, opts: DecodeOpts = {}): Node {
+	return DOMSerializer.fromSchema(schema).serializeFragment(decode(rt, schema, opts).content);
 }
 
 /** Decode a `Content` to a PM document under `schema`. */

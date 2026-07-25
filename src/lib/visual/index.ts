@@ -14,6 +14,14 @@ export type { CreateFieldOpts, FieldController } from '../core/codec/index.js';
 // The projection types — useful to a consumer building its own chrome.
 export type { ControlKind, FieldModel, GroupSection, CardModel } from './structure.js';
 
+// The `$ext.editor` write unit (issue #71). A consumer seeding editor-side chrome
+// state — a card title, the tips channel — goes through this rather than
+// `storeExtNamespace`, which replaces the namespace and takes the sibling keys with
+// it. The narrowing the editor applies to a seeded channel, so a consumer can check
+// what will render.
+export { patchEditorExt } from './ext.js';
+export { tipsChannel } from './tips.js';
+
 // The editor→preview caret-bridge address mapping (Phase 5) — a consumer wiring
 // `onCaretMove` to `preview.focusPosition` maps the editor `Addr` through this.
 export { fieldPathForAddr } from './caret.js';
