@@ -1,21 +1,19 @@
-// Theme lint — the third gate, beside `check:geometry` (rhythm) and `check:type`
-// (the size/weight ramp). Colour was the unguarded axis: geometry and type each
-// pair public dials with a derived scale and a lint, while colour had flat
-// literals and nothing watching. Three rules over `src/lib/**` — `.svelte`
-// `<style>` blocks AND `.ts`, because `preview/paint.ts` and `preview/overlay.ts`
-// carry style declarations inside JS strings and would otherwise escape:
+// Theme lint — the colour gate, beside `check:geometry` (rhythm) and `check:type`
+// (the size/weight ramp). All three axes have the same shape: public dials derive
+// a private scale, components read rungs, a lint holds the line. Three rules over
+// `src/lib/**` — `.svelte` `<style>` blocks AND `.ts`, because `preview/paint.ts`
+// and `preview/overlay.ts` carry style declarations inside JS strings and would
+// otherwise escape:
 //
 //   1. No bare colour / shadow / opacity literal. A rung (`var(--_qm-…)`) is the
 //      only value. `opacity: 0` / `1` are structural on/off, not a ladder step,
 //      and are allowed.
 //   2. The consumed `--qm-*` set EQUALS the set documented in THEMING.md. Both
-//      directions: an undocumented token is drift (`--qm-required` shipped that
-//      way), a documented-but-dead one is a promise nothing honors.
-//   3. `core/theme.ts` is the ONLY place `--_qm-*` is DEFINED. This is what makes
-//      one derivation for four detached roots safe — it replaces the older
-//      "byte-identical across four mint roots" idea, which one prettier reflow
-//      would have turned into a false failure. It covers all three axes, so
-//      `check-geometry.mjs` no longer carries a mint rule of its own.
+//      directions: an undocumented token is drift, a documented-but-dead one is a
+//      promise nothing honors.
+//   3. `core/theme.ts` is the ONLY place `--_qm-*` is DEFINED — what makes one
+//      derivation safe for four detached roots. It covers all three axes, so
+//      `check-geometry.mjs` owns only its rhythm-literal rule.
 //
 // `core/theme.ts` is exempt from rules 1 and 3: it IS the derivation, and the
 // literals in it are the documented defaults each dial falls back to.

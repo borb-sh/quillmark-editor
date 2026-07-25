@@ -6,10 +6,10 @@
   substitution applies (issue #12). The value-object a date field lowers to is a
   render-time concern — the editor only sees the stored string.
 
-  Styled rather than a native `<input type="date">` because that control's calendar
-  popup is UA-owned and reaches no dial (issue #79 §3). `DateField` (segments, no
-  calendar) rather than `DatePicker`: the segments ARE the entry affordance, and a
-  calendar is a second surface this field has never had.
+  Styled rather than a native `<input type="date">`: that control's calendar popup
+  is UA-owned and reaches no dial (issue #79 §3). `DateField` (segments, no
+  calendar) rather than `DatePicker` — the segments are the entry affordance, and a
+  calendar is a second surface this field does not need.
 
   THE BOUNDARY IS A STRING. The primitive speaks `CalendarDate`; the document
   speaks `YYYY-MM-DD`. `CalendarDate` carries no time and no zone, so the

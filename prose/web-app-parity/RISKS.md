@@ -129,7 +129,7 @@ ARIA pattern to supply. So the styled path covers `enum`, `boolean`, and `date`
 (the kinds whose faces are UA-owned shadow DOM) and leaves `text`/`number` native;
 it costs no new dependency and inherits each primitive's a11y.
 
-**Costs, measured rather than assumed.** The primitive speaks `CalendarDate`
+**Costs.** The primitive speaks `CalendarDate`
 (`@internationalized/date`, promoted from a transitive dep to a direct one) while
 the document speaks `YYYY-MM-DD`; `CalendarDate` carries no time and no zone, so
 the round-trip is lossless. Two hazards only the browser tier sees: bits reports a

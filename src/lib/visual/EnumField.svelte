@@ -9,10 +9,8 @@
   intent, expressible. The sentinel stays in the list once a value is authored, as
   the "clear back to default" (unset) affordance.
 
-  Styled rather than a native `<select>` because the dropdown list is UA-owned and
-  reaches no dial — a themed surface would keep that hole, and dark mode makes it
-  conspicuous (issue #79 §3). Listbox semantics and typeahead come with the
-  primitive.
+  Styled rather than a native `<select>`: the dropdown list is UA-owned and reaches
+  no dial (issue #79 §3). Listbox semantics and typeahead come with the primitive.
 -->
 <script lang="ts">
 	import { Select } from 'bits-ui';

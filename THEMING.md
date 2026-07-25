@@ -64,8 +64,7 @@ translucency ratio, the recede-opacity ladder, the overlay ring widths — is
 contract: a rung can be re-tuned or renamed without notice, and setting one
 yourself is unsupported.
 
-That is a floor, not a ceiling. A knob is promotable to a dial the day a real
-consumer needs it — a public token is a permanent promise, so the surface stays
+A knob is promotable to a dial the day a real consumer needs it — a public token is a permanent promise, so the surface stays
 the minimum that makes a palette swap work.
 
 `npm run check:theme` gates all of it: no component may mint a colour, shadow, or

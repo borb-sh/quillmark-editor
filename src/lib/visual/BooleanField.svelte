@@ -3,11 +3,9 @@
   reference quill, so this control is implemented to the schema contract but is
   UNTESTED against a real leaf — noted in the phase report.)
 
-  Styled rather than a native checkbox because the native box is the worst parity
-  offender: its face is UA-owned shadow DOM, so no dial reaches it and a themed
-  surface would keep one un-themeable hole (issue #79 §3). The a11y comes with the
-  primitive — Switch.Root renders `role="switch"` with its checked state and
-  keyboard handling already wired.
+  Styled rather than a native checkbox: the native box's face is UA-owned shadow
+  DOM, so no dial reaches it (issue #79 §3). The a11y comes with the primitive —
+  Switch.Root renders `role="switch"` with its checked state and keyboard handling.
 -->
 <script lang="ts">
 	import { Switch } from 'bits-ui';

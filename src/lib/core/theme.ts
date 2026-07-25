@@ -27,9 +27,9 @@ const mix = (a: string, b: string, pct: number) => `color-mix(in oklab, ${a}, ${
 /** `pct` of `c` over nothing — a translucent wash that inverts with the palette. */
 const alpha = (c: string, pct: number) => `color-mix(in oklab, ${c} ${pct}%, transparent)`;
 
-// Surfaces step bg → fg, ink steps fg → bg. Dark mode is then a two-value swap,
-// which is the whole point of the pair. The percentages are calibrated to the
-// light-mode literals they replace (2% ≈ #fafafa, 17% ≈ #d4d4d4, 35% ≈ #555).
+// Surfaces step bg → fg, ink steps fg → bg, so inverting the poles inverts the
+// scale — dark mode is a two-value swap. The percentages are calibrated to the
+// light-mode literals they stand in for (2% ≈ #fafafa, 17% ≈ #d4d4d4, 35% ≈ #555).
 const COLOR = {
 	surface: BG,
 	'surface-raised': mix(BG, FG, 2), //  card / gutter
@@ -68,8 +68,8 @@ const EFFECT = {
 	'ring-width-active': '2px'
 };
 
-// Geometry (SURFACES §Rhythm) and type: unchanged rungs, moved here from the
-// per-root `<style>` blocks they used to be re-declared in.
+// Geometry (SURFACES §Rhythm) and type — the same dial-to-scale shape as colour,
+// minted on the same root.
 const GEOMETRY = {
 	radius: 'var(--qm-radius, 8px)',
 	'radius-inner': 'calc(var(--_qm-radius) / 2)',
