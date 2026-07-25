@@ -101,7 +101,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
-		border-left: 2px solid var(--qm-border, #e0e0e0);
+		border-left: 2px solid var(--_qm-border);
 		padding-left: var(--_qm-space-2);
 	}
 	.qm-object-prop {
@@ -114,11 +114,11 @@
 		/* Soft (500), a rung under the top-level field label's 600: a nested object
 		   prop reads as secondary. Resolves the label-weight disagreement (#61). */
 		font-weight: var(--_qm-weight-soft);
-		color: var(--qm-label, #555);
+		color: var(--_qm-ink-label);
 	}
 	.qm-unsupported {
 		font-size: var(--_qm-text-body);
-		color: #999;
+		color: var(--_qm-ink-ghost);
 		font-style: italic;
 	}
 </style>

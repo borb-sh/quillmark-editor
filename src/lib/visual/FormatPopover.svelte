@@ -46,6 +46,7 @@
 	import type { MarkType } from 'prosemirror-model';
 	import { Popover } from 'bits-ui';
 	import type { Component } from 'svelte';
+	import { QM_THEME } from '../core/index.js';
 	import Bold from '@lucide/svelte/icons/bold';
 	import Italic from '@lucide/svelte/icons/italic';
 	import Underline from '@lucide/svelte/icons/underline';
@@ -253,7 +254,12 @@
 			>
 				<!-- `data-testid` lives on THIS div (ours, not bits-ui's own prop-merged
 				     wrapper) so its presence never depends on bits-ui's passthrough. -->
-				<div bind:this={contentEl} class="qm-format-popover" data-testid="format-popover">
+				<div
+					bind:this={contentEl}
+					class="qm-format-popover"
+					style={QM_THEME}
+					data-testid="format-popover"
+				>
 					{#if linkPromptOpen}
 						<form
 							class="qm-link-prompt"
@@ -315,31 +321,21 @@
 </Popover.Root>
 
 <style>
+	/* This surface PORTALS to document.body, outside .qm-editor, so it inherits the
+	   public dials but not the derived scale — it carries `style={QM_THEME}` as one
+	   of the four detached roots (core/theme.ts) rather than re-declaring the rungs. */
 	.qm-format-popover {
-		/* Re-declares the geometry scale (SURFACES §Rhythm, THEMING §Geometry): this
-		   surface PORTALS to document.body, outside .qm-editor, so it inherits the
-		   public dials but not the derived scale — it mints the private tier here,
-		   the popover being a container it reads the base radius, not the inner. */
-		--_qm-radius: var(--qm-radius, 8px);
-		--_qm-radius-inner: calc(var(--_qm-radius) / 2);
-		--_qm-space: var(--qm-space, 0.25rem);
-		--_qm-space-half: calc(var(--_qm-space) / 2);
-		--_qm-space-2: calc(var(--_qm-space) * 2);
-		/* Type scale, re-minted here for the same portal reason as the geometry rungs
-		   above (THEMING §"Base — typography & text"); this surface reads only body. */
-		--_qm-text-body: var(--qm-font-size, 0.875rem);
-
 		display: flex;
 		/* Translucent pill over the content (VISUAL_EDITOR_UIUX §Formatting): the
 		   theme bg mixed toward transparent + a backdrop blur, so the page reads
 		   faintly through it — the one floating surface earns the lift (SURFACES
-		   §Elevation). A consumer's opaque --qm-popover-bg still tints the mix. */
-		background: color-mix(in srgb, var(--qm-popover-bg, #fff) 82%, transparent);
-		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
-		border: 1px solid var(--qm-border, #d4d4d4);
+		   §Elevation). The surface rung is the mix base, so --qm-bg still tints it. */
+		background: var(--_qm-surface-popover);
+		backdrop-filter: blur(var(--_qm-blur));
+		-webkit-backdrop-filter: blur(var(--_qm-blur));
+		border: 1px solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+		box-shadow: var(--_qm-shadow-popover);
 		padding: var(--_qm-space);
 		/* Scale-in on mount; the {#if open} guard mounts fresh each raise, so the
 		   keyframe runs once per appearance. Animates the inner pill only — never the
@@ -377,17 +373,17 @@
 		font-size: var(--_qm-text-body);
 		line-height: 1;
 		padding: var(--_qm-space) var(--_qm-space-2);
-		color: var(--qm-text, #1a1a1a);
+		color: var(--_qm-ink);
 	}
 	.qm-mark-btn:hover:not(:disabled) {
-		background: var(--qm-popover-hover, #f0f0f0);
+		background: var(--_qm-surface-hover);
 	}
 	.qm-mark-btn.active {
-		background: var(--qm-popover-active-bg, #1a1a1a);
-		color: var(--qm-popover-active-fg, #fff);
+		background: var(--_qm-ink);
+		color: var(--_qm-surface);
 	}
 	.qm-mark-btn:disabled {
-		opacity: 0.35;
+		opacity: var(--_qm-opacity-idle);
 		cursor: default;
 	}
 	.qm-link-prompt {
@@ -399,7 +395,7 @@
 		font: inherit;
 		font-size: var(--_qm-text-body);
 		padding: var(--_qm-space) var(--_qm-space-2);
-		border: 1px solid var(--qm-border, #d4d4d4);
+		border: 1px solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
 		min-width: 12rem;
 	}

@@ -165,15 +165,15 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		border: 1px solid var(--qm-border, #d4d4d4);
-		background: var(--qm-field-bg, #fff);
+		border: 1px solid var(--_qm-border);
+		background: var(--_qm-surface);
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
 		line-height: 1;
 		padding: var(--_qm-space-half) var(--_qm-space);
 	}
 	.qm-mini:disabled {
-		opacity: 0.35;
+		opacity: var(--_qm-opacity-idle);
 		cursor: default;
 	}
 	.qm-remove {
@@ -187,11 +187,11 @@
 	}
 	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */
 	.qm-json:focus-visible {
-		outline: 2px solid var(--qm-focus-ring, #2563eb);
+		outline: 2px solid var(--_qm-accent);
 		outline-offset: 1px;
 	}
 	.qm-add-el {
-		border: 1px dashed var(--qm-border, #b8b8b8);
+		border: 1px dashed var(--_qm-border);
 		background: transparent;
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
@@ -199,7 +199,7 @@
 		font-size: var(--_qm-text-body);
 		/* Recede until engaged (issue #58 §6): the sole foot add rests dim — like the
 		   card stack's last trigger — and surfaces on hover of the field or on focus. */
-		opacity: 0.35;
+		opacity: var(--_qm-opacity-idle);
 		transition: opacity 120ms ease;
 	}
 	.qm-array:hover .qm-add-el,
@@ -208,7 +208,7 @@
 	}
 	@media (hover: none) {
 		.qm-add-el {
-			opacity: 0.5;
+			opacity: var(--_qm-opacity-muted);
 		}
 	}
 </style>

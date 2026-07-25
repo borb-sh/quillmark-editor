@@ -68,19 +68,19 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		border: 1px solid var(--qm-border, #d4d4d4);
-		background: var(--qm-field-bg, #fff);
+		border: 1px solid var(--_qm-border);
+		background: var(--_qm-surface);
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
 		line-height: 1;
 		padding: var(--_qm-space-half) var(--_qm-space);
-		color: #444;
+		color: var(--_qm-ink-label);
 	}
 	.qm-ctrl:disabled {
-		opacity: 0.3;
+		opacity: var(--_qm-opacity-hint);
 		cursor: default;
 	}
 	.qm-card-delete {
-		color: #b23838;
+		color: var(--_qm-danger);
 	}
 </style>

@@ -40,7 +40,7 @@
 	}
 	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */
 	.qm-check:focus-visible {
-		outline: 2px solid var(--qm-focus-ring, #2563eb);
+		outline: 2px solid var(--_qm-accent);
 		outline-offset: 1px;
 	}
 </style>

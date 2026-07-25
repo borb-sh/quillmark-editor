@@ -32,9 +32,9 @@
 	}
 	.qm-diag-line {
 		font-size: var(--_qm-text-meta);
-		color: var(--qm-diag-warning, #b25000);
+		color: var(--_qm-warning);
 	}
 	.qm-diag-line[data-severity='error'] {
-		color: var(--qm-diag-error, #c5221f);
+		color: var(--_qm-danger);
 	}
 </style>

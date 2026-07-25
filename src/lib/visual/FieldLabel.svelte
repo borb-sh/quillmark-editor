@@ -50,21 +50,21 @@
 		gap: var(--_qm-space-half);
 		font-size: var(--_qm-text-label);
 		font-weight: var(--_qm-weight-label);
-		color: var(--qm-label, #555);
+		color: var(--_qm-ink-label);
 	}
 	/* Required marker: a quiet accent glyph, not an alarm — required-ness is guidance,
 	   the document still edits and renders unmet. */
 	.qm-field-required {
 		display: inline-flex;
 		align-items: center;
-		color: var(--qm-required, #b3261e);
+		color: var(--_qm-danger);
 		line-height: 1;
 	}
 	/* The info marker recedes to the label's muted tone; the tooltip carries the text. */
 	.qm-field-hint {
 		display: inline-flex;
 		align-items: center;
-		color: var(--qm-ghost, #9a9a9a);
+		color: var(--_qm-ink-ghost);
 		cursor: help;
 	}
 </style>

@@ -9,6 +9,13 @@
 
 export { init } from './lifecycle.js';
 
+// ── Theme derivation ────────────────────────────────────────────────────────
+// The ten public dials → the private `--_qm-*` scale, as a `style`-attribute
+// string. Lives here because `core/` is the one module both `preview/` and
+// `visual/` already import, so the derivation is minted once rather than
+// re-declared per detached root (THEMING.md).
+export { QM_THEME } from './theme.js';
+
 // ── Handles + engine (values) ───────────────────────────────────────────────
 // Re-exported verbatim from the canonical runtime; the editor holds the raw
 // handles and frees them on teardown (LiveSession/Document/Quill each carry
