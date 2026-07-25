@@ -172,4 +172,38 @@ test.describe('editor shell', () => {
 		await page.emulateMedia({ colorScheme: 'light' });
 		expect(await surface(), 'the consumer dial loses in light').toBe('rgb(7, 8, 9)');
 	});
+	test('(i) a pane-scoped dial reaches the portaled surfaces', async ({ page }) => {
+		// The popover and the enum listbox portal out of the leaf's DOM. Landing them
+		// on `document.body` would put them outside the consumer's wrapper, so a
+		// palette scoped to ONE PANE — the documented "set them on any ancestor" case —
+		// reached every surface except these two: a light popover over a dark editor.
+		// They portal into the nearest `[data-qm-root]` instead. Test (g) cannot catch
+		// this: it asserts each root resolves SOME scale, which passed precisely
+		// because the portaled roots resolved the DEFAULT one.
+		await page
+			.locator('.qm-editor')
+			.evaluate((el) =>
+				(el.parentElement as HTMLElement).style.setProperty('--qm-bg', 'rgb(0, 0, 40)')
+			);
+		const surface = (selector: string) =>
+			page
+				.locator(selector)
+				.first()
+				.evaluate((el) => getComputedStyle(el).getPropertyValue('--_qm-surface').trim());
+
+		expect(await surface('.qm-editor')).toBe('rgb(0, 0, 40)');
+
+		await page.getByTestId('main-classification').click();
+		const list = page.locator('.qm-select-content').first();
+		await list.waitFor({ state: 'visible' });
+		expect(await surface('.qm-select-content'), 'the enum listbox').toBe('rgb(0, 0, 40)');
+		// The lift is only worth having if the list still lands over its trigger.
+		expect(await list.boundingBox()).not.toBeNull();
+		await page.keyboard.press('Escape');
+
+		await pm(page, 'prose-main-subject').click();
+		await page.keyboard.press('ControlOrMeta+a');
+		await expect(page.getByTestId('format-popover')).toBeVisible();
+		expect(await surface('.qm-format-popover'), 'the format popover').toBe('rgb(0, 0, 40)');
+	});
 });

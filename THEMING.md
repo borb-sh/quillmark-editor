@@ -23,13 +23,6 @@ ancestor of a mounted surface — the app, or one pane:
 Nothing to import: the package pulls its own stylesheet, which applies the
 derivation to every surface it mounts.
 
-**One exception, for now.** The selection popover and the enum listbox mount at
-`document.body`, outside the editor's subtree, so they inherit the dials from
-`<body>` rather than from a wrapper around the editor. Scope the dials to one pane
-and those two surfaces keep the defaults while the pane restyles. Set the dials at
-`:root` (or on `body`) to theme them too; scoping to a pane is safe once the
-portal targets move inside the editor root.
-
 ## The dials
 
 | Token            | Default                                | What it sets                                                                   |

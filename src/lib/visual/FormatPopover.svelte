@@ -83,6 +83,12 @@
 	let linkPromptOpen = $state(false);
 	let linkValue = $state('');
 	let contentEl = $state<HTMLElement | undefined>(undefined);
+	/** The root to portal INTO. Portalling to `document.body` escapes the editor's
+	 *  subtree and so escapes the consumer's dials with it — a pane-scoped palette
+	 *  never reached this surface. Resolved from the active leaf's own DOM, so the
+	 *  popover lands inside whichever root raised it; `undefined` falls back to
+	 *  bits-ui's default (`document.body`) for a leaf mounted outside any root. */
+	let portalTarget = $state<HTMLElement | undefined>(undefined);
 
 	/** A floating-ui `Measurable` virtual anchor over the selection rect — a NEW object each time `rect` changes, so bits-ui's `watch(() => opts.customAnchor.current, …)` sees the change and repositions (a mutated-in-place object would not). */
 	const anchor = $derived.by(() => {
@@ -109,6 +115,7 @@
 			linkPromptOpen = false;
 			return;
 		}
+		portalTarget = view.dom.closest<HTMLElement>('[data-qm-root]') ?? undefined;
 		const { from, to } = view.state.selection;
 		const a = view.coordsAtPos(from);
 		const b = view.coordsAtPos(to);
@@ -240,7 +247,7 @@
 </script>
 
 <Popover.Root bind:open>
-	<Popover.Portal>
+	<Popover.Portal to={portalTarget}>
 		{#if open && anchor}
 			<Popover.Content
 				customAnchor={anchor}
@@ -320,9 +327,11 @@
 </Popover.Root>
 
 <style>
-	/* This surface PORTALS to document.body, outside .qm-editor, so it inherits the
-	   public dials but not the derived scale — it is marked `data-qm-root`, which is
-	   where core/theme.css applies the derivation. */
+	/* This surface PORTALS out of the leaf's DOM but INTO the nearest `[data-qm-root]`
+	   (the target is resolved in `sync`), so it inherits the consumer's dials like
+	   every other surface. It carries the marker itself too: floating over content is
+	   still a detached subtree for the derivation's purposes, and the marker is what
+	   applies it (core/theme.css). */
 	.qm-format-popover {
 		display: flex;
 		/* Translucent pill over the content (VISUAL_EDITOR_UIUX §Formatting): the
