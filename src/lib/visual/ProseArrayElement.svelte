@@ -66,10 +66,10 @@
 <style>
 	.qm-array-prose {
 		flex: 1;
-		border: 1px solid var(--qm-border, #d4d4d4);
+		border: 1px solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
 		padding: var(--_qm-space) var(--_qm-space-2);
-		background: var(--qm-field-bg, #fff);
+		background: var(--_qm-surface);
 		min-height: 1.5rem;
 	}
 	/* Caret-primary, matching ProseField: the contenteditable outline is dropped
@@ -81,6 +81,6 @@
 		word-wrap: break-word;
 	}
 	.qm-array-prose:focus-within {
-		border-color: var(--qm-focus-ring, #2563eb);
+		border-color: var(--_qm-accent);
 	}
 </style>

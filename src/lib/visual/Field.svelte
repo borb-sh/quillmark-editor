@@ -27,6 +27,7 @@
 	import ArrayField from './ArrayField.svelte';
 	import ObjectField from './ObjectField.svelte';
 	import DiagnosticList from './DiagnosticList.svelte';
+	import FieldLabel from './FieldLabel.svelte';
 
 	interface Props {
 		field: FieldModel;
@@ -39,6 +40,9 @@
 		proseAddr: Addr;
 		leafKey: string;
 		onCommitScalar: (value: unknown) => void;
+		/** Enum-option policy (issue #73): `false` disables that option. Only the enum
+		 * control reads it; other controls ignore it. */
+		optionAllowed?: (value: string) => boolean;
 		onFocus?: (addr: Addr) => void;
 		onCaretMove?: (addr: Addr, pos: number) => void;
 		register?: (key: string, controller: FieldController) => void;
@@ -54,6 +58,7 @@
 		proseAddr,
 		leafKey,
 		onCommitScalar,
+		optionAllowed,
 		onFocus,
 		onCaretMove,
 		register,
@@ -72,7 +77,12 @@
 
 <div class="qm-field" class:compact={field.compact}>
 	{#if field.control !== 'array'}
-		<span class="qm-field-label">{field.label}</span>
+		<FieldLabel
+			label={field.label}
+			required={field.required}
+			description={field.description}
+			{testid}
+		/>
 	{/if}
 	<div class="qm-field-control">
 		{#if field.control === 'prose'}
@@ -96,6 +106,7 @@
 				fallback={ghost as string | undefined}
 				label={field.label}
 				onCommit={onCommitScalar}
+				{optionAllowed}
 				{testid}
 			/>
 		{:else if field.control === 'number'}
@@ -127,6 +138,8 @@
 				value={value as unknown[] | undefined}
 				items={field.schema.items}
 				label={field.label}
+				required={field.required}
+				description={field.description}
 				onCommit={onCommitScalar}
 				onFocusEl={() => onFocus?.(proseAddr)}
 				{testid}
@@ -163,10 +176,5 @@
 	}
 	.qm-field.compact {
 		flex: 1 1 12rem;
-	}
-	.qm-field-label {
-		font-size: var(--_qm-text-label);
-		font-weight: var(--_qm-weight-label);
-		color: var(--qm-label, #555);
 	}
 </style>

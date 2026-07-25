@@ -8,6 +8,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createSourceView, type SourceViewController } from './view.js';
+	import { QM_THEME } from '../core/index.js';
 	import type { Document } from '../core/index.js';
 
 	/**
@@ -37,24 +38,25 @@
 	}
 </script>
 
-<div bind:this={containerEl} class="qm-source"></div>
+<div bind:this={containerEl} class="qm-source" style={QM_THEME}></div>
 
 <style>
+	/* A DETACHED root — carries `style={QM_THEME}` (core/theme.ts). */
 	.qm-source {
 		width: 100%;
 		height: 100%;
 		overflow: auto;
-		font-size: 0.8rem;
+		font-size: var(--_qm-text-label);
 	}
 	/* CodeMirror paints its own chrome; a neutral, overridable baseline only. */
 	.qm-source :global(.cm-editor) {
 		height: 100%;
-		background: var(--qm-source-bg, #fbfbfb);
+		background: var(--_qm-surface-raised);
 	}
 	.qm-source :global(.cm-gutters) {
-		background: var(--qm-source-gutter-bg, #f3f3f3);
-		border-right: 1px solid var(--qm-border, #e2e2e2);
-		color: var(--qm-source-gutter-text, #9a9a9a);
+		background: var(--_qm-surface-hover);
+		border-right: 1px solid var(--_qm-border);
+		color: var(--_qm-ink-ghost);
 	}
 	.qm-source :global(.cm-editor.cm-focused) {
 		outline: none;

@@ -28,6 +28,18 @@ export interface FieldModel {
 	compact: boolean;
 	/** Display label — `ui.title` when set, else the humanized field name. */
 	label: string;
+	/** Schema `description` — authoring help rendered beside the label (issue #75b),
+	 * undefined when the field declares none. Chrome-only; never gates. */
+	description: string | undefined;
+	/**
+	 * Required-ness (issue #75a): a field with NO `default:` is "Unendorsed" — its
+	 * seed carries a `!must_fill` marker (DOCUMENT_MODEL: there is no separate
+	 * `required` axis). Drives a persistent label `*`, complementary to the ghosted
+	 * `default:` (a required field has no default to ghost). Persistent (schema-
+	 * derived, survives filling); the on-commit `must_fill` `validate()` warning
+	 * remains the unmet-ness signal. Label chrome only — never gates.
+	 */
+	required: boolean;
 	/** Prose-leaf flags (only meaningful when `control === 'prose'` / array items). */
 	inline: boolean;
 	plaintext: boolean;
@@ -50,6 +62,14 @@ export interface CardModel {
 	id: string;
 	isMain: boolean;
 	kind: string;
+	/**
+	 * The card's `kind` has no projectable schema (issue #72) — a foreign kind under
+	 * a schema that declares others, or a card under a schema with no `card_kinds` at
+	 * all. Such a card renders a RECOVERY SHELL (humanized title + retype + delete)
+	 * instead of a field list, so its content is never dropped or trapped: retyping
+	 * to a declared kind re-projects it, delete removes it. Always `false` for `main`.
+	 */
+	unschemable: boolean;
 	/** Raw `$ext.editor.title` override (composable cards). */
 	titleOverride: string;
 	/** Schema-resolved title used as the rename placeholder (composable cards). */
@@ -183,6 +203,8 @@ export function fieldModels(cardSchema: QuillCardSchema): FieldModel[] {
 		group: schema.ui?.group,
 		compact: !!schema.ui?.compact,
 		label: schema.ui?.title ?? humanize(name),
+		description: schema.description,
+		required: schema.default === undefined,
 		inline: !!schema.inline,
 		plaintext: schema.type === 'plaintext'
 	}));

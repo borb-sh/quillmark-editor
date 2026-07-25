@@ -19,9 +19,8 @@ export interface OverlayController {
 
 const FIELD_ATTR = 'data-qm-field';
 const ACTIVE_CLASS = 'qm-field-box--active';
-const RING = 'var(--qm-field-ring-width, 1px) solid var(--qm-field-ring, rgba(37, 99, 235, 0.55))';
-const RING_ACTIVE =
-	'var(--qm-field-ring-active-width, 2px) solid var(--qm-field-ring-active, #2563eb)';
+const RING = 'var(--_qm-ring-width) solid var(--_qm-accent-soft)';
+const RING_ACTIVE = 'var(--_qm-ring-width-active) solid var(--_qm-accent)';
 
 export function createOverlay(session: LiveSession, slots: readonly PageSlot[]): OverlayController {
 	const layers: HTMLElement[] = slots.map((slot) => {
@@ -63,7 +62,7 @@ export function createOverlay(session: LiveSession, slots: readonly PageSlot[]):
 				Object.assign(el.style, {
 					boxSizing: 'border-box',
 					borderRadius: '2px',
-					background: 'var(--qm-field-bg, transparent)'
+					background: 'transparent'
 				});
 				applyRing(el, field);
 				layer.appendChild(el);

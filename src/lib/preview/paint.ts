@@ -73,8 +73,8 @@ export function createPaintLoop(
 			position: 'relative',
 			width: '100%',
 			aspectRatio: `${size.widthPt} / ${size.heightPt}`,
-			background: 'var(--qm-page-bg, #fff)',
-			boxShadow: 'var(--qm-page-shadow, 0 1px 4px rgba(0, 0, 0, 0.2))'
+			background: 'var(--_qm-surface)',
+			boxShadow: 'var(--_qm-shadow-page)'
 		});
 		if (page > 0) el.style.marginTop = `${PAGE_GAP_PX}px`;
 		container.appendChild(el);

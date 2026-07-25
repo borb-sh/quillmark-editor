@@ -9,6 +9,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createPreview, type PreviewController } from './controller.js';
+	import { QM_THEME } from '../core/index.js';
 	import type { LiveSession, ContentHit, ChangeSet } from '../core/index.js';
 
 	/**
@@ -52,9 +53,12 @@
 	}
 </script>
 
-<div bind:this={containerEl} class="qm-preview"></div>
+<div bind:this={containerEl} class="qm-preview" style={QM_THEME}></div>
 
 <style>
+	/* A DETACHED root — the preview is not a descendant of the editor, so it carries
+	   `style={QM_THEME}` for the page/overlay rungs paint.ts and overlay.ts read
+	   (core/theme.ts). */
 	.qm-preview {
 		position: relative;
 		width: 100%;

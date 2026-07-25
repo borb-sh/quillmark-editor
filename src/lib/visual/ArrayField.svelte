@@ -19,18 +19,23 @@
 	import X from '@lucide/svelte/icons/x';
 	import TextField from './TextField.svelte';
 	import ProseArrayElement from './ProseArrayElement.svelte';
+	import FieldLabel from './FieldLabel.svelte';
 
 	interface Props {
 		value: unknown[] | undefined;
 		items: QuillFieldSchema | undefined;
 		/** Accessible-name prefix for the element controls (`label` + 1-based index). */
 		label?: string;
+		/** No-default field → a persistent required `*` on the label (issue #75a). */
+		required?: boolean;
+		/** Schema `description` — the label's help affordance (issue #75b). */
+		description?: string;
 		onCommit: (arr: unknown[]) => void;
 		/** A prose element gained focus — joins the field in the focus federation. */
 		onFocusEl?: () => void;
 		testid?: string;
 	}
-	let { value, items, label, onCommit, onFocusEl, testid }: Props = $props();
+	let { value, items, label, required, description, onCommit, onFocusEl, testid }: Props = $props();
 
 	const control = $derived(elementControl(items));
 	const plaintext = $derived(items?.type === 'plaintext');
@@ -79,7 +84,7 @@
 <div class="qm-array" data-testid={testid}>
 	<div class="qm-array-header">
 		{#if label != null}
-			<span class="qm-field-label">{label}</span>
+			<FieldLabel {label} {required} {description} {testid} />
 		{:else}
 			<span></span>
 		{/if}
@@ -148,11 +153,6 @@
 		justify-content: space-between;
 		gap: var(--_qm-space-2);
 	}
-	.qm-field-label {
-		font-size: var(--_qm-text-label);
-		font-weight: var(--_qm-weight-label);
-		color: var(--qm-label, #555);
-	}
 	.qm-array-row {
 		display: flex;
 		align-items: flex-start;
@@ -165,15 +165,15 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		border: 1px solid var(--qm-border, #d4d4d4);
-		background: var(--qm-field-bg, #fff);
+		border: 1px solid var(--_qm-border);
+		background: var(--_qm-surface);
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
 		line-height: 1;
 		padding: var(--_qm-space-half) var(--_qm-space);
 	}
 	.qm-mini:disabled {
-		opacity: 0.35;
+		opacity: var(--_qm-opacity-idle);
 		cursor: default;
 	}
 	.qm-remove {
@@ -187,11 +187,11 @@
 	}
 	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */
 	.qm-json:focus-visible {
-		outline: 2px solid var(--qm-focus-ring, #2563eb);
-		outline-offset: 1px;
+		outline: var(--_qm-ring-focus);
+		outline-offset: var(--_qm-ring-offset);
 	}
 	.qm-add-el {
-		border: 1px dashed var(--qm-border, #b8b8b8);
+		border: 1px dashed var(--_qm-border);
 		background: transparent;
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
@@ -199,7 +199,7 @@
 		font-size: var(--_qm-text-body);
 		/* Recede until engaged (issue #58 §6): the sole foot add rests dim — like the
 		   card stack's last trigger — and surfaces on hover of the field or on focus. */
-		opacity: 0.35;
+		opacity: var(--_qm-opacity-idle);
 		transition: opacity 120ms ease;
 	}
 	.qm-array:hover .qm-add-el,
@@ -208,7 +208,7 @@
 	}
 	@media (hover: none) {
 		.qm-add-el {
-			opacity: 0.5;
+			opacity: var(--_qm-opacity-muted);
 		}
 	}
 </style>

@@ -15,7 +15,7 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Quill, Document, Addr, Content, Diagnostic } from '$lib/core';
+	import type { Quill, Document, Addr, CardAddr, Content, Diagnostic } from '$lib/core';
 	import { loadUsafMemoTree } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
@@ -25,9 +25,21 @@
 	let VisualEditor = $state<VisualEditorComponent | undefined>();
 	let quillHandle: Quill | undefined = $state();
 	let docHandle: Document | undefined = $state();
+	// `$lib/core` is imported dynamically (WASM top-level await, see onMount), so the
+	// main-card selector is captured there for the reads outside that scope.
+	let mainAddr: CardAddr | undefined = $state();
 	let lastAddr = $state('none');
 	let dumpTick = $state(0);
 	let externalDiagnostics = $state<Diagnostic[]>([]);
+	// A consumer enum-policy stand-in (issue #73): once armed, forbid `CUI` on the
+	// main `classification` field so e2e can prove the option renders disabled
+	// without the stored value or the schema changing.
+	let restrictEnums = $state(false);
+	const enumOptionAllowed = $derived(
+		restrictEnums
+			? (addr: Addr, value: string) => !(addr.field === 'classification' && value === 'CUI')
+			: undefined
+	);
 
 	let toFree: Array<{ free(): void }> = [];
 
@@ -66,6 +78,11 @@
 			date: doc.getStored('date') ?? null,
 			memo_for: doc.getStored('memo_for') ?? [],
 			references: ((doc.getStored('references') as Content[] | undefined) ?? []).map((r) => r.text),
+			// The tips channel (issue #71) read off the Document, so e2e proves the
+			// DISMISSAL landed as a write and not just as an unmount — and that the
+			// `title` sibling in the same namespace survived it. `getExtNamespace` reads
+			// the one slot rather than serializing the whole main card for it.
+			mainExtEditor: (mainAddr && (doc.getExtNamespace(mainAddr, 'editor') as unknown)) ?? null,
 			cardCount: doc.cardCount,
 			cards: doc.cards.map((c, i) => ({
 				kind: c.kind,
@@ -89,7 +106,7 @@
 				// Dynamic: keep WASM's top-level await out of the route module so
 				// Safari/dev doesn't TDZ on Kit's `component` export (#7805).
 				// VisualEditor pulls the codec → `mapPos`, so it rides the same import.
-				const [{ Quill, init }, visual] = await Promise.all([
+				const [{ Quill, Document, init, MAIN_CARD_ADDR }, visual] = await Promise.all([
 					import('$lib/core'),
 					import('$lib/visual')
 				]);
@@ -97,11 +114,35 @@
 				const tree = await loadUsafMemoTree();
 				const quill = Quill.fromTree(tree);
 				const doc = quill.seedDocument();
+				// Issue #72 e2e seed: a card whose `kind` the schema can't project (as a
+				// document predating a schema change would carry). `Document.insertCard`
+				// is schema-agnostic, so it can hold a foreign kind the Quill-bound writer
+				// would reject — the exact un-schemable case the recovery shell handles.
+				const params = new URLSearchParams(window.location.search);
+				if (params.has('foreign')) {
+					doc.insertCard(Document.makeCard('legacy_kind', {}, 'Trapped legacy body.'));
+				}
+				// Issue #71 e2e seed: the tips channel a quill or consumer supplies. The
+				// reference quill declares none — tips are `$ext`, not schema — so the
+				// playground stands in for the seeding consumer, off by default so the
+				// default view stays the plain card stack.
+				if (params.has('tips')) {
+					// Through `patchEditorExt`, not a bare `storeExtNamespace` — a consumer
+					// seeding one key must not replace the namespace either.
+					visual.patchEditorExt(doc, MAIN_CARD_ADDR, {
+						tips: [
+							'Press **Tab** to move on.',
+							'Run `npm run dev` for the playground.',
+							'Last one — dismissing clears the channel.'
+						]
+					});
+				}
 				if (cancelled) {
 					doc.free();
 					quill.free();
 					return;
 				}
+				mainAddr = MAIN_CARD_ADDR;
 				VisualEditor = visual.VisualEditor;
 				quillHandle = quill;
 				docHandle = doc;
@@ -143,6 +184,7 @@
 						onCaretMove={() => refresh()}
 						onChange={refresh}
 						diagnostics={externalDiagnostics}
+						{enumOptionAllowed}
 					/>
 				{/if}
 			</div>
@@ -151,6 +193,11 @@
 				<pre data-testid="active-addr">{lastAddr}</pre>
 				<button type="button" data-testid="inject-diagnostics" onclick={injectDiagnostics}
 					>Inject test diagnostics</button
+				>
+				<button
+					type="button"
+					data-testid="toggle-enum-policy"
+					onclick={() => (restrictEnums = !restrictEnums)}>Toggle enum policy (forbid CUI)</button
 				>
 				<div class="state-label">doc state</div>
 				<pre data-testid="doc-json">{dump}</pre>

@@ -11,6 +11,9 @@ Long-form project documentation, in tiers by maturity:
 
 Deferred and not-yet-designed work is tracked as GitHub issues, not a docs tier —
 each proposal is designed fresh when scheduled, then promoted to `canon/` on ship.
+A branch integrating a set of those issues may carry a scratch tier named for it
+(`web-app-parity/`) holding the schedule and unsettled forks; it is retired with
+the branch and `check:canon` does not scan it.
 
 V1 shipped (Phases 1–5); the surfaces are described in `canon/`, with deferred
 work tracked as GitHub issues. The build-order phase briefs were retired once

@@ -25,9 +25,10 @@ top-to-bottom down one column; the document's structure is the page's structure.
 direct manipulation, the caret bridge, per-field state, against a bare built-in
 visual opinion, so a consumer restyles to its brand without fighting baked-in
 design. Structure and behavior live in the primitives (bits-ui's headless base);
-appearance is a themeable surface with a neutral, overridable baseline — a set of
-`--qm-*` custom properties ([`THEMING.md`](../../THEMING.md)). The broad theming
-system stays deferred (§Open).
+appearance is a themeable surface with a neutral, overridable baseline — ten
+`--qm-*` dials deriving a closed private scale ([`THEMING.md`](../../THEMING.md)).
+Every control is styled off that scale, including the three whose native form is
+UA-owned shadow DOM (enum, boolean, date), so the palette has no holes.
 
 ## Card stack
 
@@ -44,6 +45,32 @@ selector.
 
 Drag reorder is not carried in V1: the interaction cost (threshold, drop targets,
 keyboard and touch parity) buys only what the buttons already do.
+
+## Tips card
+
+An **ephemeral** block in the stack, fed by `$ext.editor.tips` (issue #71) — the
+one guidance surface that is not attached to a field. It sits in a fixed slot after
+`main`, ahead of the cards, so document-level hints read as document-level and
+never displace a control.
+
+One tip at a time, with an advance and a dismiss; both exits clear the channel, so
+the card leaves and does not return. Content is **inline markdown**, rendered
+through the codec's `renderContent` — decode, then the nodes' own `toDOM` — so a tip
+is written in the body's mark vocabulary rather than by a second renderer that would
+drift from it. The inline schema makes every tip one paragraph, so advancing cannot
+reshape the block.
+
+The cursor is **local**, not the channel: advancing writes nothing. A per-tip write
+would round-trip the boundary and dirty the document on what is a read gesture, so
+exactly one write happens, at dismissal. A dismissal therefore persists in `$ext` —
+what "does not reappear" costs. The tip *string* is derived before the render effect
+reads it, so an unrelated commit elsewhere in the document does not re-parse the tip
+or rebuild its live region.
+
+Visually it is in-flow like every other block (SURFACES §Elevation): one hairline,
+no lift, no new token. It recedes by tone and type — the label rung in the muted
+label colour (AESTHETIC §"Secondary text recedes") — so it reads as guidance beside
+the fields rather than as another one.
 
 ## Formatting
 
@@ -88,10 +115,14 @@ is a separate concern (the island controls), not gated by this.
   group (or, body-less, the first) auto-expanded; ungrouped fields stay above it,
   always visible.
 - **Prose leaf** — the body and each rich field as an inline WYSIWYG surface.
-- **Per-field state** — focus, inline diagnostics, and a ghosted `default:`
-  placeholder (never written back — it lives in the schema). A `!must_fill`
-  marker surfaces only as a routed `validate()` warning among those diagnostics;
-  no dedicated nudge and no tips surface (`example:`) in V1.
+- **Per-field state** — focus, inline diagnostics, a ghosted `default:`
+  placeholder (never written back — it lives in the schema), a persistent required
+  `*` on no-`default:` (Unendorsed) fields, and the field's `description:` as a
+  label tooltip (issue #75). A `!must_fill` marker also surfaces as a routed
+  `validate()` warning among those diagnostics — the `*` states required-ness, the
+  warning reports unmet-ness; `example:` still gets no dedicated nudge. No field
+  carries a tips surface: guidance that is not about one field belongs to the
+  document, and rides the tips card (§"Tips card").
 - **Array fields** — a repeater: one control per element (text / prose / minimal
   JSON by `items.type`), a per-row delete, an add affordance at the foot. No
   element reorder — rows hold entry order, and the array commits by value, so a
@@ -117,9 +148,10 @@ Debug-only, per [ARCHITECTURE.md](ARCHITECTURE.md) — not an editable dual mode
 
 ## Open
 
-- **Theming (broad system)** — the baseline `--qm-*` token set ships
-  ([`THEMING.md`](../../THEMING.md)); the broad system — semantic scales, class vs.
-  part hooks, dark mode — is deferred.
+- **Control slots** — a per-`ControlKind` extension point past the tokens is
+  deferred until a consumer needs one. The constraint is recorded: the package owns
+  reconciliation (`syncedLocal`), so a slot handing out a raw `value` reintroduces
+  issue #48's caret reset in consumer code, invisibly to this repo's tests.
 - **Insert surface (post-V1)** — the deferred position anchor: gutter affordance,
   menu, slash command, and table/island authoring.
 - **Formatting reach (post-V1)** — the touch accessory bar and keymap shortcuts

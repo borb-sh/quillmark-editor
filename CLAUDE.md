@@ -10,6 +10,12 @@ tracked as GitHub issues. Every canon doc follows the spine documented in
 [`prose/README.md`](prose/README.md) (`> **Implementation**:` folder anchor +
 `## TL;DR`); `npm run check:canon` gates it.
 
+Canon is **malleable** — the project is still taking shape and the package has no
+consumers, so nothing in `prose/canon/` is a compatibility promise. A canon doc
+that contradicts the design in hand is a doc to rewrite, not a constraint to
+design around; rewrite it in the same commit as the code so the two never diverge.
+`check:canon` gates the spine, not the claims.
+
 Comments and docs: dense, present-tense, no marketing — the `dense-prose` skill
 (in the sibling `quillmark` checkout's `.claude/skills/`).
 

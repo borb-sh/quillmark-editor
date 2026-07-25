@@ -76,10 +76,10 @@
 
 <style>
 	.qm-prose {
-		border: 1px solid var(--qm-border, #d4d4d4);
+		border: 1px solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
 		padding: var(--_qm-space) var(--_qm-space-2);
-		background: var(--qm-field-bg, #fff);
+		background: var(--_qm-surface);
 		min-height: 1.6rem;
 	}
 	/* The caret is the prose leaf's focus indicator, not a ring — a ring around a
@@ -93,15 +93,15 @@
 	/* Active-leaf cue: tint the hairline to the focus hue, shared with the scalar
 	   ring and the preview active box — no added box (the editor↔preview address). */
 	.qm-prose:focus-within {
-		border-color: var(--qm-focus-ring, #2563eb);
+		border-color: var(--_qm-accent);
 	}
 	/* Empty-leaf ghost (issue #58 §9): the resolved `default:` as dim/italic ghost,
-	   matching the scalar `--qm-ghost` treatment (AESTHETIC §"secondary text
+	   matching the scalar ghost rung (AESTHETIC §"secondary text
 	   recedes"). Rendered from a node decoration's data attr so it stays out of the
 	   document; `float`/`height:0` keep it from displacing the caret. */
 	.qm-prose :global(.ProseMirror .qm-prose-placeholder::before) {
 		content: attr(data-placeholder);
-		color: var(--qm-ghost, #9a9a9a);
+		color: var(--_qm-ink-ghost);
 		font-style: italic;
 		float: left;
 		height: 0;

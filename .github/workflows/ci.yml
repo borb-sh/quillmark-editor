@@ -1,5 +1,5 @@
 # PR gate: the tiers that run without a browser. `lint` + `check` + `check:canon`
-# + `check:geometry` + `check:type` are the gates; `test` is the Vitest core tier and `build` proves `svelte-package`
+# + `check:geometry` + `check:type` + `check:theme` are the gates; `test` is the Vitest core tier and `build` proves `svelte-package`
 # still emits `dist/`. The playground browser tier stands in for a human pass and
 # runs elsewhere, so it is not gated here.
 name: CI
@@ -44,6 +44,9 @@ jobs:
 
       - name: Type scale
         run: npm run check:type
+
+      - name: Theme
+        run: npm run check:theme
 
       - name: Test (vitest)
         run: npm test

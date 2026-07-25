@@ -16,6 +16,7 @@ interface Dump {
 	date: string | null;
 	memo_for: string[];
 	references: string[];
+	mainExtEditor: Record<string, unknown> | null;
 	cardCount: number;
 	cards: { kind: string; title: string | null; from: string | null; body: string }[];
 }
@@ -23,6 +24,46 @@ interface Dump {
 async function readDump(page: Page): Promise<Dump> {
 	const text = (await page.getByTestId('doc-json').textContent()) ?? '{}';
 	return JSON.parse(text) as Dump;
+}
+
+/**
+ * Pick an enum option. The control is a bits-ui listbox (issue #79 §3), not a
+ * native `<select>`, so `selectOption` does not apply: open the trigger, then
+ * click the option by its `data-value` — the same value-keyed targeting the old
+ * `selectOption(value)` did.
+ */
+async function pickEnum(page: Page, testid: string, value: string): Promise<void> {
+	await page.getByTestId(testid).click();
+	await page.locator(`[role="listbox"] [data-value="${value}"]`).click();
+}
+
+/** Open an enum's listbox and return a locator over one option, for state assertions. */
+async function openEnum(page: Page, testid: string) {
+	await page.getByTestId(testid).click();
+	await expect(page.locator('[role="listbox"]')).toBeVisible();
+	return (value: string) => page.locator(`[role="listbox"] [data-value="${value}"]`);
+}
+
+/** The segmented date control's first segment — the entry point for typing. */
+function dateEntry(page: Page, testid: string) {
+	return page.locator(`[data-testid="${testid}"] [data-segment="month"]`);
+}
+
+/** Type an ISO date into the segments. They advance on fill, so digits run together. */
+async function setDate(page: Page, testid: string, iso: string): Promise<void> {
+	const [y, m, d] = iso.split('-');
+	await dateEntry(page, testid).click();
+	await page.keyboard.type(`${m}${d}${y}`);
+}
+
+/**
+ * Empty the month segment — Backspace is the primitive's clear key, and one
+ * incomplete segment makes the whole date `undefined`, which is the unset rung.
+ */
+async function clearDate(page: Page, testid: string): Promise<void> {
+	await dateEntry(page, testid).click();
+	await page.keyboard.press('Backspace');
+	await page.keyboard.press('Backspace');
 }
 
 /** The contenteditable inside a prose leaf, by its container testid. */
@@ -51,6 +92,20 @@ test.describe('visual editor', () => {
 		await expect(page.getByTestId('active-addr')).toContainText('"field":"subject"');
 	});
 
+	test('(a2) a no-default field shows a required marker; a defaulted field does not (issue #75a)', async ({
+		page
+	}) => {
+		// `subject` declares no `default:` (Unendorsed) → a persistent `*`; the marker is
+		// present regardless of its accordion group's open state, so assert on DOM count.
+		await expect(page.getByTestId('required-main-subject')).toHaveCount(1);
+		await expect(page.getByTestId('required-main-subject')).toHaveAttribute(
+			'aria-label',
+			'required'
+		);
+		// `letterhead_title` carries a `default:` → not required, no marker.
+		await expect(page.getByTestId('required-main-letterhead_title')).toHaveCount(0);
+	});
+
 	test('(b) editing the body prose commits to the main body', async ({ page }) => {
 		const before = (await readDump(page)).body;
 		const el = pm(page, 'prose-main-body');
@@ -61,10 +116,30 @@ test.describe('visual editor', () => {
 	});
 
 	test('(c) changing enums (classification, letterhead_seal) commits', async ({ page }) => {
-		await page.getByTestId('main-classification').selectOption('CUI');
+		await pickEnum(page, 'main-classification', 'CUI');
 		await expect.poll(async () => (await readDump(page)).classification).toBe('CUI');
-		await page.getByTestId('main-letterhead_seal').selectOption('dod');
+		await pickEnum(page, 'main-letterhead_seal', 'dod');
 		await expect.poll(async () => (await readDump(page)).letterhead_seal).toBe('dod');
+	});
+
+	test('(c2) a consumer enum policy DISABLES a forbidden option without mutating a stored value (issue #73)', async ({
+		page
+	}) => {
+		// Author CUI first, then arm the policy that forbids it: the stored value is
+		// untouched (still CUI) and the option renders disabled, not stripped.
+		await pickEnum(page, 'main-classification', 'CUI');
+		await expect.poll(async () => (await readDump(page)).classification).toBe('CUI');
+		await page.getByTestId('toggle-enum-policy').click();
+		let opt = await openEnum(page, 'main-classification');
+		await expect(opt('CUI')).toHaveAttribute('data-disabled', '');
+		await expect(opt('UNCLASSIFIED')).not.toHaveAttribute('data-disabled', '');
+		await page.keyboard.press('Escape');
+		expect((await readDump(page)).classification).toBe('CUI');
+		// Disarm: the option is offerable again.
+		await page.getByTestId('toggle-enum-policy').click();
+		opt = await openEnum(page, 'main-classification');
+		await expect(opt('CUI')).not.toHaveAttribute('data-disabled', '');
+		await page.keyboard.press('Escape');
 	});
 
 	test('(d) editing a number (font_size) and a date (date) commits', async ({ page }) => {
@@ -73,8 +148,9 @@ test.describe('visual editor', () => {
 		await page.getByTestId('main-font_size').fill('14.5');
 		await page.getByTestId('main-font_size').blur();
 		await expect.poll(async () => (await readDump(page)).font_size).toBe(14.5);
-		await page.getByTestId('main-date').fill('2026-03-04');
-		await page.getByTestId('main-date').blur();
+		// The date control is segmented (issue #79 §3) and commits as soon as the
+		// segments form a complete date — there is no blur-to-settle step.
+		await setDate(page, 'main-date', '2026-03-04');
 		await expect.poll(async () => (await readDump(page)).date).toBe('2026-03-04');
 	});
 
@@ -91,11 +167,9 @@ test.describe('visual editor', () => {
 		await page.getByTestId('main-font_size').blur();
 		await expect.poll(async () => (await readDump(page)).font_size).toBeNull();
 
-		await page.getByTestId('main-date').fill('2026-03-04');
-		await page.getByTestId('main-date').blur();
+		await setDate(page, 'main-date', '2026-03-04');
 		await expect.poll(async () => (await readDump(page)).date).toBe('2026-03-04');
-		await page.getByTestId('main-date').fill('');
-		await page.getByTestId('main-date').blur();
+		await clearDate(page, 'main-date');
 		await expect.poll(async () => (await readDump(page)).date).toBeNull();
 	});
 
@@ -104,13 +178,16 @@ test.describe('visual editor', () => {
 	}) => {
 		// Author a value, then pick the ghost sentinel (always the first option) →
 		// the field is UNSET (null), the "clear back to default" affordance.
-		await page.getByTestId('main-classification').selectOption('CUI');
+		await pickEnum(page, 'main-classification', 'CUI');
 		await expect.poll(async () => (await readDump(page)).classification).toBe('CUI');
-		await page.getByTestId('main-classification').selectOption({ index: 0 });
+		// The sentinel is always the FIRST option — targeted positionally rather than
+		// by its internal marker value.
+		await page.getByTestId('main-classification').click();
+		await page.locator('[role="listbox"] [role="option"]').first().click();
 		await expect.poll(async () => (await readDump(page)).classification).toBeNull();
 		// Explicitly picking the default value ('' — a real enum member here) is a
 		// GENUINE write, distinct from unset: authored-default ('') vs null.
-		await page.getByTestId('main-classification').selectOption('');
+		await pickEnum(page, 'main-classification', '');
 		await expect.poll(async () => (await readDump(page)).classification).toBe('');
 	});
 
@@ -202,5 +279,80 @@ test.describe('visual editor', () => {
 	test('(j) renaming a card via its title persists $ext.editor.title', async ({ page }) => {
 		await page.getByTestId('card-title-0').fill('My Endorsement');
 		await expect.poll(async () => (await readDump(page)).cards[0].title).toBe('My Endorsement');
+	});
+
+	test('(k) an un-schemable card renders a recovery shell; retype re-projects it (issue #72)', async ({
+		page
+	}) => {
+		// `?foreign` seeds a card whose kind the schema can't project (see the route).
+		await page.goto('/visual?foreign=1');
+		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
+
+		// The foreign card is VISIBLE as a recovery shell — not dropped, not gated away.
+		const recovery = page.locator('[data-testid^="card-recovery-"]');
+		await expect(recovery).toHaveCount(1);
+		await expect(recovery).toContainText('Unrecognized card type');
+		await expect(recovery).toContainText('legacy_kind');
+		// Its content is still in the Document (the whole point — no data trap).
+		const foreign = (await readDump(page)).cards.find((c) => c.kind === 'legacy_kind');
+		expect(foreign?.body).toContain('Trapped legacy body');
+
+		// Retype to a declared kind → the shell is gone and the body is preserved under
+		// the new kind (setCardKind keeps payload + body).
+		await page.locator('[data-testid^="recovery-retype-"]').selectOption('indorsement');
+		await expect(page.locator('[data-testid^="card-recovery-"]')).toHaveCount(0);
+		await expect
+			.poll(async () =>
+				(await readDump(page)).cards.some(
+					(c) => c.kind === 'indorsement' && c.body.includes('Trapped legacy body')
+				)
+			)
+			.toBe(true);
+	});
+
+	test('(l) the tips card rotates, renders markdown, and dismissal clears the channel (issue #71)', async ({
+		page
+	}) => {
+		// `?tips` seeds `$ext.editor.tips` with three tips (see the route) — the
+		// channel a quill or consumer supplies; nothing in the schema declares it.
+		await page.goto('/visual?tips=1');
+		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
+
+		const card = page.getByTestId('tips-card');
+		await expect(card).toBeVisible();
+		await expect(page.getByTestId('tips-count')).toHaveText('1 of 3');
+		// Inline markdown, rendered as the body renders it — a `strong` element, not
+		// the literal asterisks.
+		await expect(page.getByTestId('tips-body').locator('strong')).toHaveText('Tab');
+
+		// Advance: the tip swaps, the count follows, and NOTHING is written — reading
+		// a tip must not dirty the document.
+		await page.getByTestId('tips-next').click();
+		await expect(page.getByTestId('tips-count')).toHaveText('2 of 3');
+		await expect(page.getByTestId('tips-body').locator('code')).toHaveText('npm run dev');
+		expect((await readDump(page)).mainExtEditor?.tips).toHaveLength(3);
+
+		// Advancing past the last tip clears the channel: the card goes, and the
+		// Document — not just the DOM — carries no `tips`.
+		await page.getByTestId('tips-next').click();
+		await expect(page.getByTestId('tips-count')).toHaveText('3 of 3');
+		await page.getByTestId('tips-next').click();
+		await expect(card).toHaveCount(0);
+		await expect.poll(async () => (await readDump(page)).mainExtEditor?.tips).toBeUndefined();
+	});
+
+	test('(m) dismissing tips leaves a renamed card its title (issue #71)', async ({ page }) => {
+		// The silent hazard: `tips` and `title` are sibling keys of one `editor`
+		// namespace, so a namespace-removing clear would destroy the rename. Only a
+		// document carrying BOTH can catch it — so this test makes one.
+		await page.goto('/visual?tips=1');
+		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
+
+		await page.getByTestId('card-title-0').fill('Kept Title');
+		await expect.poll(async () => (await readDump(page)).cards[0].title).toBe('Kept Title');
+
+		await page.getByTestId('tips-dismiss').click();
+		await expect(page.getByTestId('tips-card')).toHaveCount(0);
+		expect((await readDump(page)).cards[0].title).toBe('Kept Title');
 	});
 });

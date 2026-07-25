@@ -22,11 +22,12 @@
   once per derive.
 -->
 <script lang="ts">
-	import { isQuillmarkError } from '../core/index.js';
+	import { isQuillmarkError, MAIN_CARD_ADDR, QM_THEME } from '../core/index.js';
 	import type {
 		Document,
 		Quill,
 		Addr,
+		CardAddr,
 		Diagnostic,
 		ContentHit,
 		Resolved,
@@ -59,7 +60,10 @@
 		type FieldKey,
 		type RoutedDiagnostic
 	} from './diagnostics.js';
+	import { tipsChannel } from './tips.js';
+	import { patchEditorExt } from './ext.js';
 	import Card from './Card.svelte';
+	import TipsCard from './TipsCard.svelte';
 	import FormatPopover from './FormatPopover.svelte';
 
 	/**
@@ -84,8 +88,24 @@
 		 * and local commit errors (VISUAL_EDITOR §Diagnostics).
 		 */
 		diagnostics?: Diagnostic[];
+		/**
+		 * Consumer policy hook (issue #73): given a field `addr` and an enum option,
+		 * return `false` to mark that option unavailable. A disallowed option renders
+		 * DISABLED (never stripped), so an already-authored value stays visible and its
+		 * stored payload is untouched — the schema is unchanged, this is runtime policy.
+		 * Absent → every schema option is offered (the default, zero behavior change).
+		 */
+		enumOptionAllowed?: (addr: Addr, value: string) => boolean;
 	}
-	let { doc, quill, onActiveAddrChange, onCaretMove, onChange, diagnostics }: Props = $props();
+	let {
+		doc,
+		quill,
+		onActiveAddrChange,
+		onCaretMove,
+		onChange,
+		diagnostics,
+		enumOptionAllowed
+	}: Props = $props();
 
 	// ── Reactivity + session identity ───────────────────────────────────────────
 	let revision = $state(0);
@@ -262,12 +282,16 @@
 	function renameCardById(id: string, title: string): void {
 		const i = cardIndexOf(id);
 		if (i < 0) return;
-		// The `editor` namespace is the write unit and it REPLACES on write, so
-		// merge over any existing keys (id-less in V1, but future-proof).
-		// `getExtNamespace` reads just this namespace (i is already validated) rather
-		// than serializing the whole card to fish out one `$ext` slot.
-		const existing = (doc.getExtNamespace({ card: i }, 'editor') ?? {}) as Record<string, unknown>;
-		doc.storeExtNamespace({ card: i }, 'editor', { ...existing, title });
+		patchEditorExt(doc, { card: i }, { title });
+		bump();
+	}
+	/**
+	 * Clear the tips channel (issue #71) — the dismissal write, and the ONLY write
+	 * tips make. `undefined` drops the key while `title` and any later sibling ride
+	 * through; `ext.ts` holds why that matters.
+	 */
+	function dismissTips(): void {
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
 		bump();
 	}
 
@@ -331,7 +355,11 @@
 			remove: () => removeCardById(id),
 			retype: (kind: string) => retypeCardById(id, kind),
 			rename: (title: string) => renameCardById(id, title),
-			diagFor: (field?: string) => diagFor(id, isMain, field)
+			diagFor: (field?: string) => diagFor(id, isMain, field),
+			// Bind the consumer policy hook to this field's resolved addr (issue #73);
+			// no hook → every option allowed.
+			enumAllowed: (field: string, value: string) =>
+				enumOptionAllowed?.(makeAddr(id, isMain, field), value) ?? true
 		};
 	}
 
@@ -360,6 +388,9 @@
 			id,
 			isMain,
 			kind,
+			// No schema for this kind → a recovery shell, not a field list (issue #72).
+			// `main` always resolves `schema.main`, so it is never unschemable.
+			unschemable: !isMain && !cardSchema,
 			titleOverride: extEditor?.title ?? '',
 			titlePlaceholder: cardTitle(cardSchema, kind, values, undefined),
 			values,
@@ -387,6 +418,11 @@
 		const byCard = provenanceByCardIndex(resolved);
 		const bodyByCard = bodyByCardIndex(resolved);
 		return {
+			// Tips are DOCUMENT-level, not a property of the main card (issue #71): they
+			// hang off `main`'s `$ext` because that is where a document-scoped `$ext`
+			// lives, and the model says so at the root rather than making every card
+			// carry a field one card renders.
+			tips: tipsChannel((main.ext?.editor as { tips?: unknown } | undefined)?.tips),
 			main: buildCard(
 				'main',
 				true,
@@ -443,7 +479,7 @@
 	}
 </script>
 
-<div class="qm-editor">
+<div class="qm-editor" style={QM_THEME}>
 	<Card
 		card={model.main}
 		{doc}
@@ -459,31 +495,42 @@
 		{unregister}
 	/>
 
-	<!-- Cards render only when the schema declares `card_kinds`. Edge case (issue
-	     #21): a document carrying cards under a schema with none shows them
-	     nowhere — no list, no delete affordance. Left as-is (the reference fixture
-	     never hits it); if it becomes reachable, render the list with add/retype
-	     disabled rather than gating the whole thing away. -->
+	<!-- The tips card (issue #71): a fixed slot after `main`, ahead of the cards, so
+	     document-level guidance reads as document-level and never displaces a field.
+	     Absent when the channel is empty — which is what dismissal makes it, so the
+	     card leaves for good (VISUAL_EDITOR §"Card operations"). -->
+	{#if model.tips.length}
+		<TipsCard tips={model.tips} onDismiss={dismissTips} />
+	{/if}
+
+	<!-- Cards always render (issue #72). The ADD affordance is gated on the schema
+	     declaring `card_kinds` — nothing to seed otherwise — but a card already in the
+	     document shows regardless of its kind: a kind with no schema (foreign, or a
+	     schema with no `card_kinds` at all, the case issue #21 tracks) degrades to a
+	     recovery shell inside <Card> (retype + delete), never gated away, so its content
+	     is neither dropped nor trapped. -->
 	{#if kinds.length}
 		{@render addAffordance(0, model.cards.length === 0)}
-		{#each model.cards as c, i (c.id)}
-			<Card
-				card={c}
-				{doc}
-				index={i}
-				isFirst={i === 0}
-				isLast={i === model.cards.length - 1}
-				active={activeCardId === c.id}
-				{kinds}
-				ops={opsFor(c.id, false)}
-				onFocus={handleFocus}
-				onCaretMove={handleCaret}
-				{register}
-				{unregister}
-			/>
-			{@render addAffordance(i + 1, i === model.cards.length - 1)}
-		{/each}
 	{/if}
+	{#each model.cards as c, i (c.id)}
+		<Card
+			card={c}
+			{doc}
+			index={i}
+			isFirst={i === 0}
+			isLast={i === model.cards.length - 1}
+			active={activeCardId === c.id}
+			{kinds}
+			ops={opsFor(c.id, false)}
+			onFocus={handleFocus}
+			onCaretMove={handleCaret}
+			{register}
+			{unregister}
+		/>
+		{#if kinds.length}
+			{@render addAffordance(i + 1, i === model.cards.length - 1)}
+		{/if}
+	{/each}
 </div>
 
 <FormatPopover {getActiveLeaf} />
@@ -520,51 +567,28 @@
 {/snippet}
 
 <style>
+	/* The private scale arrives as `style={QM_THEME}` on the root element above —
+	   this is a DETACHED root, one of those the derivation is set on (core/theme.ts).
+	   Nothing here mints; `check:theme` enforces that. */
 	.qm-editor {
-		/* Geometry rhythm (SURFACES §Rhythm, THEMING §Geometry). Two public dials —
-		   --qm-radius, --qm-space — derive the closed private scale every interior
-		   surface reads; overriding a dial rescales the whole surface from one edit.
-		   Re-declared on each DETACHED root (FormatPopover portals out of this
-		   subtree, so it carries its own copy) — the one place a value is minted. */
-		--_qm-radius: var(--qm-radius, 8px);
-		--_qm-radius-inner: calc(var(--_qm-radius) / 2);
-		--_qm-space: var(--qm-space, 0.25rem);
-		--_qm-space-half: calc(var(--_qm-space) / 2);
-		--_qm-space-2: calc(var(--_qm-space) * 2);
-		--_qm-space-3: calc(var(--_qm-space) * 3);
-		--_qm-space-4: calc(var(--_qm-space) * 4);
-
-		/* Type rhythm (SURFACES §Rhythm, THEMING §"Base — typography & text"). Two
-		   public dials — --qm-font-size (body anchor), --qm-font-scale (ramp ratio)
-		   — derive the closed rung set every surface reads: a step up (title) and two
-		   down (label, meta). Weight is a fixed convention, not a dial: label 600,
-		   secondary 500. Minted here and re-minted on FormatPopover (portals out of
-		   this root), gated by check:type. */
-		--_qm-text-body: var(--qm-font-size, 0.875rem);
-		--_qm-text-title: calc(var(--_qm-text-body) * var(--qm-font-scale, 1.125));
-		--_qm-text-label: calc(var(--_qm-text-body) / var(--qm-font-scale, 1.125));
-		--_qm-text-meta: calc(var(--_qm-text-label) / var(--qm-font-scale, 1.125));
-		--_qm-weight-label: 600;
-		--_qm-weight-soft: 500;
-
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
 		font-family: var(--qm-font, ui-sans-serif, system-ui, sans-serif);
-		color: var(--qm-text, #1a1a1a);
+		color: var(--_qm-ink);
 	}
 	.qm-add-card {
 		display: flex;
 		justify-content: center;
 	}
 	.qm-add-btn {
-		border: 1px dashed var(--qm-border, #c4c4c4);
+		border: 1px dashed var(--_qm-border);
 		background: transparent;
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
 		padding: var(--_qm-space-half) var(--_qm-space-4);
 		font-size: var(--_qm-text-body);
-		color: #555;
+		color: var(--_qm-ink-label);
 		list-style: none;
 		/* Recede until engaged (issue #58 §6; AESTHETIC §"minimal UI"): each gap's
 		   trigger is invisible at rest and surfaces on hover or keyboard focus, so the
@@ -579,7 +603,7 @@
 		opacity: 1;
 	}
 	.qm-add-card.is-last .qm-add-btn {
-		opacity: 0.35;
+		opacity: var(--_qm-opacity-idle);
 	}
 	.qm-add-card.is-last:hover .qm-add-btn,
 	.qm-add-card.is-last .qm-add-btn:focus-visible {
@@ -588,12 +612,12 @@
 	/* Touch has no hover — keep a faint always-on affordance so add stays reachable. */
 	@media (hover: none) {
 		.qm-add-btn {
-			opacity: 0.3;
+			opacity: var(--_qm-opacity-idle);
 		}
 	}
 	.qm-add-btn:hover {
-		border-color: #9a9a9a;
-		color: #222;
+		border-color: var(--_qm-border-strong);
+		color: var(--_qm-ink);
 	}
 	.qm-add-menu {
 		position: relative;

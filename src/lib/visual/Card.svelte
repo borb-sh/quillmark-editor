@@ -14,6 +14,7 @@
 	import type { CardModel, FieldModel } from './structure.js';
 	import { packRows, humanize, initialExpandedGroup } from './structure.js';
 	import Field from './Field.svelte';
+	import FieldLabel from './FieldLabel.svelte';
 	import ProseField from './ProseField.svelte';
 	import CardControls from './CardControls.svelte';
 	import DiagnosticList from './DiagnosticList.svelte';
@@ -28,6 +29,8 @@
 		retype: (kind: string) => void;
 		rename: (title: string) => void;
 		diagFor: (field?: string) => Diagnostic[] | undefined;
+		/** Consumer enum-option policy for a field (issue #73); true when no hook set. */
+		enumAllowed: (field: string, value: string) => boolean;
 	}
 
 	interface Props {
@@ -124,122 +127,129 @@
 	}
 </script>
 
-<section class="qm-card" class:qm-main={card.isMain} class:qm-active={active}>
-	{#if !card.isMain}
-		<header class="qm-card-header">
-			<!-- Autosize: the sizer span's ::after mirrors the text and dictates the grid
+<section
+	class="qm-card"
+	class:qm-main={card.isMain}
+	class:qm-active={active}
+	class:qm-unschemable={card.unschemable}
+>
+	{#if card.unschemable}
+		{@render recoveryShell()}
+	{:else}
+		{#if !card.isMain}
+			<header class="qm-card-header">
+				<!-- Autosize: the sizer span's ::after mirrors the text and dictates the grid
 			     cell width, so the overlaid input grows with content and reads as text,
 			     not a persistent box (issue #58 §8). `data-value` falls back to the
 			     placeholder so an empty title still reserves its resolved-title width. -->
-			<span class="qm-card-title-sizer" data-value={localTitle || card.titlePlaceholder}>
-				<input
-					class="qm-card-title"
-					value={localTitle}
-					placeholder={card.titlePlaceholder}
-					aria-label="Card title"
-					size="1"
-					data-testid={`card-title-${index}`}
-					onmousedown={onTitleMousedown}
-					onfocus={onTitleFocus}
-					onkeydown={onTitleKeydown}
-					oninput={(e) => {
-						localTitle = (e.currentTarget as HTMLInputElement).value;
-						ops.rename(localTitle);
-					}}
-				/>
-			</span>
-			<div class="qm-card-header-right">
-				{#if kinds.length > 1}
-					<select
-						class="qm-retype"
-						value={card.kind}
-						data-testid={`card-retype-${index}`}
-						onchange={(e) => ops.retype((e.currentTarget as HTMLSelectElement).value)}
-					>
-						{#each kinds as k (k)}
-							<option value={k}>{humanize(k)}</option>
-						{/each}
-					</select>
-				{:else}
-					<!-- Degenerate retype (one declared kind): still wired to setCardKind. -->
-					<button
-						type="button"
-						class="qm-retype-btn"
-						title="Retype card"
-						data-testid={`card-retype-${index}`}
-						onclick={() => ops.retype(card.kind)}>{humanize(card.kind)}</button
-					>
-				{/if}
-				<CardControls
-					{isFirst}
-					{isLast}
-					onMoveUp={() => ops.move(-1)}
-					onMoveDown={() => ops.move(1)}
-					onDelete={() => ops.remove()}
-					testidPrefix={`card-${index}`}
-				/>
-			</div>
-		</header>
-	{/if}
+				<span class="qm-card-title-sizer" data-value={localTitle || card.titlePlaceholder}>
+					<input
+						class="qm-card-title"
+						value={localTitle}
+						placeholder={card.titlePlaceholder}
+						aria-label="Card title"
+						size="1"
+						data-testid={`card-title-${index}`}
+						onmousedown={onTitleMousedown}
+						onfocus={onTitleFocus}
+						onkeydown={onTitleKeydown}
+						oninput={(e) => {
+							localTitle = (e.currentTarget as HTMLInputElement).value;
+							ops.rename(localTitle);
+						}}
+					/>
+				</span>
+				<div class="qm-card-header-right">
+					{#if kinds.length > 1}
+						<select
+							class="qm-retype"
+							value={card.kind}
+							data-testid={`card-retype-${index}`}
+							onchange={(e) => ops.retype((e.currentTarget as HTMLSelectElement).value)}
+						>
+							{@render kindOptions()}
+						</select>
+					{:else}
+						<!-- Degenerate retype (one declared kind): still wired to setCardKind. -->
+						<button
+							type="button"
+							class="qm-retype-btn"
+							title="Retype card"
+							data-testid={`card-retype-${index}`}
+							onclick={() => ops.retype(card.kind)}>{humanize(card.kind)}</button
+						>
+					{/if}
+					<CardControls
+						{isFirst}
+						{isLast}
+						onMoveUp={() => ops.move(-1)}
+						onMoveDown={() => ops.move(1)}
+						onDelete={() => ops.remove()}
+						testidPrefix={`card-${index}`}
+					/>
+				</div>
+			</header>
+		{/if}
 
-	<div class="qm-card-body">
-		<!-- Ungrouped fields render above the accordion, always visible (issue #60):
+		<div class="qm-card-body">
+			<!-- Ungrouped fields render above the accordion, always visible (issue #60):
 		     a label-less section has no header to toggle, and these read as the card's
 		     primary fields. -->
-		{#each ungrouped as section (section.group ?? '_ungrouped')}
-			<div class="qm-section">
-				{#each packRows(section.fields) as row, ri (ri)}
-					{@render fieldRow(row)}
-				{/each}
-			</div>
-		{/each}
+			{#each ungrouped as section (section.group ?? '_ungrouped')}
+				<div class="qm-section">
+					{#each packRows(section.fields) as row, ri (ri)}
+						{@render fieldRow(row)}
+					{/each}
+				</div>
+			{/each}
 
-		<!-- Group accordion (issue #60): each `ui.group` is a collapsible section,
+			<!-- Group accordion (issue #60): each `ui.group` is a collapsible section,
 		     one open at a time. The header toggles; the panel slides via a
 		     0fr↔1fr grid row (200ms); an open section colors its chevron and left
 		     rule to the active hue. -->
-		{#each grouped as section (section.group)}
-			{@const isOpen = expanded === section.group}
-			<div class="qm-group" class:qm-open={isOpen}>
-				<button
-					type="button"
-					class="qm-group-header"
-					aria-expanded={isOpen}
-					data-testid={`group-${base}-${section.group}`}
-					onclick={() => toggleGroup(section.group as string)}
-				>
-					<ChevronRight class="qm-group-chevron" size={14} />
-					<span class="qm-group-label">{section.label}</span>
-				</button>
-				<div class="qm-group-panel">
-					<div class="qm-group-panel-inner">
-						{#each packRows(section.fields) as row, ri (ri)}
-							{@render fieldRow(row)}
-						{/each}
+			{#each grouped as section (section.group)}
+				{@const isOpen = expanded === section.group}
+				<div class="qm-group" class:qm-open={isOpen}>
+					<button
+						type="button"
+						class="qm-group-header"
+						aria-expanded={isOpen}
+						data-testid={`group-${base}-${section.group}`}
+						onclick={() => toggleGroup(section.group as string)}
+					>
+						<ChevronRight class="qm-group-chevron" size={14} />
+						<span class="qm-group-label">{section.label}</span>
+					</button>
+					<div class="qm-group-panel">
+						<div class="qm-group-panel-inner">
+							{#each packRows(section.fields) as row, ri (ri)}
+								{@render fieldRow(row)}
+							{/each}
+						</div>
 					</div>
 				</div>
-			</div>
-		{/each}
+			{/each}
 
-		{#if card.hasBody}
-			<div class="qm-body-leaf">
-				<span class="qm-field-label">Body</span>
-				<ProseField
-					{doc}
-					addr={ops.makeAddr(undefined)}
-					label="Body"
-					placeholder={card.bodyGhost}
-					leafKey={ops.leafKey(undefined)}
-					{onFocus}
-					{onCaretMove}
-					{register}
-					{unregister}
-					testid={`prose-${base}-body`}
-				/>
-				<DiagnosticList diagnostics={ops.diagFor(undefined)} testid={`diag-${base}-body`} />
-			</div>
-		{/if}
-	</div>
+			{#if card.hasBody}
+				<div class="qm-body-leaf">
+					<FieldLabel label="Body" />
+					<ProseField
+						{doc}
+						addr={ops.makeAddr(undefined)}
+						label="Body"
+						placeholder={card.bodyGhost}
+						leafKey={ops.leafKey(undefined)}
+						{onFocus}
+						{onCaretMove}
+						{register}
+						{unregister}
+						testid={`prose-${base}-body`}
+					/>
+					<DiagnosticList diagnostics={ops.diagFor(undefined)} testid={`diag-${base}-body`} />
+				</div>
+			{/if}
+		</div>
+	{/if}
 </section>
 
 <!-- One packed row of fields — shared by the ungrouped block and the accordion
@@ -255,6 +265,7 @@
 				proseAddr={ops.makeAddr(f.name)}
 				leafKey={ops.leafKey(f.name)}
 				onCommitScalar={(v) => ops.commit(f.name, v)}
+				optionAllowed={(v) => ops.enumAllowed(f.name, v)}
 				{onFocus}
 				{onCaretMove}
 				{register}
@@ -266,20 +277,75 @@
 	</div>
 {/snippet}
 
+<!-- Recovery shell for an un-schemable card (issue #72): a card whose `kind` has no
+     schema (foreign kind, or a schema declaring no `card_kinds`). It stays VISIBLE and
+     REMOVABLE — its fields/body/`$ext` remain in the Document — so it is never a data
+     trap. Retyping to a declared kind re-projects it (kept fields preserved by
+     `setCardKind`); with no kinds to offer, delete is the only exit. -->
+{#snippet recoveryShell()}
+	<header class="qm-card-header">
+		<span class="qm-card-title-static" data-testid={`card-unschemable-title-${index}`}
+			>{humanize(card.kind)}</span
+		>
+		<div class="qm-card-header-right">
+			<CardControls
+				{isFirst}
+				{isLast}
+				onMoveUp={() => ops.move(-1)}
+				onMoveDown={() => ops.move(1)}
+				onDelete={() => ops.remove()}
+				testidPrefix={`card-${index}`}
+			/>
+		</div>
+	</header>
+	<div class="qm-card-recovery" data-testid={`card-recovery-${index}`}>
+		<p class="qm-recovery-note">
+			Unrecognized card type <code>{card.kind}</code>. Its content is preserved.
+		</p>
+		{#if kinds.length}
+			<label class="qm-recovery-retype">
+				Change to
+				<select
+					data-testid={`recovery-retype-${index}`}
+					onchange={(e) => {
+						const el = e.currentTarget as HTMLSelectElement;
+						if (el.value) ops.retype(el.value);
+					}}
+				>
+					<option value="" disabled selected>Choose a type…</option>
+					{@render kindOptions()}
+				</select>
+			</label>
+		{:else}
+			<p class="qm-recovery-note qm-recovery-muted">
+				This document declares no card types — delete this card to remove it.
+			</p>
+		{/if}
+	</div>
+{/snippet}
+
+<!-- The declared card kinds as `<option>`s — shared by the header retype select and
+     the recovery shell's retype (issue #72), so one humanized option list feeds both. -->
+{#snippet kindOptions()}
+	{#each kinds as k (k)}
+		<option value={k}>{humanize(k)}</option>
+	{/each}
+{/snippet}
+
 <style>
 	.qm-card {
-		border: 1px solid var(--qm-border, #e2e2e2);
+		border: 1px solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
 		/* Uniform inset on every side (SURFACES §Rhythm) — a body-shown and a
 		   body-hidden card stay symmetric, every left edge on one gutter. */
 		padding: var(--_qm-space-4);
-		background: var(--qm-card-bg, #fafafa);
+		background: var(--_qm-surface-raised);
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-3);
 	}
 	.qm-card.qm-main {
-		background: var(--qm-main-bg, #fff);
+		background: var(--_qm-surface);
 	}
 	.qm-card-header {
 		display: flex;
@@ -334,19 +400,19 @@
 	}
 	.qm-card-title:hover,
 	.qm-card-title:focus {
-		border-color: var(--qm-border, #d4d4d4);
-		background: #fff;
+		border-color: var(--_qm-border);
+		background: var(--_qm-surface);
 		outline: none;
 	}
 	.qm-retype,
 	.qm-retype-btn {
 		font-size: var(--_qm-text-meta);
-		border: 1px solid var(--qm-border, #d4d4d4);
+		border: 1px solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
-		background: var(--qm-field-bg, #fff);
+		background: var(--_qm-surface);
 		padding: var(--_qm-space-half) var(--_qm-space-2);
 		cursor: pointer;
-		color: #555;
+		color: var(--_qm-ink-label);
 	}
 	.qm-card-body {
 		display: flex;
@@ -374,8 +440,8 @@
 		background: transparent;
 		padding: 0 0 var(--_qm-space-half) 0;
 		cursor: pointer;
-		color: var(--qm-section-label, #8a8a8a);
-		border-bottom: 1px solid var(--qm-border, #ececec);
+		color: var(--_qm-ink-meta);
+		border-bottom: 1px solid var(--_qm-border);
 		text-align: left;
 	}
 	.qm-group-label {
@@ -392,7 +458,7 @@
 			color 200ms ease;
 	}
 	.qm-group.qm-open .qm-group-header {
-		color: var(--qm-focus-ring, #2563eb);
+		color: var(--_qm-accent);
 	}
 	.qm-group.qm-open .qm-group-header :global(.qm-group-chevron) {
 		transform: rotate(90deg);
@@ -421,7 +487,7 @@
 	}
 	.qm-group.qm-open .qm-group-panel-inner {
 		padding-left: var(--_qm-space-3);
-		border-left-color: var(--qm-focus-ring, #2563eb);
+		border-left-color: var(--_qm-accent);
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.qm-group-panel,
@@ -445,9 +511,46 @@
 		flex-direction: column;
 		gap: var(--_qm-space);
 	}
-	.qm-field-label {
-		font-size: var(--_qm-text-label);
+	/* Recovery shell (issue #72): a receding, dashed-edge card marking an un-schemable
+	   card — visibly distinct from a normal card, but not alarming; the content behind
+	   it is intact. */
+	.qm-card.qm-unschemable {
+		border-style: dashed;
+		background: var(--_qm-surface-raised);
+	}
+	.qm-card-title-static {
+		font-size: var(--_qm-text-title);
 		font-weight: var(--_qm-weight-label);
-		color: var(--qm-label, #555);
+		color: var(--_qm-ink-label);
+	}
+	.qm-card-recovery {
+		display: flex;
+		flex-direction: column;
+		gap: var(--_qm-space-2);
+	}
+	.qm-recovery-note {
+		margin: 0;
+		font-size: var(--_qm-text-label);
+		color: var(--_qm-ink-label);
+	}
+	.qm-recovery-note code {
+		font-family: ui-monospace, monospace;
+	}
+	.qm-recovery-muted {
+		color: var(--_qm-ink-ghost);
+	}
+	.qm-recovery-retype {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--_qm-space-2);
+		font-size: var(--_qm-text-label);
+		color: var(--_qm-ink-label);
+	}
+	.qm-recovery-retype select {
+		font: inherit;
+		border: 1px solid var(--_qm-border);
+		border-radius: var(--_qm-radius-inner);
+		background: var(--_qm-surface);
+		padding: var(--_qm-space-half) var(--_qm-space-2);
 	}
 </style>
