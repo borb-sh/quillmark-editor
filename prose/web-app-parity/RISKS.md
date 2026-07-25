@@ -89,6 +89,55 @@ structural keymap. The list binding returns false when the selection is not in a
 list, so ProseMirror falls through — the later field-navigation Tab layers over
 it without either side knowing about the other, which is what keeps #70 additive.
 
+**Settled — lists are the indent primitive; no generic indent container.**
+`Content` carries horizontal offset only as `containers` (`list_item`, `quote`),
+and the reference quill consumes exactly that: `render-body` derives a
+`nest_level` from `enum.item` / `list.item`, maps it to a numbering format and an
+indent width (`get-paragraph-numbering-format`,
+`calculate-indent-from-counts` / `calculate-daf-indent`), and renders a non-first
+paragraph of an item as an unnumbered continuation block (`usaf_memo`'s
+`packages/tonguetoquill-usaf-memo/src/body.typ:18-164`). AFH 33-337's
+`1.` / `a.` / `(1)` hierarchy *is* list nesting, and its continuation paragraph is
+the `multiParagraphItem` shape already locked above. So #70's commands need no
+model axis beyond the one they already edit — including the Notion gesture that
+absorbs a trailing paragraph into the preceding item, which `list_item: block+`
+represents and `body.typ` already typesets.
+
+Generic any-block-under-any-block (Notion's model) is declined: no quill consumes
+it, so it renders as nothing while taxing every future template author; it is a
+second spelling of a meaning `list_item` already carries, and the ambiguity lands
+in the normalizer, which runs on every write; and CommonMark has spent
+indentation on code blocks, so a superset syntax either collides with them, is not
+indentation, or costs `importMarkdown` the property that a source reads correctly
+in any markdown tool. Notion affords the tree because markdown is its export
+target, not its storage — its own export cannot round-trip the nesting.
+
+**Deferred, not foreclosed.** `ContentContainer` is a tagged union, so a third
+variant stays additive: no stored document carries one, and no template handles
+one until a document does. The costly parts — syntax, normalization rules, the
+template contract — cost the same later, so waiting burns no option value. The
+one real argument for building early is ecosystem timing (every template written
+meanwhile is one to revise); it loses to not yet knowing the semantics, since an
+ecosystem written against a *wrong* generic indent is dearer to fix than one
+written without.
+
+Horizontal offset in real formats has four sources: hierarchical position
+(lists); block kind (quotation, dialogue, callout, verse — the offset is
+downstream of identity, so these want `kind`s, never an indent axis); a
+template-owned paragraph style (first-line, hanging — invisible to the model);
+and independent visual arrangement. Only the fourth is orthogonal to lists, and
+it wants a presentational scalar with no parent-child edge — not Notion's
+nesting, whose collapse/move/orphan semantics verse has no use for. Revisit on: a
+quill whose element is expressible as none of kind/quote/list nesting; authors
+faking offset with one-item lists; or a class-four need, which likely resolves to
+a `verse` kind rather than a container.
+
+**Carried into #70's code.** `decode.ts:115` branches `quote` and treats every
+other container as a list in the `else`, so a third variant would decode silently
+as a list. An explicit switch with a defensive default — mirroring
+`encode.ts:178` — turns that into visible degradation, and the file is in #70's
+scope anyway.
+
 ## #71 — a namespace hazard that destroys card titles
 
 **Placement fork unblocked.** `getExtNamespace(addr: CardAddr, ns)` documents
