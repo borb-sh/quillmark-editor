@@ -11,16 +11,20 @@
   calendar) rather than `DatePicker` — the segments are the entry affordance, and a
   calendar is a second surface this field does not need.
 
-  THE BOUNDARY IS A STRING. The primitive speaks `CalendarDate`; the document
-  speaks `YYYY-MM-DD`. `CalendarDate` carries no time and no zone, so the
-  round-trip is lossless and no local-midnight shift can occur — the hazard that
-  makes `new Date('2026-07-25')` the wrong tool here. Authored values are data, not
-  input: `parseDate` THROWS on anything malformed, so a bad string degrades to an
-  empty field rather than taking the editor down with it.
+  THE BOUNDARY IS A STRING, AND THE LOCAL IS TOO. The primitive speaks
+  `CalendarDate`; the document speaks `YYYY-MM-DD`. `CalendarDate` carries no time
+  and no zone, so the round-trip is lossless and no local-midnight shift can occur
+  — the hazard that makes `new Date('2026-07-25')` the wrong tool here. Authored
+  values are data, not input: `parseDate` THROWS on anything malformed, so a bad
+  string degrades to an empty field rather than taking the editor down with it.
+
+  `syncedLocal` reconciles by IDENTITY, so the local must hold the string, not the
+  parsed value: a fresh `CalendarDate` is never `===` the last one, which would
+  make every reconcile fire and re-render all seven segments on each commit.
 -->
 <script lang="ts">
 	import { DateField as BitsDateField } from 'bits-ui';
-	import { CalendarDate, parseDate, type DateValue } from '@internationalized/date';
+	import { parseDate, type DateValue } from '@internationalized/date';
 	import { syncedLocal } from './synced.svelte.js';
 
 	interface Props {
@@ -32,33 +36,34 @@
 	}
 	let { value, label, onCommit, testid }: Props = $props();
 
-	function toDateValue(s: string | undefined): DateValue | undefined {
+	// The stored form may carry a time (`datetime`); the date half is what a date
+	// field edits, so anything past `YYYY-MM-DD` is not this control's. `parseDate`
+	// throws on a malformed authored value — an empty field is the honest render.
+	function toDateValue(s: string): DateValue | undefined {
 		if (!s) return undefined;
 		try {
-			// The stored form may carry a time (`datetime`); the date half is what a
-			// date field edits, so anything past `YYYY-MM-DD` is not this control's.
-			return parseDate(s.slice(0, 10));
+			return parseDate(s);
 		} catch {
 			return undefined;
 		}
 	}
-	/** Back to the stored form — `CalendarDate.toString()` is exactly `YYYY-MM-DD`. */
-	const toStored = (d: DateValue | undefined) =>
-		d ? new CalendarDate(d.year, d.month, d.day).toString() : undefined;
 
-	// Local value synced to `value`; own-edits stay local, only an external change
-	// reconciles back in (see `syncedLocal`). Driven CONTROLLED (`value` +
-	// `onValueChange`, never `bind:`) so reconciliation stays the package's.
-	const local = syncedLocal(() => toDateValue(value));
+	// Local value synced to `value` as a STRING (see the identity note above);
+	// own-edits stay local, only an external change reconciles back in. Driven
+	// CONTROLLED (`value` + `onValueChange`, never `bind:`) so reconciliation stays
+	// the package's.
+	const local = syncedLocal(() => value?.slice(0, 10) ?? '');
+	const parsed = $derived(toDateValue(local.value));
 </script>
 
 <span class="qm-date-wrap">
 	<BitsDateField.Root
-		value={local.value}
+		value={parsed}
 		onValueChange={(d) => {
-			local.value = d;
-			// A cleared or half-typed field yields undefined — the unset rung.
-			onCommit(toStored(d));
+			// `CalendarDate.toString()` is exactly `YYYY-MM-DD`. A cleared or
+			// half-typed field yields undefined — the unset rung.
+			local.value = d?.toString() ?? '';
+			onCommit(d?.toString());
 		}}
 	>
 		<BitsDateField.Input class="qm-date" aria-label={label} data-testid={testid}>
@@ -93,8 +98,8 @@
 	/* The ring lands on the wrapper: focus lives on the SEGMENT, so a per-segment
 	   ring would flicker across the field as the caret walks it (SURFACES §Focus). */
 	.qm-date-wrap :global(.qm-date:focus-within) {
-		outline: 2px solid var(--_qm-accent);
-		outline-offset: 1px;
+		outline: var(--_qm-ring-focus);
+		outline-offset: var(--_qm-ring-offset);
 	}
 	.qm-date-wrap :global(.qm-date-segment) {
 		padding: 0 var(--_qm-space-half);

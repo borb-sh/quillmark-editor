@@ -62,7 +62,10 @@ The derived scale — surface / border / ink rungs, the blur radius, the popover
 translucency ratio, the recede-opacity ladder, the overlay ring widths — is
 **internal** (`--_qm-*`, minted in `src/lib/core/theme.ts`). It is not a
 contract: a rung can be re-tuned or renamed without notice, and setting one
-yourself is unsupported.
+yourself is unsupported. `QM_THEME` is exported from `@quillmark/editor/core` for
+the same reason — `preview/` and `visual/` are separate subpaths that both need
+the derivation — and is internal on the same terms: importing it buys you the
+current rung names, not a promise about the next release's.
 
 A knob is promotable to a dial the day a real consumer needs it — a public token is a permanent promise, so the surface stays
 the minimum that makes a palette swap work.

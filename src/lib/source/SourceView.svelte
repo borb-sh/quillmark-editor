@@ -46,7 +46,7 @@
 		width: 100%;
 		height: 100%;
 		overflow: auto;
-		font-size: 0.8rem;
+		font-size: var(--_qm-text-label);
 	}
 	/* CodeMirror paints its own chrome; a neutral, overridable baseline only. */
 	.qm-source :global(.cm-editor) {

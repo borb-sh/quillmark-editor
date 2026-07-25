@@ -77,7 +77,7 @@
 		color: var(--_qm-ink-label);
 	}
 	.qm-ctrl:disabled {
-		opacity: var(--_qm-opacity-hint);
+		opacity: var(--_qm-opacity-idle);
 		cursor: default;
 	}
 	.qm-card-delete {

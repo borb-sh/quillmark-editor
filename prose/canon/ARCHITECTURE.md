@@ -81,7 +81,7 @@ UX, minimal UI"), deriving the private `--_qm-*` scale every component reads. Th
 contract is the package's [`THEMING.md`](../../THEMING.md); the derivation is
 `core/theme.ts`, applied as a `style` attribute on each detached root — `core/` is
 the one module both `preview/` and `visual/` import, which is what lets one
-derivation reach four cascade islands without a CSS file.
+derivation reach every cascade island without a CSS file.
 
 The systems beneath these surfaces have their own canon: the document/WASM
 boundary ([DOCUMENT_MODEL.md](DOCUMENT_MODEL.md)), the paint loop

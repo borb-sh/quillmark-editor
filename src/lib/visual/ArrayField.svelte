@@ -187,8 +187,8 @@
 	}
 	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */
 	.qm-json:focus-visible {
-		outline: 2px solid var(--_qm-accent);
-		outline-offset: 1px;
+		outline: var(--_qm-ring-focus);
+		outline-offset: var(--_qm-ring-offset);
 	}
 	.qm-add-el {
 		border: 1px dashed var(--_qm-border);

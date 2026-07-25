@@ -46,8 +46,7 @@
 
 <style>
 	/* A primitive renders its OWN element, which a scoped selector cannot reach —
-	   styled through the wrapper with `:global`, the shape SourceView already uses
-	   for CodeMirror's chrome. */
+	   styled through the wrapper with `:global`. */
 	.qm-switch-wrap :global(.qm-switch) {
 		display: inline-flex;
 		align-items: center;
@@ -66,8 +65,8 @@
 	}
 	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */
 	.qm-switch-wrap :global(.qm-switch:focus-visible) {
-		outline: 2px solid var(--_qm-accent);
-		outline-offset: 1px;
+		outline: var(--_qm-ring-focus);
+		outline-offset: var(--_qm-ring-offset);
 	}
 	.qm-switch-wrap :global(.qm-switch-thumb) {
 		width: 0.75rem;

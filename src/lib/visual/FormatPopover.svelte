@@ -322,8 +322,8 @@
 
 <style>
 	/* This surface PORTALS to document.body, outside .qm-editor, so it inherits the
-	   public dials but not the derived scale — it carries `style={QM_THEME}` as one
-	   of the four detached roots (core/theme.ts) rather than re-declaring the rungs. */
+	   public dials but not the derived scale — it carries `style={QM_THEME}` as a
+	   detached root (core/theme.ts) rather than re-declaring the rungs. */
 	.qm-format-popover {
 		display: flex;
 		/* Translucent pill over the content (VISUAL_EDITOR_UIUX §Formatting): the

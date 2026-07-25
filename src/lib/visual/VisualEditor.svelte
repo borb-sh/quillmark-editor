@@ -568,7 +568,7 @@
 
 <style>
 	/* The private scale arrives as `style={QM_THEME}` on the root element above —
-	   this is a DETACHED root, one of the four the derivation is set on (core/theme.ts).
+	   this is a DETACHED root, one of those the derivation is set on (core/theme.ts).
 	   Nothing here mints; `check:theme` enforces that. */
 	.qm-editor {
 		display: flex;
@@ -612,7 +612,7 @@
 	/* Touch has no hover — keep a faint always-on affordance so add stays reachable. */
 	@media (hover: none) {
 		.qm-add-btn {
-			opacity: var(--_qm-opacity-hint);
+			opacity: var(--_qm-opacity-idle);
 		}
 	}
 	.qm-add-btn:hover {

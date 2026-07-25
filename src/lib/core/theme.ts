@@ -30,7 +30,11 @@ const alpha = (c: string, pct: number) => `color-mix(in oklab, ${c} ${pct}%, tra
 // Surfaces step bg → fg, ink steps fg → bg, so inverting the poles inverts the
 // scale — dark mode is a two-value swap. The percentages are calibrated to the
 // light-mode literals they stand in for (2% ≈ #fafafa, 17% ≈ #d4d4d4, 35% ≈ #555).
-const COLOR = {
+//
+// One flat object, not one per section: a duplicate rung name is then a
+// duplicate-key error rather than a silent last-wins drop.
+const SCALE = {
+	// ── Colour ───────────────────────────────────────────────────────────────
 	surface: BG,
 	'surface-raised': mix(BG, FG, 2), //  card / gutter
 	'surface-hover': mix(BG, FG, 6),
@@ -43,34 +47,34 @@ const COLOR = {
 	accent: ACCENT, //                   focus rings, active marks, the active field box
 	'accent-soft': alpha(ACCENT, 55), // an idle field box's ring
 	danger: DANGER, //                   errors, the required marker, the delete glyph
-	warning: WARNING
-};
+	warning: WARNING,
 
-// Ratios, not colours — no palette fixes these, so they are their own rungs.
-// Shadows mix from the INK pole rather than black, so they track the palette
-// instead of turning into a smudge on a dark surface.
-const EFFECT = {
+	// ── Ratios and effects ───────────────────────────────────────────────────
+	// No palette fixes these, so they are their own rungs. Shadows mix from the
+	// INK pole rather than black, so they track the palette instead of turning
+	// into a smudge on a dark surface.
 	blur: '8px',
 	'shadow-page': `0 1px 4px ${alpha(FG, 20)}`,
 	'shadow-popover': `0 4px 16px ${alpha(FG, 14)}`,
 	// The popover's translucency: the theme surface mixed toward transparent, so
 	// the page reads faintly through the pill (SURFACES §Elevation).
 	'surface-popover': alpha(mix(BG, FG, 2), 82),
-	// The recede ladder — a hover-revealed control at rest, a dim-but-present
-	// affordance, a disabled one. Opacity recedes toward whatever is behind, so
-	// these invert correctly given the element's own colour is a rung.
-	'opacity-hint': '0.3',
+	// The recede ladder: a hover-revealed or disabled affordance at rest, and a
+	// muted one. Opacity recedes toward whatever is behind, so these invert
+	// correctly given the element's own colour is a rung.
 	'opacity-idle': '0.35',
 	'opacity-muted': '0.5',
-	// The preview overlay's ring widths (PREVIEW §Overlay) — geometry, but too
-	// narrow to earn a public dial.
-	'ring-width': '1px',
-	'ring-width-active': '2px'
-};
 
-// Geometry (SURFACES §Rhythm) and type — the same dial-to-scale shape as colour,
-// minted on the same root.
-const GEOMETRY = {
+	// ── Focus (SURFACES §Focus) ──────────────────────────────────────────────
+	// The ring is one rule stated once, as a whole `outline` value — six controls
+	// drew it as a literal before it was a rung, which is drift no gate can see:
+	// each copy reads a token, so only the composite is duplicated.
+	'ring-width': '1px', //              the preview overlay's idle field box
+	'ring-width-active': '2px',
+	'ring-focus': 'var(--_qm-ring-width-active) solid var(--_qm-accent)',
+	'ring-offset': '1px',
+
+	// ── Geometry (SURFACES §Rhythm) ──────────────────────────────────────────
 	radius: 'var(--qm-radius, 8px)',
 	'radius-inner': 'calc(var(--_qm-radius) / 2)',
 	// A fully-rounded end cap — a shape tier, not a step on the radius ramp, so it
@@ -80,13 +84,12 @@ const GEOMETRY = {
 	'space-half': 'calc(var(--_qm-space) / 2)',
 	'space-2': 'calc(var(--_qm-space) * 2)',
 	'space-3': 'calc(var(--_qm-space) * 3)',
-	'space-4': 'calc(var(--_qm-space) * 4)'
-};
+	'space-4': 'calc(var(--_qm-space) * 4)',
 
-// `--qm-font-size` anchors the body rung; `--qm-font-scale` is the ratio between
-// adjacent rungs — a step up (title) and two down (label, meta). Weight is a
-// fixed convention, not a dial.
-const TYPE = {
+	// ── Type ─────────────────────────────────────────────────────────────────
+	// `--qm-font-size` anchors the body rung; `--qm-font-scale` is the ratio
+	// between adjacent rungs — a step up (title) and two down (label, meta).
+	// Weight is a fixed convention, not a dial.
 	'text-body': 'var(--qm-font-size, 0.875rem)',
 	'text-title': 'calc(var(--_qm-text-body) * var(--qm-font-scale, 1.125))',
 	'text-label': 'calc(var(--_qm-text-body) / var(--qm-font-scale, 1.125))',
@@ -97,11 +100,19 @@ const TYPE = {
 
 /**
  * The private scale as a `style`-attribute string. Set it on every DETACHED root
- * — `VisualEditor`, `FormatPopover` (it portals to `document.body`), `Preview`,
- * and `SourceView` — each of which is a cascade island the others' rungs cannot
- * reach. `check:theme` asserts this module is the only place `--_qm-*` is
- * defined.
+ * — a subtree that does not descend from another root, so it inherits the public
+ * dials from the consumer's cascade but none of the derived rungs. Today that is
+ * `VisualEditor`, `Preview`, `SourceView`, and the two surfaces that portal to
+ * `document.body`: `FormatPopover` and `EnumField`'s listbox.
+ *
+ * `check:theme` rule 3 asserts this module is the only place `--_qm-*` is
+ * defined; `e2e/visual-chrome.spec.ts` asserts each root actually resolves a
+ * rung, which is what catches a new root that forgets to set this.
+ *
+ * @internal The rungs are not a contract (THEMING.md §"What is deliberately not
+ * public"). This rides the public `./core` subpath only because `preview/` and
+ * `visual/` are separate subpaths that both need it.
  */
-export const QM_THEME: string = Object.entries({ ...COLOR, ...EFFECT, ...GEOMETRY, ...TYPE })
+export const QM_THEME: string = Object.entries(SCALE)
 	.map(([name, value]) => `--_qm-${name}: ${value};`)
 	.join(' ');

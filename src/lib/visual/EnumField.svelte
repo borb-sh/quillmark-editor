@@ -44,11 +44,13 @@
 	// the package's rather than the primitive's.
 	const local = syncedLocal(() => value ?? UNSET);
 
-	const ghostText = $derived(fallback != null && fallback !== '' ? fallback : '—');
+	/** An empty enum member has no glyph of its own; an em dash stands in for it. */
+	const dash = (v: string | undefined) => v || '—';
+
+	const unset = $derived(local.value === UNSET);
+	const ghostText = $derived(dash(fallback));
 	/** What the closed trigger shows — the pick, or the ghosted default while unset. */
-	const shown = $derived(
-		local.value === UNSET ? ghostText : local.value === '' ? '—' : local.value
-	);
+	const shown = $derived(unset ? ghostText : dash(local.value));
 </script>
 
 <span class="qm-select-wrap">
@@ -72,7 +74,7 @@
 			class="qm-select"
 			aria-label={label}
 			data-testid={testid}
-			data-ghosted={local.value === UNSET ? '' : undefined}
+			data-ghosted={unset ? '' : undefined}
 		>
 			{shown}
 			<ChevronDown size={14} aria-hidden="true" />
@@ -93,10 +95,10 @@
 							<Select.Item
 								class="qm-select-item"
 								value={v}
-								label={v === '' ? '—' : v}
+								label={dash(v)}
 								disabled={optionAllowed?.(v) === false}
 							>
-								{v === '' ? '—' : v}
+								{dash(v)}
 							</Select.Item>
 						{/each}
 					</Select.Viewport>
@@ -108,8 +110,7 @@
 
 <style>
 	/* A primitive renders its OWN element, which a scoped selector cannot reach —
-	   styled through the wrapper with `:global`, the shape SourceView already uses
-	   for CodeMirror's chrome. */
+	   styled through the wrapper with `:global`. */
 	.qm-select-wrap :global(.qm-select) {
 		display: flex;
 		align-items: center;
@@ -128,8 +129,8 @@
 	}
 	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */
 	.qm-select-wrap :global(.qm-select:focus-visible) {
-		outline: 2px solid var(--_qm-accent);
-		outline-offset: 1px;
+		outline: var(--_qm-ring-focus);
+		outline-offset: var(--_qm-ring-offset);
 	}
 	/* Shown-never-written: the closed control reads muted while unset, matching the
 	   ghosted placeholder the text/number controls show. */

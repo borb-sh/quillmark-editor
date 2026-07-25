@@ -99,4 +99,35 @@ test.describe('editor shell', () => {
 			.poll(async () => (await cmContent.textContent()) ?? '', { timeout: 15_000 })
 			.toContain('SOURCEVIEWEDIT');
 	});
+
+	test('(g) every detached root resolves the derived scale', async ({ page }) => {
+		// The derivation is set per DETACHED root (core/theme.ts) — a subtree that
+		// does not descend from another root, so it inherits the public dials from
+		// the consumer's cascade but none of the rungs. `check:theme` gates where
+		// `--_qm-*` is DEFINED; nothing static can gate that a root APPLIES it, so
+		// this walks them. A new root that forgets `style={QM_THEME}` renders with
+		// every rung unresolved — `1px solid var(--_qm-border)` collapses to
+		// `currentColor`, paddings go to zero — and fails here rather than in review.
+		const resolves = (selector: string) =>
+			page
+				.locator(selector)
+				.first()
+				.evaluate((el) => getComputedStyle(el).getPropertyValue('--_qm-ink').trim());
+
+		await page.getByTestId('toggle-source').click();
+		await expect(page.getByTestId('source-drawer')).toBeVisible();
+		for (const root of ['.qm-editor', '.qm-preview', '.qm-source']) {
+			expect(await resolves(root), `${root} carries no derived scale`).not.toBe('');
+		}
+
+		// The two that PORTAL to document.body, and so escape the editor's subtree.
+		await page.getByTestId('main-classification').click();
+		expect(await resolves('.qm-select-content'), 'the enum listbox').not.toBe('');
+		await page.keyboard.press('Escape');
+
+		await pm(page, 'prose-main-subject').click();
+		await page.keyboard.press('ControlOrMeta+a');
+		await expect(page.getByTestId('format-popover')).toBeVisible();
+		expect(await resolves('.qm-format-popover'), 'the format popover').not.toBe('');
+	});
 });
