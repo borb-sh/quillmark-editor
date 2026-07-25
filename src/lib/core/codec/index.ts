@@ -13,7 +13,7 @@ export { blockSchema, inlineSchema, isInlineSchema } from './schema.js';
 // Decode / encode / positions (tests + Phase 4). The single-splice `diff*` helpers
 // and `scanDoc` (+ its `PosRun` / `Scan` shapes) stay internal to the codec — used
 // by `lower` / `buildLineIndex` over relative imports, never off this barrel.
-export { decode, codePoints, usvLength } from './decode.js';
+export { decode, renderContent, codePoints, usvLength } from './decode.js';
 export { pmToContent, lower, diffToBundle, insertReintroducesIslandSlot } from './encode.js';
 export { usvToPM, pmToUsv, buildLineIndex } from './positions.js';
 export type { LineIndex } from './positions.js';

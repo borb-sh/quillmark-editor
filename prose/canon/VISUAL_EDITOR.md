@@ -82,8 +82,11 @@ required field has no default to ghost. An unfilled marker still surfaces as a
 routed `validate()` warning (§Diagnostics) — the `*` states required-ness, the
 warning reports unmet-ness. A field's `description:` rides its label as a tooltip
 (issue #75b); `example:` reaches the editor only through the seed cascade
-(§"Card operations") — no other per-field tips surface in V1 (VISUAL_EDITOR_UIUX
-§Fields). Nothing gates — an incomplete document edits and renders fine (canon:
+(§"Card operations"). Guidance is per-field **or** document-level, never a third
+thing hanging off a field: no field carries a tips surface of its own, and
+document-level hints ride the `$ext.editor.tips` card instead (§"Card operations",
+issue #71) — a chrome channel, not a schema key, so it makes no claim about any one
+field (VISUAL_EDITOR_UIUX §Fields, §"Tips card"). Nothing gates — an incomplete document edits and renders fine (canon:
 `SCHEMAS.md` zero-fill render). Completeness is a read of `quill.validate(doc)`,
 not a gate.
 
@@ -151,8 +154,22 @@ edits is the leaf's PM `StepMap`, not a re-hydrate.
 - **Retype** — `setCardKind`; the field list re-projects, kept fields keep their
   content.
 - **Rename** — `$ext.editor.title`, editor state that never reaches the backend
-  (canon: `CARDS.md`). The editor holds the `editor` namespace and writes it whole
-  via `setCardExtNamespace` (the namespace is the write unit).
+  (canon: `CARDS.md`).
+- **Tips** — `$ext.editor.tips` on `main`, a sibling key of `title` in the same
+  namespace (issue #71): a list of authoring hints a quill or consumer **seeds**,
+  which the editor renders as a dismissable card and never adds to. It is
+  **document-level**, so the channel is `model.tips` at the derive's root, not a
+  field on every card, and it renders in a fixed slot after `main`. Dismissal clears
+  it. Never gates, never renders to the backend, absent when the channel is empty.
+
+**The `editor` namespace is the write unit, and one verb owns it.** Because
+`storeExtNamespace` REPLACES the namespace it targets — preserving sibling
+namespaces, not sibling keys — a writer that stores only its own key destroys the
+others, silently. Both writers therefore go through `patchEditorExt(doc, addr,
+patch)` (`ext.ts`), which merges and treats an `undefined` value as a key drop; a
+consumer seeding the namespace reaches the same verb off `@quillmark/editor/visual`.
+That is what keeps a dismissal from wiping every renamed card's title, and what
+makes key N+1 inherit the rule instead of re-deriving it.
 
 ## Focus and the preview bridge
 

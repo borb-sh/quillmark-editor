@@ -1,0 +1,132 @@
+// @vitest-environment jsdom
+// The tips channel (issue #71): the narrowing the derive reads, the markdown render
+// the card paints, and the load-bearing one — that a write to the `editor` namespace
+// carries its sibling keys through, so clearing `tips` leaves `title` standing.
+//
+// These exercise `patchEditorExt` ITSELF, the function the editor calls, not a
+// restatement of it: the invariant fails silently, so a test asserting a hand-copy
+// would keep passing while the shipped write regressed.
+import { describe, it, expect, beforeAll } from 'vitest';
+import { init, Quill, Document, MAIN_CARD_ADDR } from '$lib/core';
+import { tipsChannel, renderTip } from '$lib/visual/tips.js';
+import { patchEditorExt } from '$lib/visual/ext.js';
+import { loadFixtureTree } from '../helpers/fixtures.js';
+
+let quill: Quill;
+beforeAll(async () => {
+	await init();
+	quill = Quill.fromTree(loadFixtureTree());
+});
+
+/** The `editor` namespace as the Document holds it. */
+function editorExt(doc: Document, addr = MAIN_CARD_ADDR): Record<string, unknown> {
+	return (doc.getExtNamespace(addr, 'editor') ?? {}) as Record<string, unknown>;
+}
+/** The dismissal write — the editor's own (`VisualEditor.dismissTips`). */
+function clearTips(doc: Document, addr = MAIN_CARD_ADDR): void {
+	patchEditorExt(doc, addr, { tips: undefined });
+}
+/** Render one tip and read back its HTML. */
+function html(markdown: string): string {
+	const host = document.createElement('div');
+	host.appendChild(renderTip(markdown));
+	return host.innerHTML;
+}
+
+describe('tipsChannel', () => {
+	it('passes a list of non-empty strings through', () => {
+		expect(tipsChannel(['one', 'two'])).toEqual(['one', 'two']);
+	});
+
+	it('narrows an unusable channel to none', () => {
+		// Consumer-authored and unvalidated: anything can arrive here, and every
+		// unusable shape has to read as "no tips" rather than as an empty card.
+		for (const raw of [undefined, null, 'a string', 42, {}, { 0: 'x' }])
+			expect(tipsChannel(raw)).toEqual([]);
+	});
+
+	it('drops non-string and blank entries, keeping the rest', () => {
+		expect(tipsChannel(['keep', '', '   ', 7, null, 'also'])).toEqual(['keep', 'also']);
+	});
+});
+
+describe('renderTip', () => {
+	it('renders the body mark vocabulary', () => {
+		expect(html('Use **bold** here')).toBe('<p>Use <strong>bold</strong> here</p>');
+		expect(html('_soft_ hint')).toBe('<p><em>soft</em> hint</p>');
+		expect(html('Try `npm run dev`')).toBe('<p>Try <code>npm run dev</code></p>');
+		expect(html('See [docs](https://example.com)')).toBe(
+			'<p>See <a href="https://example.com">docs</a></p>'
+		);
+	});
+
+	it('always yields one paragraph, whatever the tip', () => {
+		// The inline schema is what pins this: a multi-line or block-shaped tip
+		// cannot change the card's structure as the cursor advances.
+		expect(html('line one\n\nline two')).toBe('<p>line one line two</p>');
+		expect(html('- a\n- b')).toBe('<p>a b</p>');
+		expect(html('')).toBe('<p></p>');
+	});
+
+	it('does not carry raw HTML through', () => {
+		// markdown → Content → typed PM nodes → toDOM: the source never becomes
+		// markup, so this is not the injection seam an `{@html}` would be.
+		const out = html('<img src=x onerror="alert(1)">');
+		expect(out).not.toContain('<img');
+		expect(out).not.toContain('onerror');
+	});
+});
+
+describe('patchEditorExt', () => {
+	it('carries sibling keys through a patch', () => {
+		// The rename path and the tips path share one namespace, so each write must
+		// leave the other's key standing.
+		const doc = quill.seedDocument();
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: ['a'] });
+		patchEditorExt(doc, MAIN_CARD_ADDR, { title: 'Renamed' });
+		expect(editorExt(doc)).toEqual({ tips: ['a'], title: 'Renamed' });
+	});
+
+	it('drops a key patched to undefined, keeping the rest', () => {
+		const doc = quill.seedDocument();
+		patchEditorExt(doc, MAIN_CARD_ADDR, { title: 'Renamed', tips: ['a', 'b'] });
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
+		expect(editorExt(doc)).toEqual({ title: 'Renamed' });
+	});
+
+	it('preserves sibling namespaces', () => {
+		// Another consumer's `$ext` slot is not collateral.
+		const doc = quill.seedDocument();
+		doc.storeExtNamespace(MAIN_CARD_ADDR, 'other', { keep: 1 });
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: ['x'] });
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
+		expect(doc.main.ext).toEqual({ editor: {}, other: { keep: 1 } });
+	});
+
+	it('is a no-op patch on a document with no `editor` namespace', () => {
+		const doc = quill.seedDocument();
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
+		expect(editorExt(doc)).toEqual({});
+	});
+});
+
+describe('dismissing tips', () => {
+	it('leaves a renamed card its title, on main and on a card', () => {
+		// The hazard `removeExtNamespace` would cause: `tips` and `title` are SIBLING
+		// keys of one namespace, so clearing the channel by removing the namespace
+		// destroys the rename. Both addresses, since rename writes cards and tips
+		// write main.
+		const doc = quill.seedDocument();
+		const kind = Object.keys(quill.schema.card_kinds ?? {})[0];
+		const card = quill.seedCard(kind, doc.seedOverlay(kind));
+		if (!card) throw new Error(`the reference quill seeded no \`${kind}\` card`);
+		doc.insertCard(card);
+
+		for (const addr of [MAIN_CARD_ADDR, { card: 0 }]) {
+			patchEditorExt(doc, addr, { title: 'Renamed', tips: ['a', 'b'] });
+			clearTips(doc, addr);
+			expect(editorExt(doc, addr)).toEqual({ title: 'Renamed' });
+			expect(tipsChannel(editorExt(doc, addr).tips)).toEqual([]);
+		}
+	});
+});
