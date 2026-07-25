@@ -10,8 +10,9 @@ Long-form project documentation, in tiers by maturity:
   [`inspiration/INDEX.md`](inspiration/INDEX.md).
 - **`plans/`** — a designed-but-unbuilt rework, held as a handover: the target
   shape, the ordered work items, and the costs to accept. One file per rework,
-  retired when its last item lands. Describes *what replaces what is*, so canon
-  never links into it and `check:canon` does not scan it.
+  retired when its last item lands, so the tier is empty between reworks.
+  Describes *what replaces what is*, so canon never links into it and
+  `check:canon` does not scan it.
 
 Deferred and not-yet-designed work is tracked as GitHub issues — each proposal is
 designed fresh when scheduled, written down as a `plans/` handover only if it is
