@@ -22,7 +22,7 @@
   once per derive.
 -->
 <script lang="ts">
-	import { isQuillmarkError, MAIN_CARD_ADDR } from '../core/index.js';
+	import { isQuillmarkError, MAIN_CARD_ADDR, QM_THEME } from '../core/index.js';
 	import type {
 		Document,
 		Quill,
@@ -479,7 +479,7 @@
 	}
 </script>
 
-<div class="qm-editor">
+<div class="qm-editor" style={QM_THEME}>
 	<Card
 		card={model.main}
 		{doc}
@@ -567,51 +567,28 @@
 {/snippet}
 
 <style>
+	/* The private scale arrives as `style={QM_THEME}` on the root element above —
+	   this is a DETACHED root, one of those the derivation is set on (core/theme.ts).
+	   Nothing here mints; `check:theme` enforces that. */
 	.qm-editor {
-		/* Geometry rhythm (SURFACES §Rhythm, THEMING §Geometry). Two public dials —
-		   --qm-radius, --qm-space — derive the closed private scale every interior
-		   surface reads; overriding a dial rescales the whole surface from one edit.
-		   Re-declared on each DETACHED root (FormatPopover portals out of this
-		   subtree, so it carries its own copy) — the one place a value is minted. */
-		--_qm-radius: var(--qm-radius, 8px);
-		--_qm-radius-inner: calc(var(--_qm-radius) / 2);
-		--_qm-space: var(--qm-space, 0.25rem);
-		--_qm-space-half: calc(var(--_qm-space) / 2);
-		--_qm-space-2: calc(var(--_qm-space) * 2);
-		--_qm-space-3: calc(var(--_qm-space) * 3);
-		--_qm-space-4: calc(var(--_qm-space) * 4);
-
-		/* Type rhythm (SURFACES §Rhythm, THEMING §"Base — typography & text"). Two
-		   public dials — --qm-font-size (body anchor), --qm-font-scale (ramp ratio)
-		   — derive the closed rung set every surface reads: a step up (title) and two
-		   down (label, meta). Weight is a fixed convention, not a dial: label 600,
-		   secondary 500. Minted here and re-minted on FormatPopover (portals out of
-		   this root), gated by check:type. */
-		--_qm-text-body: var(--qm-font-size, 0.875rem);
-		--_qm-text-title: calc(var(--_qm-text-body) * var(--qm-font-scale, 1.125));
-		--_qm-text-label: calc(var(--_qm-text-body) / var(--qm-font-scale, 1.125));
-		--_qm-text-meta: calc(var(--_qm-text-label) / var(--qm-font-scale, 1.125));
-		--_qm-weight-label: 600;
-		--_qm-weight-soft: 500;
-
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
 		font-family: var(--qm-font, ui-sans-serif, system-ui, sans-serif);
-		color: var(--qm-text, #1a1a1a);
+		color: var(--_qm-ink);
 	}
 	.qm-add-card {
 		display: flex;
 		justify-content: center;
 	}
 	.qm-add-btn {
-		border: 1px dashed var(--qm-border, #c4c4c4);
+		border: 1px dashed var(--_qm-border);
 		background: transparent;
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
 		padding: var(--_qm-space-half) var(--_qm-space-4);
 		font-size: var(--_qm-text-body);
-		color: #555;
+		color: var(--_qm-ink-label);
 		list-style: none;
 		/* Recede until engaged (issue #58 §6; AESTHETIC §"minimal UI"): each gap's
 		   trigger is invisible at rest and surfaces on hover or keyboard focus, so the
@@ -626,7 +603,7 @@
 		opacity: 1;
 	}
 	.qm-add-card.is-last .qm-add-btn {
-		opacity: 0.35;
+		opacity: var(--_qm-opacity-idle);
 	}
 	.qm-add-card.is-last:hover .qm-add-btn,
 	.qm-add-card.is-last .qm-add-btn:focus-visible {
@@ -635,12 +612,12 @@
 	/* Touch has no hover — keep a faint always-on affordance so add stays reachable. */
 	@media (hover: none) {
 		.qm-add-btn {
-			opacity: 0.3;
+			opacity: var(--_qm-opacity-idle);
 		}
 	}
 	.qm-add-btn:hover {
-		border-color: #9a9a9a;
-		color: #222;
+		border-color: var(--_qm-border-strong);
+		color: var(--_qm-ink);
 	}
 	.qm-add-menu {
 		position: relative;

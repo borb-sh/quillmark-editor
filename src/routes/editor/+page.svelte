@@ -340,7 +340,18 @@
 </main>
 
 <style>
+	/* The playground is the reference CONSUMER: it derives its own chrome from the
+	   package's two colour dials with the same oklab idiom the package derivation
+	   uses (THEMING.md), rather than reaching for internals. Namespaced `--pg-*` —
+	   only the ten `--qm-*` dials are package surface. */
 	main {
+		--pg-border-strong: color-mix(in oklab, var(--qm-bg, #fff), var(--qm-fg, #1a1a1a) 40%);
+		--pg-border: color-mix(in oklab, var(--qm-bg, #fff), var(--qm-fg, #1a1a1a) 17%);
+		--pg-card-bg: color-mix(in oklab, var(--qm-bg, #fff), var(--qm-fg, #1a1a1a) 2%);
+		--pg-main-bg: var(--qm-bg, #fff);
+		--pg-ghost: color-mix(in oklab, var(--qm-fg, #1a1a1a), var(--qm-bg, #fff) 60%);
+		--pg-section-label: color-mix(in oklab, var(--qm-fg, #1a1a1a), var(--qm-bg, #fff) 45%);
+
 		font-family: ui-sans-serif, system-ui, sans-serif;
 		max-width: 88rem;
 		margin: 1.25rem auto;
@@ -381,7 +392,7 @@
 	.bridge-state button {
 		font-size: 0.72rem;
 		padding: 0.2rem 0.5rem;
-		border: 1px solid var(--qm-border, #d5d5d5);
+		border: 1px solid var(--pg-border);
 		border-radius: 5px;
 		background: #fafafa;
 		cursor: pointer;
@@ -398,17 +409,17 @@
 		height: 100%;
 		overflow: auto;
 		padding: 0.5rem;
-		border: 1px solid var(--qm-border, #e2e2e2);
+		border: 1px solid var(--pg-border);
 		border-radius: var(--qm-radius, 8px);
-		background: var(--qm-main-bg, #fff);
+		background: var(--pg-main-bg);
 	}
 	.preview-pane {
 		min-width: 0;
 		height: 100%;
-		border: 1px solid var(--qm-border, #ccc);
+		border: 1px solid var(--pg-border);
 		border-radius: var(--qm-radius, 8px);
 		overflow: hidden;
-		background: var(--qm-card-bg, #f7f7f7);
+		background: var(--pg-card-bg);
 	}
 	/* Reference resizer — a hairline in an 11px hit track, thickening on
 	   hover/drag, with an ellipsis grip that fades in over the line. */
@@ -426,7 +437,7 @@
 		width: 3px;
 		height: 100%;
 		border-radius: 999px;
-		background: var(--qm-border, #d7dee8);
+		background: var(--pg-border);
 		transition:
 			width 0.1s ease,
 			background-color 0.1s ease;
@@ -435,7 +446,7 @@
 	.resizer:focus-visible::before,
 	.resizer.dragging::before {
 		width: 5.5px;
-		background: var(--qm-border-strong, #b6bfce);
+		background: var(--pg-border-strong);
 	}
 	.resizer:focus-visible {
 		outline: none;
@@ -444,8 +455,8 @@
 		position: absolute;
 		font-size: 0.8rem;
 		line-height: 1;
-		color: var(--qm-ghost, #9a9a9a);
-		background: var(--qm-main-bg, #fff);
+		color: var(--pg-ghost);
+		background: var(--pg-main-bg);
 		padding: 0.15rem 0;
 		border-radius: 999px;
 		opacity: 0;
@@ -459,7 +470,7 @@
 	}
 	.source-drawer {
 		margin-top: 1rem;
-		border: 1px solid var(--qm-border, #e2e2e2);
+		border: 1px solid var(--pg-border);
 		border-radius: var(--qm-radius, 8px);
 		overflow: hidden;
 	}
@@ -467,10 +478,10 @@
 		font-size: 0.68rem;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		color: var(--qm-section-label, #8a8a8a);
+		color: var(--pg-section-label);
 		padding: 0.4rem 0.6rem;
 		background: #f3f3f3;
-		border-bottom: 1px solid var(--qm-border, #e2e2e2);
+		border-bottom: 1px solid var(--pg-border);
 	}
 	.source-host {
 		height: 22rem;

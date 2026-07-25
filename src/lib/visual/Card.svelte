@@ -334,18 +334,18 @@
 
 <style>
 	.qm-card {
-		border: 1px solid var(--qm-border, #e2e2e2);
+		border: 1px solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
 		/* Uniform inset on every side (SURFACES §Rhythm) — a body-shown and a
 		   body-hidden card stay symmetric, every left edge on one gutter. */
 		padding: var(--_qm-space-4);
-		background: var(--qm-card-bg, #fafafa);
+		background: var(--_qm-surface-raised);
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-3);
 	}
 	.qm-card.qm-main {
-		background: var(--qm-main-bg, #fff);
+		background: var(--_qm-surface);
 	}
 	.qm-card-header {
 		display: flex;
@@ -400,19 +400,19 @@
 	}
 	.qm-card-title:hover,
 	.qm-card-title:focus {
-		border-color: var(--qm-border, #d4d4d4);
-		background: #fff;
+		border-color: var(--_qm-border);
+		background: var(--_qm-surface);
 		outline: none;
 	}
 	.qm-retype,
 	.qm-retype-btn {
 		font-size: var(--_qm-text-meta);
-		border: 1px solid var(--qm-border, #d4d4d4);
+		border: 1px solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
-		background: var(--qm-field-bg, #fff);
+		background: var(--_qm-surface);
 		padding: var(--_qm-space-half) var(--_qm-space-2);
 		cursor: pointer;
-		color: #555;
+		color: var(--_qm-ink-label);
 	}
 	.qm-card-body {
 		display: flex;
@@ -440,8 +440,8 @@
 		background: transparent;
 		padding: 0 0 var(--_qm-space-half) 0;
 		cursor: pointer;
-		color: var(--qm-section-label, #8a8a8a);
-		border-bottom: 1px solid var(--qm-border, #ececec);
+		color: var(--_qm-ink-meta);
+		border-bottom: 1px solid var(--_qm-border);
 		text-align: left;
 	}
 	.qm-group-label {
@@ -458,7 +458,7 @@
 			color 200ms ease;
 	}
 	.qm-group.qm-open .qm-group-header {
-		color: var(--qm-focus-ring, #2563eb);
+		color: var(--_qm-accent);
 	}
 	.qm-group.qm-open .qm-group-header :global(.qm-group-chevron) {
 		transform: rotate(90deg);
@@ -487,7 +487,7 @@
 	}
 	.qm-group.qm-open .qm-group-panel-inner {
 		padding-left: var(--_qm-space-3);
-		border-left-color: var(--qm-focus-ring, #2563eb);
+		border-left-color: var(--_qm-accent);
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.qm-group-panel,
@@ -516,12 +516,12 @@
 	   it is intact. */
 	.qm-card.qm-unschemable {
 		border-style: dashed;
-		background: var(--qm-card-bg, #fafafa);
+		background: var(--_qm-surface-raised);
 	}
 	.qm-card-title-static {
 		font-size: var(--_qm-text-title);
 		font-weight: var(--_qm-weight-label);
-		color: var(--qm-label, #555);
+		color: var(--_qm-ink-label);
 	}
 	.qm-card-recovery {
 		display: flex;
@@ -531,26 +531,26 @@
 	.qm-recovery-note {
 		margin: 0;
 		font-size: var(--_qm-text-label);
-		color: var(--qm-label, #555);
+		color: var(--_qm-ink-label);
 	}
 	.qm-recovery-note code {
 		font-family: ui-monospace, monospace;
 	}
 	.qm-recovery-muted {
-		color: var(--qm-ghost, #9a9a9a);
+		color: var(--_qm-ink-ghost);
 	}
 	.qm-recovery-retype {
 		display: inline-flex;
 		align-items: center;
 		gap: var(--_qm-space-2);
 		font-size: var(--_qm-text-label);
-		color: var(--qm-label, #555);
+		color: var(--_qm-ink-label);
 	}
 	.qm-recovery-retype select {
 		font: inherit;
-		border: 1px solid var(--qm-border, #d4d4d4);
+		border: 1px solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
-		background: var(--qm-field-bg, #fff);
+		background: var(--_qm-surface);
 		padding: var(--_qm-space-half) var(--_qm-space-2);
 	}
 </style>

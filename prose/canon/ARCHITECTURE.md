@@ -75,11 +75,13 @@ other.
 
 ## Theming
 
-The surfaces carry the behavior against a neutral, overridable baseline — a set of
-`--qm-*` custom properties a consumer overrides on any ancestor (VISUAL_EDITOR_UIUX
-§"Complex UX, minimal UI"). The shipped baseline is catalogued in the package's
-[`THEMING.md`](../../THEMING.md); the broad theming system (semantic scales, part
-hooks, dark mode) is deferred past V1.
+The surfaces carry the behavior against a neutral, overridable baseline — ten
+`--qm-*` dials a consumer overrides on any ancestor (VISUAL_EDITOR_UIUX §"Complex
+UX, minimal UI"), deriving the private `--_qm-*` scale every component reads. The
+contract is the package's [`THEMING.md`](../../THEMING.md); the derivation is
+`core/theme.ts`, applied as a `style` attribute on each detached root — `core/` is
+the one module both `preview/` and `visual/` import, which is what lets one
+derivation reach every cascade island without a CSS file.
 
 The systems beneath these surfaces have their own canon: the document/WASM
 boundary ([DOCUMENT_MODEL.md](DOCUMENT_MODEL.md)), the paint loop

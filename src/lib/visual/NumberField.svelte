@@ -68,14 +68,14 @@
 		width: 100%;
 		box-sizing: border-box;
 		padding: var(--_qm-space) var(--_qm-space-2);
-		border: 1px solid var(--qm-border, #d4d4d4);
+		border: 1px solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
 		font: inherit;
-		background: var(--qm-field-bg, #fff);
+		background: var(--_qm-surface);
 	}
 	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */
 	.qm-input:focus-visible {
-		outline: 2px solid var(--qm-focus-ring, #2563eb);
-		outline-offset: 1px;
+		outline: var(--_qm-ring-focus);
+		outline-offset: var(--_qm-ring-offset);
 	}
 </style>

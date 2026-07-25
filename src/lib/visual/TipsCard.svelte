@@ -82,15 +82,15 @@
 	   colour — not by a badge or an accent (AESTHETIC §"Secondary text recedes").
 	   It mints no token of its own; every value here is an existing dial. */
 	.qm-tips {
-		border: 1px solid var(--qm-border, #e2e2e2);
+		border: 1px solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
 		padding: var(--_qm-space-3) var(--_qm-space-4);
-		background: var(--qm-card-bg, #fafafa);
+		background: var(--_qm-surface-raised);
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
 		font-size: var(--_qm-text-label);
-		color: var(--qm-label, #555);
+		color: var(--_qm-ink-label);
 	}
 	/* The rendered tip is injected DOM (the codec's `toDOM` output), so its element
 	   styles are `:global` — the compiler never sees these tags in the markup. */
@@ -112,20 +112,20 @@
 	.qm-tips-count {
 		margin-right: auto;
 		font-size: var(--_qm-text-meta);
-		color: var(--qm-ghost, #9a9a9a);
+		color: var(--_qm-ink-ghost);
 	}
 	.qm-tips-next,
 	.qm-tips-dismiss {
 		display: inline-flex;
 		align-items: center;
 		gap: var(--_qm-space-half);
-		border: 1px solid var(--qm-border, #d4d4d4);
-		background: var(--qm-field-bg, #fff);
+		border: 1px solid var(--_qm-border);
+		background: var(--_qm-surface);
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
 		line-height: 1;
 		padding: var(--_qm-space-half) var(--_qm-space-2);
 		font-size: var(--_qm-text-meta);
-		color: #444;
+		color: var(--_qm-ink-label);
 	}
 </style>

@@ -1,5 +1,16 @@
 # Styling extension — #74 tokens, #76 controls
 
+> **SUPERSEDED by issue #79, which shipped.** This note was drafted to *extend*
+> the deferred baseline: preserve the flat token set, keep native controls the
+> default, amend `THEMING.md` additively. All three clauses existed to protect
+> consumers the package does not have. #79 dropped them — the dials REPLACE the
+> flat set, the derivation is minted once in `core/theme.ts` instead of four
+> times, and the three UA-owned controls are styled. What carries forward and
+> shipped as written: the rung set and the oklab call (§Settled 1), the
+> `syncedLocal` finding, and the bits-ui finding. What did not: §Settled 1b's
+> four mint roots and the byte-identical lint that propped them up, and §"#76 —
+> recommendation"'s scoped hybrid.
+
 The two issues are one question: **how far past the baseline can a consumer
 reach, and through what.** Deciding them apart yields two extension APIs, which
 is what the #74 comment warns against. One answer, in two halves:
