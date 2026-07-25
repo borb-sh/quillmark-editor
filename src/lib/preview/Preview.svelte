@@ -19,12 +19,18 @@
 	 */
 	interface Props {
 		session: LiveSession;
+		/** Appended to the root's own class — the surface is a mounted element the
+		 *  consumer positions, so it needs a handle for layout it owns. */
+		class?: string;
+		/** Merged onto the root. Free because the derivation moved off this attribute
+		 *  and onto `data-qm-root` (core/theme.css). */
+		style?: string;
 		margin?: number;
 		overlays?: boolean;
 		onCaretPick?: (hit: ContentHit) => void;
 	}
 
-	let { session, margin, overlays, onCaretPick }: Props = $props();
+	let { session, margin, overlays, onCaretPick, class: className, style }: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let controller: PreviewController | undefined;
@@ -52,7 +58,7 @@
 	}
 </script>
 
-<div bind:this={containerEl} class="qm-preview" data-qm-root></div>
+<div bind:this={containerEl} class="qm-preview {className ?? ''}" {style} data-qm-root></div>
 
 <style>
 	/* A DETACHED root — the preview is not a descendant of the editor, so it carries

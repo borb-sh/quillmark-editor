@@ -17,8 +17,12 @@
 	 */
 	interface Props {
 		doc: Document;
+		/** Appended to the root's own class (see `Preview`). */
+		class?: string;
+		/** Merged onto the root — free since the derivation moved to `data-qm-root`. */
+		style?: string;
 	}
-	let { doc }: Props = $props();
+	let { doc, class: className, style }: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let controller: SourceViewController | undefined;
@@ -37,7 +41,7 @@
 	}
 </script>
 
-<div bind:this={containerEl} class="qm-source" data-qm-root></div>
+<div bind:this={containerEl} class="qm-source {className ?? ''}" {style} data-qm-root></div>
 
 <style>
 	/* A DETACHED root — marked `data-qm-root` (core/theme.css). The container is

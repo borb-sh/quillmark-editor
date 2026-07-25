@@ -96,6 +96,12 @@
 		 * Absent → every schema option is offered (the default, zero behavior change).
 		 */
 		enumOptionAllowed?: (addr: Addr, value: string) => boolean;
+		/** Appended to the root's own class — the surface is a mounted element the
+		 *  consumer positions, so it needs a handle for layout it owns. */
+		class?: string;
+		/** Merged onto the root. Free because the derivation moved off this attribute
+		 *  and onto `data-qm-root` (core/theme.css). */
+		style?: string;
 	}
 	let {
 		doc,
@@ -104,7 +110,9 @@
 		onCaretMove,
 		onChange,
 		diagnostics,
-		enumOptionAllowed
+		enumOptionAllowed,
+		class: className,
+		style
 	}: Props = $props();
 
 	// ── Reactivity + session identity ───────────────────────────────────────────
@@ -479,7 +487,7 @@
 	}
 </script>
 
-<div class="qm-editor" data-qm-root>
+<div class="qm-editor {className ?? ''}" {style} data-qm-root>
 	<Card
 		card={model.main}
 		{doc}
