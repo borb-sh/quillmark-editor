@@ -25,9 +25,10 @@ top-to-bottom down one column; the document's structure is the page's structure.
 direct manipulation, the caret bridge, per-field state, against a bare built-in
 visual opinion, so a consumer restyles to its brand without fighting baked-in
 design. Structure and behavior live in the primitives (bits-ui's headless base);
-appearance is a themeable surface with a neutral, overridable baseline — a set of
-`--qm-*` custom properties ([`THEMING.md`](../../THEMING.md)). The broad theming
-system stays deferred (§Open).
+appearance is a themeable surface with a neutral, overridable baseline — ten
+`--qm-*` dials deriving a closed private scale ([`THEMING.md`](../../THEMING.md)).
+Every control is styled off that scale, including the three whose native form is
+UA-owned shadow DOM (enum, boolean, date), so the palette has no holes.
 
 ## Card stack
 
@@ -147,9 +148,10 @@ Debug-only, per [ARCHITECTURE.md](ARCHITECTURE.md) — not an editable dual mode
 
 ## Open
 
-- **Theming (broad system)** — the baseline `--qm-*` token set ships
-  ([`THEMING.md`](../../THEMING.md)); the broad system — semantic scales, class vs.
-  part hooks, dark mode — is deferred.
+- **Control slots** — a per-`ControlKind` extension point past the tokens is
+  deferred until a consumer needs one. The constraint is recorded: the package owns
+  reconciliation (`syncedLocal`), so a slot handing out a raw `value` reintroduces
+  issue #48's caret reset in consumer code, invisibly to this repo's tests.
 - **Insert surface (post-V1)** — the deferred position anchor: gutter affordance,
   menu, slash command, and table/island authoring.
 - **Formatting reach (post-V1)** — the touch accessory bar and keymap shortcuts

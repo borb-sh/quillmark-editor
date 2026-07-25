@@ -65,14 +65,15 @@ fixed convention over them (label `600`, a nested object prop's secondary label
 `500`), not per-file. The ~8 ad-hoc sizes the study counted collapse to the four;
 an in-between size is the drift this prevents.
 
-**The scale in code.** All three are tokenized (THEMING §"Base — typography &
-text", §Geometry). Public dials — `--qm-radius`, `--qm-space`, and the type pair
-`--qm-font-size` / `--qm-font-scale` — derive closed private scales (`--_qm-radius`/
-`-inner`; `--_qm-space`/`-half`/`-2`/`-3`/`-4`; `--_qm-text-title`/`-body`/`-label`/
-`-meta` and `--_qm-weight-label`/`-soft`) minted ONCE per detached root
-(`.qm-editor`; `FormatPopover` re-declares them, portaling out of that subtree). A
-component reads a rung, never a literal — `npm run check:geometry` and
-`check:type` gate it, so an in-between value fails CI, not just review.
+**The scale in code.** All three axes are dials deriving a closed private scale
+([`THEMING.md`](../../THEMING.md)) — geometry (`--qm-radius`, `--qm-space`), type
+(`--qm-font-size`, `--qm-font-scale`), and colour (`--qm-bg`, `--qm-fg`, and the
+three status hues, which step surfaces `bg → fg` and ink `fg → bg` in oklab). The
+derivation is minted ONCE, in `core/theme.ts`, and applied as a `style` attribute
+on each detached root — the editor, the portaled popover and select list, the
+preview, and the source view, none of which descend from the others. A component
+reads a rung, never a literal; `check:geometry`, `check:type`, and `check:theme`
+gate it, so an in-between value fails CI, not just review.
 
 ## Focus and active state
 
@@ -93,10 +94,9 @@ case, and one rule for both is the conflation [#45] resolves:
   active leaf is cued quietly by tinting its wrapper hairline to `--qm-focus-ring`
   (`:focus-within`), not by a heavy ring.
 
-One hue carries "active" across the panes: `--qm-focus-ring` defaults to the
-preview overlay's active-box hue (`--qm-field-ring-active` — THEMING §"Preview
-overlay"), so a field reads as focused with the same color in the editor and in
-the preview (the editor↔preview active address, VISUAL_EDITOR_UIUX §"Editor↔
+One hue carries "active" across the panes: both the editor's focus ring and the
+preview overlay's active box read `--qm-accent`, so a field reads as focused with
+the same color in the editor and in the preview (the editor↔preview active address, VISUAL_EDITOR_UIUX §"Editor↔
 preview"). The active *card* is set apart separately — the `active` state that
 pins the reorder chevrons (VISUAL_EDITOR_UIUX §"Card stack").
 
@@ -107,10 +107,12 @@ an accessible indicator; theming them is deferred, not part of [#45].
 
 ## Preventing drift
 
-- **Chrome → tokens.** The look lives in `--qm-*`; a component reads a token, it
-  does not mint a value.
-- **Scale → a closed set.** Spacing and radius are a small fixed scale; a value
-  outside it is a review smell.
+- **Chrome → tokens.** The look lives in the `--_qm-*` scale; a component reads a
+  rung, it does not mint a value.
+- **Scale → a closed set.** Spacing, radius, type, and colour are small fixed
+  scales; a value outside them is a review smell.
+- **Public surface → the minimum.** Ten dials are the contract; a rung is
+  promotable the day a consumer needs it, and a public token is permanent.
 - **Rule → this page.** The elevation and rhythm questions have a written answer,
   so they are not re-argued per change.
 

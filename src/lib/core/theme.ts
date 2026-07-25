@@ -73,6 +73,9 @@ const EFFECT = {
 const GEOMETRY = {
 	radius: 'var(--qm-radius, 8px)',
 	'radius-inner': 'calc(var(--_qm-radius) / 2)',
+	// A fully-rounded end cap — a shape tier, not a step on the radius ramp, so it
+	// does not derive from the dial: a pill stays a pill at any `--qm-radius`.
+	'radius-pill': '999px',
 	space: 'var(--qm-space, 0.25rem)',
 	'space-half': 'calc(var(--_qm-space) / 2)',
 	'space-2': 'calc(var(--_qm-space) * 2)',

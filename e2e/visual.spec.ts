@@ -26,6 +26,46 @@ async function readDump(page: Page): Promise<Dump> {
 	return JSON.parse(text) as Dump;
 }
 
+/**
+ * Pick an enum option. The control is a bits-ui listbox (issue #79 §3), not a
+ * native `<select>`, so `selectOption` does not apply: open the trigger, then
+ * click the option by its `data-value` — the same value-keyed targeting the old
+ * `selectOption(value)` did.
+ */
+async function pickEnum(page: Page, testid: string, value: string): Promise<void> {
+	await page.getByTestId(testid).click();
+	await page.locator(`[role="listbox"] [data-value="${value}"]`).click();
+}
+
+/** Open an enum's listbox and return a locator over one option, for state assertions. */
+async function openEnum(page: Page, testid: string) {
+	await page.getByTestId(testid).click();
+	await expect(page.locator('[role="listbox"]')).toBeVisible();
+	return (value: string) => page.locator(`[role="listbox"] [data-value="${value}"]`);
+}
+
+/** The segmented date control's first segment — the entry point for typing. */
+function dateEntry(page: Page, testid: string) {
+	return page.locator(`[data-testid="${testid}"] [data-segment="month"]`);
+}
+
+/** Type an ISO date into the segments. They advance on fill, so digits run together. */
+async function setDate(page: Page, testid: string, iso: string): Promise<void> {
+	const [y, m, d] = iso.split('-');
+	await dateEntry(page, testid).click();
+	await page.keyboard.type(`${m}${d}${y}`);
+}
+
+/**
+ * Empty the month segment — Backspace is the primitive's clear key, and one
+ * incomplete segment makes the whole date `undefined`, which is the unset rung.
+ */
+async function clearDate(page: Page, testid: string): Promise<void> {
+	await dateEntry(page, testid).click();
+	await page.keyboard.press('Backspace');
+	await page.keyboard.press('Backspace');
+}
+
 /** The contenteditable inside a prose leaf, by its container testid. */
 function pm(page: Page, leafTestid: string) {
 	return page.locator(`[data-testid="${leafTestid}"] .ProseMirror`);
@@ -76,28 +116,30 @@ test.describe('visual editor', () => {
 	});
 
 	test('(c) changing enums (classification, letterhead_seal) commits', async ({ page }) => {
-		await page.getByTestId('main-classification').selectOption('CUI');
+		await pickEnum(page, 'main-classification', 'CUI');
 		await expect.poll(async () => (await readDump(page)).classification).toBe('CUI');
-		await page.getByTestId('main-letterhead_seal').selectOption('dod');
+		await pickEnum(page, 'main-letterhead_seal', 'dod');
 		await expect.poll(async () => (await readDump(page)).letterhead_seal).toBe('dod');
 	});
 
 	test('(c2) a consumer enum policy DISABLES a forbidden option without mutating a stored value (issue #73)', async ({
 		page
 	}) => {
-		const opt = (value: string) =>
-			page.getByTestId('main-classification').locator(`option[value="${value}"]`);
 		// Author CUI first, then arm the policy that forbids it: the stored value is
 		// untouched (still CUI) and the option renders disabled, not stripped.
-		await page.getByTestId('main-classification').selectOption('CUI');
+		await pickEnum(page, 'main-classification', 'CUI');
 		await expect.poll(async () => (await readDump(page)).classification).toBe('CUI');
 		await page.getByTestId('toggle-enum-policy').click();
-		await expect(opt('CUI')).toBeDisabled();
-		await expect(opt('UNCLASSIFIED')).toBeEnabled();
+		let opt = await openEnum(page, 'main-classification');
+		await expect(opt('CUI')).toHaveAttribute('data-disabled', '');
+		await expect(opt('UNCLASSIFIED')).not.toHaveAttribute('data-disabled', '');
+		await page.keyboard.press('Escape');
 		expect((await readDump(page)).classification).toBe('CUI');
 		// Disarm: the option is offerable again.
 		await page.getByTestId('toggle-enum-policy').click();
-		await expect(opt('CUI')).toBeEnabled();
+		opt = await openEnum(page, 'main-classification');
+		await expect(opt('CUI')).not.toHaveAttribute('data-disabled', '');
+		await page.keyboard.press('Escape');
 	});
 
 	test('(d) editing a number (font_size) and a date (date) commits', async ({ page }) => {
@@ -106,8 +148,9 @@ test.describe('visual editor', () => {
 		await page.getByTestId('main-font_size').fill('14.5');
 		await page.getByTestId('main-font_size').blur();
 		await expect.poll(async () => (await readDump(page)).font_size).toBe(14.5);
-		await page.getByTestId('main-date').fill('2026-03-04');
-		await page.getByTestId('main-date').blur();
+		// The date control is segmented (issue #79 §3) and commits as soon as the
+		// segments form a complete date — there is no blur-to-settle step.
+		await setDate(page, 'main-date', '2026-03-04');
 		await expect.poll(async () => (await readDump(page)).date).toBe('2026-03-04');
 	});
 
@@ -124,11 +167,9 @@ test.describe('visual editor', () => {
 		await page.getByTestId('main-font_size').blur();
 		await expect.poll(async () => (await readDump(page)).font_size).toBeNull();
 
-		await page.getByTestId('main-date').fill('2026-03-04');
-		await page.getByTestId('main-date').blur();
+		await setDate(page, 'main-date', '2026-03-04');
 		await expect.poll(async () => (await readDump(page)).date).toBe('2026-03-04');
-		await page.getByTestId('main-date').fill('');
-		await page.getByTestId('main-date').blur();
+		await clearDate(page, 'main-date');
 		await expect.poll(async () => (await readDump(page)).date).toBeNull();
 	});
 
@@ -137,13 +178,16 @@ test.describe('visual editor', () => {
 	}) => {
 		// Author a value, then pick the ghost sentinel (always the first option) →
 		// the field is UNSET (null), the "clear back to default" affordance.
-		await page.getByTestId('main-classification').selectOption('CUI');
+		await pickEnum(page, 'main-classification', 'CUI');
 		await expect.poll(async () => (await readDump(page)).classification).toBe('CUI');
-		await page.getByTestId('main-classification').selectOption({ index: 0 });
+		// The sentinel is always the FIRST option — targeted positionally rather than
+		// by its internal marker value.
+		await page.getByTestId('main-classification').click();
+		await page.locator('[role="listbox"] [role="option"]').first().click();
 		await expect.poll(async () => (await readDump(page)).classification).toBeNull();
 		// Explicitly picking the default value ('' — a real enum member here) is a
 		// GENUINE write, distinct from unset: authored-default ('') vs null.
-		await page.getByTestId('main-classification').selectOption('');
+		await pickEnum(page, 'main-classification', '');
 		await expect.poll(async () => (await readDump(page)).classification).toBe('');
 	});
 

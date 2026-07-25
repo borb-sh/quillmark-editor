@@ -22,8 +22,8 @@ never onto the default branch.
 | 75 | per-field guidance (required marker, description) | projection | no | amended | landed |
 | 70 | list-editing commands | codec | no | no | open |
 | 71 | ephemeral tips card (`$ext.editor.tips`) | projection | no | reopened + amended | landed |
-| 74 | unified light/dark token surface | style | no | amends `THEMING.md` | open |
-| 76 | styled control variants / control-slot hooks | projection | no | no | open |
+| 74 | unified light/dark token surface | style | no | rewrote `THEMING.md` | landed as #79 |
+| 76 | styled control variants / control-slot hooks | projection | no | amended | landed as #79 (slots deferred) |
 | 57 | document-level history (card-delete undo) | projection | no | amends | open |
 | 16 | island/table editing | codec + projection | maybe | no | open |
 
@@ -131,16 +131,17 @@ Found while scheduling; the issue bodies are stale on these points.
 
 ## Findings
 
-- **`bits-ui` is already a dependency**, consumed only for `Popover`
-  (`FormatPopover.svelte:47`). It ships headless `Select`, `Checkbox`, `Switch`,
-  and date primitives. #76 weighs styled variants against "the a11y burden the
-  native controls get for free" — that burden is smaller than the issue assumes,
-  since the precedent for consuming a headless primitive is set and the a11y
-  comes with it. This strengthens option (2) relative to the issue's own
-  recommendation of (1).
+- **`bits-ui` covers three of the five scalar kinds, not all five** — and that is
+  the right number. It ships `Select`, `Switch`/`Checkbox`, and `DateField`/
+  `DatePicker`, but NO text or number primitive, because there is nothing headless
+  to supply: `<input type="text">` and `<input type="number">` are already fully
+  styleable. The holes a palette cannot reach are the UA-owned ones — the checkbox
+  box, the dropdown list, the calendar popup — so #79 moves exactly `enum`,
+  `boolean`, and `date`, and leaves text/number native and already themed. The
+  a11y burden #76 weighed comes with each primitive.
 - **#70's groundwork holds**: `prosemirror-schema-list` is a live dependency and
   `list_item` is `block+`, so nesting is representable without a schema change.
-- **Color is the unguarded axis.** Geometry and type each pair public dials with
-  a derived private scale and a lint (`check:geometry`, `check:type`); color has
-  fifteen flat literals and no gate. That asymmetry — not dark mode as such — is
-  what #74 is really about.
+- **Color was the unguarded axis.** Geometry and type each paired public dials
+  with a derived private scale and a lint (`check:geometry`, `check:type`); color
+  had flat literals and no gate. That asymmetry — not dark mode as such — is what
+  #74 was really about, and `check:theme` closes it.

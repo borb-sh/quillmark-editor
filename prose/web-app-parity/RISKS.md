@@ -8,11 +8,11 @@ by implementing rather than deciding.
 
 | Issue | Risk | State |
 |---|---|---|
-| 74 | Rungs unreachable in `preview/` + `source/` | **Live** — four mint roots, lint-enforced |
+| 74 | Rungs unreachable in `preview/` + `source/` | Retired — one derivation in `core/`, set on four roots |
 | 71 | Clearing tips destroys card titles | Retired — merge-write shipped, hazard tested |
 | 57 | Needs a WASM undo primitive | Retired — `toJson` / `loadJson` / `clone` |
 | 70 | Codec loses nesting on indent/outdent | Retired — 8 shapes round-trip, now tested |
-| 76 | Styled variants owe a11y from scratch | Retired — bits-ui covers every `ControlKind` |
+| 76 | Styled variants owe a11y from scratch | Retired — bits-ui covers the three UA-owned kinds |
 | 16 | Island authoring unscoped | Open by design; the tail |
 
 ## #74 — the settled design breaks on two surfaces
@@ -35,15 +35,17 @@ style is a scoped Svelte `<style>`. `/preview` imports no editor-side code, so i
 cannot reach a block owned by `visual/`. `core/` is the one module both already
 import, but it is pure logic and carries no styling today.
 
-**Settled — four mint roots, not two.** The doctrine is already *one mint per
-detached root*: `FormatPopover` mints its own copy precisely because it portals
-out of the editor subtree (`check-geometry.mjs` header). `Preview` and
-`SourceView` are detached roots by the same test, so minting there is consistent
-with the rule rather than the drift the rule prevents. The duplication is real;
-`check:theme` neutralizes it by asserting the derivation block is **byte-identical
-across all four roots** — turning copy-drift into a lint failure. `check:geometry`
-already enumerates permitted mint roots, so the enumeration extends rather than
-appears. Folded into the design as §Settled 1b; #74 carries four deliverables.
+**Retired — one derivation, four call sites.** Duplicating the block across four
+roots and asserting the copies byte-identical was the answer while the derivation
+had to live in a `<style>` block; it is one prettier reflow from a false failure.
+`core/` is the module both `preview/` and `visual/` already import and it can hold
+the derivation as a plain declaration STRING, which each root sets as a `style`
+attribute — one copy, no CSS file, and the emitted `var(--qm-…)` references still
+resolve through the cascade at each root, so a consumer's ancestor rule and
+`prefers-color-scheme` work with no JS. A `style` attribute rather than an action:
+an action runs at hydration, so an SSR'd first paint would resolve no rungs.
+`check:theme` rule 3 asserts `core/theme.ts` is the only definer, which subsumes
+`check-geometry`'s mint rule for all three axes.
 
 ## #57 — the boundary ask is unnecessary
 
@@ -121,13 +123,25 @@ fails silently and only on documents carrying both keys.
 ## #76 — retired
 
 `bits-ui@2.18.1` is already installed and ships `Switch`, `Checkbox`, `Select`,
-`DatePicker`, `DateField`, and `Combobox` — a headless primitive for **every**
-`ControlKind`. The styled-variant path costs no new dependency and inherits the
-primitive's a11y, confirming the scoped-hybrid call.
+`DatePicker`, `DateField`, and `Combobox`. It ships **no** text or number
+primitive — correctly, since those natives are fully styleable and there is no
+ARIA pattern to supply. So the styled path covers `enum`, `boolean`, and `date`
+(the kinds whose faces are UA-owned shadow DOM) and leaves `text`/`number` native;
+it costs no new dependency and inherits each primitive's a11y.
 
-**Residual:** the `syncedLocal` contract already recorded in the `74-76` note —
-a slot handing out a raw `value` reintroduces the #48 caret reset in consumer
-code.
+**Costs, measured rather than assumed.** The primitive speaks `CalendarDate`
+(`@internationalized/date`, promoted from a transitive dep to a direct one) while
+the document speaks `YYYY-MM-DD`; `CalendarDate` carries no time and no zone, so
+the round-trip is lossless. Two hazards only the browser tier sees: bits reports a
+DESELECT as `''`, indistinguishable from picking the empty-string enum member the
+reference quill declares — `allowDeselect={false}` is what keeps the UNSET
+sentinel the only clear affordance; and every primitive is driven CONTROLLED
+(`value` + `onValueChange`, never `bind:`), because a two-way bind hands it a lane
+around `syncedLocal`.
+
+**Residual:** the `syncedLocal` contract — a slot handing out a raw `value`
+reintroduces the #48 caret reset in consumer code. Slots stay deferred, so this is
+recorded rather than live.
 
 ## #16 — unchanged; the largest unknown
 

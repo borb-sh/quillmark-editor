@@ -70,6 +70,7 @@
 		"@codemirror/language": "6.11.3",
 		"@codemirror/state": "6.5.2",
 		"@codemirror/view": "6.38.6",
+		"@internationalized/date": "^3.12.2",
 		"@lezer/highlight": "1.2.1",
 		"@lucide/svelte": "^1.26.0",
 		"@quillmark/wasm": "0.97.0",
