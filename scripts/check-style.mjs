@@ -1,20 +1,24 @@
 // The style gate — one walk over `src/lib/**`, one rule: a component reads a rung,
-// it does not mint a value (SURFACES §"Preventing drift"). Three axes share that
-// rule and differ only in which properties they own and which literal they forbid,
-// so they are a table, not three scripts.
+// it does not mint a value (SURFACES §"Preventing drift"). The axes share that rule
+// and differ only in which properties they own and which value betrays a mint, so
+// they are a table, not three scripts.
 //
 //   rhythm   padding / margin / gap / border-radius   a px|rem length
-//   type     font-size / font-weight                  a size, or a weight keyword
+//   type     font-size / font-weight / font-family    a size, a weight, a family
 //   colour   color / background / border / shadow …   a hex or a colour function
+//   recede   opacity                                  a step off the ladder
 //
-// Two rules sit outside the table because they are about the scale itself rather
+// Three rules sit outside the table, because they are about the scale itself rather
 // than one axis:
 //
 //   · `--_qm-*` is DEFINED only in the derivation — what makes one derivation safe
-//     for the detached roots that each apply it.
+//     for the roots that each carry its marker — and never twice in one rule, which
+//     a stylesheet will not catch the way a duplicate object key did.
 //   · The consumed `--qm-*` set EQUALS the set documented in THEMING.md, both
 //     directions: an undocumented dial is drift, a documented-but-dead one is a
 //     promise nothing honors.
+//   · Every `--qm-*` named in `prose/canon/**` is a real dial. Canon names a subset,
+//     so this way only — but it is checked, because canon rots where nothing looks.
 //
 // Scope is `src/lib/**` for every axis — a violation must not become legal by
 // directory. `.svelte` `<style>` blocks and `.ts` alike, because `preview/paint.ts`
@@ -44,6 +48,11 @@ const STYLE_MARKER = /\b(style|background|border|color|outline|boxShadow|textSha
 const PRIVATE_DEF = /(--_qm-[\w-]+)\s*:/;
 const READS_RUNG = /var\(--_qm-/;
 
+// Two shapes of rule. `literal` FORBIDS a pattern — most properties take values a
+// literal cannot be mistaken for, so naming the bad shape is enough. `allowBare`
+// REQUIRES a rung, listing the few values legitimate without one — right where any
+// value at all is a scale decision (a family, a step on the recede ladder), so
+// there is no literal shape to enumerate.
 const AXES = [
 	{
 		props: /^(border-radius|gap|row-gap|column-gap|padding|margin)(-(top|bottom|left|right))?$/,
@@ -66,6 +75,24 @@ const AXES = [
 		literal: /\b(\d{3}|bold|bolder|lighter|normal)\b/,
 		rung: '`var(--_qm-weight-…)`',
 		doc: 'THEMING §Typography',
+		svelteOnly: true
+	},
+	{
+		// A family is a scale decision whatever it names, so the rung is required
+		// rather than a shape forbidden. `inherit` is how a control defers to its
+		// surface, which is reading the scale one level up.
+		props: /^font-family$/,
+		allowBare: /^(inherit|initial|unset|revert)$/,
+		rung: '`var(--_qm-font)` / `var(--_qm-font-mono)`',
+		doc: 'THEMING §"The dials"',
+		svelteOnly: true
+	},
+	{
+		// `0` / `1` are structural on/off, not a step on the recede ladder.
+		props: /^opacity$/,
+		allowBare: /^[01]$/,
+		rung: '`var(--_qm-opacity-…)`',
+		doc: 'THEMING.md',
 		svelteOnly: true
 	},
 	{
@@ -131,27 +158,53 @@ for (const full of files) {
 			// In `.svelte` the region is already CSS, so the property name decides; in
 			// `.ts` a style declaration is one string among code, so the marker does.
 			const owns = svelte ? axis.props.test(prop ?? '') : STYLE_MARKER.test(line);
-			if (owns && axis.literal.test(svelte ? value : line))
+			if (!owns) continue;
+			const bad = axis.literal
+				? axis.literal.test(svelte ? value : line)
+				: !READS_RUNG.test(value) && !axis.allowBare.test(value.trim());
+			if (bad)
 				fail(`\`${prop ?? 'style'}\` mints a literal — read a ${axis.rung} rung (${axis.doc})`);
 		}
-
-		// `opacity: 0` / `1` are structural on/off, not a step on the recede ladder.
-		if (prop === 'opacity' && !READS_RUNG.test(value) && !/^\s*[01]\s*$/.test(value))
-			fail('`opacity` mints a literal — read a `var(--_qm-opacity-…)` rung');
 
 		const def = line.match(PRIVATE_DEF);
 		if (def) fail(`defines \`${def[1]}\` — the scale is minted only in ${DERIVATION}`);
 	});
 }
 
-// The dial census — the consumed set and the documented set must be the same set.
-const documented = new Set(
-	[...readFileSync(THEMING, 'utf8').matchAll(/`(--qm-[\w-]+)`/g)].map((m) => m[1])
-);
+// A rung defined twice is a silent last-wins drop. The `SCALE` object this replaced
+// got that from the language (a duplicate key is an error); a stylesheet does not,
+// so the check is explicit. The dark block legitimately redeclares the poles, so
+// only duplicates WITHIN one rule block count.
+{
+	const css = readFileSync(join(ROOT, DERIVATION), 'utf8');
+	for (const [, block] of css.matchAll(/\{([^{}]*)\}/g)) {
+		const seen = new Set();
+		for (const [, name] of block.matchAll(/^\s*(--_qm-[\w-]+)\s*:/gm))
+			if (seen.has(name)) errors.push(`${DERIVATION}: \`${name}\` defined twice in one rule`);
+			else seen.add(name);
+	}
+}
+
+// The dial census. THEMING.md is the contract, so it must match the consumed set
+// EXACTLY, both directions. Canon only ever names a subset, so it is checked one
+// way — but checked, because canon rotting to dead token names is what happens when
+// nothing looks: eleven names that existed nowhere in `src/` survived seventeen
+// citations across the two docs a reader reaches first.
+const dialsIn = (path) =>
+	new Set([...readFileSync(path, 'utf8').matchAll(/`(--qm-[\w-]+)`/g)].map((m) => m[1]));
+
+const documented = dialsIn(THEMING);
 for (const t of [...consumed].filter((t) => !documented.has(t)).sort())
 	errors.push(`THEMING.md: \`${t}\` consumed but undocumented`);
 for (const t of [...documented].filter((t) => !consumed.has(t)).sort())
 	errors.push(`THEMING.md: \`${t}\` documented but unconsumed`);
+
+const CANON = join(ROOT, 'prose', 'canon');
+for (const doc of readdirSync(CANON)
+	.filter((f) => f.endsWith('.md'))
+	.sort())
+	for (const t of [...dialsIn(join(CANON, doc))].filter((t) => !consumed.has(t)).sort())
+		errors.push(`prose/canon/${doc}: \`${t}\` named but not a dial`);
 
 if (errors.length) {
 	console.error(`Style check failed (${errors.length}):`);
