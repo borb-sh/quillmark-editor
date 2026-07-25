@@ -83,11 +83,24 @@ ordinal resets, and a deep mixed shape. All pass unchanged.
 
 The codec needs no work for #70.
 
-**Settled — Tab precedence.** In a list item, `Tab`/`Shift-Tab` indent and
-outdent; everywhere else Tab is unbound and stays available to the deferred
-structural keymap. The list binding returns false when the selection is not in a
-list, so ProseMirror falls through — the later field-navigation Tab layers over
-it without either side knowing about the other, which is what keeps #70 additive.
+**Settled — Tab forks on leaf role, not caret position.** The surface decides
+Tab's meaning, not the node under the cursor. An `inline` / `plaintext` leaf is a
+form field: Tab stays unbound, so the deferred structural keymap owns field
+navigation outright. A block-schema body is a document: Tab is structural —
+`sinkListItem` / `liftListItem` in a list item, inert elsewhere — and `Escape`
+blurs the leaf as the exit to the shell. The fork lands on the branch
+`editorKeymap` already draws (`field.ts:380`), so #70 stays additive.
+
+Forking on caret position instead — Tab indents in a list, falls through to field
+navigation everywhere else — makes one key structurally edit or navigate
+depending on where in a paragraph the caret sits. The role fork costs a real
+affordance (a caret in a body paragraph cannot Tab to the next field; Notion pays
+this too) and buys a key that never means two things in one surface, plus a
+deterministic keyboard exit that a positional fork cannot offer.
+
+Two surfaces own Tab locally under the same rule: `code_block` takes literal
+indentation, and an island takes cell traversal when #16 lands. Bind the body's
+Tab as a chain so each prepends a link rather than rewriting the binding.
 
 **Settled — lists are the indent primitive; no generic indent container.**
 `Content` carries horizontal offset only as `containers` (`list_item`, `quote`),
