@@ -80,8 +80,8 @@ the three status hues, which step surfaces `bg → fg` and ink `fg → bg` in ok
 The derivation is minted ONCE, in `core/`, and applied to each detached root — the
 editor, the portaled popover and select list, the preview, and the source view,
 none of which descend from the others. A component reads a rung, never a literal;
-`check:geometry`, `check:type`, and `check:theme` gate it, so an in-between value
-fails CI, not just review.
+`check:style` gates all three axes, so an in-between value fails CI, not just
+review.
 
 ## Focus and active state
 
@@ -122,8 +122,9 @@ an accessible indicator; theming them is deferred, not part of [#45].
   rung, it does not mint a value.
 - **Scale → a closed set.** Spacing, radius, type, and colour are small fixed
   scales; a value outside them is a review smell.
-- **Public surface → the minimum.** Ten dials are the contract; a rung is
-  promotable the day a consumer needs it, and a public token is permanent.
+- **Public surface → the minimum.** The dials are the contract
+  ([`THEMING.md`](../../THEMING.md) counts them); a rung is promotable the day a
+  consumer needs it. Fewer names is the point — each one is a thing a reader holds.
 - **Rule → this page.** The elevation and rhythm questions have a written answer,
   so they are not re-argued per change.
 

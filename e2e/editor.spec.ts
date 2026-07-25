@@ -103,7 +103,7 @@ test.describe('editor shell', () => {
 	test('(g) every detached root resolves the derived scale', async ({ page }) => {
 		// The derivation is set per DETACHED root (core/theme.ts) — a subtree that
 		// does not descend from another root, so it inherits the public dials from
-		// the consumer's cascade but none of the rungs. `check:theme` gates where
+		// the consumer's cascade but none of the rungs. `check:style` gates where
 		// `--_qm-*` is DEFINED; nothing static can gate that a root APPLIES it, so
 		// this walks them. A new root that forgets `style={QM_THEME}` renders with
 		// every rung unresolved — `1px solid var(--_qm-border)` collapses to

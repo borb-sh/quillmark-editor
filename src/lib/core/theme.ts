@@ -105,7 +105,7 @@ const SCALE = {
  * `VisualEditor`, `Preview`, `SourceView`, and the two surfaces that portal to
  * `document.body`: `FormatPopover` and `EnumField`'s listbox.
  *
- * `check:theme` rule 3 asserts this module is the only place `--_qm-*` is
+ * `check:style` asserts this module is the only place `--_qm-*` is
  * defined; `e2e/visual-chrome.spec.ts` asserts each root actually resolves a
  * rung, which is what catches a new root that forgets to set this.
  *

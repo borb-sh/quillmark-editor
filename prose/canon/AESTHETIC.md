@@ -48,7 +48,8 @@ overrides to its brand without fighting baked-in decoration.
 The shipped defaults are deliberately plain — a neutral grey skin that reads as
 un-branded rather than designed, so the consumer's override is the design. The
 rules above are what a restyle keeps: change the hues and the font, not the
-monochrome-and-whitespace hierarchy. The surface is ten dials deriving a closed
-private scale, so a restyle is a handful of values and dark mode is two of them
+monochrome-and-whitespace hierarchy. The surface is a small dial set deriving a
+closed private scale, so a restyle is a handful of values and dark mode is two of
+them
 ([`THEMING.md`](../../THEMING.md)). Part/class hooks stay declined — a class
 contract freezes internal DOM shape.

@@ -75,7 +75,7 @@ other.
 
 ## Theming
 
-The surfaces carry the behavior against a neutral, overridable baseline — ten
+The surfaces carry the behavior against a neutral, overridable baseline — the
 `--qm-*` dials a consumer overrides on any ancestor (VISUAL_EDITOR_UIUX §"Complex
 UX, minimal UI"), deriving the private `--_qm-*` scale every component reads. The
 contract is the package's [`THEMING.md`](../../THEMING.md); the derivation is

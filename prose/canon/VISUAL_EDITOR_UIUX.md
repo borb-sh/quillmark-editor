@@ -25,7 +25,7 @@ top-to-bottom down one column; the document's structure is the page's structure.
 direct manipulation, the caret bridge, per-field state, against a bare built-in
 visual opinion, so a consumer restyles to its brand without fighting baked-in
 design. Structure and behavior live in the primitives (bits-ui's headless base);
-appearance is a themeable surface with a neutral, overridable baseline — ten
+appearance is a themeable surface with a neutral, overridable baseline — the
 `--qm-*` dials deriving a closed private scale ([`THEMING.md`](../../THEMING.md)).
 Every control is styled off that scale, including the three whose native form is
 UA-owned shadow DOM (enum, boolean, date), so the palette has no holes.

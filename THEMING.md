@@ -78,9 +78,10 @@ the same reason — `preview/` and `visual/` are separate subpaths that both nee
 the derivation — and is internal on the same terms: importing it buys you the
 current rung names, not a promise about the next release's.
 
-A knob is promotable to a dial the day a real consumer needs it — a public token is a permanent promise, so the surface stays
-the minimum that makes a palette swap work.
+A knob is promotable to a dial the day a real consumer needs it. The surface stays
+the minimum that makes a palette swap work, because every dial is one more thing a
+reader has to hold — not because the set is frozen.
 
-`npm run check:theme` gates all of it: no component may mint a colour, shadow, or
+`npm run check:style` gates all of it: no component may mint a colour, shadow, or
 opacity literal; nothing outside the derivation may define a `--_qm-*`; and the
 consumed dial set must match this document exactly, in both directions.
