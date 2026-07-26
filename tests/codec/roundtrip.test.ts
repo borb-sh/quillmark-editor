@@ -9,16 +9,8 @@ import { describe, it, expect } from 'vitest';
 import { EditorState } from 'prosemirror-state';
 import { wrapIn } from 'prosemirror-commands';
 import type { Node as PMNode } from 'prosemirror-model';
-import {
-	decode,
-	blockSchema,
-	pmToContent,
-	buildLineIndex,
-	usvToPM,
-	pmToUsv,
-	usvLength
-} from '$lib/core/codec';
-import { md, normalize, contentEqual } from './_util.js';
+import { decode, blockSchema, pmToContent } from '$lib/core/codec';
+import { md, normalize, contentEqual, assertPositionInverse } from './_util.js';
 
 // ── A deterministic PRNG (mulberry32) ───────────────────────────────────────
 // Seeded so any failure is reproducible from the reported seed — `Math.random`
@@ -94,18 +86,9 @@ describe('generative decode → lower round-trip', () => {
 });
 
 // ── Position map across a structural edit + index rebuild ────────────────────
-/** Scan every USV offset of `doc` and assert the freshly-built index is a clean inverse. */
-function assertInverseDoc(doc: PMNode, label: string): void {
-	const rt = pmToContent(doc);
-	const index = buildLineIndex(doc);
-	const total = usvLength(rt.text);
-	for (let p = 0; p <= total; p++) {
-		const pm = usvToPM(index, p);
-		expect(pm, `${label}: usvToPM(${p}) out of range`).toBeGreaterThanOrEqual(0);
-		expect(pm, `${label}: usvToPM(${p}) out of range`).toBeLessThanOrEqual(doc.content.size);
-		expect(pmToUsv(index, pm), `${label}: roundtrip USV ${p}`).toBe(p);
-	}
-}
+// The inverse property itself is `assertPositionInverse` (_util.ts) — what these
+// add over positions.test.ts is that the index is REBUILT after a structural
+// mutation, not read off a fresh decode.
 
 describe('position map across structural edits + rebuild', () => {
 	it('holds after splitting a paragraph', () => {
@@ -113,7 +96,7 @@ describe('position map across structural edits + rebuild', () => {
 		// PM pos 4 is inside the first textblock (after "Fir") — split into two paras.
 		const newDoc = EditorState.create({ doc }).tr.split(4).doc;
 		expect(newDoc.childCount).toBe(2);
-		assertInverseDoc(newDoc, 'split');
+		assertPositionInverse(newDoc, 'split');
 	});
 
 	it('holds after joining two paragraphs', () => {
@@ -122,7 +105,7 @@ describe('position map across structural edits + rebuild', () => {
 		// The boundary between block 0 and block 1 is at block 0's node size.
 		const newDoc = EditorState.create({ doc }).tr.join(doc.child(0).nodeSize).doc;
 		expect(newDoc.childCount).toBe(1);
-		assertInverseDoc(newDoc, 'join');
+		assertPositionInverse(newDoc, 'join');
 	});
 
 	it('holds after wrapping a paragraph in a blockquote', () => {
@@ -134,7 +117,7 @@ describe('position map across structural edits + rebuild', () => {
 		});
 		expect(applied).toBe(true);
 		expect(newDoc.child(0).type.name).toBe('blockquote');
-		assertInverseDoc(newDoc, 'wrap');
+		assertPositionInverse(newDoc, 'wrap');
 	});
 
 	it('holds after a split at every interior offset of a paragraph', () => {
@@ -148,7 +131,7 @@ describe('position map across structural edits + rebuild', () => {
 			} catch {
 				continue; // not a splittable position — skip
 			}
-			assertInverseDoc(newDoc, `split@${pos}`);
+			assertPositionInverse(newDoc, `split@${pos}`);
 		}
 	});
 });

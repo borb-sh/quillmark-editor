@@ -2,31 +2,24 @@
 // offset (including across astral chars and structural shapes) the map is a clean
 // inverse, and offsets land on the right code point.
 import { describe, it, expect } from 'vitest';
-import { decode, blockSchema, buildLineIndex, usvToPM, pmToUsv, usvLength } from '$lib/core/codec';
+import { decode, blockSchema, buildLineIndex, usvToPM, pmToUsv } from '$lib/core/codec';
 import type { Content } from '$lib/core';
-import { md } from './_util.js';
+import { md, assertPositionInverse } from './_util.js';
 
 /** A synthetic single-para content over `text` (valid: one line, no marks). */
 function para(text: string): Content {
 	return { text, lines: [{ containers: [], kind: 'para' }], marks: [], islands: [] };
 }
 
-/** Assert `pmToUsv ∘ usvToPM` is the identity over every USV offset. */
+/** Decode, then assert the map is a clean inverse over every offset. */
 function assertInverse(rt: Content) {
-	const doc = decode(rt, blockSchema);
-	const index = buildLineIndex(doc);
-	const total = usvLength(rt.text);
-	for (let p = 0; p <= total; p++) {
-		const pm = usvToPM(index, p);
-		expect(pm, `usvToPM(${p}) must be a valid PM position`).toBeGreaterThanOrEqual(0);
-		expect(pm).toBeLessThanOrEqual(doc.content.size);
-		expect(pmToUsv(index, pm), `roundtrip at USV ${p}`).toBe(p);
-	}
+	assertPositionInverse(decode(rt, blockSchema));
 }
 
 describe('positions: UTF-16 / USV inverse', () => {
 	it('holds over astral chars (emoji, CJK) in one paragraph', () => {
 		assertInverse(para('a😀b🎉c'));
+		assertInverse(para('café ☕ x')); // a BMP symbol beside ASCII
 		assertInverse(para('日本語テキスト'));
 		assertInverse(para('mix 😀 と 漢字 x'));
 		assertInverse(para('👨‍👩‍👧‍👦 family zwj'));

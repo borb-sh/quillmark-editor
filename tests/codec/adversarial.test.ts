@@ -1,21 +1,13 @@
 // Independent adversarial validation of the codec (NOT the implementing agent's
-// tests). Targets exactly the seams CODEC.md flags as highest-risk: USV↔UTF-16
-// drift in the text delta (an astral char is 1 USV but 2 UTF-16 units), and the
-// position-map inverse. Everything routes through a REAL Document's applyChange,
-// so a miscounted offset surfaces as wrong stored text, not just a unit-test
-// artifact.
+// tests). Targets the seam CODEC.md flags as highest-risk: USV↔UTF-16 drift (an
+// astral char is 1 USV but 2 UTF-16 units) surviving a REAL Document's
+// applyChange — so a miscounted offset surfaces as wrong STORED text, not just a
+// unit-test artifact. That end-to-end route is what these add; the position map's
+// own inverse is positions.test.ts, over a strictly wider corpus.
 import { describe, it, expect } from 'vitest';
 import { Document } from '$lib/core';
 import type { Content, ContentMark } from '$lib/core';
-import {
-	decode,
-	blockSchema,
-	buildLineIndex,
-	usvToPM,
-	pmToUsv,
-	lower,
-	usvLength
-} from '$lib/core/codec';
+import { lower } from '$lib/core/codec';
 
 function rt(text: string, marks: ContentMark[] = [], lines?: Content['lines']): Content {
 	return {
@@ -25,36 +17,6 @@ function rt(text: string, marks: ContentMark[] = [], lines?: Content['lines']): 
 		islands: []
 	};
 }
-
-describe('codec adversarial — position map (independent)', () => {
-	it('round-trips at EVERY USV offset across astral/CJK/combining and block boundaries', () => {
-		const samples: Content[] = [
-			rt('a😀b'), // astral (emoji: 1 USV, 2 UTF-16)
-			rt('café ☕ x'), // combining-ish + BMP symbol
-			rt('日本語テスト'), // CJK
-			rt('👨‍👩‍👧 zwj family'), // ZWJ sequence (multiple code points)
-			{
-				text: 'first 😀 line\nsecond 日 line',
-				lines: [
-					{ containers: [], kind: 'para' },
-					{ containers: [], kind: 'para' }
-				],
-				marks: [],
-				islands: []
-			}
-		];
-		for (const r of samples) {
-			const doc = decode(r, blockSchema);
-			const idx = buildLineIndex(doc);
-			const n = usvLength(r.text);
-			for (let pos = 0; pos <= n; pos++) {
-				const pm = usvToPM(idx, pos);
-				const back = pmToUsv(idx, pm);
-				expect(back, `USV ${pos} in ${JSON.stringify(r.text)}`).toBe(pos);
-			}
-		}
-	});
-});
 
 describe('codec adversarial — lower∘apply through a real Document (independent)', () => {
 	it('text delta counts USV code points, so an insert after an astral char lands correctly', () => {

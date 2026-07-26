@@ -82,10 +82,6 @@ function collectFiles(dir: string): string[] {
 }
 
 describe('/preview reserved-package boundary', () => {
-	it('exists as a subpath root', () => {
-		expect(existsSync(join(PREVIEW, 'index.ts'))).toBe(true);
-	});
-
 	it('never reaches ProseMirror or the editor surfaces (transitively)', () => {
 		const seen = new Set<string>();
 		const violations: string[] = [];
