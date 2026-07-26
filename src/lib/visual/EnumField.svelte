@@ -16,6 +16,7 @@
 	import { Select } from 'bits-ui';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import { syncedLocal } from './synced.svelte.js';
+	import './controls.css'; // `.qm-focus-ring` — the shared focus-ring rule
 
 	interface Props {
 		value: string | undefined;
@@ -75,7 +76,7 @@
 		}}
 	>
 		<Select.Trigger
-			class="qm-select"
+			class="qm-select qm-focus-ring"
 			aria-label={label}
 			data-testid={testid}
 			data-ghosted={unset ? '' : undefined}
@@ -132,11 +133,7 @@
 		background: var(--_qm-surface);
 		cursor: pointer;
 	}
-	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */
-	.qm-select-wrap :global(.qm-select:focus-visible) {
-		outline: var(--_qm-ring-focus);
-		outline-offset: var(--_qm-ring-offset);
-	}
+	/* The focus ring rides `.qm-focus-ring` on the trigger (controls.css). */
 	/* Shown-never-written: the closed control reads muted while unset, matching the
 	   ghosted placeholder the text/number controls show. */
 	.qm-select-wrap :global(.qm-select[data-ghosted]) {

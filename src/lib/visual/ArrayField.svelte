@@ -111,7 +111,7 @@
 				/>
 			{:else if control === 'object'}
 				<textarea
-					class="qm-input qm-json"
+					class="qm-input qm-json qm-focus-ring"
 					aria-label={label != null ? `${label} ${k + 1}` : undefined}
 					data-testid={testid ? `${testid}-el-${k}` : undefined}
 					value={JSON.stringify(arr[k] ?? {})}

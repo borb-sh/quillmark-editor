@@ -26,6 +26,7 @@
 	import { DateField as BitsDateField } from 'bits-ui';
 	import { parseDate, type DateValue } from '@internationalized/date';
 	import { syncedLocal } from './synced.svelte.js';
+	import './controls.css'; // `.qm-focus-ring` — the shared focus-ring rule
 
 	interface Props {
 		value: string | undefined;
@@ -66,7 +67,11 @@
 			onCommit(d?.toString());
 		}}
 	>
-		<BitsDateField.Input class="qm-date" aria-label={label} data-testid={testid}>
+		<BitsDateField.Input
+			class="qm-date qm-focus-ring-within"
+			aria-label={label}
+			data-testid={testid}
+		>
 			{#snippet children({ segments })}
 				<!-- Keyed by INDEX: `part` repeats — the `literal` separators between
 				     segments all carry it — so a part-keyed block collides. -->
@@ -95,12 +100,9 @@
 		color: var(--_qm-ink);
 		background: var(--_qm-surface);
 	}
-	/* The ring lands on the wrapper: focus lives on the SEGMENT, so a per-segment
-	   ring would flicker across the field as the caret walks it (SURFACES §Focus). */
-	.qm-date-wrap :global(.qm-date:focus-within) {
-		outline: var(--_qm-ring-focus);
-		outline-offset: var(--_qm-ring-offset);
-	}
+	/* The ring rides `.qm-focus-ring-within` (controls.css) rather than the plain
+	   marker: focus lives on the SEGMENT, so it rings the field, not the segment
+	   the caret happens to be in. */
 	.qm-date-wrap :global(.qm-date-segment) {
 		padding: 0 var(--_qm-space-half);
 		border-radius: var(--_qm-radius-inner);

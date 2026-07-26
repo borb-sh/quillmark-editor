@@ -73,8 +73,10 @@
 		--_qm-opacity-muted: 0.5;
 
 		/* ── Focus (SURFACES §Focus) ─────────────────────────────────────────────
-		   The ring is one rule stated once, as a whole `outline` value, so the six
-		   controls that draw it duplicate a token read rather than a value. */
+		   The ring's VALUE is a composite rung so no control mints it. Which
+		   properties draw a ring, and on what state, is a rule rather than a rung —
+		   `.qm-focus-ring` in `visual/controls.css` — because a rung a control still
+		   has to assemble correctly is only half a scale. */
 		--_qm-ring-width: 1px; /* the preview overlay's idle field box */
 		--_qm-ring-width-active: 2px;
 		--_qm-ring-focus: var(--_qm-ring-width-active) solid var(--_qm-accent);

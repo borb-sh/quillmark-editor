@@ -17,6 +17,24 @@
    `.qm-json` adds the monospace face over `.qm-input`, with no specificity fight. */
 
 @layer qm.chrome {
+	/* The themed focus ring in place of the raw UA outline (SURFACES §Focus), as a
+	   RULE rather than as a pair of rungs each control re-reads. The composite
+	   `--_qm-ring-focus` rung already meant no control could mint the value — but
+	   five of them still restated which two properties draw a ring and in what
+	   combination, which is the decision, and a sixth control could have drawn it
+	   differently without any gate noticing.
+
+	   Two selectors, because focus lands in two places. Usually on the control
+	   itself; but the date field's focus lives on a SEGMENT, and a per-segment ring
+	   would flicker across the field as the caret walks it — so it rings the
+	   wrapper on `:focus-within` instead. That is the only real distinction, and it
+	   is the one this pair keeps. */
+	.qm-focus-ring:focus-visible,
+	.qm-focus-ring-within:focus-within {
+		outline: var(--_qm-ring-focus);
+		outline-offset: var(--_qm-ring-offset);
+	}
+
 	/* A typed value's box — text and numeric inputs, and the array's JSON textarea. */
 	.qm-input {
 		width: 100%;
@@ -26,11 +44,6 @@
 		border-radius: var(--_qm-radius-inner);
 		font: inherit;
 		background: var(--_qm-surface);
-	}
-	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */
-	.qm-input:focus-visible {
-		outline: var(--_qm-ring-focus);
-		outline-offset: var(--_qm-ring-offset);
 	}
 
 	/* A square glyph button — card reorder/delete, array remove, the tips card's

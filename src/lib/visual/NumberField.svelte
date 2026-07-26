@@ -51,7 +51,7 @@
 </script>
 
 <input
-	class="qm-input"
+	class="qm-input qm-focus-ring"
 	type="text"
 	inputmode={integer ? 'numeric' : 'decimal'}
 	value={local.value}

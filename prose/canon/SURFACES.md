@@ -94,11 +94,17 @@ palette — but a **form control** and a **prose leaf** are not the same focus
 case, and one rule for both is the conflation [#45] resolves:
 
 - **Scalar controls draw a tokenized ring.** A focused `TextField` / `NumberField`
-  / `EnumField` / `DateField` (and the array JSON control) shows `--_qm-ring-focus`
-  at `--_qm-ring-offset` in place of the raw UA default — themed, and consistent
-  across the controls. The ring is one composite rung, stated once, so the six
-  controls duplicate a token read rather than a value. Invariant: never clear a
-  form control's native outline without a visible replacement.
+  / `EnumField` / `BooleanField` / `DateField` (and the array JSON control) shows
+  `--_qm-ring-focus` at `--_qm-ring-offset` in place of the raw UA default —
+  themed, and consistent across the controls. Consistent because it is ONE RULE
+  they opt into (`.qm-focus-ring`), not a rung each restates: a composite value
+  token stops a control minting its own hue, but a control that still assembles
+  the declarations itself can differ in which properties it sets and on what
+  state, and nothing gates that. Two variants only, for the one real distinction —
+  a date field's focus lives on a segment, so it rings the field on
+  `:focus-within` rather than flickering the ring across the segments the caret
+  walks. Invariant: never clear a form control's native outline without a visible
+  replacement.
 - **A prose leaf keeps the caret as its focus indicator.** The blinking caret is
   the editor convention for a text-editing region — Google Docs, Notion, every
   ProseMirror surface — and a ring around a `contenteditable` reads as the form
