@@ -13,7 +13,7 @@ import {
 	buildLineIndex,
 	usvToPM,
 	pmToUsv,
-	diffToBundle,
+	lower,
 	usvLength
 } from '$lib/core/codec';
 
@@ -48,8 +48,8 @@ describe('codec adversarial — position map (independent)', () => {
 			const idx = buildLineIndex(doc);
 			const n = usvLength(r.text);
 			for (let pos = 0; pos <= n; pos++) {
-				const pm = usvToPM(doc, idx, pos);
-				const back = pmToUsv(doc, idx, pm);
+				const pm = usvToPM(idx, pos);
+				const back = pmToUsv(idx, pm);
 				expect(back, `USV ${pos} in ${JSON.stringify(r.text)}`).toBe(pos);
 			}
 		}
@@ -62,7 +62,7 @@ describe('codec adversarial — lower∘apply through a real Document (independe
 		doc.install({}, rt('a😀b')); // 3 USV, 4 UTF-16
 		const oldRt = doc.main.body;
 
-		const bundle = diffToBundle(oldRt, rt('a😀Xb')); // insert 'X' at USV index 2
+		const bundle = lower(oldRt, rt('a😀Xb')); // insert 'X' at USV index 2
 		// The delta must be USV-coordinate: retain 2 ('a' + the emoji as ONE unit),
 		// not retain 3 (its UTF-16 width) — the exact drift CODEC.md warns about.
 		expect(bundle.delta?.ops).toEqual([{ retain: 2 }, { insert: 'X' }, { retain: 1 }]);
@@ -74,7 +74,7 @@ describe('codec adversarial — lower∘apply through a real Document (independe
 	it('a delete spanning an astral char removes the right code points', () => {
 		const doc = new Document('usaf_memo@0.2.0');
 		doc.install({}, rt('x😀😀y'));
-		const bundle = diffToBundle(doc.main.body, rt('xy')); // drop both emoji
+		const bundle = lower(doc.main.body, rt('xy')); // drop both emoji
 		doc.applyChange({}, bundle);
 		expect(doc.main.body.text).toBe('xy');
 	});
@@ -83,7 +83,7 @@ describe('codec adversarial — lower∘apply through a real Document (independe
 		const doc = new Document('usaf_memo@0.2.0');
 		doc.install({}, rt('a😀bold')); // USV: a=0, 😀=1, b=2,o=3,l=4,d=5
 		const withMark = rt('a😀bold', [{ start: 2, end: 6, type: 'strong' } as ContentMark]);
-		const bundle = diffToBundle(doc.main.body, withMark);
+		const bundle = lower(doc.main.body, withMark);
 		doc.applyChange({}, bundle);
 		const marks = doc.main.body.marks;
 		const strong = marks.find((m) => m.type === 'strong');
@@ -105,7 +105,7 @@ describe('codec adversarial — lower∘apply through a real Document (independe
 			marks: [],
 			islands: []
 		};
-		const bundle = diffToBundle(doc.main.body, split);
+		const bundle = lower(doc.main.body, split);
 		doc.applyChange({}, bundle);
 		expect(doc.main.body.text).toBe('one\ntwo');
 		expect(doc.main.body.lines.length).toBe(2);

@@ -48,7 +48,7 @@ function runEndPm(run: PosRun): number {
 }
 
 /** USV content offset → PM position. */
-export function usvToPM(_doc: PMNode, index: LineIndex, usvPos: number): number {
+export function usvToPM(index: LineIndex, usvPos: number): number {
 	const usv = clamp(usvPos, 0, index.usvEnd);
 	if (usv >= index.usvEnd) return index.usvEnd === 0 ? index.firstContentStart : index.pmEndContent;
 	for (const run of index.runs) {
@@ -62,7 +62,7 @@ export function usvToPM(_doc: PMNode, index: LineIndex, usvPos: number): number 
 }
 
 /** PM position → USV content offset. */
-export function pmToUsv(_doc: PMNode, index: LineIndex, pmPos: number): number {
+export function pmToUsv(index: LineIndex, pmPos: number): number {
 	if (index.runs.length === 0) return 0;
 	if (pmPos < index.runs[0].pmStart) return 0;
 	for (const run of index.runs) {

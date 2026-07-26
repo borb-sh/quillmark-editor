@@ -17,10 +17,10 @@ function assertInverse(rt: Content) {
 	const index = buildLineIndex(doc);
 	const total = usvLength(rt.text);
 	for (let p = 0; p <= total; p++) {
-		const pm = usvToPM(doc, index, p);
+		const pm = usvToPM(index, p);
 		expect(pm, `usvToPM(${p}) must be a valid PM position`).toBeGreaterThanOrEqual(0);
 		expect(pm).toBeLessThanOrEqual(doc.content.size);
-		expect(pmToUsv(doc, index, pm), `roundtrip at USV ${p}`).toBe(p);
+		expect(pmToUsv(index, pm), `roundtrip at USV ${p}`).toBe(p);
 	}
 }
 
@@ -53,12 +53,12 @@ describe('positions: UTF-16 / USV inverse', () => {
 		const doc = decode(rt, blockSchema);
 		const index = buildLineIndex(doc);
 		// PM: doc>paragraph, content start at 1. "a"=[1,2], "😀"=[2,4] (2 UTF-16), "b"=[4,5].
-		expect(usvToPM(doc, index, 0)).toBe(1); // before 'a'
-		expect(usvToPM(doc, index, 1)).toBe(2); // before '😀'
-		expect(usvToPM(doc, index, 2)).toBe(4); // before 'b' — skipped the surrogate pair
-		expect(usvToPM(doc, index, 3)).toBe(5); // after 'b'
+		expect(usvToPM(index, 0)).toBe(1); // before 'a'
+		expect(usvToPM(index, 1)).toBe(2); // before '😀'
+		expect(usvToPM(index, 2)).toBe(4); // before 'b' — skipped the surrogate pair
+		expect(usvToPM(index, 3)).toBe(5); // after 'b'
 		// Inverse: the PM position after the emoji is USV 2, not 3 (no surrogate drift).
-		expect(pmToUsv(doc, index, 4)).toBe(2);
+		expect(pmToUsv(index, 4)).toBe(2);
 	});
 
 	it('maps a caret at a line boundary to the end of the previous line', () => {
@@ -66,11 +66,11 @@ describe('positions: UTF-16 / USV inverse', () => {
 		const doc = decode(rt, blockSchema);
 		const index = buildLineIndex(doc);
 		// USV: A0 B1 \n2 C3 D4. Position 2 (the newline) = end of line 0.
-		const pm = usvToPM(doc, index, 2);
-		expect(pmToUsv(doc, index, pm)).toBe(2);
+		const pm = usvToPM(index, 2);
+		expect(pmToUsv(index, pm)).toBe(2);
 		// Position 3 = start of line 1.
-		const pm3 = usvToPM(doc, index, 3);
-		expect(pmToUsv(doc, index, pm3)).toBe(3);
+		const pm3 = usvToPM(index, 3);
+		expect(pmToUsv(index, pm3)).toBe(3);
 		expect(pm3).toBeGreaterThan(pm);
 	});
 });

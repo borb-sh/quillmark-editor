@@ -140,14 +140,14 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	let index: LineIndex; // rebuilt on every structural change
 	let view: EditorView;
 
-	const state = buildState(reconciler.last as Content);
+	const state = buildState(reconciler.last);
 	index = buildLineIndex(state.doc);
 
 	view = new EditorView(container, {
 		state,
 		attributes: opts.label ? { 'aria-label': opts.label } : undefined,
 		dispatchTransaction: (tr) => {
-			const oldRt = reconciler.last as Content;
+			const oldRt = reconciler.last;
 			const next = view.state.apply(tr);
 			view.updateState(next); // (a) optimistic
 			index = buildLineIndex(next.doc);
@@ -159,7 +159,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 				commitEdit(oldRt, next.doc);
 			}
 			// (d) caret — for both structural and selection-only changes.
-			opts.onCaretMove?.(addr, pmToUsv(next.doc, index, next.selection.head));
+			opts.onCaretMove?.(addr, pmToUsv(index, next.selection.head));
 		},
 		handleDOMEvents: {
 			focus: () => {
@@ -176,7 +176,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		const seedIndex = buildLineIndex(pmDoc);
 		const seededAnchors = anchors.map((a) => ({
 			id: a.id,
-			pos: usvToPM(pmDoc, seedIndex, a.pos)
+			pos: usvToPM(seedIndex, a.pos)
 		}));
 		return EditorState.create({
 			doc: pmDoc,
@@ -205,8 +205,9 @@ export function createField(opts: CreateFieldOpts): FieldController {
 				// anchors are the plugin's positions (mapped through the tr) as USV.
 				const oldAnchors = plaintext ? [] : anchorsFromContent(oldRt);
 				const newAnchors = plaintext ? [] : readAnchorsUsv(newDoc);
-				const bundle = lower(oldRt, newDoc, { oldAnchors, newAnchors });
-				doc.applyChange(addr, bundle);
+				// `newRt` above is the projection `lower` diffs against — projecting the
+				// doc a second time here would double the per-keystroke tree walk.
+				doc.applyChange(addr, lower(oldRt, newRt, { oldAnchors, newAnchors }));
 			}
 			reconciler.commit(readLeaf(doc, addr));
 		} catch (e) {
@@ -231,12 +232,12 @@ export function createField(opts: CreateFieldOpts): FieldController {
 
 	/** Anchor positions in the CURRENT (new) doc, as USV. */
 	function readAnchorsUsv(newDoc: PMNode): AnchorPos[] {
-		return heldAnchors().map((a) => ({ id: a.id, pos: pmToUsv(newDoc, index, a.pos) }));
+		return heldAnchors().map((a) => ({ id: a.id, pos: pmToUsv(index, a.pos) }));
 	}
 
 	const controller: FieldController = {
 		setCaret(pos: number): void {
-			const pm = usvToPM(view.state.doc, index, pos);
+			const pm = usvToPM(index, pos);
 			// `Selection.near`, not `TextSelection.create`: the mapped position can
 			// be non-inline (before an island/rule block, or doc-level in an empty
 			// nested textblock), where a raw TextSelection is invalid.
@@ -247,12 +248,12 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		applyExternal(): void {
 			const current = readLeaf(doc, addr);
 			if (!reconciler.shouldRehydrate(current)) return; // own edit / no change
-			const caretUsv = pmToUsv(view.state.doc, index, view.state.selection.head);
+			const caretUsv = pmToUsv(index, view.state.selection.head);
 			const fresh = buildState(current);
 			view.updateState(fresh);
 			index = buildLineIndex(fresh.doc);
 			// Best-effort caret continuity across an external change: keep the USV.
-			const pm = usvToPM(fresh.doc, index, caretUsv);
+			const pm = usvToPM(index, caretUsv);
 			view.dispatch(view.state.tr.setSelection(Selection.near(fresh.doc.resolve(pm))));
 			reconciler.commit(current);
 		},
@@ -268,8 +269,8 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			// An anchor commits through `applyChange` (present field); a still-unset
 			// default-only field is materialized first, else the commit's create-branch
 			// `install` — value semantics — would drop the just-added anchor.
-			if (!leafPresent(doc, addr)) doc.install(addr, reconciler.last as Content);
-			const pm = usvToPM(view.state.doc, index, pos);
+			if (!leafPresent(doc, addr)) doc.install(addr, reconciler.last);
+			const pm = usvToPM(index, pos);
 			view.dispatch(view.state.tr.setMeta(anchorKey, { op: 'add', id, pos: pm } as AnchorEdit));
 		},
 		removeAnchor(id: string): void {
@@ -280,7 +281,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		anchorsInRange(from: number, to: number): string[] {
 			return heldAnchors()
 				.filter((a) => {
-					const u = pmToUsv(view.state.doc, index, a.pos);
+					const u = pmToUsv(index, a.pos);
 					return u >= from && u <= to;
 				})
 				.map((a) => a.id);
@@ -288,8 +289,8 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		selectionRange(): { from: number; to: number } {
 			const { from, to } = view.state.selection;
 			return {
-				from: pmToUsv(view.state.doc, index, from),
-				to: pmToUsv(view.state.doc, index, to)
+				from: pmToUsv(index, from),
+				to: pmToUsv(index, to)
 			};
 		},
 		destroy(): void {

@@ -100,10 +100,10 @@ function assertInverseDoc(doc: PMNode, label: string): void {
 	const index = buildLineIndex(doc);
 	const total = usvLength(rt.text);
 	for (let p = 0; p <= total; p++) {
-		const pm = usvToPM(doc, index, p);
+		const pm = usvToPM(index, p);
 		expect(pm, `${label}: usvToPM(${p}) out of range`).toBeGreaterThanOrEqual(0);
 		expect(pm, `${label}: usvToPM(${p}) out of range`).toBeLessThanOrEqual(doc.content.size);
-		expect(pmToUsv(doc, index, pm), `${label}: roundtrip USV ${p}`).toBe(p);
+		expect(pmToUsv(index, pm), `${label}: roundtrip USV ${p}`).toBe(p);
 	}
 }
 
