@@ -36,8 +36,6 @@
 	import type { FieldController } from '../core/codec/index.js';
 	import {
 		IdSeq,
-		initIds,
-		idIndex,
 		fieldModels,
 		groupOrder,
 		groupSections,
@@ -46,10 +44,12 @@
 		bodyEnabled,
 		humanize,
 		provenanceMap,
-		provenanceByCardIndex,
-		bodyByCardIndex,
-		bodyGhostText,
-		type CardModel
+		resolvedByCardIndex,
+		ghostDefault,
+		stringifyGhost,
+		NO_RESOLVED_ROWS,
+		type CardModel,
+		type ResolvedCardRows
 	} from './structure.js';
 	import {
 		fieldKeyToString,
@@ -120,7 +120,7 @@
 	const seq = new IdSeq();
 	// Session ids, one per composable card, reordered in lockstep with structure ops.
 	// svelte-ignore state_referenced_locally
-	let cardIds = $state<string[]>(initIds(doc.cardCount, seq));
+	let cardIds = $state<string[]>(seq.take(doc.cardCount));
 
 	// Local commit-error diagnostics (VISUAL_EDITOR §Diagnostics, producer #2):
 	// one slot per field key, replaced on each failed `commitScalar`, cleared on
@@ -134,9 +134,10 @@
 		revision++;
 		onChange?.();
 	}
-	/** Resolve a stable card id to its current content index (the mutation boundary). */
+	/** Resolve a stable card id to its current content index, or -1 if gone — read
+	 * at the mutation boundary, never cached (VISUAL_EDITOR §"The address is the spine"). */
 	function cardIndexOf(id: string): number {
-		return idIndex(cardIds, id);
+		return cardIds.indexOf(id);
 	}
 
 	// ── Leaf registry (setCaret target lookup + the 4b active-leaf seam) ────────
@@ -381,8 +382,7 @@
 			ext?: Record<string, unknown>;
 		},
 		cardSchema: Parameters<typeof fieldModels>[0] | undefined,
-		resolvedFields: ResolvedField[],
-		resolvedBody: ResolvedField | null
+		rows: ResolvedCardRows
 	): CardModel {
 		const values: Record<string, unknown> = {};
 		for (const p of card.payloadItems)
@@ -402,10 +402,12 @@
 			titleOverride: extEditor?.title ?? '',
 			titlePlaceholder: cardTitle(cardSchema, kind, values, undefined),
 			values,
-			provenance: provenanceMap(resolvedFields),
+			provenance: provenanceMap(rows.fields),
 			sections,
 			hasBody: bodyEnabled(cardSchema),
-			bodyGhost: bodyGhostText(resolvedBody)
+			// The body ghosts its resolved `default:` exactly as a scalar does — the
+			// same text-ghost projection `<Field>` applies to a field's row.
+			bodyGhost: stringifyGhost(ghostDefault(rows.body ?? undefined))
 		};
 	}
 
@@ -423,23 +425,17 @@
 		} catch (e) {
 			console.error('[quillmark/editor] quill.resolve failed; ghosts fall back to none', e);
 		}
-		const byCard = provenanceByCardIndex(resolved);
-		const bodyByCard = bodyByCardIndex(resolved);
+		const byCard = resolvedByCardIndex(resolved);
 		return {
 			// Tips are DOCUMENT-level, not a property of the main card (issue #71): they
 			// hang off `main`'s `$ext` because that is where a document-scoped `$ext`
 			// lives, and the model says so at the root rather than making every card
 			// carry a field one card renders.
 			tips: tipsChannel((main.ext?.editor as { tips?: unknown } | undefined)?.tips),
-			main: buildCard(
-				'main',
-				true,
-				'main',
-				main,
-				schema.main,
-				resolved?.main.fields ?? [],
-				resolved?.main.body ?? null
-			),
+			main: buildCard('main', true, 'main', main, schema.main, {
+				fields: resolved?.main.fields ?? [],
+				body: resolved?.main.body ?? null
+			}),
 			cards: cards.map((c, i) =>
 				buildCard(
 					cardIds[i] ?? `orphan${i}`,
@@ -447,8 +443,7 @@
 					c.kind,
 					c,
 					schema.card_kinds?.[c.kind],
-					byCard.get(i) ?? [],
-					bodyByCard.get(i) ?? null
+					byCard.get(i) ?? NO_RESOLVED_ROWS
 				)
 			)
 		};

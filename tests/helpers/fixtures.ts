@@ -5,6 +5,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, relative, sep } from 'node:path';
+import { Quill } from '$lib/core';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(HERE, '..', '..');
@@ -34,4 +35,16 @@ export function loadFixtureTree(root: string = USAF_MEMO_ROOT): Map<string, Uint
 	};
 	walk(root);
 	return tree;
+}
+
+/**
+ * The reference quill, parsed once per worker. `Quill.fromTree` re-parses the
+ * whole fixture tree, and a suite only ever reads its schema or seeds fresh
+ * documents off it — so the handle is shared and never freed, rather than each
+ * suite keeping its own copy of this cache.
+ */
+let cachedQuill: Quill | undefined;
+export function quill(): Quill {
+	if (!cachedQuill) cachedQuill = Quill.fromTree(loadFixtureTree());
+	return cachedQuill;
 }

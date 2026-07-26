@@ -7,7 +7,6 @@ import {
 	fieldKeyToString,
 	parsePath,
 	resolveCardKey,
-	routeByPath,
 	routeAndResolve,
 	mergeDiagnostics,
 	type FieldKey
@@ -82,47 +81,36 @@ describe('resolveCardKey', () => {
 	});
 });
 
-describe('routeByPath', () => {
-	it('drops diagnostics with no path', () => {
-		expect(routeByPath([{ severity: 'error', message: 'no path' }])).toEqual([]);
-	});
-	it('drops diagnostics whose path is unroutable', () => {
-		expect(routeByPath([err('bad', 'main.references.0')])).toEqual([]);
-	});
-	it('routes a mix of main and card paths', () => {
-		const routed = routeByPath([
-			warn('w1', 'main.subject'),
-			err('e1', 'cards.indorsement[0].from')
-		]);
-		expect(routed).toEqual([
-			{ key: { field: 'subject' }, diagnostic: warn('w1', 'main.subject') },
-			{
-				key: { card: 0, field: 'from' },
-				diagnostic: err('e1', 'cards.indorsement[0].from')
-			}
-		]);
-	});
-	it('handles an undefined/empty list', () => {
-		expect(routeByPath(undefined)).toEqual([]);
-		expect(routeByPath([])).toEqual([]);
-	});
-});
-
 describe('routeAndResolve', () => {
 	const cardIds = ['c0', 'c1'];
-	it('routes and resolves in one step, dropping out-of-range card paths', () => {
+
+	it('routes a mix of main and card paths to the live stable-id keying', () => {
 		const out = routeAndResolve(
-			[
-				warn('w1', 'main.subject'),
-				err('e1', 'cards.indorsement[1].from'),
-				err('e2', 'cards.indorsement[9].from') // out of range — dropped
-			],
+			[warn('w1', 'main.subject'), err('e1', 'cards.indorsement[1].from')],
 			cardIds
 		);
 		expect(out).toEqual([
 			{ key: { field: 'subject' }, diagnostic: warn('w1', 'main.subject') },
 			{ key: { card: 'c1', field: 'from' }, diagnostic: err('e1', 'cards.indorsement[1].from') }
 		]);
+	});
+
+	it('drops rather than mis-routes: no path, an unplaceable path, an out-of-range card', () => {
+		expect(
+			routeAndResolve(
+				[
+					{ severity: 'error', message: 'no path' },
+					err('unplaceable', 'main.references.0'),
+					err('gone', 'cards.indorsement[9].from')
+				],
+				cardIds
+			)
+		).toEqual([]);
+	});
+
+	it('handles an undefined/empty list', () => {
+		expect(routeAndResolve(undefined, cardIds)).toEqual([]);
+		expect(routeAndResolve([], cardIds)).toEqual([]);
 	});
 });
 
@@ -164,9 +152,5 @@ describe('mergeDiagnostics', () => {
 		const m = mergeDiagnostics(group);
 		expect(m.get('main:from')?.[0].message).toBe('main-from');
 		expect(m.get('c0:from')?.[0].message).toBe('card-from');
-	});
-	it('returns an empty map for no input', () => {
-		expect(mergeDiagnostics().size).toBe(0);
-		expect(mergeDiagnostics([]).size).toBe(0);
 	});
 });

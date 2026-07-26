@@ -15,7 +15,7 @@
 <script lang="ts">
 	import type { Content, QuillFieldSchema } from '../core/index.js';
 	import { emptyContent } from '../core/codec/index.js';
-	import { IdSeq, elementControl } from './structure.js';
+	import { IdSeq, controlKind } from './structure.js';
 	import X from '@lucide/svelte/icons/x';
 	import TextField from './TextField.svelte';
 	import ProseArrayElement from './ProseArrayElement.svelte';
@@ -37,7 +37,9 @@
 	}
 	let { value, items, label, required, description, onCommit, onFocusEl, testid }: Props = $props();
 
-	const control = $derived(elementControl(items));
+	// The ELEMENT control is the item schema's own; an array declaring no `items`
+	// has text elements.
+	const control = $derived(items ? controlKind(items) : 'text');
 	const plaintext = $derived(items?.type === 'plaintext');
 	const arr = $derived((value ?? []) as unknown[]);
 
@@ -46,13 +48,13 @@
 	// an effect-only seed mounts every element editor in a second render.
 	const seq = new IdSeq();
 	// svelte-ignore state_referenced_locally
-	let ids = $state<string[]>(Array.from({ length: (value ?? []).length }, () => seq.next()));
+	let ids = $state<string[]>(seq.take((value ?? []).length));
 	// Length reconcile (defend against an out-of-band length change);
 	// order is maintained by the mutators, not here.
 	$effect(() => {
 		const n = arr.length;
 		if (ids.length === n) return;
-		if (ids.length < n) ids = [...ids, ...Array.from({ length: n - ids.length }, () => seq.next())];
+		if (ids.length < n) ids = [...ids, ...seq.take(n - ids.length)];
 		else ids = ids.slice(0, n);
 	});
 

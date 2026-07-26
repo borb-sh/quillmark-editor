@@ -103,26 +103,23 @@ export interface RoutedDiagnostic {
 	diagnostic: Diagnostic;
 }
 
-/** Route a producer's raw `Diagnostic[]` (validate() / external) via `.path`, dropping unroutable entries (no `path`, or a `path` `parsePath` can't place). */
-export function routeByPath(diagnostics: Diagnostic[] | undefined): RoutedDiagnostic[] {
-	const out: RoutedDiagnostic[] = [];
-	for (const d of diagnostics ?? []) {
-		if (!d.path) continue;
-		const key = parsePath(d.path);
-		if (key) out.push({ key, diagnostic: d });
-	}
-	return out;
-}
-
-/** `routeByPath` + `resolveCardKey` in one step — the convenience a reactive caller (VisualEditor) wants for producers #1/#3. */
+/**
+ * Route a path-keyed producer's raw `Diagnostic[]` (validate() / external) to the
+ * editor's stable-id keying — the ONE door producers #1/#3 take, `parsePath` and
+ * `resolveCardKey` in a single pass. An entry drops rather than mis-routes when it
+ * carries no `path`, when `parsePath` cannot place it (a nested / array-element
+ * address), or when its absolute card index is out of the live `cardIds`.
+ */
 export function routeAndResolve(
 	diagnostics: Diagnostic[] | undefined,
 	cardIds: readonly string[]
 ): RoutedDiagnostic[] {
 	const out: RoutedDiagnostic[] = [];
-	for (const r of routeByPath(diagnostics)) {
-		const resolved = resolveCardKey(r.key, cardIds);
-		if (resolved) out.push({ key: resolved, diagnostic: r.diagnostic });
+	for (const d of diagnostics ?? []) {
+		if (!d.path) continue;
+		const key = parsePath(d.path);
+		const resolved = key && resolveCardKey(key, cardIds);
+		if (resolved) out.push({ key: resolved, diagnostic: d });
 	}
 	return out;
 }

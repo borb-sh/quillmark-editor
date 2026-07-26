@@ -2,16 +2,12 @@
 // normalizes on write, so round-trips are idempotent only up to normalization —
 // `normalize` installs a Content and reads it back through the WASM content so
 // tests assert POST-NORMALIZE equality (per the phase brief).
-import { Quill, Document, importMarkdown } from '$lib/core';
+import { Document, importMarkdown } from '$lib/core';
 import type { Content } from '$lib/core';
 import { contentEqual } from '$lib/core/codec/reconcile.js';
-import { loadFixtureTree } from '../helpers/fixtures.js';
+import { quill } from '../helpers/fixtures.js';
 
-let cachedQuill: Quill | undefined;
-export function quill(): Quill {
-	if (!cachedQuill) cachedQuill = Quill.fromTree(loadFixtureTree());
-	return cachedQuill;
-}
+export { quill };
 export function freshDoc(): Document {
 	return quill().seedDocument();
 }
