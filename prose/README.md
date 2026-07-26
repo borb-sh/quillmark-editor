@@ -18,8 +18,11 @@ Deferred and not-yet-designed work is tracked as GitHub issues — each proposal
 designed fresh when scheduled, written down as a `plans/` handover only if it is
 large enough to outlive one sitting, then promoted to `canon/` on ship. A branch
 integrating a set of those issues may carry a scratch tier named for it
-(`web-app-parity/`) holding the schedule and unsettled forks; it is retired with
-the branch and `check:canon` does not scan it.
+(`web-app-parity/` was one) holding the schedule and unsettled forks; it is
+retired WITH the branch and `check:canon` does not scan it. Retire it on the
+merge, not later: nothing gates a scratch tier, so it rots first and loudest —
+the last one outlived its branch naming a lint, a mint root, and a dial that had
+all been renamed out from under it.
 
 V1 shipped (Phases 1–5); the surfaces are described in `canon/`, with deferred
 work tracked as GitHub issues. The build-order phase briefs were retired once
