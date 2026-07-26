@@ -14,17 +14,16 @@ export { createField, emptyContent, proseLeafPlugins } from './field.js';
 export type { CreateFieldOpts, FieldController } from './field.js';
 
 // Schemas (the decode/encode target; Phase 4 mounts them).
-export { blockSchema, inlineSchema, isInlineSchema } from './schema.js';
+export { blockSchema, inlineSchema } from './schema.js';
 
 // Decode / encode / positions (tests + Phase 4).
 //
-// WHAT STAYS OFF THIS BARREL. The mark algebra (`markKey`, `pmMarkFromContent`,
-// `contentDescriptorFromPM`, `anchorsFromContent`), the island bridge
-// (`ISLAND_SLOT`, `islandEntryFromNode`), the schema predicate `isInlineSchema`,
-// the `diff*` helpers, `scanDoc`, and `codePoints` are all reached by RELATIVE
-// import inside `codec/` and by nothing else. A barrel entry for a symbol with no
-// off-barrel caller is surface to keep honest for free — so they have none, and a
-// future consumer adds one when it has a use.
+// THE BARREL CARRIES WHAT HAS AN OFF-BARREL CALLER, and nothing else. The mark
+// algebra, the island bridge, the schema predicate, the `diff*` helpers,
+// `scanDoc`, `codePoints` — every one of them is reached by RELATIVE import
+// within `codec/`, so none of them is here. An export nothing imports is surface
+// that still has to stay honest; a symbol earns its line when a caller outside
+// this folder wants it.
 export { decode, renderContent, usvLength } from './decode.js';
 export { pmToContent, lower, insertReintroducesIslandSlot } from './encode.js';
 export { usvToPM, pmToUsv, buildLineIndex } from './positions.js';

@@ -20,7 +20,7 @@
 	import TextField from './TextField.svelte';
 	import ProseArrayElement from './ProseArrayElement.svelte';
 	import FieldLabel from './FieldLabel.svelte';
-	import './controls.css'; // `.qm-input` (the JSON element) + `.qm-icon-btn` (remove)
+	import './controls.css';
 
 	interface Props {
 		value: unknown[] | undefined;

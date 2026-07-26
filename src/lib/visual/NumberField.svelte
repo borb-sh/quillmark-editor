@@ -21,7 +21,7 @@
 -->
 <script lang="ts">
 	import { syncedLocal } from './synced.svelte.js';
-	import './controls.css'; // `.qm-input` — shared with TextField and the array's JSON element
+	import './controls.css';
 
 	interface Props {
 		value: number | undefined;
@@ -63,6 +63,3 @@
 	}}
 	onchange={(e) => commit((e.currentTarget as HTMLInputElement).value)}
 />
-
-<!-- The whole box is the shared `.qm-input` recipe (controls.css); this control
-     adds nothing of its own. -->

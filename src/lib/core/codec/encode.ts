@@ -51,9 +51,10 @@ export interface Scan {
 }
 
 /** A working accumulator threaded through the walk. `usvEnd` is the RUNNING USV
- * length of `text` — every run's `usvStart` reads it and every append advances it,
- * so the walk stays linear. Re-measuring `text` per run instead would make the
- * scan quadratic, and the scan runs twice per keystroke. */
+ * length of `text` — every run's `usvStart` reads it and every append advances it.
+ * It is a counter rather than a measurement of `text` because the walk runs twice
+ * per keystroke and `usvLength` is O(n): measuring per run makes the scan
+ * quadratic in the field's length. */
 interface Acc extends Scan {
 	rawMarks: ContentMark[]; // per-text-node marks, merged into `marks` at the end
 	lastContentEndPm: number; // PM position after the previous content line's content
@@ -299,10 +300,10 @@ interface LowerOpts {
 /**
  * Lower an edit to a `ChangeBundle` — the diff old→new content into ops.
  *
- * BOTH sides are content, never a PM doc: the caller has already projected the
- * new doc (`pmToContent`) to gate the island-slot fallback, and a convenience
- * overload taking the doc would re-walk the whole tree a second time per
- * keystroke. The projection is the caller's to hold.
+ * BOTH sides are content, never a PM doc. The caller has already projected the new
+ * doc (`pmToContent`) to gate the island-slot fallback, so the projection is
+ * theirs to hold: a doc-taking overload re-walks the whole tree, once per
+ * keystroke, for a value the caller has in hand.
  */
 export function lower(oldRt: Content, newRt: Content, opts: LowerOpts = {}): ChangeBundle {
 	const delta = diffText(oldRt.text, newRt.text);

@@ -117,10 +117,10 @@ export const NO_RESOLVED_ROWS: ResolvedCardRows = { fields: [], body: null };
 /**
  * Composable cards' resolved rows keyed by document index (`ResolvedCard.index`,
  * not array position, so it holds whatever order the resolve view returns) — built
- * once per derive, so the per-card provenance join is O(1). Fields and body come
- * off the same entry in one walk; splitting them into two maps walked `cards`
- * twice for one lookup each. Empty map when `resolved` is absent (a `resolve`
- * failure degrades to no ghosts, never a blank form).
+ * once per derive, so the per-card provenance join is O(1). Both channels ride one
+ * entry: a card reads its fields and its body from a single lookup. Empty map when
+ * `resolved` is absent (a `resolve` failure degrades to no ghosts, never a blank
+ * form).
  */
 export function resolvedByCardIndex(resolved: Resolved | undefined): Map<number, ResolvedCardRows> {
 	return new Map((resolved?.cards ?? []).map((c) => [c.index, { fields: c.fields, body: c.body }]));

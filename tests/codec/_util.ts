@@ -45,9 +45,9 @@ export function bodyContent(): Content {
  * range. The index is built fresh here, so a caller that mutated the doc is
  * asserting against the rebuilt map rather than a stale one.
  *
- * One helper, not three: the property is the same whether the doc came from a
- * decode (positions.test.ts) or from a structural edit (roundtrip.test.ts), and
- * three copies drifted into three slightly different assertion sets.
+ * One helper for every caller: the property does not change with the doc's origin,
+ * so a decode (positions.test.ts) and a structural edit (roundtrip.test.ts) assert
+ * it identically. A per-suite copy is a per-suite assertion set.
  */
 export function assertPositionInverse(doc: PMNode, label = 'position map'): void {
 	const index = buildLineIndex(doc);

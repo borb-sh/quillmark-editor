@@ -26,7 +26,7 @@
 	import { DateField as BitsDateField } from 'bits-ui';
 	import { parseDate, type DateValue } from '@internationalized/date';
 	import { syncedLocal } from './synced.svelte.js';
-	import './controls.css'; // `.qm-focus-ring` — the shared focus-ring rule
+	import './controls.css';
 
 	interface Props {
 		value: string | undefined;

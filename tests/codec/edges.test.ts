@@ -5,10 +5,10 @@
 // markdown projection) has no editor-side consumer yet, so it has no test — the
 // warning surface arrives with the paste/copy wiring.
 //
-// Input-rule coverage lives in inputrules.test.ts, which drives the rules through
-// a real view; a plaintext field's suppression is field.test.ts, which drives a
-// real leaf. A rule COUNT assertion lived here and proved neither — it broke on
-// any addition and could not tell a rule that fires at the wrong position.
+// Input-rule coverage is behavioral and lives elsewhere: inputrules.test.ts drives
+// the rules through a real view, field.test.ts drives a real leaf for a plaintext
+// field's suppression. Counting the mounted rules proves neither — a rule that
+// fires at the wrong position is still one rule.
 import { describe, it, expect } from 'vitest';
 import { rebase, exportMarkdown } from '$lib/core';
 import { md } from './_util.js';

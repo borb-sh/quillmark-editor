@@ -14,7 +14,7 @@
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import X from '@lucide/svelte/icons/x';
 	import { renderTip } from './tips.js';
-	import './controls.css'; // `.qm-icon-btn` — the shared glyph-button recipe
+	import './controls.css';
 
 	interface Props {
 		/** The narrowed channel (`tipsChannel`) — never empty; the parent gates on length. */

@@ -10,7 +10,7 @@
 <script lang="ts">
 	import { Switch } from 'bits-ui';
 	import { syncedLocal } from './synced.svelte.js';
-	import './controls.css'; // `.qm-focus-ring` — the shared focus-ring rule
+	import './controls.css';
 
 	interface Props {
 		value: boolean | undefined;

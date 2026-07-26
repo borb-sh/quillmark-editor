@@ -1,9 +1,8 @@
-/* The control recipes more than one component draws — the box a typed value sits
-   in, and the square icon button. Both had been copied per component: `.qm-input`
-   stood character-for-character identical in TextField and NumberField, and
-   ArrayField's JSON textarea carried the class with no rule behind it, because
-   Svelte scopes a `<style>` block to the component that owns the markup. A copy
-   per component is how one of them silently ships unstyled.
+/* The control recipes more than one component draws — the focus ring, the box a
+   typed value sits in, and the square icon button. They live here rather than per
+   component because Svelte scopes a `<style>` block to the component that owns the
+   markup: a component that carries a shared class without also carrying its rule
+   ships unstyled, and nothing raises it.
 
    NOT in `core/theme.css`: that file is the DERIVATION — public dials in, the
    private `--_qm-*` scale out — and it mints values. This file mints none; every
@@ -18,17 +17,15 @@
 
 @layer qm.chrome {
 	/* The themed focus ring in place of the raw UA outline (SURFACES §Focus), as a
-	   RULE rather than as a pair of rungs each control re-reads. The composite
-	   `--_qm-ring-focus` rung already meant no control could mint the value — but
-	   five of them still restated which two properties draw a ring and in what
-	   combination, which is the decision, and a sixth control could have drawn it
-	   differently without any gate noticing.
+	   RULE rather than a pair of rungs each control assembles. `--_qm-ring-focus`
+	   fixes the VALUE; which properties draw a ring, and on what state, is the other
+	   half of the decision, and `check:style` sees a minted literal but never a
+	   divergent rule. A control opts in by carrying the marker class.
 
 	   Two selectors, because focus lands in two places. Usually on the control
-	   itself; but the date field's focus lives on a SEGMENT, and a per-segment ring
-	   would flicker across the field as the caret walks it — so it rings the
-	   wrapper on `:focus-within` instead. That is the only real distinction, and it
-	   is the one this pair keeps. */
+	   itself; but the date field's focus lives on a SEGMENT, so it rings the field
+	   around it — a per-segment ring flickers across the field as the caret walks
+	   it. That is the only distinction, and this pair is the whole of it. */
 	.qm-focus-ring:focus-visible,
 	.qm-focus-ring-within:focus-within {
 		outline: var(--_qm-ring-focus);

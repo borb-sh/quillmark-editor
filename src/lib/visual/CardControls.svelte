@@ -9,7 +9,7 @@
 	import ChevronUp from '@lucide/svelte/icons/chevron-up';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import X from '@lucide/svelte/icons/x';
-	import './controls.css'; // `.qm-icon-btn` — the shared glyph-button recipe
+	import './controls.css';
 
 	interface Props {
 		isFirst: boolean;
