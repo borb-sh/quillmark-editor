@@ -20,6 +20,7 @@
 	import TextField from './TextField.svelte';
 	import ProseArrayElement from './ProseArrayElement.svelte';
 	import FieldLabel from './FieldLabel.svelte';
+	import './controls.css'; // `.qm-input` (the JSON element) + `.qm-icon-btn` (remove)
 
 	interface Props {
 		value: unknown[] | undefined;
@@ -134,7 +135,7 @@
 			{/if}
 			<button
 				type="button"
-				class="qm-mini qm-remove"
+				class="qm-icon-btn qm-remove"
 				title="Remove"
 				data-testid={testid ? `${testid}-remove-${k}` : undefined}
 				onclick={() => remove(k)}><X size={14} /></button
@@ -163,34 +164,14 @@
 	.qm-array-input {
 		flex: 1;
 	}
-	.qm-mini {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		border: 1px solid var(--_qm-border);
-		background: var(--_qm-surface);
-		border-radius: var(--_qm-radius-inner);
-		cursor: pointer;
-		line-height: 1;
-		padding: var(--_qm-space-half) var(--_qm-space);
-	}
-	.qm-mini:disabled {
-		opacity: var(--_qm-opacity-idle);
-		cursor: default;
-	}
 	.qm-remove {
 		align-self: center;
 	}
+	/* The JSON element is a `.qm-input` (controls.css) — box, focus ring, and all;
+	   what a textarea adds over an input is the face and a floor on its height. */
 	.qm-json {
-		width: 100%;
-		box-sizing: border-box;
 		font-family: var(--_qm-font-mono);
 		min-height: 2.5rem;
-	}
-	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */
-	.qm-json:focus-visible {
-		outline: var(--_qm-ring-focus);
-		outline-offset: var(--_qm-ring-offset);
 	}
 	.qm-add-el {
 		border: 1px dashed var(--_qm-border);

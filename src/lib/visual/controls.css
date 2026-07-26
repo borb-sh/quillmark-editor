@@ -1,0 +1,56 @@
+/* The control recipes more than one component draws — the box a typed value sits
+   in, and the square icon button. Both had been copied per component: `.qm-input`
+   stood character-for-character identical in TextField and NumberField, and
+   ArrayField's JSON textarea carried the class with no rule behind it, because
+   Svelte scopes a `<style>` block to the component that owns the markup. A copy
+   per component is how one of them silently ships unstyled.
+
+   NOT in `core/theme.css`: that file is the DERIVATION — public dials in, the
+   private `--_qm-*` scale out — and it mints values. This file mints none; every
+   declaration reads a rung, exactly as a component's own block must
+   (SURFACES §"Preventing drift", enforced by `check:style` over `.css` too).
+
+   `@layer qm.chrome` is the second layer `theme.css` declares. Layered rules lose
+   to unlayered ones, which is the point twice over: a consumer's stylesheet beats
+   the chrome without `!important`, and a component's own scoped block still
+   overrides its shared base — `.qm-card-delete` recolours a `.qm-icon-btn`, and
+   `.qm-json` adds the monospace face over `.qm-input`, with no specificity fight. */
+
+@layer qm.chrome {
+	/* A typed value's box — text and numeric inputs, and the array's JSON textarea. */
+	.qm-input {
+		width: 100%;
+		box-sizing: border-box;
+		padding: var(--_qm-space) var(--_qm-space-2);
+		border: 1px solid var(--_qm-border);
+		border-radius: var(--_qm-radius-inner);
+		font: inherit;
+		background: var(--_qm-surface);
+	}
+	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */
+	.qm-input:focus-visible {
+		outline: var(--_qm-ring-focus);
+		outline-offset: var(--_qm-ring-offset);
+	}
+
+	/* A square glyph button — card reorder/delete, array remove, the tips card's
+	   foot. Deliberately no `color`: the callers disagree on purpose (the card
+	   delete is `--_qm-danger`, the array remove inherits its row's ink), and a
+	   base colour here would flatten that distinction rather than share a recipe. */
+	.qm-icon-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--_qm-space-half);
+		border: 1px solid var(--_qm-border);
+		background: var(--_qm-surface);
+		border-radius: var(--_qm-radius-inner);
+		cursor: pointer;
+		line-height: 1;
+		padding: var(--_qm-space-half) var(--_qm-space);
+	}
+	.qm-icon-btn:disabled {
+		opacity: var(--_qm-opacity-idle);
+		cursor: default;
+	}
+}

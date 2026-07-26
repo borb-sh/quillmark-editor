@@ -20,10 +20,13 @@
 //     so this way only — but it is checked, because canon rots where nothing looks.
 //
 // Scope is `src/lib/**` for every axis — a violation must not become legal by
-// directory. `.svelte` `<style>` blocks and `.ts` alike, because `preview/paint.ts`
-// and `preview/overlay.ts` carry style declarations inside JS strings and would
-// otherwise escape; in `.ts` a declaration is one string among code, so a marker on
-// the line stands in for the property name.
+// directory, nor by FILE TYPE. Three shapes carry style: a `.svelte` `<style>`
+// block, a plain `.css` file (the shared control recipes), and `.ts` — because
+// `preview/paint.ts` and `preview/overlay.ts` carry style declarations inside JS
+// strings and would otherwise escape. The first two are CSS, so the property name
+// decides which axis owns a line; in `.ts` a declaration is one string among code,
+// so a marker on the line stands in for the property name — which is why the
+// property-named axes run on CSS only.
 //
 // A `var()` fallback is legitimate only in the derivation, which is exempt from the
 // literal rules entirely — so outside it, a literal is a literal wherever it sits.
@@ -58,14 +61,14 @@ const AXES = [
 		literal: /\b\d*\.?\d+(px|rem)\b/,
 		rung: '`var(--_qm-space-…)` / `var(--_qm-radius…)`',
 		doc: 'SURFACES §Rhythm',
-		svelteOnly: true
+		cssOnly: true
 	},
 	{
 		props: /^font-size$/,
 		literal: /\b\d*\.?\d+(px|rem|em)\b/,
 		rung: '`var(--_qm-text-…)`',
 		doc: 'THEMING §Typography',
-		svelteOnly: true
+		cssOnly: true
 	},
 	{
 		// The CSS-wide keywords (inherit/initial/unset) carry no hierarchy decision,
@@ -74,7 +77,7 @@ const AXES = [
 		literal: /\b(\d{3}|bold|bolder|lighter|normal)\b/,
 		rung: '`var(--_qm-weight-…)`',
 		doc: 'THEMING §Typography',
-		svelteOnly: true
+		cssOnly: true
 	},
 	{
 		// A family is a scale decision whatever it names, so the rung is required
@@ -84,7 +87,7 @@ const AXES = [
 		allowBare: /^(inherit|initial|unset|revert)$/,
 		rung: '`var(--_qm-font)` / `var(--_qm-font-mono)`',
 		doc: 'THEMING §"The dials"',
-		svelteOnly: true
+		cssOnly: true
 	},
 	{
 		// `0` / `1` are structural on/off, not a step on the recede ladder.
@@ -92,7 +95,7 @@ const AXES = [
 		allowBare: /^[01]$/,
 		rung: '`var(--_qm-opacity-…)`',
 		doc: 'THEMING.md',
-		svelteOnly: true
+		cssOnly: true
 	},
 	{
 		props:
@@ -100,11 +103,11 @@ const AXES = [
 		literal: COLOR_LITERAL,
 		rung: '`var(--_qm-…)`',
 		doc: 'THEMING.md',
-		svelteOnly: false
+		cssOnly: false
 	}
 ];
 
-/** Every `.svelte`/`.ts` source under `src/lib`, test files excluded, sorted. */
+/** Every `.svelte`/`.ts`/`.css` source under `src/lib`, test files excluded, sorted. */
 function sources() {
 	const out = [];
 	(function walk(dir) {
@@ -132,8 +135,9 @@ function decomment(text) {
 
 /** A file's lintable style region and the 1-based line it starts on. In `.svelte`
  *  that is the `<style>` block — script and markup literals (positions, timeouts)
- *  are none of a style gate's business. In `.ts` declarations live in strings
- *  anywhere, so the whole file is the region. */
+ *  are none of a style gate's business. A `.css` file is style throughout, and in
+ *  `.ts` declarations live in strings anywhere, so for both the whole file is the
+ *  region. */
 function styleRegion(text, file) {
 	if (!file.endsWith('.svelte')) return { style: decomment(text), base: 0 };
 	const m = text.match(/<style[^>]*>([\s\S]*?)<\/style>/);
@@ -149,7 +153,9 @@ for (const full of files) {
 	const file = relative(ROOT, full);
 	const region = styleRegion(readFileSync(full, 'utf8'), full);
 	if (!region) continue;
-	const svelte = full.endsWith('.svelte');
+	// CSS syntax — a `.svelte` style block or a `.css` file. The property-named axes
+	// run here; a `.ts` file's declarations are strings, matched by marker instead.
+	const css = /\.(svelte|css)$/.test(full);
 
 	region.style.split('\n').forEach((line, i) => {
 		const ln = region.base + i + 1;
@@ -163,13 +169,13 @@ for (const full of files) {
 		const value = decl?.[2] ?? '';
 
 		for (const axis of AXES) {
-			if (axis.svelteOnly && !svelte) continue;
-			// In `.svelte` the region is already CSS, so the property name decides; in
-			// `.ts` a style declaration is one string among code, so the marker does.
-			const owns = svelte ? axis.props.test(prop ?? '') : STYLE_MARKER.test(line);
+			if (axis.cssOnly && !css) continue;
+			// In CSS the property name decides which axis owns the line; in `.ts` a
+			// style declaration is one string among code, so the marker does.
+			const owns = css ? axis.props.test(prop ?? '') : STYLE_MARKER.test(line);
 			if (!owns) continue;
 			const bad = axis.literal
-				? axis.literal.test(svelte ? value : line)
+				? axis.literal.test(css ? value : line)
 				: !READS_RUNG.test(value) && !axis.allowBare.test(value.trim());
 			if (bad)
 				fail(`\`${prop ?? 'style'}\` mints a literal — read a ${axis.rung} rung (${axis.doc})`);

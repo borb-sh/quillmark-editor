@@ -10,6 +10,7 @@
 -->
 <script lang="ts">
 	import { syncedLocal } from './synced.svelte.js';
+	import './controls.css'; // `.qm-input` — shared with NumberField and the array's JSON element
 
 	interface Props {
 		value: string | undefined;
@@ -43,19 +44,5 @@
 	}}
 />
 
-<style>
-	.qm-input {
-		width: 100%;
-		box-sizing: border-box;
-		padding: var(--_qm-space) var(--_qm-space-2);
-		border: 1px solid var(--_qm-border);
-		border-radius: var(--_qm-radius-inner);
-		font: inherit;
-		background: var(--_qm-surface);
-	}
-	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */
-	.qm-input:focus-visible {
-		outline: var(--_qm-ring-focus);
-		outline-offset: var(--_qm-ring-offset);
-	}
-</style>
+<!-- The whole box is the shared `.qm-input` recipe (controls.css); this control
+     adds nothing of its own. -->
