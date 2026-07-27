@@ -103,27 +103,27 @@ export function provenanceMap(fields: ResolvedField[]): Record<string, ResolvedF
 	return Object.fromEntries(fields.map((f) => [f.name, f]));
 }
 
+/** A card's resolved rows: its declared fields, and the `body` sibling `resolve`
+ * hangs off each card (issue #58 §9). */
+export interface ResolvedCardRows {
+	fields: ResolvedField[];
+	body: ResolvedField | null;
+}
+
+/** The empty rows a card with no resolve entry reads — a shared constant so the
+ * per-card miss allocates nothing. */
+export const NO_RESOLVED_ROWS: ResolvedCardRows = { fields: [], body: null };
+
 /**
  * Composable cards' resolved rows keyed by document index (`ResolvedCard.index`,
  * not array position, so it holds whatever order the resolve view returns) — built
- * once per derive, so the per-card provenance join is O(1). Empty map when
+ * once per derive, so the per-card provenance join is O(1). Both channels ride one
+ * entry: a card reads its fields and its body from a single lookup. Empty map when
  * `resolved` is absent (a `resolve` failure degrades to no ghosts, never a blank
  * form).
  */
-export function provenanceByCardIndex(
-	resolved: Resolved | undefined
-): Map<number, ResolvedField[]> {
-	return new Map((resolved?.cards ?? []).map((c) => [c.index, c.fields]));
-}
-
-/**
- * Composable cards' resolved BODY rows keyed by document index — the `body`
- * sibling `resolve` hangs off each card (issue #58 §9), parallel to
- * {@link provenanceByCardIndex}'s `fields`. Empty map (→ no body ghost) when
- * `resolved` is absent.
- */
-export function bodyByCardIndex(resolved: Resolved | undefined): Map<number, ResolvedField | null> {
-	return new Map((resolved?.cards ?? []).map((c) => [c.index, c.body]));
+export function resolvedByCardIndex(resolved: Resolved | undefined): Map<number, ResolvedCardRows> {
+	return new Map((resolved?.cards ?? []).map((c) => [c.index, { fields: c.fields, body: c.body }]));
 }
 
 /** The ghost a field shows when unset: the resolved `default:` value the render
@@ -133,28 +133,18 @@ export function ghostDefault(row: ResolvedField | undefined): unknown {
 	return row?.source === 'default' ? row.value : undefined;
 }
 
-/** A ghost value's string form, or undefined for null/object (only text ghosts render a placeholder). */
+/** A ghost value's string form, or undefined for null/object (only text ghosts
+ * render a placeholder). The one text-ghost projection: a scalar field's
+ * placeholder and a body leaf's (issue #58 §9) both read `stringifyGhost ∘
+ * ghostDefault`, since a richtext body resolves to a text render — the correct
+ * thing to display as a placeholder (FIELD_PROVENANCE → #64). */
 export function stringifyGhost(ghost: unknown): string | undefined {
 	return ghost != null && typeof ghost !== 'object' ? String(ghost) : undefined;
 }
 
-/** The empty-body ghost: the resolved body `default:` as placeholder text (issue
- * #58 §9), or undefined when the body is authored / has no default. The body row
- * is `resolve`'s `body` sibling (a `ResolvedField`, never a `fields` row); a
- * richtext body resolves to a text render — the correct thing to display as a
- * placeholder (FIELD_PROVENANCE → #64). Field's `defaultStr` derives from the
- * same {@link stringifyGhost}. */
-export function bodyGhostText(body: ResolvedField | null | undefined): string | undefined {
-	return stringifyGhost(ghostDefault(body ?? undefined));
-}
-
-/** The control an array's ELEMENTS render as, from `items.type`. */
-export function elementControl(items: QuillFieldSchema | undefined): ControlKind {
-	if (!items) return 'text';
-	return controlKind(items);
-}
-
-/** Map a field schema to its control (precedence: prose › enum › text › …). */
+/** Map a field schema to its control (precedence: prose › enum › text › …).
+ * An array's ELEMENT control is this over `items` — a missing `items` is a text
+ * element. */
 export function controlKind(f: QuillFieldSchema): ControlKind {
 	switch (f.type) {
 		case 'richtext':
@@ -240,13 +230,13 @@ export function groupLabel(cardSchema: QuillCardSchema, group: string): string {
  * Sort field models into ordered group sections. Declared groups first (in
  * `order`), each carrying its fields in declaration order; then any remaining
  * groups (including the ungrouped bucket) in first-appearance order. `labelFor`
- * resolves a group id to its display label (the `ui.groups` title override, via
- * {@link groupLabel}); it defaults to {@link humanize} for the label-free caller.
+ * resolves a group id to its display label — always {@link groupLabel} bound to
+ * the card schema, which falls back to {@link humanize} itself.
  */
 export function groupSections(
 	fields: FieldModel[],
 	order: string[],
-	labelFor: (group: string) => string = humanize
+	labelFor: (group: string) => string
 ): GroupSection[] {
 	const sections: GroupSection[] = [];
 	const emitted = new Set<string | undefined>();
@@ -347,20 +337,17 @@ export function bodyEnabled(cardSchema: QuillCardSchema | undefined): boolean {
 // derive) — it is a session id held in a parallel array, reordered in lockstep
 // with the structure ops and resolved to an index only at the mutation boundary.
 
-/** A monotonic per-session id source. Ids are opaque strings, stable for the session. */
+/** A monotonic per-session id source. Ids are opaque strings, stable for the
+ * session; a fresh array for N existing instances is `seq.take(N)`, and an id
+ * resolves to its current index by `ids.indexOf(id)` (-1 once the instance is
+ * gone) — read at the mutation boundary, never cached. */
 export class IdSeq {
 	#n = 0;
 	next(): string {
 		return `c${this.#n++}`;
 	}
-}
-
-/** A fresh id array for `count` existing instances. */
-export function initIds(count: number, seq: IdSeq): string[] {
-	return Array.from({ length: count }, () => seq.next());
-}
-
-/** Resolve a stable id to its current index, or -1 if gone. */
-export function idIndex(ids: readonly string[], id: string): number {
-	return ids.indexOf(id);
+	/** `count` fresh ids, in order. */
+	take(count: number): string[] {
+		return Array.from({ length: count }, () => this.next());
+	}
 }

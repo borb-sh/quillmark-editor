@@ -10,6 +10,7 @@
 -->
 <script lang="ts">
 	import { syncedLocal } from './synced.svelte.js';
+	import './controls.css';
 
 	interface Props {
 		value: string | undefined;
@@ -27,7 +28,7 @@
 </script>
 
 <input
-	class="qm-input"
+	class="qm-input qm-focus-ring"
 	type="text"
 	value={local.value}
 	{placeholder}
@@ -42,20 +43,3 @@
 		if (local.value === '') onCommit(undefined);
 	}}
 />
-
-<style>
-	.qm-input {
-		width: 100%;
-		box-sizing: border-box;
-		padding: var(--_qm-space) var(--_qm-space-2);
-		border: 1px solid var(--_qm-border);
-		border-radius: var(--_qm-radius-inner);
-		font: inherit;
-		background: var(--_qm-surface);
-	}
-	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */
-	.qm-input:focus-visible {
-		outline: var(--_qm-ring-focus);
-		outline-offset: var(--_qm-ring-offset);
-	}
-</style>

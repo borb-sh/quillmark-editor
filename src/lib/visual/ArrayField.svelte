@@ -15,11 +15,12 @@
 <script lang="ts">
 	import type { Content, QuillFieldSchema } from '../core/index.js';
 	import { emptyContent } from '../core/codec/index.js';
-	import { IdSeq, elementControl } from './structure.js';
+	import { IdSeq, controlKind } from './structure.js';
 	import X from '@lucide/svelte/icons/x';
 	import TextField from './TextField.svelte';
 	import ProseArrayElement from './ProseArrayElement.svelte';
 	import FieldLabel from './FieldLabel.svelte';
+	import './controls.css';
 
 	interface Props {
 		value: unknown[] | undefined;
@@ -37,7 +38,9 @@
 	}
 	let { value, items, label, required, description, onCommit, onFocusEl, testid }: Props = $props();
 
-	const control = $derived(elementControl(items));
+	// The ELEMENT control is the item schema's own; an array declaring no `items`
+	// has text elements.
+	const control = $derived(items ? controlKind(items) : 'text');
 	const plaintext = $derived(items?.type === 'plaintext');
 	const arr = $derived((value ?? []) as unknown[]);
 
@@ -46,13 +49,13 @@
 	// an effect-only seed mounts every element editor in a second render.
 	const seq = new IdSeq();
 	// svelte-ignore state_referenced_locally
-	let ids = $state<string[]>(Array.from({ length: (value ?? []).length }, () => seq.next()));
+	let ids = $state<string[]>(seq.take((value ?? []).length));
 	// Length reconcile (defend against an out-of-band length change);
 	// order is maintained by the mutators, not here.
 	$effect(() => {
 		const n = arr.length;
 		if (ids.length === n) return;
-		if (ids.length < n) ids = [...ids, ...Array.from({ length: n - ids.length }, () => seq.next())];
+		if (ids.length < n) ids = [...ids, ...seq.take(n - ids.length)];
 		else ids = ids.slice(0, n);
 	});
 
@@ -108,7 +111,7 @@
 				/>
 			{:else if control === 'object'}
 				<textarea
-					class="qm-input qm-json"
+					class="qm-input qm-json qm-focus-ring"
 					aria-label={label != null ? `${label} ${k + 1}` : undefined}
 					data-testid={testid ? `${testid}-el-${k}` : undefined}
 					value={JSON.stringify(arr[k] ?? {})}
@@ -132,7 +135,7 @@
 			{/if}
 			<button
 				type="button"
-				class="qm-mini qm-remove"
+				class="qm-icon-btn qm-remove"
 				title="Remove"
 				data-testid={testid ? `${testid}-remove-${k}` : undefined}
 				onclick={() => remove(k)}><X size={14} /></button
@@ -161,34 +164,14 @@
 	.qm-array-input {
 		flex: 1;
 	}
-	.qm-mini {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		border: 1px solid var(--_qm-border);
-		background: var(--_qm-surface);
-		border-radius: var(--_qm-radius-inner);
-		cursor: pointer;
-		line-height: 1;
-		padding: var(--_qm-space-half) var(--_qm-space);
-	}
-	.qm-mini:disabled {
-		opacity: var(--_qm-opacity-idle);
-		cursor: default;
-	}
 	.qm-remove {
 		align-self: center;
 	}
+	/* The JSON element is a `.qm-input` (controls.css) — box, focus ring, and all;
+	   what a textarea adds over an input is the face and a floor on its height. */
 	.qm-json {
-		width: 100%;
-		box-sizing: border-box;
 		font-family: var(--_qm-font-mono);
 		min-height: 2.5rem;
-	}
-	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */
-	.qm-json:focus-visible {
-		outline: var(--_qm-ring-focus);
-		outline-offset: var(--_qm-ring-offset);
 	}
 	.qm-add-el {
 		border: 1px dashed var(--_qm-border);

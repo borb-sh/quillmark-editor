@@ -205,6 +205,48 @@ test.describe('visual editor chrome — polish (issue #58)', () => {
 	const opacityOf = (page: Page, testid: string) =>
 		page.getByTestId(testid).evaluate((el) => getComputedStyle(el).opacity);
 
+	// SURFACES §Focus — the scalar controls draw ONE themed ring, and they draw it
+	// because they opt into one rule (`.qm-focus-ring`, controls.css), not because
+	// each restates the declarations. Only a browser can check this: `outline` is
+	// computed style, and three of these controls are bits-ui primitives whose
+	// element the component never writes. If a control drops the marker class, or a
+	// future one hand-rolls its own ring, the triples stop agreeing here.
+	test('(§Focus) every scalar control draws the same themed focus ring', async ({ page }) => {
+		// Establish keyboard modality first — `:focus-visible` is modality-gated on a
+		// button, so a programmatic focus after a pointer-only session would not match.
+		await page.keyboard.press('Tab');
+
+		/** Focus `focusOn`, then read the computed outline of the element that RINGS. */
+		const ringOf = async (focusOn: string, ringOn = focusOn) => {
+			await page.locator(focusOn).first().focus();
+			return page
+				.locator(ringOn)
+				.first()
+				.evaluate((el) => {
+					const s = getComputedStyle(el);
+					return `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor}`;
+				});
+		};
+
+		const rings = {
+			// A plain input, and the same recipe on the numeric entry.
+			text: await ringOf('[data-testid="main-letterhead_title"]'),
+			number: await ringOf('[data-testid="main-font_size"]'),
+			// A bits-ui trigger — its element is the primitive's, not the component's.
+			enum: await ringOf('[data-testid="main-classification"]'),
+			// The date field is the one that rings a DIFFERENT element than the one
+			// focus lands on: focus goes to a segment, the ring to the field around it
+			// (`:focus-within`), so the ring does not flicker as the caret walks the
+			// segments. The value it draws must still be the same one.
+			date: await ringOf('[data-testid="main-date"] [data-segment="month"]', '.qm-date')
+		};
+
+		// A real ring, not the UA default and not nothing.
+		expect(rings.text).toMatch(/^solid 2px rgb\(/);
+		// …and one ring: every control reports the identical computed triple.
+		expect(Object.values(rings)).toEqual(Array(4).fill(rings.text));
+	});
+
 	// §6 — the add triggers recede: invisible at rest, one dim label on the last gap,
 	// and they reveal on hover. Opacity (not display) so clicks still land.
 	test('(§6) add triggers recede at rest; only the last shows a dim label; hover reveals', async ({

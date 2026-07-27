@@ -14,8 +14,9 @@ export interface Reconciler {
 	shouldRehydrate(current: Content): boolean;
 	/** Record `rt` as the codec's known state (after its own edit or a re-hydrate). */
 	commit(rt: Content): void;
-	/** The last known content (for tests / diagnostics). */
-	readonly last: Content | undefined;
+	/** The last known content. Seeded at construction and only ever replaced, so it
+	 * is never absent — the field reads it directly rather than through a cast. */
+	readonly last: Content;
 }
 
 /** A reconciler seeded with the leaf's initial content. */

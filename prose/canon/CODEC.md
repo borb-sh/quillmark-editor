@@ -104,8 +104,11 @@ so the field falls back to `install`.
 
 `usvToPM(pos)` / `pmToUsv(pmPos)`: a content USV offset is a character index
 into `text` (with `\n` and `U+FFFC` each one USV); a PM position counts node
-tokens. The map walks the line structure — PM inline offset `k` in block `N` is
-`lineStart(N) + k` — held as a `line → USV start` index and rebuilt on structural
+tokens. The map is a list of RUNS that tile the text — a `text` run where the two
+advance together, an `nl` run spanning a block boundary or hard break, an `atom`
+run for an island slot — each carrying its PM start and its USV start. The runs
+come off the same single walk that produces the content projection, so the map
+and the projection can never disagree; the whole list is rebuilt on structural
 change. This is the function a `positionAt` result (`ContentHit.pos`) and a
 `FieldRegion.span` pass through to reach a PM caret, and the one `locate` runs in
 reverse for the preview overlay.
@@ -176,8 +179,9 @@ after normalize, not byte-for-byte. The editor holds its optimistic PM state and
 re-hydrates a field only on an **external** content change (another edit source, a
 paste, a `revise`), gated by canonical-content equality scoped to the field that
 changed — the analog of web-app's whole-document `Document.equals` gate, moved
-onto the content and narrowed to one field. Caret continuity across the editor's
-*own* edits is the VisualEditor's `StepMap`, not the codec's.
+onto the content and narrowed to one field. Caret continuity across a leaf's
+*own* edits is not this gate at all — it is PM's `StepMap`, inside the leaf the
+codec mounts, which is why an own-edit never re-hydrates and never moves a caret.
 
 ## Seams and deferrals
 
@@ -190,13 +194,11 @@ onto the content and narrowed to one field. Caret continuity across the editor's
   — per the `@quillmark/wasm` 0.97 anchor-id policy (a duplicate is a no-op); issue
   #43. A move into the document proper — and the comment-thread UX that gives an
   anchor visible chrome — waits past V1.
-- **island props are typed at the boundary** (`@quillmark/wasm` 0.96.0): the
-  `ContentIsland.props` union pins `TableProps` for `table` and `ImageProps` for
-  `image` (`TableCell` the cell shape), so the codec reads the shape off the
-  boundary and dropped its hand-rolled `IslandTable*` / `IslandImage*` duplicates
-  and shape guards (DOCUMENT_MODEL §Stability seams). The open `type` arm means a
-  discriminant check does not auto-narrow `props` — key off `type`, read `props`
-  as the matching type. Table/island *authoring* stays deferred (below).
+- **island props are typed at the boundary** (`@quillmark/wasm` 0.96.0), so the
+  codec reads the shape off it and dropped its hand-rolled `IslandTable*` /
+  `IslandImage*` duplicates and shape guards (DOCUMENT_MODEL §Stability seams).
+  The union and the narrowing rule are §Islands above. Table/island *authoring*
+  stays deferred (below).
 - **install fallback** catches the edits the diff can't lower op-wise: island
   *creation* (a `delta` can't reintroduce a slot — `IslandSlotInInsert`) and any
   `applyChange` that throws. Both retry as `install(addr, rt)`, paying that field's

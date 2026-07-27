@@ -50,10 +50,20 @@ export interface Scan {
 	usvEnd: number;
 }
 
-/** A working accumulator threaded through the walk. */
+/** A working accumulator threaded through the walk. `usvEnd` is the RUNNING USV
+ * length of `text` — every run's `usvStart` reads it and every append advances it.
+ * It is a counter rather than a measurement of `text` because the walk runs twice
+ * per keystroke and `usvLength` is O(n): measuring per run makes the scan
+ * quadratic in the field's length. */
 interface Acc extends Scan {
 	rawMarks: ContentMark[]; // per-text-node marks, merged into `marks` at the end
 	lastContentEndPm: number; // PM position after the previous content line's content
+}
+
+/** Append `s` to the accumulated text, advancing the running USV length. */
+function appendText(acc: Acc, s: string): void {
+	acc.text += s;
+	acc.usvEnd += usvLength(s);
 }
 
 /**
@@ -74,7 +84,6 @@ export function scanDoc(doc: PMNode): Scan {
 		lastContentEndPm: 0
 	};
 	scanBlocks(acc, doc, 0, []);
-	acc.usvEnd = usvLength(acc.text);
 	acc.marks = mergeMarks(acc.rawMarks);
 	return acc;
 }
@@ -148,8 +157,8 @@ function scanBlock(acc: Acc, node: PMNode, nodePos: number, containers: ContentC
 			break;
 		case 'island_block':
 			beginLine(acc, nodePos, containers, { kind: 'island' });
-			acc.runs.push({ kind: 'atom', pmStart: nodePos, usvStart: usvLength(acc.text) });
-			acc.text += ISLAND_SLOT;
+			acc.runs.push({ kind: 'atom', pmStart: nodePos, usvStart: acc.usvEnd });
+			appendText(acc, ISLAND_SLOT);
 			acc.islands.push(
 				islandEntryFromNode(node.attrs as { id: string; islandType: string; props: unknown })
 			);
@@ -194,9 +203,9 @@ function beginLine(
 			kind: 'nl',
 			pmStart: acc.lastContentEndPm,
 			pmEnd: thisContentStart,
-			usvStart: usvLength(acc.text)
+			usvStart: acc.usvEnd
 		});
-		acc.text += '\n';
+		appendText(acc, '\n');
 	}
 	acc.lines.push({ containers, ...kind } as ContentLine);
 }
@@ -215,12 +224,12 @@ function scanInline(
 			emitText(acc, child.text ?? '', pm, child.marks);
 		} else if (child.type.name === 'hard_break') {
 			// A within-block hard break: the content `\n` (a `continues` line).
-			acc.runs.push({ kind: 'nl', pmStart: pm, pmEnd: pm + 1, usvStart: usvLength(acc.text) });
-			acc.text += '\n';
+			acc.runs.push({ kind: 'nl', pmStart: pm, pmEnd: pm + 1, usvStart: acc.usvEnd });
+			appendText(acc, '\n');
 			acc.lines.push({ containers, continues: true, ...kind } as ContentLine);
 		} else if (child.type.name === 'island_inline') {
-			acc.runs.push({ kind: 'atom', pmStart: pm, usvStart: usvLength(acc.text) });
-			acc.text += ISLAND_SLOT;
+			acc.runs.push({ kind: 'atom', pmStart: pm, usvStart: acc.usvEnd });
+			appendText(acc, ISLAND_SLOT);
 			acc.islands.push(
 				islandEntryFromNode(child.attrs as { id: string; islandType: string; props: unknown })
 			);
@@ -232,14 +241,13 @@ function scanInline(
 /** Append a text node's chars: one position run + a content mark per formatting/unknown mark. */
 function emitText(acc: Acc, s: string, pmStart: number, marks: readonly Mark[]): void {
 	if (!s.length) return;
-	const usvStart = usvLength(acc.text);
+	const usvStart = acc.usvEnd;
 	acc.runs.push({ kind: 'text', pmStart, usvStart, s });
-	acc.text += s;
-	const len = usvLength(s);
+	appendText(acc, s);
 	for (const mark of marks) {
 		acc.rawMarks.push({
 			start: usvStart,
-			end: usvStart + len,
+			end: acc.usvEnd,
 			...contentDescriptorFromPM(mark)
 		} as ContentMark);
 	}
@@ -289,13 +297,15 @@ interface LowerOpts {
 	newAnchors?: { id: string; pos: number }[];
 }
 
-/** Lower a PM edit (old content + new PM doc) to a `ChangeBundle`. */
-export function lower(oldRt: Content, newDoc: PMNode, opts: LowerOpts = {}): ChangeBundle {
-	return diffToBundle(oldRt, pmToContent(newDoc), opts);
-}
-
-/** The core diff old→new content → ops. Exported for direct testing. */
-export function diffToBundle(oldRt: Content, newRt: Content, opts: LowerOpts = {}): ChangeBundle {
+/**
+ * Lower an edit to a `ChangeBundle` — the diff old→new content into ops.
+ *
+ * BOTH sides are content, never a PM doc. The caller has already projected the new
+ * doc (`pmToContent`) to gate the island-slot fallback, so the projection is
+ * theirs to hold: a doc-taking overload re-walks the whole tree, once per
+ * keystroke, for a value the caller has in hand.
+ */
+export function lower(oldRt: Content, newRt: Content, opts: LowerOpts = {}): ChangeBundle {
 	const delta = diffText(oldRt.text, newRt.text);
 	const lineOps = diffLines(oldRt, newRt);
 	const markOps = diffMarks(oldRt, newRt, delta, opts);

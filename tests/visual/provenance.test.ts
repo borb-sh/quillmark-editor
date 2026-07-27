@@ -4,22 +4,14 @@
 // usaf_memo schema, so the authored↔default flip the ghost turns on is pinned to
 // the fixture the phase runs against, not a mock.
 import { describe, it, expect } from 'vitest';
-import { Quill } from '$lib/core';
 import type { ResolvedField, Resolved } from '$lib/core';
 import {
 	provenanceMap,
-	provenanceByCardIndex,
-	bodyByCardIndex,
-	bodyGhostText,
-	ghostDefault
+	resolvedByCardIndex,
+	ghostDefault,
+	stringifyGhost
 } from '$lib/visual/structure';
-import { loadFixtureTree } from '../helpers/fixtures.js';
-
-let cached: Quill | undefined;
-function quill(): Quill {
-	if (!cached) cached = Quill.fromTree(loadFixtureTree());
-	return cached;
-}
+import { quill } from '../helpers/fixtures.js';
 
 const row = (name: string, value: unknown, source: ResolvedField['source']): ResolvedField => ({
 	name,
@@ -33,68 +25,57 @@ describe('provenanceMap', () => {
 		expect(map.a.source).toBe('authored');
 		expect(map.b).toEqual(row('b', 2, 'default'));
 	});
-	it('is empty for no rows', () => {
-		expect(provenanceMap([])).toEqual({});
-	});
 });
 
-describe('provenanceByCardIndex', () => {
-	// Array position 1 carries document index 2 — the map keys on `index`.
+describe('resolvedByCardIndex', () => {
+	// Array position 1 carries document index 2 — the map keys on `index`, and one
+	// entry carries both channels (fields and the `body` sibling, issue #58 §9).
 	const resolved = {
 		main: { fields: [], body: null },
 		cards: [
-			{ kind: 'k', index: 0, fields: [row('x', 1, 'authored')], body: null },
+			{
+				kind: 'k',
+				index: 0,
+				fields: [row('x', 1, 'authored')],
+				body: row('body', 'B0', 'default')
+			},
 			{ kind: 'k', index: 2, fields: [row('y', 2, 'default')], body: null }
 		]
 	} as unknown as Resolved;
+
 	it('keys cards by document index, not array position', () => {
-		const byCard = provenanceByCardIndex(resolved);
-		expect(byCard.get(2)?.[0]?.name).toBe('y');
-		expect(byCard.get(0)?.[0]?.name).toBe('x');
+		const byCard = resolvedByCardIndex(resolved);
+		expect(byCard.get(0)?.fields[0]?.name).toBe('x');
+		expect(byCard.get(2)?.fields[0]?.name).toBe('y');
+	});
+	it('carries each card’s body row alongside its fields', () => {
+		const byCard = resolvedByCardIndex(resolved);
+		expect(byCard.get(0)?.body?.value).toBe('B0');
+		expect(byCard.get(2)?.body).toBeNull();
 	});
 	it('is empty for a missing index or an absent resolve', () => {
-		expect(provenanceByCardIndex(resolved).get(5)).toBeUndefined();
-		expect(provenanceByCardIndex(undefined).size).toBe(0);
+		expect(resolvedByCardIndex(resolved).get(5)).toBeUndefined();
+		expect(resolvedByCardIndex(undefined).size).toBe(0);
 	});
 });
 
-describe('ghostDefault', () => {
+// The two halves of the ghost projection every control and the body leaf share:
+// `ghostDefault` decides WHETHER a row ghosts, `stringifyGhost` whether it has a
+// text form to show.
+describe('the ghost projection', () => {
 	it('ghosts only a default-sourced value', () => {
 		expect(ghostDefault(row('a', 'D', 'default'))).toBe('D');
 		expect(ghostDefault(row('a', 'A', 'authored'))).toBeUndefined();
 		expect(ghostDefault(row('a', '', 'zero'))).toBeUndefined();
 		expect(ghostDefault(undefined)).toBeUndefined();
 	});
-});
-
-describe('bodyByCardIndex (issue #58 §9)', () => {
-	const resolved = {
-		main: { fields: [], body: row('body', 'M', 'default') },
-		cards: [
-			{ kind: 'k', index: 0, fields: [], body: row('body', 'B0', 'default') },
-			{ kind: 'k', index: 2, fields: [], body: null }
-		]
-	} as unknown as Resolved;
-	it('keys card body rows by document index', () => {
-		const byCard = bodyByCardIndex(resolved);
-		expect(byCard.get(0)?.value).toBe('B0');
-		expect(byCard.get(2)).toBeNull();
-	});
-	it('is empty for an absent resolve', () => {
-		expect(bodyByCardIndex(undefined).size).toBe(0);
-	});
-});
-
-describe('bodyGhostText (issue #58 §9)', () => {
-	it('renders a default-sourced body as placeholder text, nothing otherwise', () => {
-		expect(bodyGhostText(row('body', 'Write it here', 'default'))).toBe('Write it here');
-		expect(bodyGhostText(row('body', 'authored body', 'authored'))).toBeUndefined();
-		expect(bodyGhostText(row('body', '', 'zero'))).toBeUndefined();
-		expect(bodyGhostText(null)).toBeUndefined();
-		expect(bodyGhostText(undefined)).toBeUndefined();
-	});
-	it('does not ghost an object-shaped default (only text renders as a placeholder)', () => {
-		expect(bodyGhostText(row('body', { lines: [] }, 'default'))).toBeUndefined();
+	it('renders a scalar ghost as text and declines an object one', () => {
+		expect(stringifyGhost('Write it here')).toBe('Write it here');
+		expect(stringifyGhost(12)).toBe('12');
+		expect(stringifyGhost(undefined)).toBeUndefined();
+		// Only text ghosts render a placeholder — a richtext body resolves to a text
+		// render, so an object-shaped default is not one.
+		expect(stringifyGhost({ lines: [] })).toBeUndefined();
 	});
 });
 

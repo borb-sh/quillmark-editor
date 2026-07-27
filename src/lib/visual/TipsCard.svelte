@@ -14,6 +14,7 @@
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import X from '@lucide/svelte/icons/x';
 	import { renderTip } from './tips.js';
+	import './controls.css';
 
 	interface Props {
 		/** The narrowed channel (`tipsChannel`) — never empty; the parent gates on length. */
@@ -61,13 +62,18 @@
 		{#if tips.length > 1}
 			<span class="qm-tips-count" data-testid="tips-count">{index + 1} of {tips.length}</span>
 		{/if}
-		<button type="button" class="qm-tips-next" data-testid="tips-next" onclick={advance}>
+		<button
+			type="button"
+			class="qm-icon-btn qm-tips-next"
+			data-testid="tips-next"
+			onclick={advance}
+		>
 			{isLast ? 'Got it' : 'Next'}
 			{#if !isLast}<ChevronRight size={GLYPH} />{/if}
 		</button>
 		<button
 			type="button"
-			class="qm-tips-dismiss"
+			class="qm-icon-btn qm-tips-dismiss"
 			title="Dismiss tips"
 			data-testid="tips-dismiss"
 			onclick={onDismiss}><X size={GLYPH} /></button
@@ -114,16 +120,10 @@
 		font-size: var(--_qm-text-meta);
 		color: var(--_qm-ink-ghost);
 	}
+	/* Box and disabled state come from `.qm-icon-btn` (controls.css); the foot's
+	   buttons carry a label and so widen their inset and take the meta type rung. */
 	.qm-tips-next,
 	.qm-tips-dismiss {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--_qm-space-half);
-		border: 1px solid var(--_qm-border);
-		background: var(--_qm-surface);
-		border-radius: var(--_qm-radius-inner);
-		cursor: pointer;
-		line-height: 1;
 		padding: var(--_qm-space-half) var(--_qm-space-2);
 		font-size: var(--_qm-text-meta);
 		color: var(--_qm-ink-label);

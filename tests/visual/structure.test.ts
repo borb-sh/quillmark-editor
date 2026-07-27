@@ -3,12 +3,10 @@
 // schema so the ordering contract and group layout are asserted on the fixture
 // the whole phase runs against.
 import { describe, it, expect } from 'vitest';
-import { Quill } from '$lib/core';
 import type { QuillFieldSchema } from '$lib/core';
 import {
 	controlKind,
 	enumValues,
-	elementControl,
 	humanize,
 	fieldModels,
 	groupOrder,
@@ -19,20 +17,12 @@ import {
 	interpolateTitle,
 	cardTitle,
 	bodyEnabled,
-	IdSeq,
-	initIds,
-	idIndex
+	IdSeq
 } from '$lib/visual/structure';
-import { loadFixtureTree } from '../helpers/fixtures.js';
+import { quill } from '../helpers/fixtures.js';
 
 const f = (over: Partial<QuillFieldSchema>): QuillFieldSchema =>
 	({ type: 'string', ...over }) as QuillFieldSchema;
-
-let cached: Quill | undefined;
-function quill(): Quill {
-	if (!cached) cached = Quill.fromTree(loadFixtureTree());
-	return cached;
-}
 
 describe('controlKind', () => {
 	it('maps each field type to its control', () => {
@@ -53,11 +43,6 @@ describe('controlKind', () => {
 		expect(enumValues(f({ type: 'string', enum: ['x'] }))).toEqual(['x']);
 		expect(enumValues(f({ type: 'enum', values: ['y'] }))).toEqual(['y']);
 		expect(enumValues(f({ type: 'string' }))).toBeUndefined();
-	});
-	it('resolves array element controls from items.type', () => {
-		expect(elementControl({ type: 'string' } as QuillFieldSchema)).toBe('text');
-		expect(elementControl({ type: 'richtext', inline: true } as QuillFieldSchema)).toBe('prose');
-		expect(elementControl(undefined)).toBe('text');
 	});
 });
 
@@ -120,12 +105,10 @@ describe('initialExpandedGroup', () => {
 });
 
 describe('IdSeq identity', () => {
-	it('assigns stable, unique ids and resolves index', () => {
+	it('takes unique ids, and keeps taking them across calls', () => {
 		const seq = new IdSeq();
-		const ids = initIds(3, seq);
-		expect(new Set(ids).size).toBe(3);
-		expect(idIndex(ids, ids[1])).toBe(1);
-		expect(idIndex(ids, 'nope')).toBe(-1);
+		const ids = [...seq.take(3), ...seq.take(2)];
+		expect(new Set(ids).size).toBe(5);
 	});
 });
 
@@ -193,7 +176,9 @@ describe('against the real usaf_memo schema', () => {
 	it('sections fields into the declared group order', () => {
 		const schema = quill().schema;
 		const models = fieldModels(schema.main);
-		const sections = groupSections(models, groupOrder(schema.main));
+		const sections = groupSections(models, groupOrder(schema.main), (g) =>
+			groupLabel(schema.main, g)
+		);
 		expect(sections.map((s) => s.group)).toEqual([
 			'addressing',
 			'letterhead',

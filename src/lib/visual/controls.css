@@ -1,0 +1,66 @@
+/* The control recipes more than one component draws — the focus ring, the box a
+   typed value sits in, and the square icon button. They live here rather than per
+   component because Svelte scopes a `<style>` block to the component that owns the
+   markup: a component that carries a shared class without also carrying its rule
+   ships unstyled, and nothing raises it.
+
+   NOT in `core/theme.css`: that file is the DERIVATION — public dials in, the
+   private `--_qm-*` scale out — and it mints values. This file mints none; every
+   declaration reads a rung, exactly as a component's own block must
+   (SURFACES §"Preventing drift", enforced by `check:style` over `.css` too).
+
+   `@layer qm.chrome` is the second layer `theme.css` declares. Layered rules lose
+   to unlayered ones, which is the point twice over: a consumer's stylesheet beats
+   the chrome without `!important`, and a component's own scoped block still
+   overrides its shared base — `.qm-card-delete` recolours a `.qm-icon-btn`, and
+   `.qm-json` adds the monospace face over `.qm-input`, with no specificity fight. */
+
+@layer qm.chrome {
+	/* The themed focus ring in place of the raw UA outline (SURFACES §Focus), as a
+	   RULE rather than a pair of rungs each control assembles. `--_qm-ring-focus`
+	   fixes the VALUE; which properties draw a ring, and on what state, is the other
+	   half of the decision, and `check:style` sees a minted literal but never a
+	   divergent rule. A control opts in by carrying the marker class.
+
+	   Two selectors, because focus lands in two places. Usually on the control
+	   itself; but the date field's focus lives on a SEGMENT, so it rings the field
+	   around it — a per-segment ring flickers across the field as the caret walks
+	   it. That is the only distinction, and this pair is the whole of it. */
+	.qm-focus-ring:focus-visible,
+	.qm-focus-ring-within:focus-within {
+		outline: var(--_qm-ring-focus);
+		outline-offset: var(--_qm-ring-offset);
+	}
+
+	/* A typed value's box — text and numeric inputs, and the array's JSON textarea. */
+	.qm-input {
+		width: 100%;
+		box-sizing: border-box;
+		padding: var(--_qm-space) var(--_qm-space-2);
+		border: 1px solid var(--_qm-border);
+		border-radius: var(--_qm-radius-inner);
+		font: inherit;
+		background: var(--_qm-surface);
+	}
+
+	/* A square glyph button — card reorder/delete, array remove, the tips card's
+	   foot. Deliberately no `color`: the callers disagree on purpose (the card
+	   delete is `--_qm-danger`, the array remove inherits its row's ink), and a
+	   base colour here would flatten that distinction rather than share a recipe. */
+	.qm-icon-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--_qm-space-half);
+		border: 1px solid var(--_qm-border);
+		background: var(--_qm-surface);
+		border-radius: var(--_qm-radius-inner);
+		cursor: pointer;
+		line-height: 1;
+		padding: var(--_qm-space-half) var(--_qm-space);
+	}
+	.qm-icon-btn:disabled {
+		opacity: var(--_qm-opacity-idle);
+		cursor: default;
+	}
+}

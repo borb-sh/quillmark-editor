@@ -28,7 +28,7 @@ function lowerApply(rt: Content, mkTr: (state: EditorState) => Transaction, opts
 	const state = EditorState.create({ doc: decode(oldRt, blockSchema) });
 	const tr = mkTr(state);
 	const newDoc = tr.doc;
-	const bundle = lower(oldRt, newDoc, opts);
+	const bundle = lower(oldRt, pmToContent(newDoc), opts);
 	doc.applyChange({}, bundle);
 	const stored = doc.main.body;
 	expect(contentEqual(stored, normalize(pmToContent(newDoc))), 'stored matches optimistic PM').toBe(
@@ -144,7 +144,7 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		const oldRt = doc.main.body;
 		const state = EditorState.create({ doc: decode(oldRt, blockSchema) });
 		const tr = state.tr.insertText('XX', 1); // insert before the anchor at USV 6
-		const bundle = lower(oldRt, tr.doc, {
+		const bundle = lower(oldRt, pmToContent(tr.doc), {
 			oldAnchors: [{ id: 'a1', pos: 6 }],
 			newAnchors: [{ id: 'a1', pos: 8 }] // rebased +2
 		});
@@ -160,7 +160,7 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		doc.install({}, md('plain text'));
 		const oldRt = doc.main.body;
 		const newDoc = decode(oldRt, blockSchema);
-		const bundle = lower(oldRt, newDoc, {
+		const bundle = lower(oldRt, pmToContent(newDoc), {
 			oldAnchors: [],
 			newAnchors: [{ id: 'new1', pos: 3 }]
 		});
@@ -175,7 +175,10 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		doc.install({}, anchorRt);
 		const oldRt = doc.main.body;
 		const newDoc = decode(oldRt, blockSchema);
-		const bundle = lower(oldRt, newDoc, { oldAnchors: [{ id: 'a1', pos: 6 }], newAnchors: [] });
+		const bundle = lower(oldRt, pmToContent(newDoc), {
+			oldAnchors: [{ id: 'a1', pos: 6 }],
+			newAnchors: []
+		});
 		doc.applyChange({}, bundle);
 		expect(doc.main.body.marks.some((m) => m.type === 'anchor')).toBe(false);
 	});
@@ -197,7 +200,7 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		const tr = state.tr.insertText('\n', 2); // a code-interior line before the anchor
 		const newRt = pmToContent(tr.doc);
 		expect(insertReintroducesIslandSlot(oldRt, newRt)).toBe(false); // the op path, not install
-		const bundle = lower(oldRt, tr.doc, {
+		const bundle = lower(oldRt, pmToContent(tr.doc), {
 			oldAnchors: [{ id: 'c1', pos: 3 }],
 			newAnchors: [{ id: 'c1', pos: 4 }] // the \n inserts before it → +1
 		});

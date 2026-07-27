@@ -9,6 +9,7 @@
 	import ChevronUp from '@lucide/svelte/icons/chevron-up';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import X from '@lucide/svelte/icons/x';
+	import './controls.css';
 
 	interface Props {
 		isFirst: boolean;
@@ -28,7 +29,7 @@
 	<div class="qm-card-reorder">
 		<button
 			type="button"
-			class="qm-ctrl"
+			class="qm-icon-btn"
 			title="Move up"
 			disabled={isFirst}
 			data-testid={testidPrefix ? `${testidPrefix}-up` : undefined}
@@ -36,7 +37,7 @@
 		>
 		<button
 			type="button"
-			class="qm-ctrl"
+			class="qm-icon-btn"
 			title="Move down"
 			disabled={isLast}
 			data-testid={testidPrefix ? `${testidPrefix}-down` : undefined}
@@ -45,7 +46,7 @@
 	</div>
 	<button
 		type="button"
-		class="qm-ctrl qm-card-delete"
+		class="qm-icon-btn qm-card-delete"
 		title="Delete card"
 		data-testid={testidPrefix ? `${testidPrefix}-delete` : undefined}
 		onclick={onDelete}><X size={GLYPH} /></button
@@ -64,21 +65,11 @@
 		opacity: 0;
 		transition: opacity 0.12s ease;
 	}
-	.qm-ctrl {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		border: 1px solid var(--_qm-border);
-		background: var(--_qm-surface);
-		border-radius: var(--_qm-radius-inner);
-		cursor: pointer;
-		line-height: 1;
-		padding: var(--_qm-space-half) var(--_qm-space);
+	/* Box and disabled state come from `.qm-icon-btn` (controls.css); only the ink
+	   is this component's — the reorder pair recedes to the label tone, delete
+	   carries the danger hue (scoped, so both beat the layered base). */
+	.qm-icon-btn {
 		color: var(--_qm-ink-label);
-	}
-	.qm-ctrl:disabled {
-		opacity: var(--_qm-opacity-idle);
-		cursor: default;
 	}
 	.qm-card-delete {
 		color: var(--_qm-danger);

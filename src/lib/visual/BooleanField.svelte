@@ -10,6 +10,7 @@
 <script lang="ts">
 	import { Switch } from 'bits-ui';
 	import { syncedLocal } from './synced.svelte.js';
+	import './controls.css';
 
 	interface Props {
 		value: boolean | undefined;
@@ -31,7 +32,7 @@
 
 <span class="qm-switch-wrap">
 	<Switch.Root
-		class="qm-switch"
+		class="qm-switch qm-focus-ring"
 		checked={local.value}
 		aria-label={label}
 		data-testid={testid}
@@ -63,11 +64,7 @@
 		background: var(--_qm-accent);
 		border-color: var(--_qm-accent);
 	}
-	/* Themed focus ring in place of the raw UA outline (SURFACES §Focus). */
-	.qm-switch-wrap :global(.qm-switch:focus-visible) {
-		outline: var(--_qm-ring-focus);
-		outline-offset: var(--_qm-ring-offset);
-	}
+	/* The focus ring rides `.qm-focus-ring` on the switch (controls.css). */
 	.qm-switch-wrap :global(.qm-switch-thumb) {
 		width: 0.75rem;
 		height: 0.75rem;
