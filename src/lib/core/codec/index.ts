@@ -36,6 +36,7 @@ export type { Reconciler } from './reconcile.js';
 // Input rules (Phase 4 mounts a subset; createField mounts all by default).
 export { markdownInputRules, inputRulesPlugin } from './inputrules.js';
 
-// The body leaf's list structure keys (issue #70) — `createField` binds them; the
-// suite drives them directly.
+// The body leaf's structural keys — `createField` binds the composed chains
+// (`bodyKeymap`); the suite drives both it and the list link (issue #70) directly.
+export { bodyKeymap } from './keymap.js';
 export { listKeymap } from './lists.js';
