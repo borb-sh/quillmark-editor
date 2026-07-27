@@ -99,8 +99,13 @@ truthful, not a snapshot. Committing the default instead would freeze a value
 against later schema changes — the engine never persists a default, nor does the
 editor. `EnumField` gives unset a ghost sentinel option — picking it unsets,
 picking any value (the default included) writes — so "commit the default" is
-expressible and shown-never-written stays visible. `BooleanField` is exempt (a
-checkbox has no blank). Unset, and every numeric commit, settles at `change`
+expressible and shown-never-written stays visible. `DateField` prints the default's
+digits in its empty segments, ghost-toned, rather than the primitive's `mm`/`dd`/`yyyy`
+hints (issue #89) — a format hint reads "empty" where the rung says "will render
+2026-01-01". It paints the ghost into the segment text over an unset primitive, never
+into its `value`: a defaulted value would be indistinguishable from an authored one
+to everything that reads the control. `BooleanField` is exempt (a checkbox has no
+blank). Unset, and every numeric commit, settles at `change`
 (blur/Enter): a per-keystroke commit round-trips transient invalid prefixes (`-`,
 `1.`) through the boundary and flashes a coercion diagnostic the `role="status"`
 live region announces. Text keeps live commit but defers its clear to `change` — an

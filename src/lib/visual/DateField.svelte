@@ -21,6 +21,18 @@
   `syncedLocal` reconciles by IDENTITY, so the local must hold the string, not the
   parsed value: a fresh `CalendarDate` is never `===` the last one, which would
   make every reconcile fire and re-render all seven segments on each commit.
+
+  THE GHOST IS THE DEFAULT'S DIGITS, NOT A FORMAT HINT (issue #89). An unset field
+  carrying a `default:` prints the default's digits in the segments, ghost-toned,
+  instead of the primitive's `mm`/`dd`/`yyyy` hints — which say "empty" where the
+  rung says "will render 2026-01-01". The ghost is painted in the SEGMENT SNIPPET,
+  over an unset primitive: substituting the default for `value` instead would make
+  the field indistinguishable from an authored one to every path that reads it
+  (`areAllSegmentsFilled`, Backspace, the hidden input), and the primitive shadows
+  a written-back `value` prop it was not `bind:`-ed to, so re-seating the ghost
+  after a clear never lands. `placeholder` — the `DateValue` the segments COUNT
+  from, never one they display — carries the default too, so arrowing an empty
+  segment starts at the render's date rather than today's.
 -->
 <script lang="ts">
 	import { DateField as BitsDateField } from 'bits-ui';
@@ -30,12 +42,15 @@
 
 	interface Props {
 		value: string | undefined;
+		/** The resolved `default:` in the boundary's currency (`YYYY-MM-DD`) — parsed
+		 * for display only, shown while unset, never written. */
+		fallback?: string;
 		/** Accessible name — the visual label is a bare span the segments can't reference. */
 		label?: string;
 		onCommit: (v: string | undefined) => void;
 		testid?: string;
 	}
-	let { value, label, onCommit, testid }: Props = $props();
+	let { value, fallback, label, onCommit, testid }: Props = $props();
 
 	// The stored form may carry a time (`datetime`); the date half is what a date
 	// field edits, so anything past `YYYY-MM-DD` is not this control's. `parseDate`
@@ -55,11 +70,40 @@
 	// the package's.
 	const local = syncedLocal(() => value?.slice(0, 10) ?? '');
 	const parsed = $derived(toDateValue(local.value));
+	// Ghosted only when the field is unset AND the default has a date form to show:
+	// a non-blank local that fails to parse is AUTHORED-but-malformed, which the
+	// empty field states honestly — the ghost would claim it unset.
+	const fallbackDate = $derived(toDateValue(fallback?.slice(0, 10) ?? ''));
+	const ghosted = $derived(local.value === '' && fallbackDate !== undefined);
+
+	// One segment's ghost digits, or the primitive's own text when there is nothing
+	// to ghost. `literal` (the separators) and any time part fall through — the
+	// ghost is a date. Zero-padded to the segment widths the field displays.
+	//
+	// Only an EMPTY segment ghosts. A half-entered date holds digits in the segments
+	// while the VALUE is still undefined (one unfilled segment unsets the whole
+	// field), so ghosting unconditionally would paint over the digits just typed. The
+	// segment's own text is the tell: its unfilled hint is alphabetic in every locale
+	// bits ships (`mm`/`yyyy`, `аа`, `年`), a filled one is digits.
+	function ghostSegment(part: string, text: string): string {
+		if (!ghosted || !fallbackDate || /\d/.test(text)) return text;
+		switch (part) {
+			case 'year':
+				return String(fallbackDate.year).padStart(4, '0');
+			case 'month':
+				return String(fallbackDate.month).padStart(2, '0');
+			case 'day':
+				return String(fallbackDate.day).padStart(2, '0');
+			default:
+				return text;
+		}
+	}
 </script>
 
 <span class="qm-date-wrap">
 	<BitsDateField.Root
 		value={parsed}
+		placeholder={fallbackDate}
 		onValueChange={(d) => {
 			// `CalendarDate.toString()` is exactly `YYYY-MM-DD`. A cleared or
 			// half-typed field yields undefined — the unset rung.
@@ -67,9 +111,12 @@
 			onCommit(d?.toString());
 		}}
 	>
+		<!-- `data-ghosted` states the rung the way the enum trigger does — the tone
+		     itself rides the primitive's per-segment `data-placeholder`. -->
 		<BitsDateField.Input
 			class="qm-date qm-focus-ring-within"
 			aria-label={label}
+			data-ghosted={ghosted ? '' : undefined}
 			data-testid={testid}
 		>
 			{#snippet children({ segments })}
@@ -77,7 +124,7 @@
 				     segments all carry it — so a part-keyed block collides. -->
 				{#each segments as seg, i (i)}
 					<BitsDateField.Segment class="qm-date-segment" part={seg.part}>
-						{seg.value}
+						{ghostSegment(seg.part, seg.value)}
 					</BitsDateField.Segment>
 				{/each}
 			{/snippet}
@@ -111,7 +158,9 @@
 	.qm-date-wrap :global(.qm-date-segment:focus) {
 		background: var(--_qm-surface-hover);
 	}
-	/* An unfilled segment shows its `dd`/`mm`/`yyyy` hint — shown, never written. */
+	/* An unfilled segment is ghost-toned whatever it prints — the resolved `default:`
+	   when there is one to ghost, the `dd`/`mm`/`yyyy` hint when there is not. Shown,
+	   never written, either way. */
 	.qm-date-wrap :global(.qm-date-segment[data-placeholder]) {
 		color: var(--_qm-ink-ghost);
 	}
