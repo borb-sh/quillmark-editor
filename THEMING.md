@@ -44,6 +44,20 @@ surface's padding to zero. CSS property registration would catch that, but a
 registered property's initial value must be computationally independent and these
 default in `rem` — so nothing catches it but you.
 
+## What is behind the column is yours
+
+The package draws cards, not the column they sit in. Four properties are the
+mounting site's: the gutter between your pane edge and the cards, the scroll
+container, the **page tone behind the column**, and the scroll tail that lets the
+last card reach the middle of your viewport. Nothing needs setting for the surface
+to look right — putting plain `--qm-bg` directly behind the column is a supported
+case, and the one the playground demonstrates.
+
+That is why no card's fill is a bet on your backdrop: every card sits one rung off
+the base surface and every control one rung inside its card, so a control reads
+against its card whatever you put behind it. A page tone of your own reads as a
+third plane under the stack.
+
 ## Dark mode is a two-value swap
 
 Surfaces step `bg → fg` and ink steps `fg → bg`, mixed in **oklab** — so

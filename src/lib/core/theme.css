@@ -43,11 +43,16 @@
 		   Surfaces step bg → fg, ink steps fg → bg, mixed in oklab — sRGB muddies
 		   the mid-tones and the label/meta/border rungs are exactly mid-tone. So
 		   inverting the poles inverts the scale. The percentages are calibrated to
-		   the light-mode literals they stand in for (2% ≈ #fafafa, 17% ≈ #d4d4d4,
-		   35% ≈ #555). */
+		   the light-mode literals they stand in for (17% ≈ #d4d4d4, 35% ≈ #555).
+
+		   The three surface rungs sit EVENLY 4pp apart, which is what keeps them three
+		   distinguishable steps: uneven spacing spends one rung to buy another —
+		   widening `raised` alone would leave `hover` 1pp above it. `raised` steps
+		   toward the INK pole rather than away from it, so a card is darker than the
+		   page in light and lighter in dark (SURFACES §Elevation; issue #124). */
 		--_qm-surface: var(--_qm-bg);
-		--_qm-surface-raised: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 2%);
-		--_qm-surface-hover: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 6%);
+		--_qm-surface-raised: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 4%);
+		--_qm-surface-hover: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 8%);
 		--_qm-border: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 17%);
 		--_qm-ink: var(--_qm-fg);
 		--_qm-ink-label: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 35%);

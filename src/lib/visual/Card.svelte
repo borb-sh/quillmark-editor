@@ -169,6 +169,9 @@
 	}
 </script>
 
+<!-- `qm-main` is a structural marker and carries no fill: a tone here would bet on
+     what the consumer put behind the column, and structure already says which card
+     this is (SURFACES §Elevation). -->
 <section
 	bind:this={el}
 	class="qm-card"
@@ -384,9 +387,6 @@
 		flex-direction: column;
 		gap: var(--_qm-space-3);
 	}
-	.qm-card.qm-main {
-		background: var(--_qm-surface);
-	}
 	.qm-card-header {
 		display: flex;
 		align-items: center;
@@ -569,12 +569,11 @@
 		flex-direction: column;
 		gap: var(--_qm-space);
 	}
-	/* Recovery shell (issue #72): a receding, dashed-edge card marking an un-schemable
-	   card — visibly distinct from a normal card, but not alarming; the content behind
-	   it is intact. */
+	/* Recovery shell (issue #72): a dashed-edge card marking an un-schemable card —
+	   visibly distinct from a normal card, but not alarming; the content behind it is
+	   intact. The edge alone carries that: the fill is the card rung like any other. */
 	.qm-card.qm-unschemable {
 		border-style: dashed;
-		background: var(--_qm-surface-raised);
 	}
 	.qm-card-title-static {
 		font-size: var(--_qm-text-title);

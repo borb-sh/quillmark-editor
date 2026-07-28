@@ -73,6 +73,12 @@ the preview surfaces hits, and the shell joins them (`fieldPathForAddr` maps an
 editor `Addr` to the preview's field-path grammar) — neither surface imports the
 other.
 
+`/editor` carries all four of THEMING.md's mounting-site properties on the single
+`.editor-pane` rule — gutter and scroll tail as the two ends of one `padding`,
+scroll container as `overflow: auto`, page tone as `--pg-main-bg`. That the column
+around the cards is the consumer's, not the package's, is what makes the reference
+shell the place those four are demonstrated.
+
 ## Theming
 
 The surfaces carry the behavior against a neutral, overridable baseline — the
