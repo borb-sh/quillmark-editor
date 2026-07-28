@@ -70,32 +70,40 @@
 	// the package's.
 	const local = syncedLocal(() => value?.slice(0, 10) ?? '');
 	const parsed = $derived(toDateValue(local.value));
-	// Ghosted only when the field is unset AND the default has a date form to show:
-	// a non-blank local that fails to parse is AUTHORED-but-malformed, which the
-	// empty field states honestly — the ghost would claim it unset.
+	// The date the empty segments ghost, or undefined when there is nothing to ghost:
+	// the field is unset AND the default has a date form. A non-blank local that
+	// fails to parse is AUTHORED-but-malformed, which the empty field states
+	// honestly — the ghost would claim it unset. Held as the parsed value rather than
+	// a boolean so the substitution below narrows on the one fact it needs.
 	const fallbackDate = $derived(toDateValue(fallback?.slice(0, 10) ?? ''));
-	const ghosted = $derived(local.value === '' && fallbackDate !== undefined);
+	const ghost = $derived(local.value === '' ? fallbackDate : undefined);
 
-	// One segment's ghost digits, or the primitive's own text when there is nothing
-	// to ghost. `literal` (the separators) and any time part fall through — the
-	// ghost is a date. Zero-padded to the segment widths the field displays.
+	// What one segment prints, and whether that text is shown-never-written.
 	//
-	// Only an EMPTY segment ghosts. A half-entered date holds digits in the segments
-	// while the VALUE is still undefined (one unfilled segment unsets the whole
-	// field), so ghosting unconditionally would paint over the digits just typed. The
-	// segment's own text is the tell: its unfilled hint is alphabetic in every locale
-	// bits ships (`mm`/`yyyy`, `аа`, `年`), a filled one is digits.
-	function ghostSegment(part: string, text: string): string {
-		if (!ghosted || !fallbackDate || /\d/.test(text)) return text;
+	// An UNFILLED segment is always shown-never-written, whether it prints the
+	// default's digits or the primitive's own `mm`/`dd`/`yyyy` hint — both state
+	// "nothing authored here". Only an unfilled segment ghosts: a half-entered date
+	// holds digits while the VALUE is still undefined (one unfilled segment unsets
+	// the whole field), so ghosting unconditionally would paint over, and dim, the
+	// digits just typed. The segment's own text is the tell — its unfilled hint is
+	// alphabetic in every locale bits ships (`mm`/`yyyy`, `аа`, `年`), a filled one
+	// is digits.
+	//
+	// The separators are `literal` parts, never unfilled; substitution covers the
+	// date parts only, so any time part keeps the primitive's text. Digits are
+	// zero-padded to the segment widths the field displays.
+	function segmentText(part: string, text: string): { text: string; ghosted: boolean } {
+		if (part === 'literal' || /\d/.test(text)) return { text, ghosted: false };
+		if (!ghost) return { text, ghosted: true };
 		switch (part) {
 			case 'year':
-				return String(fallbackDate.year).padStart(4, '0');
+				return { text: String(ghost.year).padStart(4, '0'), ghosted: true };
 			case 'month':
-				return String(fallbackDate.month).padStart(2, '0');
+				return { text: String(ghost.month).padStart(2, '0'), ghosted: true };
 			case 'day':
-				return String(fallbackDate.day).padStart(2, '0');
+				return { text: String(ghost.day).padStart(2, '0'), ghosted: true };
 			default:
-				return text;
+				return { text, ghosted: true };
 		}
 	}
 </script>
@@ -111,20 +119,28 @@
 			onCommit(d?.toString());
 		}}
 	>
-		<!-- `data-ghosted` states the rung the way the enum trigger does — the tone
-		     itself rides the primitive's per-segment `data-placeholder`. -->
+		<!-- `data-ghosted` states the rung the way the enum trigger does. The date
+		     primitive emits no per-segment placeholder marker (only bits' `select`
+		     does), so the TONE rides the same attribute, set per segment from the
+		     substitution itself — which is also what keeps a half-typed date's own
+		     digits at full ink while the segments around them ghost. -->
 		<BitsDateField.Input
 			class="qm-date qm-focus-ring-within"
 			aria-label={label}
-			data-ghosted={ghosted ? '' : undefined}
+			data-ghosted={ghost ? '' : undefined}
 			data-testid={testid}
 		>
 			{#snippet children({ segments })}
 				<!-- Keyed by INDEX: `part` repeats — the `literal` separators between
 				     segments all carry it — so a part-keyed block collides. -->
 				{#each segments as seg, i (i)}
-					<BitsDateField.Segment class="qm-date-segment" part={seg.part}>
-						{ghostSegment(seg.part, seg.value)}
+					{@const shown = segmentText(seg.part, seg.value)}
+					<BitsDateField.Segment
+						class="qm-date-segment"
+						part={seg.part}
+						data-ghosted={shown.ghosted ? '' : undefined}
+					>
+						{shown.text}
 					</BitsDateField.Segment>
 				{/each}
 			{/snippet}
@@ -160,8 +176,9 @@
 	}
 	/* An unfilled segment is ghost-toned whatever it prints — the resolved `default:`
 	   when there is one to ghost, the `dd`/`mm`/`yyyy` hint when there is not. Shown,
-	   never written, either way. */
-	.qm-date-wrap :global(.qm-date-segment[data-placeholder]) {
+	   never written, either way. The marker is the component's own (see the snippet):
+	   the date primitive emits no placeholder attribute of its own. */
+	.qm-date-wrap :global(.qm-date-segment[data-ghosted]) {
 		color: var(--_qm-ink-ghost);
 	}
 </style>

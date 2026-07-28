@@ -11,10 +11,12 @@ const urls = import.meta.glob('/fixtures/quills/usaf_memo/0.2.0/**/*', {
 	eager: true
 }) as Record<string, string>;
 
-// The main `date` field's declaration, verbatim — the anchor the schema variant
-// below rewrites. The indorsement card declares a `date` too, one indent level
-// deeper, so the 4-space key pins this to the main card's.
-const MAIN_DATE_DEFAULT = '\n    date:\n      type: date\n      default: ""';
+// The main `date` field's declaration up to its default's value — the anchor the
+// schema variant below rewrites, split here so the rewrite substitutes a value
+// rather than measuring characters off the end. The indorsement card declares a
+// `date` too, one indent level deeper, so the 4-space key pins this to the main
+// card's.
+const MAIN_DATE_KEY = '\n    date:\n      type: date\n      default: ';
 
 /**
  * Playground-only schema variant: give the main `date` field a literal `default:`.
@@ -26,9 +28,12 @@ const MAIN_DATE_DEFAULT = '\n    date:\n      type: date\n      default: ""';
  */
 export function withMainDateDefault(tree: Map<string, Uint8Array>, iso: string): void {
 	const yaml = new TextDecoder().decode(tree.get('Quill.yaml'));
-	if (!yaml.includes(MAIN_DATE_DEFAULT)) throw new Error('fixture: main `date` anchor not found');
-	const patched = yaml.replace(MAIN_DATE_DEFAULT, `${MAIN_DATE_DEFAULT.slice(0, -2)}"${iso}"`);
-	tree.set('Quill.yaml', new TextEncoder().encode(patched));
+	const anchor = `${MAIN_DATE_KEY}""`;
+	if (!yaml.includes(anchor)) throw new Error('fixture: main `date` anchor not found');
+	tree.set(
+		'Quill.yaml',
+		new TextEncoder().encode(yaml.replace(anchor, `${MAIN_DATE_KEY}"${iso}"`))
+	);
 }
 
 /** Fetch the reference quill into the `Map` `Quill.fromTree` accepts (keys `"/"`-joined, relative to the quill root). */

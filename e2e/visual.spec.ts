@@ -171,28 +171,42 @@ test.describe('visual editor', () => {
 		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
 
 		const field = page.getByTestId('main-date');
+		const year = field.locator('[data-segment="year"]');
+		const month = field.locator('[data-segment="month"]');
+		const ink = async (l: Locator) => l.evaluate((e) => getComputedStyle(e).color);
+
 		await expect(field).toHaveAttribute('data-ghosted', '');
 		// The segments carry the DEFAULT's digits, not `mm`/`dd`/`yyyy`.
-		await expect(field.locator('[data-segment="year"]')).toHaveText('2026');
-		await expect(field.locator('[data-segment="month"]')).toHaveText('01');
+		await expect(year).toHaveText('2026');
+		await expect(month).toHaveText('01');
+		// …and carry them in the GHOST TONE, asserted as a colour rather than an
+		// attribute: the tone IS the rung — the same digits at full ink read as an
+		// authored date — and a marker alone does not prove a rule matched it.
+		const ghostInk = await ink(year);
 		// Shown, never written: the ghost is not a value.
 		expect((await readDump(page)).date).toBeNull();
 
-		// A half-entered date keeps the digits just typed — the ghost fills only the
-		// segments still empty, though the field is unset until they all fill.
+		// A half-entered date keeps the digits just typed, at FULL ink — the ghost
+		// fills only the segments still empty, though the field is unset until they
+		// all fill.
 		await dateEntry(page, 'main-date').click();
 		await page.keyboard.type('03');
-		await expect(field.locator('[data-segment="month"]')).toHaveText('03');
+		await expect(month).toHaveText('03');
+		expect(await ink(month), 'a typed segment').not.toBe(ghostInk);
+		await expect(year).toHaveText('2026');
+		expect(await ink(year), 'a still-ghosted segment').toBe(ghostInk);
 		expect((await readDump(page)).date).toBeNull();
 
-		// Authoring drops the ghost; clearing back to unset restores it.
+		// Authoring drops the ghost, tone included; clearing back to unset restores it.
 		await setDate(page, 'main-date', '2026-03-04');
 		await expect.poll(async () => (await readDump(page)).date).toBe('2026-03-04');
 		await expect(field).not.toHaveAttribute('data-ghosted', '');
+		expect(await ink(year), 'an authored year').not.toBe(ghostInk);
 		await clearDate(page, 'main-date');
 		await expect.poll(async () => (await readDump(page)).date).toBeNull();
 		await expect(field).toHaveAttribute('data-ghosted', '');
-		await expect(field.locator('[data-segment="year"]')).toHaveText('2026');
+		await expect(year).toHaveText('2026');
+		expect(await ink(year), 'the restored ghost').toBe(ghostInk);
 	});
 
 	test('(d3) an enum unsets via the ghost sentinel; picking the default VALUE writes it (issue #21a)', async ({
@@ -419,9 +433,7 @@ test.describe('visual editor', () => {
 		// Same reason as the list keys: only the browser proves Tab is DELIVERED to
 		// the leaf — a swallowed key that still moves focus passes every unit test.
 		const el = pm(page, 'prose-main-body');
-		await el.click();
-		await page.keyboard.press('ControlOrMeta+a');
-		await page.keyboard.type('```'); // the fence input rule
+		await replaceProse(page, 'prose-main-body', '```'); // the fence input rule
 		await expect(el.locator('pre')).toHaveCount(1);
 		await page.keyboard.type('one');
 		// Enter stays INSIDE the block — a second block would be the base keymap's split.

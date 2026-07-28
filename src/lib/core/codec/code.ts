@@ -40,23 +40,23 @@ function codeBlockAt(state: EditorState): { start: number; text: string } | null
  * whole lines by dragging to the next line's start indents one line too many).
  */
 function coveredLineStarts(text: string, f: number, t: number): number[] {
+	const last = t > f ? t - 1 : t;
 	const starts: number[] = [];
-	let lineStart = 0;
-	for (let i = 0; i <= text.length; i++) {
-		if (i < text.length && text[i] !== '\n') continue;
-		if (lineStart <= t && i >= f && !(lineStart === t && t > f)) starts.push(lineStart);
-		lineStart = i + 1;
+	let s = 0;
+	for (const line of text.split('\n')) {
+		if (s <= last && s + line.length >= f) starts.push(s);
+		s += line.length + 1;
 	}
 	return starts;
 }
 
 /** Width of the indent one outdent removes at line offset `s`: a leading tab, else
- * up to `max` leading spaces — both forms, whatever Tab inserts. `0` when the line
- * carries no indent. */
-function outdentWidth(text: string, s: number, max: number): number {
+ * up to one unit of leading spaces — both forms, whatever Tab inserts. `0` when the
+ * line carries no indent. */
+function outdentWidth(text: string, s: number): number {
 	if (text[s] === '\t') return 1;
 	let n = 0;
-	while (n < max && text[s + n] === ' ') n++;
+	while (n < UNIT.length && text[s + n] === ' ') n++;
 	return n;
 }
 
@@ -65,29 +65,27 @@ function outdentWidth(text: string, s: number, max: number): number {
  * selection spans a newline. A single-line selection is REPLACED by the unit — Tab
  * types, the way any other key does.
  */
-function indentInCode(): Command {
-	return (state, dispatch) => {
-		const block = codeBlockAt(state);
-		if (!block) return false;
-		const { from, to } = state.selection;
-		const f = from - block.start;
-		const t = to - block.start;
-		if (!dispatch) return true;
-		const tr = state.tr;
-		if (!block.text.slice(f, t).includes('\n')) {
-			tr.insertText(UNIT, from, to);
-		} else {
-			const starts = coveredLineStarts(block.text, f, t);
-			// Back to front: an earlier insert would shift every later offset.
-			for (const s of [...starts].reverse()) tr.insertText(UNIT, block.start + s);
-			// Keep the covered lines covered. Mapping alone would push the head past
-			// the indent it just inserted at the first line's start.
-			tr.setSelection(TextSelection.create(tr.doc, block.start + starts[0], tr.mapping.map(to)));
-		}
-		dispatch(tr.scrollIntoView());
-		return true;
-	};
-}
+const indentInCode: Command = (state, dispatch) => {
+	const block = codeBlockAt(state);
+	if (!block) return false;
+	const { from, to } = state.selection;
+	const f = from - block.start;
+	const t = to - block.start;
+	if (!dispatch) return true;
+	const tr = state.tr;
+	if (!block.text.slice(f, t).includes('\n')) {
+		tr.insertText(UNIT, from, to);
+	} else {
+		const starts = coveredLineStarts(block.text, f, t);
+		// Back to front: an earlier insert would shift every later offset.
+		for (const s of [...starts].reverse()) tr.insertText(UNIT, block.start + s);
+		// Keep the covered lines covered. Mapping alone would push the head past
+		// the indent it just inserted at the first line's start.
+		tr.setSelection(TextSelection.create(tr.doc, block.start + starts[0], tr.mapping.map(to)));
+	}
+	dispatch(tr.scrollIntoView());
+	return true;
+};
 
 /**
  * Shift-Tab in a code block: remove one indent level from every covered line.
@@ -96,25 +94,23 @@ function indentInCode(): Command {
  * falls through to the list link and then out of the leaf, which is the body's
  * keyboard exit from inside a code block (VISUAL_EDITOR §Chrome).
  */
-function outdentInCode(): Command {
-	return (state, dispatch) => {
-		const block = codeBlockAt(state);
-		if (!block) return false;
-		const { from, to } = state.selection;
-		const cuts = coveredLineStarts(block.text, from - block.start, to - block.start)
-			.map((s) => ({ s, width: outdentWidth(block.text, s, UNIT.length) }))
-			.filter((c) => c.width > 0);
-		if (!cuts.length) return false;
-		if (dispatch) {
-			const tr = state.tr;
-			for (const c of cuts.reverse()) {
-				tr.delete(block.start + c.s, block.start + c.s + c.width);
-			}
-			dispatch(tr.scrollIntoView());
+const outdentInCode: Command = (state, dispatch) => {
+	const block = codeBlockAt(state);
+	if (!block) return false;
+	const { from, to } = state.selection;
+	const cuts = coveredLineStarts(block.text, from - block.start, to - block.start)
+		.map((s) => ({ s, width: outdentWidth(block.text, s) }))
+		.filter((c) => c.width > 0);
+	if (!cuts.length) return false;
+	if (dispatch) {
+		const tr = state.tr;
+		for (const c of cuts.reverse()) {
+			tr.delete(block.start + c.s, block.start + c.s + c.width);
 		}
-		return true;
-	};
-}
+		dispatch(tr.scrollIntoView());
+	}
+	return true;
+};
 
 /**
  * The `code_block` link of the body's key chains — `{}` for the inline/plaintext
@@ -128,8 +124,8 @@ function outdentInCode(): Command {
 export function codeKeymap(schema: Schema): Record<string, Command> {
 	if (!schema.nodes.code_block) return {};
 	return {
-		Tab: indentInCode(),
-		'Shift-Tab': outdentInCode(),
+		Tab: indentInCode,
+		'Shift-Tab': outdentInCode,
 		Enter: newlineInCode
 	};
 }

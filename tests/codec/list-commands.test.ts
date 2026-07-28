@@ -8,37 +8,13 @@
 // produces a shape `Content` cannot hold would pass a doc-shape assertion and
 // still lose the user's edit on commit.
 import { describe, it, expect } from 'vitest';
-import { EditorState, TextSelection, type Command } from 'prosemirror-state';
+import { EditorState, TextSelection } from 'prosemirror-state';
 import type { Node as PMNode } from 'prosemirror-model';
-import { blockSchema, decode, listKeymap, pmToContent } from '$lib/core/codec';
-import { baseKeymap } from 'prosemirror-commands';
-import { md, normalize } from './_util.js';
+import { blockSchema, decode, listKeymap } from '$lib/core/codec';
+import { md, atBlock, startOf, run, shape, keyDriver } from './_util.js';
 
 const keys = listKeymap(blockSchema);
-
-/** The doc's textblocks in document order, with their content-start positions. */
-function textblocks(doc: PMNode): { node: PMNode; start: number }[] {
-	const out: { node: PMNode; start: number }[] = [];
-	doc.descendants((node, pos) => {
-		if (node.isTextblock) out.push({ node, start: pos + 1 });
-		return !node.isTextblock;
-	});
-	return out;
-}
-
-/** A state with the caret at the START of the `index`-th textblock — where every
- * structural key branches, and the only way to address an EMPTY item (it carries
- * no text to anchor on). */
-function atBlock(doc: PMNode, index: number): EditorState {
-	const block = textblocks(doc)[index];
-	if (!block) throw new Error(`no textblock at index ${index}`);
-	return EditorState.create({ doc, selection: TextSelection.create(doc, block.start) });
-}
-
-/** A state over `markdown` with the caret at the start of the `index`-th textblock. */
-function startOf(markdown: string, index: number): EditorState {
-	return atBlock(decode(md(markdown), blockSchema), index);
-}
+const { press, expectPress } = keyDriver(keys);
 
 /** A state over `markdown` with the caret just after the first `caretAfter` — the
  * mid-text position, where the keys keep their ordinary meaning. */
@@ -62,41 +38,6 @@ const p = (text?: string) => n.paragraph.create(null, text ? blockSchema.text(te
 const li = (...blocks: PMNode[]) => n.list_item.create(null, blocks);
 const ul = (...items: PMNode[]) => n.bullet_list.create(null, items);
 const docOf = (...blocks: PMNode[]) => n.doc.create(null, blocks);
-
-/** Run `cmd`; the new state, or null when the command declined the key. */
-function run(state: EditorState, cmd: Command): EditorState | null {
-	let out: EditorState | null = null;
-	const handled = cmd(state, (tr) => {
-		out = state.apply(tr);
-	});
-	return handled ? out : null;
-}
-
-/** Run the leaf's binding for `key`, falling through to the base keymap exactly as
- * the plugin stack does (`proseLeafPlugins` mounts `editorKeymap` over `baseKeymap`). */
-function press(state: EditorState, key: string): EditorState {
-	const bound = keys[key] ? run(state, keys[key]) : null;
-	if (bound) return bound;
-	const base = baseKeymap[key] ? run(state, baseKeymap[key]) : null;
-	return base ?? state;
-}
-
-/** `doc(bullet_list(list_item(paragraph("a"))))` — PM's own compact rendering. */
-const shape = (state: EditorState): string => state.doc.toString();
-
-/** The mutation survives the boundary: encode → normalize → decode is a fixpoint. */
-function representable(state: EditorState): boolean {
-	const stored = normalize(pmToContent(state.doc));
-	return decode(stored, blockSchema).toString() === state.doc.toString();
-}
-
-/** Assert a press's result AND its representability in one place. */
-function expectPress(state: EditorState, key: string, expected: string): EditorState {
-	const next = press(state, key);
-	expect(shape(next)).toBe(expected);
-	expect(representable(next), `not representable: ${shape(next)}`).toBe(true);
-	return next;
-}
 
 describe('Tab / Shift-Tab change nesting depth', () => {
 	it('Tab sinks an item under its previous sibling', () => {

@@ -7,13 +7,14 @@
 // normalizer → decode is a fixpoint — because indentation is only real if it
 // survives the boundary verbatim.
 import { describe, it, expect } from 'vitest';
-import { EditorState, TextSelection, type Command } from 'prosemirror-state';
+import { EditorState, TextSelection } from 'prosemirror-state';
 import type { Node as PMNode } from 'prosemirror-model';
 import { blockSchema, bodyKeymap, decode, pmToContent } from '$lib/core/codec';
 import { baseKeymap } from 'prosemirror-commands';
-import { md, normalize } from './_util.js';
+import { md, normalize, startOf, run, shape, keyDriver } from './_util.js';
 
 const keys = bodyKeymap(blockSchema);
+const { press, expectPress } = keyDriver(keys);
 
 /** Content start of the doc's first `code_block` — the origin every offset below
  * counts from, so a case reads in the code's own coordinates. */
@@ -36,40 +37,6 @@ function sel(markdown: string, from: number, to = from): EditorState {
 		doc,
 		selection: TextSelection.create(doc, start + from, start + to)
 	});
-}
-
-/** Run `cmd`; the new state, or null when the command declined the key. */
-function run(state: EditorState, cmd: Command): EditorState | null {
-	let out: EditorState | null = null;
-	const handled = cmd(state, (tr) => {
-		out = state.apply(tr);
-	});
-	return handled ? out : null;
-}
-
-/** Run the leaf's binding for `key`, falling through to the base keymap exactly as
- * the plugin stack does (`proseLeafPlugins` mounts `editorKeymap` over `baseKeymap`). */
-function press(state: EditorState, key: string): EditorState {
-	const bound = keys[key] ? run(state, keys[key]) : null;
-	if (bound) return bound;
-	const base = baseKeymap[key] ? run(state, baseKeymap[key]) : null;
-	return base ?? state;
-}
-
-const shape = (state: EditorState): string => state.doc.toString();
-
-/** The mutation survives the boundary: encode → normalize → decode is a fixpoint. */
-function representable(state: EditorState): boolean {
-	const stored = normalize(pmToContent(state.doc));
-	return decode(stored, blockSchema).toString() === state.doc.toString();
-}
-
-/** Assert a press's result AND its representability in one place. */
-function expectPress(state: EditorState, key: string, expected: string): EditorState {
-	const next = press(state, key);
-	expect(shape(next)).toBe(expected);
-	expect(representable(next), `not representable: ${shape(next)}`).toBe(true);
-	return next;
 }
 
 const FENCE = '```\nfoo\nbar\n```';
@@ -194,17 +161,6 @@ describe('inside a list item, the code link wins', () => {
 });
 
 describe('outside a code block the links decline', () => {
-	/** A caret at the start of the doc's `index`-th textblock. */
-	function startOf(markdown: string, index: number): EditorState {
-		const doc = decode(md(markdown), blockSchema);
-		const blocks: number[] = [];
-		doc.descendants((node, pos) => {
-			if (node.isTextblock) blocks.push(pos + 1);
-			return !node.isTextblock;
-		});
-		return EditorState.create({ doc, selection: TextSelection.create(doc, blocks[index]) });
-	}
-
 	it('Tab still sinks a list item', () => {
 		expectPress(
 			startOf('- a\n- b', 1),
