@@ -143,8 +143,11 @@
 
 	// ── Leaf registry (setCaret target lookup + the 4b active-leaf seam) ────────
 	// `rootEl` scopes the leaf-key lookup `setCaret` uses to bloom its landing — the
-	// registry hands back a controller, not the DOM the wash goes over.
+	// registry hands back a controller, not the DOM the wash goes over. `reveal` is
+	// the other half of landing: a leaf inside a collapsed accordion group is clipped
+	// to zero height, so the owning card is asked to open it (Card §reveal effect).
 	let rootEl: HTMLDivElement | undefined = $state();
+	let reveal = $state<{ key: string } | undefined>(undefined);
 	const leaves = new Map<string, FieldController>();
 	function register(key: string, controller: FieldController): void {
 		leaves.set(key, controller);
@@ -465,6 +468,9 @@
 		// (HitGranularity), so just focus the leaf rather than snap the caret to a
 		// spot the click did not resolve. `'cluster'` (and an absent granularity —
 		// the backend did not report it, treat as exact) places the caret.
+		// Reveal BEFORE landing: a leaf in a collapsed group is clipped to zero
+		// height, so both the caret and the cue below would land unseen.
+		reveal = { key };
 		if (hit.granularity === 'segment') leaf.focus();
 		else leaf.setCaret(hit.pos);
 		// The arrival cue. Unconditional, unlike the preview side's change-guarded
@@ -507,6 +513,7 @@
 		onCaretMove={handleCaret}
 		{register}
 		{unregister}
+		{reveal}
 	/>
 
 	<!-- The tips card (issue #71): a fixed slot after `main`, ahead of the cards, so
@@ -540,6 +547,7 @@
 			onCaretMove={handleCaret}
 			{register}
 			{unregister}
+			{reveal}
 		/>
 		{#if kinds.length}
 			{@render addAffordance(i + 1, i === model.cards.length - 1)}

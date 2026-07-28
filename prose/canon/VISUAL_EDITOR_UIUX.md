@@ -159,6 +159,13 @@ SURFACES §Motion). The two sides differ in exactly one way, because their input
   hairline to `--_qm-accent` on `:focus-within`, so in the common case the border it
   would flash to is the colour it already is.
 
+A landing REVEALS itself first. A collapsed accordion group clips its panel to zero
+height without unmounting it, so a caret placed inside one is a caret nobody can see
+— `main.subject` on the reference memo is exactly this case. `setCaret` asks the
+owning card to open the group holding its target (§"Card stack" keeps `expanded` the
+card's own state; the editor only asks), then lands. Focus alone cannot substitute:
+the browser scrolls to a clipped box without unclipping it.
+
 ## Source view
 
 Debug-only, per [ARCHITECTURE.md](ARCHITECTURE.md) — not an editable dual mode. The
