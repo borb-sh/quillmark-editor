@@ -77,11 +77,12 @@ nothing raises it — no literal is minted, so `check:style` stays green while a
 control renders subtly wrong.
 
 - **`.qm-control-box`** — a typed value's box: `--_qm-surface`, one `--_qm-border`
-  hairline, `--_qm-radius-inner`, `--_qm-text-body`, one padding rung. Every scalar
-  control and every prose leaf **except the body**, which the slot withholds it from
-  (`ProseField`'s `unframed`). The predicate is the slot's, not the leaf's: a
-  `richtext` field without `inline` is block prose and still a control in a row of
-  controls, so only the caller that knows it is rendering the body can say so.
+  hairline, `--_qm-radius-inner`, `--_qm-text-body` at `--_qm-leading-body`, one
+  padding rung. Every scalar control and every prose leaf **except the body**, which
+  the slot withholds it from (`ProseField`'s `unframed`). The predicate is the
+  slot's, not the leaf's: a `richtext` field without `inline` is block prose and
+  still a control in a row of controls, so only the caller that knows it is
+  rendering the body can say so.
 - **`.qm-icon-btn` / `.qm-add-affordance`** — the two button families; see below.
 - the two floating surfaces share the popover recipe above.
 
@@ -101,15 +102,20 @@ spec fixes rather than a step on the space scale, so it does not move when
 expression of the same floor would have nothing watching it.
 
 **An inline prose leaf is inside that recipe, not beside it.** A field constrained
-to one paragraph is a control in a row of controls, so it draws the same five
+to one paragraph is a control in a row of controls, so it draws the same
 declarations and is therefore exactly as tall as the `.qm-input` next to it — by
-construction, with no floor of its own. Two `min-height` literals tuned to agree
-would drift the first time either box changed. The body is the one that is not a
-control at all: it opens at a few lines and grows, and it draws no box. The **type
-rung** is a leaf's either way, and sits on the leaf's own base rule rather than in
-the box it withholds: a leaf that inherits its size lands on the host page's body
-rung, minting no literal for `check:style` to catch. Paper reads the ramp exactly
-as a control does.
+construction, with no floor of its own. A control's height is one padding rung, a
+line box and two hairlines, so that agreement is **leading's** as much as padding's:
+a leading applied to one selector of the shared rule and not the other breaks the
+invariant with nothing minted for the gate to catch, and two `min-height` literals
+tuned to agree would drift the first time either box changed. The body is the one
+that is not a control at all: it draws no box and opens at a floor of six line
+boxes — size times leading times six, both factors named or the expression stops
+meaning the six lines it claims — then grows. The **type rungs** are a leaf's
+either way, size and leading alike, and sit on the leaf's own base rule rather than
+in the box it withholds: a leaf that inherits them lands on the host page's rhythm,
+minting no literal for `check:style` to catch. Paper reads the ramp exactly as a
+control does.
 
 ## Rhythm
 
@@ -160,6 +166,24 @@ over them (`--_qm-weight-label` on a field label, `--_qm-weight-soft` on a neste
 object prop's secondary label), not per-file. The ~8 ad-hoc sizes the study counted
 collapse to the four; an in-between size is the drift this prevents.
 
+**Leading** is the ramp's third axis, at two rungs rather than four: a wrapped
+label and a wrapped paragraph want different rhythms, and nothing wants a rung per
+size. `--_qm-leading-body` is reading rhythm — both prose leaves, every control
+beside them, the tips card's guidance; `--_qm-leading-tight` is a line that is a
+label rather than a passage — field labels, section labels, the card title. The
+two axes are deliberately independent, which the tips card is the case for: label
+size, reading leading. Unitless, so a rung inherits multiplicatively and holds
+against whichever size rung the surface reads. A glyph row is outside the axis
+altogether — `line-height: 1` collapses the line box onto the glyph, a structural
+claim rather than a rhythm.
+
+**Leading alone separates paper from chrome.** The body leaf reads
+`--_qm-text-body`, the same size as the input beside it, and steps up to no fifth
+rung; the line rhythm is the entire distinction, which is what keeps the size ramp
+four wide. Control height falls out of the same rung — a box is one padding rung, a
+line box and two hairlines — so a cramped control is missing leading, not a
+`min-height`.
+
 A control **reads** the rung; it does not inherit a size. Inheriting is the drift
 that hides from the gate — no literal is minted, so nothing fails, and the control
 silently takes the host page's body size. That inverts the ladder against the label
@@ -168,10 +192,11 @@ the package.
 
 **The scale in code.** All three axes are public dials deriving a closed private
 scale ([`THEMING.md`](../../THEMING.md)) — geometry (`--qm-radius`, `--qm-space`),
-type (`--qm-font-size`, with the ratio between rungs a fixed constant), and colour
-(`--qm-bg`, `--qm-fg`, and the three status hues, which step surfaces `bg → fg` and
-ink `fg → bg` in oklab). The derivation is minted ONCE, as a stylesheet in `core/`
-the package imports itself, and applies to every element marked `data-qm-root` —
+type (`--qm-font-size`, with the ratio between size rungs and the two leading rungs
+fixed constants), and colour (`--qm-bg`, `--qm-fg`, and the three status hues, which
+step surfaces `bg → fg` and ink `fg → bg` in oklab). The derivation is minted ONCE,
+as a stylesheet in `core/` the package imports itself, and applies to every element
+marked `data-qm-root` —
 the editor, the portaled popover and select list, the preview, and the source view,
 none of which descend from the others. That rule carries the baseline font and ink
 too, so a root inherits them by carrying the marker rather than by restating a

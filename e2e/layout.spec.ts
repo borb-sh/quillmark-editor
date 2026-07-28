@@ -162,6 +162,29 @@ test.describe('section grid', () => {
 		expect(Math.round(geom.lone)).toBe(Math.round(geom.cell * 2 + geom.gap));
 	});
 
+	// SURFACES §"The shared recipe" — an inline leaf is EXACTLY as tall as the input
+	// beside it, because both draw one rule rather than two floors tuned to agree. A
+	// control's height is a padding rung, a line box and two hairlines, so the
+	// agreement rests on leading as much as on padding: a `line-height` landing on one
+	// selector of the shared rule and not the other mints no literal, leaves
+	// `check:style` green, and breaks this by a few pixels. Only a browser sees it.
+	test('(f2) an inline prose leaf measures exactly as tall as the input beside it', async ({
+		page
+	}) => {
+		const box = (testid: string) =>
+			page.getByTestId(testid).evaluate((el) => {
+				const s = getComputedStyle(el);
+				return { h: el.getBoundingClientRect().height, lineHeight: s.lineHeight };
+			});
+		const leaf = await box('prose-main-tag_line');
+		const input = await box('main-letterhead_seal_subtitle');
+
+		expect(leaf.h).toBe(input.h);
+		// …and for the stated reason: one leading rung, resolved, not `normal`.
+		expect(leaf.lineHeight).toBe(input.lineHeight);
+		expect(leaf.lineHeight).not.toBe('normal');
+	});
+
 	test('(f) a resize does not remount a prose leaf', async ({ page }) => {
 		// Nothing re-derives row structure, so a capacity change touches CSS tracks and
 		// not the DOM: the leaf element must survive resizes in both directions.

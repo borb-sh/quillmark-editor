@@ -86,7 +86,10 @@
 	   hairline, no shadow, no fill beyond the card recipe. It reads as guidance
 	   rather than as a field by TONE and TYPE — the label rung in the muted label
 	   colour — not by a badge or an accent (AESTHETIC §"Secondary text recedes").
-	   It mints no token of its own; every value here is an existing dial. */
+	   It mints no token of its own; every value here is an existing dial.
+
+	   Leading is the reading rung, not the tight one the label SIZE would suggest: a
+	   tip is a passage that wraps, and the two axes are independent (SURFACES §Rhythm). */
 	.qm-tips {
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
@@ -96,6 +99,7 @@
 		flex-direction: column;
 		gap: var(--_qm-space-2);
 		font-size: var(--_qm-text-label);
+		line-height: var(--_qm-leading-body);
 		color: var(--_qm-ink-label);
 	}
 	/* The rendered tip is injected DOM (the codec's `toDOM` output), so its element

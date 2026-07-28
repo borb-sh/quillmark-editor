@@ -143,6 +143,19 @@
 		--_qm-text-meta: calc(var(--_qm-text-label) / 1.125);
 		--_qm-weight-label: 600;
 		--_qm-weight-soft: 500;
+		/* Leading — the ramp's third axis, and it does not track the sizes one for one:
+		   two rungs, because a wrapped label and a wrapped paragraph want different
+		   rhythms and nothing wants four. `body` is reading rhythm (both prose leaves,
+		   every control beside them, the tips card's guidance); `tight` is a line that is
+		   a label rather than a passage. Unitless, so a rung inherits MULTIPLICATIVELY
+		   and holds against whichever size rung the surface reads — a `rem` leading
+		   would freeze at one size and disagree with the rest of the ramp. Leading is
+		   also the WHOLE of what separates paper from chrome: the body leaf reads
+		   `--_qm-text-body`, the same size as the input beside it, and there is no fifth
+		   size rung over it. A glyph row is outside the axis — it declares
+		   `line-height: 1` to collapse the line box onto the glyph. */
+		--_qm-leading-body: 1.5;
+		--_qm-leading-tight: 1.3;
 
 		/* ── The baseline every root inherits ────────────────────────────────────
 		   Real properties, not only custom ones — the thing an inline attribute

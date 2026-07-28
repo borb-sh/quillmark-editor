@@ -48,12 +48,20 @@
 	   moves by restyling their page rather than by turning `--qm-font-size`.
 	   Splitting it here rather than restating it on the unframed leaf is
 	   the same argument the rule itself rests on: a second copy agrees until one is
-	   edited, and both copies read a rung, so `check:style` sees nothing either way. */
+	   edited, and both copies read a rung, so `check:style` sees nothing either way.
+
+	   Size and LEADING both sit after `font`, and have to: `font` is a shorthand that
+	   carries `line-height`, so either declared above it is dropped with nothing
+	   raised. And leading sits on THIS rule rather than on one of its selectors,
+	   because a box's height is a padding rung plus a line box plus two hairlines — a
+	   leaf and the input beside it agree on height exactly as long as they agree on
+	   leading, which is the whole of what "by construction" buys. */
 	.qm-control-box,
 	.qm-input,
 	.qm-prose {
 		font: inherit;
 		font-size: var(--_qm-text-body);
+		line-height: var(--_qm-leading-body);
 	}
 	.qm-control-box,
 	.qm-input {

@@ -50,6 +50,7 @@
 		gap: var(--_qm-space-half);
 		font-size: var(--_qm-text-label);
 		font-weight: var(--_qm-weight-label);
+		line-height: var(--_qm-leading-tight);
 		color: var(--_qm-ink-label);
 	}
 	/* Required marker: a quiet accent glyph, not an alarm — required-ness is guidance,
