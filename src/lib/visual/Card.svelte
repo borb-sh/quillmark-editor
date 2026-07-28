@@ -133,12 +133,10 @@
 	// Ephemeral session state — the open group's id (`null` = all collapsed). Seeded
 	// ONCE from the card's shape (structure.initialExpandedGroup); Card is keyed by
 	// stable id, so this survives the VisualEditor re-derive that reassigns `card`
-	// and resets only on a remount (reload). It is NOT reconciled to later section
-	// changes — a retype is the one reshape, and it reads fine to keep the user's
-	// open group where it still exists.
+	// and resets only on a remount (reload). Not reconciled to later section changes —
+	// a retype is the one reshape, and the open group stays where it still exists.
 	// svelte-ignore state_referenced_locally
 	let expanded = $state<string | null>(initialExpandedGroup(card.sections, card.hasBody));
-	/** Toggle a group: open it (closing any other), or collapse it if already open. */
 	function toggleGroup(group: string): void {
 		expanded = expanded === group ? null : group;
 	}
@@ -267,9 +265,8 @@
 			     one open at a time. The header toggles; the panel slides via a
 			     0fr↔1fr grid row (the `slow` duration rung). The sections share ONE wrapper
 			     with no gap of its own: each header's symmetric padding is the whole
-			     inter-group rhythm, so a label sits equidistant from the rule above it and
-			     its own (issue #118). The card body's gap still separates this block from
-			     the ungrouped fields and the body leaf.
+			     inter-group rhythm (issue #118). The card body's gap still separates this
+			     block from the ungrouped fields and the body leaf.
 
 			     Rendered only when a card HAS groups, so an empty accordion is not the
 			     bracket's last child: the bottom rule's inset belongs to whichever block
@@ -528,9 +525,7 @@
 	/* No inset between a horizontal and the accordion, deliberately: an open section's
 	   vertical has to REACH the rule to close a corner against it, and any padding here
 	   is the distance by which it would miss. The accordion needs none anyway — a group
-	   header's symmetric padding is the whole inter-group rhythm (issue #118), so the
-	   bracket's top rule IS the "rule above it" for the first section, at the same
-	   distance every other section's is.
+	   header's symmetric padding is the whole inter-group rhythm (issue #118).
 
 	   A block of FIELDS has no padding of its own, so it takes the inset wherever it
 	   abuts a rule — three places, since three blocks can: an ungrouped block under the
@@ -609,18 +604,8 @@
 	.qm-group.qm-open {
 		border-left-color: var(--_qm-border);
 	}
-	/* A closed last section's own rule lands exactly where the bracket's bottom rule
-	   does, and two hairlines at one y paint as one stroke of twice the width — which
-	   is the one thing the bracket cannot afford, its whole claim being that its three
-	   sides are the same stroke. The section's rule yields; the bracket's is the one
-	   that has to be there. Transparent rather than dropped, again so opening the last
-	   section moves nothing. */
-	.qm-meta-bottom .qm-group:last-child:not(.qm-open) .qm-group-header {
-		border-bottom-color: transparent;
-	}
-	/* Symmetric padding: the label is equidistant from the rule above it and the one
-	   it draws, and the box is the whole row — no dead strip outside it, ambiguous
-	   about which section it belongs to. WCAG 2.5.8's 24x24 is the floor. */
+	/* Symmetric padding: WCAG 2.5.8's 24×24 floor, and the header is the whole row
+	   so adjacent labels share one rhythm with no dead strip outside the button. */
 	.qm-group-header {
 		display: flex;
 		align-items: center;
@@ -631,11 +616,8 @@
 		padding: var(--_qm-space-2) 0;
 		cursor: pointer;
 		color: var(--_qm-ink-meta);
-		border-bottom: var(--_qm-border-width) solid var(--_qm-border);
 		text-align: left;
-		transition:
-			color var(--_qm-duration-fast) ease,
-			border-color var(--_qm-duration-slow) ease;
+		transition: color var(--_qm-duration-fast) ease;
 	}
 	/* Sentence case at the field-label rung — a section name is structurally a
 	   heading, and uppercase costs it twice: the word shape a column of them is
@@ -651,8 +633,8 @@
 	}
 	/* Open and hover are both an ink step, not a hue: an expanded section is not a
 	   status, and AESTHETIC §Rules keeps the three status hues as the only exits from
-	   the greyscale. The chevron's rotation already says open. Hover had no cue at
-	   all, which a bigger borderless target needs more than a small one did. */
+	   the greyscale. The chevron's rotation already says open; hover needs the ink
+	   step because a bigger borderless target has no other cue. */
 	.qm-group.qm-open .qm-group-header,
 	.qm-group-header:hover {
 		color: var(--_qm-ink);
@@ -703,9 +685,8 @@
 		flex-direction: column;
 		gap: var(--_qm-space);
 	}
-	/* Recovery shell (issue #72): a dashed-edge card marking an un-schemable card —
-	   visibly distinct from a normal card, but not alarming; the content behind it is
-	   intact. The edge alone carries that: the fill is the card rung like any other. */
+	/* Recovery shell (issue #72): dashed edge marks an un-schemable card. The edge
+	   alone carries that — fill stays the card rung, content behind it intact. */
 	.qm-card.qm-unschemable {
 		border-style: dashed;
 	}
