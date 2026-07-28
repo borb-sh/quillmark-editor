@@ -10,7 +10,7 @@
 import { DOMSerializer, type Mark, type Node as PMNode, type Schema } from 'prosemirror-model';
 import type { Content, ContentContainer, ContentLine, ContentMark } from '@quillmark/wasm';
 import { ISLAND_SLOT } from './islands.js';
-import { markKey, pmMarkFromContent } from './marks.js';
+import { descriptorOf, markKey, pmMarkFromContent } from './marks.js';
 import { isInlineSchema } from './schema.js';
 import { isAnchorMark, isCodeLine, isHeadingLine, isListItemContainer } from '../index.js';
 
@@ -299,10 +299,11 @@ function buildInline(
 /** A stable key for a mark set (order-independent) to detect run boundaries. */
 function markSetKey(active: ContentMark[]): string {
 	if (!active.length) return '';
-	// Per-mark keys via the shared NUL-delimited `markKey`; the set is JSON-joined
-	// so no url/attrs content collides with a delimiter — a `link:a|strong` url
-	// stays distinct from the two-mark set `{link:a} + {strong}`.
-	return JSON.stringify(active.map((m) => markKey(m as unknown as Record<string, unknown>)).sort());
+	// Per-mark keys via the shared descriptor + NUL-delimited `markKey` — the same
+	// pair the mark diff groups families by, so a run boundary and a mark family are
+	// one rule. The set is JSON-joined so no url/attrs content collides with a
+	// delimiter: a `link:a|strong` url stays distinct from `{link:a} + {strong}`.
+	return JSON.stringify(active.map((m) => markKey(descriptorOf(m))).sort());
 }
 
 /** The PM mark array for an active content mark set (anchors already excluded). */

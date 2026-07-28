@@ -343,11 +343,12 @@ function diffLines(oldRt: Content, newRt: Content): LineOp[] {
 	return ops;
 }
 
-/** A line minus its `containers` / `continues` envelope — exactly the
- * `ContentLineKind` half, and exactly `setKind`'s payload. Lifting it whole is what
- * keeps this arm-agnostic: `kind` is an OPEN set, so an arm-by-arm switch would
- * have to guess at the unknown arm's payload and would drift on every arm upstream
- * adds. */
+/** A line minus its `containers` / `continues` envelope — exactly `setKind`'s
+ * payload. Lifting it whole is what keeps this arm-agnostic: `kind` is an OPEN
+ * set, so an arm-by-arm switch would have to guess at the unknown arm's payload
+ * and would drift on every arm upstream adds. The core build names this shape
+ * `ContentLineKind` but the package's entry point does not re-export it, so the
+ * op is assembled untyped and cast (DOCUMENT_MODEL §Stability seams). */
 function kindPart(l: ContentLine): Record<string, unknown> {
 	const { containers: _containers, continues: _continues, ...kind } = l;
 	return kind;

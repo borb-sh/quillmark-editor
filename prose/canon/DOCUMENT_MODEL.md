@@ -56,14 +56,23 @@ Consumed by: [CODEC.md](CODEC.md) (op-grained edit, positions, markdown edges),
 [PREVIEW.md](PREVIEW.md) (live session & paint), [VISUAL_EDITOR.md](VISUAL_EDITOR.md)
 (seeding, writer, structure mutators, validation).
 
-Two neighbouring surfaces the editor deliberately stays clear of: it names no
-`OutputFormat` (Preview paints; it does not emit an artifact) and routes
+Two neighbouring surfaces the editor re-exports but never drives: it selects no
+`OutputFormat` (Preview paints a page; it emits no artifact) and it routes
 diagnostics by `path`, never by a backend's error `code`.
 
 ## Stability seams
 
-At the 0.98.0 target the whole table is stable API and this ledger reports no
-open typing gap. The two it used to are closed:
+At the 0.98.0 target the whole table is stable API. One typing gap is open:
+
+- **`ContentLineKind` is not on the public entry point.** The core build factors
+  a line's kind half out as its own type — the exact payload of `LineOp`'s
+  `setKind` — but `runtime.d.ts` re-exports `ContentLine` without it, and the
+  package's `exports` map admits no deeper path. So the codec builds a `setKind`
+  op by lifting the kind half off a line and casts the result, where naming the
+  type would carry it (`encode.ts`, `kindOp`). One cast, no runtime effect;
+  re-exporting the type retires it.
+
+The two gaps this ledger used to report are closed:
 
 - **`ContentIsland.props` is typed** — the union pins `TableProps` for `table`
   and `ImageProps` for `image` (`TableCell` the cell shape); an island of any
