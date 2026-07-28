@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { pm, replaceProse } from './support.js';
 
 // Phase 4 exit criteria (browser tier): the /visual playground mounts
 // <VisualEditor> over a freshly seeded usaf_memo document (one indorsement card).
@@ -64,19 +65,6 @@ async function clearDate(page: Page, testid: string): Promise<void> {
 	await dateEntry(page, testid).click();
 	await page.keyboard.press('Backspace');
 	await page.keyboard.press('Backspace');
-}
-
-/** The contenteditable inside a prose leaf, by its container testid. */
-function pm(page: Page, leafTestid: string) {
-	return page.locator(`[data-testid="${leafTestid}"] .ProseMirror`);
-}
-
-/** Replace a prose leaf's whole content with `text` (select-all + type). */
-async function replaceProse(page: Page, leafTestid: string, text: string): Promise<void> {
-	const el = pm(page, leafTestid);
-	await el.click();
-	await page.keyboard.press('ControlOrMeta+a');
-	await page.keyboard.type(text);
 }
 
 test.describe('visual editor', () => {

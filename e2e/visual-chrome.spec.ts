@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { pm, replaceProse, selectAndAwaitPopover } from './support.js';
 
 // Phase 4b exit criteria (browser tier): the formatting selection popover and
 // diagnostics routing, over the SAME /visual playground e2e/visual.spec.ts uses
@@ -26,25 +27,6 @@ async function readDump(page: Page): Promise<Dump> {
 	return JSON.parse(text) as Dump;
 }
 
-/** The contenteditable inside a prose leaf, by its container testid. */
-function pm(page: Page, leafTestid: string) {
-	return page.locator(`[data-testid="${leafTestid}"] .ProseMirror`);
-}
-
-/** Replace a prose leaf's whole content with `text` (select-all + type). */
-async function replaceProse(page: Page, leafTestid: string, text: string): Promise<void> {
-	const el = pm(page, leafTestid);
-	await el.click();
-	await page.keyboard.press('ControlOrMeta+a');
-	await page.keyboard.type(text);
-}
-
-/** Select the whole (single-line) content of a prose leaf. */
-async function selectAll(page: Page, leafTestid: string): Promise<void> {
-	await pm(page, leafTestid).click();
-	await page.keyboard.press('ControlOrMeta+a');
-}
-
 test.describe('visual editor chrome — formatting popover', () => {
 	test.beforeEach(async ({ page }) => {
 		await page.goto('/visual');
@@ -55,9 +37,8 @@ test.describe('visual editor chrome — formatting popover', () => {
 		page
 	}) => {
 		await replaceProse(page, 'prose-main-subject', 'BOLDWORD');
-		await selectAll(page, 'prose-main-subject');
-
-		await expect(page.getByTestId('format-popover')).toBeVisible();
+		// The raise is this test's first claim — the helper gates on it.
+		await selectAndAwaitPopover(page, 'prose-main-subject');
 		await page.getByTestId('mark-strong').click();
 
 		await expect
@@ -67,7 +48,7 @@ test.describe('visual editor chrome — formatting popover', () => {
 
 	test('(b) toggling bold again removes the mark', async ({ page }) => {
 		await replaceProse(page, 'prose-main-subject', 'BOLDWORD');
-		await selectAll(page, 'prose-main-subject');
+		await selectAndAwaitPopover(page, 'prose-main-subject');
 		await page.getByTestId('mark-strong').click();
 		await expect.poll(async () => (await readDump(page)).subjectMarks).toHaveLength(1);
 
@@ -80,11 +61,9 @@ test.describe('visual editor chrome — formatting popover', () => {
 		page
 	}) => {
 		await replaceProse(page, 'prose-main-subject', 'ITALICWORD');
-		await selectAll(page, 'prose-main-subject');
-		// Gate on the popover settling (its rAF-deferred sync mounts it and sets the
-		// active-mark state) before reading a button's class — every sibling test
-		// waits for this; skipping it races the sync.
-		await expect(page.getByTestId('format-popover')).toBeVisible();
+		// The same sync that mounts the popover sets the active-mark state, so the
+		// helper's gate is also what makes a button's class readable.
+		await selectAndAwaitPopover(page, 'prose-main-subject');
 		const em = page.getByTestId('mark-em');
 		await expect(em).not.toHaveClass(/active/);
 		await em.click();
@@ -95,7 +74,7 @@ test.describe('visual editor chrome — formatting popover', () => {
 		page
 	}) => {
 		await replaceProse(page, 'prose-main-subject', 'MULTIMARK');
-		await selectAll(page, 'prose-main-subject');
+		await selectAndAwaitPopover(page, 'prose-main-subject');
 		await page.getByTestId('mark-strong').click();
 		// If focus had moved to the button, the popover would have closed
 		// (gated on the LEAF's hasFocus()) instead of staying open for a second click.
@@ -108,8 +87,7 @@ test.describe('visual editor chrome — formatting popover', () => {
 
 	test('the popover hides once the selection collapses', async ({ page }) => {
 		await replaceProse(page, 'prose-main-subject', 'SOMEWORD');
-		await selectAll(page, 'prose-main-subject');
-		await expect(page.getByTestId('format-popover')).toBeVisible();
+		await selectAndAwaitPopover(page, 'prose-main-subject');
 		await page.keyboard.press('ArrowRight'); // collapses the selection
 		await expect(page.getByTestId('format-popover')).toBeHidden();
 	});
@@ -118,7 +96,7 @@ test.describe('visual editor chrome — formatting popover', () => {
 		page
 	}) => {
 		await replaceProse(page, 'prose-main-subject', 'LINKWORD');
-		await selectAll(page, 'prose-main-subject');
+		await selectAndAwaitPopover(page, 'prose-main-subject');
 		await page.getByTestId('mark-link').click();
 		await page.getByTestId('mark-link-input').fill('https://example.com');
 		await page.getByTestId('mark-link-apply').click();
@@ -131,13 +109,7 @@ test.describe('visual editor chrome — formatting popover', () => {
 		page
 	}) => {
 		await replaceProse(page, 'prose-main-subject', 'ANCHORTEST');
-		// The popover's raise is rAF-deferred (see FormatPopover §SELECTION
-		// OBSERVATION); re-assert the selection until it settles, so this gate never
-		// races the sync when the test runs after a heavier sibling.
-		await expect(async () => {
-			await selectAll(page, 'prose-main-subject');
-			await expect(page.getByTestId('format-popover')).toBeVisible({ timeout: 1000 });
-		}).toPass({ timeout: 15_000 });
+		await selectAndAwaitPopover(page, 'prose-main-subject');
 		const anchor = page.getByTestId('mark-anchor');
 		await expect(anchor).toBeEnabled();
 		const anchors = async () =>
@@ -156,8 +128,7 @@ test.describe('visual editor chrome — formatting popover', () => {
 		page
 	}) => {
 		await replaceProse(page, 'prose-main-subject', 'CLICKBACK');
-		await selectAll(page, 'prose-main-subject');
-		await expect(page.getByTestId('format-popover')).toBeVisible();
+		await selectAndAwaitPopover(page, 'prose-main-subject');
 		// Click at the start of the leaf's text — collapses the selection there.
 		await pm(page, 'prose-main-subject').click({ position: { x: 2, y: 5 } });
 		await page.keyboard.type('X');
@@ -177,8 +148,7 @@ test.describe('visual editor chrome — formatting popover', () => {
 		await expect.poll(async () => (await readDump(page)).cardCount).toBe(6);
 
 		await replaceProse(page, 'prose-main-body', 'SELECTION ANCHOR');
-		await selectAll(page, 'prose-main-body');
-		await expect(page.getByTestId('format-popover')).toBeVisible();
+		await selectAndAwaitPopover(page, 'prose-main-body');
 
 		const target = page.getByTestId('card-title-5');
 		await target.scrollIntoViewIfNeeded();
