@@ -277,13 +277,12 @@ export function initialExpandedGroup(sections: GroupSection[], hasBody: boolean)
 	return hasBody ? null : (grouped[0].group ?? null);
 }
 
-/** How wide a field sits in its section grid (VISUAL_EDITOR_UIUX §Fields). */
+/** How wide a field sits in its section grid (VISUAL_EDITOR_UIUX §"Section grid"). */
 export type FieldSpan =
 	| 'cell' // one column, auto-placed among its neighbours
 	| 'lone' // half the capacity from column 1 — a packable run of one
 	| 'full'; // the whole grid, its own row
 
-/** A field and the span it takes. */
 export interface PlacedField {
 	field: FieldModel;
 	span: FieldSpan;
@@ -294,8 +293,7 @@ export interface PlacedField {
  * a row is as tall as its tallest cell and each of these grows under its neighbours:
  * an array owns its label and its own rows, an object nests a whole field set, and
  * block richtext (`inline` absent) holds paragraphs. An inline prose leaf is one line
- * tall (issue #120) and packs like any scalar. So `ui.compact` on a block field is a
- * hint the editor declines — the honest reading of a request the row cannot grant.
+ * tall (issue #120) and packs like any scalar.
  */
 function packable(f: FieldModel): boolean {
 	if (!f.compact) return false;

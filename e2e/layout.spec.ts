@@ -80,8 +80,8 @@ test.describe('section grid', () => {
 	test('(b) a wrapped orphan keeps its column width', async ({ page }) => {
 		const f = await fields(page, 'letterhead');
 		const run = [f.letterhead_seal, f.letterhead_seal_subtitle, f.tag_line];
-		// The bug: flex wrapped the third field alone and `flex-grow` filled the line, so
-		// it rendered at 2x its siblings. Auto-placement leaves it one column wide.
+		// A run of three at capacity two wraps, and the wrapped field holds ONE column —
+		// filling its line would render the third field at twice its siblings.
 		expect(rows(run), 'the run of three must wrap').toBe(2);
 		expect(new Set(run.map((b) => b.w)), `widths were ${run.map((b) => b.w).join(', ')}`).toEqual(
 			new Set([run[0].w])
@@ -163,9 +163,8 @@ test.describe('section grid', () => {
 	});
 
 	test('(f) a resize does not remount a prose leaf', async ({ page }) => {
-		// The trap the grid retires: re-packing used to rebuild the row `{#each}` under
-		// the leaf. Nothing re-derives now, so the element must survive capacity changes
-		// in both directions.
+		// Nothing re-derives row structure, so a capacity change touches CSS tracks and
+		// not the DOM: the leaf element must survive resizes in both directions.
 		await expect(page.locator('[data-leaf-key="main:tag_line"]')).toBeAttached();
 		await page.evaluate(() => {
 			const el = document.querySelector('[data-leaf-key="main:tag_line"]') as HTMLElement & {

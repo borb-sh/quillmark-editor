@@ -145,16 +145,16 @@ gives each field a span — nothing more — and the grid places them:
   hint says: arrays (which own their label and their own rows), objects (a nested
   field set), and block richtext — `inline` absent, so it holds paragraphs. An
   inline prose leaf is one line tall and packs like any scalar. A quill asking for a
-  dense multi-paragraph field is asking for something a row cannot give, and the
-  honest answer is to decline rather than to wreck the row.
+  dense multi-paragraph field asks for something a row cannot give; the hint is
+  declined rather than granted at the row's expense.
 - **Capacity is the container's, not JavaScript's.** A container query steps
   1 → 2 → 4 columns, each rung the width at which a track still clears a comfortable
   field (SURFACES §Rhythm). Nothing measures, so there is no observer to loop, no
   first pass at the wrong capacity, and — because re-packing never restructures the
   DOM — no resize can remount a prose leaf.
 - **A trailing orphan keeps its column width.** It continues a grid that already
-  exists, and auto-placement holds it to one track; the old `flex-grow` filled the
-  line and rendered the third of three fields at twice its siblings.
+  exists, so auto-placement holds it to one track. A field that grew to fill its
+  line would render the third of three at twice its siblings.
 - **A compact run of ONE takes half the capacity from column 1.** It has no row
   above to align to, so a single track reads as truncated. Capacity skips 3 so that
   half always lands on a track boundary.

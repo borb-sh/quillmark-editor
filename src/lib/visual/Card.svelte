@@ -454,9 +454,9 @@
 	   still clears the comfortable field minimum (2 needs 28rem, 4 needs 57rem), and
 	   an even capacity is what lets `lone`'s half land on a track boundary.
 
-	   Three implicit row tracks per field row — label, control, diagnostics — are the
-	   tracks a `cell` subgrids onto; `row-gap` here is the gutter BETWEEN field rows,
-	   the tighter one inside a field being the subgrid's own. */
+	   A row-sharing field spans three implicit row tracks (Field.svelte), so `row-gap`
+	   here is the gutter BETWEEN field rows; the tighter one inside a field is the
+	   subgrid's own. */
 	.qm-fields {
 		--cols: 1;
 		--cols-half: 1;
