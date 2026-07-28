@@ -329,3 +329,28 @@ test.describe('visual editor chrome — diagnostics routing', () => {
 		);
 	});
 });
+
+test.describe('visual editor chrome — dark scheme', () => {
+	test.use({ colorScheme: 'dark' });
+
+	test.beforeEach(async ({ page }) => {
+		await page.goto('/visual');
+		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
+	});
+
+	// The cheapest regression guard against a typed value's box taking the UA's
+	// own text colour instead of the card's ink rung: every other spec in this
+	// tier runs at Playwright's default light scheme, where the UA's black and
+	// the light ink rung sit close enough that a divergence there is easy to
+	// miss. Dark is where a control stuck on the UA's colour and the card
+	// around it visibly disagree.
+	test("a text control's computed ink matches its card", async ({ page }) => {
+		await reveal(page, 'main-letterhead_title');
+		const color = (selector: string) =>
+			page
+				.locator(selector)
+				.first()
+				.evaluate((el) => getComputedStyle(el).color);
+		expect(await color('[data-testid="main-letterhead_title"]')).toBe(await color('.qm-card'));
+	});
+});

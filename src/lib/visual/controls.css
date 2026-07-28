@@ -55,13 +55,24 @@
 	   raised. And leading sits on THIS rule rather than on one of its selectors,
 	   because a box's height is a padding rung plus a line box plus two hairlines — a
 	   leaf and the input beside it agree on height exactly as long as they agree on
-	   leading, which is the whole of what "by construction" buys. */
+	   leading, which is the whole of what "by construction" buys.
+
+	   COLOUR is the same trap one property over: `font` does not carry it either, so
+	   an input or trigger left off this line falls to the UA's own text colour — a
+	   second black sitting beside the card's ink rather than the rung it renders on.
+	   `caret-color` is pinned to `currentColor` explicitly rather than left at its
+	   `auto` initial, which resolves the same way: the prose leaf's caret IS its
+	   focus indicator, the outline dropped in its favour (`ProseField`), so it has
+	   to track this rule's own ink on purpose, not by an initial value a future
+	   edit here could quietly change out from under it. */
 	.qm-control-box,
 	.qm-input,
 	.qm-prose {
 		font: inherit;
 		font-size: var(--_qm-text-body);
 		line-height: var(--_qm-leading-body);
+		color: var(--_qm-ink);
+		caret-color: currentColor;
 	}
 	.qm-control-box,
 	.qm-input {
@@ -74,6 +85,13 @@
 	.qm-input {
 		width: 100%;
 		box-sizing: border-box;
+	}
+	/* The native placeholder is the ghost rung, not the UA's own grey: a text or
+	   number control's placeholder is the resolved `default:` (Field's `defaultStr`)
+	   and reads as shown-never-written the same way the prose leaf's empty-state
+	   ghost does (`ProseField`). */
+	.qm-input::placeholder {
+		color: var(--_qm-ink-ghost);
 	}
 
 	/* The second recipe, and it is not the box above: a field is a box because you

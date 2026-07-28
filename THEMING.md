@@ -97,7 +97,11 @@ palette stays fixed:
 
 A palette **pinned against** your own scheme is the one case needing a second
 line: the surfaces follow your dials, but native chrome follows `color-scheme`,
-so pin it with them — `.my-editor { color-scheme: dark }`.
+so pin it with them — `.my-editor { color-scheme: dark }`. Skip that line and a
+typed value's own text still matches its card — `color` reads the same dial the
+card does, not `color-scheme` — but the selection highlight, the scrollbar, and
+the spinner a browser paints from `color-scheme` do not, and stay on whichever
+scheme the host happens to inherit.
 
 No JS runs and no media query: the derivation is emitted as `var()` references
 over `light-dark()`, so an ancestor's dials and the inherited scheme both resolve
