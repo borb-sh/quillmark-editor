@@ -28,11 +28,10 @@ overrides to its brand without fighting baked-in decoration.
   never ornament. The three status hues are the only rungs that leave the two-pole
   greyscale.
 - **Colour that answers nothing is ornament, however faint.** The test is whether
-  removing it loses an answer, not whether it is subtle enough to tolerate. The
-  preview's overlay used to hairline every field box at rest; the boxes are few, the
-  hairline was there before anything was focused or clicked, and it was ornament by
-  this rule's own terms even at 55% alpha. The correlation it half-answered is now
-  marked as an event that decays (SURFACES §Motion) and the preview rests clean.
+  removing it loses an answer, not whether it is faint enough to tolerate. A hairline
+  on every field box, present before anything is focused or clicked, answers nothing
+  at 55% alpha or at any other. So the preview draws none: correlation is marked as
+  an event that decays (SURFACES §Motion), and the page rests clean.
 - **Icons encode identity or function — never decoration.** A control's glyph
   names its action: reorder, delete, a formatting mark. An icon that dresses a
   label or a section heading, doing a job a word already does, is cut. The set is

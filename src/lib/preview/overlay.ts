@@ -37,9 +37,10 @@ export function createOverlay(session: LiveSession, slots: readonly PageSlot[]):
 
 	// The last address marked. Distinct from `flash`, which is only the bloom in
 	// flight: the guard has to OUTLIVE the decay, or the next caret move after a
-	// bloom ended would re-mark the same field. The editor→preview signal is
-	// continuous (every caret move, so every keystroke), and marking the field being
-	// typed into is the noise this replaced — only a change of address is an event.
+	// bloom ended re-marks the same field. The editor→preview signal is continuous
+	// (every caret move, so every keystroke), and only a change of address is an
+	// event — marking the field being typed into is noise the recompile already
+	// answers, since the changed text repaints under the caret 120ms later.
 	let marked: string | undefined;
 	let flash: { field: string; startedAt: number } | undefined;
 

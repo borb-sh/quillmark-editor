@@ -71,28 +71,27 @@ present during the activity that dominates the session. There is no alpha band t
 is both legible at pane scale and non-tinting, so the answer is not a fainter resting
 state but no resting state.
 
-What the boxes are for, then, is geometry and one event:
+The boxes serve geometry and one event:
 
 - **Geometry.** The bridge scrolls a field by its first box; the e2e locates ink by
-  the rect. This never needed to be visible.
+  the rect. Neither reads a pixel of the box itself.
 - **The correlation bloom.** On a change of active address the field's boxes wash to
   `--_qm-accent-wash` and decay to zero over `--_qm-duration-linger`. A field's boxes
   share one start time, so a two-box `main.subject` blooms in step instead of
   shimmering.
 
-Two consequences worth stating, because both are easy to reintroduce:
+Two rules the bloom lives under:
 
 - **A rebuilt box RESUMES its bloom, never restarts it.** `refresh` re-creates every
-  box, and the playground recompiles 120ms after each keystroke burst — a CSS
-  animation on a fresh node would re-bloom continuously while the user writes. The
-  bloom carries its start time, so a rebuilt node picks up at the offset the old one
+  box, and the playground recompiles 120ms after each keystroke burst; a CSS
+  animation on a fresh node re-blooms continuously while the user writes. The bloom
+  carries its start time, so a rebuilt node picks up at the offset the old one
   reached (`core/bloom.ts`).
-- **Discoverability is not the overlay's job any more.** The idle hairline was the
-  only hint that preview text is clickable, and it is gone. The click target is the
-  text itself, which is what a reader would try first; touch had no hover affordance
-  to lose either way. If this proves too quiet, the reserve answer is an off-paper
-  mark in the pane margin beside the page — the only form that can rest without
-  contaminating the proof.
+- **Discoverability is not the overlay's job.** Nothing on the page advertises that
+  preview text is clickable. The click target is the text itself, which is what a
+  reader tries first; touch has no hover affordance either way. The reserve answer,
+  if this proves too quiet, is an off-paper mark in the pane margin beside the page —
+  the only form that can rest without contaminating the proof.
 
 ## Click bridge
 

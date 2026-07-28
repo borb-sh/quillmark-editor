@@ -107,9 +107,9 @@ const AXES = [
 		cssOnly: false
 	},
 	{
-		// A duration is the axis with no natural units of its own — every value looks
-		// plausible, so four surfaces reached four different numbers before anything
-		// looked. `transition: none` and `animation: none` carry no time and pass.
+		// The axis with no natural units of its own: every value looks plausible, so a
+		// surface picking its own drifts silently and unarguably. `transition: none`
+		// and `animation: none` carry no time and pass.
 		props: /^(transition|animation)(-(duration|delay))?$/,
 		literal: /\b\d*\.?\d+m?s\b/,
 		rung: '`var(--_qm-duration-…)`',

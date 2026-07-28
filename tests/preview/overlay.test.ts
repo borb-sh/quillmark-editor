@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
-// Issue #115: the overlay marks correlation as an EVENT, not a state. These pin the
-// three properties that made the old resting border wrong and that a later change
-// could quietly reintroduce: nothing is drawn at rest, a bloom RESUMES across the
-// rebuild a recompile triggers rather than restarting, and a continuous caret signal
-// only blooms on an actual change of address.
+// Issue #115: the overlay marks correlation as an EVENT, not a state. Three
+// invariants, each cheap to break silently: nothing is drawn at rest, a bloom
+// RESUMES across the rebuild a recompile triggers rather than restarting, and a
+// continuous caret signal blooms only on an actual change of address.
 //
 // jsdom has no WAAPI, so `bloom()` returns `undefined` there and no animation runs.
 // That is exactly the seam these tests want: they assert the CONTROL FLOW around the

@@ -114,13 +114,12 @@ case, and one rule for both is the conflation [#45] resolves:
 One hue carries "active" across the panes: the editor's focus ring and the
 correlation bloom both resolve `--_qm-accent`, so a field reads as engaged with the
 same colour on either side (the editor↔preview active address, VISUAL_EDITOR_UIUX
-§"Editor↔preview"). But the two are different STATES OF MATTER, and that is
-deliberate. Focus is a state the editor holds, so the editor draws it and holds it.
-Correlation is an event — the moment an address crossed between the panes — so it is
-marked by a wash that decays to nothing and never by ink that rests. **The preview
-carries no focus ink at all**: it claims to be the rendered output, and a border it
-draws on the page it is proving is a border the document did not ask for. What the
-overlay draws instead is in PREVIEW §Overlay. The active *card* is set apart
+§"Editor↔preview"). The two differ in what they are, not in hue. Focus is a state
+the editor holds, so the editor draws it and holds it. Correlation is an event — the
+moment an address crossed between the panes — so a wash marks it and decays to
+nothing. **The preview carries no focus ink at all**: it claims to be the rendered
+output, and a border it draws on the page it is proving is a border the document did
+not ask for. What the overlay draws instead is in PREVIEW §Overlay. The active *card* is set apart
 separately — the `active` state that pins the reorder chevrons (VISUAL_EDITOR_UIUX
 §"Card stack").
 
@@ -144,11 +143,10 @@ Three duration rungs, named for what the eye is doing rather than for a componen
   waits out. Long enough that a wash which rises and decays is legible as a single
   gesture rather than a flicker.
 
-Duration is the axis with no units of its own — every value looks plausible, which
-is why four surfaces reached four different numbers before anything looked. So it is
-a scale like the others and `check:style` gates it, in CSS and in the script that
-animates the bloom over WAAPI (`core/bloom.ts` reads the rung off the element rather
-than forking the number).
+Duration is the axis with no units of its own: every value looks plausible, so a
+surface picking its own drifts silently. It is a scale like the others and
+`check:style` gates it — in CSS, and in the script that animates the bloom over WAAPI
+(`core/bloom.ts` reads the rung off the element rather than forking the number).
 
 Under `prefers-reduced-motion: reduce` a transition is dropped and the bloom loses
 its ramps — it holds at full for a beat and cuts. That degradation is only available

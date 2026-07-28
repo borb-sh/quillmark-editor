@@ -55,9 +55,8 @@
 		--_qm-ink-meta: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 45%);
 		--_qm-ink-ghost: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 60%);
 		/* The correlation wash (`core/bloom.ts`). Its alpha is a PEAK, not a tint: the
-		   wash is animated from and back to zero, never held, so it can read at pane
-		   scale over the preview's paper without the preview ever carrying resting
-		   ink — which is the whole reason the overlay's idle box is gone. */
+		   wash animates from and back to zero, never held, so it reads at pane scale
+		   over the preview's paper while the paper rests clean. */
 		--_qm-accent-wash: color-mix(in oklab, var(--_qm-accent) 18%, transparent);
 
 		/* ── Ratios and effects ──────────────────────────────────────────────────
