@@ -70,7 +70,20 @@ At the 0.98.0 target the whole table is stable API. One typing gap is open:
   package's `exports` map admits no deeper path. So the codec builds a `setKind`
   op by lifting the kind half off a line and casts the result, where naming the
   type would carry it (`encode.ts`, `kindOp`). One cast, no runtime effect;
-  re-exporting the type retires it.
+  re-exporting the type retires it — quillmark #1086.
+
+Two boundary hazards this ledger records because the editor works around them,
+not because it consumes them — quillmark #1084 and #1085:
+
+- **A reserved name in an unknown arm normalizes silently.** `install` and
+  `applyChange` accept `{kind: "para", attrs: {…}}` and store `{kind: "para"}`;
+  the `ReservedUnknownLineKind` invariant guards in-process construction, not the
+  wire every binding speaks. A stray payload is dropped without a diagnostic.
+- **Nothing on the boundary answers "is this value one this build knows?"** The
+  guards narrow one pinned arm at a time, so [CODEC.md](CODEC.md) §Open sets
+  reaches its unknown carriers by elimination against the built-in set — correct
+  at 0.98, and stale the release a built-in `kind` is added. That staleness is
+  invisible: by the rung above, the resulting op is accepted.
 
 The two gaps this ledger used to report are closed:
 

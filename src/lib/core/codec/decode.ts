@@ -236,6 +236,11 @@ function makeLeaf(schema: Schema, leaf: Leaf, marks: ContentMark[], cursor: Isla
 	}
 	// An unknown kind renders as a paragraph AND rides on it, so it re-encodes
 	// verbatim rather than flattening to `para` on the field's first edit.
+	// Reached by ELIMINATION: the boundary narrows one pinned arm at a time and
+	// offers no `isUnknownLine`, so the built-in set is enumerated above. A `kind`
+	// upstream adds later lands here and round-trips through the carrier — its
+	// sibling-key payload lost, with no diagnostic (DOCUMENT_MODEL §Stability
+	// seams; quillmark #1084, #1085).
 	const unknown =
 		line.kind === 'para' ? null : { kind: line.kind, attrs: 'attrs' in line ? line.attrs : null };
 	return schema.nodes.paragraph.create({ unknown }, inline);
