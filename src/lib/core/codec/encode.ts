@@ -15,7 +15,7 @@
 // throws `IslandSlotInInsert`, so `insertReintroducesIslandSlot` flags it for the
 // field's `install` fallback.
 import type { Mark, Node as PMNode } from 'prosemirror-model';
-import { mapPos, isAnchorMark, isLinkMark } from '../index.js';
+import { mapPos, isAnchorMark } from '../index.js';
 import type {
 	ChangeBundle,
 	Delta,
@@ -29,7 +29,7 @@ import type {
 } from '@quillmark/wasm';
 import { codePoints, usvLength } from './decode.js';
 import { ISLAND_SLOT, islandEntryFromNode } from './islands.js';
-import { contentDescriptorFromPM, markKey } from './marks.js';
+import { contentDescriptorFromPM, descriptorOf, markKey } from './marks.js';
 
 // ── Position-map runs (consumed by positions.ts) ────────────────────────────
 // A run is one segment of exact PM↔USV correspondence, in document order.
@@ -112,48 +112,26 @@ function scanBlock(acc: Acc, node: PMNode, nodePos: number, containers: ContentC
 	const name = node.type.name;
 	const contentStart = nodePos + 1;
 	switch (name) {
-		case 'paragraph': {
-			// `para`, or the unknown kind the paragraph carries (schema.ts) re-emitted
-			// verbatim — one value, read once, so the line and its hard-break
-			// continuations cannot disagree.
-			const u = node.attrs.unknown as { kind: string; attrs: unknown } | null;
-			const kind: KindPart = u ? { kind: u.kind, attrs: u.attrs } : { kind: 'para' };
+		case 'paragraph':
+		case 'heading': {
+			// One kind value per block: the opening line and its hard-break
+			// continuations read the SAME object, so they cannot disagree.
+			const kind = textblockKind(node);
 			beginLine(acc, contentStart, containers, kind);
 			scanInline(acc, node, contentStart, containers, kind);
 			acc.lastContentEndPm = contentStart + node.content.size;
 			break;
 		}
-		case 'heading':
-			beginLine(acc, contentStart, containers, {
-				kind: 'heading',
-				level: node.attrs.level as number
-			});
-			scanInline(acc, node, contentStart, containers, {
-				kind: 'heading',
-				level: node.attrs.level as number
-			});
-			acc.lastContentEndPm = contentStart + node.content.size;
-			break;
 		case 'code_block': {
 			const lang = (node.attrs.lang as string | null) ?? undefined;
-			beginLine(
-				acc,
-				contentStart,
-				containers,
-				lang != null ? { kind: 'code', lang } : { kind: 'code' }
-			);
+			const kind: KindPart = lang != null ? { kind: 'code', lang } : { kind: 'code' };
+			beginLine(acc, contentStart, containers, kind);
 			const codeText = node.textContent;
 			if (codeText.length) emitText(acc, codeText, contentStart, []);
 			// Internal `\n`s already sit in the text (and its run); add the extra
 			// content lines they imply as `continues` code lines.
 			const extra = codeText.split('\n').length - 1;
-			for (let i = 0; i < extra; i++) {
-				acc.lines.push({
-					containers,
-					continues: true,
-					...(lang != null ? { kind: 'code', lang } : { kind: 'code' })
-				});
-			}
+			for (let i = 0; i < extra; i++) acc.lines.push({ containers, continues: true, ...kind });
 			acc.lastContentEndPm = contentStart + node.content.size;
 			break;
 		}
@@ -201,6 +179,14 @@ function scanBlock(acc: Acc, node: PMNode, nodePos: number, containers: ContentC
 			beginLine(acc, contentStart, containers, { kind: 'para' });
 			acc.lastContentEndPm = contentStart;
 	}
+}
+
+/** A textblock's line kind: a heading's `level`, or — for a paragraph — `para`, or
+ * the unknown kind it carries (schema.ts) re-emitted verbatim. */
+function textblockKind(node: PMNode): KindPart {
+	if (node.type.name === 'heading') return { kind: 'heading', level: node.attrs.level as number };
+	const u = node.attrs.unknown as { kind: string; attrs: unknown } | null;
+	return u ? { kind: u.kind, attrs: u.attrs } : { kind: 'para' };
 }
 
 /** Open a new content line: emit the boundary `\n` (except the first line) + record. */
@@ -276,32 +262,19 @@ type KindPart =
 	| { kind: 'rule' }
 	| { kind: string; attrs: unknown };
 
-/** Merge adjacent/overlapping same-descriptor marks into maximal ranges. */
+/**
+ * Merge adjacent/overlapping same-descriptor marks into maximal ranges — the
+ * per-text-node marks the walk emits, folded into the content's normalized form.
+ * Same two primitives the mark diff runs on (`groupFormatting` + `union`), so the
+ * projection and the diff group and merge by one rule.
+ */
 function mergeMarks(raw: ContentMark[]): ContentMark[] {
-	const groups = new Map<string, ContentMark[]>();
-	for (const m of raw) {
-		const key = markKey(descriptorOf(m));
-		let list = groups.get(key);
-		if (!list) groups.set(key, (list = []));
-		list.push(m);
-	}
 	const out: ContentMark[] = [];
-	for (const list of groups.values()) {
-		list.sort((a, b) => a.start - b.start);
-		let cur = { ...list[0] };
-		for (let i = 1; i < list.length; i++) {
-			if (list[i].start <= cur.end) {
-				cur.end = Math.max(cur.end, list[i].end);
-			} else {
-				out.push(cur);
-				cur = { ...list[i] };
-			}
-		}
-		out.push(cur);
+	for (const g of groupFormatting(raw, (m) => ({ start: m.start, end: m.end })).values()) {
+		for (const iv of union(g.intervals)) out.push({ ...iv, ...g.descriptor } as ContentMark);
 	}
 	// Stable, content-like order: by start, then end.
-	out.sort((a, b) => a.start - b.start || a.end - b.end);
-	return out;
+	return out.sort((a, b) => a.start - b.start || a.end - b.end);
 }
 
 // ── Lowering: diff old→new into a ChangeBundle ──────────────────────────────
@@ -473,13 +446,6 @@ function diffMarks(
 interface FormattingGroup {
 	descriptor: Record<string, unknown>;
 	intervals: Interval[];
-}
-
-function descriptorOf(m: ContentMark): Record<string, unknown> {
-	if (isLinkMark(m)) return { type: 'link', url: m.url };
-	if ('attrs' in m && !isAnchorMark(m))
-		return { type: m.type, attrs: (m as { attrs: unknown }).attrs };
-	return { type: m.type };
 }
 
 /** Group non-anchor marks by descriptor key, mapping each to an interval. */

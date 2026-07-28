@@ -40,6 +40,18 @@ export function contentDescriptorFromPM(mark: Mark): Record<string, unknown> {
 }
 
 /**
+ * The range-free `{ type, … }` half of a content mark — `contentDescriptorFromPM`'s
+ * content-side twin, and what a `MarkOp` carries beside its range. An anchor keys
+ * on its type alone: its `id` is identity, not a formatting family, and the diff
+ * routes anchors by id on a separate channel.
+ */
+export function descriptorOf(m: ContentMark): Record<string, unknown> {
+	if (isLinkMark(m)) return { type: 'link', url: m.url };
+	if ('attrs' in m && !isAnchorMark(m)) return { type: m.type, attrs: m.attrs };
+	return { type: m.type };
+}
+
+/**
  * A stable grouping key for the mark diff — marks sharing a key union into one
  * coverage set. Formatting keys on its type; a link keys on type+url and an
  * unknown on type+attrs, because `applyChange`'s `remove` matches type AND attrs

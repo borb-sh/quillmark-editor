@@ -202,10 +202,11 @@ function ordinalAt(leaf: Leaf, depth: number): number {
 	return c && isListItemContainer(c) ? c.ordinal : -1;
 }
 
-/** Identity of a container for run gathering: its name plus its payload. Every
- * payload-carrying arm but `list_item` (which has its own run rule) keys here. */
+/** Identity of a container for run gathering: its name plus its payload, NUL-joined
+ * as `markKey` joins a mark's, so no `attrs` content can forge a name boundary.
+ * Every arm but `list_item` (which has its own run rule) keys here. */
 function containerKey(c: ContentContainer): string {
-	return 'attrs' in c ? `${c.container} ${JSON.stringify(c.attrs)}` : c.container;
+	return 'attrs' in c ? `${c.container}\u0000${JSON.stringify(c.attrs)}` : c.container;
 }
 
 /** A single leaf block node (para/heading/code/rule/island, or an unknown kind
