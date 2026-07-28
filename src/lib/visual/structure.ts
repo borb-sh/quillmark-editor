@@ -24,7 +24,8 @@ export interface FieldModel {
 	control: ControlKind;
 	/** `ui.group` (undefined = ungrouped). */
 	group: string | undefined;
-	/** `ui.compact` — packs onto a shared row with adjacent compacts. */
+	/** `ui.compact` — asks to share a row with adjacent compacts. A request, not a
+	 * guarantee: `placeFields` declines it for the shapes that grow (see `packable`). */
 	compact: boolean;
 	/** Display label — `ui.title` when set, else the humanized field name. */
 	label: string;
@@ -276,28 +277,61 @@ export function initialExpandedGroup(sections: GroupSection[], hasBody: boolean)
 	return hasBody ? null : (grouped[0].group ?? null);
 }
 
+/** How wide a field sits in its section grid (VISUAL_EDITOR_UIUX §Fields). */
+export type FieldSpan =
+	| 'cell' // one column, auto-placed among its neighbours
+	| 'lone' // half the capacity from column 1 — a packable run of one
+	| 'full'; // the whole grid, its own row
+
+/** A field and the span it takes. */
+export interface PlacedField {
+	field: FieldModel;
+	span: FieldSpan;
+}
+
 /**
- * Pack a section's fields into rows: a run of consecutive `compact` fields shares
- * one row; a non-compact field is its own row. `ui.compact` is the density hint
- * carried from web-app.
+ * Whether a field can share a row. `ui.compact` asks; three shapes decline, because
+ * a row is as tall as its tallest cell and each of these grows under its neighbours:
+ * an array owns its label and its own rows, an object nests a whole field set, and
+ * block richtext (`inline` absent) holds paragraphs. An inline prose leaf is one line
+ * tall (issue #120) and packs like any scalar. So `ui.compact` on a block field is a
+ * hint the editor declines — the honest reading of a request the row cannot grant.
  */
-export function packRows(fields: FieldModel[]): FieldModel[][] {
-	const rows: FieldModel[][] = [];
-	let run: FieldModel[] = [];
+function packable(f: FieldModel): boolean {
+	if (!f.compact) return false;
+	if (f.control === 'array' || f.control === 'object') return false;
+	return f.control !== 'prose' || f.inline;
+}
+
+/**
+ * Assign each field its span in the section grid. Consecutive packable fields are
+ * `cell`s the grid auto-places — capacity and wrapping are the container query's
+ * business, so a trailing orphan keeps its column width rather than growing to fill.
+ * A packable run of ONE is `lone`: with no row above to align to, one column reads as
+ * truncated, so it takes half the capacity from column 1. Everything else is `full`.
+ *
+ * Pure, and stays pure: no width, no measurement, nothing to re-derive on resize.
+ */
+export function placeFields(fields: FieldModel[]): PlacedField[] {
+	const out: PlacedField[] = [];
+	let run = 0;
+	// A run of one is only knowable at its end, so the span is patched back onto the
+	// field already placed.
 	const flush = () => {
-		if (run.length) rows.push(run);
-		run = [];
+		if (run === 1) out[out.length - 1].span = 'lone';
+		run = 0;
 	};
 	for (const f of fields) {
-		if (f.compact) {
-			run.push(f);
+		if (packable(f)) {
+			out.push({ field: f, span: 'cell' });
+			run++;
 		} else {
 			flush();
-			rows.push([f]);
+			out.push({ field: f, span: 'full' });
 		}
 	}
 	flush();
-	return rows;
+	return out;
 }
 
 /** Interpolate a `{field}` card-title template against live field values. */
