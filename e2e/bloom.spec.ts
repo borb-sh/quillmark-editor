@@ -9,6 +9,11 @@ import { pm, openPlayground, clickFieldBox } from './support.js';
 // visible at all, which turns on layout the DOM alone does not report: a collapsed
 // accordion group clips its panel to zero height while its children keep their
 // intrinsic boxes.
+//
+// Scope is that boundary, deliberately. Whether several boxes share a start time and
+// whether a rebuild resumes rather than restarts are decided in JS, so they are pinned
+// deterministically in the unit tier; restating them here would buy a slower, timing-
+// dependent copy of an answer already held.
 
 /** Every field box for `field` (or every box, when `field` is omitted). */
 async function boxes(page: Page, field?: string) {
@@ -17,8 +22,7 @@ async function boxes(page: Page, field?: string) {
 		return Array.from(document.querySelectorAll<HTMLElement>(sel)).map((el) => ({
 			opacity: Number(getComputedStyle(el).opacity),
 			borderWidth: getComputedStyle(el).borderTopWidth,
-			running: el.getAnimations().length,
-			offset: Number(el.getAnimations()[0]?.currentTime ?? -1)
+			running: el.getAnimations().length
 		}));
 	}, field);
 }
@@ -64,33 +68,7 @@ test.describe('correlation bloom', () => {
 		expect(rested.borderWidth).toBe('0px');
 	});
 
-	test('(c) a field with several boxes blooms them in step', async ({ page }) => {
-		// `main.subject` surfaces two boxes on the reference memo.
-		await pm(page, 'prose-main-subject').click();
-		await expect.poll(async () => (await boxes(page, 'main.subject')).length).toBeGreaterThan(1);
-		const offsets = (await boxes(page, 'main.subject')).map((b) => b.offset);
-		expect(Math.max(...offsets) - Math.min(...offsets)).toBeLessThan(20);
-	});
-
-	test('(d) typing does not re-bloom the field being typed into', async ({ page }) => {
-		await pm(page, 'prose-main-body').click();
-		await expect
-			.poll(async () => (await boxes(page, 'main.body'))[0]?.running, { timeout: 2000 })
-			.toBe(1);
-
-		// A keystroke moves the caret (so `focusPosition` fires) AND schedules the
-		// debounced recompile that rebuilds every box 120ms later. Neither may restart
-		// the wash: the address did not change, and a rebuilt box RESUMES. A restart
-		// would read as a highlight that re-blooms on every keystroke burst.
-		await page.keyboard.type('probe');
-		await page.waitForTimeout(400);
-		const after = (await boxes(page, 'main.body'))[0];
-		// Either it is still running, well past where a restart would put it, or it has
-		// already finished — never running from near zero.
-		expect(after.running === 0 || after.offset > 300).toBe(true);
-	});
-
-	test('(e) preview → editor: the landing leaf is revealed and blooms', async ({ page }) => {
+	test('(c) preview → editor: the landing leaf is revealed and blooms', async ({ page }) => {
 		// `main.subject` sits inside the collapsed ADDRESSING group, so this is also
 		// the reveal case: without it the caret — and the cue — land in a panel
 		// clipped to zero height.
@@ -110,7 +88,7 @@ test.describe('correlation bloom', () => {
 		await expect(wash).toHaveCount(0, { timeout: 4000 });
 	});
 
-	test('(f) a second landing on the same leaf reuses its wash, never stacks one', async ({
+	test('(d) a second landing on the same leaf reuses its wash, never stacks one', async ({
 		page
 	}) => {
 		await clickFieldBox(page, 'main.subject');
@@ -120,7 +98,7 @@ test.describe('correlation bloom', () => {
 		await expect(wash).toHaveCount(1);
 	});
 
-	test('(g) reduced motion holds the wash and cuts, with no ramps to track', async ({ page }) => {
+	test('(e) reduced motion holds the wash and cuts, with no ramps to track', async ({ page }) => {
 		await page.emulateMedia({ reducedMotion: 'reduce' });
 		await pm(page, 'prose-main-body').click();
 

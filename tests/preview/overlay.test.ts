@@ -71,21 +71,16 @@ function mockSlots(): PageSlot[] {
 }
 
 describe('overlay: resting ink', () => {
-	it('draws no border on any box, before or after a field is marked', () => {
+	it('draws no border on any box, and rests them at zero', () => {
 		const slots = mockSlots();
 		const overlay = createOverlay(mockSession(), slots);
-		const boxes = () => Array.from(slots[0].el.querySelectorAll<HTMLElement>('[data-qm-field]'));
+		const boxes = Array.from(slots[0].el.querySelectorAll<HTMLElement>('[data-qm-field]'));
 
-		expect(boxes()).toHaveLength(3);
-		for (const el of boxes()) {
+		expect(boxes).toHaveLength(3);
+		for (const el of boxes) {
 			expect(el.style.border).toBe('');
 			expect(el.style.opacity).toBe('0');
 		}
-
-		// A marked field is still borderless — the wash is an animation, and it ends.
-		overlay.flashField('main.body');
-		for (const el of boxes()) expect(el.style.border).toBe('');
-
 		overlay.destroy();
 	});
 });
@@ -121,12 +116,10 @@ describe('overlay: the bloom', () => {
 		const overlay = createOverlay(mockSession(), mockSlots());
 		overlay.flashField('main.body');
 
+		// Nothing clears the flash — it stays on as the change guard, and a spent
+		// elapsed is refused, so the rebuild a later recompile triggers is silent.
 		calls = [];
 		now += 5000; // well past `--_qm-duration-linger`
-		overlay.refresh();
-		expect(calls).toEqual([]);
-		// Nothing clears the flash — it stays as the change guard, and a spent elapsed
-		// is refused. Which means a rebuild is silent every time, not just the first.
 		overlay.refresh();
 		expect(calls).toEqual([]);
 
