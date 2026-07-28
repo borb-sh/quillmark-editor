@@ -182,9 +182,8 @@
 		{#if !card.isMain}
 			<header class="qm-card-header">
 				<!-- The rename target is the header's whole free width, not the title's text
-			     box (issue #123): the autosize keeps that box exactly as wide as its
-			     text, so every pixel beside it used to be dead. A press anywhere in here
-			     enters the edit. -->
+			     box (issue #123). The autosize keeps that box exactly as wide as its
+			     text; this wrapper makes the rest of the row enter the edit too. -->
 				<!-- svelte-ignore a11y_no_static_element_interactions -->
 				<div
 					class="qm-card-rename"
@@ -320,8 +319,9 @@
 <!-- Recovery shell for an un-schemable card (issue #72): a card whose `kind` has no
      schema (foreign kind, or a schema declaring no `card_kinds`). It stays VISIBLE and
      REMOVABLE — its fields/body/`$ext` remain in the Document — so it is never a data
-     trap. Retyping to a declared kind re-projects it (kept fields preserved by
-     `setCardKind`); with no kinds to offer, delete is the only exit. -->
+     trap. Retyping to a declared kind projects it against that kind on the next
+     derive — `setCardKind` swaps the kind and leaves payload and body untouched, so
+     no field is dropped; with no kinds to offer, delete is the only exit. -->
 {#snippet recoveryShell()}
 	<header class="qm-card-header">
 		<span class="qm-card-title-static" data-testid={`card-unschemable-title-${index}`}

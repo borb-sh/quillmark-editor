@@ -246,8 +246,8 @@
 	// ── Structure mutators (resolve id→index here, then reorder ids in lockstep) ──
 	/**
 	 * Scroll the card `id` into view once the mutation that placed it has rendered
-	 * (issue #123) — without this an insert on a document of any length happens
-	 * off-screen and reads as nothing happening.
+	 * (issue #123): on a document of any length an insert lands off-screen, and a
+	 * viewport that does not follow reads as nothing happening.
 	 *
 	 * Coalesced on a single pending id: two quick adds resolve their `tick()` in
 	 * order, the earlier one sees a newer pending id and drops out, so one smooth

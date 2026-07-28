@@ -312,9 +312,8 @@ test.describe('visual editor', () => {
 		await expect.poll(async () => (await readDump(page)).cardCount).toBe(1);
 	});
 
-	// The header used to carry a retype control that, with one declared kind, retyped
-	// the card to the kind it already had (issue #123). Kind is chosen at insert and
-	// changed only by the recovery shell — test (k) — so the header carries none.
+	// A kind is chosen at insert and changed only by the recovery shell — test (k) —
+	// so no card header offers a retype (issue #123).
 	test('(i) the card header carries no retype control (issue #123)', async ({ page }) => {
 		await expect(page.getByTestId('card-retype-0')).toHaveCount(0);
 	});
@@ -326,7 +325,7 @@ test.describe('visual editor', () => {
 		const region = page.getByTestId('card-rename-0');
 		const box = (await region.boundingBox())!;
 		const titleBox = (await title.boundingBox())!;
-		// Past the title's right edge — dead space before #123.
+		// Past the title's right edge — the free width the autosize leaves beside it.
 		expect(box.width).toBeGreaterThan(titleBox.width + 8);
 		await page.mouse.click(box.x + box.width - 4, box.y + box.height / 2);
 		await expect(title).toBeFocused();
@@ -478,8 +477,8 @@ test.describe('visual editor', () => {
 		await expect.poll(async () => (await readDump(page)).body).toBe('one\ntwo');
 	});
 
-	// An insert past the fold used to leave the viewport where it was, so the click
-	// read as nothing happening (issue #123).
+	// An insert past the fold moves the viewport to the new card, so the click is
+	// never silent (issue #123).
 	test('(p) a newly added card is scrolled into view (issue #123)', async ({ page }) => {
 		// Fill well past the viewport so the last insert point is genuinely off-screen.
 		for (let n = 1; n <= 4; n++) {

@@ -48,9 +48,9 @@ selects all whether it lands on the text or beside it.
 
 The header carries **no retype**. A kind is chosen once, at the between-block
 insert affordance; the only path that changes an existing card's kind is the
-recovery shell's selector, for a card whose kind the quill no longer declares.
-A header retype whose quill declares one kind is a control that cannot do
-anything, and a document whose cards are all correctly typed has nothing to
+recovery shell's selector, for a card whose kind the quill does not declare. A
+header retype is a control with nothing to do: under one declared kind it can
+only reselect the kind the card has, and a correctly typed card has nothing to
 retype.
 
 Insert and reorder **move the viewport**: a new card scrolls to centre, a moved
