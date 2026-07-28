@@ -27,8 +27,8 @@ derivation to every surface it mounts.
 
 | Token            | Default                                | What it sets                                                                                             |
 | ---------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `--qm-bg`        | `#fff`                                 | Base surface. Cards, fields, the painted page, and the popover step off it.                              |
-| `--qm-fg`        | `#1a1a1a`                              | Base ink. Body text, labels, borders, and shadows step off it.                                           |
+| `--qm-bg`        | `#fff` / `#14171c`                     | Base surface. Cards, fields, the painted page, and the popover step off it.                              |
+| `--qm-fg`        | `#1a1a1a` / `#e8eaed`                  | Base ink. Body text, labels, borders, and shadows step off it.                                           |
 | `--qm-accent`    | `#2563eb`                              | Focus rings, active marks, the preview's active field box.                                               |
 | `--qm-danger`    | `#c5221f`                              | Error diagnostics, the required marker, the delete glyph.                                                |
 | `--qm-warning`   | `#b25000`                              | Warning diagnostics.                                                                                     |
@@ -58,33 +58,51 @@ the base surface and every control one rung inside its card, so a control reads
 against its card whatever you put behind it. A page tone of your own reads as a
 third plane under the stack.
 
-## Dark mode is a two-value swap
+## The surface follows your colour scheme
 
 Surfaces step `bg → fg` and ink steps `fg → bg`, mixed in **oklab** — so
 inverting the two poles inverts the whole scale, including borders, the popover's
 translucent fill, and the page shadow (which mixes from the ink pole rather than
 from black, and so does not become a smudge on a dark surface).
 
-The package ships a dark default under `prefers-color-scheme: dark`, and native
-chrome — scrollbars, the date picker, the caret — follows it. Setting the poles
-yourself wins over that default in both schemes, so a fixed palette stays fixed:
+Which way the poles default is **your `color-scheme`**, not the operating
+system's. Declare the scheme your app is in and the surface lands on it — along
+with native chrome, which reads the same property:
 
 ```css
-@media (prefers-color-scheme: dark) {
-	.my-editor {
-		--qm-bg: #14171c;
-		--qm-fg: #e8eaed;
-	}
+html {
+	color-scheme: light dark; /* follow the OS */
+}
+
+/* A class-driven theme declares the scheme alongside the class. */
+html.dark {
+	color-scheme: dark;
 }
 ```
 
-A palette **pinned against** the OS preference is the one case needing a second
-line: the surfaces follow your dials, but native chrome still follows the user, so
-pin it with them — `[data-qm-root] { color-scheme: dark }`.
+Declare nothing and you get light, which is what an undeclared page renders as
+anyway. A dark app that skips this line gets a light editor in a dark page — and
+light scrollbars, date pickers and carets throughout, which is the same line's
+doing and not ours to fix from inside a mounted surface.
 
-No JS runs: the derivation is emitted as `var()` references, so an ancestor rule
-or a media query resolves through the cascade at paint time. There is no `dark`
-prop and no mode toggle in the package — the consumer's palette decides.
+Setting the poles yourself wins over the default in both schemes, so a fixed
+palette stays fixed:
+
+```css
+.my-editor {
+	--qm-bg: #14171c;
+	--qm-fg: #e8eaed;
+}
+```
+
+A palette **pinned against** your own scheme is the one case needing a second
+line: the surfaces follow your dials, but native chrome follows `color-scheme`,
+so pin it with them — `.my-editor { color-scheme: dark }`.
+
+No JS runs and no media query: the derivation is emitted as `var()` references
+over `light-dark()`, so an ancestor's dials and the inherited scheme both resolve
+through the cascade at paint time. There is no `dark` prop and no mode toggle in
+the package — the consumer's palette decides.
 
 ## What is deliberately not public
 
@@ -105,7 +123,8 @@ reader has to hold — not because the set is frozen.
 
 ## Requirements
 
-`@layer` and `color-mix()` — Baseline since 2022 and 2023 respectively.
+`@layer`, `color-mix()` and `light-dark()` — Baseline since 2022, 2023 and 2024
+respectively.
 
 `npm run check:style` gates all of it: no component may mint a colour, shadow, or
 opacity literal; nothing outside the derivation may define a `--_qm-*`; and the

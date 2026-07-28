@@ -340,39 +340,15 @@
 </main>
 
 <style>
-	/* The playground is the reference CONSUMER: it derives its own chrome from the
-	   package's two colour dials with the same oklab idiom the package derivation
-	   uses (THEMING.md), rather than reaching for internals. Namespaced `--pg-*` —
-	   only the ten `--qm-*` dials are package surface. */
+	/* The shell's palette is the host's, shared across the routes
+	   (`routes/playground.css`); this block is the split-pane's own geometry. */
 	main {
-		--pg-border-strong: color-mix(in oklab, var(--qm-bg, #fff), var(--qm-fg, #1a1a1a) 40%);
-		--pg-border: color-mix(in oklab, var(--qm-bg, #fff), var(--qm-fg, #1a1a1a) 17%);
-		--pg-card-bg: color-mix(in oklab, var(--qm-bg, #fff), var(--qm-fg, #1a1a1a) 4%);
-		--pg-main-bg: var(--qm-bg, #fff);
-		--pg-ghost: color-mix(in oklab, var(--qm-fg, #1a1a1a), var(--qm-bg, #fff) 60%);
-		--pg-section-label: color-mix(in oklab, var(--qm-fg, #1a1a1a), var(--qm-bg, #fff) 45%);
-
-		font-family: ui-sans-serif, system-ui, sans-serif;
 		max-width: 88rem;
 		margin: 1.25rem auto;
 		padding: 0 1.5rem;
-		color: #1a1a1a;
 	}
 	h1 {
-		font-size: 1.5rem;
 		margin-bottom: 0.2rem;
-	}
-	.sub {
-		color: #666;
-		margin-top: 0;
-	}
-	.ready {
-		color: #137333;
-		font-weight: 600;
-	}
-	.error {
-		color: #c5221f;
-		font-weight: 600;
 	}
 	.bridge-state {
 		display: flex;
@@ -381,10 +357,10 @@
 		gap: 0.75rem;
 		margin: 0.75rem 0;
 		font-size: 0.72rem;
-		color: #666;
+		color: var(--pg-ink-meta);
 	}
 	.bridge-state code {
-		background: #f3f3f3;
+		background: var(--pg-card-bg);
 		border-radius: 3px;
 		padding: 0.05rem 0.3rem;
 		font-size: 0.7rem;
@@ -394,7 +370,7 @@
 		padding: 0.2rem 0.5rem;
 		border: 1px solid var(--pg-border);
 		border-radius: 5px;
-		background: #fafafa;
+		background: var(--pg-card-bg);
 		cursor: pointer;
 	}
 	.shell {
@@ -415,7 +391,7 @@
 		padding: 0.5rem 0.5rem 40vh;
 		border: 1px solid var(--pg-border);
 		border-radius: var(--qm-radius, 8px);
-		background: var(--pg-main-bg);
+		background: var(--pg-page);
 	}
 	.preview-pane {
 		min-width: 0;
@@ -460,7 +436,7 @@
 		font-size: 0.8rem;
 		line-height: 1;
 		color: var(--pg-ghost);
-		background: var(--pg-main-bg);
+		background: var(--pg-page);
 		padding: 0.15rem 0;
 		border-radius: 999px;
 		opacity: 0;
@@ -482,9 +458,9 @@
 		font-size: 0.68rem;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		color: var(--pg-section-label);
+		color: var(--pg-ink-meta);
 		padding: 0.4rem 0.6rem;
-		background: #f3f3f3;
+		background: var(--pg-card-bg);
 		border-bottom: 1px solid var(--pg-border);
 	}
 	.source-host {

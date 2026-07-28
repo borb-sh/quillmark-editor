@@ -88,8 +88,15 @@ contract is the package's [`THEMING.md`](../../THEMING.md); the derivation is a
 stylesheet in `core/`, side-effect imported by the one module both `preview/` and
 `visual/` already pull — so a consumer has nothing to import — and applied to every
 element marked `data-qm-root`. A stylesheet rather than an inline attribute is what
-lets the scale carry a shipped dark default, a cascade layer consumer CSS beats
-without `!important`, and the baseline font every root inherits.
+lets the scale carry a cascade layer consumer CSS beats without `!important` and
+the baseline font every root inherits.
+
+The one signal the surface takes from outside the dials is the **host's declared
+`color-scheme`**, which the poles read through `light-dark()` and the root inherits
+untouched — so light/dark is the mounting site's declaration, not a preference the
+package reads behind it. A host with a theme of its own declares the scheme
+alongside it; the playground does this in `routes/playground.css`, which is also
+where the reference shell derives its own chrome from the same signal.
 
 The systems beneath these surfaces have their own canon: the document/WASM
 boundary ([DOCUMENT_MODEL.md](DOCUMENT_MODEL.md)), the paint loop
