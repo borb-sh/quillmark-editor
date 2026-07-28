@@ -58,8 +58,9 @@
 
 	// The editor→preview address mapping — captured from the dynamic `$lib/visual`
 	// import (below) rather than statically imported, so the route module never
-	// pulls VisualEditor's WASM top-level await (Kit #7805, the reason for the
-	// dynamic-import dance). This IS the public `/visual` surface, just deferred.
+	// pulls VisualEditor's WASM top-level await — Safari/dev doesn't TDZ on Kit's
+	// `component` export, the reason for the dynamic-import dance. This IS the
+	// public `/visual` surface, just deferred.
 	let fieldPathForAddr: ((addr: Addr, kinds: readonly string[]) => string | undefined) | undefined;
 
 	// Surface handles for the imperative bridge hops.
@@ -208,9 +209,10 @@
 		let cancelled = false;
 		(async () => {
 			try {
-				// Dynamic import keeps WASM's top-level await out of the route module
-				// (Safari/dev TDZ, Kit #7805); VisualEditor rides the same import. The
-				// fixture fetch is independent of both, so it runs alongside them.
+				// Dynamic import keeps WASM's top-level await out of the route module, so
+				// Safari/dev doesn't TDZ on Kit's `component` export; VisualEditor rides the
+				// same import. The fixture fetch is independent of both, so it runs alongside
+				// them.
 				const treeP = loadUsafMemoTree();
 				const [{ Engine, Quill, init }, visual] = await Promise.all([
 					import('$lib/core'),

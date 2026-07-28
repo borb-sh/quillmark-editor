@@ -19,7 +19,7 @@
 		inline?: boolean;
 		plaintext?: boolean;
 		/**
-		 * Draw no box — the card body's leaf, and nothing else (issue #117). A property
+		 * Draw no box — the card body's leaf, and nothing else. A property
 		 * of the SLOT rather than of the leaf: `block` is not the same predicate, since
 		 * a `richtext` field without `inline` is block prose and still a control in a
 		 * row of controls. Only the body is paper, and only its caller knows it is.
@@ -27,7 +27,7 @@
 		unframed?: boolean;
 		/** Accessible name for the editable region (the visual label is a sibling span). */
 		label?: string;
-		/** Ghost shown on the empty leaf — the resolved `default:` (issue #58 §9). */
+		/** Ghost shown on the empty leaf — the resolved `default:`. */
 		placeholder?: string;
 		/** Stable identity for the registry + a DOM stamp the e2e uses to prove no-remount. */
 		leafKey: string;
@@ -99,7 +99,7 @@
 <style>
 	/* The box is `.qm-control-box` (controls.css) — the same rule the input beside it
 	   draws, so the two agree on height by construction rather than by two floors
-	   tuned to match (issue #120). Nothing here restates it, and there is no
+	   tuned to match. Nothing here restates it, and there is no
 	   `min-height`: `core/codec/prose.css` resets the paragraph box, so one line of
 	   prose in this box measures one line of text in that one. */
 	.qm-prose {
@@ -130,7 +130,7 @@
 	.qm-prose.qm-control-box:focus-within {
 		border-color: var(--_qm-accent);
 	}
-	/* Empty-leaf ghost (issue #58 §9): the resolved `default:` as dim/italic ghost,
+	/* Empty-leaf ghost: the resolved `default:` as dim/italic ghost,
 	   matching the scalar ghost rung (AESTHETIC §"secondary text
 	   recedes"). Rendered from a node decoration's data attr so it stays out of the
 	   document; `float`/`height:0` keep it from displacing the caret. */

@@ -61,7 +61,7 @@
 		(async () => {
 			try {
 				// Dynamic: keep WASM's top-level await out of the route module so
-				// Safari/dev doesn't TDZ on Kit's `component` export (#7805).
+				// Safari/dev doesn't TDZ on Kit's `component` export.
 				const { Engine, Quill, init } = await import('$lib/core');
 				init();
 				const tree = await loadUsafMemoTree();

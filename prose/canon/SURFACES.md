@@ -58,7 +58,7 @@ The card is the container; nothing inside it is a second box.
   the page, not a lit surface floating above it. The three surface rungs sit 4pp
   apart — the step at which a hovered item reads against a card — so each carries a
   plane on its own. "Elevated is lighter" in both poles needs a mode signal the
-  derivation deliberately does not have (THEMING.md; #83 is the same wall).
+  derivation deliberately does not have (THEMING.md).
 - **The floating surfaces earn the lift the cards do without.** The selection
   popover takes `--_qm-surface-popover` (the *raised* surface mixed toward
   transparent) behind a `--_qm-blur` backdrop, a hairline, and
@@ -185,7 +185,7 @@ just review.
 
 A surface a caret or selection can land on shows it, within the monochrome
 palette — but a **form control** and a **prose leaf** are not the same focus
-case, and one rule for both is the conflation [#45] resolves:
+case, and one rule for both would conflate them:
 
 - **Scalar controls draw a tokenized ring.** A focused `TextField` / `NumberField`
   / `EnumField` / `BooleanField` / `DateField` (and the array JSON control) shows
@@ -227,9 +227,7 @@ One ring width, therefore: `--_qm-ring-width` is focus, and nothing sits under i
 a held-back tier.
 
 Buttons (reorder, delete, mark, add) keep the UA `:focus-visible` ring — already
-an accessible indicator; theming them is deferred, not part of [#45].
-
-[#45]: https://github.com/borb-sh/quillmark-editor/issues/45
+an accessible indicator, and not themed by this page.
 
 ## Motion
 

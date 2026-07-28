@@ -77,15 +77,15 @@ interpolated with live values — overridden per instance by `$ext.editor.title`
 else ghost the `default:` as placeholder (never written back — it lives in the
 schema). A no-`default:` field is **required** (Unendorsed — its seed carries a
 `!must_fill` marker; no separate `required` axis, canon `DOCUMENT_MODEL.md`): the
-label shows a persistent `*` (issue #75a), complementary to the ghost since a
+label shows a persistent `*`, complementary to the ghost since a
 required field has no default to ghost. An unfilled marker still surfaces as a
 routed `validate()` warning (§Diagnostics) — the `*` states required-ness, the
-warning reports unmet-ness. A field's `description:` rides its label as a tooltip
-(issue #75b); `example:` reaches the editor only through the seed cascade
+warning reports unmet-ness. A field's `description:` rides its label as a tooltip;
+`example:` reaches the editor only through the seed cascade
 (§"Card operations"). Guidance is per-field **or** document-level, never a third
 thing hanging off a field: no field carries a tips surface of its own, and
-document-level hints ride the `$ext.editor.tips` card instead (§"Card operations",
-issue #71) — a chrome channel, not a schema key, so it makes no claim about any one
+document-level hints ride the `$ext.editor.tips` card instead (§"Card operations")
+— a chrome channel, not a schema key, so it makes no claim about any one
 field (VISUAL_EDITOR_UIUX §Fields, §"Tips card"). Nothing gates — an incomplete document edits and renders fine (canon:
 `SCHEMAS.md` zero-fill render). Completeness is a read of `quill.validate(doc)`,
 not a gate.
@@ -101,7 +101,7 @@ editor. `EnumField` gives unset a ghost sentinel option — picking it unsets,
 picking any value (the default included) writes — so "commit the default" is
 expressible and shown-never-written stays visible. `DateField` prints the
 default's digits in its empty segments, ghost-toned, rather than the primitive's
-`mm`/`dd`/`yyyy` hints (issue #89) — a format hint reads "empty" where the rung
+`mm`/`dd`/`yyyy` hints — a format hint reads "empty" where the rung
 says "will render 2026-01-01". It paints the ghost into the segment text over an
 unset primitive, never into its `value`: a defaulted value would be
 indistinguishable from an authored one to everything that reads the control.
@@ -162,7 +162,7 @@ edits is the leaf's PM `StepMap`, not a re-hydrate.
 - **Rename** — `$ext.editor.title`, editor state that never reaches the backend
   (canon: `CARDS.md`).
 - **Tips** — `$ext.editor.tips` on `main`, a sibling key of `title` in the same
-  namespace (issue #71): a list of authoring hints a quill or consumer **seeds**,
+  namespace: a list of authoring hints a quill or consumer **seeds**,
   which the editor renders as a dismissable card and never adds to. It is
   **document-level**, so the channel is `model.tips` at the derive's root, not a
   field on every card, and it renders in a fixed slot after `main`. Dismissal clears

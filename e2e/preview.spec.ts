@@ -139,11 +139,11 @@ test.describe('preview', () => {
 			.toBeLessThan(scrollTopAtBottom);
 	});
 
-	// Issue #9: a mounted canvas froze its CSS width at paint time and nothing
-	// observed the container resizing, so a widened/narrowed pane left the raster
-	// the wrong size under the %-tracked page box (overlays drift off the ink).
-	// The ResizeObserver in paint.ts must repaint mounted pages so the canvas
-	// re-fits its box. Narrow the shell and assert the canvas tracks the box.
+	// A mounted canvas must not keep the CSS width it had at paint time: a
+	// widened/narrowed pane would leave the raster the wrong size under the
+	// %-tracked page box (overlays drift off the ink). The ResizeObserver in
+	// paint.ts repaints mounted pages so the canvas re-fits its box. Narrow the
+	// shell and assert the canvas tracks the box.
 	test('(i) resizing the container repaints the mounted canvas to track the page box', async ({
 		page
 	}) => {

@@ -23,7 +23,7 @@ const MAIN_DATE_KEY = '\n    date:\n      type: date\n      default: ';
  * The reference quill declares `default: ""` (blank → `datetime.today()` at render,
  * which ghosts nothing), so nothing in it exercises the date control's ghosted
  * default — this rewrites that one line in the loaded bytes so the rung is
- * reachable in the browser (issue #89), leaving the quill on disk alone. Throws
+ * reachable in the browser, leaving the quill on disk alone. Throws
  * rather than silently no-op'ing if the anchor moves.
  */
 export function withMainDateDefault(tree: Map<string, Uint8Array>, iso: string): void {

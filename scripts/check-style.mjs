@@ -72,7 +72,7 @@ const AXES = [
 		// Stroke width, which the colour axis below does NOT see: it tests `border-*`
 		// for a colour literal, so `border-left: 2px solid var(--_qm-border)` reads a
 		// rung, passes, and renders at a width nothing chose — a divergent width beside
-		// the hairlines with the gate green (issue #117). Shorthands included, since
+		// the hairlines with the gate green. Shorthands included, since
 		// that is where the width hides. What this holds is that no width is MINTED;
 		// which rung a width reads is beyond either axis shape, so a border that reads
 		// `--_qm-ring-width` passes here and is review's to catch.

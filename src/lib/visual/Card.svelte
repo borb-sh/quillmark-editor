@@ -28,7 +28,7 @@
 		retype: (kind: string) => void;
 		rename: (title: string) => void;
 		diagFor: (field?: string) => Diagnostic[] | undefined;
-		/** Consumer enum-option policy for a field (issue #73); true when no hook set. */
+		/** Consumer enum-option policy for a field; true when no hook set. */
 		enumAllowed: (field: string, value: string) => boolean;
 	}
 
@@ -73,7 +73,7 @@
 		});
 	});
 
-	// Inline-editable title (issue #58 §8): select-all on entry so a title reads as
+	// Inline-editable title: select-all on entry so a title reads as
 	// text you replace, and Enter/Escape as commit/revert. Rename stays LIVE on
 	// input — `titleAtFocus` is the pre-edit value Escape rolls back to.
 	let titleAtFocus = '';
@@ -92,8 +92,8 @@
 			el.focus();
 		}
 	}
-	// The rename region extends the title's hit area to the header's free width (issue
-	// #123). A press on that empty space focuses the input — which selects all, the
+	// The rename region extends the title's hit area to the header's free width.
+	// A press on that empty space focuses the input — which selects all, the
 	// same click-to-enter the title itself gets — and preventDefault keeps the press
 	// from starting a text selection on the wrapper. A press ON the input is left to
 	// `onTitleMousedown`, which owns the already-focused caret-placement case.
@@ -118,12 +118,12 @@
 		}
 	}
 
-	// Group accordion (issue #60). Ungrouped fields (`group == null`) render above,
+	// Group accordion. Ungrouped fields (`group == null`) render above,
 	// always visible; grouped sections collapse into a one-open-at-a-time accordion.
 	const ungrouped = $derived(card.sections.filter((s) => s.group == null));
 	const grouped = $derived(card.sections.filter((s) => s.group != null));
 
-	// Whether there is a metadata block to bracket at all (issue #117). A schema that
+	// Whether there is a metadata block to bracket at all. A schema that
 	// declares no fields still gets a body (`bodyEnabled` defaults true), and a bracket
 	// around nothing is worse than none: with no content between them the two
 	// horizontals land on one y and paint as a stroke of twice the width, which is the
@@ -159,8 +159,8 @@
 
 	let el = $state<HTMLElement | undefined>(undefined);
 	/**
-	 * Bring this card into view after the structure mutation that placed it (issue
-	 * #123) — `center` for an insert, `nearest` for a reorder that only needs to stay
+	 * Bring this card into view after the structure mutation that placed it —
+	 * `center` for an insert, `nearest` for a reorder that only needs to stay
 	 * on screen. `scrollIntoView` walks to its own scroll ancestor, so this is
 	 * indifferent to whether the package or the consumer owns the scroll container.
 	 *
@@ -189,7 +189,7 @@
 		{#if !card.isMain}
 			<header class="qm-card-header">
 				<!-- The rename target is the header's whole free width, not the title's text
-			     box (issue #123). The autosize keeps that box exactly as wide as its
+			     box. The autosize keeps that box exactly as wide as its
 			     text; this wrapper makes the rest of the row enter the edit too. -->
 				<!-- svelte-ignore a11y_no_static_element_interactions -->
 				<div
@@ -199,7 +199,7 @@
 				>
 					<!-- Autosize: the sizer span's ::after mirrors the text and dictates the grid
 				     cell width, so the overlaid input grows with content and reads as text,
-				     not a persistent box (issue #58 §8). `data-value` falls back to the
+				     not a persistent box. `data-value` falls back to the
 				     placeholder so an empty title still reserves its resolved-title width. -->
 					<span class="qm-card-title-sizer" data-value={localTitle || card.titlePlaceholder}>
 						<input
@@ -233,7 +233,7 @@
 		{/if}
 
 		<div class="qm-card-body">
-			<!-- The metadata block, and the thing the bracket brackets (issue #117): every
+			<!-- The metadata block, and the thing the bracket brackets: every
 		     field the card has, ungrouped and grouped alike, inside one element whose
 		     top and bottom EDGES are the bracket's two horizontals. Anchoring them here
 		     rather than on the header and on the accordion is what lets an open
@@ -252,7 +252,7 @@
 					class:qm-meta-top={!card.isMain}
 					class:qm-meta-bottom={card.hasBody}
 				>
-					<!-- Ungrouped fields render above the accordion, always visible (issue #60):
+					<!-- Ungrouped fields render above the accordion, always visible:
 			     a label-less section has no header to toggle, and these read as the card's
 			     primary fields. -->
 					{#each ungrouped as section (section.group ?? '_ungrouped')}
@@ -261,11 +261,11 @@
 						</div>
 					{/each}
 
-					<!-- Group accordion (issue #60): each `ui.group` is a collapsible section,
+					<!-- Group accordion: each `ui.group` is a collapsible section,
 			     one open at a time. The header toggles; the panel slides via a
 			     0fr↔1fr grid row (the `slow` duration rung). The sections share ONE wrapper
 			     with no gap of its own: each header's symmetric padding is the whole
-			     inter-group rhythm (issue #118). The card body's gap still separates this
+			     inter-group rhythm. The card body's gap still separates this
 			     block from the ungrouped fields and the body leaf.
 
 			     Rendered only when a card HAS groups, so an empty accordion is not the
@@ -299,7 +299,7 @@
 				</div>
 			{/if}
 
-			<!-- The body: no label and no box (issue #117). "Body" names the surface the
+			<!-- The body: no label and no box. "Body" names the surface the
 		     card is printed on, which is the redundancy AESTHETIC §"Strip redundancy"
 		     cuts — and the accessible name survives on the leaf itself, so the region
 		     is still announced. Unframed is the point rather than a saving: the body is
@@ -329,9 +329,9 @@
 </section>
 
 <!-- A section's fields as ONE grid — shared by the ungrouped block and the accordion
-     panels so both render a group's fields identically (issue #60). Rows are the
+     panels so both render a group's fields identically. Rows are the
      grid's business: fields carry a span and auto-place, so nothing here re-derives
-     structure on resize and a prose leaf's key never moves (issue #121). -->
+     structure on resize and a prose leaf's key never moves. -->
 {#snippet sectionFields(fields: FieldModel[])}
 	<div class="qm-fields">
 		{#each placeFields(fields) as { field: f, span } (f.name)}
@@ -356,7 +356,7 @@
 	</div>
 {/snippet}
 
-<!-- Recovery shell for an un-schemable card (issue #72): a card whose `kind` has no
+<!-- Recovery shell for an un-schemable card: a card whose `kind` has no
      schema (foreign kind, or a schema declaring no `card_kinds`). It stays VISIBLE and
      REMOVABLE — its fields/body/`$ext` remain in the Document — so it is never a data
      trap. Retyping to a declared kind projects it against that kind on the next
@@ -404,7 +404,7 @@
 	</div>
 {/snippet}
 
-<!-- The declared card kinds as `<option>`s for the recovery shell's retype (issue #72),
+<!-- The declared card kinds as `<option>`s for the recovery shell's retype,
      the one place a card's kind changes after insert. -->
 {#snippet kindOptions()}
 	{#each kinds as k (k)}
@@ -441,7 +441,7 @@
 	.qm-card.qm-active :global(.qm-card-reorder) {
 		opacity: 1;
 	}
-	/* The rename hit region (issue #123): the header's free width, full height, so a
+	/* The rename hit region: the header's free width, full height, so a
 	   press anywhere left of the controls enters the title edit. `min-width: 0` lets
 	   it shrink past the title's intrinsic width; `align-self: stretch` beats the
 	   header's `align-items: center` so the region is the row's whole height rather
@@ -454,7 +454,7 @@
 		align-items: center;
 		cursor: text;
 	}
-	/* Autosize sizer (issue #58 §8): an inline-grid whose ::after mirrors the text
+	/* Autosize sizer: an inline-grid whose ::after mirrors the text
 	   into the single cell, so the overlaid input tracks its content width. Bounded
 	   to the rename region's width (`min-width: 0` + `max-width: 100%`), which the
 	   header's space-between keeps clear of the controls. The input inherits the type
@@ -502,7 +502,7 @@
 		flex-direction: column;
 		gap: var(--_qm-space-3);
 	}
-	/* The metadata bracket (issue #117): the card's chrome brackets its metadata, and
+	/* The metadata bracket: the card's chrome brackets its metadata, and
 	   the body is what falls outside it. Three strokes at ONE rung — the two
 	   horizontals here and the open section's vertical below — because a bracket whose
 	   sides disagree on width or tone reads as three unrelated lines rather than as
@@ -525,7 +525,7 @@
 	/* No inset between a horizontal and the accordion, deliberately: an open section's
 	   vertical has to REACH the rule to close a corner against it, and any padding here
 	   is the distance by which it would miss. The accordion needs none anyway — a group
-	   header's symmetric padding is the whole inter-group rhythm (issue #118).
+	   header's symmetric padding is the whole inter-group rhythm.
 
 	   A block of FIELDS has no padding of its own, so it takes the inset wherever it
 	   abuts a rule — three places, since three blocks can: an ungrouped block under the
@@ -547,7 +547,7 @@
 	.qm-section {
 		container-type: inline-size;
 	}
-	/* One grid per section (issue #121). Capacity is the container's, not JavaScript's:
+	/* One grid per section. Capacity is the container's, not JavaScript's:
 	   nothing measures, so there is no observer to loop, no pre-measure pass at the
 	   wrong capacity, and no re-packing to restructure the DOM under a prose leaf.
 	   Fields auto-place, which is what keeps a trailing orphan at its column width
@@ -580,7 +580,7 @@
 			--cols-half: 2;
 		}
 	}
-	/* Group accordion (issue #60, VISUAL_EDITOR_UIUX §Fields). The header is a toggle
+	/* Group accordion (VISUAL_EDITOR_UIUX §Fields). The header is a toggle
 	   at the field-label rung; the panel slides via a 0fr↔1fr grid row so the height
 	   animates without a magic max-height. */
 	/* The wrapper carries NO gap: the headers' own padding is the rhythm (see the
@@ -590,7 +590,7 @@
 		display: flex;
 		flex-direction: column;
 	}
-	/* The bracket's third stroke (issue #117), on the SECTION rather than on its panel:
+	/* The bracket's third stroke, on the SECTION rather than on its panel:
 	   spanning the header and the content is what gives it a corner to close into at
 	   the block's edge — a rule that starts below the header has nothing to meet there.
 	   One rung with the two horizontals, held there by `check:style`'s border-width axis.
@@ -685,7 +685,7 @@
 		flex-direction: column;
 		gap: var(--_qm-space);
 	}
-	/* Recovery shell (issue #72): dashed edge marks an un-schemable card. The edge
+	/* Recovery shell: dashed edge marks an un-schemable card. The edge
 	   alone carries that — fill stays the card rung, content behind it intact. */
 	.qm-card.qm-unschemable {
 		border-style: dashed;

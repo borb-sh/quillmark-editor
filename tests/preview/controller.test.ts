@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Issue #10: a zero-page session must not be a permanent empty-state stub. These
+// A zero-page session must not be a permanent empty-state stub. These
 // drive the count transitions and assert the "No pages" element and the page
 // slots both track the LIVE count — 0→N escapes the empty state, N→0 returns.
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
@@ -91,9 +91,9 @@ describe('preview controller empty-state across page-count transitions', () => {
 	});
 });
 
-// Issue #11: `supportsCanvas` must gate the view (runtime.d.ts says re-check the
+// `supportsCanvas` must gate the view (runtime.d.ts says re-check the
 // getter after `open`), and the gate is re-read per compile so a non-paintable
-// compile that later becomes paintable recovers — the #10 escape, generalized.
+// compile that later becomes paintable recovers — the zero-page escape, generalized.
 describe('preview controller supportsCanvas gating', () => {
 	let container: HTMLDivElement;
 	beforeEach(() => {
@@ -133,7 +133,7 @@ describe('preview controller supportsCanvas gating', () => {
 	});
 });
 
-// Issue #11: a `session.paint` that throws must not abort the band sweep — it is
+// A `session.paint` that throws must not abort the band sweep — it is
 // caught per-slot and surfaced as an error state instead of an unhandled throw
 // inside the IntersectionObserver callback.
 describe('preview controller paint resilience', () => {

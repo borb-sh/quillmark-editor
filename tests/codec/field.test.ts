@@ -218,7 +218,7 @@ describe('field install-fallback for an un-lowerable structural edit', () => {
 	});
 });
 
-describe('anchor insertion (issue #43)', () => {
+describe('anchor insertion', () => {
 	/** The `anchor` identity marks of the stored body content. */
 	function bodyAnchors(doc: Document): { id: string; start: number; end: number }[] {
 		return doc.main.body.marks.filter((m) => m.type === 'anchor') as {
@@ -270,7 +270,7 @@ describe('anchor insertion (issue #43)', () => {
 	});
 });
 
-describe('empty-leaf ghost placeholder (issue #58 §9)', () => {
+describe('empty-leaf ghost placeholder', () => {
 	it('stamps the empty leaf with the ghost text, and drops it once typed', () => {
 		const doc = quill().seedDocument();
 		const container = mount();

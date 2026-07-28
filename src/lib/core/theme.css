@@ -57,7 +57,7 @@
 		   distinguishable steps: uneven spacing spends one rung to buy another —
 		   widening `raised` alone would leave `hover` 1pp above it. `raised` steps
 		   toward the INK pole rather than away from it, so a card is darker than the
-		   page in light and lighter in dark (SURFACES §Elevation; issue #124). */
+		   page in light and lighter in dark (SURFACES §Elevation). */
 		--_qm-surface: var(--_qm-bg);
 		--_qm-surface-raised: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 4%);
 		--_qm-surface-hover: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 8%);
@@ -159,7 +159,7 @@
 		   than about size: a root-level body size sweeps every descendant a consumer
 		   may have put inside the marker, which is a reach the derivation does not
 		   have. The rung is not withheld from the surfaces — every control and every
-		   prose leaf reads `--_qm-text-body` in its own recipe (issue #119), which is
+		   prose leaf reads `--_qm-text-body` in its own recipe, which is
 		   what closes the ramp and makes `--qm-font-size` move an input. What would
 		   break a mounted leaf is a size that CHANGES under it; a rung is fixed at
 		   mount unless the consumer turns the dial, and a consumer turning a dial is

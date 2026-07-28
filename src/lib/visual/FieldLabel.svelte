@@ -1,10 +1,10 @@
 <!--
-  A field's label plus its guidance chrome (issue #75). Two non-gating label
+  A field's label plus its guidance chrome. Two non-gating label
   decorations:
-    • a persistent required `*` (issue #75a) when the field has no `default:` — the
+    • a persistent required `*` when the field has no `default:` — the
       "Unendorsed"/must_fill set (DOCUMENT_MODEL: no separate `required` axis). Its
       accessible name is "required", so a screen reader announces the word, not the glyph;
-    • the `description` (issue #75b) as an info marker: a `title` tooltip on hover, the
+    • the `description` as an info marker: a `title` tooltip on hover, the
       text also on `aria-label` (role="img") so a screen reader announces it.
   Shared by {@link Field} (scalars, object, prose) and {@link ArrayField} so every
   control's label decorates the same way.
@@ -14,7 +14,7 @@
 
 	interface Props {
 		label: string;
-		/** No-default field → a persistent required `*` (issue #75a). */
+		/** No-default field → a persistent required `*`. */
 		required?: boolean;
 		/** Schema `description`, or undefined — the affordance renders only when set. */
 		description?: string;

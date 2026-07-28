@@ -3,7 +3,7 @@
 // projection of its `value` prop and reconciles ONLY an external change back into
 // the local — own edits stay `untrack`ed, so typing never re-runs the sync and
 // resets the caret. The five controls carried a character-identical block; this
-// is the one copy (VISUAL_EDITOR §Surface, issue #48).
+// is the one copy (VISUAL_EDITOR §Surface).
 import { untrack } from 'svelte';
 
 /** A settable local synced to an external projection. Bind `.value` in the

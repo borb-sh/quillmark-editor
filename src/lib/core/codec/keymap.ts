@@ -3,8 +3,8 @@
 //
 // A body is a document, so its structural keys are STRUCTURAL; a surface nested in
 // it that owns a key more locally joins the chain rather than rewriting the binding.
-// Precedence is inner surface first: the `code_block` link (issue #84), then the
-// list links (issue #70), and an island's cell traversal when #16 lands. Each link
+// Precedence is inner surface first: the `code_block` link, then the
+// list links, and an island's cell traversal once added. Each link
 // declines outside its surface, so the first link that claims the key gets it — and
 // where none does, the key is not swallowed at all and leaves the body a keyboard
 // exit.

@@ -34,7 +34,7 @@
 		/** This field's width in the section grid, from `placeFields`. */
 		span: FieldSpan;
 		value: unknown;
-		/** This field's resolved provenance row (FIELD_PROVENANCE → #64) — the ghost's
+		/** This field's resolved provenance row (FIELD_PROVENANCE) — the ghost's
 		 * source. Feeds the placeholder / fallback only, never `value`. */
 		provenance?: ResolvedField;
 		doc: Document;
@@ -42,7 +42,7 @@
 		proseAddr: Addr;
 		leafKey: string;
 		onCommitScalar: (value: unknown) => void;
-		/** Enum-option policy (issue #73): `false` disables that option. Only the enum
+		/** Enum-option policy: `false` disables that option. Only the enum
 		 * control reads it; other controls ignore it. */
 		optionAllowed?: (value: string) => boolean;
 		onFocus?: (addr: Addr) => void;
@@ -73,7 +73,7 @@
 	// The ghost the control shows when unset: the resolved `default:` (provenance,
 	// `source === 'default'`). `ghost` is the raw typed value (enum/number/boolean
 	// fallbacks); `defaultStr` its string form — the text placeholder and the date
-	// control's `YYYY-MM-DD` (issue #89). An object-valued default does not ghost.
+	// control's `YYYY-MM-DD`. An object-valued default does not ghost.
 	const ghost = $derived(ghostDefault(provenance));
 	const defaultStr = $derived(stringifyGhost(ghost));
 </script>

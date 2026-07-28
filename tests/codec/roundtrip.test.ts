@@ -1,4 +1,4 @@
-// Issue #20 — the two structural gaps the Phase 3 brief implies but the
+// The two structural gaps the Phase 3 brief implies but the
 // fixed-example suites miss:
 //   (1) the decode → lower round-trip had no randomized coverage — a SEEDED
 //       generator over random line kinds / containers / continues / marks asserts
@@ -29,7 +29,7 @@ function rng(seed: number): () => number {
 // Markdown (not raw `Content`) is the source so every sample is a guaranteed-
 // valid content via `importMarkdown` — the generator explores line kinds, list/
 // quote containers, the hard-break `continues` flag, and inline marks, while
-// staying clear of islands (own round-trip concerns, #16) and mark-on-code
+// staying clear of islands (own round-trip concerns) and mark-on-code
 // overlap (a separate normalization edge). At most one mark per word, so no
 // overlap that would blur the property under test.
 const WORDS = ['alpha', 'beta', 'gamma', 'x', 'the', 'quick', '😀', '🎉', '漢字', '日本語'];

@@ -105,9 +105,7 @@ test.describe('visual editor chrome — formatting popover', () => {
 			.toEqual([{ start: 0, end: 8, type: 'link', url: 'https://example.com' }]);
 	});
 
-	test('the anchor button toggles an identity anchor over the selection (issue #43)', async ({
-		page
-	}) => {
+	test('the anchor button toggles an identity anchor over the selection', async ({ page }) => {
 		await replaceProse(page, 'prose-main-subject', 'ANCHORTEST');
 		await selectAndAwaitPopover(page, 'prose-main-subject');
 		const anchor = page.getByTestId('mark-anchor');
@@ -166,7 +164,7 @@ test.describe('visual editor chrome — formatting popover', () => {
 	});
 });
 
-test.describe('visual editor chrome — polish (issue #58)', () => {
+test.describe('visual editor chrome — polish', () => {
 	test.beforeEach(async ({ page }) => {
 		await page.goto('/visual');
 		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
@@ -279,7 +277,7 @@ test.describe('visual editor chrome — diagnostics routing', () => {
 		page.on('pageerror', (e) => pageErrors.push(String(e)));
 		const before = (await readDump(page)).font_size;
 
-		// Commit is at `change` (issue #13) — blur to settle the bad entry so the
+		// Commit is at `change` — blur to settle the bad entry so the
 		// boundary judges it and the coercion diagnostic surfaces.
 		await reveal(page, 'main-font_size');
 		await page.getByTestId('main-font_size').fill('abc');

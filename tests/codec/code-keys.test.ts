@@ -1,4 +1,4 @@
-// The code-block keys (issue #84) — Tab/Shift-Tab as literal indentation, Enter as
+// The code-block keys — Tab/Shift-Tab as literal indentation, Enter as
 // a newline. Driven through `bodyKeymap`, the composed chains the leaf binds, so
 // these cover PRECEDENCE as much as the commands: the code link is only correct
 // relative to the list link it sits ahead of.

@@ -91,7 +91,7 @@
 		 */
 		diagnostics?: Diagnostic[];
 		/**
-		 * Consumer policy hook (issue #73): given a field `addr` and an enum option,
+		 * Consumer policy hook: given a field `addr` and an enum option,
 		 * return `false` to mark that option unavailable. A disallowed option renders
 		 * DISABLED (never stripped), so an already-authored value stays visible and its
 		 * stored payload is untouched — the schema is unchanged, this is runtime policy.
@@ -245,8 +245,8 @@
 
 	// ── Structure mutators (resolve id→index here, then reorder ids in lockstep) ──
 	/**
-	 * Scroll the card `id` into view once the mutation that placed it has rendered
-	 * (issue #123): on a document of any length an insert lands off-screen, and a
+	 * Scroll the card `id` into view once the mutation that placed it has rendered:
+	 * on a document of any length an insert lands off-screen, and a
 	 * viewport that does not follow reads as nothing happening.
 	 *
 	 * Coalesced on a single pending id: two quick adds resolve their `tick()` in
@@ -330,7 +330,7 @@
 		bump();
 	}
 	/**
-	 * Clear the tips channel (issue #71) — the dismissal write, and the ONLY write
+	 * Clear the tips channel — the dismissal write, and the ONLY write
 	 * tips make. `undefined` drops the key while `title` and any later sibling ride
 	 * through; `ext.ts` holds why that matters.
 	 */
@@ -400,7 +400,7 @@
 			retype: (kind: string) => retypeCardById(id, kind),
 			rename: (title: string) => renameCardById(id, title),
 			diagFor: (field?: string) => diagFor(id, isMain, field),
-			// Bind the consumer policy hook to this field's resolved addr (issue #73);
+			// Bind the consumer policy hook to this field's resolved addr;
 			// no hook → every option allowed.
 			enumAllowed: (field: string, value: string) =>
 				enumOptionAllowed?.(makeAddr(id, isMain, field), value) ?? true
@@ -431,7 +431,7 @@
 			id,
 			isMain,
 			kind,
-			// No schema for this kind → a recovery shell, not a field list (issue #72).
+			// No schema for this kind → a recovery shell, not a field list.
 			// `main` always resolves `schema.main`, so it is never unschemable.
 			unschemable: !isMain && !cardSchema,
 			titleOverride: extEditor?.title ?? '',
@@ -451,7 +451,7 @@
 		const schema = quill.schema;
 		const main = doc.main; // allocate once
 		const cards = doc.cards; // allocate once
-		// The provenance channel (FIELD_PROVENANCE → #64): one whole-doc resolve per
+		// The provenance channel (FIELD_PROVENANCE): one whole-doc resolve per
 		// derive, feeding the ghosted `default:` only. Guarded — provenance is
 		// chrome, so a resolve failure degrades to no ghosts, never a blank form.
 		let resolved: Resolved | undefined;
@@ -462,7 +462,7 @@
 		}
 		const byCard = resolvedByCardIndex(resolved);
 		return {
-			// Tips are DOCUMENT-level, not a property of the main card (issue #71): they
+			// Tips are DOCUMENT-level, not a property of the main card: they
 			// hang off `main`'s `$ext` because that is where a document-scoped `$ext`
 			// lives, and the model says so at the root rather than making every card
 			// carry a field one card renders.
@@ -545,7 +545,7 @@
 		{unregister}
 	/>
 
-	<!-- The tips card (issue #71): a fixed slot after `main`, ahead of the cards, so
+	<!-- The tips card: a fixed slot after `main`, ahead of the cards, so
 	     document-level guidance reads as document-level and never displaces a field.
 	     Absent when the channel is empty — which is what dismissal makes it, so the
 	     card leaves for good (VISUAL_EDITOR §"Card operations"). -->
@@ -553,10 +553,10 @@
 		<TipsCard tips={model.tips} onDismiss={dismissTips} />
 	{/if}
 
-	<!-- Cards always render (issue #72). The ADD affordance is gated on the schema
+	<!-- Cards always render. The ADD affordance is gated on the schema
 	     declaring `card_kinds` — nothing to seed otherwise — but a card already in the
 	     document shows regardless of its kind: a kind with no schema (foreign, or a
-	     schema with no `card_kinds` at all, the case issue #21 tracks) degrades to a
+	     schema with no `card_kinds` at all) degrades to a
 	     recovery shell inside <Card> (retype + delete), never gated away, so its content
 	     is neither dropped nor trapped. -->
 	{#if kinds.length}
@@ -643,7 +643,7 @@
 	.qm-add-btn {
 		padding: var(--_qm-space) var(--_qm-space-4);
 		list-style: none;
-		/* Recede until engaged (issue #58 §6; AESTHETIC §"minimal UI"): each gap's
+		/* Recede until engaged (AESTHETIC §"minimal UI"): each gap's
 		   trigger is invisible at rest and surfaces on hover or keyboard focus, so the
 		   stack reads as content, not a toolbar per gap. The LAST gap keeps a dim
 		   label — exactly one entry point stays visible. Opacity (not display) so the

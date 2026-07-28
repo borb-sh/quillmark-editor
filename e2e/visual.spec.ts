@@ -28,7 +28,7 @@ async function readDump(page: Page): Promise<Dump> {
 }
 
 /**
- * Pick an enum option. The control is a bits-ui listbox (issue #79 §3), not a
+ * Pick an enum option. The control is a bits-ui listbox, not a
  * native `<select>`, so `selectOption` does not apply: open the trigger, then
  * click the option by its `data-value` — the same value-keyed targeting the old
  * `selectOption(value)` did.
@@ -84,7 +84,7 @@ test.describe('visual editor', () => {
 		await expect(page.getByTestId('active-addr')).toContainText('"field":"subject"');
 	});
 
-	test('(a2) a no-default field shows a required marker; a defaulted field does not (issue #75a)', async ({
+	test('(a2) a no-default field shows a required marker; a defaulted field does not', async ({
 		page
 	}) => {
 		// `subject` declares no `default:` (Unendorsed) → a persistent `*`; the marker is
@@ -114,7 +114,7 @@ test.describe('visual editor', () => {
 		await expect.poll(async () => (await readDump(page)).letterhead_seal).toBe('dod');
 	});
 
-	test('(c2) a consumer enum policy DISABLES a forbidden option without mutating a stored value (issue #73)', async ({
+	test('(c2) a consumer enum policy DISABLES a forbidden option without mutating a stored value', async ({
 		page
 	}) => {
 		// Author CUI first, then arm the policy that forbids it: the stored value is
@@ -135,21 +135,19 @@ test.describe('visual editor', () => {
 	});
 
 	test('(d) editing a number (font_size) and a date (date) commits', async ({ page }) => {
-		// Number/date commit at `change` (blur/Enter), not per keystroke (issue #13) —
+		// Number/date commit at `change` (blur/Enter), not per keystroke —
 		// so the assertion follows a blur, mirroring a real settle.
 		await reveal(page, 'main-font_size');
 		await page.getByTestId('main-font_size').fill('14.5');
 		await page.getByTestId('main-font_size').blur();
 		await expect.poll(async () => (await readDump(page)).font_size).toBe(14.5);
-		// The date control is segmented (issue #79 §3) and commits as soon as the
+		// The date control is segmented and commits as soon as the
 		// segments form a complete date — there is no blur-to-settle step.
 		await setDate(page, 'main-date', '2026-03-04');
 		await expect.poll(async () => (await readDump(page)).date).toBe('2026-03-04');
 	});
 
-	test('(d2) clearing a number / date UNSETS the field — removed, not held (issue #12)', async ({
-		page
-	}) => {
+	test('(d2) clearing a number / date UNSETS the field — removed, not held', async ({ page }) => {
 		// Author, then clear: the field is REMOVED, so `doc.get` reads absent and the
 		// dump is null (not the last committed value) — the engine resolves the
 		// ghosted `default:` at render.
@@ -167,9 +165,7 @@ test.describe('visual editor', () => {
 		await expect.poll(async () => (await readDump(page)).date).toBeNull();
 	});
 
-	test('(d2b) an unset date ghosts its `default:`, not the format hint (issue #89)', async ({
-		page
-	}) => {
+	test('(d2b) an unset date ghosts its `default:`, not the format hint', async ({ page }) => {
 		// The reference quill's `date` declares a BLANK default (blank → today at
 		// render), which ghosts nothing — `?dateDefault` rewrites that one schema line
 		// so the rung exists to assert (src/routes/fixture.ts).
@@ -216,7 +212,7 @@ test.describe('visual editor', () => {
 		expect(await ink(year), 'the restored ghost').toBe(ghostInk);
 	});
 
-	test('(d3) an enum unsets via the ghost sentinel; picking the default VALUE writes it (issue #21a)', async ({
+	test('(d3) an enum unsets via the ghost sentinel; picking the default VALUE writes it', async ({
 		page
 	}) => {
 		// Author a value, then pick the ghost sentinel (always the first option) →
@@ -313,14 +309,14 @@ test.describe('visual editor', () => {
 	});
 
 	// A kind is chosen at insert and changed only by the recovery shell — test (k) —
-	// so no card header offers a retype (issue #123).
-	test('(i) the card header carries no retype control (issue #123)', async ({ page }) => {
+	// so no card header offers a retype.
+	test('(i) the card header carries no retype control', async ({ page }) => {
 		await expect(page.getByTestId('card-retype-0')).toHaveCount(0);
 	});
 
 	// The rename target is the header's free width, not the title's text box, which
-	// the autosize keeps exactly as wide as its text (issue #123).
-	test('(i2) a press in the header free space enters the rename (issue #123)', async ({ page }) => {
+	// the autosize keeps exactly as wide as its text.
+	test('(i2) a press in the header free space enters the rename', async ({ page }) => {
 		const title = page.getByTestId('card-title-0');
 		const region = page.getByTestId('card-rename-0');
 		const box = (await region.boundingBox())!;
@@ -339,7 +335,7 @@ test.describe('visual editor', () => {
 		await expect.poll(async () => (await readDump(page)).cards[0].title).toBe('My Endorsement');
 	});
 
-	test('(k) an un-schemable card renders a recovery shell; retype re-projects it (issue #72)', async ({
+	test('(k) an un-schemable card renders a recovery shell; retype re-projects it', async ({
 		page
 	}) => {
 		// `?foreign` seeds a card whose kind the schema can't project (see the route).
@@ -368,7 +364,7 @@ test.describe('visual editor', () => {
 			.toBe(true);
 	});
 
-	test('(l) the tips card rotates, renders markdown, and dismissal clears the channel (issue #71)', async ({
+	test('(l) the tips card rotates, renders markdown, and dismissal clears the channel', async ({
 		page
 	}) => {
 		// `?tips` seeds `$ext.editor.tips` with three tips (see the route) — the
@@ -399,7 +395,7 @@ test.describe('visual editor', () => {
 		await expect.poll(async () => (await readDump(page)).mainExtEditor?.tips).toBeUndefined();
 	});
 
-	test('(m) dismissing tips leaves a renamed card its title (issue #71)', async ({ page }) => {
+	test('(m) dismissing tips leaves a renamed card its title', async ({ page }) => {
 		// The silent hazard: `tips` and `title` are sibling keys of one `editor`
 		// namespace, so a namespace-removing clear would destroy the rename. Only a
 		// document carrying BOTH can catch it — so this test makes one.
@@ -414,9 +410,7 @@ test.describe('visual editor', () => {
 		expect((await readDump(page)).cards[0].title).toBe('Kept Title');
 	});
 
-	test('(n) list keys indent, exit, and merge through the real keymap (issue #70)', async ({
-		page
-	}) => {
+	test('(n) list keys indent, exit, and merge through the real keymap', async ({ page }) => {
 		// The browser tier is where key DELIVERY is provable: Tab reaches the leaf
 		// rather than moving focus, Shift-Tab survives the modifier, and each press
 		// COMMITS (the dump is the Document, not the DOM).
@@ -451,7 +445,7 @@ test.describe('visual editor', () => {
 		await expect(el.locator('p:not(li p)')).toHaveCount(1);
 	});
 
-	test('(o) code-block keys take literal indentation (issue #84)', async ({ page }) => {
+	test('(o) code-block keys take literal indentation', async ({ page }) => {
 		// Same reason as the list keys: only the browser proves Tab is DELIVERED to
 		// the leaf — a swallowed key that still moves focus passes every unit test.
 		const el = pm(page, 'prose-main-body');
@@ -478,8 +472,8 @@ test.describe('visual editor', () => {
 	});
 
 	// An insert past the fold moves the viewport to the new card, so the click is
-	// never silent (issue #123).
-	test('(p) a newly added card is scrolled into view (issue #123)', async ({ page }) => {
+	// never silent.
+	test('(p) a newly added card is scrolled into view', async ({ page }) => {
 		// Fill well past the viewport so the last insert point is genuinely off-screen.
 		for (let n = 1; n <= 4; n++) {
 			await page.getByTestId(`add-card-${n}`).click();

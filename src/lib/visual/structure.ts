@@ -29,11 +29,11 @@ export interface FieldModel {
 	compact: boolean;
 	/** Display label — `ui.title` when set, else the humanized field name. */
 	label: string;
-	/** Schema `description` — authoring help rendered beside the label (issue #75b),
+	/** Schema `description` — authoring help rendered beside the label,
 	 * undefined when the field declares none. Chrome-only; never gates. */
 	description: string | undefined;
 	/**
-	 * Required-ness (issue #75a): a field with NO `default:` is "Unendorsed" — its
+	 * Required-ness: a field with NO `default:` is "Unendorsed" — its
 	 * seed carries a `!must_fill` marker (DOCUMENT_MODEL: there is no separate
 	 * `required` axis). Drives a persistent label `*`, complementary to the ghosted
 	 * `default:` (a required field has no default to ghost). Persistent (schema-
@@ -64,7 +64,7 @@ export interface CardModel {
 	isMain: boolean;
 	kind: string;
 	/**
-	 * The card's `kind` has no projectable schema (issue #72) — a foreign kind under
+	 * The card's `kind` has no projectable schema — a foreign kind under
 	 * a schema that declares others, or a card under a schema with no `card_kinds` at
 	 * all. Such a card renders a RECOVERY SHELL (humanized title + retype + delete)
 	 * instead of a field list, so its content is never dropped or trapped: retyping
@@ -79,7 +79,7 @@ export interface CardModel {
 	values: Record<string, unknown>;
 	/**
 	 * Field name → its resolved provenance row (`{ value, source }`), parallel to
-	 * `values` (FIELD_PROVENANCE → #64). The channel that feeds chrome — the ghosted
+	 * `values` (FIELD_PROVENANCE). The channel that feeds chrome — the ghosted
 	 * `default:` and any authored/default/zero affordance — NEVER the control
 	 * value. Empty when `quill.resolve` is unavailable.
 	 */
@@ -87,8 +87,8 @@ export interface CardModel {
 	sections: GroupSection[];
 	hasBody: boolean;
 	/**
-	 * The empty-body ghost — the resolved body `default:` as placeholder text
-	 * (issue #58 §9), or undefined when the body is authored / has no default.
+	 * The empty-body ghost — the resolved body `default:` as placeholder text,
+	 * or undefined when the body is authored / has no default.
 	 * The body prose leaf ghosts it exactly as scalars ghost their `default:`.
 	 */
 	bodyGhost?: string;
@@ -105,7 +105,7 @@ export function provenanceMap(fields: ResolvedField[]): Record<string, ResolvedF
 }
 
 /** A card's resolved rows: its declared fields, and the `body` sibling `resolve`
- * hangs off each card (issue #58 §9). */
+ * hangs off each card. */
 export interface ResolvedCardRows {
 	fields: ResolvedField[];
 	body: ResolvedField | null;
@@ -136,9 +136,9 @@ export function ghostDefault(row: ResolvedField | undefined): unknown {
 
 /** A ghost value's string form, or undefined for null/object (only text ghosts
  * render a placeholder). The one text-ghost projection: a scalar field's
- * placeholder and a body leaf's (issue #58 §9) both read `stringifyGhost ∘
+ * placeholder and a body leaf's both read `stringifyGhost ∘
  * ghostDefault`, since a richtext body resolves to a text render — the correct
- * thing to display as a placeholder (FIELD_PROVENANCE → #64). */
+ * thing to display as a placeholder (FIELD_PROVENANCE). */
 export function stringifyGhost(ghost: unknown): string | undefined {
 	return ghost != null && typeof ghost !== 'object' ? String(ghost) : undefined;
 }
@@ -261,7 +261,7 @@ export function groupSections(
 }
 
 /**
- * The group section a card's accordion opens on first mount (issue #60), or
+ * The group section a card's accordion opens on first mount, or
  * `null` for all-collapsed. Ungrouped fields render outside the accordion, so
  * only `group != null` sections count. The rule keeps exactly one section's
  * worth of fields visible when the card would otherwise read empty:
@@ -293,7 +293,7 @@ export interface PlacedField {
  * a row is as tall as its tallest cell and each of these grows under its neighbours:
  * an array owns its label and its own rows, an object nests a whole field set, and
  * block richtext (`inline` absent) holds paragraphs. An inline prose leaf is one line
- * tall (issue #120) and packs like any scalar.
+ * tall and packs like any scalar.
  */
 function packable(f: FieldModel): boolean {
 	if (!f.compact) return false;

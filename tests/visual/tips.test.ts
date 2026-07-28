@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// The tips channel (issue #71): the narrowing the derive reads, the markdown render
+// The tips channel: the narrowing the derive reads, the markdown render
 // the card paints, and the load-bearing one — that a write to the `editor` namespace
 // carries its sibling keys through, so clearing `tips` leaves `title` standing.
 //

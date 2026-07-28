@@ -57,7 +57,7 @@ export async function replaceProse(page: Page, leafTestid: string, text: string)
  * and polling only covers a late frame — it cannot recover a gesture that
  * settled on one of those empty states, which raises nothing at all. A bare
  * assertion passes or fails by how warm the browser is, making the tier's
- * failures a function of what ran before them (issue #90).
+ * failures a function of what ran before them.
  */
 export async function selectAndAwaitPopover(page: Page, leafTestid: string): Promise<void> {
 	await reveal(page, leafTestid);

@@ -1,4 +1,4 @@
-// The list structure keys (issue #70) — Tab/Shift-Tab indent-outdent, and what
+// The list structure keys — Tab/Shift-Tab indent-outdent, and what
 // Enter/Backspace mean inside a list. Driven through the bound commands
 // `listKeymap` returns, not through re-derived copies of them, so a rebinding
 // breaks these.
