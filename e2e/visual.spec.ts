@@ -312,12 +312,26 @@ test.describe('visual editor', () => {
 		await expect.poll(async () => (await readDump(page)).cardCount).toBe(1);
 	});
 
-	test('(i) retype is wired (degenerate single kind) without error', async ({ page }) => {
-		const errors: string[] = [];
-		page.on('pageerror', (e) => errors.push(String(e)));
-		await page.getByTestId('card-retype-0').click();
-		await expect.poll(async () => (await readDump(page)).cards[0].kind).toBe('indorsement');
-		expect(errors, errors.join('\n')).toEqual([]);
+	// A kind is chosen at insert and changed only by the recovery shell — test (k) —
+	// so no card header offers a retype (issue #123).
+	test('(i) the card header carries no retype control (issue #123)', async ({ page }) => {
+		await expect(page.getByTestId('card-retype-0')).toHaveCount(0);
+	});
+
+	// The rename target is the header's free width, not the title's text box, which
+	// the autosize keeps exactly as wide as its text (issue #123).
+	test('(i2) a press in the header free space enters the rename (issue #123)', async ({ page }) => {
+		const title = page.getByTestId('card-title-0');
+		const region = page.getByTestId('card-rename-0');
+		const box = (await region.boundingBox())!;
+		const titleBox = (await title.boundingBox())!;
+		// Past the title's right edge — the free width the autosize leaves beside it.
+		expect(box.width).toBeGreaterThan(titleBox.width + 8);
+		await page.mouse.click(box.x + box.width - 4, box.y + box.height / 2);
+		await expect(title).toBeFocused();
+		// Entering selects all, so the first keystroke replaces rather than appends.
+		await page.keyboard.type('Replaced');
+		await expect.poll(async () => (await readDump(page)).cards[0].title).toBe('Replaced');
 	});
 
 	test('(j) renaming a card via its title persists $ext.editor.title', async ({ page }) => {
@@ -461,5 +475,23 @@ test.describe('visual editor', () => {
 		// Shift-Tab survives the modifier and takes the indent back.
 		await page.keyboard.press('Shift+Tab');
 		await expect.poll(async () => (await readDump(page)).body).toBe('one\ntwo');
+	});
+
+	// An insert past the fold moves the viewport to the new card, so the click is
+	// never silent (issue #123).
+	test('(p) a newly added card is scrolled into view (issue #123)', async ({ page }) => {
+		// Fill well past the viewport so the last insert point is genuinely off-screen.
+		for (let n = 1; n <= 4; n++) {
+			await page.getByTestId(`add-card-${n}`).click();
+			await expect.poll(async () => (await readDump(page)).cardCount).toBe(n + 1);
+		}
+		await page.evaluate(() => window.scrollTo(0, 0));
+		await expect(page.getByTestId('card-title-4')).not.toBeInViewport();
+
+		// `dispatchEvent` clicks WITHOUT Playwright's auto-scroll, so the insert really
+		// happens off-screen — the case the scroll exists for.
+		await page.getByTestId('add-card-5').dispatchEvent('click');
+		await expect.poll(async () => (await readDump(page)).cardCount).toBe(6);
+		await expect(page.getByTestId('card-title-5')).toBeInViewport();
 	});
 });
