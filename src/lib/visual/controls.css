@@ -50,24 +50,43 @@
 		background: var(--_qm-surface);
 	}
 
-	/* A square glyph button — card reorder/delete, array remove, the tips card's
-	   foot. Deliberately no `color`: the callers disagree on purpose (the card
-	   delete is `--_qm-danger`, the array remove inherits its row's ink), and a
-	   base colour here would flatten that distinction rather than share a recipe. */
+	/* A glyph button — card reorder/delete, array remove, the tips card's foot.
+	   UNBOXED, which is the whole distinction from `.qm-input` above: a field is a box
+	   because you type into it, a button is not a box because you press it. So no
+	   resting border and no resting fill (AESTHETIC §Rules, "prefer removing chrome to
+	   adding it"); the surface arrives on hover, off the rung the enum listbox already
+	   highlights with. Deliberately no `color`: the callers disagree on purpose (the
+	   card delete is `--_qm-danger`, the array remove inherits its row's ink), and a
+	   base colour here would flatten that distinction rather than share a recipe.
+
+	   The floor is WCAG 2.5.8's 24x24, stated on the space scale rather than as a
+	   literal — a 14px glyph on its padding alone measured 24x20, and the two
+	   destructive callers were both under it. */
 	.qm-icon-btn {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		gap: var(--_qm-space-half);
-		border: 1px solid var(--_qm-border);
-		background: var(--_qm-surface);
+		min-width: calc(var(--_qm-space) * 6);
+		min-height: calc(var(--_qm-space) * 6);
+		border: none;
+		background: transparent;
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
 		line-height: 1;
 		padding: var(--_qm-space-half) var(--_qm-space);
+		transition: background-color 120ms ease;
+	}
+	.qm-icon-btn:hover:not(:disabled) {
+		background: var(--_qm-surface-hover);
 	}
 	.qm-icon-btn:disabled {
 		opacity: var(--_qm-opacity-idle);
 		cursor: default;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.qm-icon-btn {
+			transition: none;
+		}
 	}
 }

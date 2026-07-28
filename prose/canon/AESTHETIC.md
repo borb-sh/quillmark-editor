@@ -35,7 +35,11 @@ overrides to its brand without fighting baked-in decoration.
 - **Strip redundancy.** Prefer removing chrome to adding it — a heading that
   restates the field beneath it, a divider whitespace already implies, a label the
   control already speaks. The card stack is the document's structure; it needs no
-  framing that repeats it.
+  framing that repeats it. A button carrying a field's border is the same rule's
+  concrete case: a box says "type here", and every glyph and add affordance in the
+  editor wore one. They are unboxed (SURFACES §"The shared recipe"), and the dashed
+  edge two of them drew is reserved for its one honest use — the un-schemable card,
+  where "nothing valid is here" is the state being reported.
 - **Secondary text recedes through muted type**, not heavier weight or a box. Field
   labels (`--_qm-ink-label`), section labels (`--_qm-ink-meta`), and the ghosted
   `default:` placeholder (`--_qm-ink-ghost`) step back by tone alone — three rungs

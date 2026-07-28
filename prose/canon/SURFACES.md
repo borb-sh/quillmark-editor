@@ -50,6 +50,15 @@ floating surfaces share the popover recipe above. A palette change is then one d
 not one edit per field file. A control that mints its own border grey or radius
 instead of reading the rung is the drift this prevents.
 
+**A button reads the second recipe, and it is not this one.** A glyph or text
+button — reorder, delete, array remove, both add affordances, the tips foot — is
+ink on the card: no resting border, no resting fill, `--_qm-surface-hover` arriving
+on hover, `--_qm-radius-inner` (a pill on the add triggers, which fill rather than
+tint). The distinction the one-recipe-for-everything collapse loses is worth
+stating: *a field is a box because you type into it; a button is not a box because
+you press it.* Destructive ink (`--_qm-danger`) stays — that is meaning, not
+chrome. Every button clears WCAG 2.5.8's 24×24, expressed on the space scale.
+
 **An inline prose leaf is inside that recipe, not beside it.** A field constrained
 to one paragraph is a control in a row of controls, so it draws the same five
 declarations and is therefore exactly as tall as the `.qm-input` next to it — by

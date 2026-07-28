@@ -584,12 +584,18 @@
 		display: flex;
 		justify-content: center;
 	}
+	/* Unboxed, like every button (SURFACES §"The shared recipe"). The dashed edge it
+	   used to carry is the PLACEHOLDER idiom — "nothing is here yet" — which on a
+	   button reads as disabled or as a drop target; the one place it stays honest is
+	   the un-schemable card (`Card.svelte`), which is a state, not a control. What
+	   arrives on hover is a filled pill: at rest this trigger is invisible, so a hover
+	   that only shifted its ink would have nothing to shift. */
 	.qm-add-btn {
-		border: 1px dashed var(--_qm-border);
+		border: none;
 		background: transparent;
-		border-radius: var(--_qm-radius-inner);
+		border-radius: var(--_qm-radius-pill);
 		cursor: pointer;
-		padding: var(--_qm-space-half) var(--_qm-space-4);
+		padding: var(--_qm-space) var(--_qm-space-4);
 		font-size: var(--_qm-text-body);
 		color: var(--_qm-ink-label);
 		list-style: none;
@@ -599,7 +605,9 @@
 		   label — exactly one entry point stays visible. Opacity (not display) so the
 		   pill reserves its height and the row does not jump on reveal. */
 		opacity: 0;
-		transition: opacity 120ms ease;
+		transition:
+			opacity 120ms ease,
+			background-color 120ms ease;
 	}
 	.qm-add-card:hover .qm-add-btn,
 	.qm-add-btn:focus-visible {
@@ -619,8 +627,13 @@
 		}
 	}
 	.qm-add-btn:hover {
-		border-color: var(--_qm-border-strong);
+		background: var(--_qm-surface-hover);
 		color: var(--_qm-ink);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.qm-add-btn {
+			transition: none;
+		}
 	}
 	.qm-add-menu {
 		position: relative;

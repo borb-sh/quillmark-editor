@@ -173,21 +173,34 @@
 		font-family: var(--_qm-font-mono);
 		min-height: 2.5rem;
 	}
+	/* Unboxed, same as every button — the dashed edge went with `.qm-add-btn`'s. */
 	.qm-add-el {
-		border: 1px dashed var(--_qm-border);
+		border: none;
 		background: transparent;
-		border-radius: var(--_qm-radius-inner);
+		border-radius: var(--_qm-radius-pill);
 		cursor: pointer;
 		padding: var(--_qm-space) var(--_qm-space-2);
 		font-size: var(--_qm-text-body);
+		color: var(--_qm-ink-label);
 		/* Recede until engaged (issue #58 §6): the sole foot add rests dim — like the
 		   card stack's last trigger — and surfaces on hover of the field or on focus. */
 		opacity: var(--_qm-opacity-idle);
-		transition: opacity 120ms ease;
+		transition:
+			opacity 120ms ease,
+			background-color 120ms ease;
 	}
 	.qm-array:hover .qm-add-el,
 	.qm-add-el:focus-visible {
 		opacity: 1;
+	}
+	.qm-add-el:hover {
+		background: var(--_qm-surface-hover);
+		color: var(--_qm-ink);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.qm-add-el {
+			transition: none;
+		}
 	}
 	@media (hover: none) {
 		.qm-add-el {
