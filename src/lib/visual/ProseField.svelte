@@ -72,15 +72,34 @@
 	});
 </script>
 
-<div bind:this={containerEl} class="qm-prose" data-leaf-key={leafKey} data-testid={testid}></div>
+<div
+	bind:this={containerEl}
+	class="qm-prose"
+	class:qm-prose-block={!inline}
+	data-leaf-key={leafKey}
+	data-testid={testid}
+></div>
 
 <style>
+	/* The scalar control recipe, declaration for declaration — same padding rung, same
+	   hairline, same size rung — so an inline leaf and the `.qm-input` beside it agree
+	   on height BY CONSTRUCTION rather than by two tuned floors (issue #120). The
+	   paragraph box the height used to come from is reset in `core/codec/prose.css`,
+	   which is also why there is no `min-height` here: one line of prose in this box is
+	   one line of text in that one. */
 	.qm-prose {
 		border: 1px solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
 		padding: var(--_qm-space) var(--_qm-space-2);
 		background: var(--_qm-surface);
-		min-height: 1.6rem;
+		font-size: var(--_qm-text-body);
+	}
+	/* A leaf the inline schema does NOT constrain — the body — is paper, not a cell in
+	   a row of controls, so it opens at a few lines and grows. The floor is a multiple
+	   of the type rung rather than a length: what it means is "some lines", which moves
+	   with `--qm-font-size` and not with anything else. */
+	.qm-prose-block {
+		min-height: calc(var(--_qm-text-body) * 6);
 	}
 	/* The caret is the prose leaf's focus indicator, not a ring — a ring around a
 	   contenteditable reads as the form chrome AESTHETIC strips. So the outline is

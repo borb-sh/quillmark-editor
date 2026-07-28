@@ -4,6 +4,15 @@
    hidden-selection and separator-image guards. It is imported whole; the rules are
    interdependent and which ones a given schema needs is not visible from here.
 
+   What it does NOT carry is a block reset, so without the rules below every leaf
+   inherits the UA `p { margin: 1em 0 }` — 32px of margin in a box drawn to hold one
+   line, which is what made an inline richtext field 2.1× the input beside it
+   (issue #120). The reset lives here rather than per component because every leaf in
+   the package mounts through the codec: a field, the body, an array element, and the
+   source view all pick it up without restating it, and a leaf that carries the
+   control recipe (`visual/ProseField.svelte`) can then match `.qm-input` by
+   construction instead of by a tuned `min-height`.
+
    It also carries one hard-coded hue, twice: a `#8cf` node-selection outline that
    answers to no dial. Retinted here rather than in `theme.css` because a layered
    rule loses to that unlayered stylesheet — equal specificity and a later import
@@ -13,4 +22,30 @@
 }
 li.ProseMirror-selectednode::after {
 	border: var(--_qm-ring-width-active) solid var(--_qm-accent);
+}
+
+/* Every block the schema can produce (`codec/schema.ts`) starts flush — the whole
+   block set, not `p` alone, since a paragraph-only reset leaves a leaf whose
+   headings and lists still carry UA margins and whose rhythm is therefore two
+   rhythms. `unknown_container` renders as a bare `div` and flows its children at the
+   enclosing level, so it takes no box of its own. */
+.ProseMirror :is(p, h1, h2, h3, h4, h5, h6, pre, blockquote, ul, ol, li, hr) {
+	margin: 0;
+}
+
+/* One rhythm between sibling blocks, in place of the UA's collapsed pair. `li` is
+   absent from both sides: list items are a tight run, and the gap between the list
+   and what precedes it is the list's, not each item's. */
+.ProseMirror
+	:is(p, h1, h2, h3, h4, h5, h6, pre, blockquote, ul, ol, hr)
+	+ :is(p, h1, h2, h3, h4, h5, h6, pre, blockquote, ul, ol, hr) {
+	margin-top: var(--_qm-space-4);
+}
+
+/* A blockquote's UA indent was its only mark, and the reset above takes it. The rule
+   and the inset carry it instead — the same hairline every surface reads, so a quote
+   reads as set apart without a fill or a second box (SURFACES §Elevation). */
+.ProseMirror blockquote {
+	padding-left: var(--_qm-space-3);
+	border-left: 1px solid var(--_qm-border);
 }

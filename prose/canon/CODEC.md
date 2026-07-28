@@ -189,6 +189,17 @@ codec exists — the content-object round-trip via `install` / `applyChange` is 
 path; `importMarkdown` is the wrong tool on a plaintext field (it parses markdown
 syntax).
 
+The schema distinction is also what sizes the leaf. A constrained leaf holds one
+paragraph, so it is one line tall and draws the scalar control recipe (SURFACES
+§"The shared recipe"); the full schema grows. **The codec owns the block reset both
+depend on** — `codec/prose.css`, imported beside ProseMirror's own stylesheet, which
+carries no margins of its own and so leaves every block on UA defaults. The reset
+covers the block set `schema.ts` can produce, not `p` alone, and lives here rather
+than per component because every leaf in the package — field, body, array element,
+source view — mounts through the codec and inherits it without restating it. A leaf
+that then matches an input does so by drawing the same declarations, not by a floor
+tuned to agree.
+
 ## Markdown at the edges
 
 Markdown never represents an edit, but it stays a boundary format:

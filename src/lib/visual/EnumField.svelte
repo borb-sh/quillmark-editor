@@ -128,6 +128,9 @@
 		border: 1px solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
 		font: inherit;
+		/* The rung, not the host page's size — matching `.qm-input`, and matching the
+		   listbox below, which already read it while its own trigger did not. */
+		font-size: var(--_qm-text-body);
 		text-align: left;
 		color: var(--_qm-ink);
 		background: var(--_qm-surface);

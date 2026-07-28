@@ -160,6 +160,9 @@
 		border: 1px solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
 		font: inherit;
+		/* The rung, as every scalar control reads it (issue #119) — the segments
+		   inherit it, so the field and its neighbours agree without a second rule. */
+		font-size: var(--_qm-text-body);
 		color: var(--_qm-ink);
 		background: var(--_qm-surface);
 	}

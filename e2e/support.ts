@@ -9,6 +9,30 @@ export function pm(page: Page, leafTestid: string) {
 	return page.locator(`[data-testid="${leafTestid}"] .ProseMirror`);
 }
 
+/**
+ * Expand a card's `ui.group` accordion section, so the fields inside it are
+ * REACHABLE the way a user reaches them.
+ *
+ * The main card opens all-collapsed by design (`initialExpandedGroup`: many groups
+ * plus a body leaf → the body carries the card), and a collapsed panel is an 8px
+ * `overflow: hidden` window its fields overflow. A field inside one still reports a
+ * full `getBoundingClientRect`, and Playwright will scroll the hidden box to reach
+ * it — so a gesture against a collapsed field APPEARS to work while landing on a
+ * few visible pixels, and whether it lands at all is a function of the leaf's
+ * height. Selection is where that bites: the popover raises on a non-empty PM
+ * selection, and a click that misses the sliver leaves focus on `<body>`, where
+ * ctrl+A selects the page and raises nothing.
+ *
+ * Opening the section first is not a workaround for that — it is the only state in
+ * which a user can select text in these fields at all.
+ */
+export async function openGroup(page: Page, base: string, group: string): Promise<void> {
+	const header = page.getByTestId(`group-${base}-${group}`);
+	if ((await header.getAttribute('aria-expanded')) === 'true') return;
+	await header.click();
+	await expect(header).toHaveAttribute('aria-expanded', 'true');
+}
+
 /** Replace a prose leaf's whole content with `text` (select-all + type). */
 export async function replaceProse(page: Page, leafTestid: string, text: string): Promise<void> {
 	const el = pm(page, leafTestid);

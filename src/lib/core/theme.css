@@ -113,11 +113,16 @@
 		   caret) follow the palette; `light dark` is right while the palette tracks
 		   the OS, and a consumer that PINS a palette pins this too, on the root.
 
-		   Deliberately NOT `font-size`. A root-level body size would restyle every
-		   surface that currently inherits the page's — including the prose leaves,
-		   whose line box the caret and the click-to-place-caret path are measured
-		   against. Components that want the rung read it; the roots do not impose
-		   one. */
+		   Deliberately NOT `font-size`, and the reason is about the ROOT rule rather
+		   than about size: a root-level body size sweeps every descendant a consumer
+		   may have put inside the marker, which is a reach the derivation does not
+		   have. The rung is not withheld from the surfaces — every control and every
+		   prose leaf reads `--_qm-text-body` in its own recipe (issue #119), which is
+		   what closes the ramp and makes `--qm-font-size` move an input. What would
+		   break a mounted leaf is a size that CHANGES under it; a rung is fixed at
+		   mount unless the consumer turns the dial, and a consumer turning a dial is
+		   entitled to the reflow. So: the root imposes no size, each surface reads the
+		   rung it wants. */
 		font-family: var(--_qm-font);
 		color: var(--_qm-ink);
 		color-scheme: light dark;

@@ -32,7 +32,13 @@
 		outline-offset: var(--_qm-ring-offset);
 	}
 
-	/* A typed value's box — text and numeric inputs, and the array's JSON textarea. */
+	/* A typed value's box — text and numeric inputs, and the array's JSON textarea.
+	   `font: inherit` first, because a UA input inherits neither family nor face; then
+	   the SIZE off the ramp, because inheriting that lands the control on the host
+	   page's body size — a rung the scale never minted, and one the consumer moves by
+	   restyling their page rather than by turning `--qm-font-size` (issue #119). The
+	   two together are what make the box a fixed relation to its label instead of a
+	   property of whoever mounts the editor. */
 	.qm-input {
 		width: 100%;
 		box-sizing: border-box;
@@ -40,6 +46,7 @@
 		border: 1px solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
 		font: inherit;
+		font-size: var(--_qm-text-body);
 		background: var(--_qm-surface);
 	}
 
