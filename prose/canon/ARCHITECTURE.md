@@ -73,6 +73,15 @@ the preview surfaces hits, and the shell joins them (`fieldPathForAddr` maps an
 editor `Addr` to the preview's field-path grammar) — neither surface imports the
 other.
 
+Four properties of the card column belong to whoever mounts the surface, because
+the package draws cards and not the column they sit in: the **outer gutter**
+between pane edge and card, the **scroll container**, the **page tone** behind the
+column, and the **scroll tail** that lets the last card reach the middle of the
+viewport instead of stopping at its bottom edge. `/editor` demonstrates all four on
+`.editor-pane` (`padding`, `overflow: auto`, `--pg-main-bg`, and a `40vh` tail
+element). None is a package behaviour, and a card's own tone deliberately does not
+depend on the third (SURFACES §Elevation).
+
 ## Theming
 
 The surfaces carry the behavior against a neutral, overridable baseline — the

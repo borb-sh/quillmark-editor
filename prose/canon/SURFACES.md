@@ -21,12 +21,18 @@ control inherits them instead of reinventing:
 
 The card is the container; nothing inside it is a second box.
 
-- **The card stack is in-flow.** A card carries one quiet edge — a single hairline
-  at `--_qm-border`, not a hairline and a shadow — over `--_qm-surface-raised`. The
-  `main` card sits at the base surface (`--_qm-surface`) instead, so the document's
-  head reads as the page and the composable cards read as stacked on it. One border
-  rung across all of them, not a different grey per card. The card is the only
-  container in the column.
+- **The card stack is in-flow.** Every card carries one quiet edge — a single
+  hairline at `--_qm-border`, not a hairline and a shadow — over
+  `--_qm-surface-raised`. One tone and one border rung across all of them, `main`
+  included, not a different grey per card. The card is the only container in the
+  column.
+- **A card's tone is the package's; the page behind it is not.** So the card cannot
+  be assigned a rung that only reads against a particular backdrop — a consumer who
+  puts plain `--qm-bg` behind the column is a supported case, and `main` at the base
+  surface degraded to invisibility there. What the package guarantees instead is the
+  card↔control relationship, which holds whatever is behind: a control is one rung
+  off its card, always. `main` needs no tone to say which card it is — it is the only
+  headerless card, the only one without reorder/delete, and the first in the column.
 - **Fields and the body sit quiet inside the card.** A scalar control and a prose
   leaf each carry one hairline — the shared `--_qm-border` at `--_qm-radius-inner`
   over `--_qm-surface` (§"The shared recipe") — and nothing heavier: no fill, no
@@ -34,12 +40,18 @@ The card is the container; nothing inside it is a second box.
   needs to read as editable and to host its focus ring (§"Focus and active state");
   a *second* box inside it — a nested border, a filled panel — is the density the
   monochrome rule (AESTHETIC.md) removes.
+- **The rungs step toward the ink, which the word "raised" only half means.** A card
+  is *darker* than the page in light and *lighter* in dark: a tinted plate laid on
+  the page, not a lit surface floating above it. The three surface rungs sit 4pp
+  apart so each carries a plane on its own — the spacing proven at hover, given to
+  the card. Saying "elevated is lighter" in both poles would take a mode signal the
+  derivation deliberately does not have (THEMING.md; #83 is the same wall).
 - **The floating surfaces earn the lift the cards do without.** The selection
-  popover takes `--_qm-surface-popover` (the base surface mixed toward transparent)
-  behind a `--_qm-blur` backdrop, a hairline, and `--_qm-shadow-popover`; the enum
-  listbox takes the same shadow over an opaque `--_qm-surface`, since a list of
-  choices reads through worse than a row of glyphs. Both sit over content with
-  nothing behind them (VISUAL_EDITOR_UIUX §Formatting).
+  popover takes `--_qm-surface-popover` (the *raised* surface mixed toward
+  transparent) behind a `--_qm-blur` backdrop, a hairline, and
+  `--_qm-shadow-popover`; the enum listbox takes the same shadow over an opaque
+  `--_qm-surface`, since a list of choices reads through worse than a row of glyphs.
+  Both sit over content with nothing behind them (VISUAL_EDITOR_UIUX §Formatting).
 
 ## The shared recipe
 

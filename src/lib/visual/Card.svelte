@@ -143,6 +143,11 @@
 	}
 </script>
 
+<!-- `qm-main` marks the document head structurally; it carries NO fill of its own
+     (issue #124). Which card this is already reads without a tone: it is the only
+     headerless card, the only one without reorder/delete, and the first in the
+     column. A tone here would be a bet on what the consumer put behind the column,
+     and the consumer owns that. -->
 <section
 	class="qm-card"
 	class:qm-main={card.isMain}
@@ -365,9 +370,6 @@
 		flex-direction: column;
 		gap: var(--_qm-space-3);
 	}
-	.qm-card.qm-main {
-		background: var(--_qm-surface);
-	}
 	.qm-card-header {
 		display: flex;
 		align-items: center;
@@ -552,7 +554,6 @@
 	   it is intact. */
 	.qm-card.qm-unschemable {
 		border-style: dashed;
-		background: var(--_qm-surface-raised);
 	}
 	.qm-card-title-static {
 		font-size: var(--_qm-text-title);

@@ -43,11 +43,23 @@
 		   Surfaces step bg → fg, ink steps fg → bg, mixed in oklab — sRGB muddies
 		   the mid-tones and the label/meta/border rungs are exactly mid-tone. So
 		   inverting the poles inverts the scale. The percentages are calibrated to
-		   the light-mode literals they stand in for (2% ≈ #fafafa, 17% ≈ #d4d4d4,
-		   35% ≈ #555). */
+		   the light-mode literals they stand in for (17% ≈ #d4d4d4, 35% ≈ #555).
+
+		   The three surface rungs are spaced EVENLY, 4pp apart (≈3.1% L against the
+		   light poles). That spacing is the one already proven at the top of the
+		   ladder: raised→hover was 4pp, and a hovered enum item reads against a card.
+		   The card gets the same distance from the page that hover has from the card,
+		   so a card carries a plane on its own rather than leaning on the consumer's
+		   backdrop, and the three rungs stay three distinguishable steps (issue #124).
+
+		   DIRECTION, stated because the name only half means it: `raised` mixes toward
+		   the INK pole, so a card is darker than the page in light and lighter in dark.
+		   It is a tinted plate laid on the page, not a lit surface above it. Expressing
+		   "elevated is lighter" in both poles needs a mode signal, which the derivation
+		   deliberately does not have (THEMING §dials; the same wall as #83). */
 		--_qm-surface: var(--_qm-bg);
-		--_qm-surface-raised: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 2%);
-		--_qm-surface-hover: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 6%);
+		--_qm-surface-raised: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 4%);
+		--_qm-surface-hover: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 8%);
 		--_qm-border: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 17%);
 		--_qm-ink: var(--_qm-fg);
 		--_qm-ink-label: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 35%);

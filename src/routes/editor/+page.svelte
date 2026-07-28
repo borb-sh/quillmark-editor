@@ -301,6 +301,12 @@
 						diagnostics={externalDiagnostics}
 					/>
 				{/if}
+				<!-- The scroll tail: dead space under the last card so it can be scrolled
+				     to the middle of the pane instead of stopping at the bottom edge. The
+				     consumer's, like the gutter and the scroll container around it — the
+				     package draws cards, not the column they sit in (ARCHITECTURE
+				     §Playground). -->
+				<div class="scroll-tail" aria-hidden="true"></div>
 			</section>
 			<!-- A focusable role="separator" with aria-valuenow + arrow-key handling is
 			     the WAI-ARIA window-splitter pattern; the a11y lint is conservative here. -->
@@ -403,6 +409,9 @@
 		   holds the resizer, the two side tracks are the panes. */
 		align-items: start;
 		height: 72vh;
+	}
+	.scroll-tail {
+		height: 40vh;
 	}
 	.editor-pane {
 		min-width: 0;
