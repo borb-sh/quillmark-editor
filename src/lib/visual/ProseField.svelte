@@ -76,6 +76,10 @@
 
 <style>
 	.qm-prose {
+		/* Positioned for the arrival wash `setCaret` inserts (`core/bloom.ts`) — an
+		   inset child, so it covers the text without fading it or tinting the leaf's
+		   own surface. */
+		position: relative;
 		border: 1px solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
 		padding: var(--_qm-space) var(--_qm-space-2);

@@ -183,7 +183,7 @@
 		/* Recede until engaged (issue #58 §6): the sole foot add rests dim — like the
 		   card stack's last trigger — and surfaces on hover of the field or on focus. */
 		opacity: var(--_qm-opacity-idle);
-		transition: opacity 120ms ease;
+		transition: opacity var(--_qm-duration-fast) ease;
 	}
 	.qm-array:hover .qm-add-el,
 	.qm-add-el:focus-visible {

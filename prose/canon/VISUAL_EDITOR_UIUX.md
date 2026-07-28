@@ -140,6 +140,25 @@ the editor; a preview click surfaces a `ContentHit` the consumer may hand to
 Neither surface imports the other; the bridge and the editor|preview split shell
 live at the consumer layer (the playground wires both).
 
+**Each direction shows where it landed, and neither leaves a mark.** A hop between
+the panes is an event, so it is marked by an accent wash that blooms and decays to
+nothing — resting ink on either side would outlive the hop that caused it, and on
+the preview it would sit on the surface the user is proofing (PREVIEW §Overlay,
+SURFACES §Motion). The two sides differ in exactly one way, because their inputs do:
+
+- **Editor → preview** is a CONTINUOUS signal — `onCaretMove` fires per keystroke —
+  so the preview blooms only on a change of address. Marking the field being typed
+  into is noise, and the recompile already repaints the changed text 120ms later:
+  the edit is its own highlight. The bloom earns its keep when a field is engaged
+  *without* typing — orienting, tabbing, clicking.
+- **Preview → editor** is a DISCRETE act — one click, one `setCaret` — so the
+  landing leaf blooms every time, unguarded. Its commonest target is the leaf
+  already focused, where placing a caret changes nothing on screen, or one
+  off-screen, where the browser's focus-scroll moves the page and leaves the caret
+  to be found. A border flash would answer neither: `ProseField` already tints its
+  hairline to `--_qm-accent` on `:focus-within`, so in the common case the border it
+  would flash to is the colour it already is.
+
 ## Source view
 
 Debug-only, per [ARCHITECTURE.md](ARCHITECTURE.md) — not an editable dual mode. The

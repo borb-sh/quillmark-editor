@@ -205,7 +205,7 @@
 
 			<!-- Group accordion (issue #60): each `ui.group` is a collapsible section,
 		     one open at a time. The header toggles; the panel slides via a
-		     0fr↔1fr grid row (200ms); an open section colors its chevron and left
+		     0fr↔1fr grid row (the `slow` duration rung); an open section colors its chevron and left
 		     rule to the active hue. -->
 			{#each grouped as section (section.group)}
 				{@const isOpen = expanded === section.group}
@@ -454,8 +454,8 @@
 	.qm-group-header :global(.qm-group-chevron) {
 		flex-shrink: 0;
 		transition:
-			transform 200ms ease,
-			color 200ms ease;
+			transform var(--_qm-duration-slow) ease,
+			color var(--_qm-duration-slow) ease;
 	}
 	.qm-group.qm-open .qm-group-header {
 		color: var(--_qm-accent);
@@ -468,7 +468,7 @@
 	.qm-group-panel {
 		display: grid;
 		grid-template-rows: 0fr;
-		transition: grid-template-rows 200ms ease;
+		transition: grid-template-rows var(--_qm-duration-slow) ease;
 	}
 	.qm-group.qm-open .qm-group-panel {
 		grid-template-rows: 1fr;
@@ -482,8 +482,8 @@
 		padding: var(--_qm-space-2) 0 0 0;
 		border-left: 2px solid transparent;
 		transition:
-			padding-left 200ms ease,
-			border-color 200ms ease;
+			padding-left var(--_qm-duration-slow) ease,
+			border-color var(--_qm-duration-slow) ease;
 	}
 	.qm-group.qm-open .qm-group-panel-inner {
 		padding-left: var(--_qm-space-3);

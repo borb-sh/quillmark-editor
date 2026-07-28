@@ -23,6 +23,7 @@
 -->
 <script lang="ts">
 	import { isQuillmarkError, MAIN_CARD_ADDR } from '../core/index.js';
+	import { bloomInside } from '../core/bloom.js';
 	import type {
 		Document,
 		Quill,
@@ -141,6 +142,9 @@
 	}
 
 	// ── Leaf registry (setCaret target lookup + the 4b active-leaf seam) ────────
+	// `rootEl` scopes the leaf-key lookup `setCaret` uses to bloom its landing — the
+	// registry hands back a controller, not the DOM the wash goes over.
+	let rootEl: HTMLDivElement | undefined = $state();
 	const leaves = new Map<string, FieldController>();
 	function register(key: string, controller: FieldController): void {
 		leaves.set(key, controller);
@@ -463,6 +467,13 @@
 		// the backend did not report it, treat as exact) places the caret.
 		if (hit.granularity === 'segment') leaf.focus();
 		else leaf.setCaret(hit.pos);
+		// The arrival cue. Unconditional, unlike the preview side's change-guarded
+		// bloom: a preview click is one discrete act, and its commonest target is the
+		// leaf ALREADY focused — where landing a caret changes nothing on screen — or
+		// one off-screen, where the browser's focus-scroll moves the page and leaves
+		// the caret to be hunted for in a long form.
+		const host = rootEl?.querySelector<HTMLElement>(`[data-leaf-key="${CSS.escape(key)}"]`);
+		if (host) bloomInside(host);
 	}
 	/** The active leaf's controller — the 4b formatting-popover observation seam. */
 	export function getActiveLeaf(): FieldController | undefined {
@@ -482,7 +493,7 @@
 	}
 </script>
 
-<div class="qm-editor {className ?? ''}" {style} data-qm-root>
+<div bind:this={rootEl} class="qm-editor {className ?? ''}" {style} data-qm-root>
 	<Card
 		card={model.main}
 		{doc}
@@ -599,7 +610,7 @@
 		   label — exactly one entry point stays visible. Opacity (not display) so the
 		   pill reserves its height and the row does not jump on reveal. */
 		opacity: 0;
-		transition: opacity 120ms ease;
+		transition: opacity var(--_qm-duration-fast) ease;
 	}
 	.qm-add-card:hover .qm-add-btn,
 	.qm-add-btn:focus-visible {

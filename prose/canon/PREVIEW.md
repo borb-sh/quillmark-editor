@@ -49,9 +49,9 @@ geometry.
   feeds back into layout. When `PaintResult.clamped` caps density on an oversized
   page, V1 honors it silently.
 - **Overlay** — field boxes (`session.fieldBoxes`) positioned as CSS `%`
-  (Y-flipped from PDF-pt). Drawn by default — active-field ring, click targets —
-  themeable via CSS vars, opt-out. `field` is not unique (a field split across
-  pages or shown in header + footer surfaces several boxes); group by `field`.
+  (Y-flipped from PDF-pt). Built by default, opt-out; **carrying no ink at rest**.
+  `field` is not unique (a field split across pages or shown in header + footer
+  surfaces several boxes); group by `field`, and a field's boxes bloom in step.
 - **Bridge** — clicks resolve to a content position and surface as a hook;
   commands scroll/focus a field.
 
@@ -60,6 +60,39 @@ content lands — the field's canonical `DocPath` address (`main.subject`,
 `cards.<kind>[2].name`, cards by absolute document index) mapped to on-page
 geometry. `fieldBoxes(field)` unions a field's segment rects into one (striped)
 box per page.
+
+## Overlay
+
+**The preview draws nothing on the page at rest.** It is the surface a user proofs
+against — its claim is *this is the output* — so any ink the overlay leaves is ink
+the reader has to discount. That rules out a resting hairline, and it rules out a
+resting wash more strongly: a hairline becomes a filled area over `main.body`,
+present during the activity that dominates the session. There is no alpha band that
+is both legible at pane scale and non-tinting, so the answer is not a fainter resting
+state but no resting state.
+
+What the boxes are for, then, is geometry and one event:
+
+- **Geometry.** The bridge scrolls a field by its first box; the e2e locates ink by
+  the rect. This never needed to be visible.
+- **The correlation bloom.** On a change of active address the field's boxes wash to
+  `--_qm-accent-wash` and decay to zero over `--_qm-duration-linger`. A field's boxes
+  share one start time, so a two-box `main.subject` blooms in step instead of
+  shimmering.
+
+Two consequences worth stating, because both are easy to reintroduce:
+
+- **A rebuilt box RESUMES its bloom, never restarts it.** `refresh` re-creates every
+  box, and the playground recompiles 120ms after each keystroke burst — a CSS
+  animation on a fresh node would re-bloom continuously while the user writes. The
+  bloom carries its start time, so a rebuilt node picks up at the offset the old one
+  reached (`core/bloom.ts`).
+- **Discoverability is not the overlay's job any more.** The idle hairline was the
+  only hint that preview text is clickable, and it is gone. The click target is the
+  text itself, which is what a reader would try first; touch had no hover affordance
+  to lose either way. If this proves too quiet, the reserve answer is an off-paper
+  mark in the pane margin beside the page — the only form that can rest without
+  contaminating the proof.
 
 ## Click bridge
 
