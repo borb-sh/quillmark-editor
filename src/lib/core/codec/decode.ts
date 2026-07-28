@@ -12,7 +12,7 @@ import type { Content, ContentContainer, ContentLine, ContentMark } from '@quill
 import { ISLAND_SLOT } from './islands.js';
 import { markKey, pmMarkFromContent } from './marks.js';
 import { isInlineSchema } from './schema.js';
-import { isAnchorMark } from '../index.js';
+import { isAnchorMark, isCodeLine, isHeadingLine, isListItemContainer } from '../index.js';
 
 /** Code points of `s` (USV units) — the iteration granularity the content speaks. */
 export function codePoints(s: string): string[] {
@@ -127,72 +127,66 @@ function groupBlocks(
 			continue;
 		}
 		const here = path[depth];
-		// An explicit switch, mirroring `encode.ts`'s: `ContentContainer` is a tagged
-		// union, so a third variant is additive upstream. An `else`-is-a-list default
-		// would decode one SILENTLY as a list; the default below degrades visibly.
-		switch (here.container) {
-			case 'quote': {
-				let j = i + 1;
-				while (j < leaves.length && atDepth(leaves[j], depth)?.container === 'quote') j++;
-				out.push(
-					schema.nodes.blockquote.create(
+		// `ContentContainer` is an OPEN set (0.98): a bare `here.container === 'x'`
+		// never narrows, so the two arms this schema builds are claimed by the
+		// boundary's guard / literal check and everything else falls to the inert
+		// wrapper. There is no silent-degrade branch left to get wrong.
+		if (isListItemContainer(here)) {
+			// Gather the maximal run of sibling `list_item` leaves at this depth
+			// (same ordered/start), then split it into items by `ordinal`.
+			const { ordered, start } = here;
+			let j = i + 1;
+			let prevOrd = here.ordinal;
+			while (j < leaves.length) {
+				const c = atDepth(leaves[j], depth);
+				if (!c || !isListItemContainer(c) || c.ordered !== ordered || c.start !== start) break;
+				// An ordinal reset is an ADJACENT SIBLING list (content preserves the
+				// shape) — merging it here would re-encode `[0,1,0]` as `[0,1,2]`,
+				// breaking the decode round-trip on the first edit.
+				if (c.ordinal < prevOrd) break;
+				prevOrd = c.ordinal;
+				j++;
+			}
+			const run = leaves.slice(i, j);
+			const items: PMNode[] = [];
+			let k = 0;
+			while (k < run.length) {
+				const ord = ordinalAt(run[k], depth);
+				let l = k + 1;
+				while (l < run.length && ordinalAt(run[l], depth) === ord) l++;
+				items.push(
+					schema.nodes.list_item.create(
 						null,
-						groupBlocks(schema, leaves.slice(i, j), depth + 1, marks, cursor)
+						groupBlocks(schema, run.slice(k, l), depth + 1, marks, cursor)
 					)
 				);
-				i = j;
-				break;
+				k = l;
 			}
-			case 'list_item': {
-				// Gather the maximal run of sibling `list_item` leaves at this depth
-				// (same ordered/start), then split it into items by `ordinal`.
-				const ordered = here.ordered;
-				const start = here.start;
-				let j = i + 1;
-				let prevOrd = here.ordinal;
-				while (j < leaves.length) {
-					const c = atDepth(leaves[j], depth);
-					if (!c || c.container !== 'list_item' || c.ordered !== ordered || c.start !== start)
-						break;
-					// An ordinal reset is an ADJACENT SIBLING list (content preserves the
-					// shape) — merging it here would re-encode `[0,1,0]` as `[0,1,2]`,
-					// breaking the decode round-trip on the first edit.
-					if (c.ordinal < prevOrd) break;
-					prevOrd = c.ordinal;
-					j++;
-				}
-				const run = leaves.slice(i, j);
-				const items: PMNode[] = [];
-				let k = 0;
-				while (k < run.length) {
-					const ord = (atDepth(run[k], depth) as { ordinal: number }).ordinal;
-					let l = k + 1;
-					while (l < run.length && (atDepth(run[l], depth) as { ordinal: number }).ordinal === ord)
-						l++;
-					items.push(
-						schema.nodes.list_item.create(
-							null,
-							groupBlocks(schema, run.slice(k, l), depth + 1, marks, cursor)
-						)
-					);
-					k = l;
-				}
-				const listType = ordered ? schema.nodes.ordered_list : schema.nodes.bullet_list;
-				out.push(listType.create(ordered ? { start } : null, items));
-				i = j;
-				break;
-			}
-			default: {
-				// An unknown container variant: emit the leaf as a bare block and warn.
-				// Dropping the nesting audibly beats fabricating a list.
-				console.warn(
-					'[quillmark/editor] unknown ContentContainer; decoding without it:',
-					(here as { container: string }).container
-				);
-				out.push(makeLeaf(schema, leaves[i], marks, cursor));
-				i++;
-			}
+			const listType = ordered ? schema.nodes.ordered_list : schema.nodes.bullet_list;
+			out.push(listType.create(ordered ? { start } : null, items));
+			i = j;
+			continue;
 		}
+		// quote and every unknown container share one shape — a wrapper over the run
+		// of leaves carrying the IDENTICAL container here (identity by `containerKey`,
+		// so two adjacent unknowns differing only in `attrs` stay two wrappers).
+		const key = containerKey(here);
+		let j = i + 1;
+		while (j < leaves.length) {
+			const c = atDepth(leaves[j], depth);
+			if (!c || containerKey(c) !== key) break;
+			j++;
+		}
+		const inner = groupBlocks(schema, leaves.slice(i, j), depth + 1, marks, cursor);
+		out.push(
+			here.container === 'quote'
+				? schema.nodes.blockquote.create(null, inner)
+				: schema.nodes.unknown_container.create(
+						{ container: here.container, attrs: 'attrs' in here ? here.attrs : null },
+						inner
+					)
+		);
+		i = j;
 	}
 	return out;
 }
@@ -201,29 +195,51 @@ function atDepth(leaf: Leaf, depth: number): ContentContainer | undefined {
 	return leaf.containers[depth];
 }
 
-/** A single leaf block node (para/heading/code/rule/island) from its segments. */
+/** The `ordinal` of a leaf's `list_item` at `depth` — only called inside a run the
+ * guard has already established, so a miss is unreachable. */
+function ordinalAt(leaf: Leaf, depth: number): number {
+	const c = atDepth(leaf, depth);
+	return c && isListItemContainer(c) ? c.ordinal : -1;
+}
+
+/** Identity of a container for run gathering: its name plus its payload. Every
+ * payload-carrying arm but `list_item` (which has its own run rule) keys here. */
+function containerKey(c: ContentContainer): string {
+	return 'attrs' in c ? `${c.container} ${JSON.stringify(c.attrs)}` : c.container;
+}
+
+/** A single leaf block node (para/heading/code/rule/island, or an unknown kind
+ * carried on a paragraph) from its segments. `kind` is an OPEN set (0.98), so the
+ * two payload-carrying arms read through the boundary's guards; the payload-free
+ * arms compare literally, and anything left is unknown. */
 function makeLeaf(schema: Schema, leaf: Leaf, marks: ContentMark[], cursor: IslandCursor): PMNode {
-	const kind = leaf.line.kind;
-	if (kind === 'rule') return schema.nodes.horizontal_rule.create();
-	if (kind === 'island') {
+	const line = leaf.line;
+	if (line.kind === 'rule') return schema.nodes.horizontal_rule.create();
+	if (line.kind === 'island') {
 		return schema.nodes.island_block.create(islandAttrs(cursor));
 	}
-	if (kind === 'code') {
+	if (isCodeLine(line)) {
 		// One code_block: the segments' texts joined by literal `\n`, no marks.
 		const text = leaf.segments.map((s) => s.text).join('\n');
 		const content = text.length ? [schema.text(text)] : [];
-		return schema.nodes.code_block.create({ lang: leaf.line.lang ?? null }, content);
+		return schema.nodes.code_block.create({ lang: line.lang ?? null }, content);
 	}
-	// para / heading: inline content, `hard_break` between continued segments.
+	// para / heading / unknown: inline content, `hard_break` between continued segments.
 	const inline: PMNode[] = [];
 	leaf.segments.forEach((seg, idx) => {
 		if (idx > 0) inline.push(schema.nodes.hard_break.create());
 		inline.push(...buildInline(schema, seg.text, seg.startUSV, marks, cursor, false));
 	});
-	if (kind === 'heading') {
-		return schema.nodes.heading.create({ level: leaf.line.level ?? 1 }, inline);
+	if (isHeadingLine(line)) {
+		return schema.nodes.heading.create({ level: line.level }, inline);
 	}
-	return schema.nodes.paragraph.create(null, inline);
+	// An unknown kind renders as a paragraph AND rides on it, so it re-encodes
+	// verbatim rather than flattening to `para` on the field's first edit.
+	const unknown =
+		line.kind === 'para'
+			? null
+			: { kind: line.kind, attrs: 'attrs' in line ? line.attrs : null };
+	return schema.nodes.paragraph.create({ unknown }, inline);
 }
 
 /** Consume the next island entry as PM node attrs (text-order matched to slots). */

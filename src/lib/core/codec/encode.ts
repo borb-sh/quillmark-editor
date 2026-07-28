@@ -112,11 +112,17 @@ function scanBlock(acc: Acc, node: PMNode, nodePos: number, containers: ContentC
 	const name = node.type.name;
 	const contentStart = nodePos + 1;
 	switch (name) {
-		case 'paragraph':
-			beginLine(acc, contentStart, containers, { kind: 'para' });
-			scanInline(acc, node, contentStart, containers, { kind: 'para' });
+		case 'paragraph': {
+			// `para`, or the unknown kind the paragraph carries (schema.ts) re-emitted
+			// verbatim — one value, read once, so the line and its hard-break
+			// continuations cannot disagree.
+			const u = node.attrs.unknown as { kind: string; attrs: unknown } | null;
+			const kind: KindPart = u ? { kind: u.kind, attrs: u.attrs } : { kind: 'para' };
+			beginLine(acc, contentStart, containers, kind);
+			scanInline(acc, node, contentStart, containers, kind);
 			acc.lastContentEndPm = contentStart + node.content.size;
 			break;
+		}
 		case 'heading':
 			beginLine(acc, contentStart, containers, {
 				kind: 'heading',
@@ -167,6 +173,12 @@ function scanBlock(acc: Acc, node: PMNode, nodePos: number, containers: ContentC
 		case 'blockquote':
 			scanBlocks(acc, node, contentStart, [...containers, { container: 'quote' }]);
 			break;
+		case 'unknown_container':
+			scanBlocks(acc, node, contentStart, [
+				...containers,
+				{ container: node.attrs.container as string, attrs: node.attrs.attrs }
+			]);
+			break;
 		case 'bullet_list':
 		case 'ordered_list': {
 			const ordered = name === 'ordered_list';
@@ -207,7 +219,7 @@ function beginLine(
 		});
 		appendText(acc, '\n');
 	}
-	acc.lines.push({ containers, ...kind } as ContentLine);
+	acc.lines.push({ containers, ...kind });
 }
 
 /** Walk a textblock's inline content; emit text/atom/hard-break runs + marks. */
@@ -226,7 +238,7 @@ function scanInline(
 			// A within-block hard break: the content `\n` (a `continues` line).
 			acc.runs.push({ kind: 'nl', pmStart: pm, pmEnd: pm + 1, usvStart: acc.usvEnd });
 			appendText(acc, '\n');
-			acc.lines.push({ containers, continues: true, ...kind } as ContentLine);
+			acc.lines.push({ containers, continues: true, ...kind });
 		} else if (child.type.name === 'island_inline') {
 			acc.runs.push({ kind: 'atom', pmStart: pm, usvStart: acc.usvEnd });
 			appendText(acc, ISLAND_SLOT);
@@ -253,12 +265,16 @@ function emitText(acc: Acc, s: string, pmStart: number, marks: readonly Mark[]):
 	}
 }
 
+/** The line-kind half a scanned block contributes — `ContentLineKind` as this
+ * encoder emits it, the unknown arm included (a paragraph carrying one re-emits it
+ * verbatim rather than flattening to `para`). */
 type KindPart =
 	| { kind: 'para' }
 	| { kind: 'heading'; level: number }
 	| { kind: 'code'; lang?: string }
 	| { kind: 'island' }
-	| { kind: 'rule' };
+	| { kind: 'rule' }
+	| { kind: string; attrs: unknown };
 
 /** Merge adjacent/overlapping same-descriptor marks into maximal ranges. */
 function mergeMarks(raw: ContentMark[]): ContentMark[] {
@@ -354,36 +370,34 @@ function diffLines(oldRt: Content, newRt: Content): LineOp[] {
 	return ops;
 }
 
+/** A line minus its `containers` / `continues` envelope — exactly the
+ * `ContentLineKind` half, and exactly `setKind`'s payload. Lifting it whole is what
+ * keeps this arm-agnostic: `kind` is an OPEN set, so an arm-by-arm switch would
+ * have to guess at the unknown arm's payload and would drift on every arm upstream
+ * adds. */
+function kindPart(l: ContentLine): Record<string, unknown> {
+	const { containers: _containers, continues: _continues, ...kind } = l;
+	return kind;
+}
+
 function kindOp(line: number, l: ContentLine): LineOp {
-	switch (l.kind) {
-		case 'heading':
-			return { op: 'setKind', line, kind: 'heading', level: l.level };
-		case 'code':
-			return l.lang != null
-				? { op: 'setKind', line, kind: 'code', lang: l.lang }
-				: { op: 'setKind', line, kind: 'code' };
-		case 'island':
-			return { op: 'setKind', line, kind: 'island' };
-		case 'rule':
-			return { op: 'setKind', line, kind: 'rule' };
-		default:
-			return { op: 'setKind', line, kind: 'para' };
-	}
+	return { op: 'setKind', line, ...kindPart(l) } as LineOp;
 }
 
 function lineMetaEqual(a: ContentLine[], b: ContentLine[]): boolean {
 	if (a.length !== b.length) return false;
 	for (let i = 0; i < a.length; i++) {
 		if (!!a[i].continues !== !!b[i].continues) return false;
-		if (JSON.stringify(kindKey(a[i])) !== JSON.stringify(kindKey(b[i]))) return false;
+		if (kindKey(a[i]) !== kindKey(b[i])) return false;
 		if (JSON.stringify(a[i].containers) !== JSON.stringify(b[i].containers)) return false;
 	}
 	return true;
 }
-function kindKey(l: ContentLine): unknown {
-	if (l.kind === 'heading') return ['heading', l.level];
-	if (l.kind === 'code') return ['code', l.lang ?? null];
-	return [l.kind];
+
+/** A line kind's comparison key — key-order-insensitive, because the two sides come
+ * from different producers (a WASM read and this scan). */
+function kindKey(l: ContentLine): string {
+	return JSON.stringify(Object.entries(kindPart(l)).sort(([x], [y]) => (x < y ? -1 : 1)));
 }
 
 /**
