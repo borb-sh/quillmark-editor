@@ -380,4 +380,32 @@ test.describe('visual editor', () => {
 		await expect(el.locator('ul > li')).toHaveCount(2);
 		await expect(el.locator('p:not(li p)')).toHaveCount(1);
 	});
+
+	test('(o) code-block keys take literal indentation (issue #84)', async ({ page }) => {
+		// Same reason as the list keys: only the browser proves Tab is DELIVERED to
+		// the leaf — a swallowed key that still moves focus passes every unit test.
+		const el = pm(page, 'prose-main-body');
+		await el.click();
+		await page.keyboard.press('ControlOrMeta+a');
+		await page.keyboard.type('```'); // the fence input rule
+		await expect(el.locator('pre')).toHaveCount(1);
+		await page.keyboard.type('one');
+		// Enter stays INSIDE the block — a second block would be the base keymap's split.
+		await page.keyboard.press('Enter');
+		await expect(el.locator('pre')).toHaveCount(1);
+		// Each step polls the dump before the next press: the caret rides on a
+		// committed state, and the assertion is the Document rather than the DOM.
+		await expect.poll(async () => (await readDump(page)).body).toBe('one\n');
+
+		// Tab indents rather than leaving the leaf — the focus check is the point.
+		await page.keyboard.press('Tab');
+		await expect(el).toBeFocused();
+		await expect.poll(async () => (await readDump(page)).body).toBe('one\n  ');
+		await page.keyboard.type('two');
+		await expect.poll(async () => (await readDump(page)).body).toBe('one\n  two');
+
+		// Shift-Tab survives the modifier and takes the indent back.
+		await page.keyboard.press('Shift+Tab');
+		await expect.poll(async () => (await readDump(page)).body).toBe('one\ntwo');
+	});
 });

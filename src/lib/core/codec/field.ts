@@ -23,7 +23,7 @@ import { lower, pmToContent, insertReintroducesIslandSlot } from './encode.js';
 import { anchorsFromContent, type AnchorPos } from './marks.js';
 import { createReconciler, type Reconciler } from './reconcile.js';
 import { inputRulesPlugin } from './inputrules.js';
-import { listKeymap } from './lists.js';
+import { bodyKeymap } from './keymap.js';
 import { blockSchema, inlineSchema } from './schema.js';
 
 /** Options for {@link createField}. */
@@ -363,13 +363,14 @@ function placeholderPlugin(text: string): Plugin {
 }
 
 /**
- * The field's keymap: history, mark toggles, and the list structure keys; Enter
+ * The field's keymap: history, mark toggles, and the body's structural keys; Enter
  * suppressed inline.
  *
  * Tab forks on the leaf's ROLE, not on the caret's position. An inline/plaintext
  * leaf is a form field: Tab stays unbound, so the deferred structural keymap owns
- * field navigation outright. A block-schema body is a document: Tab is structural
- * (`lists.ts`). One key never means two things within one surface.
+ * field navigation outright. A block-schema body is a document: Tab is structural,
+ * a chain each nested surface prepends to (`keymap.ts`). One key never means two
+ * things within one surface.
  */
 function editorKeymap(
 	schema: Schema,
@@ -390,8 +391,8 @@ function editorKeymap(
 		// One textblock only: swallow Enter so no second block is attempted.
 		map['Enter'] = () => true;
 	} else {
-		// Each binding falls through to `baseKeymap` when no list is in play.
-		Object.assign(map, listKeymap(schema));
+		// Each binding falls through to `baseKeymap` when no link claims the key.
+		Object.assign(map, bodyKeymap(schema));
 	}
 	return map;
 }
