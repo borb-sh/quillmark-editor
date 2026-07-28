@@ -83,10 +83,9 @@
 <style>
 	/* The scalar control recipe, declaration for declaration — same padding rung, same
 	   hairline, same size rung — so an inline leaf and the `.qm-input` beside it agree
-	   on height BY CONSTRUCTION rather than by two tuned floors (issue #120). The
-	   paragraph box the height used to come from is reset in `core/codec/prose.css`,
-	   which is also why there is no `min-height` here: one line of prose in this box is
-	   one line of text in that one. */
+	   on height BY CONSTRUCTION rather than by two tuned floors (issue #120). No
+	   `min-height`: `core/codec/prose.css` resets the paragraph box, so one line of
+	   prose in this box measures one line of text in that one. */
 	.qm-prose {
 		border: 1px solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);

@@ -584,12 +584,12 @@
 		display: flex;
 		justify-content: center;
 	}
-	/* Unboxed, like every button (SURFACES §"The shared recipe"). The dashed edge it
-	   used to carry is the PLACEHOLDER idiom — "nothing is here yet" — which on a
-	   button reads as disabled or as a drop target; the one place it stays honest is
-	   the un-schemable card (`Card.svelte`), which is a state, not a control. What
-	   arrives on hover is a filled pill: at rest this trigger is invisible, so a hover
-	   that only shifted its ink would have nothing to shift. */
+	/* Unboxed, like every button (SURFACES §"The shared recipe"), and not dashed: a
+	   dashed edge is the PLACEHOLDER idiom — "nothing is here yet" — which on a button
+	   reads as disabled or as a drop target. It stays honest in one place, the
+	   un-schemable card (`Card.svelte`), which is a state rather than a control. Hover
+	   fills a pill: this trigger is invisible at rest, so a hover that only shifted
+	   its ink would have nothing to shift. */
 	.qm-add-btn {
 		border: none;
 		background: transparent;

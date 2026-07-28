@@ -441,11 +441,9 @@
 		display: flex;
 		flex-direction: column;
 	}
-	/* Symmetric padding, so the label is equidistant from the rule above it and the
-	   one it draws — it used to sit 4px over its own hairline and 21px under the
-	   previous one, a 5:1 imbalance that read as glued down and floating up. The box
-	   is the full row and clears WCAG 2.5.8; it measured 17px, 46% of its own pitch,
-	   with the remaining 20px dead and ambiguous about which section it belonged to. */
+	/* Symmetric padding: the label is equidistant from the rule above it and the one
+	   it draws, and the box is the whole row — no dead strip outside it, ambiguous
+	   about which section it belongs to. WCAG 2.5.8's 24x24 is the floor. */
 	.qm-group-header {
 		display: flex;
 		align-items: center;
@@ -460,10 +458,10 @@
 		text-align: left;
 		transition: color 120ms ease;
 	}
-	/* Sentence case at the field-label rung. Uppercase cost twice on what is
-	   structurally a heading: it removes the word shape that makes a column of
-	   section names scannable, and it inflates apparent width, so a long label
-	   crowds sooner. The rung is reused rather than a fifth size minted. */
+	/* Sentence case at the field-label rung — a section name is structurally a
+	   heading, and uppercase costs it twice: the word shape a column of them is
+	   scanned by, and apparent width, so a long label crowds sooner. The rung is
+	   reused rather than a fifth size minted. */
 	.qm-group-label {
 		font-size: var(--_qm-text-label);
 		font-weight: var(--_qm-weight-soft);
@@ -499,10 +497,9 @@
 		gap: var(--_qm-space-2);
 		min-height: 0;
 		overflow: hidden;
-		/* Zero when closed: a `0fr` track collapses the CONTENT, not the padding, so a
-		   top inset here left 8px standing under every closed header — which is the
-		   same dead space the inter-group gap was, and would have re-broken the
-		   symmetry the header's padding just bought. It arrives with the panel. */
+		/* Zero when closed, so the inset arrives with the panel: a `0fr` track collapses
+		   the CONTENT, not the padding, and a top inset declared here stands under a
+		   closed header as dead space the header's symmetric padding cannot absorb. */
 		padding: 0;
 		border-left: 2px solid transparent;
 		transition:

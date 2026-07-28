@@ -54,10 +54,10 @@ instead of reading the rung is the drift this prevents.
 button — reorder, delete, array remove, both add affordances, the tips foot — is
 ink on the card: no resting border, no resting fill, `--_qm-surface-hover` arriving
 on hover, `--_qm-radius-inner` (a pill on the add triggers, which fill rather than
-tint). The distinction the one-recipe-for-everything collapse loses is worth
-stating: *a field is a box because you type into it; a button is not a box because
-you press it.* Destructive ink (`--_qm-danger`) stays — that is meaning, not
-chrome. Every button clears WCAG 2.5.8's 24×24, expressed on the space scale.
+tint). The distinction one recipe for both would lose: *a field is a box because you
+type into it; a button is not a box because you press it.* Destructive ink
+(`--_qm-danger`) stays — that is meaning, not chrome. Every button clears WCAG
+2.5.8's 24×24, expressed on the space scale.
 
 **An inline prose leaf is inside that recipe, not beside it.** A field constrained
 to one paragraph is a control in a row of controls, so it draws the same five
@@ -92,9 +92,9 @@ collapse to the four; an in-between size is the drift this prevents.
 
 A control **reads** the rung; it does not inherit a size. Inheriting is the drift
 that hides from the gate — no literal is minted, so nothing fails, and the control
-silently takes the host page's body size instead of a rung. That put typed text 29%
-above the label over it and made control height a property of the consumer's page
-rather than of the package.
+silently takes the host page's body size. That inverts the ladder against the label
+over it and makes control height a property of the consumer's page rather than of
+the package.
 
 **The scale in code.** All three axes are public dials deriving a closed private
 scale ([`THEMING.md`](../../THEMING.md)) — geometry (`--qm-radius`, `--qm-space`),

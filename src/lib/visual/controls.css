@@ -60,8 +60,8 @@
 	   base colour here would flatten that distinction rather than share a recipe.
 
 	   The floor is WCAG 2.5.8's 24x24, stated on the space scale rather than as a
-	   literal — a 14px glyph on its padding alone measured 24x20, and the two
-	   destructive callers were both under it. */
+	   literal. A 14px glyph on its padding alone does not reach it, and two of the
+	   callers are destructive. */
 	.qm-icon-btn {
 		display: inline-flex;
 		align-items: center;

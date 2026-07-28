@@ -6,8 +6,8 @@
 
    What it does NOT carry is a block reset, so without the rules below every leaf
    inherits the UA `p { margin: 1em 0 }` — 32px of margin in a box drawn to hold one
-   line, which is what made an inline richtext field 2.1× the input beside it
-   (issue #120). The reset lives here rather than per component because every leaf in
+   line, which is enough on its own to make an inline richtext field twice the height
+   of the input beside it. The reset lives here rather than per component because every leaf in
    the package mounts through the codec: a field, the body, an array element, and the
    source view all pick it up without restating it, and a leaf that carries the
    control recipe (`visual/ProseField.svelte`) can then match `.qm-input` by
