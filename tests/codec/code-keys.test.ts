@@ -152,10 +152,11 @@ describe('Enter takes a newline', () => {
 	});
 });
 
-// The code block owns these keys ahead of the list link, and the shapes below are
-// what the list link produced before it did: `list_item > code_block` is reachable
-// from ordinary imported markdown, and Tab there nested the ITEM, Shift-Tab lifted
-// the block clean out of the list, Enter split the item in two.
+// Precedence is load-bearing rather than cosmetic: `list_item > code_block` is
+// reachable from ordinary imported markdown, and the list link's own meanings there
+// are all wrong — Tab nests the ITEM, Shift-Tab lifts the block clean out of the
+// list, Enter splits the item in two. The code link ahead of it is what these
+// shapes guard.
 describe('inside a list item, the code link wins', () => {
 	const IN_ITEM = '- item\n\n    ```\n    code\n    ```';
 

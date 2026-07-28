@@ -27,9 +27,9 @@ export async function replaceProse(page: Page, leafTestid: string, text: string)
  * the gesture returning is NOT the popover having settled. What retries here is
  * the SELECTION, not just the assertion: a bare `toBeVisible()` already polls,
  * and polling only covers a late frame — it cannot recover a gesture that
- * settled on one of those empty states, which raises nothing at all. Issue #90:
- * asserting bare passes or fails by how warm the browser is, so which tests
- * failed varied with what ran before them.
+ * settled on one of those empty states, which raises nothing at all. A bare
+ * assertion passes or fails by how warm the browser is, making the tier's
+ * failures a function of what ran before them (issue #90).
  */
 export async function selectAndAwaitPopover(page: Page, leafTestid: string): Promise<void> {
 	await expect(async () => {
