@@ -12,27 +12,26 @@ version coupling to `@quillmark/wasm` is recorded; when a surface below moves, t
 editor's dependency moves with it. `src/lib/core/` re-exports the whole surface
 verbatim — the one door the rest of the package crosses to reach the WASM package.
 
-**V1 builds on `@quillmark/wasm` 0.97.0.** Every verb in the table below is stable
-as of that release. The settled ground the editor targets: `store*` verbs for
-verbatim writes, one unified `Addr` (`{card?, field?}`) collapsing the old
-`*CardField` pairs, the schema-bound `writer`/`reader` doors (`quill.writer(doc)` /
-`quill.reader(doc)`), a card-first `insertCard(card, at?)`, and the `datetime` split
-into `date` and `datetime`. 0.96 folds in its contract rework: the canonical
-`DocPath` address — one grammar for `Diagnostic.path`, `ContentHit.field`, and
-`FieldRegion.field` (`main.<field>`, `cards.<kind>[<i>].<field>`, cards by absolute
-document index), routed with `parseDocPath` / `formatDocPath` — plus the
-`quill.resolve(doc)` value view, `code`-bearing mutator diagnostics, and — closing
-the two seams this ledger reported — a typed `ContentIsland.props` and
-`QuillCardUi.groups`. 0.97 renames the quill-free transport read `Document.get` →
-`getStored` (naming the verbatim store lane, distinct from `reader.get`) and adds
-open-set discriminant guards (`isAnchorMark` / `isLinkMark` / `isTableIsland` /
-`isImageIsland`) the codec reads off the boundary instead of re-deriving; its
-canonized anchor-id policy (caller-supplied, unique, invariant) is what lets the
+**V1 builds on `@quillmark/wasm` 0.98.0.** Every verb in the table below is stable
+as of that release. The settled ground it stands on: `store*` verbs for verbatim
+writes, one unified `Addr` (`{card?, field?}`), the schema-bound `writer`/`reader`
+doors (`quill.writer(doc)` / `quill.reader(doc)`), a card-first `insertCard(card,
+at?)`, the quill-free transport read `getStored` (distinct from `reader.get`), the
+`quill.resolve(doc)` value view, `code`-bearing mutator diagnostics, and the
+canonized anchor-id policy (caller-supplied, unique, invariant) that lets the
 editor mint anchors at a selection ([CODEC.md](CODEC.md) §Marks).
 
-Content types
-(`Content` and its parts) and their ProseMirror mapping are the editor's own work —
-[CODEC.md](CODEC.md), not here.
+**The block vocabulary is open.** `ContentLine.kind` and
+`ContentContainer.container` stand with the mark and island `type` as OPEN sets:
+a construct this build does not know round-trips opaque rather than failing the
+load. A bare discriminant check does not narrow past the residual arm, so the
+checked path is the boundary's guards — `isHeadingLine` / `isCodeLine` /
+`isListItemContainer` beside `isAnchorMark` / `isLinkMark` / `isTableIsland` /
+`isImageIsland` — which the codec reads here instead of re-deriving, and each set
+has a PM carrier so an unknown survives an edit ([CODEC.md](CODEC.md) §Open sets).
+
+Content types (`Content` and its parts) and their ProseMirror mapping are the
+editor's own work — [CODEC.md](CODEC.md), not here.
 
 Cross-repo references read `quillmark prose/canon/X.md` (a different repo; links do
 not resolve).
@@ -57,17 +56,21 @@ Consumed by: [CODEC.md](CODEC.md) (op-grained edit, positions, markdown edges),
 [PREVIEW.md](PREVIEW.md) (live session & paint), [VISUAL_EDITOR.md](VISUAL_EDITOR.md)
 (seeding, writer, structure mutators, validation).
 
+Two neighbouring surfaces the editor deliberately stays clear of: it names no
+`OutputFormat` (Preview paints; it does not emit an artifact) and routes
+diagnostics by `path`, never by a backend's error `code`.
+
 ## Stability seams
 
-At the 0.97.0 target the whole table is stable API, and the two typing gaps this
-ledger reported are closed — 0.96's contract rework (phase 4) landed both:
+At the 0.98.0 target the whole table is stable API and this ledger reports no
+open typing gap. The two it used to are closed:
 
-- **`ContentIsland.props` is now typed** — the union pins `TableProps` for `table`
+- **`ContentIsland.props` is typed** — the union pins `TableProps` for `table`
   and `ImageProps` for `image` (`TableCell` the cell shape); an island of any
   other type round-trips with opaque `props`. The codec reads the boundary type
   and dropped its hand-rolled `IslandTable*` / `IslandImage*` duplicates and shape
   guards ([CODEC.md](CODEC.md) §Islands).
-- **`QuillCardUi.groups` is now typed** — a `Record<string, QuillGroupUi>` group
+- **`QuillCardUi.groups` is typed** — a `Record<string, QuillGroupUi>` group
   registry (key order = declaration order, `title` an optional label override).
   The editor reads group order and labels off it directly, dropping the cast
   ([VISUAL_EDITOR.md](VISUAL_EDITOR.md) §Structure).
@@ -81,7 +84,7 @@ grammar, not best-effort.
 
 The session/paint surface (`Engine.open`, `LiveSession`, `PaintOptions` /
 `PaintResult` / `PageSize`, `ChangeSet`, `supportsCanvas`) is stable as of the
-pinned 0.97.0 and the editor's Preview is its first production consumer: the editor
+pinned 0.98.0 and the editor's Preview is its first production consumer: the editor
 pins the version and rides it.
 
 ## What the editor owns at this boundary
@@ -89,7 +92,7 @@ pins the version and rides it.
 The substrate is quillmark's; two thin slices at the seam are the editor's, and
 they live in their surface docs, not here:
 
-- **Handle lifecycle** — WASM `init` (sync; shipped 0.97.0 has no async
+- **Handle lifecycle** — WASM `init` (sync; shipped 0.98.0 has no async
   `initSync` split), who holds the `Quill` and
   `Document` handles across a session, and when they are freed. The vanilla-TS core
   owns this ([ARCHITECTURE.md](ARCHITECTURE.md) §Core vs chrome).

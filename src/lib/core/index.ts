@@ -46,11 +46,11 @@ export {
 	parseDocPath,
 	formatDocPath,
 	isQuillmarkError,
-	// Open-set discriminant guards: every one of these unions carries a residual
-	// `{ <discriminant>: string; … }` arm, so a bare `===` never narrows the
-	// payload — these are the checked narrowing the codec reads off the boundary
-	// instead of re-deriving (anchor id, link url, heading level, code lang, list
-	// shape). Marks opened in 0.97, line kinds and containers in 0.98.
+	// Open-set discriminant guards: mark `type`, line `kind`, and container name
+	// each carry a residual `{ …: string; attrs }` arm, so a bare `===` leaves the
+	// payload opaque. These are the checked narrowing the codec reads off the
+	// boundary instead of re-deriving (anchor id, link url, heading level, code
+	// lang, list shape).
 	isAnchorMark,
 	isLinkMark,
 	isHeadingLine,

@@ -61,9 +61,10 @@ Fold the flat lines into the tree: group consecutive lines by common
 `containers` prefix (a shared `[ListItem]` path is one item's paragraphs;
 `[ListItem, Quote]` a quote nested in it), and join `continues` runs into one
 block (a code fence's lines → one `code_block`; a paragraph's hard breaks → one
-paragraph with `hard_break` nodes). `LineKind` selects the block node:
-`Para` → paragraph, `Heading{level}`, `Code{lang}`, `Rule` → horizontal_rule,
-`Island` → a block island node.
+paragraph with `hard_break` nodes). The line `kind` selects the block node:
+`para` → paragraph, `heading{level}`, `code{lang}`, `rule` → horizontal_rule,
+`island` → a block island node, and anything else → a paragraph carrying the
+unknown kind (§Open sets).
 
 Marks apply over their `[start, end)` range; PM splits inline nodes at mark
 boundaries, so free overlap of *different* formatting kinds is representable
@@ -135,9 +136,8 @@ mechanisms:
   and lowered to `anchor` mark ops. This split is what dissolves the "Peritext
   overlap vs nested marks" tension: overlap only bites where identity and
   formatting coexist, and they never share a mechanism.
-- **unknown** (`{tag, attrs}`) is the open-set escape hatch. ↔ an inert PM mark
-  that renders nothing and re-emits verbatim; it must survive a round-trip
-  untouched.
+- **unknown** (`{type, attrs}`) is neither — it is one of the four open sets, and
+  routes to its inert carrier (§Open sets).
 
 ## Islands
 
@@ -147,8 +147,37 @@ encode writes the slot char and the entry with its `id` preserved (stable
 identity, like an anchor). Known types carry a typed props shape pinned upstream
 (`@quillmark/wasm` 0.96.0): `ContentIsland.props` is `TableProps` (`{header, rows,
 aligns}`) for `table`, `ImageProps` (`{url, alt}`) for `image`; an island of any
-other type passes opaque. The open `type` arm means a discriminant check does not
-auto-narrow `props` — key off `type`, read `props` as the matching type.
+other type passes opaque (§Open sets).
+
+## Open sets — an unknown must survive an edit
+
+Four of the content's discriminants are **open**: a mark `type`, an island `type`,
+a line `kind`, and a container name. An unrecognized value is a construct some
+newer quillmark writes, not a corruption: it loads opaque, carrying its own tag
+and an `attrs` payload.
+
+Reading one is the easy half. A bare `line.kind === 'heading'` does not narrow
+(the residual `{ kind: string; attrs }` arm keeps a `string` live), so the checked
+path is the boundary's guards — `isHeadingLine` / `isCodeLine` /
+`isListItemContainer` / `isLinkMark` / `isAnchorMark` / `isTableIsland` /
+`isImageIsland` — read off `@quillmark/wasm`, never re-derived here.
+
+Writing is the half that bites. Lowering restates **every** line's metadata as
+soon as any of it changed (§Encode), so an unknown the PM tree cannot hold is
+destroyed by the first keystroke anywhere in the field — a document that opens
+intact and saves mangled. So each open set has an inert carrier that renders as
+its nearest safe neighbor and re-emits verbatim:
+
+| Open set | Renders as | Carrier |
+| --- | --- | --- |
+| mark `type` | nothing | the `unknown` mark (`{type, attrs}`), non-exclusive so distinct families share a range |
+| line `kind` | a paragraph | the paragraph's `unknown` attribute (`{kind, attrs}`) |
+| container | its children, at the enclosing level | the `unknown_container` node |
+| island `type` | the island leaf | `islandType` + opaque `props` on the node |
+
+A carrier is dropped only by an **explicit** conversion — retyping the paragraph
+to a heading, lifting out of the container — which is the one place losing it is
+what the user asked for.
 
 ## Inline mode
 

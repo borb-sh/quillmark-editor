@@ -127,10 +127,10 @@ function groupBlocks(
 			continue;
 		}
 		const here = path[depth];
-		// `ContentContainer` is an OPEN set (0.98): a bare `here.container === 'x'`
-		// never narrows, so the two arms this schema builds are claimed by the
-		// boundary's guard / literal check and everything else falls to the inert
-		// wrapper. There is no silent-degrade branch left to get wrong.
+		// `ContentContainer` is an OPEN set: a bare `here.container === 'x'` does not
+		// narrow, so the two arms this schema builds are claimed by the boundary's
+		// guard and a literal check, and everything else is an unknown the inert
+		// wrapper carries (CODEC §Open sets) — no branch degrades silently.
 		if (isListItemContainer(here)) {
 			// Gather the maximal run of sibling `list_item` leaves at this depth
 			// (same ordered/start), then split it into items by `ordinal`.
@@ -209,9 +209,9 @@ function containerKey(c: ContentContainer): string {
 }
 
 /** A single leaf block node (para/heading/code/rule/island, or an unknown kind
- * carried on a paragraph) from its segments. `kind` is an OPEN set (0.98), so the
- * two payload-carrying arms read through the boundary's guards; the payload-free
- * arms compare literally, and anything left is unknown. */
+ * carried on a paragraph) from its segments. `kind` is an OPEN set, so the two
+ * payload-carrying arms read through the boundary's guards; the payload-free arms
+ * compare literally, and anything left is unknown. */
 function makeLeaf(schema: Schema, leaf: Leaf, marks: ContentMark[], cursor: IslandCursor): PMNode {
 	const line = leaf.line;
 	if (line.kind === 'rule') return schema.nodes.horizontal_rule.create();
@@ -236,9 +236,7 @@ function makeLeaf(schema: Schema, leaf: Leaf, marks: ContentMark[], cursor: Isla
 	// An unknown kind renders as a paragraph AND rides on it, so it re-encodes
 	// verbatim rather than flattening to `para` on the field's first edit.
 	const unknown =
-		line.kind === 'para'
-			? null
-			: { kind: line.kind, attrs: 'attrs' in line ? line.attrs : null };
+		line.kind === 'para' ? null : { kind: line.kind, attrs: 'attrs' in line ? line.attrs : null };
 	return schema.nodes.paragraph.create({ unknown }, inline);
 }
 
