@@ -14,6 +14,7 @@
 	import { EditorState } from 'prosemirror-state';
 	import { EditorView } from 'prosemirror-view';
 	import { decode, pmToContent, inlineSchema, proseLeafPlugins } from '../core/codec/index.js';
+	import './controls.css';
 	import type { Content } from '../core/index.js';
 
 	interface Props {
@@ -61,16 +62,14 @@
 	});
 </script>
 
-<div bind:this={containerEl} class="qm-array-prose" data-testid={testid}></div>
+<div bind:this={containerEl} class="qm-array-prose qm-control-box" data-testid={testid}></div>
 
 <style>
+	/* `.qm-control-box` (controls.css) is the whole box, so an array of `richtext` and
+	   an array of `string` render rows of equal height (issue #120). No floor: the
+	   reset in `core/codec/prose.css` makes one line of prose measure one line. */
 	.qm-array-prose {
 		flex: 1;
-		border: 1px solid var(--_qm-border);
-		border-radius: var(--_qm-radius-inner);
-		padding: var(--_qm-space) var(--_qm-space-2);
-		background: var(--_qm-surface);
-		min-height: 1.5rem;
 	}
 	/* Caret-primary, matching ProseField: the contenteditable outline is dropped
 	   and the active element is cued by the wrapper border tint below, not a ring

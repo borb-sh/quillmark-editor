@@ -76,7 +76,7 @@
 		}}
 	>
 		<Select.Trigger
-			class="qm-select qm-focus-ring"
+			class="qm-select qm-control-box qm-focus-ring"
 			aria-label={label}
 			data-testid={testid}
 			data-ghosted={unset ? '' : undefined}
@@ -117,6 +117,9 @@
 <style>
 	/* A primitive renders its OWN element, which a scoped selector cannot reach —
 	   styled through the wrapper with `:global`. */
+	/* The box is `.qm-control-box` (controls.css), carried on the primitive's own
+	   element the same way `.qm-focus-ring` is; only what a TRIGGER adds over a typed
+	   value's box is here. */
 	.qm-select-wrap :global(.qm-select) {
 		display: flex;
 		align-items: center;
@@ -124,13 +127,8 @@
 		gap: var(--_qm-space);
 		width: 100%;
 		box-sizing: border-box;
-		padding: var(--_qm-space) var(--_qm-space-2);
-		border: 1px solid var(--_qm-border);
-		border-radius: var(--_qm-radius-inner);
-		font: inherit;
 		text-align: left;
 		color: var(--_qm-ink);
-		background: var(--_qm-surface);
 		cursor: pointer;
 	}
 	/* The focus ring rides `.qm-focus-ring` on the trigger (controls.css). */

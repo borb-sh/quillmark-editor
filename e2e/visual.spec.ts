@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { pm, replaceProse } from './support.js';
+import { pm, replaceProse, reveal } from './support.js';
 
 // Phase 4 exit criteria (browser tier): the /visual playground mounts
 // <VisualEditor> over a freshly seeded usaf_memo document (one indorsement card).
@@ -34,12 +34,14 @@ async function readDump(page: Page): Promise<Dump> {
  * `selectOption(value)` did.
  */
 async function pickEnum(page: Page, testid: string, value: string): Promise<void> {
+	await reveal(page, testid);
 	await page.getByTestId(testid).click();
 	await page.locator(`[role="listbox"] [data-value="${value}"]`).click();
 }
 
 /** Open an enum's listbox and return a locator over one option, for state assertions. */
 async function openEnum(page: Page, testid: string) {
+	await reveal(page, testid);
 	await page.getByTestId(testid).click();
 	await expect(page.locator('[role="listbox"]')).toBeVisible();
 	return (value: string) => page.locator(`[role="listbox"] [data-value="${value}"]`);
@@ -53,6 +55,7 @@ function dateEntry(page: Page, testid: string) {
 /** Type an ISO date into the segments. They advance on fill, so digits run together. */
 async function setDate(page: Page, testid: string, iso: string): Promise<void> {
 	const [y, m, d] = iso.split('-');
+	await reveal(page, testid);
 	await dateEntry(page, testid).click();
 	await page.keyboard.type(`${m}${d}${y}`);
 }
@@ -62,6 +65,7 @@ async function setDate(page: Page, testid: string, iso: string): Promise<void> {
  * incomplete segment makes the whole date `undefined`, which is the unset rung.
  */
 async function clearDate(page: Page, testid: string): Promise<void> {
+	await reveal(page, testid);
 	await dateEntry(page, testid).click();
 	await page.keyboard.press('Backspace');
 	await page.keyboard.press('Backspace');
@@ -133,6 +137,7 @@ test.describe('visual editor', () => {
 	test('(d) editing a number (font_size) and a date (date) commits', async ({ page }) => {
 		// Number/date commit at `change` (blur/Enter), not per keystroke (issue #13) —
 		// so the assertion follows a blur, mirroring a real settle.
+		await reveal(page, 'main-font_size');
 		await page.getByTestId('main-font_size').fill('14.5');
 		await page.getByTestId('main-font_size').blur();
 		await expect.poll(async () => (await readDump(page)).font_size).toBe(14.5);
@@ -148,6 +153,7 @@ test.describe('visual editor', () => {
 		// Author, then clear: the field is REMOVED, so `doc.get` reads absent and the
 		// dump is null (not the last committed value) — the engine resolves the
 		// ghosted `default:` at render.
+		await reveal(page, 'main-font_size');
 		await page.getByTestId('main-font_size').fill('14.5');
 		await page.getByTestId('main-font_size').blur();
 		await expect.poll(async () => (await readDump(page)).font_size).toBe(14.5);
@@ -170,6 +176,7 @@ test.describe('visual editor', () => {
 		await page.goto('/visual?dateDefault=2026-01-01');
 		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
 
+		await reveal(page, 'main-date');
 		const field = page.getByTestId('main-date');
 		const year = field.locator('[data-segment="year"]');
 		const month = field.locator('[data-segment="month"]');
@@ -232,6 +239,7 @@ test.describe('visual editor', () => {
 	}) => {
 		const initial = (await readDump(page)).memo_for;
 		expect(initial.length).toBeGreaterThanOrEqual(2);
+		await reveal(page, 'main-memo_for-el-0');
 		// Edit element 0 (arrays commit by whole-value replace).
 		await page.getByTestId('main-memo_for-el-0').fill('EDITED-ORG');
 		await expect.poll(async () => (await readDump(page)).memo_for[0]).toBe('EDITED-ORG');

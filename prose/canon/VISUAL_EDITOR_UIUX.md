@@ -113,7 +113,10 @@ is a separate concern (the island controls), not gated by this.
   Layout density carries web-app's system: `ui.group`/`ui.compact` drive columns.
   `ui.group` sections are a collapsible accordion — one open at a time, the sole
   group (or, body-less, the first) auto-expanded; ungrouped fields stay above it,
-  always visible.
+  always visible. A section header is a heading, not metadata: sentence case at the
+  field-label rung, its whole row the target, its label centred between the rule
+  above it and the one it draws. Open and hover are ink steps; the chevron's
+  rotation carries open/closed, and no hue enters (AESTHETIC §Rules).
 - **Prose leaf** — the body and each rich field as an inline WYSIWYG surface.
 - **Per-field state** — focus, inline diagnostics, a ghosted `default:`
   placeholder (never written back — it lives in the schema), a persistent required

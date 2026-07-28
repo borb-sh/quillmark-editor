@@ -221,30 +221,35 @@
 
 			<!-- Group accordion (issue #60): each `ui.group` is a collapsible section,
 		     one open at a time. The header toggles; the panel slides via a
-		     0fr↔1fr grid row (the `slow` duration rung); an open section colors its chevron and left
-		     rule to the active hue. -->
-			{#each grouped as section (section.group)}
-				{@const isOpen = expanded === section.group}
-				<div class="qm-group" class:qm-open={isOpen}>
-					<button
-						type="button"
-						class="qm-group-header"
-						aria-expanded={isOpen}
-						data-testid={`group-${base}-${section.group}`}
-						onclick={() => toggleGroup(section.group as string)}
-					>
-						<ChevronRight class="qm-group-chevron" size={14} />
-						<span class="qm-group-label">{section.label}</span>
-					</button>
-					<div class="qm-group-panel">
-						<div class="qm-group-panel-inner">
-							{#each packRows(section.fields) as row, ri (ri)}
-								{@render fieldRow(row)}
-							{/each}
+		     0fr↔1fr grid row (the `slow` duration rung). The sections share ONE wrapper
+		     with no gap of its own: each header's symmetric padding is the whole
+		     inter-group rhythm, so a label sits equidistant from the rule above it and
+		     its own (issue #118). The card body's gap still separates this block from
+		     the ungrouped fields and the body leaf. -->
+			<div class="qm-groups">
+				{#each grouped as section (section.group)}
+					{@const isOpen = expanded === section.group}
+					<div class="qm-group" class:qm-open={isOpen}>
+						<button
+							type="button"
+							class="qm-group-header"
+							aria-expanded={isOpen}
+							data-testid={`group-${base}-${section.group}`}
+							onclick={() => toggleGroup(section.group as string)}
+						>
+							<ChevronRight class="qm-group-chevron" size={14} />
+							<span class="qm-group-label">{section.label}</span>
+						</button>
+						<div class="qm-group-panel">
+							<div class="qm-group-panel-inner">
+								{#each packRows(section.fields) as row, ri (ri)}
+									{@render fieldRow(row)}
+								{/each}
+							</div>
 						</div>
 					</div>
-				</div>
-			{/each}
+				{/each}
+			</div>
 
 			{#if card.hasBody}
 				<div class="qm-body-leaf">
@@ -440,13 +445,19 @@
 		flex-direction: column;
 		gap: var(--_qm-space-2);
 	}
-	/* Group accordion (issue #60, VISUAL_EDITOR_UIUX §Fields). The header carries the
-	   uppercase meta-label treatment as a toggle; the panel slides via a 0fr↔1fr grid
-	   row so the height animates without a magic max-height. */
+	/* Group accordion (issue #60, VISUAL_EDITOR_UIUX §Fields). The header is a toggle
+	   at the field-label rung; the panel slides via a 0fr↔1fr grid row so the height
+	   animates without a magic max-height. */
+	/* The wrapper carries NO gap: the headers' own padding is the rhythm (see the
+	   markup note). */
+	.qm-groups,
 	.qm-group {
 		display: flex;
 		flex-direction: column;
 	}
+	/* Symmetric padding: the label is equidistant from the rule above it and the one
+	   it draws, and the box is the whole row — no dead strip outside it, ambiguous
+	   about which section it belongs to. WCAG 2.5.8's 24x24 is the floor. */
 	.qm-group-header {
 		display: flex;
 		align-items: center;
@@ -454,27 +465,32 @@
 		width: 100%;
 		border: none;
 		background: transparent;
-		padding: 0 0 var(--_qm-space-half) 0;
+		padding: var(--_qm-space-2) 0;
 		cursor: pointer;
 		color: var(--_qm-ink-meta);
 		border-bottom: 1px solid var(--_qm-border);
 		text-align: left;
+		transition: color var(--_qm-duration-fast) ease;
 	}
+	/* Sentence case at the field-label rung — a section name is structurally a
+	   heading, and uppercase costs it twice: the word shape a column of them is
+	   scanned by, and apparent width, so a long label crowds sooner. The rung is
+	   reused rather than a fifth size minted. */
 	.qm-group-label {
-		font-size: var(--_qm-text-meta);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
+		font-size: var(--_qm-text-label);
 		font-weight: var(--_qm-weight-soft);
 	}
-	/* Chevron: rotates 90° and takes the active hue when its section is open. */
 	.qm-group-header :global(.qm-group-chevron) {
 		flex-shrink: 0;
-		transition:
-			transform var(--_qm-duration-slow) ease,
-			color var(--_qm-duration-slow) ease;
+		transition: transform var(--_qm-duration-slow) ease;
 	}
-	.qm-group.qm-open .qm-group-header {
-		color: var(--_qm-accent);
+	/* Open and hover are both an ink step, not a hue: an expanded section is not a
+	   status, and AESTHETIC §Rules keeps the three status hues as the only exits from
+	   the greyscale. The chevron's rotation already says open. Hover had no cue at
+	   all, which a bigger borderless target needs more than a small one did. */
+	.qm-group.qm-open .qm-group-header,
+	.qm-group-header:hover {
+		color: var(--_qm-ink);
 	}
 	.qm-group.qm-open .qm-group-header :global(.qm-group-chevron) {
 		transform: rotate(90deg);
@@ -495,19 +511,23 @@
 		gap: var(--_qm-space-2);
 		min-height: 0;
 		overflow: hidden;
-		padding: var(--_qm-space-2) 0 0 0;
+		/* Zero when closed, so the inset arrives with the panel: a `0fr` track collapses
+		   the CONTENT, not the padding, and a top inset declared here stands under a
+		   closed header as dead space the header's symmetric padding cannot absorb. */
+		padding: 0;
 		border-left: 2px solid transparent;
 		transition:
-			padding-left var(--_qm-duration-slow) ease,
+			padding var(--_qm-duration-slow) ease,
 			border-color var(--_qm-duration-slow) ease;
 	}
 	.qm-group.qm-open .qm-group-panel-inner {
-		padding-left: var(--_qm-space-3);
+		padding: var(--_qm-space-2) 0 0 var(--_qm-space-3);
 		border-left-color: var(--_qm-accent);
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.qm-group-panel,
 		.qm-group-panel-inner,
+		.qm-group-header,
 		.qm-group-header :global(.qm-group-chevron) {
 			transition: none;
 		}
