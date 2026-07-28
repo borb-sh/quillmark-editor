@@ -10,6 +10,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createField, type FieldController } from '../core/codec/index.js';
+	import './controls.css';
 	import type { Document, Addr } from '../core/index.js';
 
 	interface Props {
@@ -47,6 +48,12 @@
 
 	let containerEl: HTMLDivElement | undefined = $state();
 
+	// Block prose vs a control in a row of controls — the SAME predicate the codec
+	// picks its schema by (`createField`: `plaintext` implies `inline`), so the box a
+	// leaf draws and the schema it holds cannot disagree. Keyed on `inline` alone, a
+	// `plaintext`-only field would take the body's floor while holding one paragraph.
+	const block = $derived(!(inline || plaintext));
+
 	// An absent richtext field (a `default:`-only field like `tag_line`) is handled
 	// by the codec itself — `createField` decodes an empty content and installs on
 	// the first edit — so this wrapper adds no pre-seeding, and an untouched field
@@ -74,29 +81,23 @@
 
 <div
 	bind:this={containerEl}
-	class="qm-prose"
-	class:qm-prose-block={!inline}
+	class="qm-prose qm-control-box"
+	class:qm-prose-block={block}
 	data-leaf-key={leafKey}
 	data-testid={testid}
 ></div>
 
 <style>
-	/* The scalar control recipe, declaration for declaration — same padding rung, same
-	   hairline, same size rung — so an inline leaf and the `.qm-input` beside it agree
-	   on height BY CONSTRUCTION rather than by two tuned floors (issue #120). No
+	/* The box is `.qm-control-box` (controls.css) — the same rule the input beside it
+	   draws, so the two agree on height by construction rather than by two floors
+	   tuned to match (issue #120). Nothing here restates it, and there is no
 	   `min-height`: `core/codec/prose.css` resets the paragraph box, so one line of
-	   prose in this box measures one line of text in that one. */
-	.qm-prose {
-		border: 1px solid var(--_qm-border);
-		border-radius: var(--_qm-radius-inner);
-		padding: var(--_qm-space) var(--_qm-space-2);
-		background: var(--_qm-surface);
-		font-size: var(--_qm-text-body);
-	}
-	/* A leaf the inline schema does NOT constrain — the body — is paper, not a cell in
-	   a row of controls, so it opens at a few lines and grows. The floor is a multiple
-	   of the type rung rather than a length: what it means is "some lines", which moves
-	   with `--qm-font-size` and not with anything else. */
+	   prose in this box measures one line of text in that one.
+
+	   A leaf the inline schema does NOT constrain — the body — is paper rather than a
+	   cell in a row of controls, so it opens at a few lines and grows. The floor is a
+	   multiple of the type rung, not a length: it means "several lines", and moves
+	   with `--qm-font-size` alone. */
 	.qm-prose-block {
 		min-height: calc(var(--_qm-text-body) * 6);
 	}

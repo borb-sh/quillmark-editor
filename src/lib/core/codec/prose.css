@@ -24,21 +24,22 @@ li.ProseMirror-selectednode::after {
 	border: var(--_qm-ring-width-active) solid var(--_qm-accent);
 }
 
-/* Every block the schema can produce (`codec/schema.ts`) starts flush — the whole
-   block set, not `p` alone, since a paragraph-only reset leaves a leaf whose
-   headings and lists still carry UA margins and whose rhythm is therefore two
-   rhythms. `unknown_container` renders as a bare `div` and flows its children at the
-   enclosing level, so it takes no box of its own. */
-.ProseMirror :is(p, h1, h2, h3, h4, h5, h6, pre, blockquote, ul, ol, li, hr) {
+/* Everything starts flush. Not a list of the block tags: the subtree is entirely
+   what the codec emits, a paragraph-only reset leaves headings and lists on UA
+   margins (two rhythms in one leaf), and an enumeration silently lags the schema —
+   `island_block` renders a bare `div` (`islands.ts`) and would match no such list. */
+.ProseMirror * {
 	margin: 0;
 }
 
-/* One rhythm between sibling blocks, in place of the UA's collapsed pair. `li` is
-   absent from both sides: list items are a tight run, and the gap between the list
-   and what precedes it is the list's, not each item's. */
-.ProseMirror
-	:is(p, h1, h2, h3, h4, h5, h6, pre, blockquote, ul, ol, hr)
-	+ :is(p, h1, h2, h3, h4, h5, h6, pre, blockquote, ul, ol, hr) {
+/* One rhythm between sibling blocks, in place of the UA's collapsed pair. Scoped by
+   PARENT rather than by tag, which is what keeps it true as the schema grows: the
+   four containers below are every node whose content is `block+` (`schema.ts`), so
+   their children are blocks by definition, whatever kinds exist. `ul`/`ol` are
+   deliberately absent — a run of list items is tight, and the gap before a list is
+   the list's, not each item's. */
+.ProseMirror > * + *,
+.ProseMirror :is(blockquote, li, [data-qm-unknown-container]) > * + * {
 	margin-top: var(--_qm-space-4);
 }
 

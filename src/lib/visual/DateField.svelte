@@ -125,7 +125,7 @@
 		     substitution itself — which is also what keeps a half-typed date's own
 		     digits at full ink while the segments around them ghost. -->
 		<BitsDateField.Input
-			class="qm-date qm-focus-ring-within"
+			class="qm-date qm-control-box qm-focus-ring-within"
 			aria-label={label}
 			data-ghosted={ghost ? '' : undefined}
 			data-testid={testid}
@@ -151,20 +151,15 @@
 <style>
 	/* A primitive renders its OWN element, which a scoped selector cannot reach —
 	   styled through the wrapper with `:global`. */
+	/* The box is `.qm-control-box` (controls.css), carried on the primitive's own
+	   element beside `.qm-focus-ring-within`; the segments inherit its size rung, so
+	   the field and its neighbours agree without a second rule. */
 	.qm-date-wrap :global(.qm-date) {
 		display: flex;
 		align-items: center;
 		width: 100%;
 		box-sizing: border-box;
-		padding: var(--_qm-space) var(--_qm-space-2);
-		border: 1px solid var(--_qm-border);
-		border-radius: var(--_qm-radius-inner);
-		font: inherit;
-		/* The rung, as every scalar control reads it (issue #119) — the segments
-		   inherit it, so the field and its neighbours agree without a second rule. */
-		font-size: var(--_qm-text-body);
 		color: var(--_qm-ink);
-		background: var(--_qm-surface);
 	}
 	/* The ring rides `.qm-focus-ring-within` (controls.css) rather than the plain
 	   marker: focus lives on the SEGMENT, so it rings the field, not the segment

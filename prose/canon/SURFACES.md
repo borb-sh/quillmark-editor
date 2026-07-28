@@ -43,21 +43,34 @@ The card is the container; nothing inside it is a second box.
 
 ## The shared recipe
 
-Chrome comes from the rungs applied one way, not hand-written per component. The
-scalar controls share one control chrome — `--_qm-surface`, one `--_qm-border`
-hairline, `--_qm-radius-inner`, `--_qm-text-body`, one padding rung; the two
-floating surfaces share the popover recipe above. A palette change is then one dial,
-not one edit per field file. A control that mints its own border grey or radius
-instead of reading the rung is the drift this prevents.
+Chrome comes from the rungs applied one way, not hand-written per component. Three
+recipes carry it, each **one rule in `visual/controls.css` a component opts into by
+carrying its class** — the same shape as `.qm-focus-ring`, and for the same reason:
+a rung fixes a value, but which declarations make a control cannot be assembled per
+file and stay identical. Five hand-kept copies agree until one is edited, and
+nothing raises it — no literal is minted, so `check:style` stays green while a
+control renders subtly wrong.
 
-**A button reads the second recipe, and it is not this one.** A glyph or text
-button — reorder, delete, array remove, both add affordances, the tips foot — is
-ink on the card: no resting border, no resting fill, `--_qm-surface-hover` arriving
-on hover, `--_qm-radius-inner` (a pill on the add triggers, which fill rather than
-tint). The distinction one recipe for both would lose: *a field is a box because you
-type into it; a button is not a box because you press it.* Destructive ink
-(`--_qm-danger`) stays — that is meaning, not chrome. Every button clears WCAG
-2.5.8's 24×24, expressed on the space scale.
+- **`.qm-control-box`** — a typed value's box: `--_qm-surface`, one `--_qm-border`
+  hairline, `--_qm-radius-inner`, `--_qm-text-body`, one padding rung. Every scalar
+  control and every prose leaf.
+- **`.qm-icon-btn` / `.qm-add-affordance`** — the two button families; see below.
+- the two floating surfaces share the popover recipe above.
+
+A palette change is then one dial, not one edit per field file. A control that mints
+its own border grey or radius instead of reading the rung is the drift this prevents.
+
+**A button reads the button recipe, and it is not the box.** A glyph or text button —
+reorder, delete, array remove, both add affordances, the tips foot — is ink on the
+card: no resting border, no resting fill, `--_qm-surface-hover` arriving on hover,
+`--_qm-radius-inner` (a pill on the add triggers, which fill rather than tint,
+having no resting ink for a hover to shift). The distinction one recipe for both
+would lose: *a field is a box because you type into it; a button is not a box
+because you press it.* Destructive ink (`--_qm-danger`) stays — that is meaning, not
+chrome. Every button clears WCAG 2.5.8's 24×24 off `--_qm-tap-min`: a threshold the
+spec fixes rather than a step on the space scale, so it does not move when
+`--qm-space` does, and `min-*` is outside every `check:style` axis — a second
+expression of the same floor would have nothing watching it.
 
 **An inline prose leaf is inside that recipe, not beside it.** A field constrained
 to one paragraph is a control in a row of controls, so it draws the same five

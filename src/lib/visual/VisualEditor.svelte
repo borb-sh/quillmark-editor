@@ -543,14 +543,16 @@
 		{#if kinds.length === 1}
 			<button
 				type="button"
-				class="qm-add-btn"
+				class="qm-add-btn qm-add-affordance"
 				data-testid={`add-card-${atIndex}`}
 				onclick={() => addCard(atIndex, kinds[0])}>+ Add {humanize(kinds[0])}</button
 			>
 		{:else}
 			<!-- Multi-kind add: pick the kind, then seed + insert (fixture has one kind). -->
 			<details class="qm-add-menu">
-				<summary class="qm-add-btn" data-testid={`add-card-${atIndex}`}>+ Add card</summary>
+				<summary class="qm-add-btn qm-add-affordance" data-testid={`add-card-${atIndex}`}
+					>+ Add card</summary
+				>
 				<div class="qm-add-kinds">
 					{#each kinds as k (k)}
 						<button
@@ -591,13 +593,7 @@
 	   fills a pill: this trigger is invisible at rest, so a hover that only shifted
 	   its ink would have nothing to shift. */
 	.qm-add-btn {
-		border: none;
-		background: transparent;
-		border-radius: var(--_qm-radius-pill);
-		cursor: pointer;
 		padding: var(--_qm-space) var(--_qm-space-4);
-		font-size: var(--_qm-text-body);
-		color: var(--_qm-ink-label);
 		list-style: none;
 		/* Recede until engaged (issue #58 §6; AESTHETIC §"minimal UI"): each gap's
 		   trigger is invisible at rest and surfaces on hover or keyboard focus, so the
@@ -605,9 +601,6 @@
 		   label — exactly one entry point stays visible. Opacity (not display) so the
 		   pill reserves its height and the row does not jump on reveal. */
 		opacity: 0;
-		transition:
-			opacity 120ms ease,
-			background-color 120ms ease;
 	}
 	.qm-add-card:hover .qm-add-btn,
 	.qm-add-btn:focus-visible {
@@ -624,15 +617,6 @@
 	@media (hover: none) {
 		.qm-add-btn {
 			opacity: var(--_qm-opacity-idle);
-		}
-	}
-	.qm-add-btn:hover {
-		background: var(--_qm-surface-hover);
-		color: var(--_qm-ink);
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.qm-add-btn {
-			transition: none;
 		}
 	}
 	.qm-add-menu {

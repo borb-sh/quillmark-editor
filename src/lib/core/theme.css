@@ -49,7 +49,6 @@
 		--_qm-surface-raised: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 2%);
 		--_qm-surface-hover: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 6%);
 		--_qm-border: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 17%);
-		--_qm-border-strong: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 40%);
 		--_qm-ink: var(--_qm-fg);
 		--_qm-ink-label: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 35%);
 		--_qm-ink-meta: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 45%);
@@ -93,6 +92,11 @@
 		--_qm-space-2: calc(var(--_qm-space) * 2);
 		--_qm-space-3: calc(var(--_qm-space) * 3);
 		--_qm-space-4: calc(var(--_qm-space) * 4);
+		/* WCAG 2.5.8's 24x24 pointer-target floor. A rung rather than a sixth step on
+		   the space scale: it is a threshold the spec fixes, not a rhythm choice, so
+		   it does not move when `--qm-space` does. Every button reads it, so the floor
+		   is one number instead of one expression per control. */
+		--_qm-tap-min: 24px;
 
 		/* ── Type ────────────────────────────────────────────────────────────────
 		   `--qm-font-size` anchors the body rung; 1.125 is the ratio between adjacent

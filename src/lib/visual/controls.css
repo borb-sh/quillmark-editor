@@ -32,16 +32,21 @@
 		outline-offset: var(--_qm-ring-offset);
 	}
 
-	/* A typed value's box — text and numeric inputs, and the array's JSON textarea.
-	   `font: inherit` first, because a UA input inherits neither family nor face; then
-	   the SIZE off the ramp, because inheriting that lands the control on the host
-	   page's body size — a rung the scale never minted, and one the consumer moves by
-	   restyling their page rather than by turning `--qm-font-size` (issue #119). The
-	   two together are what make the box a fixed relation to its label instead of a
-	   property of whoever mounts the editor. */
+	/* A typed value's box — every scalar control and every prose leaf: the text and
+	   numeric inputs, the array's JSON textarea, the enum trigger, the date field, and
+	   the inline richtext leaves (SURFACES §"The shared recipe"). ONE rule, because a
+	   leaf that agrees with the input beside it "by construction" has to draw the same
+	   declarations, not a copy of them: five hand-kept copies agree until one is
+	   edited, and nothing raises it — no literal is minted, so `check:style` stays
+	   green while a control renders subtly the wrong height.
+
+	   `font: inherit` first, because a UA control inherits neither family nor face;
+	   then the SIZE off the ramp, because inheriting that lands the control on the
+	   host page's body size — a rung the scale never minted, and one the consumer
+	   moves by restyling their page rather than by turning `--qm-font-size`
+	   (issue #119). */
+	.qm-control-box,
 	.qm-input {
-		width: 100%;
-		box-sizing: border-box;
 		padding: var(--_qm-space) var(--_qm-space-2);
 		border: 1px solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
@@ -49,43 +54,77 @@
 		font-size: var(--_qm-text-body);
 		background: var(--_qm-surface);
 	}
+	/* What a form control adds over the box: it does not fill its row on its own. */
+	.qm-input {
+		width: 100%;
+		box-sizing: border-box;
+	}
 
-	/* A glyph button — card reorder/delete, array remove, the tips card's foot.
-	   UNBOXED, which is the whole distinction from `.qm-input` above: a field is a box
-	   because you type into it, a button is not a box because you press it. So no
-	   resting border and no resting fill (AESTHETIC §Rules, "prefer removing chrome to
-	   adding it"); the surface arrives on hover, off the rung the enum listbox already
-	   highlights with. Deliberately no `color`: the callers disagree on purpose (the
-	   card delete is `--_qm-danger`, the array remove inherits its row's ink), and a
-	   base colour here would flatten that distinction rather than share a recipe.
+	/* The second recipe, and it is not the box above: a field is a box because you
+	   type into it, a button is not a box because you press it. No resting border and
+	   no resting fill (AESTHETIC §Rules, "prefer removing chrome to adding it"); the
+	   surface arrives on hover, off the rung the enum listbox already highlights with.
+	   Deliberately no `color`: the callers disagree on purpose (the card delete is
+	   `--_qm-danger`, the array remove inherits its row's ink), and a base colour here
+	   would flatten that distinction rather than share a recipe.
 
-	   The floor is WCAG 2.5.8's 24x24, stated on the space scale rather than as a
-	   literal. A 14px glyph on its padding alone does not reach it, and two of the
-	   callers are destructive. */
+	   `--_qm-tap-min` is WCAG 2.5.8's floor, read rather than re-expressed per
+	   control — `min-*` is outside every `check:style` axis, so a second expression of
+	   the same threshold has nothing watching it.
+
+	   Both button families are named here rather than opting in through a marker: a
+	   glyph button and an add affordance are not SOMETIMES flat, so a class they could
+	   be built without is a class one of them will eventually miss. */
+	.qm-icon-btn,
+	.qm-add-affordance {
+		min-width: var(--_qm-tap-min);
+		min-height: var(--_qm-tap-min);
+		border: none;
+		background: transparent;
+		border-radius: var(--_qm-radius-inner);
+		cursor: pointer;
+		transition: background-color 120ms ease;
+	}
+	.qm-icon-btn:hover:not(:disabled),
+	.qm-add-affordance:hover:not(:disabled) {
+		background: var(--_qm-surface-hover);
+	}
+	.qm-icon-btn:disabled,
+	.qm-add-affordance:disabled {
+		opacity: var(--_qm-opacity-idle);
+		cursor: default;
+	}
+
+	/* A glyph button — card reorder/delete, array remove, the tips card's foot. */
 	.qm-icon-btn {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		gap: var(--_qm-space-half);
-		min-width: calc(var(--_qm-space) * 6);
-		min-height: calc(var(--_qm-space) * 6);
-		border: none;
-		background: transparent;
-		border-radius: var(--_qm-radius-inner);
-		cursor: pointer;
 		line-height: 1;
 		padding: var(--_qm-space-half) var(--_qm-space);
-		transition: background-color 120ms ease;
 	}
-	.qm-icon-btn:hover:not(:disabled) {
-		background: var(--_qm-surface-hover);
+
+	/* An add affordance — the between-card trigger and the array foot's. A pill rather
+	   than the inner radius, because it FILLS on hover instead of tinting ink: both
+	   rest transparent (`--_qm-opacity-idle`, or invisible for the card stack's
+	   interior gaps), so there is no ink for a hover to shift. The recede ladder
+	   itself stays with each caller — it is driven by their own hover/focus state. */
+	.qm-add-affordance {
+		border-radius: var(--_qm-radius-pill);
+		font-size: var(--_qm-text-body);
+		color: var(--_qm-ink-label);
+		transition:
+			opacity 120ms ease,
+			background-color 120ms ease;
 	}
-	.qm-icon-btn:disabled {
-		opacity: var(--_qm-opacity-idle);
-		cursor: default;
+	.qm-add-affordance:hover {
+		color: var(--_qm-ink);
 	}
+
 	@media (prefers-reduced-motion: reduce) {
-		.qm-icon-btn {
+		.qm-icon-btn,
+		.qm-add-affordance {
 			transition: none;
 		}
 	}

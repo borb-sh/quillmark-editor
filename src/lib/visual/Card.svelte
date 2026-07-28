@@ -429,14 +429,12 @@
 		flex-direction: column;
 		gap: var(--_qm-space-2);
 	}
-	/* Group accordion (issue #60, VISUAL_EDITOR_UIUX §Fields). The header carries the
-	   uppercase meta-label treatment as a toggle; the panel slides via a 0fr↔1fr grid
-	   row so the height animates without a magic max-height. */
-	/* No gap: the headers' own padding is the rhythm (see the markup note). */
-	.qm-groups {
-		display: flex;
-		flex-direction: column;
-	}
+	/* Group accordion (issue #60, VISUAL_EDITOR_UIUX §Fields). The header is a toggle
+	   at the field-label rung; the panel slides via a 0fr↔1fr grid row so the height
+	   animates without a magic max-height. */
+	/* The wrapper carries NO gap: the headers' own padding is the rhythm (see the
+	   markup note). */
+	.qm-groups,
 	.qm-group {
 		display: flex;
 		flex-direction: column;
