@@ -26,13 +26,13 @@ The card is the container; nothing inside it is a second box.
   `--_qm-surface-raised`. One tone and one border rung across all of them, `main`
   included, not a different grey per card. The card is the only container in the
   column.
-- **A card's tone is the package's; the page behind it is not.** So the card cannot
-  be assigned a rung that only reads against a particular backdrop — a consumer who
-  puts plain `--qm-bg` behind the column is a supported case, and `main` at the base
-  surface degraded to invisibility there. What the package guarantees instead is the
-  card↔control relationship, which holds whatever is behind: a control is one rung
-  off its card, always. `main` needs no tone to say which card it is — it is the only
-  headerless card, the only one without reorder/delete, and the first in the column.
+- **A card's tone is the package's; the page behind it is not.** So no card takes a
+  rung that reads only against a particular backdrop: plain `--qm-bg` behind the
+  column is a supported case, and a card at the base surface is invisible in it.
+  What the package guarantees is the card↔control relationship, which holds whatever
+  is behind — a control is one rung off its card, always. `main` needs no tone to say
+  which card it is: it is the only headerless card, the only one without
+  reorder/delete, and the first in the column.
 - **Fields and the body sit quiet inside the card.** A scalar control and a prose
   leaf each carry one hairline — the shared `--_qm-border` at `--_qm-radius-inner`
   over `--_qm-surface` (§"The shared recipe") — and nothing heavier: no fill, no
@@ -43,8 +43,8 @@ The card is the container; nothing inside it is a second box.
 - **The rungs step toward the ink, which the word "raised" only half means.** A card
   is *darker* than the page in light and *lighter* in dark: a tinted plate laid on
   the page, not a lit surface floating above it. The three surface rungs sit 4pp
-  apart so each carries a plane on its own — the spacing proven at hover, given to
-  the card. Saying "elevated is lighter" in both poles would take a mode signal the
+  apart — the step at which a hovered item reads against a card — so each carries a
+  plane on its own. "Elevated is lighter" in both poles needs a mode signal the
   derivation deliberately does not have (THEMING.md; #83 is the same wall).
 - **The floating surfaces earn the lift the cards do without.** The selection
   popover takes `--_qm-surface-popover` (the *raised* surface mixed toward

@@ -56,7 +56,7 @@ case, and the one the playground demonstrates.
 That is why no card's fill is a bet on your backdrop: every card sits one rung off
 the base surface and every control one rung inside its card, so a control reads
 against its card whatever you put behind it. A page tone of your own reads as a
-third plane under the stack; the absence of one costs nothing.
+third plane under the stack.
 
 ## Dark mode is a two-value swap
 

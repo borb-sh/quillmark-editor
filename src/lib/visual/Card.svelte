@@ -143,11 +143,9 @@
 	}
 </script>
 
-<!-- `qm-main` marks the document head structurally; it carries NO fill of its own
-     (issue #124). Which card this is already reads without a tone: it is the only
-     headerless card, the only one without reorder/delete, and the first in the
-     column. A tone here would be a bet on what the consumer put behind the column,
-     and the consumer owns that. -->
+<!-- `qm-main` is a structural marker and carries no fill: a tone here would bet on
+     what the consumer put behind the column, and structure already says which card
+     this is (SURFACES §Elevation). -->
 <section
 	class="qm-card"
 	class:qm-main={card.isMain}
