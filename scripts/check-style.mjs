@@ -6,6 +6,7 @@
 //   rhythm   padding / margin / gap / border-radius   a px|rem length
 //   stroke   border / border-*-width                  a length, at any width
 //   type     font-size / font-weight / font-family    a size, a weight, a family
+//            line-height                              a leading off the two rungs
 //   colour   color / background / border / shadow …   a hex or a colour function
 //   recede   opacity                                  a step off the ladder
 //   motion   transition / animation                   an s|ms time
@@ -96,6 +97,18 @@ const AXES = [
 		literal: /\b(\d{3}|bold|bolder|lighter|normal)\b/,
 		rung: '`var(--_qm-weight-…)`',
 		doc: 'THEMING §Typography',
+		cssOnly: true
+	},
+	{
+		// Leading has no literal shape to forbid — a bare number is exactly what a rung
+		// resolves to, so the rung is REQUIRED instead, and the absence of one is the
+		// drift: an undeclared surface computes `normal`, a UA figure around 1.14 that
+		// varies by font. `1` is the one bare value that is not a step on the ramp — a
+		// glyph row collapsing its line box onto the glyph, structural like `opacity: 0`.
+		props: /^line-height$/,
+		allowBare: /^1$/,
+		rung: '`var(--_qm-leading-…)`',
+		doc: 'SURFACES §Rhythm',
 		cssOnly: true
 	},
 	{

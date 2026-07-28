@@ -458,7 +458,8 @@
 	   into the single cell, so the overlaid input tracks its content width. Bounded
 	   to the rename region's width (`min-width: 0` + `max-width: 100%`), which the
 	   header's space-between keeps clear of the controls. The input inherits the type
-	   tokens (`font: inherit`) so the mirror and the input measure alike. */
+	   tokens (`font: inherit`, leading included) so the mirror and the input measure
+	   alike — which is why the leading rung is declared here and not on the input. */
 	.qm-card-title-sizer {
 		display: inline-grid;
 		align-items: center;
@@ -466,6 +467,7 @@
 		max-width: 100%;
 		font-size: var(--_qm-text-title);
 		font-weight: var(--_qm-weight-label);
+		line-height: var(--_qm-leading-tight);
 		font-family: inherit;
 	}
 	.qm-card-title-sizer::after {
@@ -626,6 +628,7 @@
 	.qm-group-label {
 		font-size: var(--_qm-text-label);
 		font-weight: var(--_qm-weight-soft);
+		line-height: var(--_qm-leading-tight);
 	}
 	.qm-group-header :global(.qm-group-chevron) {
 		flex-shrink: 0;

@@ -107,9 +107,14 @@ the package — the consumer's palette decides.
 ## What is deliberately not public
 
 The derived scale — surface / border / ink rungs, the blur radius, the popover's
-translucency ratio, the recede-opacity ladder, the overlay ring widths — is
-**internal** (`--_qm-*`, minted in `core/`). It is not a contract: a rung can be
-re-tuned or renamed without notice.
+translucency ratio, the recede-opacity ladder, the two leading rungs, the overlay
+ring widths — is **internal** (`--_qm-*`, minted in `core/`). It is not a
+contract: a rung can be re-tuned or renamed without notice.
+
+Leading is private for the reason the size ratio is: a typographic ratio is a
+convention, not a dial, and both rungs are unitless, so `--qm-font-size` already
+rescales the line boxes with the type. A leading dial would buy a consumer nothing
+it does not already have and cost every reader one more name.
 
 The rungs are declared **on** each root element, so setting one from an ancestor
 does nothing — an element's own declaration beats an inherited value at any
