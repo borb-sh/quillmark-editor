@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { pm, replaceProse } from './support.js';
 
 // Phase 4 exit criteria (browser tier): the /visual playground mounts
 // <VisualEditor> over a freshly seeded usaf_memo document (one indorsement card).
@@ -64,19 +65,6 @@ async function clearDate(page: Page, testid: string): Promise<void> {
 	await dateEntry(page, testid).click();
 	await page.keyboard.press('Backspace');
 	await page.keyboard.press('Backspace');
-}
-
-/** The contenteditable inside a prose leaf, by its container testid. */
-function pm(page: Page, leafTestid: string) {
-	return page.locator(`[data-testid="${leafTestid}"] .ProseMirror`);
-}
-
-/** Replace a prose leaf's whole content with `text` (select-all + type). */
-async function replaceProse(page: Page, leafTestid: string, text: string): Promise<void> {
-	const el = pm(page, leafTestid);
-	await el.click();
-	await page.keyboard.press('ControlOrMeta+a');
-	await page.keyboard.type(text);
 }
 
 test.describe('visual editor', () => {
@@ -171,6 +159,54 @@ test.describe('visual editor', () => {
 		await expect.poll(async () => (await readDump(page)).date).toBe('2026-03-04');
 		await clearDate(page, 'main-date');
 		await expect.poll(async () => (await readDump(page)).date).toBeNull();
+	});
+
+	test('(d2b) an unset date ghosts its `default:`, not the format hint (issue #89)', async ({
+		page
+	}) => {
+		// The reference quill's `date` declares a BLANK default (blank → today at
+		// render), which ghosts nothing — `?dateDefault` rewrites that one schema line
+		// so the rung exists to assert (src/routes/fixture.ts).
+		await page.goto('/visual?dateDefault=2026-01-01');
+		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
+
+		const field = page.getByTestId('main-date');
+		const year = field.locator('[data-segment="year"]');
+		const month = field.locator('[data-segment="month"]');
+		const ink = async (l: Locator) => l.evaluate((e) => getComputedStyle(e).color);
+
+		await expect(field).toHaveAttribute('data-ghosted', '');
+		// The segments carry the DEFAULT's digits, not `mm`/`dd`/`yyyy`.
+		await expect(year).toHaveText('2026');
+		await expect(month).toHaveText('01');
+		// …and carry them in the GHOST TONE, asserted as a colour rather than an
+		// attribute: the tone IS the rung — the same digits at full ink read as an
+		// authored date — and a marker alone does not prove a rule matched it.
+		const ghostInk = await ink(year);
+		// Shown, never written: the ghost is not a value.
+		expect((await readDump(page)).date).toBeNull();
+
+		// A half-entered date keeps the digits just typed, at FULL ink — the ghost
+		// fills only the segments still empty, though the field is unset until they
+		// all fill.
+		await dateEntry(page, 'main-date').click();
+		await page.keyboard.type('03');
+		await expect(month).toHaveText('03');
+		expect(await ink(month), 'a typed segment').not.toBe(ghostInk);
+		await expect(year).toHaveText('2026');
+		expect(await ink(year), 'a still-ghosted segment').toBe(ghostInk);
+		expect((await readDump(page)).date).toBeNull();
+
+		// Authoring drops the ghost, tone included; clearing back to unset restores it.
+		await setDate(page, 'main-date', '2026-03-04');
+		await expect.poll(async () => (await readDump(page)).date).toBe('2026-03-04');
+		await expect(field).not.toHaveAttribute('data-ghosted', '');
+		expect(await ink(year), 'an authored year').not.toBe(ghostInk);
+		await clearDate(page, 'main-date');
+		await expect.poll(async () => (await readDump(page)).date).toBeNull();
+		await expect(field).toHaveAttribute('data-ghosted', '');
+		await expect(year).toHaveText('2026');
+		expect(await ink(year), 'the restored ghost').toBe(ghostInk);
 	});
 
 	test('(d3) an enum unsets via the ghost sentinel; picking the default VALUE writes it (issue #21a)', async ({
@@ -391,5 +427,31 @@ test.describe('visual editor', () => {
 		await page.keyboard.press('Enter');
 		await expect(el.locator('ul > li')).toHaveCount(2);
 		await expect(el.locator('p:not(li p)')).toHaveCount(1);
+	});
+
+	test('(o) code-block keys take literal indentation (issue #84)', async ({ page }) => {
+		// Same reason as the list keys: only the browser proves Tab is DELIVERED to
+		// the leaf — a swallowed key that still moves focus passes every unit test.
+		const el = pm(page, 'prose-main-body');
+		await replaceProse(page, 'prose-main-body', '```'); // the fence input rule
+		await expect(el.locator('pre')).toHaveCount(1);
+		await page.keyboard.type('one');
+		// Enter stays INSIDE the block — a second block would be the base keymap's split.
+		await page.keyboard.press('Enter');
+		await expect(el.locator('pre')).toHaveCount(1);
+		// Each step polls the dump before the next press: the caret rides on a
+		// committed state, and the assertion is the Document rather than the DOM.
+		await expect.poll(async () => (await readDump(page)).body).toBe('one\n');
+
+		// Tab indents rather than leaving the leaf — the focus check is the point.
+		await page.keyboard.press('Tab');
+		await expect(el).toBeFocused();
+		await expect.poll(async () => (await readDump(page)).body).toBe('one\n  ');
+		await page.keyboard.type('two');
+		await expect.poll(async () => (await readDump(page)).body).toBe('one\n  two');
+
+		// Shift-Tab survives the modifier and takes the indent back.
+		await page.keyboard.press('Shift+Tab');
+		await expect.poll(async () => (await readDump(page)).body).toBe('one\ntwo');
 	});
 });

@@ -1,15 +1,11 @@
 import { test, expect, type Page } from '@playwright/test';
+import { pm, selectAndAwaitPopover } from './support.js';
 
 // Phase 5 exit criterion (browser tier): the /editor split-pane shell is the full
 // reference harness — one LiveSession, the VisualEditor and Preview over one
 // document, the caret bridge round-tripping BOTH ways, the preview following
 // edits, diagnostics inline, and the read-only source view. All through the
 // public subpath API (no reach-through). See src/routes/editor/+page.svelte.
-
-/** The contenteditable inside an editor prose leaf, by its container testid. */
-function pm(page: Page, leafTestid: string) {
-	return page.locator(`[data-testid="${leafTestid}"] .ProseMirror`);
-}
 
 test.describe('editor shell', () => {
 	test.beforeEach(async ({ page }) => {
@@ -137,9 +133,7 @@ test.describe('editor shell', () => {
 		expect(await font('.qm-select-content'), 'the enum listbox font').toContain('ui-sans-serif');
 		await page.keyboard.press('Escape');
 
-		await pm(page, 'prose-main-subject').click();
-		await page.keyboard.press('ControlOrMeta+a');
-		await expect(page.getByTestId('format-popover')).toBeVisible();
+		await selectAndAwaitPopover(page, 'prose-main-subject');
 		expect(await resolves('.qm-format-popover'), 'the format popover').not.toBe('');
 		expect(await font('.qm-format-popover'), 'the popover font').toContain('ui-sans-serif');
 	});
@@ -201,9 +195,7 @@ test.describe('editor shell', () => {
 		expect(await list.boundingBox()).not.toBeNull();
 		await page.keyboard.press('Escape');
 
-		await pm(page, 'prose-main-subject').click();
-		await page.keyboard.press('ControlOrMeta+a');
-		await expect(page.getByTestId('format-popover')).toBeVisible();
+		await selectAndAwaitPopover(page, 'prose-main-subject');
 		expect(await surface('.qm-format-popover'), 'the format popover').toBe('rgb(0, 0, 40)');
 	});
 });

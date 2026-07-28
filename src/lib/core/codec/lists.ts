@@ -88,13 +88,13 @@ function mergeIntoPreviousItem(itemType: NodeType): Command {
  * The list bindings for a block-schema leaf — `{}` for the inline/plaintext
  * schemas, which declare no list nodes.
  *
- * `Tab` / `Shift-Tab` hold the list link of the body's Tab chain. Two surfaces own
- * Tab more locally under the same rule (`prose/canon/VISUAL_EDITOR.md` §Chrome) — a
- * `code_block` takes literal indentation (issue #84), an island takes cell
- * traversal (issue #16) — and each prepends via `chainCommands` rather than
- * rewriting the binding. Outside all of them every link returns false and the key
- * is NOT swallowed: Tab keeps its default meaning, which is the affordance the
- * deferred structural keymap owns and the body's only keyboard exit.
+ * `Tab` / `Shift-Tab` hold the list link of the body's Tab chain. Surfaces that own
+ * Tab more locally under the same rule (`prose/canon/VISUAL_EDITOR.md` §Chrome)
+ * prepend a link ahead of these in `keymap.ts` — a `code_block` takes literal
+ * indentation (`code.ts`), an island takes cell traversal (issue #16). Outside all
+ * of them every link returns false and the key is NOT swallowed: Tab keeps its
+ * default meaning, which is the affordance the deferred structural keymap owns and
+ * the body's only keyboard exit.
  *
  * `Enter` is a chain in precedence order: the paragraph-above gesture, then
  * `splitListItem`, then `liftListItem`. The middle link carries two behaviors of
