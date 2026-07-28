@@ -92,9 +92,14 @@
 	   draws, so the two agree on height by construction rather than by two floors
 	   tuned to match (issue #120). Nothing here restates it, and there is no
 	   `min-height`: `core/codec/prose.css` resets the paragraph box, so one line of
-	   prose in this box measures one line of text in that one.
-
-	   A leaf the inline schema does NOT constrain — the body — is paper rather than a
+	   prose in this box measures one line of text in that one. */
+	.qm-prose {
+		/* Positioned for the arrival wash `setCaret` inserts (`core/bloom.ts`) — an
+		   inset child, so it covers the text without fading it or tinting the leaf's
+		   own surface. */
+		position: relative;
+	}
+	/* A leaf the inline schema does NOT constrain — the body — is paper rather than a
 	   cell in a row of controls, so it opens at a few lines and grows. The floor is a
 	   multiple of the type rung, not a length: it means "several lines", and moves
 	   with `--qm-font-size` alone. */

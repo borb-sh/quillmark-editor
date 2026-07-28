@@ -83,7 +83,7 @@
 		background: transparent;
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
-		transition: background-color 120ms ease;
+		transition: background-color var(--_qm-duration-fast) ease;
 	}
 	.qm-icon-btn:hover:not(:disabled),
 	.qm-add-affordance:hover:not(:disabled) {
@@ -115,8 +115,8 @@
 		font-size: var(--_qm-text-body);
 		color: var(--_qm-ink-label);
 		transition:
-			opacity 120ms ease,
-			background-color 120ms ease;
+			opacity var(--_qm-duration-fast) ease,
+			background-color var(--_qm-duration-fast) ease;
 	}
 	.qm-add-affordance:hover {
 		color: var(--_qm-ink);

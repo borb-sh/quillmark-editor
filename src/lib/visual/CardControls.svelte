@@ -63,7 +63,7 @@
 		display: flex;
 		gap: var(--_qm-space-half);
 		opacity: 0;
-		transition: opacity 0.12s ease;
+		transition: opacity var(--_qm-duration-fast) ease;
 	}
 	/* Box and disabled state come from `.qm-icon-btn` (controls.css); only the ink
 	   is this component's — the reorder pair recedes to the label tone, delete

@@ -125,6 +125,22 @@
 	function toggleGroup(group: string): void {
 		expanded = expanded === group ? null : group;
 	}
+
+	/**
+	 * Open the group holding leaf `key`, if this card has one. A collapsed panel is
+	 * clipped to zero height rather than unmounted, so a caret placed inside it — and
+	 * the arrival wash with it — lands where nobody can see it. `VisualEditor.setCaret`
+	 * calls this on every card before landing; the card keeps owning `expanded`, and a
+	 * card that does not hold the key does nothing.
+	 *
+	 * A call, not a prop: a reveal is an event, and modelling it as state needs a
+	 * fresh-identity wrapper to re-fire and an `untrack` to keep the per-keystroke
+	 * re-derive from reopening the accordion under the user.
+	 */
+	export function revealLeaf(key: string): void {
+		const section = grouped.find((s) => s.fields.some((f) => ops.leafKey(f.name) === key));
+		if (section?.group) expanded = section.group;
+	}
 </script>
 
 <section
@@ -205,11 +221,11 @@
 
 			<!-- Group accordion (issue #60): each `ui.group` is a collapsible section,
 		     one open at a time. The header toggles; the panel slides via a
-		     0fr↔1fr grid row (200ms). The sections share ONE wrapper with no gap of
-		     its own: each header's symmetric padding is the whole inter-group rhythm,
-		     so a label sits equidistant from the rule above it and its own (issue
-		     #118). The card body's gap still separates this block from the ungrouped
-		     fields and the body leaf. -->
+		     0fr↔1fr grid row (the `slow` duration rung). The sections share ONE wrapper
+		     with no gap of its own: each header's symmetric padding is the whole
+		     inter-group rhythm, so a label sits equidistant from the rule above it and
+		     its own (issue #118). The card body's gap still separates this block from
+		     the ungrouped fields and the body leaf. -->
 			<div class="qm-groups">
 				{#each grouped as section (section.group)}
 					{@const isOpen = expanded === section.group}
@@ -454,7 +470,7 @@
 		color: var(--_qm-ink-meta);
 		border-bottom: 1px solid var(--_qm-border);
 		text-align: left;
-		transition: color 120ms ease;
+		transition: color var(--_qm-duration-fast) ease;
 	}
 	/* Sentence case at the field-label rung — a section name is structurally a
 	   heading, and uppercase costs it twice: the word shape a column of them is
@@ -466,7 +482,7 @@
 	}
 	.qm-group-header :global(.qm-group-chevron) {
 		flex-shrink: 0;
-		transition: transform 200ms ease;
+		transition: transform var(--_qm-duration-slow) ease;
 	}
 	/* Open and hover are both an ink step, not a hue: an expanded section is not a
 	   status, and AESTHETIC §Rules keeps the three status hues as the only exits from
@@ -484,7 +500,7 @@
 	.qm-group-panel {
 		display: grid;
 		grid-template-rows: 0fr;
-		transition: grid-template-rows 200ms ease;
+		transition: grid-template-rows var(--_qm-duration-slow) ease;
 	}
 	.qm-group.qm-open .qm-group-panel {
 		grid-template-rows: 1fr;
@@ -501,8 +517,8 @@
 		padding: 0;
 		border-left: 2px solid transparent;
 		transition:
-			padding 200ms ease,
-			border-color 200ms ease;
+			padding var(--_qm-duration-slow) ease,
+			border-color var(--_qm-duration-slow) ease;
 	}
 	.qm-group.qm-open .qm-group-panel-inner {
 		padding: var(--_qm-space-2) 0 0 var(--_qm-space-3);
