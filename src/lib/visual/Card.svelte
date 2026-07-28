@@ -284,8 +284,7 @@
 										data-testid={`group-${base}-${section.group}`}
 										onclick={() => toggleGroup(section.group as string)}
 									>
-										<ChevronRight class="qm-group-chevron" size={14} />
-										<span class="qm-group-label">{section.label}</span>
+										<ChevronRight class="qm-group-chevron" size={14} />{section.label}
 									</button>
 									<div class="qm-group-panel">
 										<div class="qm-group-panel-inner">
@@ -607,7 +606,22 @@
 		border-left-color: var(--_qm-border);
 	}
 	/* Symmetric padding: WCAG 2.5.8's 24×24 floor, and the header is the whole row
-	   so adjacent labels share one rhythm with no dead strip outside the button. */
+	   so adjacent labels share one rhythm with no dead strip outside the button.
+
+	   A button by tag and NEITHER button family by recipe — it takes no target floor
+	   (the symmetric padding is the row) and no hover fill (an ink step, below) — so
+	   the type a family would have carried is declared here. `font: inherit` because a
+	   UA button inherits no face and `--qm-font` would stop at this row; then the
+	   field-label rung, at the tight leading a single line takes. Sentence case at that
+	   rung, reused rather than a fifth size minted: a section name is structurally a
+	   heading, and uppercase costs it twice — the word shape a column of them is
+	   scanned by, and apparent width, so a long label crowds sooner. Size, weight and
+	   leading all sit after `font`, which is a shorthand that carries `line-height`.
+
+	   On the BUTTON rather than on a span inside it: the row's type is one decision,
+	   and a wrapper that carries nothing else is indirection between the header and
+	   its own label. The label is a text run beside the chevron, and flex gives it an
+	   anonymous item either way. */
 	.qm-group-header {
 		display: flex;
 		align-items: center;
@@ -616,19 +630,14 @@
 		border: none;
 		background: transparent;
 		padding: var(--_qm-space-2) 0;
+		font: inherit;
+		font-size: var(--_qm-text-label);
+		font-weight: var(--_qm-weight-soft);
+		line-height: var(--_qm-leading-tight);
 		cursor: pointer;
 		color: var(--_qm-ink-meta);
 		text-align: left;
 		transition: color var(--_qm-duration-fast) ease;
-	}
-	/* Sentence case at the field-label rung — a section name is structurally a
-	   heading, and uppercase costs it twice: the word shape a column of them is
-	   scanned by, and apparent width, so a long label crowds sooner. The rung is
-	   reused rather than a fifth size minted. */
-	.qm-group-label {
-		font-size: var(--_qm-text-label);
-		font-weight: var(--_qm-weight-soft);
-		line-height: var(--_qm-leading-tight);
 	}
 	.qm-group-header :global(.qm-group-chevron) {
 		flex-shrink: 0;
