@@ -23,6 +23,7 @@
 -->
 <script lang="ts">
 	import { isQuillmarkError, MAIN_CARD_ADDR } from '../core/index.js';
+	import { bloomInside } from '../core/bloom.js';
 	import type {
 		Document,
 		Quill,
@@ -142,6 +143,11 @@
 
 	// ── Leaf registry (setCaret target lookup + the 4b active-leaf seam) ────────
 	const leaves = new Map<string, FieldController>();
+	// Card handles, for `setCaret`'s reveal hop — the one thing a leaf's own controller
+	// cannot do, since which group is open is the card's state (Card §revealLeaf).
+	type CardHandle = { revealLeaf(key: string): void };
+	let mainCard = $state<CardHandle | undefined>(undefined);
+	let cardRefs = $state<(CardHandle | undefined)[]>([]);
 	function register(key: string, controller: FieldController): void {
 		leaves.set(key, controller);
 	}
@@ -461,8 +467,19 @@
 		// (HitGranularity), so just focus the leaf rather than snap the caret to a
 		// spot the click did not resolve. `'cluster'` (and an absent granularity —
 		// the backend did not report it, treat as exact) places the caret.
+		// Reveal first: a leaf in a collapsed group is clipped to zero height, so both
+		// the caret and the cue below land unseen. Exactly one card holds the key.
+		mainCard?.revealLeaf(key);
+		for (const card of cardRefs) card?.revealLeaf(key);
 		if (hit.granularity === 'segment') leaf.focus();
 		else leaf.setCaret(hit.pos);
+		// The arrival cue. Unconditional, unlike the preview side's change-guarded
+		// bloom: a preview click is one discrete act, and its commonest target is the
+		// leaf ALREADY focused — where landing a caret changes nothing on screen — or
+		// one off-screen, where the browser's focus-scroll moves the page and leaves
+		// the caret to be hunted for in a long form. The panel opens on the next flush
+		// and the wash outlasts it, so a revealed landing is cued once it settles.
+		bloomInside(leaf.el);
 	}
 	/** The active leaf's controller — the 4b formatting-popover observation seam. */
 	export function getActiveLeaf(): FieldController | undefined {
@@ -484,6 +501,7 @@
 
 <div class="qm-editor {className ?? ''}" {style} data-qm-root>
 	<Card
+		bind:this={mainCard}
 		card={model.main}
 		{doc}
 		index={-1}
@@ -517,6 +535,7 @@
 	{/if}
 	{#each model.cards as c, i (c.id)}
 		<Card
+			bind:this={cardRefs[i]}
 			card={c}
 			{doc}
 			index={i}
@@ -599,7 +618,7 @@
 		   label — exactly one entry point stays visible. Opacity (not display) so the
 		   pill reserves its height and the row does not jump on reveal. */
 		opacity: 0;
-		transition: opacity 120ms ease;
+		transition: opacity var(--_qm-duration-fast) ease;
 	}
 	.qm-add-card:hover .qm-add-btn,
 	.qm-add-btn:focus-visible {

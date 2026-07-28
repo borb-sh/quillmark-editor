@@ -54,7 +54,10 @@
 		--_qm-ink-label: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 35%);
 		--_qm-ink-meta: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 45%);
 		--_qm-ink-ghost: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 60%);
-		--_qm-accent-soft: color-mix(in oklab, var(--_qm-accent) 55%, transparent);
+		/* The correlation wash (`core/bloom.ts`). Its alpha is a PEAK, not a tint: the
+		   wash animates from and back to zero, never held, so it reads at pane scale
+		   over the preview's paper while the paper rests clean. */
+		--_qm-accent-wash: color-mix(in oklab, var(--_qm-accent) 18%, transparent);
 
 		/* ── Ratios and effects ──────────────────────────────────────────────────
 		   No palette fixes these, so they are their own rungs. Shadows mix from the
@@ -76,11 +79,21 @@
 		   These fix the ring's VALUE, so no control mints it. Which properties draw a
 		   ring, and on what state, is the other half — a rule, `.qm-focus-ring` in
 		   `visual/controls.css`, since a rung each control reassembles is a scale
-		   only up to the point where it is assembled. */
-		--_qm-ring-width: 1px; /* the preview overlay's idle field box */
-		--_qm-ring-width-active: 2px;
-		--_qm-ring-focus: var(--_qm-ring-width-active) solid var(--_qm-accent);
+		   only up to the point where it is assembled. ONE width: focus is the only
+		   state that draws a ring anywhere, so there is no held-back tier under it. */
+		--_qm-ring-width: 2px;
+		--_qm-ring-focus: var(--_qm-ring-width) solid var(--_qm-accent);
 		--_qm-ring-offset: 1px;
+
+		/* ── Motion (SURFACES §Motion) ───────────────────────────────────────────
+		   Three rungs, by what the eye is doing. `fast` is a state toggling under the
+		   pointer, not watched; `slow` is a size or position the eye tracks; `linger`
+		   is the correlation bloom, the one duration a user waits out. Read from JS
+		   too (`core/bloom.ts` animates over WAAPI), so the scale stays single-sourced
+		   across the CSS/script split rather than forking a number into each. */
+		--_qm-duration-fast: 120ms;
+		--_qm-duration-slow: 200ms;
+		--_qm-duration-linger: 1100ms;
 
 		/* ── Geometry (SURFACES §Rhythm) ─────────────────────────────────────────*/
 		--_qm-radius: var(--qm-radius, 8px);

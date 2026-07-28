@@ -7,6 +7,7 @@
 //   type     font-size / font-weight / font-family    a size, a weight, a family
 //   colour   color / background / border / shadow …   a hex or a colour function
 //   recede   opacity                                  a step off the ladder
+//   motion   transition / animation                   an s|ms time
 //
 // Three rules sit outside the table, because they are about the scale itself rather
 // than one axis:
@@ -104,6 +105,16 @@ const AXES = [
 		rung: '`var(--_qm-…)`',
 		doc: 'THEMING.md',
 		cssOnly: false
+	},
+	{
+		// The axis with no natural units of its own: every value looks plausible, so a
+		// surface picking its own drifts silently and unarguably. `transition: none`
+		// and `animation: none` carry no time and pass.
+		props: /^(transition|animation)(-(duration|delay))?$/,
+		literal: /\b\d*\.?\d+m?s\b/,
+		rung: '`var(--_qm-duration-…)`',
+		doc: 'SURFACES §Motion',
+		cssOnly: true
 	}
 ];
 

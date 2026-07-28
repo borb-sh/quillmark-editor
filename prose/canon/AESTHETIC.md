@@ -24,9 +24,14 @@ overrides to its brand without fighting baked-in decoration.
 
 - **Monochrome and typographic.** Weight and whitespace carry hierarchy, not color
   fills or decorative borders. Color encodes meaning — an inline diagnostic
-  (`--_qm-danger`, `--_qm-warning`), the preview overlay's active field box
-  (`--_qm-accent`) — never ornament. The three status hues are the only rungs that
-  leave the two-pole greyscale.
+  (`--_qm-danger`, `--_qm-warning`), a focused control's ring (`--_qm-accent`) —
+  never ornament. The three status hues are the only rungs that leave the two-pole
+  greyscale.
+- **Colour that answers nothing is ornament, however faint.** The test is whether
+  removing it loses an answer, not whether it is faint enough to tolerate. A hairline
+  on every field box, present before anything is focused or clicked, answers nothing
+  at 55% alpha or at any other. So the preview draws none: correlation is marked as
+  an event that decays (SURFACES §Motion), and the page rests clean.
 - **Icons encode identity or function — never decoration.** A control's glyph
   names its action: reorder, delete, a formatting mark. An icon that dresses a
   label or a section heading, doing a job a word already does, is cut. The set is

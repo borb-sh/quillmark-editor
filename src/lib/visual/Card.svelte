@@ -125,6 +125,22 @@
 	function toggleGroup(group: string): void {
 		expanded = expanded === group ? null : group;
 	}
+
+	/**
+	 * Open the group holding leaf `key`, if this card has one. A collapsed panel is
+	 * clipped to zero height rather than unmounted, so a caret placed inside it — and
+	 * the arrival wash with it — lands where nobody can see it. `VisualEditor.setCaret`
+	 * calls this on every card before landing; the card keeps owning `expanded`, and a
+	 * card that does not hold the key does nothing.
+	 *
+	 * A call, not a prop: a reveal is an event, and modelling it as state needs a
+	 * fresh-identity wrapper to re-fire and an `untrack` to keep the per-keystroke
+	 * re-derive from reopening the accordion under the user.
+	 */
+	export function revealLeaf(key: string): void {
+		const section = grouped.find((s) => s.fields.some((f) => ops.leafKey(f.name) === key));
+		if (section?.group) expanded = section.group;
+	}
 </script>
 
 <section
@@ -205,7 +221,7 @@
 
 			<!-- Group accordion (issue #60): each `ui.group` is a collapsible section,
 		     one open at a time. The header toggles; the panel slides via a
-		     0fr↔1fr grid row (200ms); an open section colors its chevron and left
+		     0fr↔1fr grid row (the `slow` duration rung); an open section colors its chevron and left
 		     rule to the active hue. -->
 			{#each grouped as section (section.group)}
 				{@const isOpen = expanded === section.group}
@@ -454,8 +470,8 @@
 	.qm-group-header :global(.qm-group-chevron) {
 		flex-shrink: 0;
 		transition:
-			transform 200ms ease,
-			color 200ms ease;
+			transform var(--_qm-duration-slow) ease,
+			color var(--_qm-duration-slow) ease;
 	}
 	.qm-group.qm-open .qm-group-header {
 		color: var(--_qm-accent);
@@ -468,7 +484,7 @@
 	.qm-group-panel {
 		display: grid;
 		grid-template-rows: 0fr;
-		transition: grid-template-rows 200ms ease;
+		transition: grid-template-rows var(--_qm-duration-slow) ease;
 	}
 	.qm-group.qm-open .qm-group-panel {
 		grid-template-rows: 1fr;
@@ -482,8 +498,8 @@
 		padding: var(--_qm-space-2) 0 0 0;
 		border-left: 2px solid transparent;
 		transition:
-			padding-left 200ms ease,
-			border-color 200ms ease;
+			padding-left var(--_qm-duration-slow) ease,
+			border-color var(--_qm-duration-slow) ease;
 	}
 	.qm-group.qm-open .qm-group-panel-inner {
 		padding-left: var(--_qm-space-3);

@@ -23,9 +23,9 @@ export interface PreviewOptions {
 export interface PreviewController {
 	/** Repaint `dirtyPages ∩ visible` and re-read geometry — the only apply-driven hop. */
 	refresh(change: ChangeSet): void;
-	/** Scroll `field`'s first box into view and ring it. */
+	/** Scroll `field`'s first box into view and bloom it. */
 	scrollToField(field: string): void;
-	/** Scroll the caret at `field`/`pos` into view and ring its field. */
+	/** Scroll the caret at `field`/`pos` into view and bloom its field on arrival. */
 	focusPosition(field: string, pos: number): void;
 	/** Fold a density multiplier into every future paint (crispness, not layout). */
 	setZoom(scale: number): void;
@@ -140,11 +140,11 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 		},
 		scrollToField(field) {
 			bridge?.scrollToField(field);
-			overlay?.setActiveField(field);
+			overlay?.flashField(field);
 		},
 		focusPosition(field, pos) {
 			bridge?.focusPosition(field, pos);
-			overlay?.setActiveField(field);
+			overlay?.flashField(field);
 		},
 		setZoom(scale) {
 			paintLoop.setDensityZoom(scale);

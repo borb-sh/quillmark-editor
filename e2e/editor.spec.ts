@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { pm, selectAndAwaitPopover } from './support.js';
+import { pm, selectAndAwaitPopover, openPlayground, clickFieldBox } from './support.js';
 
 // Phase 5 exit criterion (browser tier): the /editor split-pane shell is the full
 // reference harness — one LiveSession, the VisualEditor and Preview over one
@@ -9,9 +9,7 @@ import { pm, selectAndAwaitPopover } from './support.js';
 
 test.describe('editor shell', () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto('/editor');
-		// The Typst backend (26 MB) compiles on the first open; give it room.
-		await expect(page.getByTestId('status')).toHaveText('Session open.', { timeout: 60_000 });
+		await openPlayground(page, '/editor');
 	});
 
 	test('(a) both panes mount over one session', async ({ page }) => {
@@ -29,11 +27,7 @@ test.describe('editor shell', () => {
 		// Click the subject field's ink in the PREVIEW overlay (the only place
 		// `[data-qm-field]` exists — the preview surface). The overlay keys on the
 		// canonical DocPath address (`main.subject`), as `regions()` reports it.
-		const subjectBox = page.locator('[data-qm-field="main.subject"]').first();
-		await expect(subjectBox).toBeVisible();
-		const rect = await subjectBox.boundingBox();
-		if (!rect) throw new Error('subject overlay box has no bounding box');
-		await page.mouse.click(rect.x + rect.width / 2, rect.y + rect.height / 2);
+		await clickFieldBox(page, 'main.subject');
 
 		// The hit surfaced (its `field` is the canonical DocPath), and setCaret
 		// focused the editor's subject leaf — so the editor emitted its own `Addr`

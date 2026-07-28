@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { openPlayground, clickFieldBox } from './support.js';
 
 // Phase 2 exit criteria (browser tier): the playground paints usaf_memo, draws
 // field-box overlays, resolves clicks to content positions, and bounds mounted
@@ -19,9 +20,7 @@ async function mountedPages(page: Page): Promise<number[]> {
 
 test.describe('preview', () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto('/preview');
-		// The Typst backend (26 MB) compiles on the first open; give it room.
-		await expect(page.getByTestId('status')).toHaveText('Session open.', { timeout: 60_000 });
+		await openPlayground(page, '/preview');
 	});
 
 	test('(a) paints at least one canvas with non-zero backing size', async ({ page }) => {
@@ -40,23 +39,14 @@ test.describe('preview', () => {
 	test('(c) clicking the subject field ink sets last-hit to a subject ContentHit', async ({
 		page
 	}) => {
-		const subjectBox = page.locator('[data-qm-field="main.subject"]').first();
-		await expect(subjectBox).toBeVisible();
-		const rect = await subjectBox.boundingBox();
-		if (!rect) throw new Error('subject overlay box has no bounding box');
-
-		await page.mouse.click(rect.x + rect.width / 2, rect.y + rect.height / 2);
+		await clickFieldBox(page, 'main.subject');
 		await expect(page.getByTestId('last-hit')).toContainText('"field":"main.subject"');
 	});
 
 	test('(d) clicking a clearly-empty margin area does not change last-hit', async ({ page }) => {
 		// First set last-hit via a real field click, so the follow-up margin click
 		// is proven to leave an EXISTING hit alone, not just that it starts empty.
-		const subjectBox = page.locator('[data-qm-field="main.subject"]').first();
-		await expect(subjectBox).toBeVisible();
-		const sRect = await subjectBox.boundingBox();
-		if (!sRect) throw new Error('subject overlay box has no bounding box');
-		await page.mouse.click(sRect.x + sRect.width / 2, sRect.y + sRect.height / 2);
+		await clickFieldBox(page, 'main.subject');
 		await expect(page.getByTestId('last-hit')).toContainText('"field":"main.subject"');
 		const before = await page.getByTestId('last-hit').textContent();
 

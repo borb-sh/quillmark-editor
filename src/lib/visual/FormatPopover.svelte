@@ -348,7 +348,7 @@
 		/* Scale-in on mount; the {#if open} guard mounts fresh each raise, so the
 		   keyframe runs once per appearance. Animates the inner pill only — never the
 		   outer floating-ui wrapper, whose transform positions it. */
-		animation: qm-pop-in 0.12s ease-out;
+		animation: qm-pop-in var(--_qm-duration-fast) ease-out;
 	}
 	@keyframes qm-pop-in {
 		from {
