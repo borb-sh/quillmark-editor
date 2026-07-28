@@ -39,9 +39,23 @@ header, its field list, and its body, with an add-card affordance between blocks
 only — `main` has none. In the card header, right-aligned opposite the title: a
 hover-revealed move-up/move-down chevron pair, pinned visible while the card is
 active, each disabled at its edge (up on the first card, down on the last); then
-an always-visible delete. Reorder is buttons, not drag. Rename is the
-inline-editable title itself, not a separate control; retype is a between-block
-selector.
+an always-visible delete. Reorder is buttons, not drag.
+
+Rename is the inline-editable title itself, not a separate control. The title
+autosizes to its text, so the **hit region** is the header's free width rather
+than that box: a press anywhere left of the controls enters the edit, and entry
+selects all whether it lands on the text or beside it.
+
+The header carries **no retype**. A kind is chosen once, at the between-block
+insert affordance; the only path that changes an existing card's kind is the
+recovery shell's selector, for a card whose kind the quill no longer declares.
+A header retype whose quill declares one kind is a control that cannot do
+anything, and a document whose cards are all correctly typed has nothing to
+retype.
+
+Insert and reorder **move the viewport**: a new card scrolls to centre, a moved
+card to `nearest`, so a structure edit past the fold is never silent. Both honour
+`prefers-reduced-motion`.
 
 Drag reorder is not carried in V1: the interaction cost (threshold, drop targets,
 keyboard and touch parity) buys only what the buttons already do.

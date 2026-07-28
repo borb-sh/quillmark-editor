@@ -1,6 +1,6 @@
 <!--
   One card block (VISUAL_EDITOR_UIUX §"Card stack"): the header (composable cards
-  only — an inline-editable title, a degenerate retype selector, and the reorder/
+  only — an inline-editable title over a full-width rename region, and the reorder/
   delete controls), the grouped field list packed by `ui.group`/`ui.compact`, and
   the body prose leaf. `main` is headerless with no controls. Every prose leaf
   takes a parent-built LIVE address so a card reorder re-targets its commits
@@ -93,6 +93,17 @@
 			el.focus();
 		}
 	}
+	// The rename region extends the title's hit area to the header's free width (issue
+	// #123). A press on that empty space focuses the input — which selects all, the
+	// same click-to-enter the title itself gets — and preventDefault keeps the press
+	// from starting a text selection on the wrapper. A press ON the input is left to
+	// `onTitleMousedown`, which owns the already-focused caret-placement case.
+	function onRenameMousedown(e: MouseEvent): void {
+		const input = (e.currentTarget as HTMLElement).querySelector('input');
+		if (!input || e.target === input) return;
+		e.preventDefault();
+		input.focus();
+	}
 	function onTitleKeydown(e: KeyboardEvent): void {
 		const el = e.currentTarget as HTMLInputElement;
 		if (e.key === 'Enter') {
@@ -141,9 +152,25 @@
 		const section = grouped.find((s) => s.fields.some((f) => ops.leafKey(f.name) === key));
 		if (section?.group) expanded = section.group;
 	}
+
+	let el = $state<HTMLElement | undefined>(undefined);
+	/**
+	 * Bring this card into view after the structure mutation that placed it (issue
+	 * #123) — `center` for an insert, `nearest` for a reorder that only needs to stay
+	 * on screen. `scrollIntoView` walks to its own scroll ancestor, so this is
+	 * indifferent to whether the package or the consumer owns the scroll container.
+	 *
+	 * The reduced-motion guard is JS rather than the CSS the accordion uses: a
+	 * scroll's behaviour is an argument, not a transition a media query can cancel.
+	 */
+	export function scrollIntoViewCard(block: ScrollLogicalPosition): void {
+		const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+		el?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block });
+	}
 </script>
 
 <section
+	bind:this={el}
 	class="qm-card"
 	class:qm-main={card.isMain}
 	class:qm-active={active}
@@ -154,47 +181,39 @@
 	{:else}
 		{#if !card.isMain}
 			<header class="qm-card-header">
-				<!-- Autosize: the sizer span's ::after mirrors the text and dictates the grid
-			     cell width, so the overlaid input grows with content and reads as text,
-			     not a persistent box (issue #58 §8). `data-value` falls back to the
-			     placeholder so an empty title still reserves its resolved-title width. -->
-				<span class="qm-card-title-sizer" data-value={localTitle || card.titlePlaceholder}>
-					<input
-						class="qm-card-title"
-						value={localTitle}
-						placeholder={card.titlePlaceholder}
-						aria-label="Card title"
-						size="1"
-						data-testid={`card-title-${index}`}
-						onmousedown={onTitleMousedown}
-						onfocus={onTitleFocus}
-						onkeydown={onTitleKeydown}
-						oninput={(e) => {
-							localTitle = (e.currentTarget as HTMLInputElement).value;
-							ops.rename(localTitle);
-						}}
-					/>
-				</span>
+				<!-- The rename target is the header's whole free width, not the title's text
+			     box (issue #123): the autosize keeps that box exactly as wide as its
+			     text, so every pixel beside it used to be dead. A press anywhere in here
+			     enters the edit. -->
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<div
+					class="qm-card-rename"
+					data-testid={`card-rename-${index}`}
+					onmousedown={onRenameMousedown}
+				>
+					<!-- Autosize: the sizer span's ::after mirrors the text and dictates the grid
+				     cell width, so the overlaid input grows with content and reads as text,
+				     not a persistent box (issue #58 §8). `data-value` falls back to the
+				     placeholder so an empty title still reserves its resolved-title width. -->
+					<span class="qm-card-title-sizer" data-value={localTitle || card.titlePlaceholder}>
+						<input
+							class="qm-card-title"
+							value={localTitle}
+							placeholder={card.titlePlaceholder}
+							aria-label="Card title"
+							size="1"
+							data-testid={`card-title-${index}`}
+							onmousedown={onTitleMousedown}
+							onfocus={onTitleFocus}
+							onkeydown={onTitleKeydown}
+							oninput={(e) => {
+								localTitle = (e.currentTarget as HTMLInputElement).value;
+								ops.rename(localTitle);
+							}}
+						/>
+					</span>
+				</div>
 				<div class="qm-card-header-right">
-					{#if kinds.length > 1}
-						<select
-							class="qm-retype"
-							value={card.kind}
-							data-testid={`card-retype-${index}`}
-							onchange={(e) => ops.retype((e.currentTarget as HTMLSelectElement).value)}
-						>
-							{@render kindOptions()}
-						</select>
-					{:else}
-						<!-- Degenerate retype (one declared kind): still wired to setCardKind. -->
-						<button
-							type="button"
-							class="qm-retype-btn"
-							title="Retype card"
-							data-testid={`card-retype-${index}`}
-							onclick={() => ops.retype(card.kind)}>{humanize(card.kind)}</button
-						>
-					{/if}
 					<CardControls
 						{isFirst}
 						{isLast}
@@ -345,8 +364,8 @@
 	</div>
 {/snippet}
 
-<!-- The declared card kinds as `<option>`s — shared by the header retype select and
-     the recovery shell's retype (issue #72), so one humanized option list feeds both. -->
+<!-- The declared card kinds as `<option>`s for the recovery shell's retype (issue #72),
+     the one place a card's kind changes after insert. -->
 {#snippet kindOptions()}
 	{#each kinds as k (k)}
 		<option value={k}>{humanize(k)}</option>
@@ -385,10 +404,23 @@
 	.qm-card.qm-active :global(.qm-card-reorder) {
 		opacity: 1;
 	}
+	/* The rename hit region (issue #123): the header's free width, full height, so a
+	   press anywhere left of the controls enters the title edit. `min-width: 0` lets
+	   it shrink past the title's intrinsic width; `align-self: stretch` beats the
+	   header's `align-items: center` so the region is the row's whole height rather
+	   than the input's. */
+	.qm-card-rename {
+		flex: 1;
+		min-width: 0;
+		align-self: stretch;
+		display: flex;
+		align-items: center;
+		cursor: text;
+	}
 	/* Autosize sizer (issue #58 §8): an inline-grid whose ::after mirrors the text
 	   into the single cell, so the overlaid input tracks its content width. Bounded
-	   to the header's free space (`min-width: 0` + `max-width: 100%`); the header's
-	   space-between keeps the controls right-aligned. The input inherits the type
+	   to the rename region's width (`min-width: 0` + `max-width: 100%`), which the
+	   header's space-between keeps clear of the controls. The input inherits the type
 	   tokens (`font: inherit`) so the mirror and the input measure alike. */
 	.qm-card-title-sizer {
 		display: inline-grid;
@@ -424,16 +456,6 @@
 		border-color: var(--_qm-border);
 		background: var(--_qm-surface);
 		outline: none;
-	}
-	.qm-retype,
-	.qm-retype-btn {
-		font-size: var(--_qm-text-meta);
-		border: 1px solid var(--_qm-border);
-		border-radius: var(--_qm-radius-inner);
-		background: var(--_qm-surface);
-		padding: var(--_qm-space-half) var(--_qm-space-2);
-		cursor: pointer;
-		color: var(--_qm-ink-label);
 	}
 	.qm-card-body {
 		display: flex;

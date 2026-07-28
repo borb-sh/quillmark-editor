@@ -22,6 +22,7 @@
   once per derive.
 -->
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { isQuillmarkError, MAIN_CARD_ADDR } from '../core/index.js';
 	import { bloomInside } from '../core/bloom.js';
 	import type {
@@ -145,7 +146,10 @@
 	const leaves = new Map<string, FieldController>();
 	// Card handles, for `setCaret`'s reveal hop — the one thing a leaf's own controller
 	// cannot do, since which group is open is the card's state (Card §revealLeaf).
-	type CardHandle = { revealLeaf(key: string): void };
+	type CardHandle = {
+		revealLeaf(key: string): void;
+		scrollIntoViewCard(block: ScrollLogicalPosition): void;
+	};
 	let mainCard = $state<CardHandle | undefined>(undefined);
 	let cardRefs = $state<(CardHandle | undefined)[]>([]);
 	function register(key: string, controller: FieldController): void {
@@ -240,14 +244,36 @@
 	}
 
 	// ── Structure mutators (resolve id→index here, then reorder ids in lockstep) ──
+	/**
+	 * Scroll the card `id` into view once the mutation that placed it has rendered
+	 * (issue #123) — without this an insert on a document of any length happens
+	 * off-screen and reads as nothing happening.
+	 *
+	 * Coalesced on a single pending id: two quick adds resolve their `tick()` in
+	 * order, the earlier one sees a newer pending id and drops out, so one smooth
+	 * scroll runs to the last card rather than two fighting over the same scroller.
+	 */
+	let pendingScrollId: string | null = null;
+	async function scrollCardIntoView(id: string, block: ScrollLogicalPosition): Promise<void> {
+		pendingScrollId = id;
+		await tick();
+		if (pendingScrollId !== id) return;
+		pendingScrollId = null;
+		const i = cardIndexOf(id);
+		if (i >= 0) cardRefs[i]?.scrollIntoViewCard(block);
+	}
 	function addCard(atIndex: number, kind: string): void {
 		try {
 			const overlay = doc.seedOverlay(kind);
 			const card = quill.seedCard(kind, overlay);
 			if (!card) return;
 			doc.insertCard(card, atIndex);
-			cardIds = [...cardIds.slice(0, atIndex), seq.next(), ...cardIds.slice(atIndex)];
+			const id = seq.next();
+			cardIds = [...cardIds.slice(0, atIndex), id, ...cardIds.slice(atIndex)];
 			bump();
+			// `center` for an insert: the new card is the subject, and centring it shows
+			// the neighbours it landed between.
+			void scrollCardIntoView(id, 'center');
 		} catch (e) {
 			console.error('[quillmark/editor] addCard failed', e);
 		}
@@ -263,6 +289,9 @@
 		w.splice(to, 0, x);
 		cardIds = w;
 		bump();
+		// `nearest` for a reorder: the card was already in view and only needs to stay
+		// there, so a card that never left the viewport does not move it at all.
+		void scrollCardIntoView(id, 'nearest');
 	}
 	function removeCardById(id: string): void {
 		const i = cardIndexOf(id);
