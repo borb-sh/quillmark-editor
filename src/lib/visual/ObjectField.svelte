@@ -101,7 +101,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
-		border-left: 2px solid var(--_qm-border);
+		border-left: var(--_qm-border-width) solid var(--_qm-border);
 		padding-left: var(--_qm-space-2);
 	}
 	.qm-object-prop {

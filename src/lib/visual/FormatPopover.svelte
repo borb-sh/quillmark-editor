@@ -341,7 +341,7 @@
 		background: var(--_qm-surface-popover);
 		backdrop-filter: blur(var(--_qm-blur));
 		-webkit-backdrop-filter: blur(var(--_qm-blur));
-		border: 1px solid var(--_qm-border);
+		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
 		box-shadow: var(--_qm-shadow-popover);
 		padding: var(--_qm-space);
@@ -373,7 +373,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		border: 1px solid transparent;
+		border: var(--_qm-border-width) solid transparent;
 		background: transparent;
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
@@ -403,7 +403,7 @@
 		font: inherit;
 		font-size: var(--_qm-text-body);
 		padding: var(--_qm-space) var(--_qm-space-2);
-		border: 1px solid var(--_qm-border);
+		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
 		min-width: 12rem;
 	}

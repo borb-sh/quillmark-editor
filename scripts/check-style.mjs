@@ -4,6 +4,7 @@
 // they are a table, not three scripts.
 //
 //   rhythm   padding / margin / gap / border-radius   a px|rem length
+//   stroke   border / border-*-width                  a length, at any width
 //   type     font-size / font-weight / font-family    a size, a weight, a family
 //   colour   color / background / border / shadow …   a hex or a colour function
 //   recede   opacity                                  a step off the ladder
@@ -44,6 +45,9 @@ const THEMING = join(ROOT, 'THEMING.md');
 
 /** A colour literal: hex, or a functional notation that names a colour space. */
 const COLOR_LITERAL = /#[0-9a-fA-F]{3,8}\b|\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(/;
+/** A length literal, for the axes whose values are sizes. The rhythm axis keeps its
+ *  own narrower shape (`px|rem`); the type and stroke axes count `em` too. */
+const LENGTH_LITERAL = /\b\d*\.?\d+(px|rem|em)\b/;
 /** Colour properties as `Object.assign(el.style, …)` spells them — no trailing `\b`,
  *  so the camelCase compounds (`backgroundColor`, `borderTop`) match too. */
 const STYLE_MARKER = /\b(style|background|border|color|outline|boxShadow|textShadow)/;
@@ -65,8 +69,22 @@ const AXES = [
 		cssOnly: true
 	},
 	{
+		// Stroke width, which the colour axis below does NOT see: it tests `border-*`
+		// for a colour literal, so `border-left: 2px solid var(--_qm-border)` reads a
+		// rung, passes, and renders at a width nothing chose — a divergent width beside
+		// the hairlines with the gate green (issue #117). Shorthands included, since
+		// that is where the width hides. What this holds is that no width is MINTED;
+		// which rung a width reads is beyond either axis shape, so a border that reads
+		// `--_qm-ring-width` passes here and is review's to catch.
+		props: /^border(-(top|right|bottom|left))?(-width)?$/,
+		literal: LENGTH_LITERAL,
+		rung: '`var(--_qm-border-width)`',
+		doc: 'SURFACES §Rhythm',
+		cssOnly: true
+	},
+	{
 		props: /^font-size$/,
-		literal: /\b\d*\.?\d+(px|rem|em)\b/,
+		literal: LENGTH_LITERAL,
 		rung: '`var(--_qm-text-…)`',
 		doc: 'THEMING §Typography',
 		cssOnly: true

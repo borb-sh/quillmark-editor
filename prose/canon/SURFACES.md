@@ -33,13 +33,26 @@ The card is the container; nothing inside it is a second box.
   is behind — a control is one rung off its card, always. `main` needs no tone to say
   which card it is: it is the only headerless card, the only one without
   reorder/delete, and the first in the column.
-- **Fields and the body sit quiet inside the card.** A scalar control and a prose
-  leaf each carry one hairline — the shared `--_qm-border` at `--_qm-radius-inner`
-  over `--_qm-surface` (§"The shared recipe") — and nothing heavier: no fill, no
-  shadow, no frame within the frame. The single hairline is the floor a control
-  needs to read as editable and to host its focus ring (§"Focus and active state");
-  a *second* box inside it — a nested border, a filled panel — is the density the
-  monochrome rule (AESTHETIC.md) removes.
+- **Fields sit quiet inside the card; the body is unframed.** A scalar control and
+  an *inline* prose leaf each carry one hairline — the shared `--_qm-border` at
+  `--_qm-radius-inner` over `--_qm-surface` (§"The shared recipe") — and nothing
+  heavier: no fill, no shadow, no frame within the frame. The single hairline is the
+  floor a control needs to read as editable and to host its focus ring (§"Focus and
+  active state"); a *second* box inside it — a nested border, a filled panel — is
+  the density the monochrome rule (AESTHETIC.md) removes. The **body takes no box at
+  all**: it is the one surface in the card with no edge, which is what makes it read
+  as the paper the card is printed on rather than as one more field. Being unframed
+  is the statement, not a saving.
+- **The metadata bracket is strokes, not a box.** The card's chrome brackets the
+  fields, and the body is what falls outside it: a rule under the card title, a rule
+  dividing the fields from the body, and a left rule on the open section spanning its
+  header and its panel. All three at `--_qm-border-width` in `--_qm-border` — the
+  sameness is the whole effect, since a figure whose sides disagree on width or tone
+  reads as unrelated lines rather than as one bracket. It stays a *bracket*: each
+  horizontal is conditional on what it means, so the headerless `main` has no top
+  rule and a bodiless card no bottom one, and the right side is never drawn. An open
+  figure at the card's own gutter is not the second box this section forbids — a
+  closed one would be.
 - **The rungs step toward the ink, which the word "raised" only half means.** A card
   is *darker* than the page in light and *lighter* in dark: a tinted plate laid on
   the page, not a lit surface floating above it. The three surface rungs sit 4pp
@@ -65,7 +78,10 @@ control renders subtly wrong.
 
 - **`.qm-control-box`** — a typed value's box: `--_qm-surface`, one `--_qm-border`
   hairline, `--_qm-radius-inner`, `--_qm-text-body`, one padding rung. Every scalar
-  control and every prose leaf.
+  control and every prose leaf **except the body**, which the slot withholds it from
+  (`ProseField`'s `unframed`). The predicate is the slot's, not the leaf's: a
+  `richtext` field without `inline` is block prose and still a control in a row of
+  controls, so only the caller that knows it is rendering the body can say so.
 - **`.qm-icon-btn` / `.qm-add-affordance`** — the two button families; see below.
 - the two floating surfaces share the popover recipe above.
 
@@ -88,17 +104,38 @@ expression of the same floor would have nothing watching it.
 to one paragraph is a control in a row of controls, so it draws the same five
 declarations and is therefore exactly as tall as the `.qm-input` next to it — by
 construction, with no floor of its own. Two `min-height` literals tuned to agree
-would drift the first time either box changed. The block leaf — the body — is the
-one that is not a control: it opens at a few lines and grows.
+would drift the first time either box changed. The body is the one that is not a
+control at all: it opens at a few lines and grows, and it draws no box. The **type
+rung** is a leaf's either way, and sits on the leaf's own base rule rather than in
+the box it withholds: a leaf that inherits its size lands on the host page's body
+rung, minting no literal for `check:style` to catch. Paper reads the ramp exactly
+as a control does.
 
 ## Rhythm
 
 **Spacing.** A small closed scale — `--_qm-space` and its `half`/`2`/`3`/`4`
-multiples — is the shared rhythm. Card padding and the prose-leaf inset stack to a
-uniform inset on every side, so a body-shown card and a body-hidden card stay
-symmetric; every left edge aligns to one gutter. Stacked regions — a card's header,
-its field list, its body — are separated by one gap, not per-region margins that
-drift. Pick from the scale; an in-between value is a review smell.
+multiples — is the shared rhythm. Card padding is uniform on every side, so a
+body-shown card and a body-hidden card stay symmetric, and the card's content edge
+is the gutter every top-level region starts on: the field list, the metadata
+bracket's two horizontals, and the body's first character alike. What indents from
+that gutter is **containment, stated geometrically** — a grouped field sits inside
+its section's rule, a section label sits right of its disclosure chevron — and it
+is the one cue that survives a section being open. One gutter, then, is a claim
+about the card's inset and about what starts on it, not a prohibition on hierarchy
+inside it. Stacked regions — a card's header, its field list, its body — are
+separated by one gap, not per-region margins that drift. Pick from the scale; an
+in-between value is a review smell.
+
+**Stroke.** One width for every edge the chrome draws — `--_qm-border-width`, a
+threshold rather than a rhythm choice, so a hairline stays a hairline at any
+`--qm-space`. The card's edge, a control's box, a nested object's rule, and the
+metadata bracket's three sides are all the same stroke. It needs a rung because the
+colour axis tests `border-*` for a *colour* literal only, so a shorthand that reads
+a colour rung passes at whatever width it likes and a divergent stroke sits beside
+the hairlines with the gate green. `check:style`'s border-width axis closes that:
+what it holds is that no width is minted — a width still has to READ a rung, and
+reading the wrong one is review's to catch, since neither axis shape can name a
+particular token.
 
 **Capacity.** A field section's column count is a closed ramp too — 1 → 2 → 4, at
 `28rem` and `57rem` of CONTAINER width (VISUAL_EDITOR_UIUX §"Section grid"). Each
@@ -164,9 +201,15 @@ case, and one rule for both is the conflation [#45] resolves:
   the editor convention for a text-editing region — Google Docs, Notion, every
   ProseMirror surface — and a ring around a `contenteditable` reads as the form
   chrome the AESTHETIC rule strips, not as paper. So the leaf clears its
-  contenteditable outline deliberately; the caret *is* the replacement, and the
-  active leaf is cued quietly by tinting its wrapper hairline to `--_qm-accent`
-  (`:focus-within`), not by a heavy ring.
+  contenteditable outline deliberately; the caret *is* the replacement, and a leaf
+  that has a hairline cues active quietly by tinting it to `--_qm-accent`
+  (`:focus-within`), not by a heavy ring. **The body has no hairline and takes no
+  substitute** — the caret is the whole indicator there. It is the only writing
+  surface in its card and the largest thing in it, so "which leaf am I in" is not a
+  question it raises; a rule drawn to answer it would be a stroke bought back to
+  replace the one unframing removed. The correlation wash is unaffected either way:
+  it mounts as an inset child of the leaf (`core/bloom.ts`), needing the leaf to be
+  positioned and nothing else, so the editor↔preview address keeps its cue on paper.
 
 One hue carries "active" across the panes: the editor's focus ring and the
 correlation bloom both resolve `--_qm-accent`, so a field reads as engaged with the

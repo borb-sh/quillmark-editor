@@ -40,18 +40,26 @@
 	   edited, and nothing raises it — no literal is minted, so `check:style` stays
 	   green while a control renders subtly the wrong height.
 
+	   The type half is a WIDER list than the box, because it is not chrome: the body
+	   leaf withholds the box and still reads the ramp (SURFACES §"The shared recipe").
 	   `font: inherit` first, because a UA control inherits neither family nor face;
-	   then the SIZE off the ramp, because inheriting that lands the control on the
+	   then the SIZE off the ramp, because inheriting that lands the surface on the
 	   host page's body size — a rung the scale never minted, and one the consumer
 	   moves by restyling their page rather than by turning `--qm-font-size`
-	   (issue #119). */
+	   (issue #119). Splitting it here rather than restating it on the unframed leaf is
+	   the same argument the rule itself rests on: a second copy agrees until one is
+	   edited, and both copies read a rung, so `check:style` sees nothing either way. */
+	.qm-control-box,
+	.qm-input,
+	.qm-prose {
+		font: inherit;
+		font-size: var(--_qm-text-body);
+	}
 	.qm-control-box,
 	.qm-input {
 		padding: var(--_qm-space) var(--_qm-space-2);
-		border: 1px solid var(--_qm-border);
+		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
-		font: inherit;
-		font-size: var(--_qm-text-body);
 		background: var(--_qm-surface);
 	}
 	/* What a form control adds over the box: it does not fill its row on its own. */

@@ -54,7 +54,7 @@
 		width: 1.75rem;
 		height: 1rem;
 		padding: var(--_qm-space-half);
-		border: 1px solid var(--_qm-border);
+		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius-pill);
 		background: var(--_qm-surface-hover);
 		cursor: pointer;
