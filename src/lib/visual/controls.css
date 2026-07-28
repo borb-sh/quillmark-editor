@@ -48,7 +48,7 @@
 	.qm-control-box,
 	.qm-input {
 		padding: var(--_qm-space) var(--_qm-space-2);
-		border: 1px solid var(--_qm-border);
+		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
 		font: inherit;
 		font-size: var(--_qm-text-body);

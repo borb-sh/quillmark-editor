@@ -88,7 +88,7 @@
 	   colour — not by a badge or an accent (AESTHETIC §"Secondary text recedes").
 	   It mints no token of its own; every value here is an existing dial. */
 	.qm-tips {
-		border: 1px solid var(--_qm-border);
+		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
 		padding: var(--_qm-space-3) var(--_qm-space-4);
 		background: var(--_qm-surface-raised);

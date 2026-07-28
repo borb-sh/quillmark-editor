@@ -18,6 +18,13 @@
 		addr: Addr;
 		inline?: boolean;
 		plaintext?: boolean;
+		/**
+		 * Draw no box — the card body's leaf, and nothing else (issue #117). A property
+		 * of the SLOT rather than of the leaf: `block` is not the same predicate, since
+		 * a `richtext` field without `inline` is block prose and still a control in a
+		 * row of controls. Only the body is paper, and only its caller knows it is.
+		 */
+		unframed?: boolean;
 		/** Accessible name for the editable region (the visual label is a sibling span). */
 		label?: string;
 		/** Ghost shown on the empty leaf — the resolved `default:` (issue #58 §9). */
@@ -36,6 +43,7 @@
 		addr,
 		inline,
 		plaintext,
+		unframed,
 		label,
 		placeholder,
 		leafKey,
@@ -81,7 +89,9 @@
 
 <div
 	bind:this={containerEl}
-	class="qm-prose qm-control-box"
+	class="qm-prose"
+	class:qm-control-box={!unframed}
+	class:qm-prose-unframed={unframed}
 	class:qm-prose-block={block}
 	data-leaf-key={leafKey}
 	data-testid={testid}
@@ -106,15 +116,28 @@
 	.qm-prose-block {
 		min-height: calc(var(--_qm-text-body) * 6);
 	}
+	/* The unframed leaf takes one declaration off `.qm-control-box`, and it is the one
+	   that is not chrome (issue #117). Dropping the class drops the SIZE with the box,
+	   and a leaf that inherits its size lands on the host page's body rung — #119 again,
+	   silently, since no literal is minted for `check:style` to see. Paper reads the
+	   ramp exactly as a control does. Nothing else returns: no padding, so the body's
+	   text starts on the card's gutter rather than a border and an inset inside it. */
+	.qm-prose-unframed {
+		font-size: var(--_qm-text-body);
+	}
 	/* The caret is the prose leaf's focus indicator, not a ring — a ring around a
 	   contenteditable reads as the form chrome AESTHETIC strips. So the outline is
-	   dropped; the active leaf is cued by the wrapper border tint below (SURFACES §Focus). */
+	   dropped; a boxed leaf tints its wrapper border below (SURFACES §Focus). */
 	.qm-prose :global(.ProseMirror) {
 		outline: none;
 	}
 	/* Active-leaf cue: tint the hairline to the focus hue, shared with the scalar
-	   ring and the preview active box — no added box (the editor↔preview address). */
-	.qm-prose:focus-within {
+	   ring and the preview active box — no added box (the editor↔preview address).
+	   Scoped to the leaves that HAVE a hairline: the body has none, and the caret is
+	   the whole indicator there — one surface per card, and the largest in it, so
+	   "which leaf am I in" is not a question it raises. A rule drawn to answer it
+	   would be a stroke bought back to replace the one unframing removed. */
+	.qm-prose.qm-control-box:focus-within {
 		border-color: var(--_qm-accent);
 	}
 	/* Empty-leaf ghost (issue #58 §9): the resolved `default:` as dim/italic ghost,

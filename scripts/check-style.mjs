@@ -65,6 +65,20 @@ const AXES = [
 		cssOnly: true
 	},
 	{
+		// Stroke width, which the colour axis below does NOT see: it tests `border-*`
+		// for a colour literal, so `border-left: 2px solid var(--_qm-border)` reads a
+		// rung, passes, and renders at a width nothing chose. That is how the accordion
+		// carried a 2px rule beside 1px ones through a green gate (issue #117). The
+		// bracket's claim is that its three sides are ONE stroke, and a claim no axis
+		// holds is a convention, not an invariant. Shorthands included, since that is
+		// where the width usually hides.
+		props: /^border(-(top|right|bottom|left))?(-width)?$/,
+		literal: /\b\d*\.?\d+(px|rem|em)\b/,
+		rung: '`var(--_qm-border-width)`',
+		doc: 'SURFACES §Rhythm',
+		cssOnly: true
+	},
+	{
 		props: /^font-size$/,
 		literal: /\b\d*\.?\d+(px|rem|em)\b/,
 		rung: '`var(--_qm-text-…)`',

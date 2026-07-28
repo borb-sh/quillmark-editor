@@ -100,6 +100,14 @@
 		--_qm-duration-linger: 1100ms;
 
 		/* ── Geometry (SURFACES §Rhythm) ─────────────────────────────────────────*/
+		/* ONE stroke width for every edge the chrome draws — a card's, a control's,
+		   and the metadata bracket's three rules alike. A threshold rather than a
+		   rhythm choice, like the tap floor: a hairline is a hairline at any
+		   `--qm-space`, so it does not derive from a dial. It exists as a rung because
+		   the bracket's whole claim is that its vertical and its horizontals are the
+		   same stroke, and `check:style`'s border-width axis can only hold that
+		   against a token. */
+		--_qm-border-width: 1px;
 		--_qm-radius: var(--qm-radius, 8px);
 		--_qm-radius-inner: calc(var(--_qm-radius) / 2);
 		/* A fully-rounded end cap — a shape tier, not a step on the radius ramp, so

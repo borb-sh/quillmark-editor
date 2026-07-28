@@ -132,8 +132,15 @@ is a separate concern (the island controls), not gated by this.
   always visible. A section header is a heading, not metadata: sentence case at the
   field-label rung, its whole row the target, its label centred between the rule
   above it and the one it draws. Open and hover are ink steps; the chevron's
-  rotation carries open/closed, and no hue enters (AESTHETIC §Rules).
-- **Prose leaf** — the body and each rich field as an inline WYSIWYG surface.
+  rotation carries open/closed, and no hue enters (AESTHETIC §Rules). The open
+  section also draws the bracket's vertical, down its header and its panel together
+  (SURFACES §Elevation) — which is what gives it a corner to close into where the
+  bracket's horizontal meets it, at the top of the first section or the bottom of the
+  last. A section in between meets neither and does not try to: the stroke reads by
+  being the same stroke, not by terminating.
+- **Prose leaf** — each rich field as an inline WYSIWYG surface, and the body as
+  paper: no label — "Body" names the surface, and the accessible name stays on the
+  leaf — and no box, the bracket's bottom rule doing the separating a border was.
 - **Per-field state** — focus, inline diagnostics, a ghosted `default:`
   placeholder (never written back — it lives in the schema), a persistent required
   `*` on no-`default:` (Unendorsed) fields, and the field's `description:` as a

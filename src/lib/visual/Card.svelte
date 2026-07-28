@@ -14,7 +14,6 @@
 	import type { CardModel, FieldModel } from './structure.js';
 	import { placeFields, humanize, initialExpandedGroup } from './structure.js';
 	import Field from './Field.svelte';
-	import FieldLabel from './FieldLabel.svelte';
 	import ProseField from './ProseField.svelte';
 	import CardControls from './CardControls.svelte';
 	import DiagnosticList from './DiagnosticList.svelte';
@@ -229,51 +228,80 @@
 		{/if}
 
 		<div class="qm-card-body">
-			<!-- Ungrouped fields render above the accordion, always visible (issue #60):
-		     a label-less section has no header to toggle, and these read as the card's
-		     primary fields. -->
-			{#each ungrouped as section (section.group ?? '_ungrouped')}
-				<div class="qm-section">
-					{@render sectionFields(section.fields)}
-				</div>
-			{/each}
-
-			<!-- Group accordion (issue #60): each `ui.group` is a collapsible section,
-		     one open at a time. The header toggles; the panel slides via a
-		     0fr↔1fr grid row (the `slow` duration rung). The sections share ONE wrapper
-		     with no gap of its own: each header's symmetric padding is the whole
-		     inter-group rhythm, so a label sits equidistant from the rule above it and
-		     its own (issue #118). The card body's gap still separates this block from
-		     the ungrouped fields and the body leaf. -->
-			<div class="qm-groups">
-				{#each grouped as section (section.group)}
-					{@const isOpen = expanded === section.group}
-					<div class="qm-group" class:qm-open={isOpen}>
-						<button
-							type="button"
-							class="qm-group-header"
-							aria-expanded={isOpen}
-							data-testid={`group-${base}-${section.group}`}
-							onclick={() => toggleGroup(section.group as string)}
-						>
-							<ChevronRight class="qm-group-chevron" size={14} />
-							<span class="qm-group-label">{section.label}</span>
-						</button>
-						<div class="qm-group-panel">
-							<div class="qm-group-panel-inner">
-								{@render sectionFields(section.fields)}
-							</div>
-						</div>
+			<!-- The metadata block, and the thing the bracket brackets (issue #117): every
+		     field the card has, ungrouped and grouped alike, inside one element whose
+		     top and bottom EDGES are the bracket's two horizontals. Anchoring them here
+		     rather than on the header and on the accordion is what lets an open
+		     section's vertical actually reach them — a rule drawn in the card body's
+		     gap instead would stand clear of where that vertical stops, and the corner
+		     it exists to close would miss. It also survives the shapes the accordion
+		     does not have: a card with no groups still terminates above its body,
+		     because the rule belongs to the fields, not to the sections. -->
+			<div
+				class="qm-card-meta"
+				class:qm-meta-top={!card.isMain}
+				class:qm-meta-bottom={card.hasBody}
+			>
+				<!-- Ungrouped fields render above the accordion, always visible (issue #60):
+			     a label-less section has no header to toggle, and these read as the card's
+			     primary fields. -->
+				{#each ungrouped as section (section.group ?? '_ungrouped')}
+					<div class="qm-section">
+						{@render sectionFields(section.fields)}
 					</div>
 				{/each}
+
+				<!-- Group accordion (issue #60): each `ui.group` is a collapsible section,
+			     one open at a time. The header toggles; the panel slides via a
+			     0fr↔1fr grid row (the `slow` duration rung). The sections share ONE wrapper
+			     with no gap of its own: each header's symmetric padding is the whole
+			     inter-group rhythm, so a label sits equidistant from the rule above it and
+			     its own (issue #118). The card body's gap still separates this block from
+			     the ungrouped fields and the body leaf.
+
+			     Rendered only when a card HAS groups, so an empty accordion is not the
+			     bracket's last child: the bottom rule's inset belongs to whichever block
+			     actually abuts it, and a zero-height wrapper standing there would take it
+			     from the ungrouped fields that do. -->
+				{#if grouped.length}
+					<div class="qm-groups">
+						{#each grouped as section (section.group)}
+							{@const isOpen = expanded === section.group}
+							<div class="qm-group" class:qm-open={isOpen}>
+								<button
+									type="button"
+									class="qm-group-header"
+									aria-expanded={isOpen}
+									data-testid={`group-${base}-${section.group}`}
+									onclick={() => toggleGroup(section.group as string)}
+								>
+									<ChevronRight class="qm-group-chevron" size={14} />
+									<span class="qm-group-label">{section.label}</span>
+								</button>
+								<div class="qm-group-panel">
+									<div class="qm-group-panel-inner">
+										{@render sectionFields(section.fields)}
+									</div>
+								</div>
+							</div>
+						{/each}
+					</div>
+				{/if}
 			</div>
 
+			<!-- The body: no label and no box (issue #117). "Body" names the surface the
+		     card is printed on, which is the redundancy AESTHETIC §"Strip redundancy"
+		     cuts — and the accessible name survives on the leaf itself, so the region
+		     is still announced. Unframed is the point rather than a saving: the body is
+		     the ONLY surface in the card without an edge, which is what makes it read
+		     as paper instead of as one more field, and the bracket's bottom rule
+		     already does the separating a box was doing. -->
 			{#if card.hasBody}
 				<div class="qm-body-leaf">
-					<FieldLabel label="Body" />
 					<ProseField
 						{doc}
 						addr={ops.makeAddr(undefined)}
+						unframed
 						label="Body"
 						placeholder={card.bodyGhost}
 						leafKey={ops.leafKey(undefined)}
@@ -376,7 +404,7 @@
 
 <style>
 	.qm-card {
-		border: 1px solid var(--_qm-border);
+		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
 		/* Uniform inset on every side (SURFACES §Rhythm) — a body-shown and a
 		   body-hidden card stay symmetric, every left edge on one gutter. */
@@ -438,14 +466,14 @@
 		min-width: 2ch;
 		/* Match the input's box model so the mirror and the input measure alike. */
 		padding: var(--_qm-space);
-		border: 1px solid transparent;
+		border: var(--_qm-border-width) solid transparent;
 	}
 	.qm-card-title {
 		grid-area: 1 / 1;
 		width: 100%;
 		min-width: 0;
 		font: inherit;
-		border: 1px solid transparent;
+		border: var(--_qm-border-width) solid transparent;
 		border-radius: var(--_qm-radius-inner);
 		padding: var(--_qm-space);
 		background: transparent;
@@ -460,6 +488,47 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-3);
+	}
+	/* The metadata bracket (issue #117): the card's chrome brackets its metadata, and
+	   the body is what falls outside it. Three strokes at ONE rung — the two
+	   horizontals here and the open section's vertical below — because a bracket whose
+	   sides disagree on width or tone reads as three unrelated lines rather than as
+	   one figure. That sameness is the whole effect; it is why the vertical takes
+	   `--_qm-border` and not `--_qm-accent`, which under AESTHETIC §Rules would be
+	   ornament with the chevron and the header's ink step already saying open.
+
+	   Both horizontals are conditional, and each condition is what the stroke means: a
+	   top rule is the line under a card title, so the headerless `main` has none and
+	   its bracket starts at the card's own top inset; a bottom rule divides fields from
+	   body, so a card with no body has nothing to divide. The bracket is therefore
+	   sometimes two strokes and sometimes one — an open figure by construction, which
+	   is what distinguishes it from the second box SURFACES §Elevation forbids. */
+	.qm-card-meta {
+		display: flex;
+		flex-direction: column;
+		gap: var(--_qm-space-3);
+	}
+	.qm-card-meta.qm-meta-top {
+		border-top: var(--_qm-border-width) solid var(--_qm-border);
+	}
+	.qm-card-meta.qm-meta-bottom {
+		border-bottom: var(--_qm-border-width) solid var(--_qm-border);
+	}
+	/* No inset between a horizontal and the accordion, deliberately: an open section's
+	   vertical has to REACH the rule to close a corner against it, and any padding here
+	   is the distance by which it would miss. The accordion needs none anyway — a group
+	   header's symmetric padding is the whole inter-group rhythm (issue #118), so the
+	   bracket's top rule is simply the "rule above it" for the first section, at the
+	   same distance every other section's is.
+
+	   An ungrouped block has no such padding of its own, so it takes the inset where it
+	   abuts a rule — and only there, which is why this is two selectors rather than
+	   padding on the block. */
+	.qm-meta-top > .qm-section:first-child {
+		padding-top: var(--_qm-space-3);
+	}
+	.qm-meta-bottom > .qm-section:last-child {
+		padding-bottom: var(--_qm-space-3);
 	}
 	/* Each section is its own query container, so capacity follows the width the fields
 	   actually get — a group panel's inset makes that narrower than the card. */
@@ -509,6 +578,29 @@
 		display: flex;
 		flex-direction: column;
 	}
+	/* The bracket's third stroke (issue #117), on the SECTION rather than on its panel:
+	   spanning the header and the content is what gives it a corner to close into at
+	   the block's edge, where a rule starting below the header ended in mid-air. One
+	   rung with the two horizontals, held there by `check:style`'s border-width axis.
+
+	   Drawn transparent when closed rather than absent, so the 1px it occupies is the
+	   same open or shut and a toggle moves no text. */
+	.qm-group {
+		border-left: var(--_qm-border-width) solid transparent;
+		transition: border-color var(--_qm-duration-slow) ease;
+	}
+	.qm-group.qm-open {
+		border-left-color: var(--_qm-border);
+	}
+	/* A closed last section's own rule lands exactly where the bracket's bottom rule
+	   does, and two hairlines at one y paint as one stroke of twice the width — which
+	   is the one thing the bracket cannot afford, its whole claim being that its three
+	   sides are the same stroke. The section's rule yields; the bracket's is the one
+	   that has to be there. Transparent rather than dropped, again so opening the last
+	   section moves nothing. */
+	.qm-meta-bottom .qm-group:last-child:not(.qm-open) .qm-group-header {
+		border-bottom-color: transparent;
+	}
 	/* Symmetric padding: the label is equidistant from the rule above it and the one
 	   it draws, and the box is the whole row — no dead strip outside it, ambiguous
 	   about which section it belongs to. WCAG 2.5.8's 24x24 is the floor. */
@@ -522,9 +614,11 @@
 		padding: var(--_qm-space-2) 0;
 		cursor: pointer;
 		color: var(--_qm-ink-meta);
-		border-bottom: 1px solid var(--_qm-border);
+		border-bottom: var(--_qm-border-width) solid var(--_qm-border);
 		text-align: left;
-		transition: color var(--_qm-duration-fast) ease;
+		transition:
+			color var(--_qm-duration-fast) ease,
+			border-color var(--_qm-duration-slow) ease;
 	}
 	/* Sentence case at the field-label rung — a section name is structurally a
 	   heading, and uppercase costs it twice: the word shape a column of them is
@@ -550,7 +644,7 @@
 		transform: rotate(90deg);
 	}
 	/* Sliding panel: the grid track goes 0fr→1fr; the inner clips at min-height 0.
-	   An open panel gains an accent left rule. */
+	   The rule an open panel used to draw is the section's now (see `.qm-group`). */
 	.qm-group-panel {
 		display: grid;
 		grid-template-rows: 0fr;
@@ -572,18 +666,15 @@
 		   the CONTENT, not the padding, and a top inset declared here stands under a
 		   closed header as dead space the header's symmetric padding cannot absorb. */
 		padding: 0;
-		border-left: 2px solid transparent;
-		transition:
-			padding var(--_qm-duration-slow) ease,
-			border-color var(--_qm-duration-slow) ease;
+		transition: padding var(--_qm-duration-slow) ease;
 	}
 	.qm-group.qm-open .qm-group-panel-inner {
 		padding: var(--_qm-space-2) 0 0 var(--_qm-space-3);
-		border-left-color: var(--_qm-accent);
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.qm-group-panel,
 		.qm-group-panel-inner,
+		.qm-group,
 		.qm-group-header,
 		.qm-group-header :global(.qm-group-chevron) {
 			transition: none;
@@ -630,7 +721,7 @@
 	}
 	.qm-recovery-retype select {
 		font: inherit;
-		border: 1px solid var(--_qm-border);
+		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
 		background: var(--_qm-surface);
 		padding: var(--_qm-space-half) var(--_qm-space-2);
