@@ -301,12 +301,6 @@
 						diagnostics={externalDiagnostics}
 					/>
 				{/if}
-				<!-- The scroll tail: dead space under the last card so it can be scrolled
-				     to the middle of the pane instead of stopping at the bottom edge. The
-				     consumer's, like the gutter and the scroll container around it — the
-				     package draws cards, not the column they sit in (ARCHITECTURE
-				     §Playground). -->
-				<div class="scroll-tail" aria-hidden="true"></div>
 			</section>
 			<!-- A focusable role="separator" with aria-valuenow + arrow-key handling is
 			     the WAI-ARIA window-splitter pattern; the a11y lint is conservative here. -->
@@ -353,7 +347,7 @@
 	main {
 		--pg-border-strong: color-mix(in oklab, var(--qm-bg, #fff), var(--qm-fg, #1a1a1a) 40%);
 		--pg-border: color-mix(in oklab, var(--qm-bg, #fff), var(--qm-fg, #1a1a1a) 17%);
-		--pg-card-bg: color-mix(in oklab, var(--qm-bg, #fff), var(--qm-fg, #1a1a1a) 2%);
+		--pg-card-bg: color-mix(in oklab, var(--qm-bg, #fff), var(--qm-fg, #1a1a1a) 4%);
 		--pg-main-bg: var(--qm-bg, #fff);
 		--pg-ghost: color-mix(in oklab, var(--qm-fg, #1a1a1a), var(--qm-bg, #fff) 60%);
 		--pg-section-label: color-mix(in oklab, var(--qm-fg, #1a1a1a), var(--qm-bg, #fff) 45%);
@@ -410,14 +404,15 @@
 		align-items: start;
 		height: 72vh;
 	}
-	.scroll-tail {
-		height: 40vh;
-	}
 	.editor-pane {
 		min-width: 0;
 		height: 100%;
 		overflow: auto;
-		padding: 0.5rem;
+		/* All four mounting-site properties are on this one rule (ARCHITECTURE
+		   §Playground). The end padding is the scroll TAIL: dead space under the last
+		   card so it can reach the middle of the pane rather than stopping at the
+		   bottom edge. */
+		padding: 0.5rem 0.5rem 40vh;
 		border: 1px solid var(--pg-border);
 		border-radius: var(--qm-radius, 8px);
 		background: var(--pg-main-bg);

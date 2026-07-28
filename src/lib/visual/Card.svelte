@@ -547,9 +547,9 @@
 		flex-direction: column;
 		gap: var(--_qm-space);
 	}
-	/* Recovery shell (issue #72): a receding, dashed-edge card marking an un-schemable
-	   card — visibly distinct from a normal card, but not alarming; the content behind
-	   it is intact. */
+	/* Recovery shell (issue #72): a dashed-edge card marking an un-schemable card —
+	   visibly distinct from a normal card, but not alarming; the content behind it is
+	   intact. The edge alone carries that: the fill is the card rung like any other. */
 	.qm-card.qm-unschemable {
 		border-style: dashed;
 	}

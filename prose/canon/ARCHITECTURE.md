@@ -73,13 +73,11 @@ the preview surfaces hits, and the shell joins them (`fieldPathForAddr` maps an
 editor `Addr` to the preview's field-path grammar) — neither surface imports the
 other.
 
-The package draws cards, not the column they sit in, so four properties of the
-column are the mounting site's. `/editor` carries all four on `.editor-pane`: the
-outer **gutter** (`padding`), the **scroll container** (`overflow: auto`), the
-**page tone** behind the column (`--pg-main-bg`), and a `40vh` **scroll tail** that
-lets the last card reach the middle of the pane instead of stopping at its bottom
-edge. THEMING.md states the contract; a card's own tone deliberately does not
-depend on the page tone (SURFACES §Elevation).
+`/editor` carries all four of THEMING.md's mounting-site properties on the single
+`.editor-pane` rule — gutter and scroll tail as the two ends of one `padding`,
+scroll container as `overflow: auto`, page tone as `--pg-main-bg`. That the column
+around the cards is the consumer's, not the package's, is what makes the reference
+shell the place those four are demonstrated.
 
 ## Theming
 
