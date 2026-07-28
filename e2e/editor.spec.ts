@@ -1,5 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
-import { pm, reveal, selectAndAwaitPopover, openPlayground, clickFieldBox } from './support.js';
+import {
+	pm,
+	reveal,
+	selectAndAwaitPopover,
+	openPlayground,
+	clickFieldBox,
+	declareScheme
+} from './support.js';
 
 // Phase 5 exit criterion (browser tier): the /editor split-pane shell is the full
 // reference harness — one LiveSession, the VisualEditor and Preview over one
@@ -136,33 +143,86 @@ test.describe('editor shell', () => {
 		expect(await font('.qm-format-popover'), 'the popover font').toContain('ui-sans-serif');
 	});
 
-	test('(h) the shipped dark default inverts the scale, and a consumer dial beats it', async ({
+	test('(h) the default follows the HOST scheme, not the OS, and a consumer dial beats both', async ({
 		page
 	}) => {
-		// Dark mode is a two-value swap with no JS: the poles carry the dials as
-		// FALLBACKS, so `prefers-color-scheme` retunes the default while a consumer's
-		// own value still wins. Only a browser can check both halves — a media query
-		// and the cascade are exactly what static analysis cannot see.
-		const surface = () =>
-			page
-				.locator('.qm-editor')
-				.evaluate((el) => getComputedStyle(el).getPropertyValue('--_qm-surface').trim());
+		// Dark is a two-value swap with no JS: the poles carry the dials as FALLBACKS
+		// over `light-dark()`, so the scheme the host DECLARES retunes the default
+		// while a consumer's own value still wins. Only a browser can check this —
+		// inheritance, `light-dark()` and the cascade are what static analysis cannot
+		// see, and `--_qm-ink` reads back as the unresolved `light-dark(…)` token in
+		// either scheme, so every assertion is on a USED property: `color`, which the
+		// root rule sets to the ink pole and so resolves it exactly.
+		const ink = () => page.locator('.qm-editor').evaluate((el) => getComputedStyle(el).color);
+		const declare = (scheme: string) => declareScheme(page, scheme);
 
-		await page.emulateMedia({ colorScheme: 'light' });
-		const light = await surface();
+		// The OS says dark throughout: nothing below may move with it.
 		await page.emulateMedia({ colorScheme: 'dark' });
-		const dark = await surface();
-		expect(dark, 'the dark default does not differ from light').not.toBe(light);
+		await declare('light');
+		const light = await ink();
+		await declare('dark');
+		const dark = await ink();
+		expect(dark, 'the host-declared scheme does not retune the poles').not.toBe(light);
 
-		// A dial set on an ancestor of the root wins in BOTH schemes.
+		// An undeclared host takes the light pole, matching the page's own unstyled
+		// text: the OS preference is not a signal the package reads.
+		await declare('normal');
+		expect(await ink(), 'an undeclared host follows the OS').toBe(light);
+
+		// A dial set on an ancestor of the root wins under EITHER declaration.
 		await page
 			.locator('.qm-editor')
 			.evaluate((el) =>
-				(el.parentElement as HTMLElement).style.setProperty('--qm-bg', 'rgb(7, 8, 9)')
+				(el.parentElement as HTMLElement).style.setProperty('--qm-fg', 'rgb(7, 8, 9)')
 			);
-		expect(await surface(), 'the consumer dial loses to the dark default').toBe('rgb(7, 8, 9)');
-		await page.emulateMedia({ colorScheme: 'light' });
-		expect(await surface(), 'the consumer dial loses in light').toBe('rgb(7, 8, 9)');
+		await declare('dark');
+		expect(await ink(), 'the consumer dial loses to the dark default').toBe('rgb(7, 8, 9)');
+		await declare('light');
+		expect(await ink(), 'the consumer dial loses in light').toBe('rgb(7, 8, 9)');
+	});
+
+	test('(h2) the shell inverts with the surface it hosts', async ({ page }) => {
+		// The divergence the scheme contract exists to close: the host's chrome and
+		// the mounted surface reading two different signals, so one inverts and the
+		// other does not. The shell derives its `--pg-*` from the same declaration
+		// (`routes/playground.css`), so the two poles stay on the same side of their
+		// page in BOTH schemes — which a literal in either place breaks.
+		//
+		// A rung off a `color-mix` computes to `oklab(…)`, so each reading rasterises
+		// through a 2D context, which takes any CSS colour and returns the sRGB bytes
+		// that reach the screen. Luma against mid-grey: every pole sits far from it,
+		// so the claim is which side a value landed on, not its exact tone.
+		const reading = () =>
+			page.evaluate(() => {
+				const ctx = document.createElement('canvas').getContext('2d')!;
+				const luma = (css: string): number => {
+					ctx.clearRect(0, 0, 1, 1);
+					ctx.fillStyle = css;
+					ctx.fillRect(0, 0, 1, 1);
+					const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+					return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+				};
+				const of = (sel: string, prop: 'color' | 'backgroundColor') =>
+					luma(getComputedStyle(document.querySelector(sel)!)[prop]);
+				return {
+					shellInk: of('main', 'color'),
+					shellPane: of('.editor-pane', 'backgroundColor'),
+					// The card, not `.qm-editor`: the editor root paints nothing, so the
+					// surface rung reaches the pixels one level in.
+					surface: of('.qm-card', 'backgroundColor')
+				};
+			});
+
+		for (const [scheme, dark] of [
+			['light', false],
+			['dark', true]
+		] as const) {
+			await declareScheme(page, scheme);
+			const r = await reading();
+			expect(r.shellPane < 128, `the shell's pane under ${scheme}`).toBe(dark);
+			expect(r.surface < 128, `the surface inside it under ${scheme}`).toBe(dark);
+			expect(r.shellInk < 128, `the shell's ink under ${scheme}`).toBe(!dark);
+		}
 	});
 	test('(i) a pane-scoped dial reaches the portaled surfaces', async ({ page }) => {
 		// The popover and the enum listbox portal out of the leaf's DOM. Landing them

@@ -215,27 +215,8 @@
 
 <style>
 	main {
-		font-family: ui-sans-serif, system-ui, sans-serif;
 		max-width: 78rem;
 		margin: 1.5rem auto;
-		padding: 0 1.5rem;
-		color: #1a1a1a;
-	}
-	h1 {
-		font-size: 1.5rem;
-		margin-bottom: 0.2rem;
-	}
-	.sub {
-		color: #666;
-		margin-top: 0;
-	}
-	.ready {
-		color: #137333;
-		font-weight: 600;
-	}
-	.error {
-		color: #c5221f;
-		font-weight: 600;
 	}
 	.layout {
 		display: grid;
@@ -249,24 +230,24 @@
 	.state-panel {
 		position: sticky;
 		top: 1rem;
-		border: 1px solid #e2e2e2;
+		border: 1px solid var(--pg-border);
 		border-radius: 8px;
 		padding: 0.75rem;
-		background: #fbfbfb;
+		background: var(--pg-card-bg);
 	}
 	.state-label {
 		font-size: 0.68rem;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		color: #8a8a8a;
+		color: var(--pg-ghost);
 		margin: 0.4rem 0 0.2rem;
 	}
 	.state-panel pre {
 		white-space: pre-wrap;
 		word-break: break-all;
 		font-size: 0.7rem;
-		background: #fff;
-		border: 1px solid #eee;
+		background: var(--pg-page);
+		border: 1px solid var(--pg-border);
 		border-radius: 4px;
 		padding: 0.4rem;
 		margin: 0;

@@ -6,16 +6,17 @@
    TRANSPORT: a stylesheet, side-effect imported by `core/index.ts` and applied to
    every element marked `data-qm-root`. The package imports it itself, so there is
    no `import './theme.css'` for a consumer to forget. A stylesheet rather than an
-   inline `style` attribute is what buys the four things an attribute cannot carry:
-   a shipped dark default (`@media`), a cascade layer consumer CSS beats without
-   `!important`, real properties on the root rule (`font-family`, `color-scheme`)
-   that every root then inherits, and a free `style` attribute for the consumer.
+   inline `style` attribute is what buys the three things an attribute cannot
+   carry: a cascade layer consumer CSS beats without `!important`, real properties
+   on the root rule (`font-family`) that every root then inherits, and a free
+   `style` attribute for the consumer.
 
    Every value stays a `var()` reference, so the dials resolve against the CASCADE
    at each root: a consumer's `[data-theme="dark"]` ancestor rule flows in
-   unchanged, `prefers-color-scheme` needs no JS, and `color-mix` runs at paint
-   time. The rungs are declared ON the root, so they are reachable only by a rule
-   targeting it — THEMING.md §"What is deliberately not public" states the terms.
+   unchanged, the light/dark default follows the `color-scheme` the host declares
+   with no JS and no media query, and `color-mix` runs at paint time. The rungs are
+   declared ON the root, so they are reachable only by a rule targeting it —
+   THEMING.md §"What is deliberately not public" states the terms.
 
    `@property` is absent because it cannot work here: an `initial-value` must be
    computationally independent, which `rem` is not, so registering `--qm-space` or
@@ -28,11 +29,18 @@
 	:where([data-qm-root]) {
 		/* ── Poles ───────────────────────────────────────────────────────────────
 		   Each dial's default, stated ONCE. Every rung below reads a pole, never a
-		   dial, so the dark block retunes two declarations rather than fifteen — and
-		   a consumer's ancestor value still wins in both schemes, which it would not
-		   if the dark block set `--qm-bg` on the root instead. */
-		--_qm-bg: var(--qm-bg, #fff);
-		--_qm-fg: var(--qm-fg, #1a1a1a);
+		   dial, so both schemes cost two declarations rather than fifteen — and the
+		   dial sits in FRONT of the default, so a consumer's ancestor value wins in
+		   either scheme, which it would not if a scheme rule set `--qm-bg` instead.
+
+		   `light-dark()` keys the default off the `color-scheme` this root INHERITS,
+		   which is the host's — an app that declares `dark` gets a dark surface
+		   whatever the OS says, and one that declares nothing gets light, matching
+		   its own unstyled text. So the package owns no mode logic at all: light or
+		   dark is the mounting site's, like every other value here (THEMING.md
+		   §"The surface follows your colour scheme"). */
+		--_qm-bg: var(--qm-bg, light-dark(#fff, #14171c));
+		--_qm-fg: var(--qm-fg, light-dark(#1a1a1a, #e8eaed));
 		--_qm-accent: var(--qm-accent, #2563eb);
 		--_qm-danger: var(--qm-danger, #c5221f);
 		--_qm-warning: var(--qm-warning, #b25000);
@@ -131,9 +139,13 @@
 		/* ── The baseline every root inherits ────────────────────────────────────
 		   Real properties, not only custom ones — the thing an inline attribute
 		   could carry but never did, which is why `--qm-font` reached one root of
-		   five. `color-scheme` makes native chrome (scrollbars, the date picker, the
-		   caret) follow the palette; `light dark` is right while the palette tracks
-		   the OS, and a consumer that PINS a palette pins this too, on the root.
+		   five. `color-scheme` is deliberately absent: it inherits, so the host's
+		   reaches this root untouched and native chrome (scrollbars, the date
+		   picker, the caret) lands on the same pole the poles above resolve to.
+		   Declaring it here would break that lockstep in the one direction that
+		   matters — a host that declares `dark` would get light native chrome under
+		   a dark surface. A consumer that PINS a palette against its own scheme
+		   declares `color-scheme` with it, on the root (THEMING.md).
 
 		   Deliberately NOT `font-size`, and the reason is about the ROOT rule rather
 		   than about size: a root-level body size sweeps every descendant a consumer
@@ -147,15 +159,5 @@
 		   rung it wants. */
 		font-family: var(--_qm-font);
 		color: var(--_qm-ink);
-		color-scheme: light dark;
-	}
-
-	/* The shipped dark default. Retunes the poles only; a consumer that sets a dial
-	   on any ancestor still wins here, because these are fallbacks, not overrides. */
-	@media (prefers-color-scheme: dark) {
-		:where([data-qm-root]) {
-			--_qm-bg: var(--qm-bg, #14171c);
-			--_qm-fg: var(--qm-fg, #e8eaed);
-		}
 	}
 }

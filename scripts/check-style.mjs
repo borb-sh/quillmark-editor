@@ -198,8 +198,8 @@ for (const full of files) {
 }
 
 // A rung defined twice is a silent last-wins drop, and CSS raises nothing for it
-// the way a duplicate object key does — so the check is explicit. The dark block
-// redeclares the poles by design, so only duplicates WITHIN one rule block count.
+// the way a duplicate object key does — so the check is explicit. Per RULE BLOCK,
+// so a rung a scoped rule legitimately retunes stays legal.
 {
 	const css = readFileSync(join(ROOT, DERIVATION), 'utf8');
 	for (const [, block] of css.matchAll(/\{([^{}]*)\}/g)) {

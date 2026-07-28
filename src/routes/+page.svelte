@@ -121,19 +121,8 @@
 
 <style>
 	main {
-		font-family: ui-sans-serif, system-ui, sans-serif;
 		max-width: 42rem;
 		margin: 3rem auto;
-		padding: 0 1.5rem;
-		color: #1a1a1a;
-	}
-	h1 {
-		font-size: 1.5rem;
-		margin-bottom: 0.25rem;
-	}
-	.sub {
-		color: #666;
-		margin-top: 0;
 	}
 	nav {
 		display: flex;
@@ -146,28 +135,20 @@
 		flex-direction: column;
 		gap: 0.15rem;
 		padding: 0.6rem 0.9rem;
-		border: 1px solid #e2e2e2;
+		border: 1px solid var(--pg-border);
 		border-radius: 8px;
 		text-decoration: none;
-		color: #1a56db;
+		color: var(--pg-link);
 		font-weight: 600;
 	}
 	nav a:hover {
-		border-color: #1a56db;
-		background: #f5f8ff;
+		border-color: var(--pg-link);
+		background: var(--pg-card-bg);
 	}
 	nav a span {
-		color: #8a8a8a;
+		color: var(--pg-ghost);
 		font-weight: 400;
 		font-size: 0.78rem;
-	}
-	.ready {
-		color: #137333;
-		font-weight: 600;
-	}
-	.error {
-		color: #c5221f;
-		font-weight: 600;
 	}
 	dl {
 		display: grid;
@@ -177,7 +158,7 @@
 		font-variant-numeric: tabular-nums;
 	}
 	dt {
-		color: #666;
+		color: var(--pg-ink-meta);
 	}
 	dd {
 		margin: 0;

@@ -133,27 +133,8 @@
 
 <style>
 	main {
-		font-family: ui-sans-serif, system-ui, sans-serif;
 		max-width: 60rem;
 		margin: 2rem auto;
-		padding: 0 1.5rem;
-		color: #1a1a1a;
-	}
-	h1 {
-		font-size: 1.5rem;
-		margin-bottom: 0.25rem;
-	}
-	.sub {
-		color: #666;
-		margin-top: 0;
-	}
-	.ready {
-		color: #137333;
-		font-weight: 600;
-	}
-	.error {
-		color: #c5221f;
-		font-weight: 600;
 	}
 	.toolbar {
 		display: flex;
@@ -164,6 +145,6 @@
 	.preview-shell {
 		height: 500px;
 		width: min(700px, 100%);
-		border: 1px solid #ccc;
+		border: 1px solid var(--pg-border-strong);
 	}
 </style>
