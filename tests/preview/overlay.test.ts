@@ -117,7 +117,7 @@ describe('overlay: the bloom', () => {
 		overlay.destroy();
 	});
 
-	it('drops the bloom once the decay is spent, so a later rebuild is inert', () => {
+	it('goes inert once the decay is spent, so later rebuilds are silent', () => {
 		const overlay = createOverlay(mockSession(), mockSlots());
 		overlay.flashField('main.body');
 
@@ -125,9 +125,8 @@ describe('overlay: the bloom', () => {
 		now += 5000; // well past `--_qm-duration-linger`
 		overlay.refresh();
 		expect(calls).toEqual([]);
-
-		// And the state really is gone, not merely past its end: another rebuild is
-		// still silent.
+		// Nothing clears the flash — it stays as the change guard, and a spent elapsed
+		// is refused. Which means a rebuild is silent every time, not just the first.
 		overlay.refresh();
 		expect(calls).toEqual([]);
 

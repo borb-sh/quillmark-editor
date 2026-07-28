@@ -46,9 +46,6 @@
 		onCaretMove?: (addr: Addr, pos: number) => void;
 		register?: (key: string, controller: FieldController) => void;
 		unregister?: (key: string) => void;
-		/** A leaf key the editor needs VISIBLE, wrapped so each request is a new
-		 *  identity (`setCaret`; see the reveal effect below). */
-		reveal?: { key: string };
 	}
 	let {
 		card,
@@ -62,8 +59,7 @@
 		onFocus,
 		onCaretMove,
 		register,
-		unregister,
-		reveal
+		unregister
 	}: Props = $props();
 
 	const base = $derived(card.isMain ? 'main' : `card${index}`);
@@ -130,25 +126,21 @@
 		expanded = expanded === group ? null : group;
 	}
 
-	// A collapsed panel is clipped to zero height, not unmounted — so a caret landed
-	// in one lands where nobody can see it, and the arrival bloom with it. `setCaret`
-	// ASKS (`reveal`); the card still owns `expanded`, and opens only the group
-	// holding that leaf. Every card sees every request and the key names exactly one,
-	// so a non-owner falls through.
-	//
-	// `reveal` is a wrapper object, one per request, so a repeat click on the same
-	// field is a new identity and re-opens a group the user has since collapsed.
-	// `untrack` keeps `grouped`/`ops` out of the dependency set: they re-derive on
-	// every revision bump, and a reveal that re-ran there would fight the user for
-	// the accordion on each keystroke.
-	$effect(() => {
-		const want = reveal;
-		if (!want) return;
-		untrack(() => {
-			const section = grouped.find((s) => s.fields.some((f) => ops.leafKey(f.name) === want.key));
-			if (section?.group) expanded = section.group;
-		});
-	});
+	/**
+	 * Open the group holding leaf `key`, if this card has one. A collapsed panel is
+	 * clipped to zero height rather than unmounted, so a caret placed inside it — and
+	 * the arrival wash with it — lands where nobody can see it. `VisualEditor.setCaret`
+	 * calls this on every card before landing; the card keeps owning `expanded`, and a
+	 * card that does not hold the key does nothing.
+	 *
+	 * A call, not a prop: a reveal is an event, and modelling it as state needs a
+	 * fresh-identity wrapper to re-fire and an `untrack` to keep the per-keystroke
+	 * re-derive from reopening the accordion under the user.
+	 */
+	export function revealLeaf(key: string): void {
+		const section = grouped.find((s) => s.fields.some((f) => ops.leafKey(f.name) === key));
+		if (section?.group) expanded = section.group;
+	}
 </script>
 
 <section

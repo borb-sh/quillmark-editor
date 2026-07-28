@@ -17,9 +17,13 @@
 // while the user writes; a rebuilt node resumes at the offset the old one reached.
 
 /** Marks a transient wash node — the wash is decoration, never a hit target. */
-export const BLOOM_CLASS = 'qm-bloom';
+const BLOOM_CLASS = 'qm-bloom';
 
 const WASH = 'var(--_qm-accent-wash)';
+/** The one duration used when the derivation is out of reach (an unstyled root, or
+ *  jsdom, where `getComputedStyle` reports custom properties as empty). One number,
+ *  not one per rung: a fallback is the absence of the scale, not a copy of it. */
+const FALLBACK_MS = 1100;
 
 // Rise fast, hold, then leave slowly: a highlighter's decay, not a linear fade. A
 // keyframe's easing governs the segment that STARTS at it. Under reduced motion the
@@ -33,61 +37,88 @@ const FRAMES: Keyframe[] = [
 ];
 const FRAMES_REDUCED: Keyframe[] = [{ opacity: 1 }, { opacity: 1 }];
 
-/** A duration rung as a number, read off `el` so the CSS scale is the single source.
- *  Falls back when the derivation is absent — an unstyled root, or jsdom, where
- *  `getComputedStyle` reports custom properties as empty. */
-function durationOf(el: HTMLElement, rung: string, fallback: number): number {
-	const raw = getComputedStyle(el).getPropertyValue(rung).trim();
-	const n = Number.parseFloat(raw);
-	if (!Number.isFinite(n)) return fallback;
-	return raw.endsWith('ms') ? n : n * 1000;
+/** The resting state a bloom animates from and back to: the wash, held at zero. */
+export function primeWash(el: HTMLElement): void {
+	Object.assign(el.style, { background: WASH, opacity: '0' });
 }
 
-function prefersReducedMotion(): boolean {
-	return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+/** What one bloom runs: resolved from the scale, and from the viewer's motion
+ *  preference. */
+export interface BloomTiming {
+	duration: number;
+	frames: Keyframe[];
 }
 
 /**
- * Bloom the wash on `el` itself — the caller owns the element, its background, and
- * its resting `opacity: 0`. Returns the running animation, or `undefined` when there
- * is nothing left to run: `elapsed` past the decay, or an environment without WAAPI.
+ * Resolve the timing off `el`, so the duration scale is single-sourced in CSS.
+ *
+ * Read ONCE PER BATCH, not per element: `getComputedStyle` forces a style recalc and
+ * `animate` re-dirties style, so a read inside a loop flushes once per element (~0.15ms
+ * each). The rungs inherit, so every element in a batch resolves the same numbers.
  */
-export function bloom(el: HTMLElement, elapsed = 0): Animation | undefined {
+export function bloomTiming(el: HTMLElement): BloomTiming {
+	const reduced =
+		typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+	const raw = getComputedStyle(el)
+		.getPropertyValue(reduced ? '--_qm-duration-slow' : '--_qm-duration-linger')
+		.trim();
+	const n = Number.parseFloat(raw);
+	const duration = !Number.isFinite(n) ? FALLBACK_MS : raw.endsWith('ms') ? n : n * 1000;
+	return { duration, frames: reduced ? FRAMES_REDUCED : FRAMES };
+}
+
+/**
+ * Bloom the wash on `el` itself — the caller owns the element and has primed it
+ * ({@link primeWash}). Returns the running animation, or `undefined` when there is
+ * nothing left to run: `elapsed` past the decay, or an environment without WAAPI.
+ * Pass `timing` to share one resolve across a batch.
+ */
+export function bloom(el: HTMLElement, elapsed = 0, timing?: BloomTiming): Animation | undefined {
 	if (typeof el.animate !== 'function') return undefined;
-	const reduced = prefersReducedMotion();
-	const duration = reduced
-		? durationOf(el, '--_qm-duration-slow', 200)
-		: durationOf(el, '--_qm-duration-linger', 1100);
+	const { duration, frames } = timing ?? bloomTiming(el);
 	if (elapsed >= duration) return undefined;
-	const anim = el.animate(reduced ? FRAMES_REDUCED : FRAMES, { duration });
+	const anim = el.animate(frames, { duration });
 	if (elapsed > 0) anim.currentTime = elapsed;
 	return anim;
 }
 
 /**
- * Bloom over `host`'s CONTENT — a transient inset child that removes itself, so the
- * wash never touches the host's own background and never fades the text under it.
- * `host` must be positioned. No `elapsed` seam: the surfaces that use this (editor
- * leaves) are not rebuilt under the animation the way the preview's boxes are.
+ * Bloom over `host`'s CONTENT — an inset child, so the wash neither tints the host's
+ * own background nor fades the text under it. `host` must be positioned.
+ *
+ * ONE wash node per host, reused while it lives: two quick landings on the same leaf
+ * must not stack two alphas over it. No `elapsed` seam — the surfaces that use this
+ * (editor leaves) are not rebuilt under the animation the way the preview's boxes are.
  */
 export function bloomInside(host: HTMLElement): void {
-	const el = document.createElement('div');
-	el.className = BLOOM_CLASS;
-	Object.assign(el.style, {
-		position: 'absolute',
-		inset: '0',
-		pointerEvents: 'none',
-		borderRadius: 'inherit',
-		background: WASH,
-		opacity: '0'
-	});
-	host.appendChild(el);
-	const anim = bloom(el);
+	let el = host.querySelector<HTMLElement>(`:scope > .${BLOOM_CLASS}`);
+	if (el) {
+		// Drop the in-flight run's handlers before cancelling: its `oncancel` would
+		// otherwise remove the node the new run is about to animate.
+		for (const a of el.getAnimations()) {
+			a.onfinish = null;
+			a.oncancel = null;
+			a.cancel();
+		}
+	} else {
+		el = document.createElement('div');
+		el.className = BLOOM_CLASS;
+		Object.assign(el.style, {
+			position: 'absolute',
+			inset: '0',
+			pointerEvents: 'none',
+			borderRadius: 'inherit'
+		});
+		primeWash(el);
+		host.appendChild(el);
+	}
+	const node = el;
+	const anim = bloom(node);
 	if (!anim) {
-		el.remove();
+		node.remove();
 		return;
 	}
-	const drop = (): void => el.remove();
+	const drop = (): void => node.remove();
 	anim.onfinish = drop;
 	anim.oncancel = drop;
 }

@@ -142,13 +142,12 @@
 	}
 
 	// ── Leaf registry (setCaret target lookup + the 4b active-leaf seam) ────────
-	// `rootEl` scopes the leaf-key lookup `setCaret` uses to bloom its landing — the
-	// registry hands back a controller, not the DOM the wash goes over. `reveal` is
-	// the other half of landing: a leaf inside a collapsed accordion group is clipped
-	// to zero height, so the owning card is asked to open it (Card §reveal effect).
-	let rootEl: HTMLDivElement | undefined = $state();
-	let reveal = $state<{ key: string } | undefined>(undefined);
 	const leaves = new Map<string, FieldController>();
+	// Card handles, for `setCaret`'s reveal hop — the one thing a leaf's own controller
+	// cannot do, since which group is open is the card's state (Card §revealLeaf).
+	type CardHandle = { revealLeaf(key: string): void };
+	let mainCard = $state<CardHandle | undefined>(undefined);
+	let cardRefs = $state<(CardHandle | undefined)[]>([]);
 	function register(key: string, controller: FieldController): void {
 		leaves.set(key, controller);
 	}
@@ -468,18 +467,19 @@
 		// (HitGranularity), so just focus the leaf rather than snap the caret to a
 		// spot the click did not resolve. `'cluster'` (and an absent granularity —
 		// the backend did not report it, treat as exact) places the caret.
-		// Reveal BEFORE landing: a leaf in a collapsed group is clipped to zero
-		// height, so both the caret and the cue below would land unseen.
-		reveal = { key };
+		// Reveal first: a leaf in a collapsed group is clipped to zero height, so both
+		// the caret and the cue below land unseen. Exactly one card holds the key.
+		mainCard?.revealLeaf(key);
+		for (const card of cardRefs) card?.revealLeaf(key);
 		if (hit.granularity === 'segment') leaf.focus();
 		else leaf.setCaret(hit.pos);
 		// The arrival cue. Unconditional, unlike the preview side's change-guarded
 		// bloom: a preview click is one discrete act, and its commonest target is the
 		// leaf ALREADY focused — where landing a caret changes nothing on screen — or
 		// one off-screen, where the browser's focus-scroll moves the page and leaves
-		// the caret to be hunted for in a long form.
-		const host = rootEl?.querySelector<HTMLElement>(`[data-leaf-key="${CSS.escape(key)}"]`);
-		if (host) bloomInside(host);
+		// the caret to be hunted for in a long form. The panel opens on the next flush
+		// and the wash outlasts it, so a revealed landing is cued once it settles.
+		bloomInside(leaf.el);
 	}
 	/** The active leaf's controller — the 4b formatting-popover observation seam. */
 	export function getActiveLeaf(): FieldController | undefined {
@@ -499,8 +499,9 @@
 	}
 </script>
 
-<div bind:this={rootEl} class="qm-editor {className ?? ''}" {style} data-qm-root>
+<div class="qm-editor {className ?? ''}" {style} data-qm-root>
 	<Card
+		bind:this={mainCard}
 		card={model.main}
 		{doc}
 		index={-1}
@@ -513,7 +514,6 @@
 		onCaretMove={handleCaret}
 		{register}
 		{unregister}
-		{reveal}
 	/>
 
 	<!-- The tips card (issue #71): a fixed slot after `main`, ahead of the cards, so
@@ -535,6 +535,7 @@
 	{/if}
 	{#each model.cards as c, i (c.id)}
 		<Card
+			bind:this={cardRefs[i]}
 			card={c}
 			{doc}
 			index={i}
@@ -547,7 +548,6 @@
 			onCaretMove={handleCaret}
 			{register}
 			{unregister}
-			{reveal}
 		/>
 		{#if kinds.length}
 			{@render addAffordance(i + 1, i === model.cards.length - 1)}

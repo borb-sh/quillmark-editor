@@ -74,7 +74,9 @@ state but no resting state.
 The boxes serve geometry and one event:
 
 - **Geometry.** The bridge scrolls a field by its first box; the e2e locates ink by
-  the rect. Neither reads a pixel of the box itself.
+  the rect. Neither reads a pixel of the box itself. Each box carries `data-qm-field`
+  (its address) and `.qm-field-box` — the hooks a consumer targets, since the wash
+  itself is animated from a script and cannot be restyled away.
 - **The correlation bloom.** On a change of active address the field's boxes wash to
   `--_qm-accent-wash` and decay to zero over `--_qm-duration-linger`. A field's boxes
   share one start time, so a two-box `main.subject` blooms in step instead of

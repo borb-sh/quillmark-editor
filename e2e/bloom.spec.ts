@@ -1,20 +1,20 @@
 import { test, expect, type Page } from '@playwright/test';
-import { pm } from './support.js';
+import { pm, openPlayground, clickFieldBox } from './support.js';
 
 // Issue #115 (browser tier): the editor↔preview address is marked as an EVENT and
-// the preview rests clean. Unit tests can reach the control flow around the wash
+// the preview rests clean. The unit tier reaches the control flow around the wash
 // (tests/preview/overlay.test.ts, with a stubbed `animate` — jsdom has no WAAPI);
-// what only the real browser can answer is whether the wash actually RUNS — real
-// keyframes, real `color-mix`, real compositing over the page canvas — and whether
-// the landing is visible at all, which turns on layout the DOM alone does not
-// report (a collapsed accordion group clips its panel to zero height while its
-// children keep their intrinsic boxes).
+// what only a real browser answers is whether the wash RUNS — real keyframes, real
+// `color-mix`, real compositing over the page canvas — and whether the landing is
+// visible at all, which turns on layout the DOM alone does not report: a collapsed
+// accordion group clips its panel to zero height while its children keep their
+// intrinsic boxes.
 
-/** Every field box for `field`, as `{opacity, borderWidth, running}`. */
-async function boxes(page: Page, field: string) {
+/** Every field box for `field` (or every box, when `field` is omitted). */
+async function boxes(page: Page, field?: string) {
 	return page.evaluate((f) => {
-		const els = Array.from(document.querySelectorAll<HTMLElement>(`[data-qm-field="${f}"]`));
-		return els.map((el) => ({
+		const sel = f ? `[data-qm-field="${f}"]` : '[data-qm-field]';
+		return Array.from(document.querySelectorAll<HTMLElement>(sel)).map((el) => ({
 			opacity: Number(getComputedStyle(el).opacity),
 			borderWidth: getComputedStyle(el).borderTopWidth,
 			running: el.getAnimations().length,
@@ -25,29 +25,18 @@ async function boxes(page: Page, field: string) {
 
 test.describe('correlation bloom', () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto('/editor');
-		// The Typst backend (26 MB) compiles on the first open; give it room.
-		await expect(page.getByTestId('status')).toHaveText('Session open.', { timeout: 60_000 });
+		await openPlayground(page, '/editor');
 		await expect(page.locator('[data-qm-field]').first()).toBeVisible();
 	});
 
 	test('(a) the preview rests clean — no box draws ink until an address moves', async ({
 		page
 	}) => {
-		const all = await page.evaluate(() =>
-			Array.from(document.querySelectorAll<HTMLElement>('[data-qm-field]')).map((el) => {
-				const cs = getComputedStyle(el);
-				return {
-					border: cs.borderTopWidth,
-					opacity: cs.opacity,
-					running: el.getAnimations().length
-				};
-			})
-		);
+		const all = await boxes(page);
 		expect(all.length).toBeGreaterThan(0);
 		for (const b of all) {
-			expect(b.border).toBe('0px');
-			expect(b.opacity).toBe('0');
+			expect(b.borderWidth).toBe('0px');
+			expect(b.opacity).toBe(0);
 			expect(b.running).toBe(0);
 		}
 	});
@@ -96,7 +85,9 @@ test.describe('correlation bloom', () => {
 		await page.keyboard.type('probe');
 		await page.waitForTimeout(400);
 		const after = (await boxes(page, 'main.body'))[0];
-		if (after.running) expect(after.offset).toBeGreaterThan(300);
+		// Either it is still running, well past where a restart would put it, or it has
+		// already finished — never running from near zero.
+		expect(after.running === 0 || after.offset > 300).toBe(true);
 	});
 
 	test('(e) preview → editor: the landing leaf is revealed and blooms', async ({ page }) => {
@@ -106,9 +97,7 @@ test.describe('correlation bloom', () => {
 		const group = page.getByTestId('group-main-addressing');
 		await expect(group).toHaveAttribute('aria-expanded', 'false');
 
-		const rect = await page.locator('[data-qm-field="main.subject"]').first().boundingBox();
-		if (!rect) throw new Error('subject overlay box has no bounding box');
-		await page.mouse.click(rect.x + rect.width / 2, rect.y + rect.height / 2);
+		await clickFieldBox(page, 'main.subject');
 
 		await expect(group).toHaveAttribute('aria-expanded', 'true');
 		const leaf = page.locator('[data-leaf-key="main:subject"]');
@@ -119,5 +108,42 @@ test.describe('correlation bloom', () => {
 		await expect(wash).toBeVisible();
 		expect(await wash.evaluate((el) => Number(getComputedStyle(el).opacity))).toBeGreaterThan(0.5);
 		await expect(wash).toHaveCount(0, { timeout: 4000 });
+	});
+
+	test('(f) a second landing on the same leaf reuses its wash, never stacks one', async ({
+		page
+	}) => {
+		await clickFieldBox(page, 'main.subject');
+		const wash = page.locator('[data-leaf-key="main:subject"] .qm-bloom');
+		await expect(wash).toHaveCount(1);
+		await clickFieldBox(page, 'main.subject');
+		await expect(wash).toHaveCount(1);
+	});
+
+	test('(g) reduced motion holds the wash and cuts, with no ramps to track', async ({ page }) => {
+		await page.emulateMedia({ reducedMotion: 'reduce' });
+		await pm(page, 'prose-main-body').click();
+
+		const timing = async () =>
+			page
+				.locator('[data-qm-field="main.body"]')
+				.first()
+				.evaluate((el) => {
+					const effect = el.getAnimations()[0]?.effect as KeyframeEffect | undefined;
+					return {
+						opacity: Number(getComputedStyle(el).opacity),
+						duration: (effect?.getTiming().duration as number) ?? null,
+						frames: effect?.getKeyframes().length ?? null
+					};
+				});
+		// The reduced form is a two-frame hold at full on the `slow` rung, not the
+		// four-frame rise/hold/decay on `linger`.
+		await expect.poll(async () => (await timing()).opacity, { timeout: 2000 }).toBe(1);
+		const t = await timing();
+		expect(t.frames).toBe(2);
+		expect(t.duration).toBeLessThan(1100);
+
+		// It still ends at nothing — the degradation drops the ramps, not the decay.
+		await expect.poll(async () => (await timing()).opacity, { timeout: 3000 }).toBe(0);
 	});
 });

@@ -38,3 +38,26 @@ export async function selectAndAwaitPopover(page: Page, leafTestid: string): Pro
 		await expect(page.getByTestId('format-popover')).toBeVisible({ timeout: 1000 });
 	}).toPass({ timeout: 15_000 });
 }
+
+/**
+ * Open a playground route and wait out the first compile. The Typst backend is
+ * 26 MB and compiles on the first `open`, so the wait is generous — one number,
+ * because every spec in this tier pays it.
+ */
+export async function openPlayground(page: Page, route: string): Promise<void> {
+	await page.goto(route);
+	await expect(page.getByTestId('status')).toHaveText('Session open.', { timeout: 60_000 });
+}
+
+/**
+ * Click the centre of `field`'s first preview field box. The overlay is
+ * `pointer-events: none`, so this is a geometry oracle: the click lands on the page
+ * canvas beneath and resolves through the bridge, exactly as a click on the ink does.
+ */
+export async function clickFieldBox(page: Page, field: string): Promise<void> {
+	const box = page.locator(`[data-qm-field="${field}"]`).first();
+	await expect(box).toBeVisible();
+	const rect = await box.boundingBox();
+	if (!rect) throw new Error(`overlay box for ${field} has no bounding box`);
+	await page.mouse.click(rect.x + rect.width / 2, rect.y + rect.height / 2);
+}
