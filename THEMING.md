@@ -32,7 +32,7 @@ derivation to every surface it mounts.
 | `--qm-accent`    | `#2563eb`                              | Focus rings, active marks, the preview's active field box.                                               |
 | `--qm-danger`    | `#c5221f`                              | Error diagnostics, the required marker, the delete glyph.                                                |
 | `--qm-warning`   | `#b25000`                              | Warning diagnostics.                                                                                     |
-| `--qm-font`      | `ui-sans-serif, system-ui, sans-serif` | The editor surface's font family.                                                                        |
+| `--qm-font`      | `ui-sans-serif, system-ui, sans-serif` | The editor surface's font family. Controls and buttons take it too, in place of the UA face.             |
 | `--qm-font-mono` | `ui-monospace, monospace`              | The monospace face — the source mirror, the JSON array control, the tips card.                           |
 | `--qm-font-size` | `0.875rem`                             | Body text — every control's size, and the anchor the ramp derives up (title) and down (label/meta) from. |
 | `--qm-radius`    | `8px`                                  | Card & popover corner. Interior controls derive a tighter tier (half).                                   |

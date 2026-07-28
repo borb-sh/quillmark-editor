@@ -115,7 +115,13 @@ const AXES = [
 		// A family is a scale decision whatever it names, so the rung is required
 		// rather than a shape forbidden. `inherit` is how a control defers to its
 		// surface, which is reading the scale one level up.
-		props: /^font-family$/,
+		//
+		// The `font` SHORTHAND is owned here too, and it is the widest hole of the
+		// three type axes: one declaration sets family, size and leading at once, past
+		// three axes that each watch only a longhand. Nothing but the keywords is
+		// legal in it — a control defers with `font: inherit` and then restates the
+		// rungs it wants, in that order, since the shorthand resets what precedes it.
+		props: /^(font|font-family)$/,
 		allowBare: /^(inherit|initial|unset|revert)$/,
 		rung: '`var(--_qm-font)` / `var(--_qm-font-mono)`',
 		doc: 'THEMING §"The dials"',

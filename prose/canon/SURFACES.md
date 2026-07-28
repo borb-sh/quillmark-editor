@@ -101,6 +101,26 @@ spec fixes rather than a step on the space scale, so it does not move when
 `--qm-space` does, and `min-*` is outside every `check:style` axis — a second
 expression of the same floor would have nothing watching it.
 
+**Type is the button recipes' too, not the box's alone.** A UA button inherits
+neither family nor size, so a button that declares no type renders in the UA face at
+the UA size — the same failure the shared rule prevents for chrome, and quieter,
+because an absence mints no literal: the gate stays green while `--qm-font`, a
+documented dial, stops short of the package's own buttons. Both families take
+`font: inherit` and then the body rung, the anchor the box reads, so a button and
+the input beside it agree on face and size. Where the box's height is a line box, a
+button's is the tap floor: a label is one line and a glyph is not text at all, so the
+line box collapses onto its content and one height source decides instead of two.
+`font` is a shorthand carrying `line-height`, so size and leading are declared after
+it or dropped in silence — the same ordering the box recipe keeps, and the reason the
+family half cannot be written as a longhand-free convenience.
+
+**The section header is a button by tag and neither family by recipe.** It takes no
+target floor (its symmetric padding is the row) and no hover fill (an ink step
+instead), so it declares its own type rather than joining a family it would then have
+to unpick: the field-label rung at the tight leading, on the button, with the label a
+text run beside the chevron. A wrapper carrying only the size is indirection between
+a header and its own label.
+
 **An inline prose leaf is inside that recipe, not beside it.** A field constrained
 to one paragraph is a control in a row of controls, so it draws the same
 declarations and is therefore exactly as tall as the `.qm-input` next to it — by
