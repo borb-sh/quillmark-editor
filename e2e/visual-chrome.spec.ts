@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { openGroup, pm, replaceProse, selectAndAwaitPopover } from './support.js';
+import { pm, replaceProse, reveal, selectAndAwaitPopover } from './support.js';
 
 // Phase 4b exit criteria (browser tier): the formatting selection popover and
 // diagnostics routing, over the SAME /visual playground e2e/visual.spec.ts uses
@@ -31,9 +31,6 @@ test.describe('visual editor chrome — formatting popover', () => {
 	test.beforeEach(async ({ page }) => {
 		await page.goto('/visual');
 		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
-		// `subject` lives in the ADDRESSING group, which the main card opens collapsed.
-		// Selection needs the leaf actually visible — see `openGroup`.
-		await openGroup(page, 'main', 'addressing');
 	});
 
 	test('(a) a non-empty selection in `subject` raises the popover; bold toggles a strong markOp', async ({
@@ -284,6 +281,7 @@ test.describe('visual editor chrome — diagnostics routing', () => {
 
 		// Commit is at `change` (issue #13) — blur to settle the bad entry so the
 		// boundary judges it and the coercion diagnostic surfaces.
+		await reveal(page, 'main-font_size');
 		await page.getByTestId('main-font_size').fill('abc');
 		await page.getByTestId('main-font_size').blur();
 		await expect(page.getByTestId('diag-main-font_size')).toBeVisible();
@@ -295,6 +293,7 @@ test.describe('visual editor chrome — diagnostics routing', () => {
 	});
 
 	test('a subsequent valid commit clears the commit-error diagnostic', async ({ page }) => {
+		await reveal(page, 'main-font_size');
 		await page.getByTestId('main-font_size').fill('abc');
 		await page.getByTestId('main-font_size').blur();
 		await expect(page.getByTestId('diag-main-font_size')).toBeVisible();
@@ -306,6 +305,7 @@ test.describe('visual editor chrome — diagnostics routing', () => {
 	});
 
 	test('the app keeps working after a coercion error (non-gating)', async ({ page }) => {
+		await reveal(page, 'main-font_size');
 		await page.getByTestId('main-font_size').fill('not-a-number');
 		await page.getByTestId('main-font_size').blur();
 		await expect(page.getByTestId('diag-main-font_size')).toBeVisible();

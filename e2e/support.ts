@@ -10,31 +10,35 @@ export function pm(page: Page, leafTestid: string) {
 }
 
 /**
- * Expand a card's `ui.group` accordion section, so the fields inside it are
- * REACHABLE the way a user reaches them.
+ * Expand whatever `ui.group` section holds `testid`, so a gesture against it is the
+ * gesture a user makes. A no-op for a field outside the accordion, or one already
+ * showing. One section opens at a time, so a test walking two fields in two groups
+ * calls this before each — which is also what a user does.
  *
- * The main card opens all-collapsed by design (`initialExpandedGroup`: many groups
- * plus a body leaf → the body carries the card), and a collapsed panel is an 8px
- * `overflow: hidden` window its fields overflow. A field inside one still reports a
- * full `getBoundingClientRect`, and Playwright will scroll the hidden box to reach
- * it — so a gesture against a collapsed field APPEARS to work while landing on a
- * few visible pixels, and whether it lands at all is a function of the leaf's
- * height. Selection is where that bites: the popover raises on a non-empty PM
- * selection, and a click that misses the sliver leaves focus on `<body>`, where
- * ctrl+A selects the page and raises nothing.
- *
- * Opening the section first is not a workaround for that — it is the only state in
- * which a user can select text in these fields at all.
+ * Needed because the main card opens ALL-COLLAPSED by design
+ * (`initialExpandedGroup`: many groups plus a body leaf → the body carries the
+ * card). A field in a closed section is clipped, not absent: it still reports a
+ * full `getBoundingClientRect`, and Playwright will scroll the `overflow: hidden`
+ * panel to reach it. So a gesture against a collapsed field used to land — on
+ * whatever pixels the panel's inset happened to leave standing, which is a state no
+ * user can be in and a number no test should depend on. Selection was where it bit
+ * first: a click that misses leaves focus on `<body>`, where ctrl+A selects the page
+ * and raises no popover.
  */
-export async function openGroup(page: Page, base: string, group: string): Promise<void> {
-	const header = page.getByTestId(`group-${base}-${group}`);
-	if ((await header.getAttribute('aria-expanded')) === 'true') return;
-	await header.click();
-	await expect(header).toHaveAttribute('aria-expanded', 'true');
+export async function reveal(page: Page, testid: string): Promise<void> {
+	const header = await page.evaluate((t) => {
+		const group = document.querySelector(`[data-testid="${t}"]`)?.closest('.qm-group');
+		if (!group || group.classList.contains('qm-open')) return null;
+		return (group.querySelector('.qm-group-header') as HTMLElement | null)?.dataset.testid ?? null;
+	}, testid);
+	if (!header) return;
+	await page.getByTestId(header).click();
+	await expect(page.getByTestId(header)).toHaveAttribute('aria-expanded', 'true');
 }
 
 /** Replace a prose leaf's whole content with `text` (select-all + type). */
 export async function replaceProse(page: Page, leafTestid: string, text: string): Promise<void> {
+	await reveal(page, leafTestid);
 	const el = pm(page, leafTestid);
 	await el.click();
 	await page.keyboard.press('ControlOrMeta+a');
@@ -56,6 +60,7 @@ export async function replaceProse(page: Page, leafTestid: string, text: string)
  * failures a function of what ran before them (issue #90).
  */
 export async function selectAndAwaitPopover(page: Page, leafTestid: string): Promise<void> {
+	await reveal(page, leafTestid);
 	await expect(async () => {
 		await pm(page, leafTestid).click();
 		await page.keyboard.press('ControlOrMeta+a');

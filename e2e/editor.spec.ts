@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { pm, selectAndAwaitPopover } from './support.js';
+import { pm, reveal, selectAndAwaitPopover } from './support.js';
 
 // Phase 5 exit criterion (browser tier): the /editor split-pane shell is the full
 // reference harness — one LiveSession, the VisualEditor and Preview over one
@@ -48,6 +48,7 @@ test.describe('editor shell', () => {
 	}) => {
 		// Click into the editor's subject leaf (an editor-origin caret move, not via
 		// the preview) → onCaretMove → focusPosition with the canonical DocPath address.
+		await reveal(page, 'prose-main-subject');
 		await pm(page, 'prose-main-subject').click();
 		await expect(page.getByTestId('last-focus')).toContainText('"field":"main.subject"');
 	});
@@ -57,6 +58,7 @@ test.describe('editor shell', () => {
 		page.on('pageerror', (e) => errors.push(String(e)));
 
 		await expect(page.getByTestId('last-change')).toHaveText('none');
+		await reveal(page, 'prose-main-subject');
 		await pm(page, 'prose-main-subject').click();
 		await page.keyboard.type('SHELLEDIT');
 
@@ -88,6 +90,7 @@ test.describe('editor shell', () => {
 		await expect(mirror).toContainText('usaf_memo');
 
 		// Edit the subject; the source view refreshes on the recompile tick.
+		await reveal(page, 'prose-main-subject');
 		await pm(page, 'prose-main-subject').click();
 		await page.keyboard.press('ControlOrMeta+a');
 		await page.keyboard.type('SOURCEVIEWEDIT');
@@ -128,6 +131,7 @@ test.describe('editor shell', () => {
 		}
 
 		// The two that PORTAL to document.body, and so escape the editor's subtree.
+		await reveal(page, 'main-classification');
 		await page.getByTestId('main-classification').click();
 		expect(await resolves('.qm-select-content'), 'the enum listbox').not.toBe('');
 		expect(await font('.qm-select-content'), 'the enum listbox font').toContain('ui-sans-serif');
@@ -187,6 +191,7 @@ test.describe('editor shell', () => {
 
 		expect(await surface('.qm-editor')).toBe('rgb(0, 0, 40)');
 
+		await reveal(page, 'main-classification');
 		await page.getByTestId('main-classification').click();
 		const list = page.locator('.qm-select-content').first();
 		await list.waitFor({ state: 'visible' });
