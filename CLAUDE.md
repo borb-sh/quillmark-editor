@@ -37,8 +37,8 @@ Comments and docs: use the `dense-prose` skill.
   runtime layer; `node_modules/@quillmark/wasm/runtime/runtime.d.ts` is the
   canonical typing — read it before assuming a verb's shape.
 - WASM under Vitest: copy the sibling checkout's
-  `crates/bindings/wasm/vitest.config.js` — node environment + `vite-plugin-wasm`
-  + `vite-plugin-top-level-await`.
+  `crates/bindings/wasm/vitest.config.js` — node environment,
+  `vite-plugin-wasm`, `vite-plugin-top-level-await`.
 
 ## Verification
 
