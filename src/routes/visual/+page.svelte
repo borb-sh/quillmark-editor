@@ -31,7 +31,7 @@
 	let lastAddr = $state('none');
 	let dumpTick = $state(0);
 	let externalDiagnostics = $state<Diagnostic[]>([]);
-	// A consumer enum-policy stand-in (issue #73): once armed, forbid `CUI` on the
+	// A consumer enum-policy stand-in: once armed, forbid `CUI` on the
 	// main `classification` field so e2e can prove the option renders disabled
 	// without the stored value or the schema changing.
 	let restrictEnums = $state(false);
@@ -78,7 +78,7 @@
 			date: doc.getStored('date') ?? null,
 			memo_for: doc.getStored('memo_for') ?? [],
 			references: ((doc.getStored('references') as Content[] | undefined) ?? []).map((r) => r.text),
-			// The tips channel (issue #71) read off the Document, so e2e proves the
+			// The tips channel read off the Document, so e2e proves the
 			// DISMISSAL landed as a write and not just as an unmount — and that the
 			// `title` sibling in the same namespace survived it. `getExtNamespace` reads
 			// the one slot rather than serializing the whole main card for it.
@@ -104,7 +104,7 @@
 		(async () => {
 			try {
 				// Dynamic: keep WASM's top-level await out of the route module so
-				// Safari/dev doesn't TDZ on Kit's `component` export (#7805).
+				// Safari/dev doesn't TDZ on Kit's `component` export.
 				// VisualEditor pulls the codec → `mapPos`, so it rides the same import.
 				const [{ Quill, Document, init, MAIN_CARD_ADDR }, visual] = await Promise.all([
 					import('$lib/core'),
@@ -112,7 +112,7 @@
 				]);
 				init();
 				const tree = await loadUsafMemoTree();
-				// Issue #89 e2e variant: the reference quill's `date` declares a blank
+				// e2e variant: the reference quill's `date` declares a blank
 				// `default:`, which ghosts nothing — `?dateDefault=YYYY-MM-DD` rewrites it
 				// so the date control's ghosted default is reachable in the browser. A
 				// SCHEMA variant, so it patches the tree before the quill is built, unlike
@@ -122,14 +122,14 @@
 				if (dateDefault) withMainDateDefault(tree, dateDefault);
 				const quill = Quill.fromTree(tree);
 				const doc = quill.seedDocument();
-				// Issue #72 e2e seed: a card whose `kind` the schema can't project (as a
+				// e2e seed: a card whose `kind` the schema can't project (as a
 				// document predating a schema change would carry). `Document.insertCard`
 				// is schema-agnostic, so it can hold a foreign kind the Quill-bound writer
 				// would reject — the exact un-schemable case the recovery shell handles.
 				if (params.has('foreign')) {
 					doc.insertCard(Document.makeCard('legacy_kind', {}, 'Trapped legacy body.'));
 				}
-				// Issue #71 e2e seed: the tips channel a quill or consumer supplies. The
+				// e2e seed: the tips channel a quill or consumer supplies. The
 				// reference quill declares none — tips are `$ext`, not schema — so the
 				// playground stands in for the seeding consumer, off by default so the
 				// default view stays the plain card stack.

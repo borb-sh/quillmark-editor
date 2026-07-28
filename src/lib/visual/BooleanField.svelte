@@ -4,7 +4,7 @@
   UNTESTED against a real leaf — noted in the phase report.)
 
   Styled rather than a native checkbox: the native box's face is UA-owned shadow
-  DOM, so no dial reaches it (issue #79 §3). The a11y comes with the primitive —
+  DOM, so no dial reaches it. The a11y comes with the primitive —
   Switch.Root renders `role="switch"` with its checked state and keyboard handling.
 -->
 <script lang="ts">
@@ -26,7 +26,7 @@
 	// change reconciles back in (see `syncedLocal`). The primitive is driven
 	// CONTROLLED (`checked` + `onCheckedChange`, never `bind:`) so reconciliation
 	// stays the package's — a two-way bind hands the primitive a lane around it,
-	// which is the #48 hazard in miniature.
+	// which repeats the reconciliation hazard in miniature.
 	const local = syncedLocal(() => value ?? fallback ?? false);
 </script>
 

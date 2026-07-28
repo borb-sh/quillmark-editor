@@ -10,7 +10,8 @@ consumers, no compatibility promise. A doc that contradicts the design in hand
 gets rewritten in the same commit as the code. `npm run check:canon` gates the
 doc spine (see [`prose/README.md`](prose/README.md)), not the claims.
 
-Comments and docs: use the `dense-prose` skill.
+Comments and docs: use the `dense-prose` skill. No GitHub issue numbers in
+comments or docs — state the design fact itself, not where it's tracked.
 
 ## Commands
 

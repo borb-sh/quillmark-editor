@@ -3,14 +3,14 @@
   values`, on bits-ui. When nothing is authored the list shows a distinct UNSET
   sentinel that GHOSTS the `default:` (muted, shown-never-written), distinguishable
   from an authored pick and re-selectable — so re-picking the default fires a
-  change (issue #21a). The sentinel commits nothing; any real pick — INCLUDING the
+  change. The sentinel commits nothing; any real pick — INCLUDING the
   value that equals the default — commits via the parent's typed `writer.set`.
   Explicitly picking the default is the one place "commit the default" is genuine
   intent, expressible. The sentinel stays in the list once a value is authored, as
   the "clear back to default" (unset) affordance.
 
   Styled rather than a native `<select>`: the dropdown list is UA-owned and reaches
-  no dial (issue #79 §3). Listbox semantics and typeahead come with the primitive.
+  no dial. Listbox semantics and typeahead come with the primitive.
 -->
 <script lang="ts">
 	import { Select } from 'bits-ui';
@@ -25,7 +25,7 @@
 		/** Accessible name — the visual label is a bare span the trigger can't reference. */
 		label?: string;
 		onCommit: (v: string | undefined) => void;
-		/** Consumer policy (issue #73): `false` disables an option so it can't be picked.
+		/** Consumer policy: `false` disables an option so it can't be picked.
 		 * A disallowed value already authored stays SELECTED and visible (disabled), never
 		 * stripped or mutated. The UNSET sentinel is exempt — clear-to-default always works. */
 		optionAllowed?: (value: string) => boolean;
@@ -62,7 +62,7 @@
 	<!-- `allowDeselect={false}`: the UNSET sentinel is the clear-to-default
 	     affordance, so the primitive's own deselect must stay off. It reports a
 	     deselect as `''` — INDISTINGUISHABLE from picking the empty-string enum
-	     member the reference quill actually declares (issue #21a). -->
+	     member the reference quill actually declares. -->
 	<Select.Root
 		type="single"
 		allowDeselect={false}
@@ -163,7 +163,7 @@
 	.qm-select-content :global(.qm-select-item[data-selected]) {
 		font-weight: var(--_qm-weight-label);
 	}
-	/* Consumer policy (issue #73) — offered but unpickable, never hidden. */
+	/* Consumer policy — offered but unpickable, never hidden. */
 	.qm-select-content :global(.qm-select-item[data-disabled]) {
 		opacity: var(--_qm-opacity-muted);
 		cursor: default;

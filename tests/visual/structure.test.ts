@@ -194,7 +194,7 @@ describe('against the real usaf_memo schema', () => {
 		expect(byName.references.schema.items?.type).toBe('richtext');
 	});
 
-	it('projects each field schema description into the model (issue #75b)', () => {
+	it('projects each field schema description into the model', () => {
 		const schema = quill().schema;
 		const byName = Object.fromEntries(fieldModels(schema.main).map((m) => [m.name, m]));
 		// `memo_from` carries a description in the fixture; it threads verbatim.
@@ -202,7 +202,7 @@ describe('against the real usaf_memo schema', () => {
 		expect(byName.memo_from.description).toMatch(/office symbol/i);
 	});
 
-	it('marks a no-default field required, a defaulted field not (issue #75a)', () => {
+	it('marks a no-default field required, a defaulted field not', () => {
 		const schema = quill().schema;
 		const byName = Object.fromEntries(fieldModels(schema.main).map((m) => [m.name, m]));
 		// No `default:` → required (Unendorsed); a declared `default:` (incl. `""`/`[]`)

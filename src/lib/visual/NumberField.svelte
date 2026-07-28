@@ -4,9 +4,9 @@
   (`-`, `1.`, `1e`) is never a document state worth a boundary round-trip, and
   committing it live flashes a coercion diagnostic + `console.error` on every
   intermediate prefix, announced by `DiagnosticList`'s `role="status"` live
-  region (issue #13). A blank entry commits `undefined` — the UNSET rung of the
+  region. A blank entry commits `undefined` — the UNSET rung of the
   commitment ladder: the parent removes the field and the engine renders the
-  ghosted `default:` (issue #12). Settling at `change` also keeps
+  ghosted `default:`. Settling at `change` also keeps
   select-all-and-retype from flashing the preview through the default mid-keystroke.
 
   `type="text"`, not `type="number"` — a native number input SANITIZES an

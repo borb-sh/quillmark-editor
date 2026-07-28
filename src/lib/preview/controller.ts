@@ -35,7 +35,7 @@ export interface PreviewController {
 const CONTAINER_CLASS = 'qm-preview';
 // The message states share one element; each carries `MESSAGE_CLASS` plus a
 // state class so a consumer (and the tests) can target them. `EMPTY_CLASS` is
-// kept for the zero-page hook that issue #10 established.
+// the zero-page hook consumers and tests target.
 const MESSAGE_CLASS = 'qm-preview-message';
 const EMPTY_CLASS = 'qm-preview-empty';
 const UNSUPPORTED_CLASS = 'qm-preview-unsupported';
@@ -98,8 +98,8 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	// when there is something to paint, the shared message otherwise. Called at
 	// construction and after every `apply`, so `supportsCanvas` is re-read per
 	// compile (runtime.d.ts: re-check after `open`) and a 0-page or non-canvas
-	// compile that later gains paintable pages recovers — issue #10 generalized
-	// past the count to the paint capability.
+	// compile that later gains paintable pages recovers — the check spans the
+	// paint capability generally, not just the page count.
 	function render(pageCount: number, dirtyPages: readonly number[]): void {
 		if (!session.supportsCanvas || pageCount === 0) {
 			// Nothing paintable: collapse slots, drop geometry attachments, say why.

@@ -45,8 +45,8 @@
 	   `font: inherit` first, because a UA control inherits neither family nor face;
 	   then the SIZE off the ramp, because inheriting that lands the surface on the
 	   host page's body size — a rung the scale never minted, and one the consumer
-	   moves by restyling their page rather than by turning `--qm-font-size`
-	   (issue #119). Splitting it here rather than restating it on the unframed leaf is
+	   moves by restyling their page rather than by turning `--qm-font-size`.
+	   Splitting it here rather than restating it on the unframed leaf is
 	   the same argument the rule itself rests on: a second copy agrees until one is
 	   edited, and both copies read a rung, so `check:style` sees nothing either way. */
 	.qm-control-box,

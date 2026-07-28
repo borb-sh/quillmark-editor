@@ -66,7 +66,7 @@
 
 <style>
 	/* `.qm-control-box` (controls.css) is the whole box, so an array of `richtext` and
-	   an array of `string` render rows of equal height (issue #120). No floor: the
+	   an array of `string` render rows of equal height. No floor: the
 	   reset in `core/codec/prose.css` makes one line of prose measure one line. */
 	.qm-array-prose {
 		flex: 1;

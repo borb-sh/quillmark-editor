@@ -1,4 +1,4 @@
-// The provenance channel (FIELD_PROVENANCE → #64): `quill.resolve(doc)` mapped to the
+// The provenance channel (FIELD_PROVENANCE): `quill.resolve(doc)` mapped to the
 // editor's name-keyed `provenance` map and the ghosted `default:` it feeds. The
 // pure helpers are unit-tested; the resolve behavior is asserted against the REAL
 // usaf_memo schema, so the authored↔default flip the ghost turns on is pinned to
@@ -29,7 +29,7 @@ describe('provenanceMap', () => {
 
 describe('resolvedByCardIndex', () => {
 	// Array position 1 carries document index 2 — the map keys on `index`, and one
-	// entry carries both channels (fields and the `body` sibling, issue #58 §9).
+	// entry carries both channels (fields and the `body` sibling).
 	const resolved = {
 		main: { fields: [], body: null },
 		cards: [

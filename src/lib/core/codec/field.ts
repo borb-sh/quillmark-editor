@@ -61,7 +61,7 @@ export interface FieldController {
 	/** The current stored content for this addr (for tests / reconcile). */
 	getContent(): Content;
 	/**
-	 * Insert an identity anchor `id` at USV `pos` (issue #43) — the seam that gives
+	 * Insert an identity anchor `id` at USV `pos` — the seam that gives
 	 * `anchor` the toggle the six formatting marks have. Zero-width; it folds into the
 	 * plugin's position set and commits through the mark-diff `anchor` op, so it
 	 * survives later edits like any anchor. The id is caller-supplied and must be
@@ -82,7 +82,7 @@ const anchorKey = new PluginKey<AnchorPos[]>('quill-anchors');
 /** An anchor mutation carried on a transaction's `anchorKey` meta — the seam that
  * folds a new identity anchor (or a removal) into the plugin's position set, so
  * the next commit lowers it through the mark diff exactly as a toggled formatting
- * mark does (issue #43). Ids are caller-supplied, unique, invariant (the 0.97
+ * mark does. Ids are caller-supplied, unique, invariant (the 0.97
  * anchor-id policy); `pos` is a PM position. */
 type AnchorEdit = { op: 'add'; id: string; pos: number } | { op: 'remove'; id: string };
 
@@ -340,7 +340,7 @@ export function proseLeafPlugins(
 }
 
 /**
- * The empty-leaf ghost placeholder (VISUAL_EDITOR_UIUX §Fields; issue #58 §9). A
+ * The empty-leaf ghost placeholder (VISUAL_EDITOR_UIUX §Fields). A
  * node decoration stamps the sole empty textblock with a class + the ghost text,
  * which CSS renders via `::before { content: attr(data-placeholder) }` — so the
  * text never enters the document, the caret path, or a `pmToContent` export. It

@@ -27,9 +27,9 @@
 		items: QuillFieldSchema | undefined;
 		/** Accessible-name prefix for the element controls (`label` + 1-based index). */
 		label?: string;
-		/** No-default field → a persistent required `*` on the label (issue #75a). */
+		/** No-default field → a persistent required `*` on the label. */
 		required?: boolean;
-		/** Schema `description` — the label's help affordance (issue #75b). */
+		/** Schema `description` — the label's help affordance. */
 		description?: string;
 		onCommit: (arr: unknown[]) => void;
 		/** A prose element gained focus — joins the field in the focus federation. */
@@ -174,8 +174,8 @@
 		min-height: 2.5rem;
 	}
 	/* Chrome, hover fill and target come from `.qm-add-affordance` (controls.css);
-	   what is here is this trigger's own inset and recede ladder
-	   (issue #58 §6) — the sole foot add rests dim, like the card stack's LAST
+	   what is here is this trigger's own inset and recede ladder — the sole foot add
+	   rests dim, like the card stack's LAST
 	   trigger, and surfaces on hover of the field or on focus. */
 	.qm-add-el {
 		padding: var(--_qm-space) var(--_qm-space-2);

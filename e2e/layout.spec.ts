@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { openPlayground, reveal } from './support.js';
 
-// The section grid (issue #121), browser tier. `placeFields` decides spans and is
+// The section grid, browser tier. `placeFields` decides spans and is
 // unit-tested; the container query decides capacity and subgrid decides alignment,
 // and neither is visible anywhere but a laid-out page. Everything here is geometry.
 //

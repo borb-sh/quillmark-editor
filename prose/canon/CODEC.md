@@ -231,8 +231,8 @@ codec mounts, which is why an own-edit never re-hydrates and never moves a caret
   seam `insertAnchor(id, pos)` / `removeAnchor(id)`: a zero-width edit carried on an
   `anchorKey` meta that folds into the plugin set and commits through the same
   mark diff a formatting toggle does. The id is caller-supplied — unique, invariant
-  — per the `@quillmark/wasm` 0.97 anchor-id policy (a duplicate is a no-op); issue
-  #43. A move into the document proper — and the comment-thread UX that gives an
+  — per the `@quillmark/wasm` 0.97 anchor-id policy (a duplicate is a no-op). A move
+  into the document proper — and the comment-thread UX that gives an
   anchor visible chrome — waits past V1.
 - **island props are typed at the boundary** (`@quillmark/wasm` 0.96.0), so the
   codec reads the shape off it and dropped its hand-rolled `IslandTable*` /

@@ -62,7 +62,7 @@ keyboard and touch parity) buys only what the buttons already do.
 
 ## Tips card
 
-An **ephemeral** block in the stack, fed by `$ext.editor.tips` (issue #71) — the
+An **ephemeral** block in the stack, fed by `$ext.editor.tips` — the
 one guidance surface that is not attached to a field. It sits in a fixed slot after
 `main`, ahead of the cards, so document-level hints read as document-level and
 never displace a control.
@@ -107,7 +107,7 @@ floating surface earns the lift), top-center over the selection and flipping bel
 when it nears the viewport top, scaling in on each raise. Each mark is a Lucide
 glyph, the icon naming its action (AESTHETIC §Icons) — bold, italic, underline,
 strikethrough, code, link — with `anchor` a 7th, toggling an identity handle
-over the selection (its codec seam ships: `FieldController.insertAnchor`, #43).
+over the selection (its codec seam ships: `FieldController.insertAnchor`).
 
 **Input rules — typist shorthand, no chrome.** `**`, `*`, `~~`, `` ` ``, `# `,
 `- `, `1. `, `> `, and a ` ``` ` code fence. These cover the marks and the block
@@ -144,7 +144,7 @@ is a separate concern (the island controls), not gated by this.
 - **Per-field state** — focus, inline diagnostics, a ghosted `default:`
   placeholder (never written back — it lives in the schema), a persistent required
   `*` on no-`default:` (Unendorsed) fields, and the field's `description:` as a
-  label tooltip (issue #75). A `!must_fill` marker also surfaces as a routed
+  label tooltip. A `!must_fill` marker also surfaces as a routed
   `validate()` warning among those diagnostics — the `*` states required-ness, the
   warning reports unmet-ness; `example:` still gets no dedicated nudge. No field
   carries a tips surface: guidance that is not about one field belongs to the
@@ -235,7 +235,7 @@ no editor library, so `/source` ships dependency-free.
 - **Control slots** — a per-`ControlKind` extension point past the tokens is
   deferred until a consumer needs one. The constraint is recorded: the package owns
   reconciliation (`syncedLocal`), so a slot handing out a raw `value` reintroduces
-  issue #48's caret reset in consumer code, invisibly to this repo's tests.
+  a caret reset in consumer code, invisibly to this repo's tests.
 - **Insert surface (post-V1)** — the deferred position anchor: gutter affordance,
   menu, slash command, and table/island authoring.
 - **Formatting reach (post-V1)** — the touch accessory bar and keymap shortcuts

@@ -3,11 +3,11 @@
   stored value is a string (fixture uses `YYYY-MM-DD`, blank to mean "today at
   render"); a cleared control commits `undefined` — the unset rung: the parent
   removes the field, so the memo quill's blank-date → `datetime.today()`
-  substitution applies (issue #12). The value-object a date field lowers to is a
+  substitution applies. The value-object a date field lowers to is a
   render-time concern — the editor only sees the stored string.
 
   Styled rather than a native `<input type="date">`: that control's calendar popup
-  is UA-owned and reaches no dial (issue #79 §3). `DateField` (segments, no
+  is UA-owned and reaches no dial. `DateField` (segments, no
   calendar) rather than `DatePicker` — the segments are the entry affordance, and a
   calendar is a second surface this field does not need.
 
@@ -22,7 +22,7 @@
   parsed value: a fresh `CalendarDate` is never `===` the last one, which would
   make every reconcile fire and re-render all seven segments on each commit.
 
-  THE GHOST IS THE DEFAULT'S DIGITS, NOT A FORMAT HINT (issue #89). An unset field
+  THE GHOST IS THE DEFAULT'S DIGITS, NOT A FORMAT HINT. An unset field
   carrying a `default:` prints the default's digits in the segments, ghost-toned,
   instead of the primitive's `mm`/`dd`/`yyyy` hints — which say "empty" where the
   rung says "will render 2026-01-01". The ghost is painted in the SEGMENT SNIPPET,

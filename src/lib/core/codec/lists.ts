@@ -1,4 +1,4 @@
-// List editing — the body leaf's structural commands (issue #70), over
+// List editing — the body leaf's structural commands, over
 // `prosemirror-schema-list` primitives. Indent/outdent on Tab, and the two
 // structural keys lists redefine: Enter (split, exit an empty item, open a
 // paragraph above) and Backspace (merge, or lift at the list's start).
@@ -91,7 +91,7 @@ function mergeIntoPreviousItem(itemType: NodeType): Command {
  * `Tab` / `Shift-Tab` hold the list link of the body's Tab chain. Surfaces that own
  * Tab more locally under the same rule (`prose/canon/VISUAL_EDITOR.md` §Chrome)
  * prepend a link ahead of these in `keymap.ts` — a `code_block` takes literal
- * indentation (`code.ts`), an island takes cell traversal (issue #16). Outside all
+ * indentation (`code.ts`), an island takes cell traversal once added. Outside all
  * of them every link returns false and the key is NOT swallowed: Tab keeps its
  * default meaning, which is the affordance the deferred structural keymap owns and
  * the body's only keyboard exit.

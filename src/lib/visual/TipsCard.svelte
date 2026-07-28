@@ -1,5 +1,5 @@
 <!--
-  The ephemeral tips card (issue #71, VISUAL_EDITOR_UIUX §"Tips card"). Renders the
+  The ephemeral tips card (VISUAL_EDITOR_UIUX §"Tips card"). Renders the
   `$ext.editor.tips` channel one tip at a time with an advance and a dismiss; both
   exits call `onDismiss`, which CLEARS the channel in the Document, so the card is
   gone and does not reappear.

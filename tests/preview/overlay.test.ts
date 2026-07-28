@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Issue #115: the overlay marks correlation as an EVENT, not a state. Three
+// The overlay marks correlation as an EVENT, not a state. Three
 // invariants, each cheap to break silently: nothing is drawn at rest, a bloom
 // RESUMES across the rebuild a recompile triggers rather than restarting, and a
 // continuous caret signal blooms only on an actual change of address.

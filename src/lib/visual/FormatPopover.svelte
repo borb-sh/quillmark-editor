@@ -209,7 +209,7 @@
 	}
 
 	/**
-	 * Toggle an identity anchor over the selection (issue #43) — the `anchor`
+	 * Toggle an identity anchor over the selection — the `anchor`
 	 * button's answer to a formatting toggle. If the selection already covers
 	 * anchors, remove them; else insert one at its start with a freshly-minted
 	 * unique id (the caller-supplied, invariant id the 0.97 policy settles).
@@ -293,7 +293,7 @@
 					{:else}
 						<!-- `role="group"`, not `toolbar`: these buttons carry no roving-tabindex /
 						     arrow-key navigation, so the ARIA toolbar contract would be a lie;
-						     a labelled group is the honest description (issue #19). -->
+						     a labelled group is the honest description. -->
 						<div class="qm-format-buttons" role="group" aria-label="Formatting">
 							{#each MARKS as m (m.name)}
 								{@const Icon = m.icon}

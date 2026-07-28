@@ -1,4 +1,4 @@
-// The tips channel (issue #71): `$ext.editor.tips`, a list of authoring hints a
+// The tips channel: `$ext.editor.tips`, a list of authoring hints a
 // quill or consumer seeds, which the editor only ever RENDERS and CLEARS.
 // Editor-only chrome — never reaches the render backend, never gates, absent when
 // the channel is empty (VISUAL_EDITOR §"Card operations").

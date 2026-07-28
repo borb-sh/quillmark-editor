@@ -7,7 +7,7 @@
 // from the previous compile — pages can be added or removed). A ResizeObserver
 // plus a DPR media-query listener repaint mounted pages when the container's CSS
 // width or `devicePixelRatio` changes, so a frozen canvas never outlives the
-// page box it fills (issue #9).
+// page box it fills.
 import type { LiveSession, PageSize } from '../core/index.js';
 
 /** One page's DOM slot — the box overlay.ts/bridge.ts position against, plus its cached geometry. */

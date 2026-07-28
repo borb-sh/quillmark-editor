@@ -140,7 +140,7 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 	if (schema.nodes.code_block) {
 		rules.push(textblockTypeInputRule(/^```$/, schema.nodes.code_block));
 	}
-	// The list shorthands are the ONLY entry point that starts a list (issue #70):
+	// The list shorthands are the ONLY entry point that starts a list:
 	// there is no toggle command and no toolbar affordance, so `- ` / `1. ` at the
 	// start of a block is how one begins, here or nested inside an item.
 	if (schema.nodes.bullet_list && schema.nodes.paragraph) {

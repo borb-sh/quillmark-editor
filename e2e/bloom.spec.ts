@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { pm, openPlayground, clickFieldBox } from './support.js';
 
-// Issue #115 (browser tier): the editor↔preview address is marked as an EVENT and
+// Browser tier: the editor↔preview address is marked as an EVENT and
 // the preview rests clean. The unit tier reaches the control flow around the wash
 // (tests/preview/overlay.test.ts, with a stubbed `animate` — jsdom has no WAAPI);
 // what only a real browser answers is whether the wash RUNS — real keyframes, real

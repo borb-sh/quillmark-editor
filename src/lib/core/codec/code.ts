@@ -1,4 +1,4 @@
-// Code-block editing — the `code_block` link of the body's key chains (issue #84).
+// Code-block editing — the `code_block` link of the body's key chains.
 // Tab takes LITERAL indentation here rather than a structural edit, and Enter takes
 // a newline, because a code block is text the author controls to the character:
 // `whitespace: 'pre'`, `marks: ''` (`schema.ts`).

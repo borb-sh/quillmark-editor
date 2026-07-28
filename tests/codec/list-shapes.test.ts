@@ -1,7 +1,7 @@
 // List-shape round-trip coverage. The decode-idempotence suite carries one
 // two-level bullet case; these are the shapes structural list commands produce —
 // deeper nesting, mixed kinds, multi-block items, sibling splits. The list
-// editing in issue #70 is additive only while these hold, so they are the
+// editing is additive only while these hold, so they are the
 // invariant it builds on.
 import { describe, it, expect } from 'vitest';
 import type { Attrs } from 'prosemirror-model';
