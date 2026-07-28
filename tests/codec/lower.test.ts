@@ -130,6 +130,46 @@ describe('unknown mark round-trip (verbatim)', () => {
 	});
 });
 
+describe('unknown line kind and container round-trip (verbatim)', () => {
+	// The 0.98 open block vocabulary, from the codec's side: a `kind` and a
+	// `container` this build does not know. Both render as their nearest safe
+	// neighbor (a paragraph; nothing) and both must come back out unchanged — an
+	// edit anywhere in the field restates EVERY line's metadata, so a carrier that
+	// only survives decode would still lose them on the first keystroke.
+	const openRt: Content = {
+		text: 'a callout line\ninside an aside',
+		lines: [
+			{ containers: [], kind: 'callout', attrs: { tone: 'warn' } } as never,
+			{ containers: [{ container: 'aside', attrs: { side: 'left' } } as never], kind: 'para' }
+		],
+		marks: [],
+		islands: []
+	};
+	/** The line at `i`, minus the envelope — what a `setKind` restates. */
+	const kindOf = (rt: Content, i: number) => {
+		const { containers: _c, continues: _k, ...kind } = rt.lines[i];
+		return kind;
+	};
+
+	it('decodes to a paragraph carrying the kind, wrapped in an unknown container', () => {
+		const doc = decode(openRt, blockSchema);
+		expect(doc.child(0).type.name).toBe('paragraph');
+		expect(doc.child(0).attrs.unknown).toEqual({ kind: 'callout', attrs: { tone: 'warn' } });
+		expect(doc.child(1).type.name).toBe('unknown_container');
+		expect(doc.child(1).attrs).toEqual({ container: 'aside', attrs: { side: 'left' } });
+	});
+	it('survives decode → pmToContent verbatim', () => {
+		const back = pmToContent(decode(openRt, blockSchema));
+		expect(kindOf(back, 0)).toEqual({ kind: 'callout', attrs: { tone: 'warn' } });
+		expect(back.lines[1].containers).toEqual([{ container: 'aside', attrs: { side: 'left' } }]);
+	});
+	it('survives decode → lower(edit) → apply → decode', () => {
+		const { stored } = lowerApply(openRt, (s) => s.tr.insertText('Z', 2));
+		expect(kindOf(stored, 0)).toEqual({ kind: 'callout', attrs: { tone: 'warn' } });
+		expect(stored.lines[1].containers).toEqual([{ container: 'aside', attrs: { side: 'left' } }]);
+	});
+});
+
 describe('identity anchor round-trip (op-based, survives edits)', () => {
 	const anchorRt: Content = {
 		text: 'hello world',

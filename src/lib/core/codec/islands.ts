@@ -66,5 +66,5 @@ export function islandEntryFromNode(attrs: {
 		// `loss` is recomputed by the content on write; a faithful default keeps
 		// `install`-based test round-trips stable for known lossless types.
 		loss: 'lossless'
-	} as ContentIsland;
+	};
 }

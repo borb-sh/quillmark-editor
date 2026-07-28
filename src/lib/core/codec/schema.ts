@@ -1,7 +1,9 @@
 // The PM schema — the codec OWNS it; decode/encode target it. Nodes mirror the
 // content block kinds (para/heading/code/rule/island) and its container nesting
-// (list_item/quote → lists/blockquote); marks mirror the content formatting set
-// plus the inert `unknown` carrier. `blockSchema` is the full field; `inlineSchema`
+// (list_item/quote → lists/blockquote); marks mirror the content formatting set.
+// Each of the three open sets gets an inert carrier so an unrecognized value
+// survives a round-trip: the `unknown` mark, the paragraph's `unknown` attribute,
+// and the `unknown_container` node. `blockSchema` is the full field; `inlineSchema`
 // is the constrained single-textblock form for `richtext(inline)` / `plaintext`
 // (one paragraph, no block split, no containers, no islands) — same decode/lower/
 // position machinery, narrower shape. Anchors are NOT marks here (decorations).
@@ -40,11 +42,20 @@ const marks: Record<string, MarkSpec> = {
 // ── Block nodes ─────────────────────────────────────────────────────────────
 const blockNodes: Record<string, NodeSpec> = {
 	doc: { content: 'block+' },
+	// `unknown` carries a line `kind` this build does not know (`{ kind, attrs }`,
+	// else null). A paragraph IS how such a line renders, so the carrier is an
+	// attribute rather than a node type: every paragraph command already reaches it,
+	// and retyping it to a heading or a list drops the attribute — an explicit
+	// conversion, which is the one place the unknown kind SHOULD be lost.
 	paragraph: {
 		content: 'inline*',
 		group: 'block',
+		attrs: { unknown: { default: null } },
 		parseDOM: [{ tag: 'p' }],
-		toDOM: () => ['p', 0]
+		toDOM: (node) => {
+			const u = node.attrs.unknown as { kind: string } | null;
+			return u ? ['p', { 'data-qm-unknown-line': u.kind }, 0] : ['p', 0];
+		}
 	},
 	heading: {
 		content: 'inline*',
@@ -96,6 +107,17 @@ const blockNodes: Record<string, NodeSpec> = {
 		defining: true,
 		parseDOM: [{ tag: 'li' }],
 		toDOM: () => ['li', 0]
+	},
+	// A container this build does not know: a transparent wrapper that renders as a
+	// bare block (its children flow at the enclosing level, which is how upstream
+	// renders it) and re-emits its `container`/`attrs` on encode. `defining` so a
+	// lift out of it is deliberate rather than a backspace away.
+	unknown_container: {
+		content: 'block+',
+		group: 'block',
+		defining: true,
+		attrs: { container: { default: '' }, attrs: { default: null } },
+		toDOM: (node) => ['div', { 'data-qm-unknown-container': node.attrs.container as string }, 0]
 	},
 	island_block: islandBlockSpec
 };
