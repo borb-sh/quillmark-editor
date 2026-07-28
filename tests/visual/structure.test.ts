@@ -13,7 +13,7 @@ import {
 	groupLabel,
 	groupSections,
 	initialExpandedGroup,
-	packRows,
+	placeFields,
 	interpolateTitle,
 	cardTitle,
 	bodyEnabled,
@@ -67,18 +67,81 @@ describe('interpolateTitle + cardTitle', () => {
 	});
 });
 
-describe('packRows', () => {
-	it('packs consecutive compact fields, solos the rest', () => {
-		const mk = (name: string, compact: boolean) =>
-			({ name, compact }) as unknown as ReturnType<typeof fieldModels>[number];
-		const rows = packRows([
-			mk('a', false),
-			mk('b', true),
-			mk('c', true),
-			mk('d', false),
-			mk('e', true)
+describe('placeFields', () => {
+	const mk = (name: string, compact: boolean, extra: Record<string, unknown> = {}) =>
+		({ name, compact, control: 'text', inline: false, ...extra }) as unknown as ReturnType<
+			typeof fieldModels
+		>[number];
+	const spans = (fields: ReturnType<typeof mk>[]) =>
+		placeFields(fields).map((p) => [p.field.name, p.span]);
+
+	it('shares a row across a compact run, solos the rest', () => {
+		expect(
+			spans([mk('a', false), mk('b', true), mk('c', true), mk('d', true), mk('e', false)])
+		).toEqual([
+			['a', 'full'],
+			['b', 'cell'],
+			['c', 'cell'],
+			['d', 'cell'],
+			['e', 'full']
 		]);
-		expect(rows.map((r) => r.map((x) => x.name))).toEqual([['a'], ['b', 'c'], ['d'], ['e']]);
+	});
+
+	it('gives a compact run of one the half-width span, wherever it sits', () => {
+		// Trailing, leading, and sandwiched: a run of one is a run of one.
+		expect(spans([mk('a', false), mk('b', true)])).toEqual([
+			['a', 'full'],
+			['b', 'lone']
+		]);
+		expect(spans([mk('a', true), mk('b', false)])).toEqual([
+			['a', 'lone'],
+			['b', 'full']
+		]);
+		expect(spans([mk('a', true)])).toEqual([['a', 'lone']]);
+	});
+
+	it('keeps a run of two as cells — `lone` is only ever a run of ONE', () => {
+		expect(spans([mk('a', true), mk('b', true)])).toEqual([
+			['a', 'cell'],
+			['b', 'cell']
+		]);
+	});
+
+	it('declines the compact hint for shapes that grow under their neighbours', () => {
+		// Block richtext (`inline` absent) holds paragraphs; an array owns its own rows;
+		// an object nests a field set. All three take a full row despite `ui.compact`.
+		expect(
+			spans([
+				mk('block', true, { control: 'prose', inline: false }),
+				mk('arr', true, { control: 'array' }),
+				mk('obj', true, { control: 'object' })
+			])
+		).toEqual([
+			['block', 'full'],
+			['arr', 'full'],
+			['obj', 'full']
+		]);
+	});
+
+	it('packs an inline prose leaf like any scalar', () => {
+		// `tag_line` in the reference quill: richtext + inline + compact, one line tall.
+		expect(
+			spans([mk('seal', true), mk('tag_line', true, { control: 'prose', inline: true })])
+		).toEqual([
+			['seal', 'cell'],
+			['tag_line', 'cell']
+		]);
+	});
+
+	it('does not let a declined field fuse the runs on either side of it', () => {
+		// The block field breaks the run, so each neighbour is a run of one.
+		expect(
+			spans([mk('a', true), mk('block', true, { control: 'prose', inline: false }), mk('b', true)])
+		).toEqual([
+			['a', 'lone'],
+			['block', 'full'],
+			['b', 'lone']
+		]);
 	});
 });
 

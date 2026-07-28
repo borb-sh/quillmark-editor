@@ -123,8 +123,10 @@ is a separate concern (the island controls), not gated by this.
 
 ## Fields
 
-- **Field form** — the schema's fields as controls, laid out from `ui` hints.
-  Layout density carries web-app's system: `ui.group`/`ui.compact` drive columns.
+- **Field form** — the schema's fields as controls, laid out from `ui` hints. The
+  editor carries web-app's density *hints* — `ui.group` and `ui.compact` — and not
+  its layout pass: a section is ONE grid, capacity comes from a container query, and
+  fields auto-place (§"Section grid").
   `ui.group` sections are a collapsible accordion — one open at a time, the sole
   group (or, body-less, the first) auto-expanded; ungrouped fields stay above it,
   always visible. A section header is a heading, not metadata: sentence case at the
@@ -146,6 +148,36 @@ is a separate concern (the island controls), not gated by this.
   mis-order is fixed by editing in place, not by moving rows. (The card stack
   keeps ↑/↓ — a curated set of heavyweight blocks earns it; a scalar list does
   not.) Reorder can return behind an `items`/`ui` hint if a quill needs it.
+
+### Section grid
+
+A section is one grid, and a row is its output rather than its input. `placeFields`
+gives each field a span — nothing more — and the grid places them:
+
+- **`ui.compact` asks; the editor may decline.** A row is as tall as its tallest
+  cell, so the shapes that GROW under their neighbours take a full row whatever the
+  hint says: arrays (which own their label and their own rows), objects (a nested
+  field set), and block richtext — `inline` absent, so it holds paragraphs. An
+  inline prose leaf is one line tall and packs like any scalar. A quill asking for a
+  dense multi-paragraph field asks for something a row cannot give; the hint is
+  declined rather than granted at the row's expense.
+- **Capacity is the container's, not JavaScript's.** A container query steps
+  1 → 2 → 4 columns, each rung the width at which a track still clears a comfortable
+  field (SURFACES §Rhythm). Nothing measures, so there is no observer to loop, no
+  first pass at the wrong capacity, and — because re-packing never restructures the
+  DOM — no resize can remount a prose leaf.
+- **A trailing orphan keeps its column width.** It continues a grid that already
+  exists, so auto-placement holds it to one track. A field that grew to fill its
+  line would render the third of three at twice its siblings.
+- **A compact run of ONE takes half the capacity from column 1.** It has no row
+  above to align to, so a single track reads as truncated. Capacity skips 3 so that
+  half always lands on a track boundary.
+- **Fields subgrid onto the section's rows.** A row-sharing field takes three tracks
+  from the section — label, control, diagnostics — instead of sizing its own, so
+  every control in a row starts at one baseline however tall a neighbour's label
+  wrapped, and a diagnostic under one field lifts none of the others out of line. A
+  full-width field owns its row and stays a plain stack: there is nothing to align
+  it against. No fallback ships — subgrid and container queries are both Baseline.
 
 ## Editor↔preview
 

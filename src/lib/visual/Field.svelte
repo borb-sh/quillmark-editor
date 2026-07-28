@@ -16,7 +16,7 @@
 <script lang="ts">
 	import type { Document, Addr, Diagnostic, ResolvedField } from '../core/index.js';
 	import type { FieldController } from '../core/codec/index.js';
-	import type { FieldModel } from './structure.js';
+	import type { FieldModel, FieldSpan } from './structure.js';
 	import { enumValues, ghostDefault, stringifyGhost } from './structure.js';
 	import ProseField from './ProseField.svelte';
 	import TextField from './TextField.svelte';
@@ -31,6 +31,8 @@
 
 	interface Props {
 		field: FieldModel;
+		/** This field's width in the section grid, from `placeFields`. */
+		span: FieldSpan;
 		value: unknown;
 		/** This field's resolved provenance row (FIELD_PROVENANCE → #64) — the ghost's
 		 * source. Feeds the placeholder / fallback only, never `value`. */
@@ -52,6 +54,7 @@
 	}
 	let {
 		field,
+		span,
 		value,
 		provenance,
 		doc,
@@ -75,7 +78,7 @@
 	const defaultStr = $derived(stringifyGhost(ghost));
 </script>
 
-<div class="qm-field" class:compact={field.compact}>
+<div class="qm-field" class:cell={span === 'cell'} class:lone={span === 'lone'}>
 	{#if field.control !== 'array'}
 		<FieldLabel
 			label={field.label}
@@ -168,14 +171,37 @@
 </div>
 
 <style>
+	/* The `full` span, and the base every field starts from: its own row, a plain
+	   stack. Nothing shares the row, so there are no internals to align against. */
 	.qm-field {
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space);
-		flex: 1 1 auto;
+		grid-column: 1 / -1;
 		min-width: 0;
 	}
-	.qm-field.compact {
-		flex: 1 1 12rem;
+	/* A row-sharing field subgrids onto the section's row tracks instead of sizing its
+	   own: three tracks — label, control, diagnostics — taken from the parent, so every
+	   control in a visual row starts at the same y however tall a neighbour's label
+	   wrapped, and one field's diagnostic lifts none of the others out of line. Source
+	   order IS track order; `align-items: start` keeps a short control from stretching
+	   to a taller sibling's track. `row-gap` overrides the section's inter-row gutter
+	   for the tracks this field spans: inside a field the rhythm is tighter than
+	   between rows. */
+	.qm-field.cell,
+	.qm-field.lone {
+		display: grid;
+		grid-row: span 3;
+		grid-template-rows: subgrid;
+		row-gap: var(--_qm-space);
+		align-items: start;
+	}
+	.qm-field.cell {
+		grid-column: span 1;
+	}
+	/* A run of one takes half the capacity from column 1 — `--cols-half` is the section's
+	   capacity halved, so the edge lands on a track boundary at every capacity. */
+	.qm-field.lone {
+		grid-column: span var(--cols-half);
 	}
 </style>

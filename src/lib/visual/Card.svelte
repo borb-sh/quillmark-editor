@@ -12,7 +12,7 @@
 	import type { Document, Addr, Diagnostic } from '../core/index.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import type { CardModel, FieldModel } from './structure.js';
-	import { packRows, humanize, initialExpandedGroup } from './structure.js';
+	import { placeFields, humanize, initialExpandedGroup } from './structure.js';
 	import Field from './Field.svelte';
 	import FieldLabel from './FieldLabel.svelte';
 	import ProseField from './ProseField.svelte';
@@ -234,9 +234,7 @@
 		     primary fields. -->
 			{#each ungrouped as section (section.group ?? '_ungrouped')}
 				<div class="qm-section">
-					{#each packRows(section.fields) as row, ri (ri)}
-						{@render fieldRow(row)}
-					{/each}
+					{@render sectionFields(section.fields)}
 				</div>
 			{/each}
 
@@ -263,9 +261,7 @@
 						</button>
 						<div class="qm-group-panel">
 							<div class="qm-group-panel-inner">
-								{#each packRows(section.fields) as row, ri (ri)}
-									{@render fieldRow(row)}
-								{/each}
+								{@render sectionFields(section.fields)}
 							</div>
 						</div>
 					</div>
@@ -294,13 +290,16 @@
 	{/if}
 </section>
 
-<!-- One packed row of fields — shared by the ungrouped block and the accordion
-     panels so both render a group's fields identically (issue #60). -->
-{#snippet fieldRow(row: FieldModel[])}
-	<div class="qm-row" class:packed={row.length > 1}>
-		{#each row as f (f.name)}
+<!-- A section's fields as ONE grid — shared by the ungrouped block and the accordion
+     panels so both render a group's fields identically (issue #60). Rows are the
+     grid's business: fields carry a span and auto-place, so nothing here re-derives
+     structure on resize and a prose leaf's key never moves (issue #121). -->
+{#snippet sectionFields(fields: FieldModel[])}
+	<div class="qm-fields">
+		{#each placeFields(fields) as { field: f, span } (f.name)}
 			<Field
 				field={f}
+				{span}
 				value={card.values[f.name]}
 				provenance={card.provenance[f.name]}
 				{doc}
@@ -462,10 +461,43 @@
 		flex-direction: column;
 		gap: var(--_qm-space-3);
 	}
+	/* Each section is its own query container, so capacity follows the width the fields
+	   actually get — a group panel's inset makes that narrower than the card. */
 	.qm-section {
-		display: flex;
-		flex-direction: column;
-		gap: var(--_qm-space-2);
+		container-type: inline-size;
+	}
+	/* One grid per section (issue #121). Capacity is the container's, not JavaScript's:
+	   nothing measures, so there is no observer to loop, no pre-measure pass at the
+	   wrong capacity, and no re-packing to restructure the DOM under a prose leaf.
+	   Fields auto-place, which is what keeps a trailing orphan at its column width
+	   instead of growing to fill the line.
+
+	   Capacity steps 1 → 2 → 4, skipping 3: each rung is the width at which a track
+	   still clears the comfortable field minimum (2 needs 28rem, 4 needs 57rem), and
+	   an even capacity is what lets `lone`'s half land on a track boundary.
+
+	   A row-sharing field spans three implicit row tracks (Field.svelte), so `row-gap`
+	   here is the gutter BETWEEN field rows; the tighter one inside a field is the
+	   subgrid's own. */
+	.qm-fields {
+		--cols: 1;
+		--cols-half: 1;
+		display: grid;
+		grid-template-columns: repeat(var(--cols), 1fr);
+		column-gap: var(--_qm-space-2);
+		row-gap: var(--_qm-space-2);
+	}
+	@container (min-width: 28rem) {
+		.qm-fields {
+			--cols: 2;
+			--cols-half: 1;
+		}
+	}
+	@container (min-width: 57rem) {
+		.qm-fields {
+			--cols: 4;
+			--cols-half: 2;
+		}
 	}
 	/* Group accordion (issue #60, VISUAL_EDITOR_UIUX §Fields). The header is a toggle
 	   at the field-label rung; the panel slides via a 0fr↔1fr grid row so the height
@@ -527,7 +559,10 @@
 	.qm-group.qm-open .qm-group-panel {
 		grid-template-rows: 1fr;
 	}
+	/* Also the grouped sections' query container — its inset is exactly what makes a
+	   panel's usable width differ from the card's. */
 	.qm-group-panel-inner {
+		container-type: inline-size;
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
@@ -553,16 +588,6 @@
 		.qm-group-header :global(.qm-group-chevron) {
 			transition: none;
 		}
-	}
-	.qm-row {
-		display: flex;
-		flex-direction: column;
-		gap: var(--_qm-space-2);
-	}
-	.qm-row.packed {
-		flex-direction: row;
-		flex-wrap: wrap;
-		align-items: flex-start;
 	}
 	.qm-body-leaf {
 		display: flex;

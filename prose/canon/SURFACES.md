@@ -100,6 +100,14 @@ symmetric; every left edge aligns to one gutter. Stacked regions — a card's he
 its field list, its body — are separated by one gap, not per-region margins that
 drift. Pick from the scale; an in-between value is a review smell.
 
+**Capacity.** A field section's column count is a closed ramp too — 1 → 2 → 4, at
+`28rem` and `57rem` of CONTAINER width (VISUAL_EDITOR_UIUX §"Section grid"). Each
+rung is the width at which a track still clears ~220px, the narrowest a labelled
+control reads comfortably; the ramp skips 3 so a half-capacity span lands on a track
+boundary at every rung. These are geometry thresholds like the tap-target floor —
+they answer to what a control needs, not to `--qm-space` — so they do not derive
+from the spacing dial and do not move when it does.
+
 **Radius.** One radius base with at most a small derived step, by surface weight —
 the card and the two floating surfaces at `--_qm-radius`, interior controls at the
 tighter `--_qm-radius-inner` — not a free choice per component. `--_qm-radius-pill`
