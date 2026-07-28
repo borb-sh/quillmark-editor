@@ -36,9 +36,9 @@
 		   `light-dark()` keys the default off the `color-scheme` this root INHERITS,
 		   which is the host's — an app that declares `dark` gets a dark surface
 		   whatever the OS says, and one that declares nothing gets light, matching
-		   its own unstyled text. So the package owns no mode logic: the one decision
-		   it used to make for itself (THEMING.md §"The surface follows your colour
-		   scheme") is the host's, like every other value here. */
+		   its own unstyled text. So the package owns no mode logic at all: light or
+		   dark is the mounting site's, like every other value here (THEMING.md
+		   §"The surface follows your colour scheme"). */
 		--_qm-bg: var(--qm-bg, light-dark(#fff, #14171c));
 		--_qm-fg: var(--qm-fg, light-dark(#1a1a1a, #e8eaed));
 		--_qm-accent: var(--qm-accent, #2563eb);

@@ -217,10 +217,6 @@
 	main {
 		max-width: 78rem;
 		margin: 1.5rem auto;
-		padding: 0 1.5rem;
-	}
-	h1 {
-		margin-bottom: 0.2rem;
 	}
 	.layout {
 		display: grid;

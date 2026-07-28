@@ -1,5 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
-import { pm, reveal, selectAndAwaitPopover, openPlayground, clickFieldBox } from './support.js';
+import {
+	pm,
+	reveal,
+	selectAndAwaitPopover,
+	openPlayground,
+	clickFieldBox,
+	declareScheme
+} from './support.js';
 
 // Phase 5 exit criterion (browser tier): the /editor split-pane shell is the full
 // reference harness — one LiveSession, the VisualEditor and Preview over one
@@ -147,8 +154,7 @@ test.describe('editor shell', () => {
 		// either scheme, so every assertion is on a USED property: `color`, which the
 		// root rule sets to the ink pole and so resolves it exactly.
 		const ink = () => page.locator('.qm-editor').evaluate((el) => getComputedStyle(el).color);
-		const declare = (scheme: string) =>
-			page.evaluate((s) => document.documentElement.style.setProperty('color-scheme', s), scheme);
+		const declare = (scheme: string) => declareScheme(page, scheme);
 
 		// The OS says dark throughout: nothing below may move with it.
 		await page.emulateMedia({ colorScheme: 'dark' });
@@ -158,10 +164,8 @@ test.describe('editor shell', () => {
 		const dark = await ink();
 		expect(dark, 'the host-declared scheme does not retune the poles').not.toBe(light);
 
-		// `normal` is what a host that declares nothing inherits — the playground
-		// itself declares `light dark`, so the undeclared case is stated, not left
-		// off. It takes the light pole, matching the page's own unstyled text: the OS
-		// preference is not a signal the package reads.
+		// An undeclared host takes the light pole, matching the page's own unstyled
+		// text: the OS preference is not a signal the package reads.
 		await declare('normal');
 		expect(await ink(), 'an undeclared host follows the OS').toBe(light);
 
@@ -183,11 +187,11 @@ test.describe('editor shell', () => {
 		// other does not. The shell derives its `--pg-*` from the same declaration
 		// (`routes/playground.css`), so the two poles stay on the same side of their
 		// page in BOTH schemes — which a literal in either place breaks.
-		// Every rung off a `color-mix` computes to `oklab(…)`, so the readings are
-		// rasterised through a 2D context: it takes any CSS colour and hands back the
-		// sRGB bytes that actually reach the screen, which is what "is this dark?"
-		// means. Luma against mid-grey — every pole sits far from it, so the assertion
-		// is about the side a value landed on, not its exact tone.
+		//
+		// A rung off a `color-mix` computes to `oklab(…)`, so each reading rasterises
+		// through a 2D context, which takes any CSS colour and returns the sRGB bytes
+		// that reach the screen. Luma against mid-grey: every pole sits far from it,
+		// so the claim is which side a value landed on, not its exact tone.
 		const reading = () =>
 			page.evaluate(() => {
 				const ctx = document.createElement('canvas').getContext('2d')!;
@@ -213,10 +217,7 @@ test.describe('editor shell', () => {
 			['light', false],
 			['dark', true]
 		] as const) {
-			await page.evaluate(
-				(s) => document.documentElement.style.setProperty('color-scheme', s),
-				scheme
-			);
+			await declareScheme(page, scheme);
 			const r = await reading();
 			expect(r.shellPane < 128, `the shell's pane under ${scheme}`).toBe(dark);
 			expect(r.surface < 128, `the surface inside it under ${scheme}`).toBe(dark);

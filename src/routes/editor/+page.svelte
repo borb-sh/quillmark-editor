@@ -345,10 +345,6 @@
 	main {
 		max-width: 88rem;
 		margin: 1.25rem auto;
-		padding: 0 1.5rem;
-	}
-	h1 {
-		margin-bottom: 0.2rem;
 	}
 	.bridge-state {
 		display: flex;

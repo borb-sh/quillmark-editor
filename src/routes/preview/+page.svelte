@@ -135,10 +135,6 @@
 	main {
 		max-width: 60rem;
 		margin: 2rem auto;
-		padding: 0 1.5rem;
-	}
-	h1 {
-		margin-bottom: 0.25rem;
 	}
 	.toolbar {
 		display: flex;

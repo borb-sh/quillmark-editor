@@ -1,24 +1,23 @@
-/* The playground plays the HOST's part, and the host's part is two things: declare
-   a colour scheme, and derive your own chrome from the same signal the mounted
-   surface follows (THEMING.md §"The surface follows your colour scheme"). Both are
-   here rather than per route, because a shell with four pages that each pick their
-   own greys is four chances for the page to diverge from the cards inside it —
-   which is the exact failure the scheme contract exists to close.
+/* The playground plays the HOST's part, which is two things: declare a colour
+   scheme, and derive the page's own chrome from the same signal the mounted
+   surface follows (THEMING.md §"The surface follows your colour scheme"). Both sit
+   here rather than per route — four pages each picking their own greys is four
+   chances for the page to diverge from the cards inside it.
 
    `light dark` is the answer for an app with no theme of its own: it follows the
    OS, and every `[data-qm-root]` inside inherits it, so page and surface invert
    together with no media query on either side.
 
    The page's poles are the SYSTEM colours, so unstyled text and a `--pg-*` rung
-   land on the same tone — a host can do this, since it knows what canvas it sits
-   on; the package cannot, so it ships calibrated literals instead. Dials still sit
-   in front, so setting `--qm-bg`/`--qm-fg` on the shell retunes page and surface
-   at once. Only the ten `--qm-*` dials are package surface: nothing here reads a
-   `--_qm-*` rung, and everything the shell mints is namespaced `--pg-*`.
+   land on the same tone — a host knows what canvas it sits on; the package does
+   not, so it ships calibrated literals. Dials still sit in front, so `--qm-bg` /
+   `--qm-fg` on the shell retunes page and surface at once. Only the ten `--qm-*`
+   dials are package surface: nothing here reads a `--_qm-*` rung, and everything
+   the shell mints is namespaced `--pg-*`.
 
    The mid-tones are mixes, not picks. `--pg-ink-meta` lands at 7.5:1 on the page
-   in light and 7.3:1 in dark — a hand-chosen grey holds one of those at best,
-   because the eye calibrates it against the scheme it was chosen in. */
+   in light and 7.3:1 in dark — a grey chosen by eye holds one of those at best,
+   since it is calibrated against the scheme it was chosen in. */
 
 :root {
 	color-scheme: light dark;
@@ -38,15 +37,17 @@
 	--pg-alert: light-dark(#c5221f, #ff9c94);
 }
 
-/* The shell's own chrome. Each route keeps its measure and rhythm — only the
-   palette is shared. */
+/* The shell's own chrome: palette, gutter and heading rhythm. A route sets its own
+   measure and the layout inside it, nothing more. */
 main {
 	font-family: ui-sans-serif, system-ui, sans-serif;
 	color: var(--pg-ink);
+	padding: 0 1.5rem;
 }
 
 main h1 {
 	font-size: 1.5rem;
+	margin-bottom: 0.25rem;
 }
 
 main .sub {

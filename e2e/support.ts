@@ -90,3 +90,13 @@ export async function clickFieldBox(page: Page, field: string): Promise<void> {
 	if (!rect) throw new Error(`overlay box for ${field} has no bounding box`);
 	await page.mouse.click(rect.x + rect.width / 2, rect.y + rect.height / 2);
 }
+
+/**
+ * Declare a colour scheme on the document element, standing in for the host page's
+ * own declaration — the signal the derivation's poles follow (THEMING.md). `normal`
+ * is the undeclared case, which the playground's own `light dark` would otherwise
+ * mask.
+ */
+export async function declareScheme(page: Page, scheme: string): Promise<void> {
+	await page.evaluate((s) => document.documentElement.style.setProperty('color-scheme', s), scheme);
+}

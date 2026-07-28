@@ -123,10 +123,6 @@
 	main {
 		max-width: 42rem;
 		margin: 3rem auto;
-		padding: 0 1.5rem;
-	}
-	h1 {
-		margin-bottom: 0.25rem;
 	}
 	nav {
 		display: flex;
