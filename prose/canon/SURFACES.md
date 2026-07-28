@@ -105,11 +105,11 @@ to one paragraph is a control in a row of controls, so it draws the same five
 declarations and is therefore exactly as tall as the `.qm-input` next to it — by
 construction, with no floor of its own. Two `min-height` literals tuned to agree
 would drift the first time either box changed. The body is the one that is not a
-control at all: it opens at a few lines and grows, and it draws no box. What it
-still reads from the recipe is the **type rung** — dropping the class drops the
-size with the border, and a leaf that inherits its size lands on the host page's
-body rung with no literal minted for `check:style` to catch. Paper reads the ramp
-exactly as a control does.
+control at all: it opens at a few lines and grows, and it draws no box. The **type
+rung** is a leaf's either way, and sits on the leaf's own base rule rather than in
+the box it withholds: a leaf that inherits its size lands on the host page's body
+rung, minting no literal for `check:style` to catch. Paper reads the ramp exactly
+as a control does.
 
 ## Rhythm
 
@@ -129,11 +129,13 @@ in-between value is a review smell.
 **Stroke.** One width for every edge the chrome draws — `--_qm-border-width`, a
 threshold rather than a rhythm choice, so a hairline stays a hairline at any
 `--qm-space`. The card's edge, a control's box, a nested object's rule, and the
-metadata bracket's three sides are all the same stroke. It exists as a rung because
-the bracket's whole claim is that its sides agree, and `check:style`'s border-width
-axis can only hold that against a token: the colour axis tests `border-*` for a
-colour literal, so a shorthand that reads a colour rung passes at whatever width it
-likes — which is how a 2px rule stood beside 1px ones through a green gate.
+metadata bracket's three sides are all the same stroke. It needs a rung because the
+colour axis tests `border-*` for a *colour* literal only, so a shorthand that reads
+a colour rung passes at whatever width it likes and a divergent stroke sits beside
+the hairlines with the gate green. `check:style`'s border-width axis closes that:
+what it holds is that no width is minted — a width still has to READ a rung, and
+reading the wrong one is review's to catch, since neither axis shape can name a
+particular token.
 
 **Capacity.** A field section's column count is a closed ramp too — 1 → 2 → 4, at
 `28rem` and `57rem` of CONTAINER width (VISUAL_EDITOR_UIUX §"Section grid"). Each

@@ -123,6 +123,13 @@
 	const ungrouped = $derived(card.sections.filter((s) => s.group == null));
 	const grouped = $derived(card.sections.filter((s) => s.group != null));
 
+	// Whether there is a metadata block to bracket at all (issue #117). A schema that
+	// declares no fields still gets a body (`bodyEnabled` defaults true), and a bracket
+	// around nothing is worse than none: with no content between them the two
+	// horizontals land on one y and paint as a stroke of twice the width, which is the
+	// one thing a figure claiming one width cannot do.
+	const hasMeta = $derived(ungrouped.length > 0 || grouped.length > 0);
+
 	// Ephemeral session state — the open group's id (`null` = all collapsed). Seeded
 	// ONCE from the card's shape (structure.initialExpandedGroup); Card is keyed by
 	// stable id, so this survives the VisualEditor re-derive that reassigns `card`
@@ -236,22 +243,27 @@
 		     gap instead would stand clear of where that vertical stops, and the corner
 		     it exists to close would miss. It also survives the shapes the accordion
 		     does not have: a card with no groups still terminates above its body,
-		     because the rule belongs to the fields, not to the sections. -->
-			<div
-				class="qm-card-meta"
-				class:qm-meta-top={!card.isMain}
-				class:qm-meta-bottom={card.hasBody}
-			>
-				<!-- Ungrouped fields render above the accordion, always visible (issue #60):
+		     because the rule belongs to the fields, not to the sections.
+
+		     Rendered only when there ARE fields: the bracket is a statement about a
+		     block, so with no block there is nothing to say, and an empty wrapper
+		     between two rules is what collapses them onto each other. -->
+			{#if hasMeta}
+				<div
+					class="qm-card-meta"
+					class:qm-meta-top={!card.isMain}
+					class:qm-meta-bottom={card.hasBody}
+				>
+					<!-- Ungrouped fields render above the accordion, always visible (issue #60):
 			     a label-less section has no header to toggle, and these read as the card's
 			     primary fields. -->
-				{#each ungrouped as section (section.group ?? '_ungrouped')}
-					<div class="qm-section">
-						{@render sectionFields(section.fields)}
-					</div>
-				{/each}
+					{#each ungrouped as section (section.group ?? '_ungrouped')}
+						<div class="qm-section">
+							{@render sectionFields(section.fields)}
+						</div>
+					{/each}
 
-				<!-- Group accordion (issue #60): each `ui.group` is a collapsible section,
+					<!-- Group accordion (issue #60): each `ui.group` is a collapsible section,
 			     one open at a time. The header toggles; the panel slides via a
 			     0fr↔1fr grid row (the `slow` duration rung). The sections share ONE wrapper
 			     with no gap of its own: each header's symmetric padding is the whole
@@ -263,31 +275,32 @@
 			     bracket's last child: the bottom rule's inset belongs to whichever block
 			     actually abuts it, and a zero-height wrapper standing there would take it
 			     from the ungrouped fields that do. -->
-				{#if grouped.length}
-					<div class="qm-groups">
-						{#each grouped as section (section.group)}
-							{@const isOpen = expanded === section.group}
-							<div class="qm-group" class:qm-open={isOpen}>
-								<button
-									type="button"
-									class="qm-group-header"
-									aria-expanded={isOpen}
-									data-testid={`group-${base}-${section.group}`}
-									onclick={() => toggleGroup(section.group as string)}
-								>
-									<ChevronRight class="qm-group-chevron" size={14} />
-									<span class="qm-group-label">{section.label}</span>
-								</button>
-								<div class="qm-group-panel">
-									<div class="qm-group-panel-inner">
-										{@render sectionFields(section.fields)}
+					{#if grouped.length}
+						<div class="qm-groups">
+							{#each grouped as section (section.group)}
+								{@const isOpen = expanded === section.group}
+								<div class="qm-group" class:qm-open={isOpen}>
+									<button
+										type="button"
+										class="qm-group-header"
+										aria-expanded={isOpen}
+										data-testid={`group-${base}-${section.group}`}
+										onclick={() => toggleGroup(section.group as string)}
+									>
+										<ChevronRight class="qm-group-chevron" size={14} />
+										<span class="qm-group-label">{section.label}</span>
+									</button>
+									<div class="qm-group-panel">
+										<div class="qm-group-panel-inner">
+											{@render sectionFields(section.fields)}
+										</div>
 									</div>
 								</div>
-							</div>
-						{/each}
-					</div>
-				{/if}
-			</div>
+							{/each}
+						</div>
+					{/if}
+				</div>
+			{/if}
 
 			<!-- The body: no label and no box (issue #117). "Body" names the surface the
 		     card is printed on, which is the redundancy AESTHETIC §"Strip redundancy"
@@ -484,7 +497,10 @@
 		background: var(--_qm-surface);
 		outline: none;
 	}
-	.qm-card-body {
+	/* One rhythm for the card's stacked regions and for the metadata block inside it:
+	   the gap between a field list and the body is the gap between two field lists. */
+	.qm-card-body,
+	.qm-card-meta {
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-3);
@@ -503,31 +519,32 @@
 	   body, so a card with no body has nothing to divide. The bracket is therefore
 	   sometimes two strokes and sometimes one — an open figure by construction, which
 	   is what distinguishes it from the second box SURFACES §Elevation forbids. */
-	.qm-card-meta {
-		display: flex;
-		flex-direction: column;
-		gap: var(--_qm-space-3);
-	}
-	.qm-card-meta.qm-meta-top {
+	.qm-meta-top {
 		border-top: var(--_qm-border-width) solid var(--_qm-border);
 	}
-	.qm-card-meta.qm-meta-bottom {
+	.qm-meta-bottom {
 		border-bottom: var(--_qm-border-width) solid var(--_qm-border);
 	}
 	/* No inset between a horizontal and the accordion, deliberately: an open section's
 	   vertical has to REACH the rule to close a corner against it, and any padding here
 	   is the distance by which it would miss. The accordion needs none anyway — a group
 	   header's symmetric padding is the whole inter-group rhythm (issue #118), so the
-	   bracket's top rule is simply the "rule above it" for the first section, at the
-	   same distance every other section's is.
+	   bracket's top rule IS the "rule above it" for the first section, at the same
+	   distance every other section's is.
 
-	   An ungrouped block has no such padding of its own, so it takes the inset where it
-	   abuts a rule — and only there, which is why this is two selectors rather than
-	   padding on the block. */
-	.qm-meta-top > .qm-section:first-child {
+	   A block of FIELDS has no padding of its own, so it takes the inset wherever it
+	   abuts a rule — three places, since three blocks can: an ungrouped block under the
+	   top rule, an ungrouped block over the bottom rule (only reachable because the
+	   accordion's `{#if}` keeps an empty wrapper out of last position), and the last
+	   section's panel when it is open, whose inset is otherwise zero at the bottom and
+	   would stand its final row of controls directly on the stroke. The panel's padding
+	   is inside `.qm-group`, so the vertical still runs the full height to the corner.
+	   Ungrouped fields always render first, so the top selector needs no qualifier. */
+	.qm-meta-top > .qm-section {
 		padding-top: var(--_qm-space-3);
 	}
-	.qm-meta-bottom > .qm-section:last-child {
+	.qm-meta-bottom > .qm-section:last-child,
+	.qm-meta-bottom .qm-group:last-child.qm-open .qm-group-panel-inner {
 		padding-bottom: var(--_qm-space-3);
 	}
 	/* Each section is its own query container, so capacity follows the width the fields
@@ -580,8 +597,8 @@
 	}
 	/* The bracket's third stroke (issue #117), on the SECTION rather than on its panel:
 	   spanning the header and the content is what gives it a corner to close into at
-	   the block's edge, where a rule starting below the header ended in mid-air. One
-	   rung with the two horizontals, held there by `check:style`'s border-width axis.
+	   the block's edge — a rule that starts below the header has nothing to meet there.
+	   One rung with the two horizontals, held there by `check:style`'s border-width axis.
 
 	   Drawn transparent when closed rather than absent, so the 1px it occupies is the
 	   same open or shut and a toggle moves no text. */
@@ -644,7 +661,8 @@
 		transform: rotate(90deg);
 	}
 	/* Sliding panel: the grid track goes 0fr→1fr; the inner clips at min-height 0.
-	   The rule an open panel used to draw is the section's now (see `.qm-group`). */
+	   The panel draws no rule of its own — the vertical is the section's (`.qm-group`),
+	   which is what spans the header too. */
 	.qm-group-panel {
 		display: grid;
 		grid-template-rows: 0fr;

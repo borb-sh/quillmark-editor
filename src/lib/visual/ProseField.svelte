@@ -91,7 +91,6 @@
 	bind:this={containerEl}
 	class="qm-prose"
 	class:qm-control-box={!unframed}
-	class:qm-prose-unframed={unframed}
 	class:qm-prose-block={block}
 	data-leaf-key={leafKey}
 	data-testid={testid}
@@ -115,15 +114,6 @@
 	   with `--qm-font-size` alone. */
 	.qm-prose-block {
 		min-height: calc(var(--_qm-text-body) * 6);
-	}
-	/* The unframed leaf takes one declaration off `.qm-control-box`, and it is the one
-	   that is not chrome (issue #117). Dropping the class drops the SIZE with the box,
-	   and a leaf that inherits its size lands on the host page's body rung — #119 again,
-	   silently, since no literal is minted for `check:style` to see. Paper reads the
-	   ramp exactly as a control does. Nothing else returns: no padding, so the body's
-	   text starts on the card's gutter rather than a border and an inset inside it. */
-	.qm-prose-unframed {
-		font-size: var(--_qm-text-body);
 	}
 	/* The caret is the prose leaf's focus indicator, not a ring — a ring around a
 	   contenteditable reads as the form chrome AESTHETIC strips. So the outline is
