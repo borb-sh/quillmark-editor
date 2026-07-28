@@ -161,6 +161,40 @@ test.describe('visual editor', () => {
 		await expect.poll(async () => (await readDump(page)).date).toBeNull();
 	});
 
+	test('(d2b) an unset date ghosts its `default:`, not the format hint (issue #89)', async ({
+		page
+	}) => {
+		// The reference quill's `date` declares a BLANK default (blank → today at
+		// render), which ghosts nothing — `?dateDefault` rewrites that one schema line
+		// so the rung exists to assert (src/routes/fixture.ts).
+		await page.goto('/visual?dateDefault=2026-01-01');
+		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
+
+		const field = page.getByTestId('main-date');
+		await expect(field).toHaveAttribute('data-ghosted', '');
+		// The segments carry the DEFAULT's digits, not `mm`/`dd`/`yyyy`.
+		await expect(field.locator('[data-segment="year"]')).toHaveText('2026');
+		await expect(field.locator('[data-segment="month"]')).toHaveText('01');
+		// Shown, never written: the ghost is not a value.
+		expect((await readDump(page)).date).toBeNull();
+
+		// A half-entered date keeps the digits just typed — the ghost fills only the
+		// segments still empty, though the field is unset until they all fill.
+		await dateEntry(page, 'main-date').click();
+		await page.keyboard.type('03');
+		await expect(field.locator('[data-segment="month"]')).toHaveText('03');
+		expect((await readDump(page)).date).toBeNull();
+
+		// Authoring drops the ghost; clearing back to unset restores it.
+		await setDate(page, 'main-date', '2026-03-04');
+		await expect.poll(async () => (await readDump(page)).date).toBe('2026-03-04');
+		await expect(field).not.toHaveAttribute('data-ghosted', '');
+		await clearDate(page, 'main-date');
+		await expect.poll(async () => (await readDump(page)).date).toBeNull();
+		await expect(field).toHaveAttribute('data-ghosted', '');
+		await expect(field.locator('[data-segment="year"]')).toHaveText('2026');
+	});
+
 	test('(d3) an enum unsets via the ghost sentinel; picking the default VALUE writes it (issue #21a)', async ({
 		page
 	}) => {

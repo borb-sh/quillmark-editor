@@ -16,7 +16,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { Quill, Document, Addr, CardAddr, Content, Diagnostic } from '$lib/core';
-	import { loadUsafMemoTree } from '../fixture';
+	import { loadUsafMemoTree, withMainDateDefault } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
 	type VisualEditorComponent = typeof import('$lib/visual').VisualEditor;
@@ -112,13 +112,20 @@
 				]);
 				init();
 				const tree = await loadUsafMemoTree();
+				// Issue #89 e2e variant: the reference quill's `date` declares a blank
+				// `default:`, which ghosts nothing — `?dateDefault=YYYY-MM-DD` rewrites it
+				// so the date control's ghosted default is reachable in the browser. A
+				// SCHEMA variant, so it patches the tree before the quill is built, unlike
+				// the document seeds below.
+				const params = new URLSearchParams(window.location.search);
+				const dateDefault = params.get('dateDefault');
+				if (dateDefault) withMainDateDefault(tree, dateDefault);
 				const quill = Quill.fromTree(tree);
 				const doc = quill.seedDocument();
 				// Issue #72 e2e seed: a card whose `kind` the schema can't project (as a
 				// document predating a schema change would carry). `Document.insertCard`
 				// is schema-agnostic, so it can hold a foreign kind the Quill-bound writer
 				// would reject — the exact un-schemable case the recovery shell handles.
-				const params = new URLSearchParams(window.location.search);
 				if (params.has('foreign')) {
 					doc.insertCard(Document.makeCard('legacy_kind', {}, 'Trapped legacy body.'));
 				}

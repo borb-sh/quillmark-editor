@@ -69,8 +69,8 @@
 
 	// The ghost the control shows when unset: the resolved `default:` (provenance,
 	// `source === 'default'`). `ghost` is the raw typed value (enum/number/boolean
-	// fallbacks); `defaultStr` its string form (the text placeholder). An
-	// object-valued default does not ghost.
+	// fallbacks); `defaultStr` its string form — the text placeholder and the date
+	// control's `YYYY-MM-DD` (issue #89). An object-valued default does not ghost.
 	const ghost = $derived(ghostDefault(provenance));
 	const defaultStr = $derived(stringifyGhost(ghost));
 </script>
@@ -129,6 +129,7 @@
 		{:else if field.control === 'date'}
 			<DateField
 				value={value as string | undefined}
+				fallback={defaultStr}
 				label={field.label}
 				onCommit={onCommitScalar}
 				{testid}
