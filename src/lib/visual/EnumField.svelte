@@ -104,14 +104,14 @@
 				     element (not the primitive's) because scoped CSS keys off which
 				     component OWNS the markup: a `class` passed to a primitive is a
 				     plain string and never picks up the scoping hash. -->
-				<div class="qm-select-content" data-qm-root>
+				<div class="qm-menu-surface qm-select-content" data-qm-root>
 					<Select.Viewport>
-						<Select.Item class="qm-select-item" value={UNSET} label={ghostText}>
+						<Select.Item class="qm-menu-item qm-select-item" value={UNSET} label={ghostText}>
 							<span class="qm-select-ghost">{ghostText}</span>
 						</Select.Item>
 						{#each values as v (v)}
 							<Select.Item
-								class="qm-select-item"
+								class="qm-menu-item qm-select-item"
 								value={v}
 								label={dash(v)}
 								disabled={optionAllowed?.(v) === false}
@@ -148,28 +148,14 @@
 	.qm-select-wrap :global(.qm-select[data-ghosted]) {
 		color: var(--_qm-ink-ghost);
 	}
-	/* The open list — a floating surface, so it earns the lift (SURFACES §Elevation). */
+	/* The open list is `.qm-menu-surface` and its rows `.qm-menu-item` (controls.css) —
+	   the lift, the inset and the highlight are the shared menu recipe. What a LISTBOX
+	   adds over a menu is here: it spans its trigger rather than its own content, it
+	   scrolls past a screenful, and it marks the value already stored. */
 	.qm-select-content {
 		min-width: var(--bits-select-anchor-width);
 		max-height: 16rem;
 		overflow-y: auto;
-		padding: var(--_qm-space-half);
-		border: var(--_qm-border-width) solid var(--_qm-border);
-		border-radius: var(--_qm-radius);
-		background: var(--_qm-surface);
-		box-shadow: var(--_qm-shadow-popover);
-		font-size: var(--_qm-text-body);
-		color: var(--_qm-ink);
-	}
-	.qm-select-content :global(.qm-select-item) {
-		padding: var(--_qm-space) var(--_qm-space-2);
-		border-radius: var(--_qm-radius-inner);
-		cursor: pointer;
-		user-select: none;
-	}
-	/* bits marks the pointer/keyboard-highlighted item; there is no :hover lane. */
-	.qm-select-content :global(.qm-select-item[data-highlighted]) {
-		background: var(--_qm-surface-hover);
 	}
 	.qm-select-content :global(.qm-select-item[data-selected]) {
 		font-weight: var(--_qm-weight-label);

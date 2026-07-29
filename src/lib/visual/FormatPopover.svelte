@@ -263,7 +263,7 @@
 				     wrapper) so its presence never depends on bits-ui's passthrough. -->
 				<div
 					bind:this={contentEl}
-					class="qm-format-popover"
+					class="qm-format-popover qm-popover-surface"
 					data-qm-root
 					data-testid="format-popover"
 				>
@@ -335,38 +335,12 @@
 	   every other surface. It carries the marker itself too: floating over content is
 	   still a detached subtree for the derivation's purposes, and the marker is what
 	   applies it (core/theme.css). */
+	/* The lift, the translucency, the blur and the scale-in come from
+	   `.qm-popover-surface` (controls.css); this surface's own is a row and an inset
+	   (VISUAL_EDITOR_UIUX §Formatting). */
 	.qm-format-popover {
 		display: flex;
-		/* Translucent pill over the content (VISUAL_EDITOR_UIUX §Formatting): the
-		   theme bg mixed toward transparent + a backdrop blur, so the page reads
-		   faintly through it — the one floating surface earns the lift (SURFACES
-		   §Elevation). The surface rung is the mix base, so --qm-bg still tints it. */
-		background: var(--_qm-surface-popover);
-		backdrop-filter: blur(var(--_qm-blur));
-		-webkit-backdrop-filter: blur(var(--_qm-blur));
-		border: var(--_qm-border-width) solid var(--_qm-border);
-		border-radius: var(--_qm-radius);
-		box-shadow: var(--_qm-shadow-popover);
 		padding: var(--_qm-space);
-		/* Scale-in on mount; the {#if open} guard mounts fresh each raise, so the
-		   keyframe runs once per appearance. Animates the inner pill only — never the
-		   outer floating-ui wrapper, whose transform positions it. */
-		animation: qm-pop-in var(--_qm-duration-fast) ease-out;
-	}
-	@keyframes qm-pop-in {
-		from {
-			opacity: 0;
-			transform: scale(0.94);
-		}
-		to {
-			opacity: 1;
-			transform: none;
-		}
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.qm-format-popover {
-			animation: none;
-		}
 	}
 	.qm-format-buttons {
 		display: flex;

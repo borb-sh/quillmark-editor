@@ -1,8 +1,8 @@
 <!--
-  The schema `description` as a themed floating surface — the third and last
-  (SURFACES §Elevation), after the enum listbox and {@link FormatPopover}, and it
-  portals into the nearest `[data-qm-root]` like both of them so a consumer's dials
-  still reach it.
+  The schema `description` as a themed floating surface — the second that is READ
+  rather than picked from, so it shares {@link FormatPopover}'s translucent recipe
+  (SURFACES §Elevation) and portals into the nearest `[data-qm-root]` like every
+  other floating surface, so a consumer's dials still reach it.
 
   It replaces the native `title` tooltip, which reached no dial, waited ~1s, could
   not be dismissed, and — the part that made it a hole rather than a blemish —
@@ -107,7 +107,7 @@
 				     `data-qm-root` because a portalled subtree is detached for the
 				     derivation's purposes, and the marker is what applies it. -->
 				<div
-					class="qm-hint-popover"
+					class="qm-hint-popover qm-popover-surface"
 					data-qm-root
 					aria-hidden="true"
 					data-testid={testid ? `${testid}-popover` : undefined}
@@ -138,40 +138,16 @@
 	.qm-field-hint:focus-visible {
 		color: var(--_qm-ink-meta);
 	}
-	/* Same recipe as the other two floating surfaces (SURFACES §Elevation): the
-	   translucent theme surface, a backdrop blur, one hairline, one shadow. What this
-	   one adds is a MEASURE — guidance is prose, and prose past ~40 characters a line
-	   stops being scannable. */
+	/* The lift, the translucency, the blur and the scale-in come from
+	   `.qm-popover-surface` (controls.css). This surface's own is a MEASURE — guidance
+	   is prose, and prose past ~40 characters a line stops being scannable — plus the
+	   inset and the meta type rung that keep it a note about a field rather than a
+	   second field. */
 	.qm-hint-popover {
 		max-width: 22rem;
 		padding: var(--_qm-space) var(--_qm-space-2);
-		background: var(--_qm-surface-popover);
-		backdrop-filter: blur(var(--_qm-blur));
-		-webkit-backdrop-filter: blur(var(--_qm-blur));
-		border: var(--_qm-border-width) solid var(--_qm-border);
-		border-radius: var(--_qm-radius);
-		box-shadow: var(--_qm-shadow-popover);
 		font-size: var(--_qm-text-meta);
 		line-height: var(--_qm-leading-body);
 		color: var(--_qm-ink-meta);
-		animation: qm-hint-in var(--_qm-duration-fast) ease-out;
-	}
-	/* Scale-in on mount; the `{#if open}` guard mounts fresh each raise, so the
-	   keyframe runs once per appearance. Animates the inner pill only — never the
-	   outer floating-ui wrapper, whose transform positions it. */
-	@keyframes qm-hint-in {
-		from {
-			opacity: 0;
-			transform: scale(0.96);
-		}
-		to {
-			opacity: 1;
-			transform: none;
-		}
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.qm-hint-popover {
-			animation: none;
-		}
 	}
 </style>
