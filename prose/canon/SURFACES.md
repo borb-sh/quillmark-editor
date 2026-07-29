@@ -68,7 +68,7 @@ The card is the container; nothing inside it is a second box.
 
 ## The shared recipe
 
-Chrome comes from the rungs applied one way, not hand-written per component. Three
+Chrome comes from the rungs applied one way, not hand-written per component. Four
 recipes carry it, each **one rule in `visual/controls.css` a component opts into by
 carrying its class** — the same shape as `.qm-focus-ring`, and for the same reason:
 a rung fixes a value, but which declarations make a control cannot be assembled per
@@ -84,7 +84,16 @@ control renders subtly wrong.
   without `inline` is block prose and still a control in a row of controls, so
   only the caller that knows it is rendering the body can say so.
 - **`.qm-icon-btn` / `.qm-add-affordance`** — the two button families; see below.
-- the two floating surfaces share the popover recipe above.
+- **`.qm-menu-surface` / `.qm-menu-item`** — a floating list of choices: the enum's
+  listbox and the card stack's kind menu. The surface takes the lift (§Elevation)
+  and one inset; an item takes a padding rung, `--_qm-radius-inner`, and
+  `--_qm-surface-hover` on `[data-highlighted]` — bits-ui's mark, and the only
+  hover lane, since an item under the pointer and one under the keyboard cursor are
+  one state to a menu and a `:hover` rule beside it would paint a second highlight
+  the keyboard cannot reach. What a caller adds is its own: the listbox spans its
+  trigger, scrolls past a screenful, and weights the value already stored.
+- the selection popover is the one floating surface that is not a list, and takes
+  the translucent recipe above.
 
 A palette change is then one dial, not one edit per field file. A control that mints
 its own border grey or radius instead of reading the rung is the drift this prevents.
@@ -151,6 +160,16 @@ about the card's inset and about what starts on it, not a prohibition on hierarc
 inside it. Stacked regions — a card's header, its field list, its body — are
 separated by one gap, not per-region margins that drift. Pick from the scale; an
 in-between value is a review smell.
+
+**The card stack's gutter is mostly the add strip.** Between two cards sits a
+full-bleed insert trigger at the tap floor, and its own height is most of what
+separates them — so it ABSORBS one space rung of the stack's gap on each side
+rather than adding to it. Absorbed, not removed: the gap is also what separates
+the two seams no strip sits in — `main` from the tips card, and every card from
+the next under a quill that declares no kinds, where the affordance does not
+render (VISUAL_EDITOR_UIUX §"Card stack"). A negative margin reading a scale step
+is the one place the rhythm subtracts, and it is why: two spacings meet, and the
+taller one is the separation.
 
 **The action column** is the other half of that claim, on the side the gutter says
 nothing about. A field section reserves a trailing column — a row action's tap

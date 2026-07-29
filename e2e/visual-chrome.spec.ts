@@ -227,6 +227,76 @@ test.describe('visual editor chrome — polish', () => {
 		await expect.poll(() => opacityOf(page, 'add-card-0')).toBe('1');
 	});
 
+	// The strip between two blocks IS the target — a gap is found by position, and a
+	// trigger sized to its label is a word to aim at in a row the eye reads as empty.
+	// Geometry only a browser settles: the width comes from the flex row, the height
+	// from `--_qm-tap-min` through the button recipe's `box-sizing`, and the gutter
+	// from the strip's own margins netted against the stack's gap.
+	test('the add strip spans the stack, stays on the tap floor, and is the whole gutter', async ({
+		page
+	}) => {
+		const cards = page.locator('.qm-card');
+		const [above, below, strip] = await Promise.all([
+			cards.nth(0).boundingBox(),
+			cards.nth(1).boundingBox(),
+			page.getByTestId('add-card-0').boundingBox()
+		]);
+
+		// Full-bleed: the trigger is as wide as the cards it sits between, not as wide
+		// as `+ Add Indorsement`.
+		expect(Math.round(strip!.width)).toBe(Math.round(above!.width));
+		// …and still ≥ the WCAG floor the recipe reads.
+		expect(strip!.height).toBeGreaterThanOrEqual(24);
+
+		// The strip absorbs a space rung of the gap on each side, so the visible gutter
+		// is the strip plus what is left — 32px, down from 8 + 24 + 8.
+		expect(Math.round(below!.y - (above!.y + above!.height))).toBe(32);
+		// What is left is miss-tolerance: the strip is invisible and live, so a click
+		// just under a card's edge must land on neither.
+		expect(strip!.y - (above!.y + above!.height)).toBeGreaterThan(0);
+	});
+
+	// The strip absorbs the gap; it does not replace it. `main` and the tips card have
+	// no strip between them — as no pair does under a quill declaring no kinds — so the
+	// gap is their whole separation and the strip's margins must not reach it.
+	test('a seam with no strip in it keeps the full stack gap', async ({ page }) => {
+		await page.goto('/visual?tips=1');
+		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
+
+		const main = (await page.locator('.qm-card').first().boundingBox())!;
+		const tips = (await page.getByTestId('tips-card').boundingBox())!;
+		expect(Math.round(tips.y - (main.y + main.height))).toBe(8);
+	});
+
+	// The cost of a full-bleed invisible target: 24px of dead-to-the-eye,
+	// live-to-the-pointer strip between every pair of cards. A drag that starts in a
+	// body and is released past the gap must select, not insert — a `click` fires on
+	// the common ancestor of press and release, so leaving the button on the way out
+	// is not a press of it.
+	test('a selection dragged out of a card body across the strip selects, and inserts nothing', async ({
+		page
+	}) => {
+		await replaceProse(page, 'prose-main-body', 'DRAG ACROSS THE GAP');
+		const before = await readDump(page);
+
+		const leaf = (await pm(page, 'prose-main-body').boundingBox())!;
+		const strip = (await page.getByTestId('add-card-0').boundingBox())!;
+		await page.mouse.move(leaf.x + 4, leaf.y + leaf.height / 2);
+		await page.mouse.down();
+		await page.mouse.move(leaf.x + leaf.width - 4, leaf.y + leaf.height / 2, { steps: 5 });
+		// …out of the leaf, through the strip, and released below it.
+		await page.mouse.move(strip.x + strip.width / 2, strip.y + strip.height / 2, { steps: 5 });
+		await page.mouse.move(strip.x + strip.width / 2, strip.y + strip.height + 8, { steps: 5 });
+		await page.mouse.up();
+
+		const after = await readDump(page);
+		expect(after.cardCount).toBe(before.cardCount); // crossing it is not pressing it
+		expect(after.body).toBe(before.body);
+		expect(
+			await page.evaluate(() => (window.getSelection()?.toString() ?? '').length)
+		).toBeGreaterThan(0);
+	});
+
 	// §8 — focusing the title selects all, so typing replaces it rather than appending.
 	test('(§8) focusing the title selects all so a keystroke replaces the whole title', async ({
 		page
@@ -327,6 +397,124 @@ test.describe('visual editor chrome — diagnostics routing', () => {
 		await expect(page.getByTestId('diag-card0-from')).toContainText(
 			'External test error on indorsement 0 from'
 		);
+	});
+});
+
+// The reference quill declares exactly one card kind, so `kinds.length === 1` always
+// wins and the add affordance's MENU branch is a path no fixture reaches — the same
+// blind spot the untested scalar controls sit in. `?kinds2` declares a second kind so
+// the branch has a browser to run in.
+test.describe('visual editor chrome — the multi-kind add menu', () => {
+	test.beforeEach(async ({ page }) => {
+		await page.goto('/visual?kinds2=1');
+		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
+	});
+
+	const openMenu = async (page: Page) => {
+		await page.getByTestId('add-card-0').click();
+		await expect(page.getByTestId('add-card-0-kinds')).toBeVisible();
+		// Off the strip, so nothing below is proved by hover rather than by state.
+		await page.mouse.move(0, 0);
+	};
+
+	// The trigger takes the button recipes rather than rendering in UA chrome, and it
+	// measures what the single-kind button measures: the floor is a BOX floor, so an
+	// element that is not a `<button>` cannot clear it on its content box and stand a
+	// padding taller than its sibling branch.
+	test('the trigger draws the shared recipes and lands on the same tap floor', async ({ page }) => {
+		const trigger = page.getByTestId('add-card-0');
+		const chrome = await trigger.evaluate((el) => {
+			const s = getComputedStyle(el);
+			// The root carries the family every surface inherits, but deliberately no
+			// size — the body rung is what a control reads instead (theme.css).
+			const root = getComputedStyle(el.closest('[data-qm-root]')!);
+			const probe = document.createElement('span');
+			probe.style.fontSize = 'var(--_qm-text-body)';
+			el.closest('[data-qm-root]')!.append(probe);
+			const bodyRung = getComputedStyle(probe).fontSize;
+			probe.remove();
+			return {
+				borderWidth: s.borderTopWidth,
+				background: s.backgroundColor,
+				sameFamilyAsRoot: s.fontFamily === root.fontFamily,
+				readsBodyRung: s.fontSize === bodyRung
+			};
+		});
+		expect(chrome.borderWidth).toBe('0px'); // no UA border
+		expect(chrome.background).toBe('rgba(0, 0, 0, 0)'); // no UA fill
+		expect(chrome.sameFamilyAsRoot).toBe(true); // not Arial
+		expect(chrome.readsBodyRung).toBe(true);
+
+		const box = (await trigger.boundingBox())!;
+		expect(box.height).toBe(24);
+	});
+
+	// A menu, not a disclosure: it floats, so raising it moves no card. An in-flow
+	// list of kinds pushes the stack open and reflows every card below the gap.
+	test('opening the menu moves no card', async ({ page }) => {
+		const below = page.locator('.qm-card').nth(1);
+		// Document space, not the viewport's: reaching a trigger below the fold scrolls
+		// the page, and a scroll is not the reflow under test.
+		const docTop = () => below.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+		const before = await docTop();
+		await openMenu(page);
+		expect(await docTop()).toBe(before);
+	});
+
+	// The recede ladder is driven by the row's hover, and the menu portals OUT of the
+	// row — so a pointer on an item has left the element that was revealing the label
+	// the menu hangs from. Without the open state the trigger vanishes under its own
+	// menu.
+	test('an open menu keeps its trigger lit with the pointer away', async ({ page }) => {
+		await openMenu(page);
+		await expect
+			.poll(() => page.getByTestId('add-card-0').evaluate((el) => getComputedStyle(el).opacity))
+			.toBe('1');
+	});
+
+	// The items are the shared menu recipe (`.qm-menu-item`, controls.css) — bits-ui
+	// marks the pointer/keyboard cursor with `[data-highlighted]`, and that is the one
+	// lane a highlight fills through.
+	test('an item takes the shared menu recipe and fills on the highlight rung', async ({ page }) => {
+		await openMenu(page);
+		const item = page.getByTestId('add-card-0-attachment');
+		const rest = await item.evaluate((el) => getComputedStyle(el).backgroundColor);
+		await item.hover();
+		await expect
+			.poll(() => item.evaluate((el) => getComputedStyle(el).backgroundColor))
+			.not.toBe(rest);
+	});
+
+	// The pick commits: the chosen kind is seeded and inserted at the gap, and the
+	// menu closes behind it.
+	test('picking a kind inserts a card of that kind and closes the menu', async ({ page }) => {
+		// `seedDocument` seeds a card per declared kind, so the count is the variant's,
+		// not the reference quill's — the claim is the delta and the position.
+		const before = (await readDump(page)).cardCount;
+		await openMenu(page);
+		await page.getByTestId('add-card-0-attachment').click();
+
+		await expect.poll(async () => (await readDump(page)).cardCount).toBe(before + 1);
+		// Index 0 is the gap this affordance owns: the pick lands there, as that kind.
+		expect((await readDump(page)).cards[0].kind).toBe('attachment');
+		await expect(page.getByTestId('add-card-0-kinds')).toBeHidden();
+	});
+
+	// The two dismissals that are not a pick. The outside click goes through the raw
+	// mouse: bits-ui's dismissal layer swallows the press, which is the behaviour under
+	// test and which Playwright's actionability check reads as an interception.
+	test('Escape and an outside click both dismiss the menu', async ({ page }) => {
+		const before = (await readDump(page)).cardCount;
+
+		await openMenu(page);
+		await page.keyboard.press('Escape');
+		await expect(page.getByTestId('add-card-0-kinds')).toBeHidden();
+
+		await openMenu(page);
+		const card = (await page.locator('.qm-card').first().boundingBox())!;
+		await page.mouse.click(card.x + 5, card.y + 5);
+		await expect(page.getByTestId('add-card-0-kinds')).toBeHidden();
+		expect((await readDump(page)).cardCount).toBe(before); // dismissal is not a pick
 	});
 });
 
