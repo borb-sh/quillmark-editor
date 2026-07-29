@@ -126,6 +126,9 @@
 		/* Soft (500), a rung under the top-level field label's 600: a nested object
 		   prop reads as secondary. Resolves the label-weight disagreement. */
 		font-weight: var(--_qm-weight-soft);
+		/* A label is a line, not a passage, so it overrides the root's reading
+		   rhythm the way every other label rung does (SURFACES §Rhythm). */
+		line-height: var(--_qm-leading-tight);
 		color: var(--_qm-ink-label);
 	}
 	.qm-unsupported {

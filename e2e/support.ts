@@ -15,14 +15,14 @@ export function pm(page: Page, leafTestid: string) {
  * showing. One section opens at a time, so a test walking two fields in two groups
  * calls this before each — which is also what a user does.
  *
- * Needed because only the FIRST section opens at mount (`initialExpandedGroup`),
- * so every later one starts closed. A field in a closed section is clipped, not
- * absent: it still reports a full `getBoundingClientRect`, and Playwright will
- * scroll the `overflow: hidden` panel to reach it. So a gesture against a collapsed field can land — on whatever
- * pixels the panel's insets leave standing, which is a state no user can be in and a
- * number no test should depend on. Selection is where that bites hardest: a click
- * that misses leaves focus on `<body>`, where ctrl+A selects the page and raises no
- * popover.
+ * Needed because only the FIRST section opens at mount (`initialExpandedGroup`), so
+ * every later one starts closed. A field in a closed section is clipped, not absent:
+ * it still reports a full `getBoundingClientRect`, and Playwright will scroll the
+ * `overflow: hidden` panel to reach it. So a gesture against a collapsed field can
+ * land — on whatever pixels the panel's insets leave standing, which is a state no
+ * user can be in and a number no test should depend on. Selection is where that bites
+ * hardest: a click that misses leaves focus on `<body>`, where ctrl+A selects the page
+ * and raises no popover.
  */
 export async function reveal(page: Page, testid: string): Promise<void> {
 	const header = await page.evaluate((t) => {

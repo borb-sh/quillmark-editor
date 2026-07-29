@@ -54,6 +54,7 @@
 	import Link from '@lucide/svelte/icons/link';
 	import Hash from '@lucide/svelte/icons/hash';
 	import type { FieldController } from '../core/codec/index.js';
+	import './controls.css';
 
 	type LeafWithView = FieldController & { view?: EditorView };
 
@@ -281,10 +282,12 @@
 								data-testid="mark-link-input"
 								bind:value={linkValue}
 							/>
-							<button type="submit" class="qm-mark-btn" data-testid="mark-link-apply">Apply</button>
+							<button type="submit" class="qm-icon-btn qm-mark-btn" data-testid="mark-link-apply"
+								>Apply</button
+							>
 							<button
 								type="button"
-								class="qm-mark-btn"
+								class="qm-icon-btn qm-mark-btn"
 								data-testid="mark-link-cancel"
 								onmousedown={keepFocus}
 								onclick={cancelLink}>Cancel</button
@@ -299,7 +302,7 @@
 								{@const Icon = m.icon}
 								<button
 									type="button"
-									class="qm-mark-btn"
+									class="qm-icon-btn qm-mark-btn"
 									class:active={activeMarks[m.name]}
 									title={m.title}
 									aria-label={m.title}
@@ -310,7 +313,7 @@
 							{/each}
 							<button
 								type="button"
-								class="qm-mark-btn"
+								class="qm-icon-btn qm-mark-btn"
 								class:active={activeMarks.anchor}
 								title="Anchor — an identity handle over the selection"
 								aria-label="Anchor"
@@ -369,30 +372,21 @@
 		display: flex;
 		gap: var(--_qm-space-half);
 	}
+	/* Chrome, type, target floor, hover fill and disabled recede come from
+	   `.qm-icon-btn` (controls.css); what is here is this surface's own. The border is
+	   drawn transparent rather than absent so the active inversion adds no width and
+	   shifts no glyph, and the ink is stated because the family deliberately declares
+	   none — its callers disagree, and a popover over content reads at the card's. */
 	.qm-mark-btn {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
 		border: var(--_qm-border-width) solid transparent;
-		background: transparent;
-		border-radius: var(--_qm-radius-inner);
-		cursor: pointer;
-		font: inherit;
-		font-size: var(--_qm-text-body);
-		line-height: 1;
 		padding: var(--_qm-space) var(--_qm-space-2);
 		color: var(--_qm-ink);
 	}
-	.qm-mark-btn:hover:not(:disabled) {
-		background: var(--_qm-surface-hover);
-	}
+	/* Active is an ink inversion, the one state on this surface a hover fill cannot
+	   say: a mark already carried is not a mark under the pointer. */
 	.qm-mark-btn.active {
 		background: var(--_qm-ink);
 		color: var(--_qm-surface);
-	}
-	.qm-mark-btn:disabled {
-		opacity: var(--_qm-opacity-idle);
-		cursor: default;
 	}
 	.qm-link-prompt {
 		display: flex;

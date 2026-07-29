@@ -140,7 +140,6 @@
 		width: 100%;
 		box-sizing: border-box;
 		text-align: left;
-		color: var(--_qm-ink);
 		cursor: pointer;
 	}
 	/* The focus ring rides `.qm-focus-ring` on the trigger (controls.css). */

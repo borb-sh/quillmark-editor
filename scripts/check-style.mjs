@@ -5,7 +5,8 @@
 //
 //   rhythm   padding / margin / gap / border-radius   a px|rem length
 //   stroke   border / border-*-width                  a length, at any width
-//   type     font-size / font-weight / font-family    a size, a weight, a family
+//   type     font                                     anything but a CSS-wide keyword
+//            font-size / font-weight / font-family    a size, a weight, a family
 //            line-height                              a leading off the two rungs
 //   colour   color / background / border / shadow …   a hex or a colour function
 //   recede   opacity                                  a step off the ladder
@@ -56,11 +57,13 @@ const STYLE_MARKER = /\b(style|background|border|color|outline|boxShadow|textSha
 const PRIVATE_DEF = /(--_qm-[\w-]+)\s*:/;
 const READS_RUNG = /var\(--_qm-/;
 
-// Two shapes of rule. `literal` FORBIDS a pattern — most properties take values a
+// Three shapes of rule. `literal` FORBIDS a pattern — most properties take values a
 // literal cannot be mistaken for, so naming the bad shape is enough. `allowBare`
 // REQUIRES a rung, listing the few values legitimate without one — right where any
 // value at all is a scale decision (a family, a step on the recede ladder), so
-// there is no literal shape to enumerate.
+// there is no literal shape to enumerate. `only` REQUIRES one of a fixed set and
+// takes NO rung escape, for the one property where naming a rung is not enough to
+// make a value safe.
 const AXES = [
 	{
 		props: /^(border-radius|gap|row-gap|column-gap|padding|margin)(-(top|bottom|left|right))?$/,
@@ -101,10 +104,11 @@ const AXES = [
 	},
 	{
 		// Leading has no literal shape to forbid — a bare number is exactly what a rung
-		// resolves to, so the rung is REQUIRED instead, and the absence of one is the
-		// drift: an undeclared surface computes `normal`, a UA figure around 1.14 that
-		// varies by font. `1` is the one bare value that is not a step on the ramp — a
-		// glyph row collapsing its line box onto the glyph, structural like `opacity: 0`.
+		// resolves to, so the rung is REQUIRED instead. The axis fires only on a line
+		// that DECLARES leading; a surface that declares none is covered by the root
+		// baseline, since a unitless rung inherits (core/theme.css). `1` is the one bare
+		// value that is not a step on the ramp — a line box collapsed onto its content,
+		// a glyph or a button's one-line label, structural like `opacity: 0`.
 		props: /^line-height$/,
 		allowBare: /^1$/,
 		rung: '`var(--_qm-leading-…)`',
@@ -115,15 +119,23 @@ const AXES = [
 		// A family is a scale decision whatever it names, so the rung is required
 		// rather than a shape forbidden. `inherit` is how a control defers to its
 		// surface, which is reading the scale one level up.
-		//
-		// The `font` SHORTHAND is owned here too, and it is the widest hole of the
-		// three type axes: one declaration sets family, size and leading at once, past
-		// three axes that each watch only a longhand. Nothing but the keywords is
-		// legal in it — a control defers with `font: inherit` and then restates the
-		// rungs it wants, in that order, since the shorthand resets what precedes it.
-		props: /^(font|font-family)$/,
+		props: /^font-family$/,
 		allowBare: /^(inherit|initial|unset|revert)$/,
 		rung: '`var(--_qm-font)` / `var(--_qm-font-mono)`',
+		doc: 'THEMING §"The dials"',
+		cssOnly: true
+	},
+	{
+		// The `font` SHORTHAND sets family, size and leading in one declaration, past
+		// three axes that each watch a single longhand. It takes no rung escape, which
+		// is what makes it its own entry: `font: 600 12px/1.2 var(--_qm-font)` names a
+		// rung and still mints a size and a leading nothing else is watching. So
+		// nothing but a CSS-wide keyword is legal — a surface defers with
+		// `font: inherit` and restates the rungs it wants as longhands after it, since
+		// the shorthand resets whatever precedes it.
+		props: /^font$/,
+		only: /^(inherit|initial|unset|revert)$/,
+		fix: 'defer with `font: inherit` and read the rungs as longhands after it',
 		doc: 'THEMING §"The dials"',
 		cssOnly: true
 	},
@@ -224,9 +236,13 @@ for (const full of files) {
 			if (!owns) continue;
 			const bad = axis.literal
 				? axis.literal.test(css ? value : line)
-				: !READS_RUNG.test(value) && !axis.allowBare.test(value.trim());
+				: axis.only
+					? !axis.only.test(value.trim())
+					: !READS_RUNG.test(value) && !axis.allowBare.test(value.trim());
 			if (bad)
-				fail(`\`${prop ?? 'style'}\` mints a literal — read a ${axis.rung} rung (${axis.doc})`);
+				fail(
+					`\`${prop ?? 'style'}\` mints a literal — ${axis.fix ?? `read a ${axis.rung} rung`} (${axis.doc})`
+				);
 		}
 
 		const def = line.match(PRIVATE_DEF);
