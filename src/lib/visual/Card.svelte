@@ -547,10 +547,32 @@
 	.qm-meta-bottom .qm-group:last-child.qm-open .qm-group-panel-inner {
 		padding-bottom: var(--_qm-space-3);
 	}
-	/* Each section is its own query container, so capacity follows the width the fields
-	   actually get — a group panel's inset makes that narrower than the card. */
-	.qm-section {
+	/* The two query containers — an ungrouped section, and a group panel's inner. Each
+	   is its own, so capacity follows the width the fields actually get: a panel's
+	   inset makes that narrower than the card.
+
+	   The trailing ACTION COLUMN is the container's inset, not the grid's inside it
+	   (SURFACES §Rhythm): the tap target a row action takes plus a section grid's own
+	   column gutter, held clear of every track so one right edge serves the whole
+	   section whether or not a row carries an action. It sits HERE because a size query
+	   reads the CONTENT box — an inset on the query container is width the query never
+	   offers, so the capacity ramp below stays calibrated to what a track actually gets
+	   and no breakpoint has to carry the column's width in arithmetic a `var()` cannot
+	   reach. An inset rather than a fifth track, because auto-placement walks every
+	   track it is given: a fifth would take the compact field that overflows the fourth
+	   column. An array is the one field with actions to put there, and reaches back
+	   across it (ArrayField).
+
+	   The panel ANIMATES its padding, so its right inset is written into both the closed
+	   and the open shorthand below — a shorthand left to inherit it would animate the
+	   reservation away. */
+	.qm-section,
+	.qm-group-panel-inner {
+		--action-col: calc(var(--_qm-tap-min) + var(--_qm-space-2));
 		container-type: inline-size;
+	}
+	.qm-section {
+		padding-right: var(--action-col);
 	}
 	/* One grid per section. Capacity is the container's, not JavaScript's:
 	   nothing measures, so there is no observer to loop, no pre-measure pass at the
@@ -564,24 +586,15 @@
 
 	   A row-sharing field spans three implicit row tracks (Field.svelte), so `row-gap`
 	   here is the gutter BETWEEN field rows; the tighter one inside a field is the
-	   subgrid's own.
-
-	   The trailing ACTION COLUMN is the section's, not a row's (SURFACES §Rhythm): the
-	   tap target a row action takes plus this grid's own column gutter, held clear of
-	   every track so one right edge serves the whole section whether or not a row
-	   carries an action. Reserved as the grid's own inset rather than a track, because
-	   auto-placement walks every track it is given — a fifth would take the compact
-	   field that overflows the fourth column. An array is the one field with actions
-	   to put there, and reaches back across it (ArrayField). */
+	   subgrid's own. The grid takes the container's full width — the action column is
+	   already off it, reserved on the container above. */
 	.qm-fields {
 		--cols: 1;
 		--cols-half: 1;
-		--action-col: calc(var(--_qm-tap-min) + var(--_qm-space-2));
 		display: grid;
 		grid-template-columns: repeat(var(--cols), 1fr);
 		column-gap: var(--_qm-space-2);
 		row-gap: var(--_qm-space-2);
-		padding-right: var(--action-col);
 	}
 	@container (min-width: 28rem) {
 		.qm-fields {
@@ -679,23 +692,25 @@
 	.qm-group.qm-open .qm-group-panel {
 		grid-template-rows: 1fr;
 	}
-	/* Also the grouped sections' query container — its inset is exactly what makes a
-	   panel's usable width differ from the card's. */
+	/* The grouped sections' query container (declared above) — its left inset is
+	   exactly what makes a panel's usable width differ from the card's. */
 	.qm-group-panel-inner {
-		container-type: inline-size;
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
 		min-height: 0;
 		overflow: hidden;
-		/* Zero when closed, so the inset arrives with the panel: a `0fr` track collapses
-		   the CONTENT, not the padding, and a top inset declared here stands under a
-		   closed header as dead space the header's symmetric padding cannot absorb. */
-		padding: 0;
+		/* Zero on three sides when closed, so those insets arrive with the panel: a `0fr`
+		   track collapses the CONTENT, not the padding, and a top inset declared here
+		   stands under a closed header as dead space the header's symmetric padding
+		   cannot absorb. The RIGHT inset is the action column and holds in both states —
+		   it is what the capacity query reads, so a panel that animated it would animate
+		   its own breakpoints. */
+		padding: 0 var(--action-col) 0 0;
 		transition: padding var(--_qm-duration-slow) ease;
 	}
 	.qm-group.qm-open .qm-group-panel-inner {
-		padding: var(--_qm-space-2) 0 0 var(--_qm-space-3);
+		padding: var(--_qm-space-2) var(--action-col) 0 var(--_qm-space-3);
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.qm-group-panel,
@@ -716,9 +731,13 @@
 	.qm-card.qm-unschemable {
 		border-style: dashed;
 	}
+	/* One typographic role with the editable title above, so it reads the same three
+	   rungs — including the tight leading a card title takes over the root's reading
+	   rhythm (SURFACES §Rhythm). */
 	.qm-card-title-static {
 		font-size: var(--_qm-text-title);
 		font-weight: var(--_qm-weight-label);
+		line-height: var(--_qm-leading-tight);
 		color: var(--_qm-ink-label);
 	}
 	.qm-card-recovery {

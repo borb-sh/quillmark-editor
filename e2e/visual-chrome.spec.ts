@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { pm, replaceProse, reveal, selectAndAwaitPopover } from './support.js';
+import { declareScheme, pm, replaceProse, reveal, selectAndAwaitPopover } from './support.js';
 
 // Phase 4b exit criteria (browser tier): the formatting selection popover and
 // diagnostics routing, over the SAME /visual playground e2e/visual.spec.ts uses
@@ -331,10 +331,14 @@ test.describe('visual editor chrome — diagnostics routing', () => {
 });
 
 test.describe('visual editor chrome — dark scheme', () => {
-	test.use({ colorScheme: 'dark' });
-
+	// Dark arrives as the HOST's declaration on `documentElement` (`declareScheme`),
+	// the signal the derivation's poles read — not as browser-level OS emulation,
+	// which reaches the poles only while the page leaves `color-scheme` at
+	// `light dark`. A consumer pinning a scheme is a documented pattern (THEMING.md),
+	// and under one this spec would render light while believing it configured dark.
 	test.beforeEach(async ({ page }) => {
 		await page.goto('/visual');
+		await declareScheme(page, 'dark');
 		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
 	});
 

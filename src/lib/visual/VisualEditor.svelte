@@ -67,6 +67,7 @@
 	import Card from './Card.svelte';
 	import TipsCard from './TipsCard.svelte';
 	import FormatPopover from './FormatPopover.svelte';
+	import './controls.css';
 
 	/**
 	 * REMOUNT CONTRACT. `cardIds`, the id `seq`, and the leaf registry seed ONCE
@@ -605,6 +606,7 @@
 					{#each kinds as k (k)}
 						<button
 							type="button"
+							class="qm-add-affordance"
 							data-testid={`add-card-${atIndex}-${k}`}
 							onclick={(e) => {
 								addCard(atIndex, k);

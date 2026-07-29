@@ -168,6 +168,16 @@
 		   a dark surface. A consumer that PINS a palette against its own scheme
 		   declares `color-scheme` with it, on the root (THEMING.md).
 
+		   Face, ink and LEADING are the three axes a root carries this way. Leading
+		   belongs with the other two because a unitless ratio inherits
+		   MULTIPLICATIVELY: it holds against whatever size rung each surface reads, so
+		   it imposes less than the ink beside it, and the reason `font-size` stays off
+		   does not transfer — a ratio has no size to sweep a consumer's content with.
+		   What it buys is that `normal` — the UA figure near 1.14, varying by font — is
+		   unreachable under a marker, so a type-bearing surface lands on the ramp
+		   whether or not it remembers to say so, and a per-surface
+		   `--_qm-leading-tight` reads as the deliberate override it is.
+
 		   Deliberately NOT `font-size`, and the reason is about the ROOT rule rather
 		   than about size: a root-level body size sweeps every descendant a consumer
 		   may have put inside the marker, which is a reach the derivation does not
@@ -180,5 +190,6 @@
 		   rung it wants. */
 		font-family: var(--_qm-font);
 		color: var(--_qm-ink);
+		line-height: var(--_qm-leading-body);
 	}
 }

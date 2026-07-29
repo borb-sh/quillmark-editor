@@ -156,9 +156,13 @@ in-between value is a review smell.
 nothing about. A field section reserves a trailing column — a row action's tap
 target plus the grid's own column gutter — held clear of the tracks: every control
 in the section ends on one right edge, and an array's rows put their remove past it,
-where it is never over the value it removes. Reserved as the grid's own inset rather
-than as a fifth track, because auto-placement walks every track it is given and a
-compact field overflowing the last column would land in the action column. Every
+where it is never over the value it removes. Reserved as an inset rather than as a
+fifth track, because auto-placement walks every track it is given and a compact
+field overflowing the last column would land in the action column — and the inset
+sits on the section rather than on the grid inside it, because the section is the
+query container and a size query reads its CONTENT box: capacity below then measures
+the width the tracks actually get, with no breakpoint carrying the column's width in
+arithmetic a `var()` cannot reach. Every
 section pays the width, including one with no action in it — a right edge that moved
 with a section's contents is the raggedness this removes. The left gutter is what a
 region STARTS on; the right edge is what a control ENDS on, and only an action sits
@@ -230,9 +234,11 @@ step surfaces `bg → fg` and ink `fg → bg` in oklab). The derivation is minte
 as a stylesheet in `core/` the package imports itself, and applies to every element
 marked `data-qm-root` —
 the editor, the portaled popover and select list, the preview, and the source view,
-none of which descend from the others. That rule carries the baseline font and ink
-too, so a root inherits them by carrying the marker rather than by restating a
-declaration; it stops short of a body `font-size`, because a root rule sweeps every
+none of which descend from the others. That rule carries the baseline font, ink and
+leading too, so a root inherits them by carrying the marker rather than by restating
+a declaration — which is what puts `normal` out of reach below a marker, leaving a
+per-surface `--_qm-leading-tight` as the deliberate override. It stops short of a
+body `font-size`, because a root rule sweeps every
 descendant a consumer may have mounted inside the marker — a reach the derivation
 does not have. Each surface reads the rung instead. A component reads a rung, never
 a literal; `check:style` gates all three axes, so an in-between value fails CI, not
