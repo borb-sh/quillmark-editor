@@ -16,7 +16,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { Quill, Document, Addr, CardAddr, Content, Diagnostic } from '$lib/core';
-	import { loadUsafMemoTree, withMainDateDefault } from '../fixture';
+	import { loadUsafMemoTree, withMainDateDefault, withSecondCardKind } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
 	type VisualEditorComponent = typeof import('$lib/visual').VisualEditor;
@@ -120,6 +120,10 @@
 				const params = new URLSearchParams(window.location.search);
 				const dateDefault = params.get('dateDefault');
 				if (dateDefault) withMainDateDefault(tree, dateDefault);
+				// The other schema variant: `?kinds2` declares a second card kind, so the
+				// add affordance takes its MENU branch — the one the reference quill's
+				// single kind means nothing on disk reaches.
+				if (params.has('kinds2')) withSecondCardKind(tree);
 				const quill = Quill.fromTree(tree);
 				const doc = quill.seedDocument();
 				// e2e seed: a card whose `kind` the schema can't project (as a

@@ -23,6 +23,7 @@
 -->
 <script lang="ts">
 	import { tick } from 'svelte';
+	import { DropdownMenu } from 'bits-ui';
 	import { isQuillmarkError, MAIN_CARD_ADDR } from '../core/index.js';
 	import { bloomInside } from '../core/bloom.js';
 	import type {
@@ -67,6 +68,9 @@
 	import Card from './Card.svelte';
 	import TipsCard from './TipsCard.svelte';
 	import FormatPopover from './FormatPopover.svelte';
+	// The add trigger and the kind menu draw shared recipes; a component carrying a
+	// shared class without also pulling its rule ships unstyled (controls.css).
+	import './controls.css';
 
 	/**
 	 * REMOUNT CONTRACT. `cardIds`, the id `seq`, and the leaf registry seed ONCE
@@ -152,6 +156,9 @@
 	};
 	let mainCard = $state<CardHandle | undefined>(undefined);
 	let cardRefs = $state<(CardHandle | undefined)[]>([]);
+	/** The stack's own element — it carries `data-qm-root`, so it is what the kind
+	 *  menu portals INTO, the way each leaf's surface resolves its nearest root. */
+	let rootEl = $state<HTMLElement | undefined>(undefined);
 	function register(key: string, controller: FieldController): void {
 		leaves.set(key, controller);
 	}
@@ -528,7 +535,7 @@
 	}
 </script>
 
-<div class="qm-editor {className ?? ''}" {style} data-qm-root>
+<div class="qm-editor {className ?? ''}" {style} data-qm-root bind:this={rootEl}>
 	<Card
 		bind:this={mainCard}
 		card={model.main}
@@ -596,25 +603,33 @@
 				onclick={() => addCard(atIndex, kinds[0])}>+ Add {humanize(kinds[0])}</button
 			>
 		{:else}
-			<!-- Multi-kind add: pick the kind, then seed + insert (fixture has one kind). -->
-			<details class="qm-add-menu">
-				<summary class="qm-add-btn qm-add-affordance" data-testid={`add-card-${atIndex}`}
-					>+ Add card</summary
+			<!-- Multi-kind add: pick the kind, then seed + insert. A MENU rather than a
+			     disclosure — it floats out of the stack, so raising it moves no card, and
+			     it dismisses on pick, on Escape and on a click outside, none of which a
+			     `<details>` does. The trigger is bits-ui's `<button>`, which is why the
+			     recede ladder below reaches it through `:global`. -->
+			<DropdownMenu.Root>
+				<DropdownMenu.Trigger
+					class="qm-add-btn qm-add-affordance"
+					data-testid={`add-card-${atIndex}`}>+ Add card</DropdownMenu.Trigger
 				>
-				<div class="qm-add-kinds">
-					{#each kinds as k (k)}
-						<button
-							type="button"
-							data-testid={`add-card-${atIndex}-${k}`}
-							onclick={(e) => {
-								addCard(atIndex, k);
-								// <details> has no auto-close on selection.
-								(e.currentTarget as HTMLElement).closest('details')?.removeAttribute('open');
-							}}>{humanize(k)}</button
-						>
-					{/each}
-				</div>
-			</details>
+				<DropdownMenu.Portal to={rootEl}>
+					<DropdownMenu.Content sideOffset={4}>
+						<!-- Portalled out of the row but INTO the stack's root, and carrying the
+						     marker itself: floating is still a detached subtree to the
+						     derivation, like FormatPopover and the enum listbox. -->
+						<div class="qm-menu-surface" data-qm-root data-testid={`add-card-${atIndex}-kinds`}>
+							{#each kinds as k (k)}
+								<DropdownMenu.Item
+									class="qm-menu-item"
+									data-testid={`add-card-${atIndex}-${k}`}
+									onSelect={() => addCard(atIndex, k)}>{humanize(k)}</DropdownMenu.Item
+								>
+							{/each}
+						</div>
+					</DropdownMenu.Content>
+				</DropdownMenu.Portal>
+			</DropdownMenu.Root>
 		{/if}
 	</div>
 {/snippet}
@@ -630,19 +645,36 @@
 		gap: var(--_qm-space-2);
 		color: var(--_qm-ink);
 	}
+	/* The strip between two blocks, and the whole of it is the target: a gap is found
+	   by POSITION, and a trigger sized to its label is a word to aim at in the middle
+	   of a row the eye reads as empty. Its own height is then most of the separation
+	   the stack shows, so it absorbs one space rung of the editor's gap on each side —
+	   40px of gutter becomes 32px with the trigger still on the tap floor. Absorbed
+	   rather than removed, because `gap` is also what separates the two seams no strip
+	   sits in: `main` from the tips card, and every card from the next under a quill
+	   declaring no kinds, where the affordance does not render at all. What is left of
+	   the gap is also the miss-tolerance below a card's edge — the strip is invisible
+	   and live, so a near-miss on the card above must not insert. */
 	.qm-add-card {
 		display: flex;
-		justify-content: center;
+		margin-top: calc(var(--_qm-space) * -1);
+		margin-bottom: calc(var(--_qm-space) * -1);
 	}
 	/* Unboxed, like every button (SURFACES §"The shared recipe"), and not dashed: a
 	   dashed edge is the PLACEHOLDER idiom — "nothing is here yet" — which on a button
 	   reads as disabled or as a drop target. It stays honest in one place, the
 	   un-schemable card (`Card.svelte`), which is a state rather than a control. Hover
 	   fills a pill: this trigger is invisible at rest, so a hover that only shifted
-	   its ink would have nothing to shift. */
-	.qm-add-btn {
+	   its ink would have nothing to shift. The pill fills the strip because the strip
+	   is what was pressed; the padding sits inside the width, which is the button
+	   recipe's `box-sizing` doing the work.
+
+	   `:global`, because the multi-kind trigger is bits-ui's own element and a `class`
+	   passed to a primitive is a plain string that never picks up the scoping hash —
+	   the same seam the enum trigger is styled through. */
+	.qm-add-card :global(.qm-add-btn) {
+		width: 100%;
 		padding: var(--_qm-space) var(--_qm-space-4);
-		list-style: none;
 		/* Recede until engaged (AESTHETIC §"minimal UI"): each gap's
 		   trigger is invisible at rest and surfaces on hover or keyboard focus, so the
 		   stack reads as content, not a toolbar per gap. The LAST gap keeps a dim
@@ -650,29 +682,27 @@
 		   pill reserves its height and the row does not jump on reveal. */
 		opacity: 0;
 	}
-	.qm-add-card:hover .qm-add-btn,
-	.qm-add-btn:focus-visible {
+	.qm-add-card:hover :global(.qm-add-btn),
+	.qm-add-card :global(.qm-add-btn:focus-visible) {
 		opacity: 1;
 	}
-	.qm-add-card.is-last .qm-add-btn {
+	.qm-add-card.is-last :global(.qm-add-btn) {
 		opacity: var(--_qm-opacity-idle);
 	}
-	.qm-add-card.is-last:hover .qm-add-btn,
-	.qm-add-card.is-last .qm-add-btn:focus-visible {
+	.qm-add-card.is-last:hover :global(.qm-add-btn),
+	.qm-add-card.is-last :global(.qm-add-btn:focus-visible) {
 		opacity: 1;
 	}
 	/* Touch has no hover — keep a faint always-on affordance so add stays reachable. */
 	@media (hover: none) {
-		.qm-add-btn {
+		.qm-add-card :global(.qm-add-btn) {
 			opacity: var(--_qm-opacity-idle);
 		}
 	}
-	.qm-add-menu {
-		position: relative;
-	}
-	.qm-add-kinds {
-		display: flex;
-		gap: var(--_qm-space);
-		margin-top: var(--_qm-space);
+	/* An open menu keeps its trigger lit, and this rule comes last so it outranks the
+	   two above it: the menu portals out of the strip, so a pointer moving onto an item
+	   has left the row that was revealing the label the menu hangs from. */
+	.qm-add-card :global(.qm-add-btn[data-state='open']) {
+		opacity: 1;
 	}
 </style>

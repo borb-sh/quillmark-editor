@@ -53,6 +53,23 @@ header retype is a control with nothing to do: under one declared kind it can
 only reselect the kind the card has, and a correctly typed card has nothing to
 retype.
 
+**The add affordance is the strip, not the label.** The trigger spans the gap it
+sits in, because a gap is found by POSITION — a button sized to `+ Add
+Indorsement` is a word to aim at in the middle of a row the eye reads as empty,
+and the hover reveal was already full-bleed while the hit region was not. The
+recede ladder is unchanged (invisible at rest on interior gaps, the last gap dim,
+full on hover or focus, a faint always-on state where there is no hover); it
+paints a strip instead of a word, and the strip's height is the tap floor. What
+is left of the stack's gap around it is miss-tolerance: the strip is invisible
+and live, so a click just under a card's edge must land on neither.
+
+Under **more than one declared kind** the trigger raises a menu of them. A menu,
+not a disclosure: it floats, so raising it moves no card, and it dismisses on
+pick, on Escape, and on a click outside. It portals into the stack's own
+`[data-qm-root]` and draws the shared menu recipe the enum listbox draws
+(SURFACES §"The shared recipe"). The reference quill declares one kind, so this
+branch is reached only through the playground's two-kind schema variant.
+
 Insert and reorder **move the viewport**: a new card scrolls to centre, a moved
 card to `nearest`, so a structure edit past the fold is never silent. Both honour
 `prefers-reduced-motion`.
