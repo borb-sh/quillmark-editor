@@ -118,7 +118,12 @@
 
 	   `--_qm-tap-min` is WCAG 2.5.8's floor, read rather than re-expressed per
 	   control — `min-*` is outside every `check:style` axis, so a second expression of
-	   the same threshold has nothing watching it.
+	   the same threshold has nothing watching it. `box-sizing` is what makes it a BOX
+	   floor: a `<button>` takes border-box from the UA sheet and a plain element does
+	   not, so a control on this recipe that is not a button clears the threshold on its
+	   CONTENT box and stands a padding taller than the button beside it. Declared here,
+	   the floor means the same height whatever element carries it — and a caller that
+	   stretches one of these to its row gets a width the padding sits inside.
 
 	   Both button families are named here rather than opting in through a marker: a
 	   glyph button and an add affordance are not SOMETIMES flat, so a class they could
@@ -137,6 +142,7 @@
 	.qm-icon-btn,
 	.qm-add-affordance {
 		line-height: 1;
+		box-sizing: border-box;
 		min-width: var(--_qm-tap-min);
 		min-height: var(--_qm-tap-min);
 		border: none;
@@ -178,6 +184,36 @@
 	}
 	.qm-add-affordance:hover {
 		color: var(--_qm-ink);
+	}
+
+	/* A floating list of choices — the enum's listbox and the card stack's kind menu.
+	   Both portal into the nearest `[data-qm-root]`, and both are PICKED FROM, so the
+	   surface (its lift, its inset, its ink) and the item (its pad, its radius, the
+	   rung a highlight fills with) are one recipe rather than two that agree until one
+	   is edited. What a caller adds over it is its own: the enum sizes itself off its
+	   trigger and weights the stored value.
+
+	   `[data-highlighted]` is bits-ui's mark and it is the ONLY hover lane: an item
+	   under the pointer and an item under the keyboard cursor are one state to a menu,
+	   so the primitive marks both and a `:hover` rule beside it would paint a second
+	   highlight the keyboard cannot reach. */
+	.qm-menu-surface {
+		padding: var(--_qm-space-half);
+		border: var(--_qm-border-width) solid var(--_qm-border);
+		border-radius: var(--_qm-radius);
+		background: var(--_qm-surface);
+		box-shadow: var(--_qm-shadow-popover);
+		font-size: var(--_qm-text-body);
+		color: var(--_qm-ink);
+	}
+	.qm-menu-item {
+		padding: var(--_qm-space) var(--_qm-space-2);
+		border-radius: var(--_qm-radius-inner);
+		cursor: pointer;
+		user-select: none;
+	}
+	.qm-menu-item[data-highlighted] {
+		background: var(--_qm-surface-hover);
 	}
 
 	@media (prefers-reduced-motion: reduce) {
