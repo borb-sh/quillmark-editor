@@ -87,9 +87,12 @@ export interface CardModel {
 	sections: GroupSection[];
 	hasBody: boolean;
 	/**
-	 * The empty-body ghost — the resolved body `default:` as placeholder text,
-	 * or undefined when the body is authored / has no default.
-	 * The body prose leaf ghosts it exactly as scalars ghost their `default:`.
+	 * The empty-body ghost, or undefined when the card renders no body. Never
+	 * empty for a card that does: the resolved body `default:` when there is one,
+	 * else the consumer's wording, else the built-in invitation
+	 * ({@link resolveBodyGhost}). A body leaf therefore always has something in it
+	 * to write into, which the inline fields deliberately do not — their ghost IS
+	 * the resolved default, and an invented one would read as a value.
 	 */
 	bodyGhost?: string;
 }
@@ -141,6 +144,46 @@ export function ghostDefault(row: ResolvedField | undefined): unknown {
  * thing to display as a placeholder (FIELD_PROVENANCE). */
 export function stringifyGhost(ghost: unknown): string | undefined {
 	return ghost != null && typeof ghost !== 'object' ? String(ghost) : undefined;
+}
+
+/**
+ * The built-in empty-body invitation. The package's own words, not the schema's
+ * — the first such string here, so it is kept to the one thing true of every
+ * body and claims nothing about the card it sits in.
+ */
+export const DEFAULT_BODY_PLACEHOLDER = 'Write…';
+
+/** What a {@link BodyPlaceholder} is told about the body it words. The card's
+ *  IDENTITY, not its chrome: `kind` keys the consumer's own `quill.schema` for
+ *  anything richer, and a renamed card must not shift its ghost. */
+export interface BodyPlaceholderContext {
+	/** The card's kind; `'main'` for the main card. */
+	kind: string;
+	/** The main card — whose `kind` is not a `card_kinds` key. */
+	isMain: boolean;
+}
+
+/**
+ * Consumer wording for an empty body, in place of {@link DEFAULT_BODY_PLACEHOLDER}
+ * — returning `undefined` takes the built-in. Consulted ONCE PER KIND per session
+ * and cached by the editor, so a hook that samples a set at random still reads as
+ * one deliberate string: two empty cards of a kind ghost the same, and a remount
+ * does not re-roll. Impurity is expected, and the cache is what contains it.
+ */
+export type BodyPlaceholder = (ctx: BodyPlaceholderContext) => string | undefined;
+
+/**
+ * The empty body's ghost: the resolved body `default:`, else consumer wording,
+ * else the built-in. The `default:` WINS because it is the only one of the three
+ * that describes the render — it promises what prints if nothing is written, and
+ * wording placed over it would make that promise unreadable. The other two are
+ * invitations, and an invitation belongs only where there is no promise.
+ */
+export function resolveBodyGhost(
+	resolvedDefault: string | undefined,
+	custom: string | undefined
+): string {
+	return resolvedDefault || custom || DEFAULT_BODY_PLACEHOLDER;
 }
 
 /** Map a field schema to its control (precedence: prose › enum › text › …).

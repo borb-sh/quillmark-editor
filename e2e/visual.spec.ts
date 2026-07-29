@@ -573,4 +573,59 @@ test.describe('visual editor', () => {
 		await expect.poll(async () => (await readDump(page)).cardCount).toBe(6);
 		await expect(page.getByTestId('card-title-5')).toBeInViewport();
 	});
+
+	// The empty body's ghost. Asserted through the DECORATION, never the dump: a
+	// ghost that reached the document would be the bug this guards against, so each
+	// case checks the rendered attribute AND that `body` stayed empty.
+	const ghost = (page: Page, testid: string) =>
+		page.locator(`[data-testid="${testid}"] .qm-prose-placeholder`);
+
+	test('(q) a freshly added card ghosts the built-in invitation, writing nothing', async ({
+		page
+	}) => {
+		await page.getByTestId('add-card-1').click();
+		await expect.poll(async () => (await readDump(page)).cardCount).toBe(2);
+
+		// The reference quill declares no body `default:`, so this is the fallback.
+		await expect(ghost(page, 'prose-card1-body')).toHaveAttribute('data-placeholder', 'Write…');
+		expect((await readDump(page)).cards[1].body).toBe('');
+
+		// It is a ghost, not content: typing replaces it and leaves nothing behind.
+		await pm(page, 'prose-card1-body').click();
+		await page.keyboard.type('AUTHORED');
+		await expect.poll(async () => (await readDump(page)).cards[1].body).toBe('AUTHORED');
+		await expect(ghost(page, 'prose-card1-body')).toHaveCount(0);
+	});
+
+	test('(r) a consumer hook words every empty body, and sampling does not re-roll', async ({
+		page
+	}) => {
+		await page.getByTestId('add-card-1').click();
+		await page.getByTestId('add-card-2').click();
+		await expect.poll(async () => (await readDump(page)).cardCount).toBe(3);
+
+		// The playground's hook samples at random and is a fresh closure per derive —
+		// the worst case for stability, and the one the per-kind cache exists for.
+		await page.getByTestId('toggle-body-placeholder').click();
+
+		const read = async (t: string) => await ghost(page, t).getAttribute('data-placeholder');
+		await expect.poll(async () => await read('prose-card1-body')).not.toBe('Write…');
+
+		const first = await read('prose-card1-body');
+		// Two cards of ONE kind are one invitation — the property a per-mount re-roll
+		// breaks, and the reason the answer is cached by kind.
+		expect(await read('prose-card2-body')).toBe(first);
+
+		// A re-derive must not re-roll it. Editing another card's body bumps the model
+		// without remounting these leaves.
+		await pm(page, 'prose-main-body').click();
+		await page.keyboard.type('X');
+		await expect.poll(async () => (await readDump(page)).body).toContain('X');
+		expect(await read('prose-card1-body')).toBe(first);
+		expect(await read('prose-card2-body')).toBe(first);
+
+		// Still only chrome: no hook wording reached any card's stored body.
+		const dump = await readDump(page);
+		expect(dump.cards.map((c) => c.body)).toEqual(['', '', '']);
+	});
 });
