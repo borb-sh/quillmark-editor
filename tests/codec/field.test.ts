@@ -73,23 +73,10 @@ describe('createField over a real usaf_memo leaf', () => {
 		// Put the caret at USV 5, then insert two chars before it.
 		field.setCaret(5);
 		const head0 = view.state.selection.head;
-		expect(head0).toBe(6); // USV 5 ↔ PM 6
+		expect(head0).toBe(6); // inline single paragraph: USV k ↔ PM k+1
 		view.dispatch(view.state.tr.insertText('AB', 1)); // insert before the caret
 		// The selection mapped forward by 2 (StepMap) — caret continuity across own-edits.
 		expect(view.state.selection.head).toBe(head0 + 2);
-		field.destroy();
-	});
-
-	it('setCaret maps a USV position to the PM caret', () => {
-		const field = createField({
-			doc,
-			addr: { field: 'subject' },
-			container: mount()
-		});
-		const view = viewOf(field);
-		field.setCaret(7);
-		// Inline single paragraph: USV k → PM k+1.
-		expect(view.state.selection.head).toBe(8);
 		field.destroy();
 	});
 });
@@ -270,44 +257,6 @@ describe('anchor insertion', () => {
 	});
 });
 
-describe('empty-leaf ghost placeholder', () => {
-	it('stamps the empty leaf with the ghost text, and drops it once typed', () => {
-		const doc = quill().seedDocument();
-		const container = mount();
-		// `tag_line` is `default:`-only → decodes an empty leaf, the placeholder case.
-		const field = createField({
-			doc,
-			addr: { field: 'tag_line' },
-			container,
-			inline: true,
-			placeholder: 'DEPARTMENT MOTTO'
-		});
-		const ghost = container.querySelector('.qm-prose-placeholder');
-		expect(ghost).not.toBeNull();
-		expect(ghost?.getAttribute('data-placeholder')).toBe('DEPARTMENT MOTTO');
-
-		// Any content dismisses the ghost (the emptiness test fails).
-		const view = viewOf(field);
-		view.dispatch(view.state.tr.insertText('X', 1));
-		expect(container.querySelector('.qm-prose-placeholder')).toBeNull();
-
-		// Clearing back to empty restores it.
-		view.dispatch(view.state.tr.delete(1, view.state.doc.content.size - 1));
-		expect(container.querySelector('.qm-prose-placeholder')).not.toBeNull();
-		field.destroy();
-	});
-
-	it('adds no ghost when no placeholder is given (never enters the content)', () => {
-		const doc = quill().seedDocument();
-		const container = mount();
-		const field = createField({ doc, addr: { field: 'tag_line' }, container, inline: true });
-		expect(container.querySelector('.qm-prose-placeholder')).toBeNull();
-		// The ghost is decoration-only: the stored content stays absent (unset).
-		expect(doc.getStored('tag_line')).toBeUndefined();
-		field.destroy();
-	});
-});
-
 describe('createField accessible name (a11y follow-up)', () => {
 	it('sets aria-label on the editable element when a label is given', () => {
 		const doc = quill().seedDocument();
@@ -331,6 +280,89 @@ describe('createField accessible name (a11y follow-up)', () => {
 			inline: true
 		});
 		expect(viewOf(field).dom.hasAttribute('aria-label')).toBe(false);
+		field.destroy();
+	});
+});
+
+// The ghost is chrome: it decorates an empty leaf, never enters the document, and
+// moves without an edit. `setPlaceholder` is what a RETYPED card uses to take its
+// new kind's wording — the leaf is keyed by card id, so it cannot remount to pick
+// one up.
+describe('the empty-leaf ghost', () => {
+	const ghostOf = (f: FieldController): string | null =>
+		viewOf(f).dom.querySelector('.qm-prose-placeholder')?.getAttribute('data-placeholder') ?? null;
+
+	/** A freshly added card's body — empty, which the seeded MAIN body is not.
+	 *  This is the very leaf the fallback exists for. */
+	function emptyBodyDoc(): Document {
+		const q = quill();
+		const doc = q.seedDocument();
+		const card = q.seedCard('indorsement', doc.seedOverlay('indorsement'));
+		doc.insertCard(card!, doc.cardCount);
+		return doc;
+	}
+	const CARD_BODY = { card: 0 };
+
+	function emptyBody(doc: Document, placeholder?: string): FieldController {
+		return createField({ doc, addr: CARD_BODY, container: mount(), placeholder });
+	}
+
+	it('decorates an empty leaf with the ghost, and no leaf without one', () => {
+		const doc = emptyBodyDoc();
+		expect(ghostOf(emptyBody(doc, 'Write…'))).toBe('Write…');
+		expect(ghostOf(emptyBody(doc))).toBeNull();
+		// Decoration only: a body that reads as empty stays empty in the store.
+		expect(doc.cards.at(-1)!.body.text).toBe('');
+	});
+
+	it('moves the ghost after mount without touching the document', () => {
+		const doc = emptyBodyDoc();
+		const caret: number[] = [];
+		const field = createField({
+			doc,
+			addr: CARD_BODY,
+			container: mount(),
+			placeholder: 'Write…',
+			onCaretMove: (_a, p) => caret.push(p)
+		});
+		const before = pmToContent(viewOf(field).state.doc);
+
+		field.setPlaceholder('Say something unforgettable…');
+
+		expect(ghostOf(field)).toBe('Say something unforgettable…');
+		// Chrome only: no content edit, and no caret reported at a moment the caret
+		// did not move (the reason this is not a transaction).
+		expect(contentEqual(normalize(pmToContent(viewOf(field).state.doc)), normalize(before))).toBe(
+			true
+		);
+		expect(caret).toEqual([]);
+		field.destroy();
+	});
+
+	it('clears and re-installs the ghost on a leaf mounted without one', () => {
+		const doc = emptyBodyDoc();
+		const field = emptyBody(doc);
+		// Installed late — the plugin rides every leaf, so a ghost can arrive after
+		// mount rather than needing one at creation to be possible at all.
+		field.setPlaceholder('Write…');
+		expect(ghostOf(field)).toBe('Write…');
+		field.setPlaceholder(undefined);
+		expect(ghostOf(field)).toBeNull();
+		field.destroy();
+	});
+
+	it('hides the ghost once the leaf holds content, whatever the text', () => {
+		const doc = emptyBodyDoc();
+		const field = emptyBody(doc, 'Write…');
+		const view = viewOf(field);
+		view.dispatch(view.state.tr.insertText('typed', view.state.selection.head));
+		expect(ghostOf(field)).toBeNull();
+		// Moving it while non-empty stays invisible — emptiness gates the decoration.
+		field.setPlaceholder('Another…');
+		expect(ghostOf(field)).toBeNull();
+		// And emptying the leaf brings it back: the gate is the content, not the mount.
+		view.dispatch(view.state.tr.delete(1, view.state.doc.content.size - 1));
+		expect(ghostOf(field)).toBe('Another…');
 		field.destroy();
 	});
 });

@@ -1,6 +1,5 @@
-// caret.ts — the editor→preview field-path mapping (Phase 5). Pure address math;
-// the live bridge round-trip is exercised in the browser (e2e/editor.spec.ts).
-// This pins the canonical `DocPath` grammar and its inverse relationship with the
+// caret.ts — the editor→preview field-path mapping (Phase 5). Pure address math:
+// the canonical `DocPath` grammar and its inverse relationship with the
 // `parsePath` route.
 import { describe, it, expect } from 'vitest';
 import { fieldPathForAddr } from '$lib/visual/caret';

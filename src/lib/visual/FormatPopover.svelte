@@ -1,8 +1,9 @@
 <!--
   The formatting selection popover (VISUAL_EDITOR §Chrome, VISUAL_EDITOR_UIUX
   §Formatting). ONE popover, shell-owned, observing the ACTIVE leaf through
-  `getActiveLeaf` — the accessor 4a left as "the 4b formatting-popover
-  observation seam". A non-empty selection in the active leaf raises it over
+  `getActiveLeaf` — the VisualEditor's accessor over its `leaves` registry, and
+  the whole of what this surface knows about the editor. A non-empty selection in
+  the active leaf raises it over
   that leaf's selection rect; each button dispatches a PM `toggleMark` command
   straight at the leaf's `EditorView`. The codec's own `dispatchTransaction`
   (field.ts, read-only from here) lowers the resulting transaction to
@@ -54,11 +55,12 @@
 	import Link from '@lucide/svelte/icons/link';
 	import Hash from '@lucide/svelte/icons/hash';
 	import type { FieldController } from '../core/codec/index.js';
+	import './controls.css';
 
 	type LeafWithView = FieldController & { view?: EditorView };
 
 	interface Props {
-		/** The 4b observation seam VisualEditor exposes over its `leaves` registry. */
+		/** The observation seam VisualEditor exposes over its `leaves` registry. */
 		getActiveLeaf: () => FieldController | undefined;
 	}
 	let { getActiveLeaf }: Props = $props();
@@ -145,8 +147,8 @@
 	// final range) must coalesce to ONE settled check, not one `sync()` per
 	// event — reacting to each intermediate state mounts/unmounts
 	// `Popover.Content` repeatedly within a few event-loop turns, which is both
-	// visibly unstable (Playwright's actionability check sees a moving/detached
-	// target) and races bits-ui's own internal effects (observed: Svelte's
+	// visibly unstable (a moving, momentarily detached click target) and races
+	// bits-ui's own internal effects (observed: Svelte's
 	// `derived_inert` warning from a stale read after a too-fast unmount). A
 	// microtask is not late enough — those transient events are themselves
 	// separated by microtasks. `requestAnimationFrame` is: it runs once
@@ -258,14 +260,7 @@
 				onOpenAutoFocus={(e: Event) => e.preventDefault()}
 				onCloseAutoFocus={(e: Event) => e.preventDefault()}
 			>
-				<!-- `data-testid` lives on THIS div (ours, not bits-ui's own prop-merged
-				     wrapper) so its presence never depends on bits-ui's passthrough. -->
-				<div
-					bind:this={contentEl}
-					class="qm-format-popover"
-					data-qm-root
-					data-testid="format-popover"
-				>
+				<div bind:this={contentEl} class="qm-format-popover qm-popover-surface" data-qm-root>
 					{#if linkPromptOpen}
 						<form
 							class="qm-link-prompt"
@@ -278,14 +273,12 @@
 								class="qm-link-input"
 								type="text"
 								placeholder="https://…"
-								data-testid="mark-link-input"
 								bind:value={linkValue}
 							/>
-							<button type="submit" class="qm-mark-btn" data-testid="mark-link-apply">Apply</button>
+							<button type="submit" class="qm-icon-btn qm-mark-btn">Apply</button>
 							<button
 								type="button"
-								class="qm-mark-btn"
-								data-testid="mark-link-cancel"
+								class="qm-icon-btn qm-mark-btn"
 								onmousedown={keepFocus}
 								onclick={cancelLink}>Cancel</button
 							>
@@ -299,22 +292,20 @@
 								{@const Icon = m.icon}
 								<button
 									type="button"
-									class="qm-mark-btn"
+									class="qm-icon-btn qm-mark-btn"
 									class:active={activeMarks[m.name]}
 									title={m.title}
 									aria-label={m.title}
-									data-testid={`mark-${m.name}`}
 									onmousedown={keepFocus}
 									onclick={() => toggle(m.name)}><Icon size={GLYPH} /></button
 								>
 							{/each}
 							<button
 								type="button"
-								class="qm-mark-btn"
+								class="qm-icon-btn qm-mark-btn"
 								class:active={activeMarks.anchor}
 								title="Anchor — an identity handle over the selection"
 								aria-label="Anchor"
-								data-testid="mark-anchor"
 								onmousedown={keepFocus}
 								onclick={toggleAnchor}><Hash size={GLYPH} /></button
 							>
@@ -332,67 +323,32 @@
 	   every other surface. It carries the marker itself too: floating over content is
 	   still a detached subtree for the derivation's purposes, and the marker is what
 	   applies it (core/theme.css). */
+	/* The lift, the translucency, the blur and the scale-in come from
+	   `.qm-popover-surface` (controls.css); this surface's own is a row and an inset
+	   (VISUAL_EDITOR_UIUX §Formatting). */
 	.qm-format-popover {
 		display: flex;
-		/* Translucent pill over the content (VISUAL_EDITOR_UIUX §Formatting): the
-		   theme bg mixed toward transparent + a backdrop blur, so the page reads
-		   faintly through it — the one floating surface earns the lift (SURFACES
-		   §Elevation). The surface rung is the mix base, so --qm-bg still tints it. */
-		background: var(--_qm-surface-popover);
-		backdrop-filter: blur(var(--_qm-blur));
-		-webkit-backdrop-filter: blur(var(--_qm-blur));
-		border: var(--_qm-border-width) solid var(--_qm-border);
-		border-radius: var(--_qm-radius);
-		box-shadow: var(--_qm-shadow-popover);
 		padding: var(--_qm-space);
-		/* Scale-in on mount; the {#if open} guard mounts fresh each raise, so the
-		   keyframe runs once per appearance. Animates the inner pill only — never the
-		   outer floating-ui wrapper, whose transform positions it. */
-		animation: qm-pop-in var(--_qm-duration-fast) ease-out;
-	}
-	@keyframes qm-pop-in {
-		from {
-			opacity: 0;
-			transform: scale(0.94);
-		}
-		to {
-			opacity: 1;
-			transform: none;
-		}
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.qm-format-popover {
-			animation: none;
-		}
 	}
 	.qm-format-buttons {
 		display: flex;
 		gap: var(--_qm-space-half);
 	}
+	/* Chrome, type, target floor, hover fill and disabled recede come from
+	   `.qm-icon-btn` (controls.css); what is here is this surface's own. The border is
+	   drawn transparent rather than absent so the active inversion adds no width and
+	   shifts no glyph, and the ink is stated because the family deliberately declares
+	   none — its callers disagree, and a popover over content reads at the card's. */
 	.qm-mark-btn {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
 		border: var(--_qm-border-width) solid transparent;
-		background: transparent;
-		border-radius: var(--_qm-radius-inner);
-		cursor: pointer;
-		font: inherit;
-		font-size: var(--_qm-text-body);
-		line-height: 1;
 		padding: var(--_qm-space) var(--_qm-space-2);
 		color: var(--_qm-ink);
 	}
-	.qm-mark-btn:hover:not(:disabled) {
-		background: var(--_qm-surface-hover);
-	}
+	/* Active is an ink inversion, the one state on this surface a hover fill cannot
+	   say: a mark already carried is not a mark under the pointer. */
 	.qm-mark-btn.active {
 		background: var(--_qm-ink);
 		color: var(--_qm-surface);
-	}
-	.qm-mark-btn:disabled {
-		opacity: var(--_qm-opacity-idle);
-		cursor: default;
 	}
 	.qm-link-prompt {
 		display: flex;

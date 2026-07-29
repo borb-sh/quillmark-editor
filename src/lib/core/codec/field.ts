@@ -35,13 +35,22 @@ export interface CreateFieldOpts {
 	inline?: boolean;
 	/** Inline + marks/islands stripped (a `plaintext` field). Implies `inline`. */
 	plaintext?: boolean;
-	/** Suppress the markdown-shorthand input rules (Phase 4 opt-out). */
+	/** Suppress the markdown-shorthand input rules. */
 	noInputRules?: boolean;
-	/** Accessible name → `aria-label` on the `contenteditable` (the visual label is a sibling it can't reference). */
+	/** Accessible name → `aria-label` on the `contenteditable`. For a leaf NOTHING
+	 * else names — an array element (the field label plus its 1-based index), the
+	 * card body (no visible label at all). A leaf with a field label takes
+	 * `labelledBy` instead: `for` cannot reach a `contenteditable`, which is not a
+	 * labelable element, so the association runs the other way. */
 	label?: string;
-	/** Ghost text shown on the empty leaf — the resolved `default:` a body ghosts
-	 * (VISUAL_EDITOR_UIUX §Fields). Captured at mount (a schema default is stable);
-	 * an empty/absent string adds no placeholder. */
+	/** The field label's own id → `aria-labelledby`, which supersedes `label`. */
+	labelledBy?: string;
+	/** The parked `description` → `aria-describedby`; announced after the name. */
+	describedBy?: string;
+	/** Ghost text shown on the empty leaf — the resolved `default:` a field ghosts,
+	 * or a body's invitation (VISUAL_EDITOR_UIUX §Fields). The INITIAL value;
+	 * {@link FieldController.setPlaceholder} moves it after mount. Empty/absent
+	 * shows no ghost. */
 	placeholder?: string;
 	onFocus?(addr: Addr): void;
 	/** Fired with the new USV caret after an edit or a selection move. */
@@ -57,6 +66,15 @@ export interface FieldController {
 	setCaret(pos: number): void;
 	/** External content change → re-hydrate this leaf (gated by reconcile). */
 	applyExternal(): void;
+	/**
+	 * Move the empty-leaf ghost after mount — a card retyped to another kind takes
+	 * its new kind's wording without remounting, which it must not do (the leaf key
+	 * is the card's session id, so a remount would cost the caret).
+	 *
+	 * Refreshes the decoration WITHOUT a transaction: a placeholder is chrome, and
+	 * a transaction would fire `onCaretMove` at a moment the caret did not move.
+	 */
+	setPlaceholder(text: string | undefined): void;
 	focus(): void;
 	/** The current stored content for this addr (for tests / reconcile). */
 	getContent(): Content;
@@ -130,6 +148,18 @@ function leafPresent(doc: Document, addr: Addr): boolean {
 	return doc.getStored(addr) !== undefined;
 }
 
+/** The naming attributes for the `contenteditable`. `aria-labelledby` supersedes
+ * `aria-label` — a leaf carrying both is the ambiguity where implementations
+ * disagree about which wins — and `undefined` is returned whole when a leaf takes
+ * neither, since ProseMirror reads the absence, not an empty object. */
+function proseAttributes(opts: CreateFieldOpts): Record<string, string> | undefined {
+	const attrs: Record<string, string> = {};
+	if (opts.labelledBy) attrs['aria-labelledby'] = opts.labelledBy;
+	else if (opts.label) attrs['aria-label'] = opts.label;
+	if (opts.describedBy) attrs['aria-describedby'] = opts.describedBy;
+	return Object.keys(attrs).length ? attrs : undefined;
+}
+
 export function createField(opts: CreateFieldOpts): FieldController {
 	const { doc, addr, container } = opts;
 	const inline = !!opts.inline || !!opts.plaintext;
@@ -142,13 +172,16 @@ export function createField(opts: CreateFieldOpts): FieldController {
 
 	let index: LineIndex; // rebuilt on every structural change
 	let view: EditorView;
+	// The ghost's live cell — the placeholder plugin reads it per pass, so moving it
+	// is an assignment plus a re-render rather than a rebuilt plugin stack.
+	let placeholderText = opts.placeholder;
 
 	const state = buildState(reconciler.last);
 	index = buildLineIndex(state.doc);
 
 	view = new EditorView(container, {
 		state,
-		attributes: opts.label ? { 'aria-label': opts.label } : undefined,
+		attributes: proseAttributes(opts),
 		dispatchTransaction: (tr) => {
 			const oldRt = reconciler.last;
 			const next = view.state.apply(tr);
@@ -187,7 +220,9 @@ export function createField(opts: CreateFieldOpts): FieldController {
 				inline,
 				plaintext,
 				noInputRules: opts.noInputRules,
-				placeholder: opts.placeholder,
+				// Always installed, so a leaf that mounts without a ghost can still be
+				// given one later; the plugin draws nothing while the text is empty.
+				placeholder: () => placeholderText,
 				afterHistory: [anchorPlugin(seededAnchors)]
 			})
 		});
@@ -261,6 +296,13 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			view.dispatch(view.state.tr.setSelection(Selection.near(fresh.doc.resolve(pm))));
 			reconciler.commit(current);
 		},
+		setPlaceholder(text: string | undefined): void {
+			if (text === placeholderText) return;
+			placeholderText = text;
+			// `setProps` re-runs the decoration pass against the unchanged state — no
+			// transaction, so nothing commits and no caret is reported.
+			view.setProps({});
+		},
 		focus(): void {
 			view.focus();
 		},
@@ -301,8 +343,8 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			view.destroy();
 		}
 	};
-	// The underlying view is an available (undocumented) handle: Phase 4 composes
-	// views into the VisualEditor, and tests drive edits through it.
+	// The underlying view, exposed as an available (undocumented) handle: the
+	// VisualEditor composes views, and tests drive edits through it.
 	(controller as FieldController & { view: EditorView }).view = view;
 	return controller;
 }
@@ -327,7 +369,10 @@ export function proseLeafPlugins(
 		inline: boolean;
 		plaintext: boolean;
 		noInputRules?: boolean;
-		placeholder?: string;
+		/** Read live, not captured: the ghost can move after mount
+		 *  ({@link FieldController.setPlaceholder}), and a re-hydration rebuilds this
+		 *  stack, so the plugin must ask rather than hold. */
+		placeholder?: () => string | undefined;
 		afterHistory?: Plugin[];
 	}
 ): Plugin[] {
@@ -345,11 +390,16 @@ export function proseLeafPlugins(
  * which CSS renders via `::before { content: attr(data-placeholder) }` — so the
  * text never enters the document, the caret path, or a `pmToContent` export. It
  * vanishes the instant the leaf holds any content (the emptiness test fails).
+ *
+ * `read` is called per decoration pass rather than closed over, so moving the
+ * ghost is a re-render and never a document edit.
  */
-function placeholderPlugin(text: string): Plugin {
+function placeholderPlugin(read: () => string | undefined): Plugin {
 	return new Plugin({
 		props: {
 			decorations(state) {
+				const text = read();
+				if (!text) return null;
 				const { doc } = state;
 				const first = doc.firstChild;
 				const empty =

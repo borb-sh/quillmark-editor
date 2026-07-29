@@ -12,7 +12,7 @@
   `type="text"`, not `type="number"` — a native number input SANITIZES an
   invalid string to `""` before the DOM `value` setter even runs (verified:
   `.value = "abc"` on `type="number"` never lands), which would make a
-  genuinely bad entry untypeable. Phase 4b's commit-time coercion diagnostic
+  genuinely bad entry untypeable. The commit-time coercion diagnostic
   (VISUAL_EDITOR §Diagnostics) needs exactly that path reachable through the
   UI, so a non-blank entry that fails to parse forwards the RAW STRING to
   `onCommit` unchanged — the boundary's own `writer.set` coercion is the judge
@@ -27,12 +27,18 @@
 		value: number | undefined;
 		integer?: boolean;
 		fallback?: number;
-		/** Accessible name — the visual label is a bare span the input can't reference. */
+		/** Accessible name for an input NOTHING else names — an object property, whose
+		 * name is the field label plus the property's. A field's own input takes `id`
+		 * instead and is named by the `<label for>` beside it. */
 		label?: string;
+		/** `<label for>` target. Set → the label names this input, so `aria-label`
+		 * comes off: two names is where implementations disagree about which wins. */
+		id?: string;
+		/** The parked `description` (FieldLabel) — announced after the name. */
+		describedBy?: string;
 		onCommit: (v: number | string | undefined) => void;
-		testid?: string;
 	}
-	let { value, integer, fallback, label, onCommit, testid }: Props = $props();
+	let { value, integer, fallback, label, id, describedBy, onCommit }: Props = $props();
 
 	// Local input state synced to `value` (as a string projection); own-typing
 	// stays local, only an external change reconciles back in (see `syncedLocal`).
@@ -55,9 +61,10 @@
 	type="text"
 	inputmode={integer ? 'numeric' : 'decimal'}
 	value={local.value}
+	{id}
 	placeholder={fallback != null ? String(fallback) : ''}
-	aria-label={label}
-	data-testid={testid}
+	aria-label={id ? undefined : label}
+	aria-describedby={describedBy}
 	oninput={(e) => {
 		local.value = (e.currentTarget as HTMLInputElement).value;
 	}}

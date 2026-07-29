@@ -1,9 +1,10 @@
 <!--
   Card controls (VISUAL_EDITOR_UIUX §"Card controls"), composable cards only.
-  Right-aligned in the header: a hover-revealed move-up/move-down chevron pair
-  (pinned while the card is active, each disabled at its edge), then an
-  always-visible delete. Reorder is BUTTONS, not drag (V1). The hover/active
-  reveal of `.qm-card-reorder` is owned by the parent card's CSS.
+  Right-aligned in the header: a move-up/move-down chevron pair revealed while the
+  pointer or the caret is in the card (each disabled at its edge), then an
+  always-visible delete. Reorder is BUTTONS, not drag (V1). The card scopes that
+  reveal, so its condition lives in the parent's CSS; the pair keeps the narrower
+  guarantee here, that a focused chevron is a visible one.
 -->
 <script lang="ts">
 	import ChevronUp from '@lucide/svelte/icons/chevron-up';
@@ -17,9 +18,8 @@
 		onMoveUp: () => void;
 		onMoveDown: () => void;
 		onDelete: () => void;
-		testidPrefix?: string;
 	}
-	let { isFirst, isLast, onMoveUp, onMoveDown, onDelete, testidPrefix }: Props = $props();
+	let { isFirst, isLast, onMoveUp, onMoveDown, onDelete }: Props = $props();
 
 	/** Control-glyph size — the shared rule for the reorder/delete icons (AESTHETIC §Icons). */
 	const GLYPH = 14;
@@ -27,29 +27,19 @@
 
 <div class="qm-card-controls">
 	<div class="qm-card-reorder">
-		<button
-			type="button"
-			class="qm-icon-btn"
-			title="Move up"
-			disabled={isFirst}
-			data-testid={testidPrefix ? `${testidPrefix}-up` : undefined}
-			onclick={onMoveUp}><ChevronUp size={GLYPH} /></button
+		<button type="button" class="qm-icon-btn" title="Move up" disabled={isFirst} onclick={onMoveUp}
+			><ChevronUp size={GLYPH} /></button
 		>
 		<button
 			type="button"
 			class="qm-icon-btn"
 			title="Move down"
 			disabled={isLast}
-			data-testid={testidPrefix ? `${testidPrefix}-down` : undefined}
 			onclick={onMoveDown}><ChevronDown size={GLYPH} /></button
 		>
 	</div>
-	<button
-		type="button"
-		class="qm-icon-btn qm-card-delete"
-		title="Delete card"
-		data-testid={testidPrefix ? `${testidPrefix}-delete` : undefined}
-		onclick={onDelete}><X size={GLYPH} /></button
+	<button type="button" class="qm-icon-btn qm-card-delete" title="Delete card" onclick={onDelete}
+		><X size={GLYPH} /></button
 	>
 </div>
 
@@ -64,6 +54,13 @@
 		gap: var(--_qm-space-half);
 		opacity: 0;
 		transition: opacity var(--_qm-duration-fast) ease;
+	}
+	/* Opacity hides the pair without taking it out of the tab order, so the
+	   component holds its own floor: a chevron that has focus is drawn, and its ring
+	   with it. The card's reveal already covers this; the rule is here because the
+	   hidden state is. */
+	.qm-card-reorder:focus-within {
+		opacity: 1;
 	}
 	/* Box and disabled state come from `.qm-icon-btn` (controls.css); only the ink
 	   is this component's — the reorder pair recedes to the label tone, delete

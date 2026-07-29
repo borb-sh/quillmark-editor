@@ -59,16 +59,22 @@ The card is the container; nothing inside it is a second box.
   apart — the step at which a hovered item reads against a card — so each carries a
   plane on its own. "Elevated is lighter" in both poles needs a mode signal the
   derivation deliberately does not have (THEMING.md).
-- **The floating surfaces earn the lift the cards do without.** The selection
-  popover takes `--_qm-surface-popover` (the *raised* surface mixed toward
-  transparent) behind a `--_qm-blur` backdrop, a hairline, and
-  `--_qm-shadow-popover`; the enum listbox takes the same shadow over an opaque
-  `--_qm-surface`, since a list of choices reads through worse than a row of glyphs.
-  Both sit over content with nothing behind them (VISUAL_EDITOR_UIUX §Formatting).
+- **The floating surfaces earn the lift the cards do without**, in two shapes rather
+  than one per component. **Translucent** — `--_qm-surface-popover` (the *raised*
+  surface mixed toward transparent) behind a `--_qm-blur` backdrop, a hairline, and
+  `--_qm-shadow-popover` — carries what floats over the content it is about: the
+  selection popover, and the field-guidance popover, which adds only a measure and
+  the meta type rung, since it holds prose where the other holds glyphs
+  (VISUAL_EDITOR_UIUX §Fields). **Opaque** — the same shadow over `--_qm-surface` —
+  carries the lists, the enum's and the card stack's kind menu (§"The shared
+  recipe"): a row of choices reads through a blur worse than a row of glyphs does.
+  All four sit over content with nothing behind them, and all four portal into the
+  nearest `[data-qm-root]` rather than `document.body` — floating still leaves the
+  editor's subtree, and the marker is what carries the consumer's dials back to it.
 
 ## The shared recipe
 
-Chrome comes from the rungs applied one way, not hand-written per component. Three
+Chrome comes from the rungs applied one way, not hand-written per component. Four
 recipes carry it, each **one rule in `visual/controls.css` a component opts into by
 carrying its class** — the same shape as `.qm-focus-ring`, and for the same reason:
 a rung fixes a value, but which declarations make a control cannot be assembled per
@@ -77,39 +83,77 @@ nothing raises it — no literal is minted, so `check:style` stays green while a
 control renders subtly wrong.
 
 - **`.qm-control-box`** — a typed value's box: `--_qm-surface`, one `--_qm-border`
-  hairline, `--_qm-radius-inner`, `--_qm-text-body`, one padding rung. Every scalar
-  control and every prose leaf **except the body**, which the slot withholds it from
-  (`ProseField`'s `unframed`). The predicate is the slot's, not the leaf's: a
-  `richtext` field without `inline` is block prose and still a control in a row of
-  controls, so only the caller that knows it is rendering the body can say so.
+  hairline, `--_qm-radius-inner`, `--_qm-text-body` at `--_qm-leading-body`, one
+  padding rung, `--_qm-ink` for its text. Every scalar control and every prose leaf
+  **except the body**, which the slot withholds it from (`ProseField`'s
+  `unframed`). The predicate is the slot's, not the leaf's: a `richtext` field
+  without `inline` is block prose and still a control in a row of controls, so
+  only the caller that knows it is rendering the body can say so.
 - **`.qm-icon-btn` / `.qm-add-affordance`** — the two button families; see below.
-- the two floating surfaces share the popover recipe above.
+- **`.qm-menu-surface` / `.qm-menu-item`** — a floating list of choices: the enum's
+  listbox and the card stack's kind menu. The surface takes the lift (§Elevation)
+  and one inset; an item takes a padding rung, `--_qm-radius-inner`, and
+  `--_qm-surface-hover` on `[data-highlighted]` — bits-ui's mark, and the only
+  hover lane, since an item under the pointer and one under the keyboard cursor are
+  one state to a menu and a `:hover` rule beside it would paint a second highlight
+  the keyboard cannot reach. What a caller adds is its own: the listbox spans its
+  trigger, scrolls past a screenful, and weights the value already stored.
+- the two floating surfaces that are not lists — the selection popover and the
+  field-guidance popover — take the translucent recipe above.
 
 A palette change is then one dial, not one edit per field file. A control that mints
 its own border grey or radius instead of reading the rung is the drift this prevents.
 
 **A button reads the button recipe, and it is not the box.** A glyph or text button —
-reorder, delete, array remove, both add affordances, the tips foot — is ink on the
+reorder, delete, array remove, the field label's guidance marker, both add
+affordances, the tips foot — is ink on the
 card: no resting border, no resting fill, `--_qm-surface-hover` arriving on hover,
 `--_qm-radius-inner` (a pill on the add triggers, which fill rather than tint,
 having no resting ink for a hover to shift). The distinction one recipe for both
 would lose: *a field is a box because you type into it; a button is not a box
 because you press it.* Destructive ink (`--_qm-danger`) stays — that is meaning, not
-chrome. Every button clears WCAG 2.5.8's 24×24 off `--_qm-tap-min`: a threshold the
+chrome. Both families clear WCAG 2.5.8's 24×24 off `--_qm-tap-min`: a threshold the
 spec fixes rather than a step on the space scale, so it does not move when
 `--qm-space` does, and `min-*` is outside every `check:style` axis — a second
 expression of the same floor would have nothing watching it.
 
+**Type is the button recipes' too, not the box's alone.** A UA button inherits
+neither family nor size, so a button that declares no type renders in the UA face at
+the UA size — the same failure the shared rule prevents for chrome, and quieter,
+because an absence mints no literal: the gate stays green while `--qm-font`, a
+documented dial, stops short of the package's own buttons. Both families take
+`font: inherit` and then the body rung, the anchor the box reads, so a button and
+the input beside it agree on face and size. Where the box's height is a line box, a
+button's is the tap floor: a label is one line and a glyph is not text at all, so the
+line box collapses onto its content and one height source decides instead of two.
+`font` is a shorthand carrying `line-height`, so size and leading are declared after
+it or dropped in silence — the same ordering the box recipe keeps.
+
+**The section header is a button by tag and neither family by recipe.** It reads no
+`--_qm-tap-min` — its symmetric padding already clears the floor, and the whole row
+is the target — and takes no hover fill (an ink step instead), so it declares its own
+type rather than joining a family it would then have to unpick: the field-label rung
+at the tight leading, on the button, with the label a text run beside the chevron. A
+wrapper carrying only the size is indirection between a header and its own label.
+
 **An inline prose leaf is inside that recipe, not beside it.** A field constrained
-to one paragraph is a control in a row of controls, so it draws the same five
+to one paragraph is a control in a row of controls, so it draws the same
 declarations and is therefore exactly as tall as the `.qm-input` next to it — by
-construction, with no floor of its own. Two `min-height` literals tuned to agree
-would drift the first time either box changed. The body is the one that is not a
-control at all: it opens at a few lines and grows, and it draws no box. The **type
-rung** is a leaf's either way, and sits on the leaf's own base rule rather than in
-the box it withholds: a leaf that inherits its size lands on the host page's body
-rung, minting no literal for `check:style` to catch. Paper reads the ramp exactly
-as a control does.
+construction, with no floor of its own. A control's height is one padding rung, a
+line box and two hairlines, so that agreement is **leading's** as much as padding's:
+a leading applied to one selector of the shared rule and not the other breaks the
+invariant with nothing minted for the gate to catch, and two `min-height` literals
+tuned to agree would drift the first time either box changed. The body is the one
+that is not a control at all: it draws no box and opens at a floor of three line
+boxes — size times leading times three, both factors named or the expression stops
+meaning the three lines it claims — then grows. The floor is only ever the height
+of an EMPTY body, where the ghost takes the first line
+([VISUAL_EDITOR_UIUX.md](VISUAL_EDITOR_UIUX.md) §Fields): what opens is an
+invitation with room under it, not a drop. The **type rungs** are a leaf's
+either way, size and leading alike, and sit on the leaf's own base rule rather than
+in the box it withholds: a leaf that inherits them lands on the host page's rhythm,
+minting no literal for `check:style` to catch. Paper reads the ramp exactly as a
+control does.
 
 ## Rhythm
 
@@ -125,6 +169,32 @@ about the card's inset and about what starts on it, not a prohibition on hierarc
 inside it. Stacked regions — a card's header, its field list, its body — are
 separated by one gap, not per-region margins that drift. Pick from the scale; an
 in-between value is a review smell.
+
+**The card stack's gutter is mostly the add strip.** Between two cards sits a
+full-bleed insert trigger at the tap floor, and its own height is most of what
+separates them — so it ABSORBS one space rung of the stack's gap on each side
+rather than adding to it. Absorbed, not removed: the gap is also what separates
+the two seams no strip sits in — `main` from the tips card, and every card from
+the next under a quill that declares no kinds, where the affordance does not
+render (VISUAL_EDITOR_UIUX §"Card stack"). A negative margin reading a scale step
+is the one place the rhythm subtracts, and it is why: two spacings meet, and the
+taller one is the separation.
+
+**The action column** is the other half of that claim, on the side the gutter says
+nothing about. A field section reserves a trailing column — a row action's tap
+target plus the grid's own column gutter — held clear of the tracks: every control
+in the section ends on one right edge, and an array's rows put their remove past it,
+where it is never over the value it removes. Reserved as an inset rather than as a
+fifth track, because auto-placement walks every track it is given and a compact
+field overflowing the last column would land in the action column — and the inset
+sits on the section rather than on the grid inside it, because the section is the
+query container and a size query reads its CONTENT box: capacity below then measures
+the width the tracks actually get, with no breakpoint carrying the column's width in
+arithmetic a `var()` cannot reach. Every
+section pays the width, including one with no action in it — a right edge that moved
+with a section's contents is the raggedness this removes. The left gutter is what a
+region STARTS on; the right edge is what a control ENDS on, and only an action sits
+outside it.
 
 **Stroke.** One width for every edge the chrome draws — `--_qm-border-width`, a
 threshold rather than a rhythm choice, so a hairline stays a hairline at any
@@ -146,7 +216,7 @@ they answer to what a control needs, not to `--qm-space` — so they do not deri
 from the spacing dial and do not move when it does.
 
 **Radius.** One radius base with at most a small derived step, by surface weight —
-the card and the two floating surfaces at `--_qm-radius`, interior controls at the
+the card and the three floating surfaces at `--_qm-radius`, interior controls at the
 tighter `--_qm-radius-inner` — not a free choice per component. `--_qm-radius-pill`
 is a shape tier beside the ramp rather than a step on it, so a fully-rounded end cap
 stays round at any `--qm-radius`. Four unrelated radii is drift, not a scale.
@@ -157,8 +227,26 @@ control: inputs, the select trigger, the date field, both prose leaves, add
 affordances), `--_qm-text-label` (field labels, section headers),
 `--_qm-text-meta` (diagnostics, mini controls) — with weight a fixed convention
 over them (`--_qm-weight-label` on a field label, `--_qm-weight-soft` on a nested
-object prop's secondary label), not per-file. The ~8 ad-hoc sizes the study counted
-collapse to the four; an in-between size is the drift this prevents.
+object prop's secondary label), not per-file. Four rungs carry every surface; an
+in-between size is the drift this prevents.
+
+**Leading** is the ramp's third axis, at two rungs rather than four: a wrapped
+label and a wrapped paragraph want different rhythms, and nothing wants a rung per
+size. `--_qm-leading-body` is reading rhythm — both prose leaves, every control
+beside them, the tips card's guidance; `--_qm-leading-tight` is a line that is a
+label rather than a passage — field labels, section labels, the card title. The
+two axes are deliberately independent, which the tips card is the case for: label
+size, reading leading. Unitless, so a rung inherits multiplicatively and holds
+against whichever size rung the surface reads. `line-height: 1` is outside the axis
+altogether — it collapses the line box onto its content, a glyph or a button's
+one-line label, which is a structural claim rather than a rhythm.
+
+**Leading alone separates paper from chrome.** The body leaf reads
+`--_qm-text-body`, the same size as the input beside it, and steps up to no fifth
+rung; the line rhythm is the entire distinction, which is what keeps the size ramp
+four wide. Control height falls out of the same rung — a box is one padding rung, a
+line box and two hairlines — so a cramped control is missing leading, not a
+`min-height`.
 
 A control **reads** the rung; it does not inherit a size. Inheriting is the drift
 that hides from the gate — no literal is minted, so nothing fails, and the control
@@ -168,14 +256,17 @@ the package.
 
 **The scale in code.** All three axes are public dials deriving a closed private
 scale ([`THEMING.md`](../../THEMING.md)) — geometry (`--qm-radius`, `--qm-space`),
-type (`--qm-font-size`, with the ratio between rungs a fixed constant), and colour
-(`--qm-bg`, `--qm-fg`, and the three status hues, which step surfaces `bg → fg` and
-ink `fg → bg` in oklab). The derivation is minted ONCE, as a stylesheet in `core/`
-the package imports itself, and applies to every element marked `data-qm-root` —
+type (`--qm-font-size`, with the ratio between size rungs and the two leading rungs
+fixed constants), and colour (`--qm-bg`, `--qm-fg`, and the three status hues, which
+step surfaces `bg → fg` and ink `fg → bg` in oklab). The derivation is minted ONCE,
+as a stylesheet in `core/` the package imports itself, and applies to every element
+marked `data-qm-root` —
 the editor, the portaled popover and select list, the preview, and the source view,
-none of which descend from the others. That rule carries the baseline font and ink
-too, so a root inherits them by carrying the marker rather than by restating a
-declaration; it stops short of a body `font-size`, because a root rule sweeps every
+none of which descend from the others. That rule carries the baseline font, ink and
+leading too, so a root inherits them by carrying the marker rather than by restating
+a declaration — which is what puts `normal` out of reach below a marker, leaving a
+per-surface `--_qm-leading-tight` as the deliberate override. It stops short of a
+body `font-size`, because a root rule sweeps every
 descendant a consumer may have mounted inside the marker — a reach the derivation
 does not have. Each surface reads the rung instead. A component reads a rung, never
 a literal; `check:style` gates all three axes, so an in-between value fails CI, not
@@ -219,9 +310,22 @@ the editor holds, so the editor draws it and holds it. Correlation is an event �
 moment an address crossed between the panes — so a wash marks it and decays to
 nothing. **The preview carries no focus ink at all**: it claims to be the rendered
 output, and a border it draws on the page it is proving is a border the document did
-not ask for. What the overlay draws instead is in PREVIEW §Overlay. The active *card* is set apart
-separately — the `active` state that pins the reorder chevrons (VISUAL_EDITOR_UIUX
-§"Card stack").
+not ask for. What the overlay draws instead is in PREVIEW §Overlay.
+
+**Card scale takes no mark of its own.** The focused leaf's cue sits *inside* the
+card, so "which card" is answered by containment and a second mark would only
+restate it. The rungs rule out the obvious candidate besides:
+`--_qm-surface-hover` is the button recipe's hover ink (§Elevation), so an active
+card filled with it stands its controls two rungs off their card instead of the one
+the package guarantees, and leaves a hovered button on its own ground. Nor would a
+fill reach the case that argues for one — a tone step reads only against a
+neighbouring card, so a card taller than the viewport has nothing to compare and
+shows nothing. `main` settles the same question the same way: structure says which
+card it is, and no tone is minted to repeat it. What a card carries instead is its
+**controls' reveal** — pointer or caret inside brings the reorder chevrons up
+(VISUAL_EDITOR_UIUX §"Card stack"). That is an affordance surfacing where it can be
+used, not a state drawn on the section, and it is why `main` needs no equivalent:
+it has no controls to reveal.
 
 One ring width, therefore: `--_qm-ring-width` is focus, and nothing sits under it as
 a held-back tier.

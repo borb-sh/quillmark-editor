@@ -37,9 +37,18 @@ header, its field list, and its body, with an add-card affordance between blocks
 
 **Card controls** carry web-app's placement (`EditorBlock`). Composable cards
 only — `main` has none. In the card header, right-aligned opposite the title: a
-hover-revealed move-up/move-down chevron pair, pinned visible while the card is
-active, each disabled at its edge (up on the first card, down on the last); then
+move-up/move-down chevron pair revealed while the pointer or the caret is in the
+card, each disabled at its edge (up on the first card, down on the last); then
 an always-visible delete. Reorder is buttons, not drag.
+
+The reveal is **pointer or focus**, not hover alone. The pair is hidden by opacity
+and so stays in the tab order: a hover-only rule hands a keyboard a focused control
+it cannot see, and hands a touch pointer — which never hovers — no path to reorder
+at all. Focus is read off the card (`:focus-within`), so the caret in any leaf, in
+the title, or on a chevron itself holds the reveal, and it drops when focus leaves
+the editor rather than resting on the last card edited. This reveal is the card's
+whole active treatment; SURFACES §"Focus and active state" declines a mark at card
+scale, so nothing tints or fills the section.
 
 Rename is the inline-editable title itself, not a separate control. The title
 autosizes to its text, so the **hit region** is the header's free width rather
@@ -52,6 +61,23 @@ recovery shell's selector, for a card whose kind the quill does not declare. A
 header retype is a control with nothing to do: under one declared kind it can
 only reselect the kind the card has, and a correctly typed card has nothing to
 retype.
+
+**The add affordance is the strip, not the label.** The trigger spans the gap it
+sits in, because a gap is found by POSITION — a button sized to `+ Add
+Indorsement` is a word to aim at in the middle of a row the eye reads as empty,
+and the hover reveal was already full-bleed while the hit region was not. The
+recede ladder is unchanged (invisible at rest on interior gaps, the last gap dim,
+full on hover or focus, a faint always-on state where there is no hover); it
+paints a strip instead of a word, and the strip's height is the tap floor. What
+is left of the stack's gap around it is miss-tolerance: the strip is invisible
+and live, so a click just under a card's edge must land on neither.
+
+Under **more than one declared kind** the trigger raises a menu of them. A menu,
+not a disclosure: it floats, so raising it moves no card, and it dismisses on
+pick, on Escape, and on a click outside. It portals into the stack's own
+`[data-qm-root]` and draws the shared menu recipe the enum listbox draws
+(SURFACES §"The shared recipe"). The reference quill declares one kind, so this
+branch is reached only through the playground's two-kind schema variant.
 
 Insert and reorder **move the viewport**: a new card scrolls to centre, a moved
 card to `nearest`, so a structure edit past the fold is never silent. Both honour
@@ -116,7 +142,7 @@ no table-entry rule ships (island authoring deferred, §Open). Markdown is an in
 shorthand, never the stored form.
 
 **Deferred past V1 — the position anchor:** a gutter insert affordance, its menu,
-and a slash command, together the doors onto insertion. While deferred, the editor
+and a slash command, together the doors onto insertion. Without them the editor
 does not author tables or islands in V1 — a step back from web-app, named here
 rather than left silent. Editing a table already present in an imported document
 is a separate concern (the island controls), not gated by this.
@@ -127,34 +153,85 @@ is a separate concern (the island controls), not gated by this.
   editor carries web-app's density *hints* — `ui.group` and `ui.compact` — and not
   its layout pass: a section is ONE grid, capacity comes from a container query, and
   fields auto-place (§"Section grid").
-  `ui.group` sections are a collapsible accordion — one open at a time, the sole
-  group (or, body-less, the first) auto-expanded; ungrouped fields stay above it,
-  always visible. A section header is a heading, not metadata: sentence case at the
-  field-label rung, its whole row the target, its label centred between the rule
-  above it and the one it draws. Open and hover are ink steps; the chevron's
-  rotation carries open/closed, and no hue enters (AESTHETIC §Rules). The open
-  section also draws the bracket's vertical, down its header and its panel together
-  (SURFACES §Elevation) — which is what gives it a corner to close into where the
-  bracket's horizontal meets it, at the top of the first section or the bottom of the
-  last. A section in between meets neither and does not try to: the stroke reads by
-  being the same stroke, not by terminating.
+  `ui.group` sections are a collapsible accordion — one open at a time, the
+  first in order open at mount; ungrouped fields stay above it, always visible.
+  A card opens on fields, never on chevrons alone: a body leaf does not stand in
+  for one, since on a card carrying both the fields are what the card is for. A
+  section header is a heading, not metadata: sentence case at the field-label
+  rung, its whole row the target, its label centred between the rule above it
+  and the one it draws. Open and hover are ink steps; the chevron's rotation
+  carries open/closed, and no hue enters (AESTHETIC §Rules). The open section
+  also draws the bracket's vertical, down its header and its panel together
+  (SURFACES §Elevation) — which is what gives it a corner to close into where
+  the bracket's horizontal meets it, at the top of the first section or the
+  bottom of the last. A section in between meets neither and does not try to:
+  the stroke reads by being the same stroke, not by terminating.
 - **Prose leaf** — each rich field as an inline WYSIWYG surface, and the body as
   paper: no label — "Body" names the surface, and the accessible name stays on the
   leaf — and no box, the bracket's bottom rule doing the separating a border was.
+- **An empty body invites; an empty field does not.** A body's ghost falls back
+  where a field's does not: the resolved `default:` when the kind declares one,
+  else the consumer's `bodyPlaceholder` wording, else `Write…`. A `default:` wins
+  over both — it alone says what prints if nothing is written, and an invitation
+  over it would hide that. A field keeps the opposite rule: its ghost is the
+  resolved default or nothing, because invented placeholder text in a control
+  reads as a value already entered. Both render at the ghost rung
+  (`--_qm-ink-ghost`, italic) and neither enters the document.
+  `bodyPlaceholder` is asked once per KIND and its answer held for the session,
+  so a consumer sampling a set at random still reads as deliberate — cards of a
+  kind agree, and a re-derive does not re-roll. Keyed by kind, not by card: two
+  empty cards of a kind are the same invitation. A retyped card takes its new
+  kind's wording in place, without remounting the leaf and losing the caret.
+- **The label NAMES the control.** A real `<label>`, not a span beside one: a click
+  lands the caret in the field, which is the widest target in the row and the most
+  conventional affordance a form has. `for` reaches a labelable control and the UA
+  does the rest; the prose leaf, the date field's segments, an array and an object
+  subform are not labelable, so the association runs the other way — the control
+  points back at the label with `aria-labelledby` (`role="group"` where the label
+  names a SET rather than one control), and the click hands off to the control's own
+  focus, which for a prose leaf places a selection and for a date lands the first
+  segment. A control named this way carries no `aria-label` of its own: two names is
+  where implementations disagree about which wins. One survives only where nothing
+  else names the control — an array element (the label plus its 1-based index), an
+  object property, the card body. The DOM ids come from the leaf key, so the label,
+  the control, the leaf registry and the diagnostics resolve to one identity.
+  The required `*` sits INSIDE the label and so names the control with it ("Subject
+  required"); the `description:` does NOT — it describes, through `aria-describedby`
+  against an always-present parked node, since a name is not where ~110 characters
+  of guidance belong.
 - **Per-field state** — focus, inline diagnostics, a ghosted `default:`
   placeholder (never written back — it lives in the schema), a persistent required
-  `*` on no-`default:` (Unendorsed) fields, and the field's `description:` as a
-  label tooltip. A `!must_fill` marker also surfaces as a routed
+  `*` on no-`default:` (Unendorsed) fields, and the field's `description:` on a
+  themed popover — hover, focus, and tap, one per input modality (SURFACES
+  §Elevation). Floating rather than inline under the label because the reference
+  quill's descriptions run past 250 characters at the tail, which in flow is several
+  wrapped lines under every field; a quill whose guidance is all one short line would
+  be better served inline. The surface is chrome, never the announcement — the parked
+  node above holds whether it is open or not, so no reader depends on a hover, which
+  is what the native `title` it replaces got wrong (unstyled, undismissable, and
+  absent on touch entirely). A `!must_fill` marker also surfaces as a routed
   `validate()` warning among those diagnostics — the `*` states required-ness, the
   warning reports unmet-ness; `example:` still gets no dedicated nudge. No field
   carries a tips surface: guidance that is not about one field belongs to the
   document, and rides the tips card (§"Tips card").
 - **Array fields** — a repeater: one control per element (text / prose / minimal
-  JSON by `items.type`), a per-row delete, an add affordance at the foot. No
-  element reorder — rows hold entry order, and the array commits by value, so a
-  mis-order is fixed by editing in place, not by moving rows. (The card stack
-  keeps ↑/↓ — a curated set of heavyweight blocks earns it; a scalar list does
-  not.) Reorder can return behind an `items`/`ui` hint if a quill needs it.
+  JSON by `items.type`), a per-row remove in the section's action column
+  (SURFACES §Rhythm), an add affordance at the foot. No element reorder — rows
+  hold entry order, and the array commits by value, so a mis-order is fixed by
+  editing in place, not by moving rows. (The card stack keeps ↑/↓ — a curated
+  set of heavyweight blocks earns it; a scalar list does not.) Reorder can
+  return behind an `items`/`ui` hint if a quill needs it.
+- **Keys carry the list.** Enter on an element opens a sibling below it and takes
+  the caret there; Backspace on an EMPTY element removes it and hands the caret back
+  up — to the element above, or to the add affordance once nothing is left to hold
+  it. A remove by click moves the caret the same way: the button under the pointer
+  is part of what it destroys. Both keys are the shape a list in the body prose
+  already has, which is the argument for these two rather than a scheme of the
+  array's own. Removal has no undo, so it takes a deliberate press: an auto-repeat is
+  ignored, and emptiness is read before the keystroke applies, so the press that
+  clears the last character never also destroys the row. Focus lands after the
+  commit's flush — the array commits by value, so the row a mutation names exists
+  only once the parent has re-derived.
 
 ### Section grid
 

@@ -22,16 +22,25 @@
 		value: string | undefined;
 		values: string[];
 		fallback?: string;
-		/** Accessible name — the visual label is a bare span the trigger can't reference. */
+		/** Accessible name for a trigger NOTHING else names — an object property, whose
+		 * name is the field label plus the property's. A field's own trigger takes `id`
+		 * instead and is named by the `<label for>` beside it (the trigger is a
+		 * `<button>`, so `for` reaches it and a label click opens the list — what the
+		 * native `<select>` this replaces would have done). */
 		label?: string;
+		/** `<label for>` target. Set → the label names this trigger, so `aria-label`
+		 * comes off: two names is where implementations disagree about which wins. */
+		id?: string;
+		/** The parked `description` (FieldLabel) — announced after the name. */
+		describedBy?: string;
 		onCommit: (v: string | undefined) => void;
 		/** Consumer policy: `false` disables an option so it can't be picked.
 		 * A disallowed value already authored stays SELECTED and visible (disabled), never
 		 * stripped or mutated. The UNSET sentinel is exempt — clear-to-default always works. */
 		optionAllowed?: (value: string) => boolean;
-		testid?: string;
 	}
-	let { value, values, fallback, label, onCommit, optionAllowed, testid }: Props = $props();
+	let { value, values, fallback, label, id, describedBy, onCommit, optionAllowed }: Props =
+		$props();
 
 	// The sentinel's option value — a namespaced marker that no schema-authored
 	// enum member would ever be (`values` are classification markings, seal ids, and
@@ -77,8 +86,9 @@
 	>
 		<Select.Trigger
 			class="qm-select qm-control-box qm-focus-ring"
-			aria-label={label}
-			data-testid={testid}
+			{id}
+			aria-label={id ? undefined : label}
+			aria-describedby={describedBy}
 			data-ghosted={unset ? '' : undefined}
 		>
 			{shown}
@@ -92,14 +102,14 @@
 				     element (not the primitive's) because scoped CSS keys off which
 				     component OWNS the markup: a `class` passed to a primitive is a
 				     plain string and never picks up the scoping hash. -->
-				<div class="qm-select-content" data-qm-root>
+				<div class="qm-menu-surface qm-select-content" data-qm-root>
 					<Select.Viewport>
-						<Select.Item class="qm-select-item" value={UNSET} label={ghostText}>
+						<Select.Item class="qm-menu-item qm-select-item" value={UNSET} label={ghostText}>
 							<span class="qm-select-ghost">{ghostText}</span>
 						</Select.Item>
 						{#each values as v (v)}
 							<Select.Item
-								class="qm-select-item"
+								class="qm-menu-item qm-select-item"
 								value={v}
 								label={dash(v)}
 								disabled={optionAllowed?.(v) === false}
@@ -128,7 +138,6 @@
 		width: 100%;
 		box-sizing: border-box;
 		text-align: left;
-		color: var(--_qm-ink);
 		cursor: pointer;
 	}
 	/* The focus ring rides `.qm-focus-ring` on the trigger (controls.css). */
@@ -137,28 +146,14 @@
 	.qm-select-wrap :global(.qm-select[data-ghosted]) {
 		color: var(--_qm-ink-ghost);
 	}
-	/* The open list — a floating surface, so it earns the lift (SURFACES §Elevation). */
+	/* The open list is `.qm-menu-surface` and its rows `.qm-menu-item` (controls.css) —
+	   the lift, the inset and the highlight are the shared menu recipe. What a LISTBOX
+	   adds over a menu is here: it spans its trigger rather than its own content, it
+	   scrolls past a screenful, and it marks the value already stored. */
 	.qm-select-content {
 		min-width: var(--bits-select-anchor-width);
 		max-height: 16rem;
 		overflow-y: auto;
-		padding: var(--_qm-space-half);
-		border: var(--_qm-border-width) solid var(--_qm-border);
-		border-radius: var(--_qm-radius);
-		background: var(--_qm-surface);
-		box-shadow: var(--_qm-shadow-popover);
-		font-size: var(--_qm-text-body);
-		color: var(--_qm-ink);
-	}
-	.qm-select-content :global(.qm-select-item) {
-		padding: var(--_qm-space) var(--_qm-space-2);
-		border-radius: var(--_qm-radius-inner);
-		cursor: pointer;
-		user-select: none;
-	}
-	/* bits marks the pointer/keyboard-highlighted item; there is no :hover lane. */
-	.qm-select-content :global(.qm-select-item[data-highlighted]) {
-		background: var(--_qm-surface-hover);
 	}
 	.qm-select-content :global(.qm-select-item[data-selected]) {
 		font-weight: var(--_qm-weight-label);

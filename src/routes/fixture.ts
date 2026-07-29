@@ -36,6 +36,38 @@ export function withMainDateDefault(tree: Map<string, Uint8Array>, iso: string):
 	);
 }
 
+// The `card_kinds:` map opener, and a second kind to drop under it. The reference
+// quill declares exactly ONE kind, so the add affordance's multi-kind branch — a
+// menu rather than a single labelled button — is a code path no fixture reaches.
+// Inserted at the opener rather than appended, so it does not depend on
+// `card_kinds` staying the last block in the file.
+const CARD_KINDS_KEY = '\ncard_kinds:\n';
+const SECOND_KIND = `  attachment:
+    description: A trailing attachment block. Playground-only, to give the card stack a second kind.
+    ui:
+      title: Attachment
+    fields:
+      caption:
+        type: string
+        example: Slide deck
+        description: What is attached.
+`;
+
+/**
+ * Playground-only schema variant: declare a second card kind. The reference quill's
+ * one kind means `kinds.length === 1` always wins in `VisualEditor`, so nothing on
+ * disk exercises the kind menu, its dismissal, or its item chrome. Throws rather
+ * than silently no-op'ing if the anchor moves.
+ */
+export function withSecondCardKind(tree: Map<string, Uint8Array>): void {
+	const yaml = new TextDecoder().decode(tree.get('Quill.yaml'));
+	if (!yaml.includes(CARD_KINDS_KEY)) throw new Error('fixture: `card_kinds` anchor not found');
+	tree.set(
+		'Quill.yaml',
+		new TextEncoder().encode(yaml.replace(CARD_KINDS_KEY, CARD_KINDS_KEY + SECOND_KIND))
+	);
+}
+
 /** Fetch the reference quill into the `Map` `Quill.fromTree` accepts (keys `"/"`-joined, relative to the quill root). */
 export async function loadUsafMemoTree(): Promise<Map<string, Uint8Array>> {
 	const tree = new Map<string, Uint8Array>();

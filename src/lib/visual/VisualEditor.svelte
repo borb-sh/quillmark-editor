@@ -23,6 +23,7 @@
 -->
 <script lang="ts">
 	import { tick } from 'svelte';
+	import { DropdownMenu } from 'bits-ui';
 	import { isQuillmarkError, MAIN_CARD_ADDR } from '../core/index.js';
 	import { bloomInside } from '../core/bloom.js';
 	import type {
@@ -49,7 +50,9 @@
 		resolvedByCardIndex,
 		ghostDefault,
 		stringifyGhost,
+		resolveBodyGhost,
 		NO_RESOLVED_ROWS,
+		type BodyPlaceholder,
 		type CardModel,
 		type ResolvedCardRows
 	} from './structure.js';
@@ -62,11 +65,15 @@
 		type FieldKey,
 		type RoutedDiagnostic
 	} from './diagnostics.js';
+	import { fieldDomIds } from './domid.js';
 	import { tipsChannel } from './tips.js';
 	import { patchEditorExt } from './ext.js';
 	import Card from './Card.svelte';
 	import TipsCard from './TipsCard.svelte';
 	import FormatPopover from './FormatPopover.svelte';
+	// The add trigger and the kind menu draw shared recipes; a component carrying a
+	// shared class without also pulling its rule ships unstyled (controls.css).
+	import './controls.css';
 
 	/**
 	 * REMOUNT CONTRACT. `cardIds`, the id `seq`, and the leaf registry seed ONCE
@@ -98,6 +105,18 @@
 		 * Absent → every schema option is offered (the default, zero behavior change).
 		 */
 		enumOptionAllowed?: (addr: Addr, value: string) => boolean;
+		/**
+		 * Consumer wording hook for an EMPTY BODY's ghost: given a card's kind,
+		 * return the invitation its empty body shows, or `undefined` to take the
+		 * built-in. A body with a resolved `default:` ghosts that and never consults
+		 * this — the default is the ghost that describes the render.
+		 *
+		 * Consulted ONCE PER KIND per session and cached, so a hook that samples a set
+		 * at random still reads as deliberate: two empty cards of a kind ghost the
+		 * same string, and a remount does not re-roll it. Absent → the built-in for
+		 * every kind.
+		 */
+		bodyPlaceholder?: BodyPlaceholder;
 		/** Appended to the root's own class — the surface is a mounted element the
 		 *  consumer positions, so it needs a handle for layout it owns. */
 		class?: string;
@@ -113,12 +132,19 @@
 		onChange,
 		diagnostics,
 		enumOptionAllowed,
+		bodyPlaceholder,
 		class: className,
 		style
 	}: Props = $props();
 
 	// ── Reactivity + session identity ───────────────────────────────────────────
 	let revision = $state(0);
+	// This editor's own id, prefixed onto every field's DOM ids (`domid.ts`). The
+	// leaf-key space is unique per EDITOR, not per page: two editors mounted
+	// side-by-side both hold `main:subject`, and a duplicate `id` makes `for` resolve
+	// to whichever mounted first. `$props.id()` is stable across SSR and hydration,
+	// which a module counter is not.
+	const uid = $props.id();
 	const seq = new IdSeq();
 	// Session ids, one per composable card, reordered in lockstep with structure ops.
 	// svelte-ignore state_referenced_locally
@@ -129,6 +155,13 @@
 	// the next successful one for that field. Id-keyed (not positional) so an
 	// error stays pinned to its field across a card reorder.
 	let commitErrors = $state(new Map<string, RoutedDiagnostic>());
+	/** Edit the commit-error map copy-on-write — a `$state` Map is not deeply
+	 *  reactive, so a mutation in place re-derives nothing. */
+	function editCommitErrors(edit: (m: Map<string, RoutedDiagnostic>) => void): void {
+		const next = new Map(commitErrors);
+		edit(next);
+		commitErrors = next;
+	}
 
 	const kinds = $derived(Object.keys(quill.schema.card_kinds ?? {}));
 
@@ -142,7 +175,7 @@
 		return cardIds.indexOf(id);
 	}
 
-	// ── Leaf registry (setCaret target lookup + the 4b active-leaf seam) ────────
+	// ── Leaf registry (setCaret target lookup + the active-leaf seam) ───────────
 	const leaves = new Map<string, FieldController>();
 	// Card handles, for `setCaret`'s reveal hop — the one thing a leaf's own controller
 	// cannot do, since which group is open is the card's state (Card §revealLeaf).
@@ -152,6 +185,9 @@
 	};
 	let mainCard = $state<CardHandle | undefined>(undefined);
 	let cardRefs = $state<(CardHandle | undefined)[]>([]);
+	/** The stack's own element — it carries `data-qm-root`, so it is what the kind
+	 *  menu portals INTO, the way each leaf's surface resolves its nearest root. */
+	let rootEl = $state<HTMLElement | undefined>(undefined);
 	function register(key: string, controller: FieldController): void {
 		leaves.set(key, controller);
 	}
@@ -160,6 +196,10 @@
 	}
 
 	// ── Focus + bridge outputs ──────────────────────────────────────────────────
+	// `activeCardId` is the id-keyed half of `activeAddr` (whose `card` is positional),
+	// and it feeds lookups only: the `activeController` seam below, and the clear on
+	// delete. Nothing draws it — a card's active treatment is its controls' reveal,
+	// which the card reads off `:focus-within` (SURFACES §"Focus and active state").
 	let activeAddr = $state<Addr | undefined>(undefined);
 	let activeCardId = $state<string | undefined>(undefined);
 
@@ -184,7 +224,7 @@
 	// A scalar control commits `undefined` for a cleared entry — the unset lane
 	// below (`doc.removeField`), not a write.
 	//
-	// A bad value makes `writer.set` THROW a `QuillmarkError`; as of 0.96.0 its
+	// A bad value makes `writer.set` THROW a `QuillmarkError`, whose
 	// `diagnostics[0]` carries a `code` and a canonical `path` (e.g.
 	// `edit::field_conform` at `main.font_size`, or `edit::unknown_field`). The
 	// editor already KNOWS the field/card being committed, so it KEYS the entry
@@ -225,20 +265,14 @@
 					w.card(i).set(name, value);
 				}
 			}
-			if (commitErrors.has(keyStr)) {
-				const next = new Map(commitErrors);
-				next.delete(keyStr);
-				commitErrors = next;
-			}
+			if (commitErrors.has(keyStr)) editCommitErrors((m) => m.delete(keyStr));
 			bump();
 		} catch (e) {
 			const diagnostic: Diagnostic = (isQuillmarkError(e) ? e.diagnostics[0] : undefined) ?? {
 				severity: 'error',
 				message: e instanceof Error ? e.message : String(e)
 			};
-			const next = new Map(commitErrors);
-			next.set(keyStr, { key, diagnostic });
-			commitErrors = next;
+			editCommitErrors((m) => m.set(keyStr, { key, diagnostic }));
 			console.error('[quillmark/editor] scalar commit failed', e);
 		}
 	}
@@ -306,11 +340,10 @@
 		// (VISUAL_EDITOR §"The address is the spine") avoids mis-attributing them to
 		// whichever card next takes this position, but an orphaned entry would
 		// otherwise sit in the map forever (ids are never reused).
-		if ([...commitErrors.keys()].some((k) => k.startsWith(`${id}:`))) {
-			const next = new Map(commitErrors);
-			for (const k of [...next.keys()]) if (k.startsWith(`${id}:`)) next.delete(k);
-			commitErrors = next;
-		}
+		if ([...commitErrors.keys()].some((k) => k.startsWith(`${id}:`)))
+			editCommitErrors((m) => {
+				for (const k of [...m.keys()]) if (k.startsWith(`${id}:`)) m.delete(k);
+			});
 		bump();
 	}
 	function retypeCardById(id: string, kind: string): void {
@@ -384,27 +417,52 @@
 		const fromExternal = routeAndResolve(diagnostics, cardIds);
 		return mergeDiagnostics(fromValidate, fromExternal, [...commitErrors.values()]);
 	});
-	function diagFor(id: string, isMain: boolean, field?: string): Diagnostic[] | undefined {
-		return diagByKey.get(fieldKeyToString({ card: isMain ? undefined : id, field }));
-	}
-
 	function opsFor(id: string, isMain: boolean) {
+		// ONE identity per field: the leaf registry, the DOM's three names, and the
+		// diagnostics map all key off this string, so a leaf, its label and its
+		// diagnostics can only ever resolve together.
+		const leafKey = (field?: string) => fieldKeyToString({ card: isMain ? undefined : id, field });
 		return {
 			makeAddr: (field?: string) => makeAddr(id, isMain, field),
-			// The leaf-registry key space IS the diagnostics FieldKey space — one
-			// `fieldKeyToString`, so a leaf and its diagnostics resolve to one string.
-			leafKey: (field?: string) => fieldKeyToString({ card: isMain ? undefined : id, field }),
+			leafKey,
+			domIds: (field?: string) => fieldDomIds(uid, leafKey(field)),
 			commit: (name: string, value: unknown) => commitScalar(id, isMain, name, value),
 			move: (dir: -1 | 1) => moveCardById(id, dir),
 			remove: () => removeCardById(id),
 			retype: (kind: string) => retypeCardById(id, kind),
 			rename: (title: string) => renameCardById(id, title),
-			diagFor: (field?: string) => diagFor(id, isMain, field),
+			diagFor: (field?: string) => diagByKey.get(leafKey(field)),
 			// Bind the consumer policy hook to this field's resolved addr;
 			// no hook → every option allowed.
 			enumAllowed: (field: string, value: string) =>
 				enumOptionAllowed?.(makeAddr(id, isMain, field), value) ?? true
 		};
+	}
+
+	// ── The empty-body ghost's consumer wording ─────────────────────────────────
+	// The hook is consulted once per KIND and its answer kept for the session, which
+	// is the whole determinism guarantee: a hook that samples a witty set at random
+	// is impure by design, and this cache is what makes its answer look chosen —
+	// same string for every card of a kind, and the same one after a remount or any
+	// re-derive. Keyed by kind rather than by card id deliberately: two empty cards
+	// that are the same kind ARE the same invitation, and disagreeing ghosts read as
+	// a glitch. Retyping a card crosses to another key and re-asks, which is right —
+	// it is a different card now. Plain (non-`$state`) on purpose: memoization, so
+	// filling it during a derive must not feed back into one.
+	let ghostHook: BodyPlaceholder | undefined;
+	const ghostByKind = new Map<string, string | undefined>();
+	function customBodyGhost(kind: string, isMain: boolean): string | undefined {
+		// A swapped hook invalidates every answer the old one gave.
+		if (bodyPlaceholder !== ghostHook) {
+			ghostByKind.clear();
+			ghostHook = bodyPlaceholder;
+		}
+		if (!bodyPlaceholder) return undefined;
+		// `main` is not a `card_kinds` key, so a kind that spells it collides without
+		// the flag in the key.
+		const key = `${isMain ? '1' : '0'}\0${kind}`;
+		if (!ghostByKind.has(key)) ghostByKind.set(key, bodyPlaceholder({ kind, isMain }));
+		return ghostByKind.get(key);
 	}
 
 	// ── The derived card tree (schema × payload join) ───────────────────────────
@@ -427,6 +485,7 @@
 			? groupSections(fields, groupOrder(cardSchema), (g) => groupLabel(cardSchema, g))
 			: [];
 		const extEditor = card.ext?.editor as { title?: string } | undefined;
+		const hasBody = bodyEnabled(cardSchema);
 		return {
 			id,
 			isMain,
@@ -439,10 +498,19 @@
 			values,
 			provenance: provenanceMap(rows.fields),
 			sections,
-			hasBody: bodyEnabled(cardSchema),
+			hasBody,
 			// The body ghosts its resolved `default:` exactly as a scalar does — the
-			// same text-ghost projection `<Field>` applies to a field's row.
-			bodyGhost: stringifyGhost(ghostDefault(rows.body ?? undefined))
+			// same text-ghost projection `<Field>` applies to a field's row — and falls
+			// back to an invitation where a scalar shows nothing, because an empty body
+			// is a surface to write on and an empty control is a value not yet given.
+			// Asked only for a card that HAS a body, so the hook is never consulted
+			// about one that renders none.
+			bodyGhost: hasBody
+				? resolveBodyGhost(
+						stringifyGhost(ghostDefault(rows.body ?? undefined)),
+						customBodyGhost(kind, isMain)
+					)
+				: undefined
 		};
 	}
 
@@ -510,7 +578,7 @@
 		// and the wash outlasts it, so a revealed landing is cued once it settles.
 		bloomInside(leaf.el);
 	}
-	/** The active leaf's controller — the 4b formatting-popover observation seam. */
+	/** The active leaf's controller — the formatting popover's observation seam. */
 	export function getActiveLeaf(): FieldController | undefined {
 		if (!activeAddr) return undefined;
 		const card = activeAddr.card != null ? activeCardId : undefined;
@@ -528,7 +596,7 @@
 	}
 </script>
 
-<div class="qm-editor {className ?? ''}" {style} data-qm-root>
+<div class="qm-editor {className ?? ''}" {style} data-qm-root bind:this={rootEl}>
 	<Card
 		bind:this={mainCard}
 		card={model.main}
@@ -536,7 +604,6 @@
 		index={-1}
 		isFirst={true}
 		isLast={true}
-		active={activeCardId === 'main'}
 		{kinds}
 		ops={opsFor('main', true)}
 		onFocus={handleFocus}
@@ -553,15 +620,7 @@
 		<TipsCard tips={model.tips} onDismiss={dismissTips} />
 	{/if}
 
-	<!-- Cards always render. The ADD affordance is gated on the schema
-	     declaring `card_kinds` — nothing to seed otherwise — but a card already in the
-	     document shows regardless of its kind: a kind with no schema (foreign, or a
-	     schema with no `card_kinds` at all) degrades to a
-	     recovery shell inside <Card> (retype + delete), never gated away, so its content
-	     is neither dropped nor trapped. -->
-	{#if kinds.length}
-		{@render addAffordance(0, model.cards.length === 0)}
-	{/if}
+	{@render addAffordance(0, model.cards.length === 0)}
 	{#each model.cards as c, i (c.id)}
 		<Card
 			bind:this={cardRefs[i]}
@@ -570,7 +629,6 @@
 			index={i}
 			isFirst={i === 0}
 			isLast={i === model.cards.length - 1}
-			active={activeCardId === c.id}
 			{kinds}
 			ops={opsFor(c.id, false)}
 			onFocus={handleFocus}
@@ -578,45 +636,56 @@
 			{register}
 			{unregister}
 		/>
-		{#if kinds.length}
-			{@render addAffordance(i + 1, i === model.cards.length - 1)}
-		{/if}
+		{@render addAffordance(i + 1, i === model.cards.length - 1)}
 	{/each}
 </div>
 
 <FormatPopover {getActiveLeaf} />
 
+<!-- Cards always render; the ADD affordance is gated on the schema declaring
+     `card_kinds`, since there is nothing to seed otherwise. A card already in the
+     document shows regardless of its kind — a kind with no schema (foreign, or a
+     schema with no `card_kinds` at all) degrades to a recovery shell inside <Card>
+     (retype + delete), never gated away, so its content is neither dropped nor
+     trapped. The gate lives HERE rather than at each call site: the strip is one
+     decision, and two copies of it drift into a stack with a gap at one end. -->
 {#snippet addAffordance(atIndex: number, isLast: boolean)}
-	<div class="qm-add-card" class:is-last={isLast}>
-		{#if kinds.length === 1}
-			<button
-				type="button"
-				class="qm-add-btn qm-add-affordance"
-				data-testid={`add-card-${atIndex}`}
-				onclick={() => addCard(atIndex, kinds[0])}>+ Add {humanize(kinds[0])}</button
-			>
-		{:else}
-			<!-- Multi-kind add: pick the kind, then seed + insert (fixture has one kind). -->
-			<details class="qm-add-menu">
-				<summary class="qm-add-btn qm-add-affordance" data-testid={`add-card-${atIndex}`}
-					>+ Add card</summary
+	{#if kinds.length}
+		<div class="qm-add-card" class:is-last={isLast}>
+			{#if kinds.length === 1}
+				<button
+					type="button"
+					class="qm-add-btn qm-add-affordance"
+					onclick={() => addCard(atIndex, kinds[0])}>+ Add {humanize(kinds[0])}</button
 				>
-				<div class="qm-add-kinds">
-					{#each kinds as k (k)}
-						<button
-							type="button"
-							data-testid={`add-card-${atIndex}-${k}`}
-							onclick={(e) => {
-								addCard(atIndex, k);
-								// <details> has no auto-close on selection.
-								(e.currentTarget as HTMLElement).closest('details')?.removeAttribute('open');
-							}}>{humanize(k)}</button
-						>
-					{/each}
-				</div>
-			</details>
-		{/if}
-	</div>
+			{:else}
+				<!-- Multi-kind add: pick the kind, then seed + insert. A MENU rather than a
+			     disclosure — it floats out of the stack, so raising it moves no card, and
+			     it dismisses on pick, on Escape and on a click outside, none of which a
+			     `<details>` does. The trigger is bits-ui's `<button>`, which is why the
+			     recede ladder below reaches it through `:global`. -->
+				<DropdownMenu.Root>
+					<DropdownMenu.Trigger class="qm-add-btn qm-add-affordance"
+						>+ Add card</DropdownMenu.Trigger
+					>
+					<DropdownMenu.Portal to={rootEl}>
+						<DropdownMenu.Content sideOffset={4}>
+							<!-- Portalled out of the row but INTO the stack's root, and carrying the
+						     marker itself: floating is still a detached subtree to the
+						     derivation, like FormatPopover and the enum listbox. -->
+							<div class="qm-menu-surface" data-qm-root>
+								{#each kinds as k (k)}
+									<DropdownMenu.Item class="qm-menu-item" onSelect={() => addCard(atIndex, k)}
+										>{humanize(k)}</DropdownMenu.Item
+									>
+								{/each}
+							</div>
+						</DropdownMenu.Content>
+					</DropdownMenu.Portal>
+				</DropdownMenu.Root>
+			{/if}
+		</div>
+	{/if}
 {/snippet}
 
 <style>
@@ -630,49 +699,63 @@
 		gap: var(--_qm-space-2);
 		color: var(--_qm-ink);
 	}
+	/* The strip between two blocks, and the whole of it is the target: a gap is found
+	   by POSITION, and a trigger sized to its label is a word to aim at in the middle
+	   of a row the eye reads as empty. Its own height is then most of the separation
+	   the stack shows, so it absorbs one space rung of the editor's gap on each side —
+	   40px of gutter becomes 32px with the trigger still on the tap floor. Absorbed
+	   rather than removed, because `gap` is also what separates the two seams no strip
+	   sits in: `main` from the tips card, and every card from the next under a quill
+	   declaring no kinds, where the affordance does not render at all. What is left of
+	   the gap is also the miss-tolerance below a card's edge — the strip is invisible
+	   and live, so a near-miss on the card above must not insert. */
 	.qm-add-card {
 		display: flex;
-		justify-content: center;
+		margin-top: calc(var(--_qm-space) * -1);
+		margin-bottom: calc(var(--_qm-space) * -1);
 	}
 	/* Unboxed, like every button (SURFACES §"The shared recipe"), and not dashed: a
 	   dashed edge is the PLACEHOLDER idiom — "nothing is here yet" — which on a button
 	   reads as disabled or as a drop target. It stays honest in one place, the
 	   un-schemable card (`Card.svelte`), which is a state rather than a control. Hover
 	   fills a pill: this trigger is invisible at rest, so a hover that only shifted
-	   its ink would have nothing to shift. */
-	.qm-add-btn {
+	   its ink would have nothing to shift. The pill fills the strip because the strip
+	   is what was pressed; the padding sits inside the width, which is the button
+	   recipe's `box-sizing` doing the work.
+
+	   `:global`, because the multi-kind trigger is bits-ui's own element and a `class`
+	   passed to a primitive is a plain string that never picks up the scoping hash —
+	   the same seam the enum trigger is styled through. */
+	/* The recede ladder, in source order: every rung after the first ties on
+	   specificity with the one before it, so the later rule wins and no state needs
+	   restating per gap. Rest, then the last gap's exception, then engaged. */
+	.qm-add-card :global(.qm-add-btn) {
+		width: 100%;
 		padding: var(--_qm-space) var(--_qm-space-4);
-		list-style: none;
-		/* Recede until engaged (AESTHETIC §"minimal UI"): each gap's
-		   trigger is invisible at rest and surfaces on hover or keyboard focus, so the
-		   stack reads as content, not a toolbar per gap. The LAST gap keeps a dim
-		   label — exactly one entry point stays visible. Opacity (not display) so the
-		   pill reserves its height and the row does not jump on reveal. */
+		/* Recede until engaged (AESTHETIC §"minimal UI"): each gap's trigger is
+		   invisible at rest and surfaces on hover or keyboard focus, so the stack reads
+		   as content, not a toolbar per gap. Opacity (not display) so the pill reserves
+		   its height and the row does not jump on reveal. */
 		opacity: 0;
 	}
-	.qm-add-card:hover .qm-add-btn,
-	.qm-add-btn:focus-visible {
-		opacity: 1;
-	}
-	.qm-add-card.is-last .qm-add-btn {
+	/* The LAST gap keeps a dim label — exactly one entry point stays visible. */
+	.qm-add-card.is-last :global(.qm-add-btn) {
 		opacity: var(--_qm-opacity-idle);
 	}
-	.qm-add-card.is-last:hover .qm-add-btn,
-	.qm-add-card.is-last .qm-add-btn:focus-visible {
+	.qm-add-card:hover :global(.qm-add-btn),
+	.qm-add-card :global(.qm-add-btn:focus-visible) {
 		opacity: 1;
 	}
 	/* Touch has no hover — keep a faint always-on affordance so add stays reachable. */
 	@media (hover: none) {
-		.qm-add-btn {
+		.qm-add-card :global(.qm-add-btn) {
 			opacity: var(--_qm-opacity-idle);
 		}
 	}
-	.qm-add-menu {
-		position: relative;
-	}
-	.qm-add-kinds {
-		display: flex;
-		gap: var(--_qm-space);
-		margin-top: var(--_qm-space);
+	/* An open menu keeps its trigger lit, and this rule comes last so it outranks the
+	   two above it: the menu portals out of the strip, so a pointer moving onto an item
+	   has left the row that was revealing the label the menu hangs from. */
+	.qm-add-card :global(.qm-add-btn[data-state='open']) {
+		opacity: 1;
 	}
 </style>

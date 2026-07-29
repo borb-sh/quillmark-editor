@@ -13,6 +13,7 @@
 	import type { FieldController } from '../core/codec/index.js';
 	import type { CardModel, FieldModel } from './structure.js';
 	import { placeFields, humanize, initialExpandedGroup } from './structure.js';
+	import type { FieldDomIds } from './domid.js';
 	import Field from './Field.svelte';
 	import ProseField from './ProseField.svelte';
 	import CardControls from './CardControls.svelte';
@@ -22,6 +23,7 @@
 	interface CardOps {
 		makeAddr: (field?: string) => Addr;
 		leafKey: (field?: string) => string;
+		domIds: (field?: string) => FieldDomIds;
 		commit: (name: string, value: unknown) => void;
 		move: (dir: -1 | 1) => void;
 		remove: () => void;
@@ -38,7 +40,6 @@
 		index: number;
 		isFirst: boolean;
 		isLast: boolean;
-		active: boolean;
 		kinds: string[];
 		ops: CardOps;
 		onFocus?: (addr: Addr) => void;
@@ -52,7 +53,6 @@
 		index,
 		isFirst,
 		isLast,
-		active,
 		kinds,
 		ops,
 		onFocus,
@@ -60,8 +60,6 @@
 		register,
 		unregister
 	}: Props = $props();
-
-	const base = $derived(card.isMain ? 'main' : `card${index}`);
 
 	// Local title reconcile (external change only), like the scalar controls.
 	// svelte-ignore state_referenced_locally
@@ -136,7 +134,7 @@
 	// and resets only on a remount (reload). Not reconciled to later section changes —
 	// a retype is the one reshape, and the open group stays where it still exists.
 	// svelte-ignore state_referenced_locally
-	let expanded = $state<string | null>(initialExpandedGroup(card.sections, card.hasBody));
+	let expanded = $state<string | null>(initialExpandedGroup(card.sections));
 	function toggleGroup(group: string): void {
 		expanded = expanded === group ? null : group;
 	}
@@ -180,7 +178,6 @@
 	bind:this={el}
 	class="qm-card"
 	class:qm-main={card.isMain}
-	class:qm-active={active}
 	class:qm-unschemable={card.unschemable}
 >
 	{#if card.unschemable}
@@ -192,11 +189,7 @@
 			     box. The autosize keeps that box exactly as wide as its
 			     text; this wrapper makes the rest of the row enter the edit too. -->
 				<!-- svelte-ignore a11y_no_static_element_interactions -->
-				<div
-					class="qm-card-rename"
-					data-testid={`card-rename-${index}`}
-					onmousedown={onRenameMousedown}
-				>
+				<div class="qm-card-rename" onmousedown={onRenameMousedown}>
 					<!-- Autosize: the sizer span's ::after mirrors the text and dictates the grid
 				     cell width, so the overlaid input grows with content and reads as text,
 				     not a persistent box. `data-value` falls back to the
@@ -208,7 +201,6 @@
 							placeholder={card.titlePlaceholder}
 							aria-label="Card title"
 							size="1"
-							data-testid={`card-title-${index}`}
 							onmousedown={onTitleMousedown}
 							onfocus={onTitleFocus}
 							onkeydown={onTitleKeydown}
@@ -226,7 +218,6 @@
 						onMoveUp={() => ops.move(-1)}
 						onMoveDown={() => ops.move(1)}
 						onDelete={() => ops.remove()}
-						testidPrefix={`card-${index}`}
 					/>
 				</div>
 			</header>
@@ -281,11 +272,9 @@
 										type="button"
 										class="qm-group-header"
 										aria-expanded={isOpen}
-										data-testid={`group-${base}-${section.group}`}
 										onclick={() => toggleGroup(section.group as string)}
 									>
-										<ChevronRight class="qm-group-chevron" size={14} />
-										<span class="qm-group-label">{section.label}</span>
+										<ChevronRight class="qm-group-chevron" size={14} />{section.label}
 									</button>
 									<div class="qm-group-panel">
 										<div class="qm-group-panel-inner">
@@ -319,9 +308,8 @@
 						{onCaretMove}
 						{register}
 						{unregister}
-						testid={`prose-${base}-body`}
 					/>
-					<DiagnosticList diagnostics={ops.diagFor(undefined)} testid={`diag-${base}-body`} />
+					<DiagnosticList diagnostics={ops.diagFor(undefined)} />
 				</div>
 			{/if}
 		</div>
@@ -343,6 +331,7 @@
 				{doc}
 				proseAddr={ops.makeAddr(f.name)}
 				leafKey={ops.leafKey(f.name)}
+				domIds={ops.domIds(f.name)}
 				onCommitScalar={(v) => ops.commit(f.name, v)}
 				optionAllowed={(v) => ops.enumAllowed(f.name, v)}
 				{onFocus}
@@ -350,7 +339,6 @@
 				{register}
 				{unregister}
 				diagnostics={ops.diagFor(f.name)}
-				testid={`${base}-${f.name}`}
 			/>
 		{/each}
 	</div>
@@ -364,9 +352,7 @@
      no field is dropped; with no kinds to offer, delete is the only exit. -->
 {#snippet recoveryShell()}
 	<header class="qm-card-header">
-		<span class="qm-card-title-static" data-testid={`card-unschemable-title-${index}`}
-			>{humanize(card.kind)}</span
-		>
+		<span class="qm-card-title-static">{humanize(card.kind)}</span>
 		<div class="qm-card-header-right">
 			<CardControls
 				{isFirst}
@@ -374,11 +360,10 @@
 				onMoveUp={() => ops.move(-1)}
 				onMoveDown={() => ops.move(1)}
 				onDelete={() => ops.remove()}
-				testidPrefix={`card-${index}`}
 			/>
 		</div>
 	</header>
-	<div class="qm-card-recovery" data-testid={`card-recovery-${index}`}>
+	<div class="qm-card-recovery">
 		<p class="qm-recovery-note">
 			Unrecognized card type <code>{card.kind}</code>. Its content is preserved.
 		</p>
@@ -386,7 +371,6 @@
 			<label class="qm-recovery-retype">
 				Change to
 				<select
-					data-testid={`recovery-retype-${index}`}
 					onchange={(e) => {
 						const el = e.currentTarget as HTMLSelectElement;
 						if (el.value) ops.retype(el.value);
@@ -435,10 +419,14 @@
 		align-items: center;
 		gap: var(--_qm-space-2);
 	}
-	/* Reveal the reorder chevrons on hover or while active (CardControls owns the
-	   default hidden state). */
+	/* Reveal the reorder chevrons while the pointer or the caret is in the card
+	   (CardControls owns the default hidden state). Focus is read off the CARD, so a
+	   caret in any leaf, the title, or a chevron itself holds the reveal — hover
+	   alone would strand the pair on keyboard and touch (SURFACES §"Focus and active
+	   state"). This is the card's whole active treatment; nothing marks the section
+	   itself. */
 	.qm-card:hover :global(.qm-card-reorder),
-	.qm-card.qm-active :global(.qm-card-reorder) {
+	.qm-card:focus-within :global(.qm-card-reorder) {
 		opacity: 1;
 	}
 	/* The rename hit region: the header's free width, full height, so a
@@ -458,7 +446,8 @@
 	   into the single cell, so the overlaid input tracks its content width. Bounded
 	   to the rename region's width (`min-width: 0` + `max-width: 100%`), which the
 	   header's space-between keeps clear of the controls. The input inherits the type
-	   tokens (`font: inherit`) so the mirror and the input measure alike. */
+	   tokens (`font: inherit`, leading included) so the mirror and the input measure
+	   alike — which is why the leading rung is declared here and not on the input. */
 	.qm-card-title-sizer {
 		display: inline-grid;
 		align-items: center;
@@ -466,6 +455,7 @@
 		max-width: 100%;
 		font-size: var(--_qm-text-title);
 		font-weight: var(--_qm-weight-label);
+		line-height: var(--_qm-leading-tight);
 		font-family: inherit;
 	}
 	.qm-card-title-sizer::after {
@@ -483,6 +473,10 @@
 		width: 100%;
 		min-width: 0;
 		font: inherit;
+		/* `font: inherit` does not carry colour — an actual form control, unlike this
+		   rule's neighbours, defaults to the UA's own text colour rather than the
+		   header's ink without this line. */
+		color: var(--_qm-ink);
 		border: var(--_qm-border-width) solid transparent;
 		border-radius: var(--_qm-radius-inner);
 		padding: var(--_qm-space);
@@ -542,10 +536,32 @@
 	.qm-meta-bottom .qm-group:last-child.qm-open .qm-group-panel-inner {
 		padding-bottom: var(--_qm-space-3);
 	}
-	/* Each section is its own query container, so capacity follows the width the fields
-	   actually get — a group panel's inset makes that narrower than the card. */
-	.qm-section {
+	/* The two query containers — an ungrouped section, and a group panel's inner. Each
+	   is its own, so capacity follows the width the fields actually get: a panel's
+	   inset makes that narrower than the card.
+
+	   The trailing ACTION COLUMN is the container's inset, not the grid's inside it
+	   (SURFACES §Rhythm): the tap target a row action takes plus a section grid's own
+	   column gutter, held clear of every track so one right edge serves the whole
+	   section whether or not a row carries an action. It sits HERE because a size query
+	   reads the CONTENT box — an inset on the query container is width the query never
+	   offers, so the capacity ramp below stays calibrated to what a track actually gets
+	   and no breakpoint has to carry the column's width in arithmetic a `var()` cannot
+	   reach. An inset rather than a fifth track, because auto-placement walks every
+	   track it is given: a fifth would take the compact field that overflows the fourth
+	   column. An array is the one field with actions to put there, and reaches back
+	   across it (ArrayField).
+
+	   The panel ANIMATES its padding, so its right inset is written into both the closed
+	   and the open shorthand below — a shorthand left to inherit it would animate the
+	   reservation away. */
+	.qm-section,
+	.qm-group-panel-inner {
+		--action-col: calc(var(--_qm-tap-min) + var(--_qm-space-2));
 		container-type: inline-size;
+	}
+	.qm-section {
+		padding-right: var(--action-col);
 	}
 	/* One grid per section. Capacity is the container's, not JavaScript's:
 	   nothing measures, so there is no observer to loop, no pre-measure pass at the
@@ -559,7 +575,8 @@
 
 	   A row-sharing field spans three implicit row tracks (Field.svelte), so `row-gap`
 	   here is the gutter BETWEEN field rows; the tighter one inside a field is the
-	   subgrid's own. */
+	   subgrid's own. The grid takes the container's full width — the action column is
+	   already off it, reserved on the container above. */
 	.qm-fields {
 		--cols: 1;
 		--cols-half: 1;
@@ -605,7 +622,23 @@
 		border-left-color: var(--_qm-border);
 	}
 	/* Symmetric padding: WCAG 2.5.8's 24×24 floor, and the header is the whole row
-	   so adjacent labels share one rhythm with no dead strip outside the button. */
+	   so adjacent labels share one rhythm with no dead strip outside the button.
+
+	   A button by tag and NEITHER button family by recipe — it reads no
+	   `--_qm-tap-min` (the padding above already clears the floor) and takes no hover
+	   fill (an ink step, below) — so the type a family would have carried is declared
+	   here. `font: inherit` because a UA button inherits no face and `--qm-font` would
+	   stop at this row; then the field-label rung, at the tight leading a single line
+	   takes. Sentence case at that rung, reused rather than a fifth size minted: a
+	   section name is structurally a heading, and uppercase costs it twice — the word
+	   shape a column of them is scanned by, and apparent width, so a long label crowds
+	   sooner. Size, weight and leading all sit after `font`, which is a shorthand that
+	   carries `line-height`.
+
+	   On the BUTTON rather than on a span inside it: the row's type is one decision,
+	   and a wrapper that carries nothing else is indirection between the header and
+	   its own label. The label is a text run beside the chevron, and flex gives it an
+	   anonymous item either way. */
 	.qm-group-header {
 		display: flex;
 		align-items: center;
@@ -614,18 +647,14 @@
 		border: none;
 		background: transparent;
 		padding: var(--_qm-space-2) 0;
+		font: inherit;
+		font-size: var(--_qm-text-label);
+		font-weight: var(--_qm-weight-soft);
+		line-height: var(--_qm-leading-tight);
 		cursor: pointer;
 		color: var(--_qm-ink-meta);
 		text-align: left;
 		transition: color var(--_qm-duration-fast) ease;
-	}
-	/* Sentence case at the field-label rung — a section name is structurally a
-	   heading, and uppercase costs it twice: the word shape a column of them is
-	   scanned by, and apparent width, so a long label crowds sooner. The rung is
-	   reused rather than a fifth size minted. */
-	.qm-group-label {
-		font-size: var(--_qm-text-label);
-		font-weight: var(--_qm-weight-soft);
 	}
 	.qm-group-header :global(.qm-group-chevron) {
 		flex-shrink: 0;
@@ -653,23 +682,25 @@
 	.qm-group.qm-open .qm-group-panel {
 		grid-template-rows: 1fr;
 	}
-	/* Also the grouped sections' query container — its inset is exactly what makes a
-	   panel's usable width differ from the card's. */
+	/* The grouped sections' query container (declared above) — its left inset is
+	   exactly what makes a panel's usable width differ from the card's. */
 	.qm-group-panel-inner {
-		container-type: inline-size;
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
 		min-height: 0;
 		overflow: hidden;
-		/* Zero when closed, so the inset arrives with the panel: a `0fr` track collapses
-		   the CONTENT, not the padding, and a top inset declared here stands under a
-		   closed header as dead space the header's symmetric padding cannot absorb. */
-		padding: 0;
+		/* Zero on three sides when closed, so those insets arrive with the panel: a `0fr`
+		   track collapses the CONTENT, not the padding, and a top inset declared here
+		   stands under a closed header as dead space the header's symmetric padding
+		   cannot absorb. The RIGHT inset is the action column and holds in both states —
+		   it is what the capacity query reads, so a panel that animated it would animate
+		   its own breakpoints. */
+		padding: 0 var(--action-col) 0 0;
 		transition: padding var(--_qm-duration-slow) ease;
 	}
 	.qm-group.qm-open .qm-group-panel-inner {
-		padding: var(--_qm-space-2) 0 0 var(--_qm-space-3);
+		padding: var(--_qm-space-2) var(--action-col) 0 var(--_qm-space-3);
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.qm-group-panel,
@@ -690,9 +721,13 @@
 	.qm-card.qm-unschemable {
 		border-style: dashed;
 	}
+	/* One typographic role with the editable title above, so it reads the same three
+	   rungs — including the tight leading a card title takes over the root's reading
+	   rhythm (SURFACES §Rhythm). */
 	.qm-card-title-static {
 		font-size: var(--_qm-text-title);
 		font-weight: var(--_qm-weight-label);
+		line-height: var(--_qm-leading-tight);
 		color: var(--_qm-ink-label);
 	}
 	.qm-card-recovery {

@@ -18,6 +18,7 @@
 	import type { FieldController } from '../core/codec/index.js';
 	import type { FieldModel, FieldSpan } from './structure.js';
 	import { enumValues, ghostDefault, stringifyGhost } from './structure.js';
+	import type { FieldDomIds } from './domid.js';
 	import ProseField from './ProseField.svelte';
 	import TextField from './TextField.svelte';
 	import EnumField from './EnumField.svelte';
@@ -41,6 +42,9 @@
 		/** LIVE prose address (getter-`card`); used only when control === 'prose'. */
 		proseAddr: Addr;
 		leafKey: string;
+		/** This field's three DOM names, derived from `leafKey` (see `domid.ts`) — how
+		 * the label and the control find each other. */
+		domIds: FieldDomIds;
 		onCommitScalar: (value: unknown) => void;
 		/** Enum-option policy: `false` disables that option. Only the enum
 		 * control reads it; other controls ignore it. */
@@ -50,7 +54,6 @@
 		register?: (key: string, controller: FieldController) => void;
 		unregister?: (key: string) => void;
 		diagnostics?: Diagnostic[];
-		testid?: string;
 	}
 	let {
 		field,
@@ -60,14 +63,14 @@
 		doc,
 		proseAddr,
 		leafKey,
+		domIds,
 		onCommitScalar,
 		optionAllowed,
 		onFocus,
 		onCaretMove,
 		register,
 		unregister,
-		diagnostics,
-		testid
+		diagnostics
 	}: Props = $props();
 
 	// The ghost the control shows when unset: the resolved `default:` (provenance,
@@ -76,66 +79,99 @@
 	// control's `YYYY-MM-DD`. An object-valued default does not ghost.
 	const ghost = $derived(ghostDefault(provenance));
 	const defaultStr = $derived(stringifyGhost(ghost));
+
+	// `for` reaches a LABELABLE control and the browser does the rest. The other four
+	// are not labelable — the prose leaf's `contenteditable`, the date field's segment
+	// container, the object subform, an array's N inputs — so `for` there would be
+	// both inert and invalid markup; they take `aria-labelledby` and a click handoff.
+	const labelable = $derived(
+		field.control === 'text' ||
+			field.control === 'enum' ||
+			field.control === 'number' ||
+			field.control === 'boolean'
+	);
+	// The parked description node renders only when the schema carries one, so the
+	// reference must vanish with it — `aria-describedby` pointing at nothing describes
+	// nothing, and silently.
+	const describedBy = $derived(field.description ? domIds.description : undefined);
+
+	// Focus handoff for the two controls a label click cannot reach natively. Both
+	// expose their own `focus()` because "focusing" differs: a PM view restores a
+	// selection, a date field lands on its first segment.
+	let proseEl = $state<{ focus: () => void } | undefined>();
+	let dateEl = $state<{ focus: () => void } | undefined>();
+	const onActivate = $derived(
+		field.control === 'prose'
+			? () => proseEl?.focus()
+			: field.control === 'date'
+				? () => dateEl?.focus()
+				: undefined
+	);
 </script>
 
 <div class="qm-field" class:cell={span === 'cell'} class:lone={span === 'lone'}>
 	{#if field.control !== 'array'}
 		<FieldLabel
 			label={field.label}
+			controlId={labelable ? domIds.control : undefined}
+			id={domIds.label}
+			descriptionId={domIds.description}
+			{onActivate}
 			required={field.required}
 			description={field.description}
-			{testid}
 		/>
 	{/if}
 	<div class="qm-field-control">
 		{#if field.control === 'prose'}
 			<ProseField
+				bind:this={proseEl}
 				{doc}
 				addr={proseAddr}
 				inline={field.inline}
 				plaintext={field.plaintext}
-				label={field.label}
+				labelledBy={domIds.label}
+				{describedBy}
 				{leafKey}
 				{onFocus}
 				{onCaretMove}
 				{register}
 				{unregister}
-				testid={testid ? `prose-${testid}` : undefined}
 			/>
 		{:else if field.control === 'enum'}
 			<EnumField
 				value={value as string | undefined}
 				values={enumValues(field.schema) ?? []}
 				fallback={ghost as string | undefined}
-				label={field.label}
+				id={domIds.control}
+				{describedBy}
 				onCommit={onCommitScalar}
 				{optionAllowed}
-				{testid}
 			/>
 		{:else if field.control === 'number'}
 			<NumberField
 				value={value as number | undefined}
 				integer={field.schema.type === 'integer'}
 				fallback={ghost as number | undefined}
-				label={field.label}
+				id={domIds.control}
+				{describedBy}
 				onCommit={onCommitScalar}
-				{testid}
 			/>
 		{:else if field.control === 'boolean'}
 			<BooleanField
 				value={value as boolean | undefined}
 				fallback={ghost as boolean | undefined}
-				label={field.label}
+				id={domIds.control}
+				{describedBy}
 				onCommit={onCommitScalar}
-				{testid}
 			/>
 		{:else if field.control === 'date'}
 			<DateField
+				bind:this={dateEl}
 				value={value as string | undefined}
 				fallback={defaultStr}
-				label={field.label}
+				labelledBy={domIds.label}
+				{describedBy}
 				onCommit={onCommitScalar}
-				{testid}
 			/>
 		{:else if field.control === 'array'}
 			<ArrayField
@@ -144,30 +180,32 @@
 				label={field.label}
 				required={field.required}
 				description={field.description}
+				labelId={domIds.label}
+				descriptionId={domIds.description}
 				onCommit={onCommitScalar}
 				onFocusEl={() => onFocus?.(proseAddr)}
-				{testid}
 			/>
 		{:else if field.control === 'object'}
 			<ObjectField
 				value={value as Record<string, unknown> | undefined}
 				properties={field.schema.properties}
 				label={field.label}
+				labelledBy={domIds.label}
+				{describedBy}
 				onCommit={onCommitScalar}
-				{testid}
 			/>
 		{:else}
 			<TextField
 				value={value as string | undefined}
 				placeholder={defaultStr}
-				label={field.label}
+				id={domIds.control}
+				{describedBy}
 				onCommit={onCommitScalar}
-				{testid}
 			/>
 		{/if}
 	</div>
 
-	<DiagnosticList {diagnostics} testid={testid ? `diag-${testid}` : undefined} />
+	<DiagnosticList {diagnostics} />
 </div>
 
 <style>

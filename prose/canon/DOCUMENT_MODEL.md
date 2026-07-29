@@ -56,6 +56,18 @@ Consumed by: [CODEC.md](CODEC.md) (op-grained edit, positions, markdown edges),
 [PREVIEW.md](PREVIEW.md) (live session & paint), [VISUAL_EDITOR.md](VISUAL_EDITOR.md)
 (seeding, writer, structure mutators, validation).
 
+**A ghost is not always a `default:`.** `resolve`'s `FieldSource` rung is the
+boundary's, and a `default`-sourced row is a promise about the render: this is
+what prints if you write nothing. The editor ghosts that row verbatim for every
+control, and for a body that has one. A body that has NONE — the common case,
+and the case for every kind the reference quill declares — ghosts an invitation
+instead, either the consumer's `bodyPlaceholder` wording or the built-in `Write…`
+([VISUAL_EDITOR_UIUX.md](VISUAL_EDITOR_UIUX.md) §Fields). Both render at the same
+ghost rung, and neither is ever written back, so on screen they are one thing;
+they are not one thing here. Only the `default:` came from the boundary, and a
+fallback must never be read back as one — nothing derives a schema value from
+what a leaf displays.
+
 Two neighbouring surfaces the editor re-exports but never drives: it selects no
 `OutputFormat` (Preview paints a page; it emits no artifact) and it routes
 diagnostics by `path`, never by a backend's error `code`.
@@ -72,16 +84,15 @@ At the 0.98.0 target the whole table is stable API. One typing gap is open:
   type would carry it (`encode.ts`, `kindOp`). One cast, no runtime effect;
   re-exporting the type retires it.
 
-The two gaps this ledger used to report are closed:
+Two shapes the editor reads straight off the boundary, with no local duplicate:
 
-- **`ContentIsland.props` is typed** — the union pins `TableProps` for `table`
-  and `ImageProps` for `image` (`TableCell` the cell shape); an island of any
-  other type round-trips with opaque `props`. The codec reads the boundary type
-  and dropped its hand-rolled `IslandTable*` / `IslandImage*` duplicates and shape
-  guards ([CODEC.md](CODEC.md) §Islands).
-- **`QuillCardUi.groups` is typed** — a `Record<string, QuillGroupUi>` group
-  registry (key order = declaration order, `title` an optional label override).
-  The editor reads group order and labels off it directly, dropping the cast
+- **`ContentIsland.props`** — the union pins `TableProps` for `table` and
+  `ImageProps` for `image` (`TableCell` the cell shape); an island of any other
+  type round-trips with opaque `props`. The codec needs no hand-rolled
+  `IslandTable*` / `IslandImage*` shapes or guards ([CODEC.md](CODEC.md) §Islands).
+- **`QuillCardUi.groups`** — a `Record<string, QuillGroupUi>` group registry (key
+  order = declaration order, `title` an optional label override). The editor reads
+  group order and labels off it directly, uncast
   ([VISUAL_EDITOR.md](VISUAL_EDITOR.md) §Structure).
 
 Field addresses are one canonical `DocPath` across the boundary — `Diagnostic.path`,

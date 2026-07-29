@@ -32,7 +32,7 @@ derivation to every surface it mounts.
 | `--qm-accent`    | `#2563eb`                              | Focus rings, active marks, the preview's active field box.                                               |
 | `--qm-danger`    | `#c5221f`                              | Error diagnostics, the required marker, the delete glyph.                                                |
 | `--qm-warning`   | `#b25000`                              | Warning diagnostics.                                                                                     |
-| `--qm-font`      | `ui-sans-serif, system-ui, sans-serif` | The editor surface's font family.                                                                        |
+| `--qm-font`      | `ui-sans-serif, system-ui, sans-serif` | The editor surface's font family. Controls and buttons take it too, in place of the UA face.             |
 | `--qm-font-mono` | `ui-monospace, monospace`              | The monospace face — the source mirror, the JSON array control, the tips card.                           |
 | `--qm-font-size` | `0.875rem`                             | Body text — every control's size, and the anchor the ramp derives up (title) and down (label/meta) from. |
 | `--qm-radius`    | `8px`                                  | Card & popover corner. Interior controls derive a tighter tier (half).                                   |
@@ -97,7 +97,11 @@ palette stays fixed:
 
 A palette **pinned against** your own scheme is the one case needing a second
 line: the surfaces follow your dials, but native chrome follows `color-scheme`,
-so pin it with them — `.my-editor { color-scheme: dark }`.
+so pin it with them — `.my-editor { color-scheme: dark }`. Skip that line and a
+typed value's own text still matches its card — `color` reads the same dial the
+card does, not `color-scheme` — but what the browser paints from `color-scheme`
+does not: the selection highlight, the scrollbar and the spinner stay on
+whichever scheme the host happens to inherit.
 
 No JS runs and no media query: the derivation is emitted as `var()` references
 over `light-dark()`, so an ancestor's dials and the inherited scheme both resolve
@@ -107,9 +111,13 @@ the package — the consumer's palette decides.
 ## What is deliberately not public
 
 The derived scale — surface / border / ink rungs, the blur radius, the popover's
-translucency ratio, the recede-opacity ladder, the overlay ring widths — is
-**internal** (`--_qm-*`, minted in `core/`). It is not a contract: a rung can be
-re-tuned or renamed without notice.
+translucency ratio, the recede-opacity ladder, the two leading rungs, the overlay
+ring widths — is **internal** (`--_qm-*`, minted in `core/`). It is not a
+contract: a rung can be re-tuned or renamed without notice.
+
+Leading is private for the reason the size ratio is: a typographic ratio is a
+convention, not a dial, and both rungs are unitless, so `--qm-font-size` already
+rescales the line boxes with the type.
 
 The rungs are declared **on** each root element, so setting one from an ancestor
 does nothing — an element's own declaration beats an inherited value at any

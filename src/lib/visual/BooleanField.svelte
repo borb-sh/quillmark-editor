@@ -1,7 +1,7 @@
 <!--
-  A `boolean` field → a styled switch on bits-ui. (No boolean field exists in the
-  reference quill, so this control is implemented to the schema contract but is
-  UNTESTED against a real leaf — noted in the phase report.)
+  A `boolean` field → a styled switch on bits-ui. No boolean field exists in the
+  reference quill, so this control is implemented to the schema contract and is
+  UNTESTED against a real leaf.
 
   Styled rather than a native checkbox: the native box's face is UA-owned shadow
   DOM, so no dial reaches it. The a11y comes with the primitive —
@@ -15,12 +15,20 @@
 	interface Props {
 		value: boolean | undefined;
 		fallback?: boolean;
-		/** Accessible name — the visual label is a bare span the switch can't reference. */
+		/** Accessible name for a switch NOTHING else names — an object property, whose
+		 * name is the field label plus the property's. A field's own switch takes `id`
+		 * instead and is named by the `<label for>` beside it. */
 		label?: string;
+		/** `<label for>` target. `Switch.Root` renders a `<button>`, which IS labelable,
+		 * so the click a label forwards toggles the switch — correct for this control,
+		 * and single-fire: the label is a sibling, not a wrapper, so there is no second
+		 * click bubbling back up to be re-dispatched. */
+		id?: string;
+		/** The parked `description` (FieldLabel) — announced after the name. */
+		describedBy?: string;
 		onCommit: (v: boolean) => void;
-		testid?: string;
 	}
-	let { value, fallback, label, onCommit, testid }: Props = $props();
+	let { value, fallback, label, id, describedBy, onCommit }: Props = $props();
 
 	// Local toggle state synced to `value`; own-toggles stay local, only an external
 	// change reconciles back in (see `syncedLocal`). The primitive is driven
@@ -34,8 +42,9 @@
 	<Switch.Root
 		class="qm-switch qm-focus-ring"
 		checked={local.value}
-		aria-label={label}
-		data-testid={testid}
+		{id}
+		aria-label={id ? undefined : label}
+		aria-describedby={describedBy}
 		onCheckedChange={(v) => {
 			local.value = v;
 			onCommit(v);

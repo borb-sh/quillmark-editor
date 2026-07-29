@@ -25,17 +25,28 @@
 		 * row of controls. Only the body is paper, and only its caller knows it is.
 		 */
 		unframed?: boolean;
-		/** Accessible name for the editable region (the visual label is a sibling span). */
+		/** Accessible name for a leaf NOTHING else names — an array element, or the
+		 * card body. A leaf with a field label takes `labelledBy` instead. */
 		label?: string;
-		/** Ghost shown on the empty leaf — the resolved `default:`. */
+		/** The field label's own id → `aria-labelledby` on the editable region. `for`
+		 * cannot reach a `contenteditable` — not a labelable element — so the
+		 * association runs the other way, and the label's click comes back through
+		 * the controller's `focus`. */
+		labelledBy?: string;
+		/** The parked `description` (FieldLabel) → `aria-describedby`. */
+		describedBy?: string;
+		/** Ghost shown on the empty leaf. An inline leaf's is the resolved `default:`
+		 *  or nothing; a body's always has text, falling back to an invitation
+		 *  (`resolveBodyGhost`). Reactive — a change is pushed into the mounted view,
+		 *  never a remount. */
 		placeholder?: string;
-		/** Stable identity for the registry + a DOM stamp the e2e uses to prove no-remount. */
+		/** Stable identity for the registry, stamped on the DOM node so a remount is
+		 *  visible as one. */
 		leafKey: string;
 		onFocus?: (addr: Addr) => void;
 		onCaretMove?: (addr: Addr, pos: number) => void;
 		register?: (key: string, controller: FieldController) => void;
 		unregister?: (key: string) => void;
-		testid?: string;
 	}
 
 	let {
@@ -45,13 +56,14 @@
 		plaintext,
 		unframed,
 		label,
+		labelledBy,
+		describedBy,
 		placeholder,
 		leafKey,
 		onFocus,
 		onCaretMove,
 		register,
-		unregister,
-		testid
+		unregister
 	}: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
@@ -66,15 +78,26 @@
 	// by the codec itself — `createField` decodes an empty content and installs on
 	// the first edit — so this wrapper adds no pre-seeding, and an untouched field
 	// stays absent (its default rendering intact) until actually edited.
+	let controller: FieldController | undefined;
+
+	/** Take the caret — what the label click calls. The CONTROLLER's focus, not the
+	 * container's: a PM view restores a selection that an `HTMLElement.focus()` on
+	 * the wrapper leaves unplaced. */
+	export function focus(): void {
+		controller?.focus();
+	}
+
 	onMount(() => {
 		if (!containerEl) return;
-		const controller = createField({
+		controller = createField({
 			doc,
 			addr,
 			container: containerEl,
 			inline,
 			plaintext,
 			label,
+			labelledBy,
+			describedBy,
 			placeholder,
 			onFocus,
 			onCaretMove
@@ -82,8 +105,17 @@
 		register?.(leafKey, controller);
 		return () => {
 			unregister?.(leafKey);
-			controller.destroy();
+			controller?.destroy();
+			controller = undefined;
 		};
+	});
+
+	// The ghost outlives no remount of its own: the leaf is keyed by the card's
+	// session id, so a card RETYPED to another kind keeps this view and would keep
+	// the old kind's wording. Push it instead — the caret is worth more than the
+	// simplicity of rebuilding.
+	$effect(() => {
+		controller?.setPlaceholder(placeholder);
 	});
 </script>
 
@@ -93,7 +125,6 @@
 	class:qm-control-box={!unframed}
 	class:qm-prose-block={block}
 	data-leaf-key={leafKey}
-	data-testid={testid}
 ></div>
 
 <style>
@@ -109,11 +140,15 @@
 		position: relative;
 	}
 	/* A leaf the inline schema does NOT constrain — the body — is paper rather than a
-	   cell in a row of controls, so it opens at a few lines and grows. The floor is a
-	   multiple of the type rung, not a length: it means "several lines", and moves
-	   with `--qm-font-size` alone. */
+	   cell in a row of controls, so it opens at a few lines and grows. The floor is
+	   three LINE BOXES, not a length: size times leading is what one line measures, so
+	   both factors are named or the expression stops meaning the three lines it claims.
+	   It moves with the type ramp and with nothing else. Three is what an EMPTY body
+	   costs, which is the only state the floor is ever the height: the ghost takes the
+	   first line, so the opening reads as an invitation with room under it rather than
+	   as a drop. */
 	.qm-prose-block {
-		min-height: calc(var(--_qm-text-body) * 6);
+		min-height: calc(var(--_qm-text-body) * var(--_qm-leading-body) * 3);
 	}
 	/* The caret is the prose leaf's focus indicator, not a ring — a ring around a
 	   contenteditable reads as the form chrome AESTHETIC strips. So the outline is

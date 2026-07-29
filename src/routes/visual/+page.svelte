@@ -1,22 +1,21 @@
 <!--
-  Phase 4 playground: mount <VisualEditor> over a seeded reference-quill document
-  and prove the exit criteria in a real browser (e2e/visual.spec.ts,
-  e2e/visual-chrome.spec.ts). A live `data-testid="doc-json"` dump reads curated
-  doc state (field values, card order, card titles/bodies, `subject`'s marks) so
-  the spec asserts commits actually LANDED in the Document, not just that the
-  DOM changed. Client-only (WASM + PM need the browser); handles are freed on
+  Phase 4 playground: mount <VisualEditor> over a seeded reference-quill document.
+  The side panel's live `doc-json` dump reads curated doc state (field values,
+  card order, card titles/bodies, `subject`'s marks), so a commit that changed the
+  DOM without landing in the Document reads as the two disagreeing rather than as
+  a success. Client-only (WASM + PM need the browser); handles are freed on
   unmount.
 
-  `inject-diagnostics`: a test-only affordance for Phase 4b's diagnostics
-  producer #3 (the consumer-supplied `diagnostics` prop, VISUAL_EDITOR
-  §Diagnostics) — a real consumer (Phase 5) would derive these from
-  `LiveSession.warnings` / render errors; here a button stands in so
-  e2e/visual-chrome.spec.ts can prove the routing without a live render.
+  The panel's buttons stand in for consumer-supplied channels the reference quill
+  has no way to declare: `inject-diagnostics` for the consumer `diagnostics` prop
+  (VISUAL_EDITOR §Diagnostics — a real consumer derives it from
+  `LiveSession.warnings` and render errors), plus the enum policy and the body
+  wording below.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { Quill, Document, Addr, CardAddr, Content, Diagnostic } from '$lib/core';
-	import { loadUsafMemoTree, withMainDateDefault } from '../fixture';
+	import { loadUsafMemoTree, withMainDateDefault, withSecondCardKind } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
 	type VisualEditorComponent = typeof import('$lib/visual').VisualEditor;
@@ -31,14 +30,30 @@
 	let lastAddr = $state('none');
 	let dumpTick = $state(0);
 	let externalDiagnostics = $state<Diagnostic[]>([]);
-	// A consumer enum-policy stand-in: once armed, forbid `CUI` on the
-	// main `classification` field so e2e can prove the option renders disabled
-	// without the stored value or the schema changing.
+	// A consumer enum-policy stand-in: once armed, forbid `CUI` on the main
+	// `classification` field, so the option renders disabled without the stored
+	// value or the schema changing.
 	let restrictEnums = $state(false);
 	const enumOptionAllowed = $derived(
 		restrictEnums
 			? (addr: Addr, value: string) => !(addr.field === 'classification' && value === 'CUI')
 			: undefined
+	);
+
+	// A consumer empty-body wording stand-in, deliberately the WORST case for
+	// determinism: it samples at random and is a fresh closure on every re-derive.
+	// The editor consults it once per kind and keeps the answer, so the ghosts hold
+	// still anyway — the reason a consumer may write a hook this careless without
+	// it showing.
+	let wittyGhosts = $state(false);
+	const WITTY = [
+		'Say something unforgettable…',
+		'Begin anywhere…',
+		'The blank page is bluffing…',
+		'Draft badly, revise later…'
+	];
+	const bodyPlaceholder = $derived(
+		wittyGhosts ? () => WITTY[Math.floor(Math.random() * WITTY.length)] : undefined
 	);
 
 	let toFree: Array<{ free(): void }> = [];
@@ -78,10 +93,11 @@
 			date: doc.getStored('date') ?? null,
 			memo_for: doc.getStored('memo_for') ?? [],
 			references: ((doc.getStored('references') as Content[] | undefined) ?? []).map((r) => r.text),
-			// The tips channel read off the Document, so e2e proves the
-			// DISMISSAL landed as a write and not just as an unmount — and that the
-			// `title` sibling in the same namespace survived it. `getExtNamespace` reads
-			// the one slot rather than serializing the whole main card for it.
+			// The tips channel read off the Document: a dismissal that only unmounted
+			// the card shows here as an unchanged slot, and the `title` sibling in the
+			// same namespace shows whether the write replaced the namespace.
+			// `getExtNamespace` reads the one slot rather than serializing the whole
+			// main card for it.
 			mainExtEditor: (mainAddr && (doc.getExtNamespace(mainAddr, 'editor') as unknown)) ?? null,
 			cardCount: doc.cardCount,
 			cards: doc.cards.map((c, i) => ({
@@ -112,25 +128,28 @@
 				]);
 				init();
 				const tree = await loadUsafMemoTree();
-				// e2e variant: the reference quill's `date` declares a blank
-				// `default:`, which ghosts nothing — `?dateDefault=YYYY-MM-DD` rewrites it
-				// so the date control's ghosted default is reachable in the browser. A
-				// SCHEMA variant, so it patches the tree before the quill is built, unlike
-				// the document seeds below.
+				// The reference quill's `date` declares a blank `default:`, which ghosts
+				// nothing — `?dateDefault=YYYY-MM-DD` rewrites it so the date control's
+				// ghosted default is reachable at all. A SCHEMA variant, so it patches the
+				// tree before the quill is built, unlike the document seeds below.
 				const params = new URLSearchParams(window.location.search);
 				const dateDefault = params.get('dateDefault');
 				if (dateDefault) withMainDateDefault(tree, dateDefault);
+				// The other schema variant: `?kinds2` declares a second card kind, so the
+				// add affordance takes its MENU branch — the one the reference quill's
+				// single kind means nothing on disk reaches.
+				if (params.has('kinds2')) withSecondCardKind(tree);
 				const quill = Quill.fromTree(tree);
 				const doc = quill.seedDocument();
-				// e2e seed: a card whose `kind` the schema can't project (as a
+				// `?foreign` seeds a card whose `kind` the schema can't project (as a
 				// document predating a schema change would carry). `Document.insertCard`
 				// is schema-agnostic, so it can hold a foreign kind the Quill-bound writer
 				// would reject — the exact un-schemable case the recovery shell handles.
 				if (params.has('foreign')) {
 					doc.insertCard(Document.makeCard('legacy_kind', {}, 'Trapped legacy body.'));
 				}
-				// e2e seed: the tips channel a quill or consumer supplies. The
-				// reference quill declares none — tips are `$ext`, not schema — so the
+				// `?tips` seeds the channel a quill or consumer supplies. The reference
+				// quill declares none — tips are `$ext`, not schema — so the
 				// playground stands in for the seeding consumer, off by default so the
 				// default view stays the plain card stack.
 				if (params.has('tips')) {
@@ -192,6 +211,7 @@
 						onChange={refresh}
 						diagnostics={externalDiagnostics}
 						{enumOptionAllowed}
+						{bodyPlaceholder}
 					/>
 				{/if}
 			</div>
@@ -205,6 +225,11 @@
 					type="button"
 					data-testid="toggle-enum-policy"
 					onclick={() => (restrictEnums = !restrictEnums)}>Toggle enum policy (forbid CUI)</button
+				>
+				<button
+					type="button"
+					data-testid="toggle-body-placeholder"
+					onclick={() => (wittyGhosts = !wittyGhosts)}>Toggle custom body placeholder</button
 				>
 				<div class="state-label">doc state</div>
 				<pre data-testid="doc-json">{dump}</pre>

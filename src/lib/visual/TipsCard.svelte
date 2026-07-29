@@ -54,20 +54,15 @@
 	}
 </script>
 
-<aside class="qm-tips" aria-label="Editor tips" data-testid="tips-card">
+<aside class="qm-tips" aria-label="Editor tips">
 	<!-- Advancing swaps the text under a button that keeps focus, so the region
 	     announces rather than the change passing silently. -->
-	<div class="qm-tips-body" aria-live="polite" data-testid="tips-body" bind:this={bodyEl}></div>
+	<div class="qm-tips-body" aria-live="polite" bind:this={bodyEl}></div>
 	<div class="qm-tips-foot">
 		{#if tips.length > 1}
-			<span class="qm-tips-count" data-testid="tips-count">{index + 1} of {tips.length}</span>
+			<span class="qm-tips-count">{index + 1} of {tips.length}</span>
 		{/if}
-		<button
-			type="button"
-			class="qm-icon-btn qm-tips-next"
-			data-testid="tips-next"
-			onclick={advance}
-		>
+		<button type="button" class="qm-icon-btn qm-tips-next" onclick={advance}>
 			{isLast ? 'Got it' : 'Next'}
 			{#if !isLast}<ChevronRight size={GLYPH} />{/if}
 		</button>
@@ -75,7 +70,6 @@
 			type="button"
 			class="qm-icon-btn qm-tips-dismiss"
 			title="Dismiss tips"
-			data-testid="tips-dismiss"
 			onclick={onDismiss}><X size={GLYPH} /></button
 		>
 	</div>
@@ -86,7 +80,10 @@
 	   hairline, no shadow, no fill beyond the card recipe. It reads as guidance
 	   rather than as a field by TONE and TYPE — the label rung in the muted label
 	   colour — not by a badge or an accent (AESTHETIC §"Secondary text recedes").
-	   It mints no token of its own; every value here is an existing dial. */
+	   It mints no token of its own; every value here is an existing dial.
+
+	   Leading is the reading rung, not the tight one the label SIZE would suggest: a
+	   tip is a passage that wraps, and the two axes are independent (SURFACES §Rhythm). */
 	.qm-tips {
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
@@ -96,6 +93,7 @@
 		flex-direction: column;
 		gap: var(--_qm-space-2);
 		font-size: var(--_qm-text-label);
+		line-height: var(--_qm-leading-body);
 		color: var(--_qm-ink-label);
 	}
 	/* The rendered tip is injected DOM (the codec's `toDOM` output), so its element
