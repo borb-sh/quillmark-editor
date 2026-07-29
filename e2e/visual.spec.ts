@@ -259,6 +259,88 @@ test.describe('visual editor', () => {
 		await expect.poll(async () => (await readDump(page)).references[1]).toBe(initial[1]);
 	});
 
+	// The array's keyboard contract (VISUAL_EDITOR_UIUX §Fields). The browser tier is
+	// where it is provable at all: the keys ride the element control's own keydown, the
+	// focus that follows lands after a flush the array cannot observe, and every step
+	// asserts the Document rather than the DOM.
+	test('(e3) Enter inserts a sibling mid-array; Backspace on an empty element removes it', async ({
+		page
+	}) => {
+		const initial = (await readDump(page)).memo_for;
+		expect(initial.length).toBeGreaterThanOrEqual(2);
+		await reveal(page, 'main-memo_for-el-0');
+
+		// Enter on element 0 opens a sibling BELOW it — mid-array, not at the end — and
+		// takes the caret there, so the next keystroke is the new element's value.
+		await page.getByTestId('main-memo_for-el-0').click();
+		await page.keyboard.press('Enter');
+		await expect(page.getByTestId('main-memo_for-el-1')).toBeFocused();
+		await page.keyboard.type('INSERTED');
+		await expect
+			.poll(async () => (await readDump(page)).memo_for)
+			.toEqual([initial[0], 'INSERTED', ...initial.slice(1)]);
+
+		// A HELD Backspace runs on past the character that empties an element; the
+		// repeats are ignored, so clearing a value never also destroys its row.
+		await page.keyboard.press('ControlOrMeta+a');
+		for (let i = 0; i < 12; i++) await page.keyboard.down('Backspace');
+		await page.keyboard.up('Backspace');
+		await expect(page.getByTestId('main-memo_for-el-1')).toBeFocused();
+		await expect(page.getByTestId(`main-memo_for-el-${initial.length}`)).toHaveCount(1);
+
+		// A deliberate press on the now-empty element removes it, and the caret falls to
+		// the element above.
+		await page.keyboard.press('Backspace');
+		await expect.poll(async () => (await readDump(page)).memo_for).toEqual(initial);
+		await expect(page.getByTestId('main-memo_for-el-0')).toBeFocused();
+
+		// Emptied all the way down, the list hands focus to the add affordance — the only
+		// thing left to hold it — and a press there re-opens the list at one element.
+		for (let n = initial.length; n > 0; n--) {
+			await page.keyboard.press('ControlOrMeta+a');
+			await page.keyboard.press('Backspace');
+			await page.keyboard.press('Backspace');
+			await expect.poll(async () => (await readDump(page)).memo_for.length).toBe(n - 1);
+		}
+		await expect(page.getByTestId('main-memo_for-add')).toBeFocused();
+		await page.keyboard.press('Enter');
+		await expect(page.getByTestId('main-memo_for-el-0')).toBeFocused();
+		await page.keyboard.type('REOPENED');
+		await expect.poll(async () => (await readDump(page)).memo_for).toEqual(['REOPENED']);
+	});
+
+	test('(e4) a mid-array insert moves the prose elements below it without remounting them', async ({
+		page
+	}) => {
+		const initial = (await readDump(page)).references;
+		expect(initial.length).toBeGreaterThanOrEqual(2);
+		await reveal(page, 'main-references-el-0');
+		// Stamp element 1's view. Ids splice with the values, so the insert above it
+		// carries it down a row — a remount would lose both the stamp and a live caret.
+		await page
+			.getByTestId('main-references-el-1')
+			.evaluate((el: HTMLElement & { __survived?: boolean }) => (el.__survived = true));
+
+		await pm(page, 'main-references-el-0').click();
+		await page.keyboard.press('Enter');
+		await page.keyboard.type('NEW REFERENCE');
+		await expect
+			.poll(async () => (await readDump(page)).references)
+			.toEqual([initial[0], 'NEW REFERENCE', ...initial.slice(1)]);
+		await expect(page.getByTestId('main-references-el-2')).toHaveJSProperty('__survived', true);
+
+		// Backspace on an EMPTY prose element removes it — the element's committed
+		// `Content`, not an input's value, is what "empty" means here — and the caret
+		// falls back to the element above.
+		await page.keyboard.press('ControlOrMeta+a');
+		await page.keyboard.press('Backspace');
+		await expect.poll(async () => (await readDump(page)).references[1]).toBe('');
+		await page.keyboard.press('Backspace');
+		await expect.poll(async () => (await readDump(page)).references).toEqual(initial);
+		await expect(pm(page, 'main-references-el-0')).toBeFocused();
+		await expect(page.getByTestId('main-references-el-1')).toHaveJSProperty('__survived', true);
+	});
+
 	test('(f) adding an indorsement card makes it appear', async ({ page }) => {
 		expect((await readDump(page)).cardCount).toBe(1);
 		await page.getByTestId('add-card-1').click();

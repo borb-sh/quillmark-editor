@@ -150,11 +150,23 @@ is a separate concern (the island controls), not gated by this.
   carries a tips surface: guidance that is not about one field belongs to the
   document, and rides the tips card (§"Tips card").
 - **Array fields** — a repeater: one control per element (text / prose / minimal
-  JSON by `items.type`), a per-row delete, an add affordance at the foot. No
+  JSON by `items.type`), a per-row remove in the section's action column
+  (SURFACES §Rhythm), an add affordance at the foot. No
   element reorder — rows hold entry order, and the array commits by value, so a
   mis-order is fixed by editing in place, not by moving rows. (The card stack
   keeps ↑/↓ — a curated set of heavyweight blocks earns it; a scalar list does
   not.) Reorder can return behind an `items`/`ui` hint if a quill needs it.
+- **Keys carry the list.** Enter on an element opens a sibling below it and takes
+  the caret there; Backspace on an EMPTY element removes it and hands the caret back
+  up — to the element above, or to the add affordance once nothing is left to hold
+  it. A remove by click moves the caret the same way: the button under the pointer
+  is part of what it destroys. Both keys are the shape a list in the body prose
+  already has, which is the argument for these two rather than a scheme of the
+  array's own. Removal has no undo, so it takes a deliberate press: an auto-repeat is
+  ignored, and emptiness is read before the keystroke applies, so the press that
+  clears the last character never also destroys the row. Focus lands after the
+  commit's flush — the array commits by value, so the row a mutation names exists
+  only once the parent has re-derived.
 
 ### Section grid
 

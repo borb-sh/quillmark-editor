@@ -564,14 +564,24 @@
 
 	   A row-sharing field spans three implicit row tracks (Field.svelte), so `row-gap`
 	   here is the gutter BETWEEN field rows; the tighter one inside a field is the
-	   subgrid's own. */
+	   subgrid's own.
+
+	   The trailing ACTION COLUMN is the section's, not a row's (SURFACES §Rhythm): the
+	   tap target a row action takes plus this grid's own column gutter, held clear of
+	   every track so one right edge serves the whole section whether or not a row
+	   carries an action. Reserved as the grid's own inset rather than a track, because
+	   auto-placement walks every track it is given — a fifth would take the compact
+	   field that overflows the fourth column. An array is the one field with actions
+	   to put there, and reaches back across it (ArrayField). */
 	.qm-fields {
 		--cols: 1;
 		--cols-half: 1;
+		--action-col: calc(var(--_qm-tap-min) + var(--_qm-space-2));
 		display: grid;
 		grid-template-columns: repeat(var(--cols), 1fr);
 		column-gap: var(--_qm-space-2);
 		row-gap: var(--_qm-space-2);
+		padding-right: var(--action-col);
 	}
 	@container (min-width: 28rem) {
 		.qm-fields {

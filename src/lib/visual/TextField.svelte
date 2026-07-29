@@ -18,22 +18,33 @@
 		/** Accessible name — the visual label is a bare span the input can't reference. */
 		label?: string;
 		onCommit: (v: string | undefined) => void;
+		/** Raw keydown, for a container whose own keys run through this control — the
+		 * array repeater's Enter/Backspace (`ArrayField`). */
+		onKey?: (e: KeyboardEvent) => void;
 		testid?: string;
 	}
-	let { value, placeholder, label, onCommit, testid }: Props = $props();
+	let { value, placeholder, label, onCommit, onKey, testid }: Props = $props();
 
 	// Local input state synced to `value`: own-typing stays local, only an external
 	// change reconciles back in (see `syncedLocal`).
 	const local = syncedLocal(() => value ?? '');
+
+	let inputEl: HTMLInputElement | undefined = $state();
+	/** Take the caret — what a parent placing focus on this control calls. */
+	export function focus(): void {
+		inputEl?.focus();
+	}
 </script>
 
 <input
+	bind:this={inputEl}
 	class="qm-input qm-focus-ring"
 	type="text"
 	value={local.value}
 	{placeholder}
 	aria-label={label}
 	data-testid={testid}
+	onkeydown={onKey}
 	oninput={(e) => {
 		local.value = (e.currentTarget as HTMLInputElement).value;
 		// Live-commit a non-empty edit; defer a cleared field to `change` (see header).
