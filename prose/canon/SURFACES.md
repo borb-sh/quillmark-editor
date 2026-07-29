@@ -59,12 +59,17 @@ The card is the container; nothing inside it is a second box.
   apart — the step at which a hovered item reads against a card — so each carries a
   plane on its own. "Elevated is lighter" in both poles needs a mode signal the
   derivation deliberately does not have (THEMING.md).
-- **The floating surfaces earn the lift the cards do without.** The selection
-  popover takes `--_qm-surface-popover` (the *raised* surface mixed toward
-  transparent) behind a `--_qm-blur` backdrop, a hairline, and
-  `--_qm-shadow-popover`; the enum listbox takes the same shadow over an opaque
-  `--_qm-surface`, since a list of choices reads through worse than a row of glyphs.
-  Both sit over content with nothing behind them (VISUAL_EDITOR_UIUX §Formatting).
+- **The floating surfaces earn the lift the cards do without.** There are three, and
+  three is the whole list. The selection popover takes `--_qm-surface-popover` (the
+  *raised* surface mixed toward transparent) behind a `--_qm-blur` backdrop, a
+  hairline, and `--_qm-shadow-popover`; the field-guidance popover takes that same
+  recipe at `--_qm-text-meta` in `--_qm-ink-meta`, adding only a measure, since it
+  carries prose rather than glyphs (VISUAL_EDITOR_UIUX §Fields); the enum listbox
+  takes the same shadow over an OPAQUE `--_qm-surface`, since a list of choices reads
+  through worse than a row of glyphs. All three sit over content with nothing behind
+  them, and all three portal into the nearest `[data-qm-root]` rather than
+  `document.body` — a floating surface leaves the editor's subtree, and the marker is
+  what carries the consumer's dials back to it.
 
 ## The shared recipe
 
@@ -84,7 +89,7 @@ control renders subtly wrong.
   without `inline` is block prose and still a control in a row of controls, so
   only the caller that knows it is rendering the body can say so.
 - **`.qm-icon-btn` / `.qm-add-affordance`** — the two button families; see below.
-- the two floating surfaces share the popover recipe above.
+- the three floating surfaces share the popover recipe above.
 
 A palette change is then one dial, not one edit per field file. A control that mints
 its own border grey or radius instead of reading the rung is the drift this prevents.
@@ -184,7 +189,7 @@ they answer to what a control needs, not to `--qm-space` — so they do not deri
 from the spacing dial and do not move when it does.
 
 **Radius.** One radius base with at most a small derived step, by surface weight —
-the card and the two floating surfaces at `--_qm-radius`, interior controls at the
+the card and the three floating surfaces at `--_qm-radius`, interior controls at the
 tighter `--_qm-radius-inner` — not a free choice per component. `--_qm-radius-pill`
 is a shape tier beside the ramp rather than a step on it, so a fully-rounded end cap
 stays round at any `--qm-radius`. Four unrelated radii is drift, not a scale.

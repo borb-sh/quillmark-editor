@@ -553,6 +553,130 @@ test.describe('visual editor', () => {
 		await expect.poll(async () => (await readDump(page)).body).toBe('one\ntwo');
 	});
 
+	// ── Labels name their control ───────────────────────────────────────────────
+	// The browser tier's own question: a label click is a round-trip through the
+	// UA's label semantics (or, where `for` is inert, through the handoff standing
+	// in for them), and where focus LANDS is not a thing a unit test can read.
+
+	test('(q1) a label click lands focus in the control it names', async ({ page }) => {
+		// `for` reaches the labelable ones and the UA does the rest.
+		await reveal(page, 'main-letterhead_title');
+		await page.getByTestId('label-main-letterhead_title').click();
+		await expect(page.getByTestId('main-letterhead_title')).toBeFocused();
+
+		// The number control, same path — a second labelable control so the assertion
+		// is about the mechanism rather than one field's wiring.
+		await reveal(page, 'main-font_size');
+		await page.getByTestId('label-main-font_size').click();
+		await expect(page.getByTestId('main-font_size')).toBeFocused();
+	});
+
+	test('(q2) a label click reaches the controls `for` cannot', async ({ page }) => {
+		// The prose leaf is a `contenteditable` — not a labelable element, so `for`
+		// would be inert. Focus lands via the controller, which places a selection an
+		// `HTMLElement.focus()` would leave unplaced.
+		await reveal(page, 'prose-main-subject');
+		await page.getByTestId('label-main-subject').click();
+		await expect(pm(page, 'prose-main-subject')).toBeFocused();
+
+		// The date field's focus lives on a SEGMENT; the container holds none. The
+		// first non-literal segment is where the label has to land.
+		await reveal(page, 'main-date');
+		await page.getByTestId('label-main-date').click();
+		await expect(dateEntry(page, 'main-date')).toBeFocused();
+
+		// An array has N inputs and no single `for` target — the first element.
+		await reveal(page, 'main-memo_for');
+		await page.getByTestId('label-main-memo_for').click();
+		await expect(page.getByTestId('main-memo_for-el-0')).toBeFocused();
+	});
+
+	test('(q3) the control takes its name from the label, and carries no second one', async ({
+		page
+	}) => {
+		await reveal(page, 'main-letterhead_title');
+		const input = page.getByTestId('main-letterhead_title');
+		const label = page.getByTestId('label-main-letterhead_title');
+		// `for` and `id` are the SAME id — the association, asserted as one fact.
+		const id = await input.getAttribute('id');
+		expect(id).toBeTruthy();
+		await expect(label).toHaveAttribute('for', id!);
+		// And the control names itself no second time: two names is the ambiguity.
+		await expect(input).not.toHaveAttribute('aria-label');
+
+		// The prose leaf runs the association the other way, and equally once.
+		await reveal(page, 'prose-main-subject');
+		const leaf = pm(page, 'prose-main-subject');
+		const labelId = await page.getByTestId('label-main-subject').getAttribute('id');
+		expect(labelId).toBeTruthy();
+		await expect(leaf).toHaveAttribute('aria-labelledby', labelId!);
+		await expect(leaf).not.toHaveAttribute('aria-label');
+	});
+
+	test('(q4) the required marker names the control along with the label text', async ({ page }) => {
+		// `subject` declares no `default:` → the `*`. It sits INSIDE the `<label>`, so
+		// the computed name carries it rather than announcing as an adjacent node.
+		const name = await page
+			.getByTestId('label-main-subject')
+			.evaluate((el) => el.textContent?.trim());
+		expect(name).toContain('*');
+		await expect(page.getByTestId('required-main-subject')).toHaveAttribute(
+			'aria-label',
+			'required'
+		);
+	});
+
+	test('(q5) guidance is a themed surface on hover, and describes the control while closed', async ({
+		page
+	}) => {
+		await reveal(page, 'main-letterhead_title');
+		const hint = page.getByTestId('hint-main-letterhead_title');
+		const popover = page.getByTestId('hint-main-letterhead_title-popover');
+
+		// The native `title` is gone — that tooltip reached no dial and did not exist
+		// on touch at all.
+		await expect(hint).not.toHaveAttribute('title');
+		await expect(popover).toHaveCount(0);
+
+		await hint.hover();
+		await expect(popover).toBeVisible();
+		await expect(popover).toHaveText(/Joint Commands/i);
+		// It portals INTO the editor root, so a consumer's dials still reach it.
+		expect(await popover.evaluate((el) => !!el.closest('[data-qm-root]'))).toBe(true);
+
+		// Away closes it — dismissable, which `title` never was.
+		await page.getByTestId('label-main-letterhead_title').hover();
+		await expect(popover).toHaveCount(0);
+
+		// And with the surface shut, the description still reaches a reader: the
+		// control points at a parked node holding the same text.
+		const describedBy = await page
+			.getByTestId('main-letterhead_title')
+			.getAttribute('aria-describedby');
+		expect(describedBy).toBeTruthy();
+		// Resolved with `getElementById`, which is how ARIA resolves an id reference —
+		// not as a CSS selector, which would need the id's own syntax escaped.
+		const parked = await page.evaluate(
+			(id) => document.getElementById(id)?.textContent,
+			describedBy!
+		);
+		expect(parked).toMatch(/Joint Commands/i);
+	});
+
+	test('(q6) keyboard focus raises the guidance; Escape dismisses it', async ({ page }) => {
+		await reveal(page, 'main-letterhead_title');
+		const popover = page.getByTestId('hint-main-letterhead_title-popover');
+		// Tab from the label's own control back one stop: the trigger precedes it in
+		// source order, so a keyboard user meets it on the way in.
+		await page.getByTestId('main-letterhead_title').focus();
+		await page.keyboard.press('Shift+Tab');
+		await expect(page.getByTestId('hint-main-letterhead_title')).toBeFocused();
+		await expect(popover).toBeVisible();
+
+		await page.keyboard.press('Escape');
+		await expect(popover).toHaveCount(0);
+	});
+
 	// An insert past the fold moves the viewport to the new card, so the click is
 	// never silent.
 	test('(p) a newly added card is scrolled into view', async ({ page }) => {
