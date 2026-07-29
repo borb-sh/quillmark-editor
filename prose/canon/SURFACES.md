@@ -78,11 +78,11 @@ control renders subtly wrong.
 
 - **`.qm-control-box`** — a typed value's box: `--_qm-surface`, one `--_qm-border`
   hairline, `--_qm-radius-inner`, `--_qm-text-body` at `--_qm-leading-body`, one
-  padding rung. Every scalar control and every prose leaf **except the body**, which
-  the slot withholds it from (`ProseField`'s `unframed`). The predicate is the
-  slot's, not the leaf's: a `richtext` field without `inline` is block prose and
-  still a control in a row of controls, so only the caller that knows it is
-  rendering the body can say so.
+  padding rung, `--_qm-ink` for its text. Every scalar control and every prose leaf
+  **except the body**, which the slot withholds it from (`ProseField`'s
+  `unframed`). The predicate is the slot's, not the leaf's: a `richtext` field
+  without `inline` is block prose and still a control in a row of controls, so
+  only the caller that knows it is rendering the body can say so.
 - **`.qm-icon-btn` / `.qm-add-affordance`** — the two button families; see below.
 - the two floating surfaces share the popover recipe above.
 

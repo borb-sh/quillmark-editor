@@ -484,6 +484,10 @@
 		width: 100%;
 		min-width: 0;
 		font: inherit;
+		/* `font: inherit` does not carry colour — an actual form control, unlike this
+		   rule's neighbours, defaults to the UA's own text colour rather than the
+		   header's ink without this line. */
+		color: var(--_qm-ink);
 		border: var(--_qm-border-width) solid transparent;
 		border-radius: var(--_qm-radius-inner);
 		padding: var(--_qm-space);
