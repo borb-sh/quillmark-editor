@@ -54,7 +54,6 @@
 		register?: (key: string, controller: FieldController) => void;
 		unregister?: (key: string) => void;
 		diagnostics?: Diagnostic[];
-		testid?: string;
 	}
 	let {
 		field,
@@ -71,8 +70,7 @@
 		onCaretMove,
 		register,
 		unregister,
-		diagnostics,
-		testid
+		diagnostics
 	}: Props = $props();
 
 	// The ghost the control shows when unset: the resolved `default:` (provenance,
@@ -121,7 +119,6 @@
 			{onActivate}
 			required={field.required}
 			description={field.description}
-			{testid}
 		/>
 	{/if}
 	<div class="qm-field-control">
@@ -139,7 +136,6 @@
 				{onCaretMove}
 				{register}
 				{unregister}
-				testid={testid ? `prose-${testid}` : undefined}
 			/>
 		{:else if field.control === 'enum'}
 			<EnumField
@@ -150,7 +146,6 @@
 				{describedBy}
 				onCommit={onCommitScalar}
 				{optionAllowed}
-				{testid}
 			/>
 		{:else if field.control === 'number'}
 			<NumberField
@@ -160,7 +155,6 @@
 				id={domIds.control}
 				{describedBy}
 				onCommit={onCommitScalar}
-				{testid}
 			/>
 		{:else if field.control === 'boolean'}
 			<BooleanField
@@ -169,7 +163,6 @@
 				id={domIds.control}
 				{describedBy}
 				onCommit={onCommitScalar}
-				{testid}
 			/>
 		{:else if field.control === 'date'}
 			<DateField
@@ -179,7 +172,6 @@
 				labelledBy={domIds.label}
 				{describedBy}
 				onCommit={onCommitScalar}
-				{testid}
 			/>
 		{:else if field.control === 'array'}
 			<ArrayField
@@ -192,7 +184,6 @@
 				descriptionId={domIds.description}
 				onCommit={onCommitScalar}
 				onFocusEl={() => onFocus?.(proseAddr)}
-				{testid}
 			/>
 		{:else if field.control === 'object'}
 			<ObjectField
@@ -202,7 +193,6 @@
 				labelledBy={domIds.label}
 				{describedBy}
 				onCommit={onCommitScalar}
-				{testid}
 			/>
 		{:else}
 			<TextField
@@ -211,12 +201,11 @@
 				id={domIds.control}
 				{describedBy}
 				onCommit={onCommitScalar}
-				{testid}
 			/>
 		{/if}
 	</div>
 
-	<DiagnosticList {diagnostics} testid={testid ? `diag-${testid}` : undefined} />
+	<DiagnosticList {diagnostics} />
 </div>
 
 <style>

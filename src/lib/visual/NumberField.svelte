@@ -12,7 +12,7 @@
   `type="text"`, not `type="number"` — a native number input SANITIZES an
   invalid string to `""` before the DOM `value` setter even runs (verified:
   `.value = "abc"` on `type="number"` never lands), which would make a
-  genuinely bad entry untypeable. Phase 4b's commit-time coercion diagnostic
+  genuinely bad entry untypeable. The commit-time coercion diagnostic
   (VISUAL_EDITOR §Diagnostics) needs exactly that path reachable through the
   UI, so a non-blank entry that fails to parse forwards the RAW STRING to
   `onCommit` unchanged — the boundary's own `writer.set` coercion is the judge
@@ -37,9 +37,8 @@
 		/** The parked `description` (FieldLabel) — announced after the name. */
 		describedBy?: string;
 		onCommit: (v: number | string | undefined) => void;
-		testid?: string;
 	}
-	let { value, integer, fallback, label, id, describedBy, onCommit, testid }: Props = $props();
+	let { value, integer, fallback, label, id, describedBy, onCommit }: Props = $props();
 
 	// Local input state synced to `value` (as a string projection); own-typing
 	// stays local, only an external change reconciles back in (see `syncedLocal`).
@@ -66,7 +65,6 @@
 	placeholder={fallback != null ? String(fallback) : ''}
 	aria-label={id ? undefined : label}
 	aria-describedby={describedBy}
-	data-testid={testid}
 	oninput={(e) => {
 		local.value = (e.currentTarget as HTMLInputElement).value;
 	}}

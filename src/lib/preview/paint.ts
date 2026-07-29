@@ -223,7 +223,7 @@ export function createPaintLoop(
 
 	// Container CSS-width changes (drag the pane wider, resize the window). Guarded
 	// for jsdom, which ships no ResizeObserver — the unit suite drives no resize, so
-	// skipping it there is correct; the browser tier (e2e) exercises the real path.
+	// skipping it there is correct; a real browser takes the observed path.
 	const resizeObserver =
 		typeof ResizeObserver === 'undefined'
 			? undefined

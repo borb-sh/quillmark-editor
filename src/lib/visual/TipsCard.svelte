@@ -54,20 +54,15 @@
 	}
 </script>
 
-<aside class="qm-tips" aria-label="Editor tips" data-testid="tips-card">
+<aside class="qm-tips" aria-label="Editor tips">
 	<!-- Advancing swaps the text under a button that keeps focus, so the region
 	     announces rather than the change passing silently. -->
-	<div class="qm-tips-body" aria-live="polite" data-testid="tips-body" bind:this={bodyEl}></div>
+	<div class="qm-tips-body" aria-live="polite" bind:this={bodyEl}></div>
 	<div class="qm-tips-foot">
 		{#if tips.length > 1}
-			<span class="qm-tips-count" data-testid="tips-count">{index + 1} of {tips.length}</span>
+			<span class="qm-tips-count">{index + 1} of {tips.length}</span>
 		{/if}
-		<button
-			type="button"
-			class="qm-icon-btn qm-tips-next"
-			data-testid="tips-next"
-			onclick={advance}
-		>
+		<button type="button" class="qm-icon-btn qm-tips-next" onclick={advance}>
 			{isLast ? 'Got it' : 'Next'}
 			{#if !isLast}<ChevronRight size={GLYPH} />{/if}
 		</button>
@@ -75,7 +70,6 @@
 			type="button"
 			class="qm-icon-btn qm-tips-dismiss"
 			title="Dismiss tips"
-			data-testid="tips-dismiss"
 			onclick={onDismiss}><X size={GLYPH} /></button
 		>
 	</div>

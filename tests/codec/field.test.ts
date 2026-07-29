@@ -73,23 +73,10 @@ describe('createField over a real usaf_memo leaf', () => {
 		// Put the caret at USV 5, then insert two chars before it.
 		field.setCaret(5);
 		const head0 = view.state.selection.head;
-		expect(head0).toBe(6); // USV 5 ↔ PM 6
+		expect(head0).toBe(6); // inline single paragraph: USV k ↔ PM k+1
 		view.dispatch(view.state.tr.insertText('AB', 1)); // insert before the caret
 		// The selection mapped forward by 2 (StepMap) — caret continuity across own-edits.
 		expect(view.state.selection.head).toBe(head0 + 2);
-		field.destroy();
-	});
-
-	it('setCaret maps a USV position to the PM caret', () => {
-		const field = createField({
-			doc,
-			addr: { field: 'subject' },
-			container: mount()
-		});
-		const view = viewOf(field);
-		field.setCaret(7);
-		// Inline single paragraph: USV k → PM k+1.
-		expect(view.state.selection.head).toBe(8);
 		field.destroy();
 	});
 });
@@ -270,44 +257,6 @@ describe('anchor insertion', () => {
 	});
 });
 
-describe('empty-leaf ghost placeholder', () => {
-	it('stamps the empty leaf with the ghost text, and drops it once typed', () => {
-		const doc = quill().seedDocument();
-		const container = mount();
-		// `tag_line` is `default:`-only → decodes an empty leaf, the placeholder case.
-		const field = createField({
-			doc,
-			addr: { field: 'tag_line' },
-			container,
-			inline: true,
-			placeholder: 'DEPARTMENT MOTTO'
-		});
-		const ghost = container.querySelector('.qm-prose-placeholder');
-		expect(ghost).not.toBeNull();
-		expect(ghost?.getAttribute('data-placeholder')).toBe('DEPARTMENT MOTTO');
-
-		// Any content dismisses the ghost (the emptiness test fails).
-		const view = viewOf(field);
-		view.dispatch(view.state.tr.insertText('X', 1));
-		expect(container.querySelector('.qm-prose-placeholder')).toBeNull();
-
-		// Clearing back to empty restores it.
-		view.dispatch(view.state.tr.delete(1, view.state.doc.content.size - 1));
-		expect(container.querySelector('.qm-prose-placeholder')).not.toBeNull();
-		field.destroy();
-	});
-
-	it('adds no ghost when no placeholder is given (never enters the content)', () => {
-		const doc = quill().seedDocument();
-		const container = mount();
-		const field = createField({ doc, addr: { field: 'tag_line' }, container, inline: true });
-		expect(container.querySelector('.qm-prose-placeholder')).toBeNull();
-		// The ghost is decoration-only: the stored content stays absent (unset).
-		expect(doc.getStored('tag_line')).toBeUndefined();
-		field.destroy();
-	});
-});
-
 describe('createField accessible name (a11y follow-up)', () => {
 	it('sets aria-label on the editable element when a label is given', () => {
 		const doc = quill().seedDocument();
@@ -362,6 +311,8 @@ describe('the empty-leaf ghost', () => {
 		const doc = emptyBodyDoc();
 		expect(ghostOf(emptyBody(doc, 'Write…'))).toBe('Write…');
 		expect(ghostOf(emptyBody(doc))).toBeNull();
+		// Decoration only: a body that reads as empty stays empty in the store.
+		expect(doc.cards.at(-1)!.body.text).toBe('');
 	});
 
 	it('moves the ghost after mount without touching the document', () => {
@@ -409,6 +360,9 @@ describe('the empty-leaf ghost', () => {
 		// Moving it while non-empty stays invisible — emptiness gates the decoration.
 		field.setPlaceholder('Another…');
 		expect(ghostOf(field)).toBeNull();
+		// And emptying the leaf brings it back: the gate is the content, not the mount.
+		view.dispatch(view.state.tr.delete(1, view.state.doc.content.size - 1));
+		expect(ghostOf(field)).toBe('Another…');
 		field.destroy();
 	});
 });

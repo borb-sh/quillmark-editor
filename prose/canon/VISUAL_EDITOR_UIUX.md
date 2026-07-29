@@ -142,7 +142,7 @@ no table-entry rule ships (island authoring deferred, §Open). Markdown is an in
 shorthand, never the stored form.
 
 **Deferred past V1 — the position anchor:** a gutter insert affordance, its menu,
-and a slash command, together the doors onto insertion. While deferred, the editor
+and a slash command, together the doors onto insertion. Without them the editor
 does not author tables or islands in V1 — a step back from web-app, named here
 rather than left silent. Editing a table already present in an imported document
 is a separate concern (the island controls), not gated by this.

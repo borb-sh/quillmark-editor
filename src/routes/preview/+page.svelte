@@ -1,15 +1,15 @@
 <!--
   Phase 2 playground: mount <Preview> over a live session of the reference quill
-  and prove the three responsibilities in a real browser — paint (canvas per
-  page), overlay (field-box rects), and the click bridge (positionAt -> a
-  ContentHit written to `data-testid="last-hit"` for the e2e spec to assert on).
+  and exercise the three responsibilities in a real browser — paint (canvas per
+  page), overlay (field-box rects), and the click bridge (positionAt → a
+  ContentHit, written to the state strip below).
 
   `margin={0}` (the component's own default is 1) is deliberate: usaf_memo is a
   2-page fixture, and any margin >= 1 always keeps BOTH pages mounted regardless
   of scroll position (page 0 and page 1 are never more than 1 page apart), which
   makes "mounted canvases stay bounded below pageCount" unfalsifiable. margin=0
   plus the short fixed-height shell below make scrolling actually swap which
-  page is mounted — see e2e/preview.spec.ts.
+  page is mounted.
 
   The "apply an edit" button exercises the OTHER half of the exit criteria (an
   apply repaints dirty ∩ visible pages) without reaching into Phase 3's codec:

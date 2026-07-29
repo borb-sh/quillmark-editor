@@ -37,9 +37,8 @@
 		/** The parked description node; the trigger points at it too, so a reader
 		 * that lands HERE announces the guidance rather than only the field's own. */
 		describedBy?: string;
-		testid?: string;
 	}
-	let { description, label, describedBy, testid }: Props = $props();
+	let { description, label, describedBy }: Props = $props();
 
 	let open = $state(false);
 	let triggerEl = $state<HTMLButtonElement | undefined>(undefined);
@@ -60,7 +59,6 @@
 	aria-label="{label} guidance"
 	aria-expanded={open}
 	aria-describedby={describedBy}
-	data-testid={testid}
 	onpointerenter={(e) => {
 		if (e.pointerType !== 'touch') open = true;
 	}}
@@ -102,16 +100,9 @@
 				onOpenAutoFocus={(e: Event) => e.preventDefault()}
 				onCloseAutoFocus={(e: Event) => e.preventDefault()}
 			>
-				<!-- `data-testid` lives on THIS div (ours, not bits-ui's own prop-merged
-				     wrapper) so its presence never depends on bits-ui's passthrough.
-				     `data-qm-root` because a portalled subtree is detached for the
+				<!-- `data-qm-root` because a portalled subtree is detached for the
 				     derivation's purposes, and the marker is what applies it. -->
-				<div
-					class="qm-hint-popover qm-popover-surface"
-					data-qm-root
-					aria-hidden="true"
-					data-testid={testid ? `${testid}-popover` : undefined}
-				>
+				<div class="qm-hint-popover qm-popover-surface" data-qm-root aria-hidden="true">
 					{description}
 				</div>
 			</Popover.Content>

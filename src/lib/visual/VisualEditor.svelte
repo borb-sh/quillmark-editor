@@ -155,6 +155,13 @@
 	// the next successful one for that field. Id-keyed (not positional) so an
 	// error stays pinned to its field across a card reorder.
 	let commitErrors = $state(new Map<string, RoutedDiagnostic>());
+	/** Edit the commit-error map copy-on-write — a `$state` Map is not deeply
+	 *  reactive, so a mutation in place re-derives nothing. */
+	function editCommitErrors(edit: (m: Map<string, RoutedDiagnostic>) => void): void {
+		const next = new Map(commitErrors);
+		edit(next);
+		commitErrors = next;
+	}
 
 	const kinds = $derived(Object.keys(quill.schema.card_kinds ?? {}));
 
@@ -168,7 +175,7 @@
 		return cardIds.indexOf(id);
 	}
 
-	// ── Leaf registry (setCaret target lookup + the 4b active-leaf seam) ────────
+	// ── Leaf registry (setCaret target lookup + the active-leaf seam) ───────────
 	const leaves = new Map<string, FieldController>();
 	// Card handles, for `setCaret`'s reveal hop — the one thing a leaf's own controller
 	// cannot do, since which group is open is the card's state (Card §revealLeaf).
@@ -217,7 +224,7 @@
 	// A scalar control commits `undefined` for a cleared entry — the unset lane
 	// below (`doc.removeField`), not a write.
 	//
-	// A bad value makes `writer.set` THROW a `QuillmarkError`; as of 0.96.0 its
+	// A bad value makes `writer.set` THROW a `QuillmarkError`, whose
 	// `diagnostics[0]` carries a `code` and a canonical `path` (e.g.
 	// `edit::field_conform` at `main.font_size`, or `edit::unknown_field`). The
 	// editor already KNOWS the field/card being committed, so it KEYS the entry
@@ -258,20 +265,14 @@
 					w.card(i).set(name, value);
 				}
 			}
-			if (commitErrors.has(keyStr)) {
-				const next = new Map(commitErrors);
-				next.delete(keyStr);
-				commitErrors = next;
-			}
+			if (commitErrors.has(keyStr)) editCommitErrors((m) => m.delete(keyStr));
 			bump();
 		} catch (e) {
 			const diagnostic: Diagnostic = (isQuillmarkError(e) ? e.diagnostics[0] : undefined) ?? {
 				severity: 'error',
 				message: e instanceof Error ? e.message : String(e)
 			};
-			const next = new Map(commitErrors);
-			next.set(keyStr, { key, diagnostic });
-			commitErrors = next;
+			editCommitErrors((m) => m.set(keyStr, { key, diagnostic }));
 			console.error('[quillmark/editor] scalar commit failed', e);
 		}
 	}
@@ -339,11 +340,10 @@
 		// (VISUAL_EDITOR §"The address is the spine") avoids mis-attributing them to
 		// whichever card next takes this position, but an orphaned entry would
 		// otherwise sit in the map forever (ids are never reused).
-		if ([...commitErrors.keys()].some((k) => k.startsWith(`${id}:`))) {
-			const next = new Map(commitErrors);
-			for (const k of [...next.keys()]) if (k.startsWith(`${id}:`)) next.delete(k);
-			commitErrors = next;
-		}
+		if ([...commitErrors.keys()].some((k) => k.startsWith(`${id}:`)))
+			editCommitErrors((m) => {
+				for (const k of [...m.keys()]) if (k.startsWith(`${id}:`)) m.delete(k);
+			});
 		bump();
 	}
 	function retypeCardById(id: string, kind: string): void {
@@ -417,26 +417,21 @@
 		const fromExternal = routeAndResolve(diagnostics, cardIds);
 		return mergeDiagnostics(fromValidate, fromExternal, [...commitErrors.values()]);
 	});
-	function diagFor(id: string, isMain: boolean, field?: string): Diagnostic[] | undefined {
-		return diagByKey.get(fieldKeyToString({ card: isMain ? undefined : id, field }));
-	}
-
 	function opsFor(id: string, isMain: boolean) {
+		// ONE identity per field: the leaf registry, the DOM's three names, and the
+		// diagnostics map all key off this string, so a leaf, its label and its
+		// diagnostics can only ever resolve together.
+		const leafKey = (field?: string) => fieldKeyToString({ card: isMain ? undefined : id, field });
 		return {
 			makeAddr: (field?: string) => makeAddr(id, isMain, field),
-			// The leaf-registry key space IS the diagnostics FieldKey space — one
-			// `fieldKeyToString`, so a leaf and its diagnostics resolve to one string.
-			leafKey: (field?: string) => fieldKeyToString({ card: isMain ? undefined : id, field }),
-			// …and the DOM's names for a field derive from that same key, so the label,
-			// the control, the registry and the diagnostics all resolve to one identity.
-			domIds: (field?: string) =>
-				fieldDomIds(uid, fieldKeyToString({ card: isMain ? undefined : id, field })),
+			leafKey,
+			domIds: (field?: string) => fieldDomIds(uid, leafKey(field)),
 			commit: (name: string, value: unknown) => commitScalar(id, isMain, name, value),
 			move: (dir: -1 | 1) => moveCardById(id, dir),
 			remove: () => removeCardById(id),
 			retype: (kind: string) => retypeCardById(id, kind),
 			rename: (title: string) => renameCardById(id, title),
-			diagFor: (field?: string) => diagFor(id, isMain, field),
+			diagFor: (field?: string) => diagByKey.get(leafKey(field)),
 			// Bind the consumer policy hook to this field's resolved addr;
 			// no hook → every option allowed.
 			enumAllowed: (field: string, value: string) =>
@@ -583,7 +578,7 @@
 		// and the wash outlasts it, so a revealed landing is cued once it settles.
 		bloomInside(leaf.el);
 	}
-	/** The active leaf's controller — the 4b formatting-popover observation seam. */
+	/** The active leaf's controller — the formatting popover's observation seam. */
 	export function getActiveLeaf(): FieldController | undefined {
 		if (!activeAddr) return undefined;
 		const card = activeAddr.card != null ? activeCardId : undefined;
@@ -625,15 +620,7 @@
 		<TipsCard tips={model.tips} onDismiss={dismissTips} />
 	{/if}
 
-	<!-- Cards always render. The ADD affordance is gated on the schema
-	     declaring `card_kinds` — nothing to seed otherwise — but a card already in the
-	     document shows regardless of its kind: a kind with no schema (foreign, or a
-	     schema with no `card_kinds` at all) degrades to a
-	     recovery shell inside <Card> (retype + delete), never gated away, so its content
-	     is neither dropped nor trapped. -->
-	{#if kinds.length}
-		{@render addAffordance(0, model.cards.length === 0)}
-	{/if}
+	{@render addAffordance(0, model.cards.length === 0)}
 	{#each model.cards as c, i (c.id)}
 		<Card
 			bind:this={cardRefs[i]}
@@ -649,53 +636,56 @@
 			{register}
 			{unregister}
 		/>
-		{#if kinds.length}
-			{@render addAffordance(i + 1, i === model.cards.length - 1)}
-		{/if}
+		{@render addAffordance(i + 1, i === model.cards.length - 1)}
 	{/each}
 </div>
 
 <FormatPopover {getActiveLeaf} />
 
+<!-- Cards always render; the ADD affordance is gated on the schema declaring
+     `card_kinds`, since there is nothing to seed otherwise. A card already in the
+     document shows regardless of its kind — a kind with no schema (foreign, or a
+     schema with no `card_kinds` at all) degrades to a recovery shell inside <Card>
+     (retype + delete), never gated away, so its content is neither dropped nor
+     trapped. The gate lives HERE rather than at each call site: the strip is one
+     decision, and two copies of it drift into a stack with a gap at one end. -->
 {#snippet addAffordance(atIndex: number, isLast: boolean)}
-	<div class="qm-add-card" class:is-last={isLast}>
-		{#if kinds.length === 1}
-			<button
-				type="button"
-				class="qm-add-btn qm-add-affordance"
-				data-testid={`add-card-${atIndex}`}
-				onclick={() => addCard(atIndex, kinds[0])}>+ Add {humanize(kinds[0])}</button
-			>
-		{:else}
-			<!-- Multi-kind add: pick the kind, then seed + insert. A MENU rather than a
+	{#if kinds.length}
+		<div class="qm-add-card" class:is-last={isLast}>
+			{#if kinds.length === 1}
+				<button
+					type="button"
+					class="qm-add-btn qm-add-affordance"
+					onclick={() => addCard(atIndex, kinds[0])}>+ Add {humanize(kinds[0])}</button
+				>
+			{:else}
+				<!-- Multi-kind add: pick the kind, then seed + insert. A MENU rather than a
 			     disclosure — it floats out of the stack, so raising it moves no card, and
 			     it dismisses on pick, on Escape and on a click outside, none of which a
 			     `<details>` does. The trigger is bits-ui's `<button>`, which is why the
 			     recede ladder below reaches it through `:global`. -->
-			<DropdownMenu.Root>
-				<DropdownMenu.Trigger
-					class="qm-add-btn qm-add-affordance"
-					data-testid={`add-card-${atIndex}`}>+ Add card</DropdownMenu.Trigger
-				>
-				<DropdownMenu.Portal to={rootEl}>
-					<DropdownMenu.Content sideOffset={4}>
-						<!-- Portalled out of the row but INTO the stack's root, and carrying the
+				<DropdownMenu.Root>
+					<DropdownMenu.Trigger class="qm-add-btn qm-add-affordance"
+						>+ Add card</DropdownMenu.Trigger
+					>
+					<DropdownMenu.Portal to={rootEl}>
+						<DropdownMenu.Content sideOffset={4}>
+							<!-- Portalled out of the row but INTO the stack's root, and carrying the
 						     marker itself: floating is still a detached subtree to the
 						     derivation, like FormatPopover and the enum listbox. -->
-						<div class="qm-menu-surface" data-qm-root data-testid={`add-card-${atIndex}-kinds`}>
-							{#each kinds as k (k)}
-								<DropdownMenu.Item
-									class="qm-menu-item"
-									data-testid={`add-card-${atIndex}-${k}`}
-									onSelect={() => addCard(atIndex, k)}>{humanize(k)}</DropdownMenu.Item
-								>
-							{/each}
-						</div>
-					</DropdownMenu.Content>
-				</DropdownMenu.Portal>
-			</DropdownMenu.Root>
-		{/if}
-	</div>
+							<div class="qm-menu-surface" data-qm-root>
+								{#each kinds as k (k)}
+									<DropdownMenu.Item class="qm-menu-item" onSelect={() => addCard(atIndex, k)}
+										>{humanize(k)}</DropdownMenu.Item
+									>
+								{/each}
+							</div>
+						</DropdownMenu.Content>
+					</DropdownMenu.Portal>
+				</DropdownMenu.Root>
+			{/if}
+		</div>
+	{/if}
 {/snippet}
 
 <style>
@@ -736,25 +726,24 @@
 	   `:global`, because the multi-kind trigger is bits-ui's own element and a `class`
 	   passed to a primitive is a plain string that never picks up the scoping hash —
 	   the same seam the enum trigger is styled through. */
+	/* The recede ladder, in source order: every rung after the first ties on
+	   specificity with the one before it, so the later rule wins and no state needs
+	   restating per gap. Rest, then the last gap's exception, then engaged. */
 	.qm-add-card :global(.qm-add-btn) {
 		width: 100%;
 		padding: var(--_qm-space) var(--_qm-space-4);
-		/* Recede until engaged (AESTHETIC §"minimal UI"): each gap's
-		   trigger is invisible at rest and surfaces on hover or keyboard focus, so the
-		   stack reads as content, not a toolbar per gap. The LAST gap keeps a dim
-		   label — exactly one entry point stays visible. Opacity (not display) so the
-		   pill reserves its height and the row does not jump on reveal. */
+		/* Recede until engaged (AESTHETIC §"minimal UI"): each gap's trigger is
+		   invisible at rest and surfaces on hover or keyboard focus, so the stack reads
+		   as content, not a toolbar per gap. Opacity (not display) so the pill reserves
+		   its height and the row does not jump on reveal. */
 		opacity: 0;
 	}
-	.qm-add-card:hover :global(.qm-add-btn),
-	.qm-add-card :global(.qm-add-btn:focus-visible) {
-		opacity: 1;
-	}
+	/* The LAST gap keeps a dim label — exactly one entry point stays visible. */
 	.qm-add-card.is-last :global(.qm-add-btn) {
 		opacity: var(--_qm-opacity-idle);
 	}
-	.qm-add-card.is-last:hover :global(.qm-add-btn),
-	.qm-add-card.is-last :global(.qm-add-btn:focus-visible) {
+	.qm-add-card:hover :global(.qm-add-btn),
+	.qm-add-card :global(.qm-add-btn:focus-visible) {
 		opacity: 1;
 	}
 	/* Touch has no hover — keep a faint always-on affordance so add stays reachable. */

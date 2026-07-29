@@ -1,7 +1,6 @@
-# PR gate: the tiers that run without a browser. `lint` + `check` + `check:canon`
-# + `check:style` are the gates; `test` is the Vitest core tier and `build` proves `svelte-package`
-# still emits `dist/`. The playground browser tier stands in for a human pass and
-# runs elsewhere, so it is not gated here.
+# The whole gate. `lint` + `check` + `check:canon` + `check:style` are the checks,
+# `test` is the Vitest tier, and `build` proves `svelte-package` still emits
+# `dist/`. Nothing here needs a browser, and nothing runs elsewhere.
 name: CI
 
 on:

@@ -2,8 +2,8 @@
   An `object` field → a nested subform over `properties` (declaration order),
   committing the WHOLE object by value on any nested change. No object field
   exists in the reference quill, so this is implemented to the schema contract
-  for SCALAR properties and is UNTESTED against a real leaf (noted in the report);
-  nested prose/array/object properties render a placeholder rather than recurse.
+  for SCALAR properties and is UNTESTED against a real leaf; nested
+  prose/array/object properties render a placeholder rather than recurse.
 
   A property's ghosted `default:` is the static schema `sub.default`, not the
   resolved provenance the top-level ghosts read (FIELD_PROVENANCE) — `resolve`
@@ -32,9 +32,8 @@
 		/** The parked `description` (FieldLabel) — announced on entering the group. */
 		describedBy?: string;
 		onCommit: (obj: Record<string, unknown>) => void;
-		testid?: string;
 	}
-	let { value, properties, label, labelledBy, describedBy, onCommit, testid }: Props = $props();
+	let { value, properties, label, labelledBy, describedBy, onCommit }: Props = $props();
 
 	const entries = $derived(Object.entries(properties ?? {}));
 	const obj = $derived((value ?? {}) as Record<string, unknown>);
@@ -53,13 +52,7 @@
 	}
 </script>
 
-<div
-	class="qm-object"
-	role="group"
-	aria-labelledby={labelledBy}
-	aria-describedby={describedBy}
-	data-testid={testid}
->
+<div class="qm-object" role="group" aria-labelledby={labelledBy} aria-describedby={describedBy}>
 	{#each entries as [key, sub] (key)}
 		{@const kind = controlKind(sub)}
 		{@const propLabel = `${label != null ? `${label} ` : ''}${sub.ui?.title ?? humanize(key)}`}

@@ -51,7 +51,6 @@
 		onCommit: (arr: unknown[]) => void;
 		/** A prose element gained focus — joins the field in the focus federation. */
 		onFocusEl?: () => void;
-		testid?: string;
 	}
 	let {
 		value,
@@ -62,8 +61,7 @@
 		labelId,
 		descriptionId,
 		onCommit,
-		onFocusEl,
-		testid
+		onFocusEl
 	}: Props = $props();
 
 	// The ELEMENT control is the item schema's own; an array declaring no `items`
@@ -197,7 +195,6 @@
 	role="group"
 	aria-labelledby={label != null ? labelId : undefined}
 	aria-describedby={description ? descriptionId : undefined}
-	data-testid={testid}
 >
 	<div class="qm-array-header">
 		{#if label != null}
@@ -208,17 +205,12 @@
 				onActivate={activate}
 				{required}
 				{description}
-				{testid}
 			/>
 		{:else}
 			<span></span>
 		{/if}
-		<button
-			type="button"
-			class="qm-add-el qm-add-affordance"
-			data-testid={testid ? `${testid}-add` : undefined}
-			bind:this={addEl}
-			onclick={add}>+ Add</button
+		<button type="button" class="qm-add-el qm-add-affordance" bind:this={addEl} onclick={add}
+			>+ Add</button
 		>
 	</div>
 	{#each ids as id, k (id)}
@@ -232,13 +224,11 @@
 					onChange={(rt) => commitElement(k, rt)}
 					onKey={(e) => onElementKey(e, k)}
 					{onFocusEl}
-					testid={testid ? `${testid}-el-${k}` : undefined}
 				/>
 			{:else if control === 'object'}
 				<textarea
 					class="qm-input qm-json qm-focus-ring"
 					aria-label={label != null ? `${label} ${k + 1}` : undefined}
-					data-testid={testid ? `${testid}-el-${k}` : undefined}
 					value={JSON.stringify(arr[k] ?? {})}
 					onchange={(e) => {
 						try {
@@ -255,15 +245,10 @@
 					label={label != null ? `${label} ${k + 1}` : undefined}
 					onCommit={(v) => commitElement(k, v)}
 					onKey={(e) => onElementKey(e, k)}
-					testid={testid ? `${testid}-el-${k}` : undefined}
 				/>
 			{/if}
-			<button
-				type="button"
-				class="qm-icon-btn qm-remove"
-				title="Remove"
-				data-testid={testid ? `${testid}-remove-${k}` : undefined}
-				onclick={() => remove(k)}><X size={14} /></button
+			<button type="button" class="qm-icon-btn qm-remove" title="Remove" onclick={() => remove(k)}
+				><X size={14} /></button
 			>
 		</div>
 	{/each}

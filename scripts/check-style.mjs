@@ -3,7 +3,8 @@
 // and differ only in which properties they own and which value betrays a mint, so
 // they are a table, not three scripts.
 //
-//   rhythm   padding / margin / gap / border-radius   a px|rem length
+//   rhythm   padding / margin / gap / radius, every
+//            physical, logical and corner spelling    a px|rem length
 //   stroke   border / border-*-width                  a length, at any width
 //   type     font                                     anything but a CSS-wide keyword
 //            font-size / font-weight / font-family    a size, a weight, a family
@@ -66,7 +67,11 @@ const READS_RUNG = /var\(--_qm-/;
 // make a value safe.
 const AXES = [
 	{
-		props: /^(border-radius|gap|row-gap|column-gap|padding|margin)(-(top|bottom|left|right))?$/,
+		// Every spelling of the same decision: the physical longhands, the logical ones
+		// (`margin-block`, `padding-inline-start`), and the radius corners. An axis that
+		// names only the physical forms is a gate a rewrite walks through — the codebase
+		// already reaches for `margin-block` where a rung goes on both sides at once.
+		props: /^(border(-[\w-]+)?-radius|gap|row-gap|column-gap|(padding|margin)(-[\w-]+)?)$/,
 		literal: /\b\d*\.?\d+(px|rem)\b/,
 		rung: '`var(--_qm-space-…)` / `var(--_qm-radius…)`',
 		doc: 'SURFACES §Rhythm',

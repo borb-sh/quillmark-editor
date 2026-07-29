@@ -152,7 +152,6 @@ npm run build   # svelte-package → dist/
 npm test        # Vitest (codec, diagnostics, geometry, chain)
 npm run check   # svelte-check
 npm run lint    # prettier
-npm run test:e2e # Playwright — the browser tier (paint, bridge, virtualization)
 ```
 
 The playground under `src/routes/` consumes **only** the public subpath API — a

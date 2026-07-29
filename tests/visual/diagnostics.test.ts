@@ -1,6 +1,5 @@
-// diagnostics.ts routing/merge/precedence — pure logic, no Document (VisualEditor's
-// `$derived.by` glue is exercised indirectly by e2e/visual-chrome.spec.ts, which
-// asserts the routed OUTCOME through the DOM; this suite pins the pure math).
+// diagnostics.ts routing/merge/precedence — pure logic, no Document. VisualEditor's
+// `$derived.by` glue is the thin part; the math it feeds on is here.
 import { describe, it, expect } from 'vitest';
 import type { Diagnostic } from '$lib/core';
 import {
