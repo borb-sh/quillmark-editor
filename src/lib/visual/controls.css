@@ -77,11 +77,10 @@
 	   COLOUR is the trap one property over: `font` does not carry it either, so an
 	   input or trigger left off this line falls to the UA's own text colour — a second
 	   black sitting beside the card's ink rather than the rung it renders on.
-	   `caret-color` is pinned to `currentColor` explicitly rather than left at its
-	   `auto` initial, which resolves the same way: the prose leaf's caret IS its
-	   focus indicator, the outline dropped in its favour (`ProseField`), so it has
-	   to track this rule's own ink on purpose, not by an initial value a future
-	   edit here could quietly change out from under it. */
+	   `caret-color` is pinned to `currentColor` rather than left at its `auto`
+	   initial, which resolves the same way: the prose leaf's caret IS its focus
+	   indicator, the outline dropped in its favour (`ProseField`), so it tracks
+	   this rule's own ink deliberately. */
 	.qm-control-box,
 	.qm-input,
 	.qm-prose {

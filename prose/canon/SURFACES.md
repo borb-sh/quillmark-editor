@@ -96,7 +96,7 @@ card: no resting border, no resting fill, `--_qm-surface-hover` arriving on hove
 having no resting ink for a hover to shift). The distinction one recipe for both
 would lose: *a field is a box because you type into it; a button is not a box
 because you press it.* Destructive ink (`--_qm-danger`) stays — that is meaning, not
-chrome. Every button clears WCAG 2.5.8's 24×24 off `--_qm-tap-min`: a threshold the
+chrome. Both families clear WCAG 2.5.8's 24×24 off `--_qm-tap-min`: a threshold the
 spec fixes rather than a step on the space scale, so it does not move when
 `--qm-space` does, and `min-*` is outside every `check:style` axis — a second
 expression of the same floor would have nothing watching it.
@@ -111,15 +111,14 @@ the input beside it agree on face and size. Where the box's height is a line box
 button's is the tap floor: a label is one line and a glyph is not text at all, so the
 line box collapses onto its content and one height source decides instead of two.
 `font` is a shorthand carrying `line-height`, so size and leading are declared after
-it or dropped in silence — the same ordering the box recipe keeps, and the reason the
-family half cannot be written as a longhand-free convenience.
+it or dropped in silence — the same ordering the box recipe keeps.
 
-**The section header is a button by tag and neither family by recipe.** It takes no
-target floor (its symmetric padding is the row) and no hover fill (an ink step
-instead), so it declares its own type rather than joining a family it would then have
-to unpick: the field-label rung at the tight leading, on the button, with the label a
-text run beside the chevron. A wrapper carrying only the size is indirection between
-a header and its own label.
+**The section header is a button by tag and neither family by recipe.** It reads no
+`--_qm-tap-min` — its symmetric padding already clears the floor, and the whole row
+is the target — and takes no hover fill (an ink step instead), so it declares its own
+type rather than joining a family it would then have to unpick: the field-label rung
+at the tight leading, on the button, with the label a text run beside the chevron. A
+wrapper carrying only the size is indirection between a header and its own label.
 
 **An inline prose leaf is inside that recipe, not beside it.** A field constrained
 to one paragraph is a control in a row of controls, so it draws the same
@@ -209,9 +208,9 @@ beside them, the tips card's guidance; `--_qm-leading-tight` is a line that is a
 label rather than a passage — field labels, section labels, the card title. The
 two axes are deliberately independent, which the tips card is the case for: label
 size, reading leading. Unitless, so a rung inherits multiplicatively and holds
-against whichever size rung the surface reads. A glyph row is outside the axis
-altogether — `line-height: 1` collapses the line box onto the glyph, a structural
-claim rather than a rhythm.
+against whichever size rung the surface reads. `line-height: 1` is outside the axis
+altogether — it collapses the line box onto its content, a glyph or a button's
+one-line label, which is a structural claim rather than a rhythm.
 
 **Leading alone separates paper from chrome.** The body leaf reads
 `--_qm-text-body`, the same size as the input beside it, and steps up to no fifth

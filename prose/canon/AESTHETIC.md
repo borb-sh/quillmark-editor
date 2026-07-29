@@ -16,12 +16,12 @@ carries.
 
 Modern paper: monochrome, typographic, restrained. Hierarchy comes from type
 weight, size and leading and from whitespace, not from color fills, badges, or
-icon chrome. Leading carries more of it than its one declaration suggests: it is
-the whole of what tells the card's paper from the card's chrome, since the body
-sits on the same size rung as the input beside it (SURFACES §Rhythm). This is the
-visual half of VISUAL_EDITOR_UIUX §"Complex UX, minimal UI" — dense behavior over a
-thin, neutral skin — so the baseline states an opinion a consumer overrides to its
-brand without fighting baked-in decoration.
+icon chrome. Leading is the whole of what tells the card's paper from the card's
+chrome, since the body sits on the same size rung as the input beside it
+(SURFACES §Rhythm). This is the visual half of VISUAL_EDITOR_UIUX §"Complex UX,
+minimal UI" — dense behavior over a thin, neutral skin — so the baseline states
+an opinion a consumer overrides to its brand without fighting baked-in
+decoration.
 
 ## Rules
 

@@ -635,15 +635,16 @@
 	/* Symmetric padding: WCAG 2.5.8's 24×24 floor, and the header is the whole row
 	   so adjacent labels share one rhythm with no dead strip outside the button.
 
-	   A button by tag and NEITHER button family by recipe — it takes no target floor
-	   (the symmetric padding is the row) and no hover fill (an ink step, below) — so
-	   the type a family would have carried is declared here. `font: inherit` because a
-	   UA button inherits no face and `--qm-font` would stop at this row; then the
-	   field-label rung, at the tight leading a single line takes. Sentence case at that
-	   rung, reused rather than a fifth size minted: a section name is structurally a
-	   heading, and uppercase costs it twice — the word shape a column of them is
-	   scanned by, and apparent width, so a long label crowds sooner. Size, weight and
-	   leading all sit after `font`, which is a shorthand that carries `line-height`.
+	   A button by tag and NEITHER button family by recipe — it reads no
+	   `--_qm-tap-min` (the padding above already clears the floor) and takes no hover
+	   fill (an ink step, below) — so the type a family would have carried is declared
+	   here. `font: inherit` because a UA button inherits no face and `--qm-font` would
+	   stop at this row; then the field-label rung, at the tight leading a single line
+	   takes. Sentence case at that rung, reused rather than a fifth size minted: a
+	   section name is structurally a heading, and uppercase costs it twice — the word
+	   shape a column of them is scanned by, and apparent width, so a long label crowds
+	   sooner. Size, weight and leading all sit after `font`, which is a shorthand that
+	   carries `line-height`.
 
 	   On the BUTTON rather than on a span inside it: the row's type is one decision,
 	   and a wrapper that carries nothing else is indirection between the header and

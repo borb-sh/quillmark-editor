@@ -127,18 +127,19 @@ is a separate concern (the island controls), not gated by this.
   editor carries web-app's density *hints* — `ui.group` and `ui.compact` — and not
   its layout pass: a section is ONE grid, capacity comes from a container query, and
   fields auto-place (§"Section grid").
-  `ui.group` sections are a collapsible accordion — one open at a time, the first
-  in order open at mount; ungrouped fields stay above it, always visible. A card
-  opens on fields, never on chevrons alone: a body leaf does not stand in for one,
-  since on a card carrying both the fields are what the card is for. A section header is a heading, not metadata: sentence case at the
-  field-label rung, its whole row the target, its label centred between the rule
-  above it and the one it draws. Open and hover are ink steps; the chevron's
-  rotation carries open/closed, and no hue enters (AESTHETIC §Rules). The open
-  section also draws the bracket's vertical, down its header and its panel together
-  (SURFACES §Elevation) — which is what gives it a corner to close into where the
-  bracket's horizontal meets it, at the top of the first section or the bottom of the
-  last. A section in between meets neither and does not try to: the stroke reads by
-  being the same stroke, not by terminating.
+  `ui.group` sections are a collapsible accordion — one open at a time, the
+  first in order open at mount; ungrouped fields stay above it, always visible.
+  A card opens on fields, never on chevrons alone: a body leaf does not stand in
+  for one, since on a card carrying both the fields are what the card is for. A
+  section header is a heading, not metadata: sentence case at the field-label
+  rung, its whole row the target, its label centred between the rule above it
+  and the one it draws. Open and hover are ink steps; the chevron's rotation
+  carries open/closed, and no hue enters (AESTHETIC §Rules). The open section
+  also draws the bracket's vertical, down its header and its panel together
+  (SURFACES §Elevation) — which is what gives it a corner to close into where
+  the bracket's horizontal meets it, at the top of the first section or the
+  bottom of the last. A section in between meets neither and does not try to:
+  the stroke reads by being the same stroke, not by terminating.
 - **Prose leaf** — each rich field as an inline WYSIWYG surface, and the body as
   paper: no label — "Body" names the surface, and the accessible name stays on the
   leaf — and no box, the bracket's bottom rule doing the separating a border was.
@@ -165,11 +166,11 @@ is a separate concern (the island controls), not gated by this.
   document, and rides the tips card (§"Tips card").
 - **Array fields** — a repeater: one control per element (text / prose / minimal
   JSON by `items.type`), a per-row remove in the section's action column
-  (SURFACES §Rhythm), an add affordance at the foot. No
-  element reorder — rows hold entry order, and the array commits by value, so a
-  mis-order is fixed by editing in place, not by moving rows. (The card stack
-  keeps ↑/↓ — a curated set of heavyweight blocks earns it; a scalar list does
-  not.) Reorder can return behind an `items`/`ui` hint if a quill needs it.
+  (SURFACES §Rhythm), an add affordance at the foot. No element reorder — rows
+  hold entry order, and the array commits by value, so a mis-order is fixed by
+  editing in place, not by moving rows. (The card stack keeps ↑/↓ — a curated
+  set of heavyweight blocks earns it; a scalar list does not.) Reorder can
+  return behind an `items`/`ui` hint if a quill needs it.
 - **Keys carry the list.** Enter on an element opens a sibling below it and takes
   the caret there; Backspace on an EMPTY element removes it and hands the caret back
   up — to the element above, or to the add affordance once nothing is left to hold

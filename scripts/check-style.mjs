@@ -107,8 +107,8 @@ const AXES = [
 		// resolves to, so the rung is REQUIRED instead. The axis fires only on a line
 		// that DECLARES leading; a surface that declares none is covered by the root
 		// baseline, since a unitless rung inherits (core/theme.css). `1` is the one bare
-		// value that is not a step on the ramp — a glyph row collapsing its line box
-		// onto the glyph, structural like `opacity: 0`.
+		// value that is not a step on the ramp — a line box collapsed onto its content,
+		// a glyph or a button's one-line label, structural like `opacity: 0`.
 		props: /^line-height$/,
 		allowBare: /^1$/,
 		rung: '`var(--_qm-leading-…)`',

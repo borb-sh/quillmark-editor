@@ -128,8 +128,8 @@
 		--_qm-space-4: calc(var(--_qm-space) * 4);
 		/* WCAG 2.5.8's 24x24 pointer-target floor. A rung rather than a sixth step on
 		   the space scale: it is a threshold the spec fixes, not a rhythm choice, so
-		   it does not move when `--qm-space` does. Every button reads it, so the floor
-		   is one number instead of one expression per control. */
+		   it does not move when `--qm-space` does. Both button families read it, so the
+		   floor is one number instead of one expression per control. */
 		--_qm-tap-min: 24px;
 
 		/* ── Type ────────────────────────────────────────────────────────────────
@@ -152,8 +152,8 @@
 		   would freeze at one size and disagree with the rest of the ramp. Leading is
 		   also the WHOLE of what separates paper from chrome: the body leaf reads
 		   `--_qm-text-body`, the same size as the input beside it, and there is no fifth
-		   size rung over it. A glyph row is outside the axis — it declares
-		   `line-height: 1` to collapse the line box onto the glyph. */
+		   size rung over it. `line-height: 1` is outside the axis — it collapses the
+		   line box onto its content, a glyph or a button's one-line label. */
 		--_qm-leading-body: 1.5;
 		--_qm-leading-tight: 1.3;
 
