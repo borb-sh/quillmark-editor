@@ -453,9 +453,12 @@ test.describe('visual editor chrome — the multi-kind add menu', () => {
 	// list of kinds pushes the stack open and reflows every card below the gap.
 	test('opening the menu moves no card', async ({ page }) => {
 		const below = page.locator('.qm-card').nth(1);
-		const before = (await below.boundingBox())!.y;
+		// Document space, not the viewport's: reaching a trigger below the fold scrolls
+		// the page, and a scroll is not the reflow under test.
+		const docTop = () => below.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+		const before = await docTop();
 		await openMenu(page);
-		expect((await below.boundingBox())!.y).toBe(before);
+		expect(await docTop()).toBe(before);
 	});
 
 	// The recede ladder is driven by the row's hover, and the menu portals OUT of the
