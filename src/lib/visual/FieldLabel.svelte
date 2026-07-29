@@ -128,16 +128,15 @@
 	}
 	/* The parked description: in the accessibility tree, out of the layout, and never
 	   a focus stop. Clipped rather than `display: none` / `hidden`, which take a node
-	   out of the tree entirely and would make the `aria-describedby` dangle. */
+	   out of the tree entirely and would make the `aria-describedby` dangle. Out of
+	   flow, so the classic recipe's `margin: -1px` has nothing left to counteract —
+	   and it would mint a literal off every rung. */
 	.qm-visually-hidden {
 		position: absolute;
 		width: 1px;
 		height: 1px;
-		margin: -1px;
-		padding: 0;
 		overflow: hidden;
 		clip-path: inset(50%);
 		white-space: nowrap;
-		border: 0;
 	}
 </style>

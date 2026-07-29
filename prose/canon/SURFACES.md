@@ -95,7 +95,8 @@ A palette change is then one dial, not one edit per field file. A control that m
 its own border grey or radius instead of reading the rung is the drift this prevents.
 
 **A button reads the button recipe, and it is not the box.** A glyph or text button —
-reorder, delete, array remove, both add affordances, the tips foot — is ink on the
+reorder, delete, array remove, the field label's guidance marker, both add
+affordances, the tips foot — is ink on the
 card: no resting border, no resting fill, `--_qm-surface-hover` arriving on hover,
 `--_qm-radius-inner` (a pill on the add triggers, which fill rather than tint,
 having no resting ink for a hover to shift). The distinction one recipe for both

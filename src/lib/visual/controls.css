@@ -155,7 +155,8 @@
 		cursor: default;
 	}
 
-	/* A glyph button — card reorder/delete, array remove, the tips card's foot. */
+	/* A glyph button — card reorder/delete, array remove, the field label's guidance
+	   marker, the tips card's foot. */
 	.qm-icon-btn {
 		display: inline-flex;
 		align-items: center;

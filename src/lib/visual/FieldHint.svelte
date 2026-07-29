@@ -56,7 +56,7 @@
 <button
 	bind:this={triggerEl}
 	type="button"
-	class="qm-field-hint qm-focus-ring"
+	class="qm-field-hint qm-icon-btn qm-focus-ring"
 	aria-label="{label} guidance"
 	aria-expanded={open}
 	aria-describedby={describedBy}
@@ -120,27 +120,20 @@
 </Popover.Root>
 
 <style>
-	/* The marker recedes to the label's ghost tone; the surface carries the text.
-	   A tap target, not a glyph's worth of pixels — `--_qm-tap-min` is the floor the
-	   array's remove and the card's chevrons already stand on, reached with negative
-	   margin so the label's baseline rhythm is untouched by it. */
+	/* Chrome, type, tap floor, hover fill and ring are the glyph-button family's
+	   (`.qm-icon-btn` + `.qm-focus-ring`, controls.css) — this trigger is one more
+	   glyph button and assembles none of that itself. Three facts are its own. */
 	.qm-field-hint {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		min-width: var(--_qm-tap-min);
-		min-height: var(--_qm-tap-min);
-		margin: calc(var(--_qm-tap-min) / -2) 0;
-		padding: 0;
-		border: 0;
-		border-radius: var(--_qm-radius-inner);
-		background: none;
-		font: inherit;
+		/* The marker recedes to the label's ghost tone; the surface carries the text. */
 		color: var(--_qm-ink-ghost);
+		/* Not the family's `pointer`: the glyph raises guidance, it does not act. */
 		cursor: help;
+		/* Off the row's rhythm. The tap floor is a target, not a line box, and it
+		   would otherwise set the height of every label row in the card — the array
+		   header, which stands a real button beside its label, is the one row that
+		   genuinely is that tall. */
+		margin-block: calc(var(--_qm-tap-min) / -2);
 	}
-	/* The focus ring rides `.qm-focus-ring` (controls.css) — the shared recipe, on
-	   the radius set above so it hugs the glyph rather than the tap box. */
 	.qm-field-hint:hover,
 	.qm-field-hint:focus-visible {
 		color: var(--_qm-ink-meta);
