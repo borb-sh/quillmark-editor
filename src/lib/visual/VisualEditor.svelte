@@ -62,6 +62,7 @@
 		type FieldKey,
 		type RoutedDiagnostic
 	} from './diagnostics.js';
+	import { fieldDomIds } from './domid.js';
 	import { tipsChannel } from './tips.js';
 	import { patchEditorExt } from './ext.js';
 	import Card from './Card.svelte';
@@ -119,6 +120,12 @@
 
 	// ── Reactivity + session identity ───────────────────────────────────────────
 	let revision = $state(0);
+	// This editor's own id, prefixed onto every field's DOM ids (`domid.ts`). The
+	// leaf-key space is unique per EDITOR, not per page: two editors mounted
+	// side-by-side both hold `main:subject`, and a duplicate `id` makes `for` resolve
+	// to whichever mounted first. `$props.id()` is stable across SSR and hydration,
+	// which a module counter is not.
+	const uid = $props.id();
 	const seq = new IdSeq();
 	// Session ids, one per composable card, reordered in lockstep with structure ops.
 	// svelte-ignore state_referenced_locally
@@ -394,6 +401,10 @@
 			// The leaf-registry key space IS the diagnostics FieldKey space — one
 			// `fieldKeyToString`, so a leaf and its diagnostics resolve to one string.
 			leafKey: (field?: string) => fieldKeyToString({ card: isMain ? undefined : id, field }),
+			// …and the DOM's names for a field derive from that same key, so the label,
+			// the control, the registry and the diagnostics all resolve to one identity.
+			domIds: (field?: string) =>
+				fieldDomIds(uid, fieldKeyToString({ card: isMain ? undefined : id, field })),
 			commit: (name: string, value: unknown) => commitScalar(id, isMain, name, value),
 			move: (dir: -1 | 1) => moveCardById(id, dir),
 			remove: () => removeCardById(id),

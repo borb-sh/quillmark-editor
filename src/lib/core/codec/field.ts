@@ -37,8 +37,16 @@ export interface CreateFieldOpts {
 	plaintext?: boolean;
 	/** Suppress the markdown-shorthand input rules (Phase 4 opt-out). */
 	noInputRules?: boolean;
-	/** Accessible name → `aria-label` on the `contenteditable` (the visual label is a sibling it can't reference). */
+	/** Accessible name → `aria-label` on the `contenteditable`. For a leaf NOTHING
+	 * else names — an array element (the field label plus its 1-based index), the
+	 * card body (no visible label at all). A leaf with a field label takes
+	 * `labelledBy` instead: `for` cannot reach a `contenteditable`, which is not a
+	 * labelable element, so the association runs the other way. */
 	label?: string;
+	/** The field label's own id → `aria-labelledby`, which supersedes `label`. */
+	labelledBy?: string;
+	/** The parked `description` → `aria-describedby`; announced after the name. */
+	describedBy?: string;
 	/** Ghost text shown on the empty leaf — the resolved `default:` a body ghosts
 	 * (VISUAL_EDITOR_UIUX §Fields). Captured at mount (a schema default is stable);
 	 * an empty/absent string adds no placeholder. */
@@ -130,6 +138,18 @@ function leafPresent(doc: Document, addr: Addr): boolean {
 	return doc.getStored(addr) !== undefined;
 }
 
+/** The naming attributes for the `contenteditable`. `aria-labelledby` supersedes
+ * `aria-label` — a leaf carrying both is the ambiguity where implementations
+ * disagree about which wins — and `undefined` is returned whole when a leaf takes
+ * neither, since ProseMirror reads the absence, not an empty object. */
+function proseAttributes(opts: CreateFieldOpts): Record<string, string> | undefined {
+	const attrs: Record<string, string> = {};
+	if (opts.labelledBy) attrs['aria-labelledby'] = opts.labelledBy;
+	else if (opts.label) attrs['aria-label'] = opts.label;
+	if (opts.describedBy) attrs['aria-describedby'] = opts.describedBy;
+	return Object.keys(attrs).length ? attrs : undefined;
+}
+
 export function createField(opts: CreateFieldOpts): FieldController {
 	const { doc, addr, container } = opts;
 	const inline = !!opts.inline || !!opts.plaintext;
@@ -148,7 +168,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 
 	view = new EditorView(container, {
 		state,
-		attributes: opts.label ? { 'aria-label': opts.label } : undefined,
+		attributes: proseAttributes(opts),
 		dispatchTransaction: (tr) => {
 			const oldRt = reconciler.last;
 			const next = view.state.apply(tr);

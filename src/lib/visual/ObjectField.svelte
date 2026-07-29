@@ -25,10 +25,16 @@
 		properties: Record<string, QuillFieldSchema> | undefined;
 		/** Accessible-name prefix for the property controls. */
 		label?: string;
+		/** The field label's own id. A subform is a GROUP of controls, not one control
+		 * `for` could reach, so the field's label names the set and each property
+		 * control keeps its own composed `aria-label`. */
+		labelledBy?: string;
+		/** The parked `description` (FieldLabel) — announced on entering the group. */
+		describedBy?: string;
 		onCommit: (obj: Record<string, unknown>) => void;
 		testid?: string;
 	}
-	let { value, properties, label, onCommit, testid }: Props = $props();
+	let { value, properties, label, labelledBy, describedBy, onCommit, testid }: Props = $props();
 
 	const entries = $derived(Object.entries(properties ?? {}));
 	const obj = $derived((value ?? {}) as Record<string, unknown>);
@@ -47,7 +53,13 @@
 	}
 </script>
 
-<div class="qm-object" data-testid={testid}>
+<div
+	class="qm-object"
+	role="group"
+	aria-labelledby={labelledBy}
+	aria-describedby={describedBy}
+	data-testid={testid}
+>
 	{#each entries as [key, sub] (key)}
 		{@const kind = controlKind(sub)}
 		{@const propLabel = `${label != null ? `${label} ` : ''}${sub.ui?.title ?? humanize(key)}`}

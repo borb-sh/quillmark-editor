@@ -25,8 +25,16 @@
 		 * row of controls. Only the body is paper, and only its caller knows it is.
 		 */
 		unframed?: boolean;
-		/** Accessible name for the editable region (the visual label is a sibling span). */
+		/** Accessible name for a leaf NOTHING else names — an array element, or the
+		 * card body. A leaf with a field label takes `labelledBy` instead. */
 		label?: string;
+		/** The field label's own id → `aria-labelledby` on the editable region. `for`
+		 * cannot reach a `contenteditable` — not a labelable element — so the
+		 * association runs the other way, and the label's click comes back through
+		 * the controller's `focus`. */
+		labelledBy?: string;
+		/** The parked `description` (FieldLabel) → `aria-describedby`. */
+		describedBy?: string;
 		/** Ghost shown on the empty leaf — the resolved `default:`. */
 		placeholder?: string;
 		/** Stable identity for the registry + a DOM stamp the e2e uses to prove no-remount. */
@@ -45,6 +53,8 @@
 		plaintext,
 		unframed,
 		label,
+		labelledBy,
+		describedBy,
 		placeholder,
 		leafKey,
 		onFocus,
@@ -55,6 +65,14 @@
 	}: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
+	let controller: FieldController | undefined;
+
+	/** Take the caret — what the label click calls. The CONTROLLER's focus, not the
+	 * container's: a PM view restores a selection that an `HTMLElement.focus()` on
+	 * the wrapper leaves unplaced. */
+	export function focus(): void {
+		controller?.focus();
+	}
 
 	// Block prose vs a control in a row of controls — the SAME predicate the codec
 	// picks its schema by (`createField`: `plaintext` implies `inline`), so the box a
@@ -68,21 +86,25 @@
 	// stays absent (its default rendering intact) until actually edited.
 	onMount(() => {
 		if (!containerEl) return;
-		const controller = createField({
+		const own = createField({
 			doc,
 			addr,
 			container: containerEl,
 			inline,
 			plaintext,
 			label,
+			labelledBy,
+			describedBy,
 			placeholder,
 			onFocus,
 			onCaretMove
 		});
-		register?.(leafKey, controller);
+		controller = own;
+		register?.(leafKey, own);
 		return () => {
 			unregister?.(leafKey);
-			controller.destroy();
+			controller = undefined;
+			own.destroy();
 		};
 	});
 </script>

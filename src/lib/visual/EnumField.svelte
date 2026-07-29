@@ -22,8 +22,17 @@
 		value: string | undefined;
 		values: string[];
 		fallback?: string;
-		/** Accessible name — the visual label is a bare span the trigger can't reference. */
+		/** Accessible name for a trigger NOTHING else names — an object property, whose
+		 * name is the field label plus the property's. A field's own trigger takes `id`
+		 * instead and is named by the `<label for>` beside it (the trigger is a
+		 * `<button>`, so `for` reaches it and a label click opens the list — what the
+		 * native `<select>` this replaces would have done). */
 		label?: string;
+		/** `<label for>` target. Set → the label names this trigger, so `aria-label`
+		 * comes off: two names is where implementations disagree about which wins. */
+		id?: string;
+		/** The parked `description` (FieldLabel) — announced after the name. */
+		describedBy?: string;
 		onCommit: (v: string | undefined) => void;
 		/** Consumer policy: `false` disables an option so it can't be picked.
 		 * A disallowed value already authored stays SELECTED and visible (disabled), never
@@ -31,7 +40,8 @@
 		optionAllowed?: (value: string) => boolean;
 		testid?: string;
 	}
-	let { value, values, fallback, label, onCommit, optionAllowed, testid }: Props = $props();
+	let { value, values, fallback, label, id, describedBy, onCommit, optionAllowed, testid }: Props =
+		$props();
 
 	// The sentinel's option value — a namespaced marker that no schema-authored
 	// enum member would ever be (`values` are classification markings, seal ids, and
@@ -77,7 +87,9 @@
 	>
 		<Select.Trigger
 			class="qm-select qm-control-box qm-focus-ring"
-			aria-label={label}
+			{id}
+			aria-label={id ? undefined : label}
+			aria-describedby={describedBy}
 			data-testid={testid}
 			data-ghosted={unset ? '' : undefined}
 		>
