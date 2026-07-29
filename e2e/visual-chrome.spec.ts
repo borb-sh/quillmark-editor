@@ -256,6 +256,18 @@ test.describe('visual editor chrome — polish', () => {
 		expect(strip!.y - (above!.y + above!.height)).toBeGreaterThan(0);
 	});
 
+	// The strip absorbs the gap; it does not replace it. `main` and the tips card have
+	// no strip between them — as no pair does under a quill declaring no kinds — so the
+	// gap is their whole separation and the strip's margins must not reach it.
+	test('a seam with no strip in it keeps the full stack gap', async ({ page }) => {
+		await page.goto('/visual?tips=1');
+		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
+
+		const main = (await page.locator('.qm-card').first().boundingBox())!;
+		const tips = (await page.getByTestId('tips-card').boundingBox())!;
+		expect(Math.round(tips.y - (main.y + main.height))).toBe(8);
+	});
+
 	// The cost of a full-bleed invisible target: 24px of dead-to-the-eye,
 	// live-to-the-pointer strip between every pair of cards. A drag that starts in a
 	// body and is released past the gap must select, not insert — a `click` fires on
