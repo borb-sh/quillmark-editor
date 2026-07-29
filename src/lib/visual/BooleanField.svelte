@@ -1,7 +1,7 @@
 <!--
-  A `boolean` field → a styled switch on bits-ui. (No boolean field exists in the
-  reference quill, so this control is implemented to the schema contract but is
-  UNTESTED against a real leaf — noted in the phase report.)
+  A `boolean` field → a styled switch on bits-ui. No boolean field exists in the
+  reference quill, so this control is implemented to the schema contract and is
+  UNTESTED against a real leaf.
 
   Styled rather than a native checkbox: the native box's face is UA-owned shadow
   DOM, so no dial reaches it. The a11y comes with the primitive —

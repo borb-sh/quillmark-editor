@@ -175,7 +175,7 @@
 		return cardIds.indexOf(id);
 	}
 
-	// ── Leaf registry (setCaret target lookup + the 4b active-leaf seam) ────────
+	// ── Leaf registry (setCaret target lookup + the active-leaf seam) ───────────
 	const leaves = new Map<string, FieldController>();
 	// Card handles, for `setCaret`'s reveal hop — the one thing a leaf's own controller
 	// cannot do, since which group is open is the card's state (Card §revealLeaf).
@@ -224,7 +224,7 @@
 	// A scalar control commits `undefined` for a cleared entry — the unset lane
 	// below (`doc.removeField`), not a write.
 	//
-	// A bad value makes `writer.set` THROW a `QuillmarkError`; as of 0.96.0 its
+	// A bad value makes `writer.set` THROW a `QuillmarkError`, whose
 	// `diagnostics[0]` carries a `code` and a canonical `path` (e.g.
 	// `edit::field_conform` at `main.font_size`, or `edit::unknown_field`). The
 	// editor already KNOWS the field/card being committed, so it KEYS the entry
@@ -578,7 +578,7 @@
 		// and the wash outlasts it, so a revealed landing is cued once it settles.
 		bloomInside(leaf.el);
 	}
-	/** The active leaf's controller — the 4b formatting-popover observation seam. */
+	/** The active leaf's controller — the formatting popover's observation seam. */
 	export function getActiveLeaf(): FieldController | undefined {
 		if (!activeAddr) return undefined;
 		const card = activeAddr.card != null ? activeCardId : undefined;

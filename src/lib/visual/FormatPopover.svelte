@@ -1,8 +1,9 @@
 <!--
   The formatting selection popover (VISUAL_EDITOR §Chrome, VISUAL_EDITOR_UIUX
   §Formatting). ONE popover, shell-owned, observing the ACTIVE leaf through
-  `getActiveLeaf` — the accessor 4a left as "the 4b formatting-popover
-  observation seam". A non-empty selection in the active leaf raises it over
+  `getActiveLeaf` — the VisualEditor's accessor over its `leaves` registry, and
+  the whole of what this surface knows about the editor. A non-empty selection in
+  the active leaf raises it over
   that leaf's selection rect; each button dispatches a PM `toggleMark` command
   straight at the leaf's `EditorView`. The codec's own `dispatchTransaction`
   (field.ts, read-only from here) lowers the resulting transaction to
@@ -59,7 +60,7 @@
 	type LeafWithView = FieldController & { view?: EditorView };
 
 	interface Props {
-		/** The 4b observation seam VisualEditor exposes over its `leaves` registry. */
+		/** The observation seam VisualEditor exposes over its `leaves` registry. */
 		getActiveLeaf: () => FieldController | undefined;
 	}
 	let { getActiveLeaf }: Props = $props();

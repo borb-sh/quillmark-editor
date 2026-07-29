@@ -197,8 +197,8 @@ export function controlKind(f: QuillFieldSchema): ControlKind {
 		case 'enum':
 			return 'enum';
 		case 'string':
-			// The deprecated `enum` modifier or a `values` domain promotes a string
-			// to a select; a bare string is a text input.
+			// Either spelling of a closed domain — the `enum` modifier or `values` —
+			// promotes a string to a select; a bare string is a text input.
 			return enumValues(f) ? 'enum' : 'text';
 		case 'number':
 		case 'integer':
@@ -246,9 +246,9 @@ export function fieldModels(cardSchema: QuillCardSchema): FieldModel[] {
 
 /**
  * Group-section order (VISUAL_EDITOR §Layout): the schema's `ui.groups` registry
- * KEY ORDER when present — `QuillCardUi.groups` is a typed `Record` as of
- * `@quillmark/wasm` 0.96.0 (the retired typing seam), so this reads it directly —
- * else the first-appearance order of each field's `ui.group`.
+ * KEY ORDER when present — `QuillCardUi.groups` is a typed `Record` at the
+ * boundary, so this reads it uncast — else the first-appearance order of each
+ * field's `ui.group`.
  */
 export function groupOrder(cardSchema: QuillCardSchema): string[] {
 	const groups = cardSchema.ui?.groups;

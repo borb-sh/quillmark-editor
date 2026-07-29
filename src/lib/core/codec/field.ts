@@ -35,7 +35,7 @@ export interface CreateFieldOpts {
 	inline?: boolean;
 	/** Inline + marks/islands stripped (a `plaintext` field). Implies `inline`. */
 	plaintext?: boolean;
-	/** Suppress the markdown-shorthand input rules (Phase 4 opt-out). */
+	/** Suppress the markdown-shorthand input rules. */
 	noInputRules?: boolean;
 	/** Accessible name → `aria-label` on the `contenteditable`. For a leaf NOTHING
 	 * else names — an array element (the field label plus its 1-based index), the
@@ -343,8 +343,8 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			view.destroy();
 		}
 	};
-	// The underlying view is an available (undocumented) handle: Phase 4 composes
-	// views into the VisualEditor, and tests drive edits through it.
+	// The underlying view, exposed as an available (undocumented) handle: the
+	// VisualEditor composes views, and tests drive edits through it.
 	(controller as FieldController & { view: EditorView }).view = view;
 	return controller;
 }

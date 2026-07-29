@@ -84,16 +84,15 @@ At the 0.98.0 target the whole table is stable API. One typing gap is open:
   type would carry it (`encode.ts`, `kindOp`). One cast, no runtime effect;
   re-exporting the type retires it.
 
-The two gaps this ledger used to report are closed:
+Two shapes the editor reads straight off the boundary, with no local duplicate:
 
-- **`ContentIsland.props` is typed** — the union pins `TableProps` for `table`
-  and `ImageProps` for `image` (`TableCell` the cell shape); an island of any
-  other type round-trips with opaque `props`. The codec reads the boundary type
-  and dropped its hand-rolled `IslandTable*` / `IslandImage*` duplicates and shape
-  guards ([CODEC.md](CODEC.md) §Islands).
-- **`QuillCardUi.groups` is typed** — a `Record<string, QuillGroupUi>` group
-  registry (key order = declaration order, `title` an optional label override).
-  The editor reads group order and labels off it directly, dropping the cast
+- **`ContentIsland.props`** — the union pins `TableProps` for `table` and
+  `ImageProps` for `image` (`TableCell` the cell shape); an island of any other
+  type round-trips with opaque `props`. The codec needs no hand-rolled
+  `IslandTable*` / `IslandImage*` shapes or guards ([CODEC.md](CODEC.md) §Islands).
+- **`QuillCardUi.groups`** — a `Record<string, QuillGroupUi>` group registry (key
+  order = declaration order, `title` an optional label override). The editor reads
+  group order and labels off it directly, uncast
   ([VISUAL_EDITOR.md](VISUAL_EDITOR.md) §Structure).
 
 Field addresses are one canonical `DocPath` across the boundary — `Diagnostic.path`,
