@@ -22,10 +22,6 @@ beforeAll(async () => {
 function editorExt(doc: Document, addr = MAIN_CARD_ADDR): Record<string, unknown> {
 	return (doc.getExtNamespace(addr, 'editor') ?? {}) as Record<string, unknown>;
 }
-/** The dismissal write — the editor's own (`VisualEditor.dismissTips`). */
-function clearTips(doc: Document, addr = MAIN_CARD_ADDR): void {
-	patchEditorExt(doc, addr, { tips: undefined });
-}
 /** Render one tip and read back its HTML. */
 function html(markdown: string): string {
 	const host = document.createElement('div');
@@ -87,11 +83,23 @@ describe('patchEditorExt', () => {
 		expect(editorExt(doc)).toEqual({ tips: ['a'], title: 'Renamed' });
 	});
 
-	it('drops a key patched to undefined, keeping the rest', () => {
+	it('drops a key patched to undefined, keeping the rest — on main and on a card', () => {
+		// The dismissal write (`VisualEditor.dismissTips`), and the hazard
+		// `removeExtNamespace` would cause: `tips` and `title` are SIBLING keys of one
+		// namespace, so clearing the channel by removing the namespace destroys the
+		// rename. Both addresses, since rename writes cards and tips write main.
 		const doc = quill.seedDocument();
-		patchEditorExt(doc, MAIN_CARD_ADDR, { title: 'Renamed', tips: ['a', 'b'] });
-		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
-		expect(editorExt(doc)).toEqual({ title: 'Renamed' });
+		const kind = Object.keys(quill.schema.card_kinds ?? {})[0];
+		const card = quill.seedCard(kind, doc.seedOverlay(kind));
+		if (!card) throw new Error(`the reference quill seeded no \`${kind}\` card`);
+		doc.insertCard(card);
+
+		for (const addr of [MAIN_CARD_ADDR, { card: 0 }]) {
+			patchEditorExt(doc, addr, { title: 'Renamed', tips: ['a', 'b'] });
+			patchEditorExt(doc, addr, { tips: undefined });
+			expect(editorExt(doc, addr)).toEqual({ title: 'Renamed' });
+			expect(tipsChannel(editorExt(doc, addr).tips)).toEqual([]);
+		}
 	});
 
 	it('preserves sibling namespaces', () => {
@@ -107,26 +115,5 @@ describe('patchEditorExt', () => {
 		const doc = quill.seedDocument();
 		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
 		expect(editorExt(doc)).toEqual({});
-	});
-});
-
-describe('dismissing tips', () => {
-	it('leaves a renamed card its title, on main and on a card', () => {
-		// The hazard `removeExtNamespace` would cause: `tips` and `title` are SIBLING
-		// keys of one namespace, so clearing the channel by removing the namespace
-		// destroys the rename. Both addresses, since rename writes cards and tips
-		// write main.
-		const doc = quill.seedDocument();
-		const kind = Object.keys(quill.schema.card_kinds ?? {})[0];
-		const card = quill.seedCard(kind, doc.seedOverlay(kind));
-		if (!card) throw new Error(`the reference quill seeded no \`${kind}\` card`);
-		doc.insertCard(card);
-
-		for (const addr of [MAIN_CARD_ADDR, { card: 0 }]) {
-			patchEditorExt(doc, addr, { title: 'Renamed', tips: ['a', 'b'] });
-			clearTips(doc, addr);
-			expect(editorExt(doc, addr)).toEqual({ title: 'Renamed' });
-			expect(tipsChannel(editorExt(doc, addr).tips)).toEqual([]);
-		}
 	});
 });

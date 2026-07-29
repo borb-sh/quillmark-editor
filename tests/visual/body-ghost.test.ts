@@ -27,20 +27,12 @@ describe('resolveBodyGhost', () => {
 		);
 	});
 
-	it('falls back to the built-in with no default and no consumer', () => {
-		expect(resolveBodyGhost(undefined, undefined)).toBe(DEFAULT_BODY_PLACEHOLDER);
-	});
-
-	it('treats a hook that declines or returns empty as absent', () => {
-		// `undefined` is the documented "defer to the package" answer; an empty
-		// string is the same intent expressed badly, and must not blank the leaf.
-		expect(resolveBodyGhost(undefined, undefined)).toBe(DEFAULT_BODY_PLACEHOLDER);
-		expect(resolveBodyGhost(undefined, '')).toBe(DEFAULT_BODY_PLACEHOLDER);
-		// Likewise an empty resolved default falls through rather than winning.
-		expect(resolveBodyGhost('', 'witty')).toBe('witty');
-	});
-
 	it('never yields empty — a body leaf always has something to invite into it', () => {
+		// `undefined` is the documented "defer to the package" answer from a consumer
+		// hook; an empty string is the same intent expressed badly, and an empty
+		// resolved default falls through rather than winning. No combination blanks
+		// the leaf.
+		expect(resolveBodyGhost('', 'witty')).toBe('witty');
 		for (const [d, c] of [
 			['', ''],
 			[undefined, ''],
@@ -52,25 +44,20 @@ describe('resolveBodyGhost', () => {
 });
 
 describe('the reference quill body channel', () => {
-	it('resolves NO body default on main — the fallback is the common case, not the edge', () => {
-		const doc = quill().seedDocument();
-		const body = quill().resolve(doc).main.body;
-		expect(stringifyGhost(ghostDefault(body ?? undefined))).toBeUndefined();
-		expect(resolveBodyGhost(stringifyGhost(ghostDefault(body ?? undefined)), undefined)).toBe(
-			DEFAULT_BODY_PLACEHOLDER
-		);
-	});
-
-	it('resolves no body default for a freshly added indorsement either', () => {
-		// The exact sequence `addCard` runs, against the real schema.
+	it('resolves no body default on main, nor on a freshly added indorsement', () => {
+		// The add path is the exact sequence `addCard` runs, against the real schema.
 		const q = quill();
 		const doc = q.seedDocument();
 		const card = q.seedCard('indorsement', doc.seedOverlay('indorsement'));
 		expect(card).toBeTruthy();
 		doc.insertCard(card!, doc.cardCount);
 
-		const resolved = q.resolve(doc).cards.at(-1);
-		expect(resolved?.kind).toBe('indorsement');
-		expect(stringifyGhost(ghostDefault(resolved?.body ?? undefined))).toBeUndefined();
+		const resolved = q.resolve(doc);
+		expect(resolved.cards.at(-1)?.kind).toBe('indorsement');
+		for (const body of [resolved.main.body, resolved.cards.at(-1)?.body]) {
+			const ghost = stringifyGhost(ghostDefault(body ?? undefined));
+			expect(ghost).toBeUndefined();
+			expect(resolveBodyGhost(ghost, undefined)).toBe(DEFAULT_BODY_PLACEHOLDER);
+		}
 	});
 });

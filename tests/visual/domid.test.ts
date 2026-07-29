@@ -24,17 +24,10 @@ describe('fieldDomIds', () => {
 		expect(new Set([ids.control, ids.label, ids.description]).size).toBe(3);
 	});
 
-	it('separates two editors holding the same field', () => {
-		// The leaf-key space is unique per EDITOR: two mounted side by side both hold
-		// `main:subject`, and a duplicate id makes `for` resolve to the first.
-		const a = fieldDomIds('u1', 'main:subject');
-		const b = fieldDomIds('u2', 'main:subject');
-		expect(a.control).not.toBe(b.control);
-	});
-
 	it('is INJECTIVE — a key that differs by one character keeps its own id', () => {
-		// The pairs a plain replace-with-dash would collapse: the key's own separator
-		// against a literal dash, and the body sentinel against a field of that name.
+		// The hand-written pairs a plain replace-with-dash would collapse (the key's own
+		// separator against a literal dash, the body sentinel against a field of that
+		// name), plus the shapes the real key space actually mints.
 		const keys = [
 			'main:subject',
 			'main-subject',
@@ -44,22 +37,22 @@ describe('fieldDomIds', () => {
 			'a-b:c',
 			'card1:x',
 			'card1:x-',
-			'card:1:x'
-		];
-		const ids = keys.map((k) => fieldDomIds('u1', k).control);
-		expect(new Set(ids).size).toBe(keys.length);
-	});
-
-	it('carries the real key space — every fixture-shaped key stays distinct', () => {
-		const keys = [
-			fieldKeyToString({ field: 'subject' }),
+			'card:1:x',
 			fieldKeyToString({ field: 'memo_for' }),
-			fieldKeyToString({}),
 			fieldKeyToString({ card: 'c1', field: 'subject' }),
 			fieldKeyToString({ card: 'c1' }),
 			fieldKeyToString({ card: 2, field: 'subject' })
 		];
 		const ids = keys.map((k) => fieldDomIds('u1', k).control);
 		expect(new Set(ids).size).toBe(keys.length);
+	});
+
+	it('separates two editors holding the same field', () => {
+		// The leaf-key space is unique per EDITOR, not per document: two mounted side by
+		// side both hold `main:subject`, and a duplicate id makes `for` resolve to the
+		// first.
+		expect(fieldDomIds('u1', 'main:subject').control).not.toBe(
+			fieldDomIds('u2', 'main:subject').control
+		);
 	});
 });

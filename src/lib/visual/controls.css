@@ -213,6 +213,9 @@
 		cursor: pointer;
 		user-select: none;
 	}
+	.qm-menu-item[data-highlighted] {
+		background: var(--_qm-surface-hover);
+	}
 
 	/* A floating surface that is READ rather than picked from — the selection popover
 	   and the field label's guidance. The theme surface mixed toward transparent
@@ -245,16 +248,12 @@
 			transform: none;
 		}
 	}
+	/* Every motion this file mints, opted out in one place — a raise's scale-in and
+	   the button families' hover fade. */
 	@media (prefers-reduced-motion: reduce) {
 		.qm-popover-surface {
 			animation: none;
 		}
-	}
-	.qm-menu-item[data-highlighted] {
-		background: var(--_qm-surface-hover);
-	}
-
-	@media (prefers-reduced-motion: reduce) {
 		.qm-icon-btn,
 		.qm-add-affordance {
 			transition: none;
