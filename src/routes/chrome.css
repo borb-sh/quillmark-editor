@@ -8,11 +8,19 @@
    because it IS where the defaults are stated. A recipe living beside them would
    inherit the exemption and become the one place a minted grey could hide. */
 
-/* Every band of the shell — head, route, foot — starts on the same two edges. The
-   width is left to `auto`: a block box already fills its parent and takes the
-   gutter out of the inside, where `width: 100%` would add it to the outside and
-   push a viewport narrower than the maximum into horizontal scroll. */
+/* Every band of the shell — head, route, foot — starts on the same two edges: a
+   stated width, a maximum, and the gutter taken out of the INSIDE.
+
+   Both halves of that are load-bearing. The width has to be stated because a band
+   is a grid item of the shell and `margin-inline: auto` switches its stretch
+   alignment off — left to `auto` it sizes to its content, which collapses a route's
+   panes to whatever they happen to hold. And the gutter has to be inside, or a
+   viewport narrower than the maximum overflows by exactly the two gutters. That is
+   `border-box`, declared here rather than as a global `*` reset, which would reach
+   past the host's own chrome and re-box every package element mounted inside it. */
 .pg-width {
+	box-sizing: border-box;
+	width: 100%;
 	max-width: var(--pg-max);
 	margin-inline: auto;
 	padding-inline: var(--pg-space-6);
