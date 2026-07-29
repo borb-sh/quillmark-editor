@@ -354,3 +354,78 @@ test.describe('visual editor chrome — dark scheme', () => {
 		expect(await color('[data-testid="main-letterhead_title"]')).toBe(await color('.qm-card'));
 	});
 });
+
+// VISUAL_EDITOR_UIUX §"Card stack" — the reorder pair reveals on POINTER OR FOCUS,
+// and the focus half is what only a browser can check: `:focus-within` is a live
+// match against the document's focus, and the pair is hidden by OPACITY, so it stays
+// in the tab order whether or not it is drawn. A hover-only rule type-checks, passes
+// every unit test, and leaves a keyboard on a focused control it cannot see.
+test.describe('visual editor chrome — card controls reveal', () => {
+	test.beforeEach(async ({ page }) => {
+		await page.goto('/visual');
+		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
+	});
+
+	/** The pair's computed opacity — the wrapper carries it, not the buttons. */
+	const reorderOpacity = (page: Page) =>
+		page
+			.locator('.qm-card-reorder')
+			.first()
+			.evaluate((el) => getComputedStyle(el).opacity);
+
+	test('hidden at rest, revealed by the pointer', async ({ page }) => {
+		expect(await reorderOpacity(page)).toBe('0');
+		await page.getByTestId('card-title-0').hover();
+		await expect.poll(() => reorderOpacity(page)).toBe('1');
+	});
+
+	test('a caret in the card reveals the pair, and leaving the editor drops it', async ({
+		page
+	}) => {
+		await pm(page, 'prose-card0-body').click();
+		await expect.poll(() => reorderOpacity(page)).toBe('1');
+
+		// Focus out of the editor entirely, pointer parked off every card: the reveal
+		// tracks where focus IS, so it does not rest on the last card edited.
+		await page.mouse.move(0, 0);
+		await page.getByTestId('doc-json').evaluate((el) => {
+			(document.activeElement as HTMLElement | null)?.blur();
+			el.scrollIntoView();
+		});
+		await expect.poll(() => reorderOpacity(page)).toBe('0');
+	});
+
+	/**
+	 * Seed a second card, so card 0's move-DOWN is off its edge and can hold focus.
+	 * The one-card seed disables both chevrons (first card and last at once), and a
+	 * disabled button takes no focus — the reveal is checkable only past that edge.
+	 */
+	async function addSecondCard(page: Page): Promise<void> {
+		await page.getByTestId('add-card-1').click();
+		await expect.poll(async () => (await readDump(page)).cardCount).toBe(2);
+		await page.mouse.move(0, 0);
+		await page.getByTestId('card-0-down').evaluate((el) => (el as HTMLElement).blur());
+		await expect.poll(() => reorderOpacity(page)).toBe('0');
+	}
+
+	test('the title holds the reveal, so tabbing on reaches a drawn chevron', async ({ page }) => {
+		await addSecondCard(page);
+		// The title's focus does not route through the editor's active-leaf tracking,
+		// so this is the entry a card-state class keyed to that tracking misses.
+		await page.getByTestId('card-title-0').focus();
+		await expect.poll(() => reorderOpacity(page)).toBe('1');
+
+		// Tab on: move-up is disabled on the first card, so the next stop is move-down.
+		await page.keyboard.press('Tab');
+		await expect(page.getByTestId('card-0-down')).toBeFocused();
+		expect(await reorderOpacity(page)).toBe('1');
+	});
+
+	test('a focused chevron is drawn even with the pointer away', async ({ page }) => {
+		// CardControls' own floor, independent of the card's rule.
+		await addSecondCard(page);
+		await page.getByTestId('card-0-down').focus();
+		await page.mouse.move(0, 0);
+		await expect.poll(() => reorderOpacity(page)).toBe('1');
+	});
+});
