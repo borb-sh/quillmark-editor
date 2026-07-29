@@ -1,12 +1,23 @@
-/* The playground plays the HOST's part, which is two things: declare a colour
-   scheme, and derive the page's own chrome from the same signal the mounted
-   surface follows (THEMING.md §"The surface follows your colour scheme"). Both sit
-   here rather than per route — four pages each picking their own greys is four
-   chances for the page to diverge from the cards inside it.
+/* The HOST's derivation — public dials in, the `--pg-*` scale the playground's own
+   chrome reads out. The recipes that consume it are `routes/chrome.css`; the split
+   is the one `core/theme.css` and `visual/controls.css` make, and for the same
+   reason: a rung fixes a VALUE, a recipe fixes which declarations make a thing, and
+   only the second can be checked against the first. Literals live here and nowhere
+   else under `src/routes` — `check:style` runs its axes over the host scope too,
+   with this file exempt as the place the defaults are minted (PLAYGROUND
+   §"Preventing drift").
+
+   The playground plays the host's part, which is three things: declare a colour
+   scheme, derive the page's own chrome from the same signal the mounted surface
+   follows (THEMING.md §"The surface follows your colour scheme"), and put a page
+   tone behind the column where a route mounts one.
 
    `light dark` is the answer for an app with no theme of its own: it follows the
    OS, and every `[data-qm-root]` inside inherits it, so page and surface invert
-   together with no media query on either side.
+   together with no media query on either side. The running head's scheme control
+   pins `color-scheme` on the document element, which is the same declaration a host
+   app makes — so flipping it is the contract being exercised, not a mode the
+   playground implements.
 
    The page's poles are the SYSTEM colours, so unstyled text and a `--pg-*` rung
    land on the same tone — a host knows what canvas it sits on; the package does
@@ -22,11 +33,21 @@
 :root {
 	color-scheme: light dark;
 
+	/* ── Colour ──────────────────────────────────────────────────────────────── */
 	--pg-page: var(--qm-bg, Canvas);
 	--pg-ink: var(--qm-fg, CanvasText);
 	--pg-ink-meta: color-mix(in oklab, var(--pg-ink), var(--pg-page) 45%);
 	--pg-ghost: color-mix(in oklab, var(--pg-ink), var(--pg-page) 60%);
-	--pg-card-bg: color-mix(in oklab, var(--pg-page), var(--pg-ink) 4%);
+	/* Two planes behind content, stepping toward the ink exactly as the package's
+	   surfaces do and at the same 4pp apart (SURFACES §Elevation) — so a host plate
+	   and a card on it agree about which way "raised" goes in both schemes. */
+	--pg-surface: color-mix(in oklab, var(--pg-page), var(--pg-ink) 4%);
+	--pg-surface-hover: color-mix(in oklab, var(--pg-page), var(--pg-ink) 8%);
+	/* The page tone THEMING §"What is behind the column is yours" leaves to the
+	   host: the ground a mounted surface's own paper reads against. The same rung a
+	   plate takes, named for the other job — a third step between the two would buy
+	   a fourth grey and cost the ladder its even spacing. */
+	--pg-desk: var(--pg-surface);
 	--pg-border: color-mix(in oklab, var(--pg-page), var(--pg-ink) 17%);
 	--pg-border-strong: color-mix(in oklab, var(--pg-page), var(--pg-ink) 40%);
 
@@ -35,36 +56,89 @@
 	--pg-link: light-dark(#1a56db, #93b4ff);
 	--pg-ok: light-dark(#137333, #5bd08a);
 	--pg-alert: light-dark(#c5221f, #ff9c94);
+
+	/* ── Rhythm ──────────────────────────────────────────────────────────────── */
+	/* One base and its multiples, the package's scale widened at the top: a page
+	   separates SECTIONS where a card separates fields, so the ramp runs to 6rem.
+	   An in-between value is the drift this prevents. */
+	--pg-space: 0.25rem;
+	--pg-space-half: calc(var(--pg-space) / 2);
+	--pg-space-2: calc(var(--pg-space) * 2);
+	--pg-space-3: calc(var(--pg-space) * 3);
+	--pg-space-4: calc(var(--pg-space) * 4);
+	--pg-space-6: calc(var(--pg-space) * 6);
+	--pg-space-8: calc(var(--pg-space) * 8);
+	--pg-space-12: calc(var(--pg-space) * 12);
+	--pg-space-16: calc(var(--pg-space) * 16);
+	--pg-space-24: calc(var(--pg-space) * 24);
+	--pg-border-width: 1px;
+	--pg-ring-width: 2px;
+	--pg-radius: var(--qm-radius, 8px);
+	--pg-radius-inner: calc(var(--pg-radius) / 2);
+	/* A shape tier beside the ramp rather than a step on it, so an end cap stays
+	   round at any `--qm-radius`. */
+	--pg-radius-pill: 999px;
+
+	/* The two widths the layout is built from: the measure a passage wraps at, and
+	   the margin the annotation column sits in (PLAYGROUND §"The rail"). Both are
+	   reading geometry — what a line of text needs — so neither derives from the
+	   spacing dial, the same reason the package's capacity ramp does not. */
+	--pg-measure: 34rem;
+	--pg-rail: 8rem;
+	/* ONE page width for the whole shell — the running head, every route and the
+	   foot start and end on the same two edges. A per-route maximum is the
+	   raggedness this removes: the head would step in and out over a surface it
+	   sits above. */
+	--pg-max: 84rem;
+
+	/* ── Type ────────────────────────────────────────────────────────────────── */
+	/* Two faces with a job each: prose is sans, chrome is mono (PLAYGROUND §"Two
+	   faces"). Both are system stacks — a downloaded face would put the front door
+	   on a network request the static build otherwise does not make. */
+	--pg-font: ui-sans-serif, system-ui, sans-serif;
+	--pg-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+	--pg-text: 1rem;
+	--pg-text-display: clamp(1.9rem, 1.3rem + 1.9vw, 2.6rem);
+	--pg-text-title: 1.3125rem;
+	--pg-text-label: 0.8125rem;
+	--pg-text-meta: 0.6875rem;
+	/* A ratio beside the ramp rather than a step on it: an inline code run has to
+	   shrink against whatever it sits in — a deck at title size, a note at label
+	   size — so it cannot be an absolute rung. */
+	--pg-text-code: 0.9em;
+	--pg-weight-strong: 600;
+	--pg-weight-mid: 500;
+	--pg-leading-body: 1.6;
+	--pg-leading-tight: 1.25;
+	--pg-track-display: -0.02em;
+	--pg-track-label: 0.08em;
+
+	/* ── Motion ──────────────────────────────────────────────────────────────── */
+	/* One rung: every transition on these pages is a state toggling under the
+	   pointer that nobody watches. A second would need something the eye tracks,
+	   and the playground's chrome has none. */
+	--pg-duration: 140ms;
 }
 
-/* The shell's own chrome: palette, gutter and heading rhythm. A route sets its own
-   measure and the layout inside it, nothing more. */
-main {
-	font-family: ui-sans-serif, system-ui, sans-serif;
+/* Reduced motion collapses the SCALE, not each transition. Every animated rule
+   reads the rung, so one override reaches all of them — where a blanket `*` rule
+   would also reach past the host's own chrome and into every package element
+   mounted inside it. */
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--pg-duration: 1ms;
+	}
+}
+
+/* The page's own baseline, which every route inherits by sitting in the document —
+   the same job `core/theme.css`'s root rule does for a mounted surface. */
+body {
+	margin: 0;
+	background: var(--pg-page);
 	color: var(--pg-ink);
-	padding: 0 1.5rem;
-}
-
-main h1 {
-	font-size: 1.5rem;
-	margin-bottom: 0.25rem;
-}
-
-main .sub {
-	color: var(--pg-ink-meta);
-	margin-top: 0;
-}
-
-main .ready {
-	color: var(--pg-ok);
-	font-weight: 600;
-}
-
-main .loading {
-	color: var(--pg-ink-meta);
-}
-
-main .error {
-	color: var(--pg-alert);
-	font-weight: 600;
+	font-family: var(--pg-font);
+	font-size: var(--pg-text);
+	line-height: var(--pg-leading-body);
+	-webkit-font-smoothing: antialiased;
 }

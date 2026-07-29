@@ -1,13 +1,20 @@
 <!--
-  Phase 1 playground: prove the substrate chain end-to-end in a real browser —
-  load the reference quill, seed a Document, open a LiveSession, and report the
-  three boundary quantities (pageCount / supportsCanvas / warnings). No paint, no
-  editing yet; those surfaces mount here as their phases land.
+  The playground's front page, and the one route written for a stranger. It opens
+  a session over the reference quill exactly as the tool routes do, then spends it
+  twice: the hero mounts <Preview> over it, so the first thing a visitor sees is a
+  real compiled page painted by the package rather than a picture of one, and the
+  panel at the foot reports the boundary quantities off the same handles
+  (pageCount / supportsCanvas / warnings).
+
+  Clicking the hero sheet is the package's thesis in one gesture — a hit on the
+  painted page resolves to a content address, printed under it. Nothing else on
+  the page claims anything the session is not already proving.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
-	import type { Diagnostic } from '$lib/core';
+	import { Preview } from '$lib/preview';
+	import type { ContentHit, Diagnostic, LiveSession } from '$lib/core';
 	import { loadUsafMemoTree } from './fixture';
 
 	type Status =
@@ -15,19 +22,44 @@
 		| { phase: 'error'; message: string }
 		| {
 				phase: 'ready';
-				treeSize: number;
 				quillName: string;
 				quillVersion: string;
 				backendId: string;
 				fieldCount: number;
 				cardKinds: string[];
-				quillRef: string;
 				pageCount: number;
 				supportsCanvas: boolean;
 				warnings: Diagnostic[];
 		  };
 
+	const SURFACES = [
+		{
+			path: '/preview',
+			name: 'Preview',
+			line: 'One canvas per visible page, painted from the session. Clicks resolve to a content position; field boxes bloom where the caret lands.'
+		},
+		{
+			path: '/visual',
+			name: 'Visual',
+			line: 'The federated WYSIWYG — every content leaf its own ProseMirror surface, every scalar a form control, over one document.'
+		},
+		{
+			path: '/editor',
+			name: 'Editor',
+			line: 'Both surfaces over one session, the caret bridged in each direction, and the canonical markdown underneath.'
+		}
+	];
+
+	const OPEN_SNIPPET = `import { Engine, Quill, init } from '@quillmark/editor/core';
+
+init();
+const quill = Quill.fromTree(tree);
+const doc = quill.seedDocument();
+const session = await new Engine().open(quill, doc);`;
+
 	let status = $state<Status>({ phase: 'loading' });
+	let session = $state<LiveSession | undefined>();
+	let lastHit = $state<ContentHit | undefined>();
 	let toFree: Array<{ free(): void }> = [];
 
 	onMount(() => {
@@ -55,15 +87,14 @@
 					return;
 				}
 				toFree = created;
+				session = openedSession;
 				status = {
 					phase: 'ready',
-					treeSize: tree.size,
 					quillName: quill.metadata.name,
 					quillVersion: quill.metadata.version,
 					backendId: quill.backendId,
 					fieldCount: Object.keys(quill.schema.main.fields).length,
 					cardKinds: Object.keys(quill.schema.card_kinds ?? {}),
-					quillRef: doc.quillRef,
 					pageCount: openedSession.pageCount,
 					supportsCanvas: openedSession.supportsCanvas,
 					warnings: openedSession.warnings
@@ -78,90 +109,285 @@
 			cancelled = true;
 			for (const h of toFree) h.free();
 			toFree = [];
+			session = undefined;
 		};
 	});
 </script>
 
-<main>
-	<h1>@quillmark/editor</h1>
-	<p class="sub">Phase 1 substrate — the WASM boundary proven live.</p>
+<main class="pg-width">
+	<section class="hero">
+		<!-- No eyebrow over the title: the running head already says whose page this
+		     is, and a label that repeats it is chrome restating chrome. -->
+		<div class="thesis">
+			<h1>A WYSIWYG editor whose preview is the compiled page.</h1>
+			<p class="pg-deck">
+				Quillmark compiles a structured document to a typeset, paginated page.
+				<code>@quillmark/editor</code> puts an editing surface on one side of that session and the painted
+				output on the other, and carries the caret between them — click a word on the page and land in
+				the field that produced it.
+			</p>
+			<div class="actions">
+				<a class="pg-cta" href="{base}/editor">Open the split-pane editor</a>
+				<a class="pg-link" href="https://github.com/borb-sh/quillmark-editor">Read the source</a>
+			</div>
+		</div>
 
-	<nav aria-label="Playground pages">
-		<a href="{base}/preview">Preview <span>Phase 2 — paint, overlay, click bridge</span></a>
-		<a href="{base}/visual">Visual <span>Phase 4 — the WYSIWYG surface</span></a>
-		<a href="{base}/editor">Editor <span>Phase 5 — the split-pane shell + caret bridge</span></a>
-	</nav>
+		<!-- The sheet: the reference quill, compiled and painted, on a page tone the
+		     host supplies (THEMING §"What is behind the column is yours"). -->
+		<figure class="sheet">
+			<div class="pg-frame sheet-frame">
+				{#if session}
+					<Preview {session} onCaretPick={(hit) => (lastHit = hit)} />
+				{/if}
+			</div>
+			<figcaption class="sheet-caption">
+				<span class="pg-label">Caret pick</span>
+				<span class="pg-readout" data-testid="hero-hit">
+					{lastHit ? `${lastHit.field} @ ${lastHit.pos}` : 'click any text on the page'}
+				</span>
+			</figcaption>
+		</figure>
+	</section>
 
-	{#if status.phase === 'loading'}
-		<p data-testid="status" class="loading">Loading reference quill…</p>
-	{:else if status.phase === 'error'}
-		<p data-testid="status" class="error">Error: {status.message}</p>
-	{:else}
-		<p data-testid="status" class="ready">Session open.</p>
-		<dl>
-			<dt>fixture entries</dt>
-			<dd>{status.treeSize}</dd>
-			<dt>quill</dt>
-			<dd>{status.quillName}@{status.quillVersion} ({status.backendId})</dd>
-			<dt>main fields</dt>
-			<dd>{status.fieldCount}</dd>
-			<dt>card kinds</dt>
-			<dd>{status.cardKinds.join(', ') || '—'}</dd>
-			<dt>document</dt>
-			<dd>{status.quillRef}</dd>
-			<dt>pageCount</dt>
-			<dd data-testid="pageCount">{status.pageCount}</dd>
-			<dt>supportsCanvas</dt>
-			<dd data-testid="supportsCanvas">{status.supportsCanvas}</dd>
-			<dt>warnings</dt>
-			<dd data-testid="warnings">{status.warnings.length}</dd>
-		</dl>
-	{/if}
+	<section class="pg-rail block">
+		<h2 class="pg-label">Surfaces</h2>
+		<ul class="surfaces">
+			{#each SURFACES as surface (surface.path)}
+				<li>
+					<a class="surface" href="{base}{surface.path}">
+						<span class="surface-name">{surface.name}</span>
+						<span class="surface-line">{surface.line}</span>
+						<span class="surface-go">Open</span>
+					</a>
+				</li>
+			{/each}
+		</ul>
+	</section>
+
+	<section class="pg-rail block">
+		<h2 class="pg-label">Install</h2>
+		<div class="install">
+			<pre class="pg-readout">npm install @quillmark/editor</pre>
+			<p class="note">
+				<code>svelte@^5</code> is a peer dependency; <code>@quillmark/wasm</code> comes as a dependency.
+				The heavy machinery is vanilla TS, so a non-Svelte consumer wraps a core in a few lines.
+			</p>
+			<pre class="pg-readout">{OPEN_SNIPPET}</pre>
+			<p class="note">
+				The consumer owns the session and every handle. Each page here runs exactly that, then
+				mounts a surface over the result — no route reaches past the public subpaths.
+			</p>
+		</div>
+	</section>
+
+	<section class="pg-rail block">
+		<h2 class="pg-label">This page</h2>
+		<div class="pg-panel readout-panel">
+			{#if status.phase === 'loading'}
+				<p data-testid="status" class="pg-status loading">Loading reference quill…</p>
+			{:else if status.phase === 'error'}
+				<p data-testid="status" class="pg-status error">Error: {status.message}</p>
+			{:else}
+				<p data-testid="status" class="pg-status ready">Session open</p>
+				<dl class="facts">
+					<dt>quill</dt>
+					<dd>{status.quillName}@{status.quillVersion}</dd>
+					<dt>backend</dt>
+					<dd>{status.backendId}</dd>
+					<dt>main fields</dt>
+					<dd>{status.fieldCount}</dd>
+					<dt>card kinds</dt>
+					<dd>{status.cardKinds.join(', ') || '—'}</dd>
+					<dt>pageCount</dt>
+					<dd data-testid="pageCount">{status.pageCount}</dd>
+					<dt>supportsCanvas</dt>
+					<dd data-testid="supportsCanvas">{status.supportsCanvas}</dd>
+					<dt>warnings</dt>
+					<dd data-testid="warnings">{status.warnings.length}</dd>
+				</dl>
+			{/if}
+		</div>
+	</section>
 </main>
 
 <style>
-	main {
-		max-width: 42rem;
-		margin: 3rem auto;
+	/* The thesis and the artifact it describes, side by side; the sheet drops under
+	   the text where the two no longer fit. */
+	.hero {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 26rem;
+		gap: var(--pg-space-16);
+		align-items: start;
+		padding-block: var(--pg-space-16);
 	}
-	nav {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.75rem;
-		margin: 1.5rem 0;
-	}
-	nav a {
+
+	.thesis {
 		display: flex;
 		flex-direction: column;
-		gap: 0.15rem;
-		padding: 0.6rem 0.9rem;
-		border: 1px solid var(--pg-border);
-		border-radius: 8px;
-		text-decoration: none;
-		color: var(--pg-link);
-		font-weight: 600;
+		gap: var(--pg-space-4);
+		max-width: var(--pg-measure);
 	}
-	nav a:hover {
-		border-color: var(--pg-link);
-		background: var(--pg-card-bg);
+
+	h1 {
+		margin: 0;
+		font-size: var(--pg-text-display);
+		font-weight: var(--pg-weight-strong);
+		line-height: var(--pg-leading-tight);
+		letter-spacing: var(--pg-track-display);
+		text-wrap: balance;
 	}
-	nav a span {
-		color: var(--pg-ghost);
-		font-weight: 400;
-		font-size: 0.78rem;
+
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--pg-space-4);
+		margin-top: var(--pg-space-2);
 	}
-	dl {
-		display: grid;
-		grid-template-columns: max-content 1fr;
-		gap: 0.35rem 1.25rem;
-		margin-top: 1.5rem;
-		font-variant-numeric: tabular-nums;
+
+	.sheet {
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--pg-space-2);
 	}
-	dt {
+
+	/* The desk inset: the painted page carries its own edge and shadow, so what the
+	   host owes it is room to sit in and a tone to read against. */
+	.sheet-frame {
+		height: 32rem;
+		padding: var(--pg-space-4);
+	}
+
+	.sheet-caption {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--pg-space-2);
+	}
+
+	.sheet-caption .pg-readout {
 		color: var(--pg-ink-meta);
 	}
+
+	/* ── Sections ───────────────────────────────────────────────────────────── */
+
+	.block {
+		padding-block: var(--pg-space-12);
+		border-top: var(--pg-border-width) solid var(--pg-border);
+	}
+
+	.surfaces {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+		gap: var(--pg-space-8);
+	}
+
+	/* No plate and no box: the reading column stays unboxed, so an entry is a rule
+	   with type under it. The rule is what carries the hover — it is the only ink
+	   the entry has that is not doing another job. */
+	.surface {
+		display: flex;
+		flex-direction: column;
+		align-items: start;
+		gap: var(--pg-space-2);
+		height: 100%;
+		padding-top: var(--pg-space-3);
+		border-top: var(--pg-ring-width) solid var(--pg-border-strong);
+		color: inherit;
+		text-decoration: none;
+		transition: border-color var(--pg-duration) ease;
+	}
+
+	.surface:hover {
+		border-top-color: var(--pg-ink);
+	}
+
+	.surface-name {
+		font-size: var(--pg-text-title);
+		font-weight: var(--pg-weight-strong);
+		line-height: var(--pg-leading-tight);
+	}
+
+	.surface-line {
+		color: var(--pg-ink-meta);
+		font-size: var(--pg-text-label);
+	}
+
+	/* Pushed to the foot of its entry, so the three read on one line whatever their
+	   descriptions wrap to. */
+	.surface-go {
+		margin-top: auto;
+		padding-top: var(--pg-space-2);
+		font-family: var(--pg-font-mono);
+		font-size: var(--pg-text-meta);
+		letter-spacing: var(--pg-track-label);
+		text-transform: uppercase;
+		color: var(--pg-ghost);
+	}
+
+	.surface-go::after {
+		content: ' →';
+	}
+
+	.install {
+		display: flex;
+		flex-direction: column;
+		gap: var(--pg-space-4);
+		max-width: var(--pg-measure);
+	}
+
+	.note {
+		margin: 0;
+		color: var(--pg-ink-meta);
+		font-size: var(--pg-text-label);
+	}
+
+	code {
+		font-family: var(--pg-font-mono);
+		font-size: var(--pg-text-code);
+	}
+
+	/* ── The boundary readout ───────────────────────────────────────────────── */
+
+	.readout-panel {
+		display: flex;
+		flex-direction: column;
+		gap: var(--pg-space-3);
+		max-width: var(--pg-measure);
+	}
+
+	.facts {
+		display: grid;
+		grid-template-columns: max-content minmax(0, 1fr);
+		gap: var(--pg-space) var(--pg-space-6);
+		margin: 0;
+		font-family: var(--pg-font-mono);
+		font-size: var(--pg-text-label);
+		line-height: var(--pg-leading-tight);
+		font-variant-numeric: tabular-nums;
+	}
+
+	dt {
+		color: var(--pg-ghost);
+	}
+
 	dd {
 		margin: 0;
-		font-weight: 500;
+		overflow-wrap: anywhere;
+	}
+
+	@media (width < 60rem) {
+		.hero {
+			grid-template-columns: minmax(0, 1fr);
+			gap: var(--pg-space-8);
+			padding-block: var(--pg-space-12) var(--pg-space-8);
+		}
+		.sheet {
+			max-width: 26rem;
+		}
 	}
 </style>

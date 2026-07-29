@@ -1,24 +1,36 @@
 <!--
-  Phase 4 playground: mount <VisualEditor> over a seeded reference-quill document.
-  The side panel's live `doc-json` dump reads curated doc state (field values,
-  card order, card titles/bodies, `subject`'s marks), so a commit that changed the
-  DOM without landing in the Document reads as the two disagreeing rather than as
-  a success. Client-only (WASM + PM need the browser); handles are freed on
-  unmount.
+  Mount <VisualEditor> over a seeded reference-quill document. The panel's live
+  `doc-json` dump reads curated doc state (field values, card order, card
+  titles/bodies, `subject`'s marks), so a commit that changed the DOM without
+  landing in the Document reads as the two disagreeing rather than as a success.
+  Client-only (WASM + PM need the browser); handles are freed on unmount.
 
   The panel's buttons stand in for consumer-supplied channels the reference quill
   has no way to declare: `inject-diagnostics` for the consumer `diagnostics` prop
   (VISUAL_EDITOR §Diagnostics — a real consumer derives it from
   `LiveSession.warnings` and render errors), plus the enum policy and the body
   wording below.
+
+  The fixture variants are SCHEMA or SEED changes read once at mount, so their
+  links reload the page rather than navigating within it.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { base } from '$app/paths';
+	import { page } from '$app/state';
 	import type { Quill, Document, Addr, CardAddr, Content, Diagnostic } from '$lib/core';
 	import { loadUsafMemoTree, withMainDateDefault, withSecondCardKind } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
 	type VisualEditorComponent = typeof import('$lib/visual').VisualEditor;
+
+	// What each flag changes about the document under the editor. Named for the
+	// branch it reaches — the reference quill on disk reaches none of them.
+	const VARIANTS = [
+		{ flag: 'tips', label: 'tips', hint: 'seed the guidance channel on main' },
+		{ flag: 'kinds2', label: 'kinds2', hint: 'a second card kind, so add takes its menu branch' },
+		{ flag: 'foreign', label: 'foreign', hint: 'a card whose kind the schema cannot project' }
+	];
 
 	let status = $state<Status>({ phase: 'loading' });
 	let VisualEditor = $state<VisualEditorComponent | undefined>();
@@ -56,14 +68,27 @@
 		wittyGhosts ? () => WITTY[Math.floor(Math.random() * WITTY.length)] : undefined
 	);
 
+	// A variant link flips its own flag and leaves the rest of the query alone, so
+	// the three compose.
+	const variants = $derived(
+		VARIANTS.map((variant) => {
+			const params = new URLSearchParams(page.url.search);
+			const on = params.has(variant.flag);
+			if (on) params.delete(variant.flag);
+			else params.set(variant.flag, '');
+			const query = params.toString().replace(/=(?=&|$)/g, '');
+			return { ...variant, on, href: `${base}/visual${query ? `?${query}` : ''}` };
+		})
+	);
+
 	let toFree: Array<{ free(): void }> = [];
 
 	function refresh(): void {
 		dumpTick++;
 	}
 
-	// A consumer-supplied diagnostic feed stand-in (Phase 5 would derive this
-	// from LiveSession.warnings / render errors) — one main-field path, one
+	// A consumer-supplied diagnostic feed stand-in (the split-pane shell derives
+	// this from LiveSession.warnings / render errors) — one main-field path, one
 	// card-field DocPath, proving the external producer routes to both.
 	function injectDiagnostics(): void {
 		externalDiagnostics = [
@@ -190,16 +215,25 @@
 	});
 </script>
 
-<main>
-	<h1>@quillmark/editor — Visual</h1>
-	<p class="sub">Phase 4 — the federated WYSIWYG surface over a seeded document.</p>
+<main class="pg-width">
+	<header class="pg-rail head">
+		{#if status.phase === 'loading'}
+			<p data-testid="status" class="pg-status loading">Opening…</p>
+		{:else if status.phase === 'error'}
+			<p data-testid="status" class="pg-status error">Error: {status.message}</p>
+		{:else}
+			<p data-testid="status" class="pg-status ready">Document seeded</p>
+		{/if}
+		<div>
+			<h1>Visual</h1>
+			<p class="pg-deck">
+				A federated WYSIWYG over one document — every content leaf its own ProseMirror surface,
+				every scalar a form control, the card stack the document's structure.
+			</p>
+		</div>
+	</header>
 
-	{#if status.phase === 'loading'}
-		<p data-testid="status" class="loading">Loading reference quill…</p>
-	{:else if status.phase === 'error'}
-		<p data-testid="status" class="error">Error: {status.message}</p>
-	{:else}
-		<p data-testid="status" class="ready">Ready.</p>
+	{#if status.phase === 'ready'}
 		<div class="layout">
 			<div class="editor-shell">
 				{#if VisualEditor && docHandle && quillHandle}
@@ -215,68 +249,113 @@
 					/>
 				{/if}
 			</div>
-			<aside class="state-panel">
-				<div class="state-label">active addr</div>
-				<pre data-testid="active-addr">{lastAddr}</pre>
-				<button type="button" data-testid="inject-diagnostics" onclick={injectDiagnostics}
-					>Inject test diagnostics</button
-				>
-				<button
-					type="button"
-					data-testid="toggle-enum-policy"
-					onclick={() => (restrictEnums = !restrictEnums)}>Toggle enum policy (forbid CUI)</button
-				>
-				<button
-					type="button"
-					data-testid="toggle-body-placeholder"
-					onclick={() => (wittyGhosts = !wittyGhosts)}>Toggle custom body placeholder</button
-				>
-				<div class="state-label">doc state</div>
-				<pre data-testid="doc-json">{dump}</pre>
+
+			<aside class="pg-panel instruments">
+				<p class="pg-label">Consumer channels</p>
+				<div class="buttons">
+					<button
+						class="pg-btn"
+						type="button"
+						data-testid="inject-diagnostics"
+						onclick={injectDiagnostics}>Inject diagnostics</button
+					>
+					<button
+						class="pg-btn"
+						type="button"
+						data-testid="toggle-enum-policy"
+						aria-pressed={restrictEnums}
+						onclick={() => (restrictEnums = !restrictEnums)}>Forbid CUI</button
+					>
+					<button
+						class="pg-btn"
+						type="button"
+						data-testid="toggle-body-placeholder"
+						aria-pressed={wittyGhosts}
+						onclick={() => (wittyGhosts = !wittyGhosts)}>Custom body placeholder</button
+					>
+				</div>
+
+				<p class="pg-label">Fixture variants</p>
+				<div class="buttons">
+					{#each variants as variant (variant.flag)}
+						<a
+							class="pg-btn"
+							href={variant.href}
+							data-sveltekit-reload
+							aria-current={variant.on ? 'true' : undefined}
+							title={variant.hint}>{variant.label}</a
+						>
+					{/each}
+				</div>
+
+				<p class="pg-label">Active address</p>
+				<p class="pg-readout" data-testid="active-addr">{lastAddr}</p>
+
+				<p class="pg-label">Document</p>
+				<pre class="pg-readout" data-testid="doc-json">{dump}</pre>
 			</aside>
 		</div>
 	{/if}
 </main>
 
 <style>
-	main {
-		max-width: 78rem;
-		margin: 1.5rem auto;
+	.head {
+		padding-block: var(--pg-space-12) var(--pg-space-8);
 	}
+
+	h1 {
+		margin: 0 0 var(--pg-space-2);
+		font-size: var(--pg-text-display);
+		font-weight: var(--pg-weight-strong);
+		line-height: var(--pg-leading-tight);
+		letter-spacing: var(--pg-track-display);
+	}
+
 	.layout {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) 22rem;
-		gap: 1.25rem;
+		gap: var(--pg-space-8);
 		align-items: start;
 	}
+
 	.editor-shell {
 		min-width: 0;
 	}
-	.state-panel {
+
+	.instruments {
 		position: sticky;
-		top: 1rem;
-		border: 1px solid var(--pg-border);
-		border-radius: 8px;
-		padding: 0.75rem;
-		background: var(--pg-card-bg);
-	}
-	.state-label {
-		font-size: 0.68rem;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: var(--pg-ghost);
-		margin: 0.4rem 0 0.2rem;
-	}
-	.state-panel pre {
-		white-space: pre-wrap;
-		word-break: break-all;
-		font-size: 0.7rem;
-		background: var(--pg-page);
-		border: 1px solid var(--pg-border);
-		border-radius: 4px;
-		padding: 0.4rem;
-		margin: 0;
-		max-height: 20rem;
+		top: var(--pg-space-16);
+		display: flex;
+		flex-direction: column;
+		gap: var(--pg-space-half);
+		max-height: calc(100dvh - var(--pg-space-24));
 		overflow: auto;
+	}
+
+	/* A label sits on its value; the space belongs between the groups. */
+	.instruments .pg-label:not(:first-child) {
+		margin-top: var(--pg-space-4);
+	}
+
+	.buttons {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--pg-space);
+	}
+
+	/* The variant links are controls by role, so they take the button recipe and
+	   lose the anchor's underline with it. */
+	a.pg-btn {
+		text-decoration: none;
+	}
+
+	@media (width < 60rem) {
+		.layout {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.instruments {
+			position: static;
+			max-height: none;
+		}
 	}
 </style>

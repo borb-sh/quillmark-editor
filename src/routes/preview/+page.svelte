@@ -1,20 +1,20 @@
 <!--
-  Phase 2 playground: mount <Preview> over a live session of the reference quill
-  and exercise the three responsibilities in a real browser — paint (canvas per
-  page), overlay (field-box rects), and the click bridge (positionAt → a
-  ContentHit, written to the state strip below).
+  Mount <Preview> over a live session of the reference quill and exercise the
+  three responsibilities in a real browser — paint (canvas per page), overlay
+  (field-box rects), and the click bridge (positionAt → a ContentHit, written to
+  the panel beside it).
 
   `margin={0}` (the component's own default is 1) is deliberate: usaf_memo is a
   2-page fixture, and any margin >= 1 always keeps BOTH pages mounted regardless
   of scroll position (page 0 and page 1 are never more than 1 page apart), which
   makes "mounted canvases stay bounded below pageCount" unfalsifiable. margin=0
-  plus the short fixed-height shell below make scrolling actually swap which
-  page is mounted.
+  plus the short fixed-height frame below make scrolling actually swap which page
+  is mounted.
 
-  The "apply an edit" button exercises the OTHER half of the exit criteria (an
-  apply repaints dirty ∩ visible pages) without reaching into Phase 3's codec:
-  `doc.revise` is a Phase-1 substrate primitive, so this stays
-  in the playground route's lane, not Preview's — Preview never calls `apply`.
+  The "edit subject" button exercises the OTHER half of the exit criteria (an
+  apply repaints dirty ∩ visible pages) without reaching into the codec:
+  `doc.revise` is a substrate primitive, so this stays in the playground route's
+  lane, not Preview's — Preview never calls `apply`.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -25,7 +25,7 @@
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
 
 	let status = $state<Status>({ phase: 'loading' });
-	let session: LiveSession | undefined = $state();
+	let session = $state<LiveSession | undefined>();
 	let lastHit = $state<ContentHit | undefined>(undefined);
 	let lastChange = $state<ChangeSet | undefined>(undefined);
 	let previewRef: ReturnType<typeof Preview> | undefined = $state();
@@ -46,9 +46,9 @@
 		previewRef?.refresh(change);
 	}
 
-	// Exercises the two remaining command-surface verbs the click-bridge tests
-	// don't reach: `setZoom` (density, not layout — the canvas backing store
-	// should grow) and `scrollToField` (fieldBoxes -> scroll into view).
+	// Exercises the two remaining command-surface verbs the click bridge does not
+	// reach: `setZoom` (density, not layout — the canvas backing store should grow)
+	// and `scrollToField` (fieldBoxes -> scroll into view).
 	function zoomIn(): void {
 		previewRef?.setZoom(2);
 	}
@@ -96,55 +96,136 @@
 	});
 </script>
 
-<main>
-	<h1>@quillmark/editor — Preview</h1>
-	<p class="sub">Phase 2 — paint, overlay, and the click bridge over a live session.</p>
-
-	{#if status.phase === 'loading'}
-		<p data-testid="status" class="loading">Loading reference quill…</p>
-	{:else if status.phase === 'error'}
-		<p data-testid="status" class="error">Error: {status.message}</p>
-	{:else}
-		<p data-testid="status" class="ready">Session open.</p>
-		<div class="toolbar">
-			<button onclick={applySubjectEdit}>Edit subject (apply + refresh)</button>
-			<button onclick={zoomIn}>Zoom 2x</button>
-			<button onclick={scrollToSubject}>Scroll to subject</button>
-			<span data-testid="dirty-pages">
-				{lastChange ? `dirtyPages: [${lastChange.dirtyPages.join(', ')}]` : 'dirtyPages: —'}
-			</span>
+<main class="pg-width">
+	<header class="pg-rail head">
+		{#if status.phase === 'loading'}
+			<p data-testid="status" class="pg-status loading">Opening…</p>
+		{:else if status.phase === 'error'}
+			<p data-testid="status" class="pg-status error">Error: {status.message}</p>
+		{:else}
+			<p data-testid="status" class="pg-status ready">Session open</p>
+		{/if}
+		<div>
+			<h1>Preview</h1>
+			<p class="pg-deck">
+				One canvas per visible page, painted from the session and mounted as you scroll. Click any
+				text on the page to resolve a content position.
+			</p>
 		</div>
-		<p data-testid="last-hit">
-			{lastHit
-				? JSON.stringify({
-						field: lastHit.field,
-						pos: lastHit.pos,
-						granularity: lastHit.granularity
-					})
-				: 'none'}
-		</p>
-		<div class="preview-shell">
-			{#if session}
-				<Preview bind:this={previewRef} {session} margin={0} onCaretPick={handleCaretPick} />
-			{/if}
+	</header>
+
+	{#if status.phase === 'ready'}
+		<div class="layout">
+			<div>
+				<div class="pg-frame preview-frame">
+					{#if session}
+						<Preview bind:this={previewRef} {session} margin={0} onCaretPick={handleCaretPick} />
+					{/if}
+				</div>
+				<p class="note">
+					The frame is deliberately short and the page margin is <code>0</code>, so scrolling swaps
+					which page is mounted instead of keeping both alive — the bound the paint loop claims is
+					only falsifiable at this size.
+				</p>
+			</div>
+
+			<aside class="pg-panel instruments">
+				<p class="pg-label">Commands</p>
+				<div class="buttons">
+					<button class="pg-btn" type="button" onclick={applySubjectEdit}>
+						Edit subject, apply, refresh
+					</button>
+					<button class="pg-btn" type="button" onclick={zoomIn}>Zoom 2×</button>
+					<button class="pg-btn" type="button" onclick={scrollToSubject}>Scroll to subject</button>
+				</div>
+
+				<p class="pg-label">Caret pick</p>
+				<p class="pg-readout" data-testid="last-hit">
+					{lastHit
+						? JSON.stringify({
+								field: lastHit.field,
+								pos: lastHit.pos,
+								granularity: lastHit.granularity
+							})
+						: 'none'}
+				</p>
+
+				<p class="pg-label">Dirty pages</p>
+				<p class="pg-readout" data-testid="dirty-pages">
+					{lastChange ? `[${lastChange.dirtyPages.join(', ')}]` : '—'}
+				</p>
+			</aside>
 		</div>
 	{/if}
 </main>
 
 <style>
-	main {
-		max-width: 60rem;
-		margin: 2rem auto;
+	.head {
+		padding-block: var(--pg-space-12) var(--pg-space-8);
 	}
-	.toolbar {
+
+	h1 {
+		margin: 0 0 var(--pg-space-2);
+		font-size: var(--pg-text-display);
+		font-weight: var(--pg-weight-strong);
+		line-height: var(--pg-leading-tight);
+		letter-spacing: var(--pg-track-display);
+	}
+
+	/* The surface, and the instruments beside it — the shape every tool route takes.
+	   */
+	.layout {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 22rem;
+		gap: var(--pg-space-8);
+		align-items: start;
+	}
+
+	/* Short by design, and inset so the painted page reads against the desk tone
+	   rather than bleeding into the frame's own edge. */
+	.preview-frame {
+		height: 31rem;
+		padding: var(--pg-space-4);
+	}
+
+	.note {
+		max-width: var(--pg-measure);
+		margin: var(--pg-space-3) 0 0;
+		color: var(--pg-ink-meta);
+		font-size: var(--pg-text-label);
+	}
+
+	code {
+		font-family: var(--pg-font-mono);
+		font-size: var(--pg-text-code);
+	}
+
+	.instruments {
+		position: sticky;
+		top: var(--pg-space-16);
 		display: flex;
-		align-items: center;
-		gap: 1rem;
-		margin: 1rem 0;
+		flex-direction: column;
+		gap: var(--pg-space-half);
 	}
-	.preview-shell {
-		height: 500px;
-		width: min(700px, 100%);
-		border: 1px solid var(--pg-border-strong);
+
+	/* A label sits on its value; the space belongs between the groups. */
+	.instruments .pg-label:not(:first-child) {
+		margin-top: var(--pg-space-4);
+	}
+
+	.buttons {
+		display: flex;
+		flex-direction: column;
+		align-items: start;
+		gap: var(--pg-space);
+	}
+
+	@media (width < 60rem) {
+		.layout {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.instruments {
+			position: static;
+		}
 	}
 </style>

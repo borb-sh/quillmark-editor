@@ -1,0 +1,246 @@
+/* The host's shared recipes — the declarations more than one route draws, so a
+   route carries a class instead of restating a rule. The rungs they read are minted
+   in `routes/playground.css`; this file mints nothing, exactly as a component's own
+   block must not (PLAYGROUND §"Preventing drift", enforced by `check:style` over
+   the host scope).
+
+   Not merged into the derivation: that file is exempt from the literal rules,
+   because it IS where the defaults are stated. A recipe living beside them would
+   inherit the exemption and become the one place a minted grey could hide. */
+
+/* Every band of the shell — head, route, foot — starts on the same two edges. The
+   width is left to `auto`: a block box already fills its parent and takes the
+   gutter out of the inside, where `width: 100%` would add it to the outside and
+   push a viewport narrower than the maximum into horizontal scroll. */
+.pg-width {
+	max-width: var(--pg-max);
+	margin-inline: auto;
+	padding-inline: var(--pg-space-6);
+}
+
+/* ── The rail ──────────────────────────────────────────────────────────────── */
+/* The layout device the playground is built on: a block is an annotation in the
+   margin and the content it names. The label is what a section heading would
+   otherwise be, moved out of the reading column so the content starts at the top of
+   its own block — and it earns the column by answering something the content does
+   not repeat (PLAYGROUND §"The rail"). Below the width where the margin stops
+   fitting, the rail stacks and the annotation stays the same run of type. */
+.pg-rail {
+	display: grid;
+	grid-template-columns: var(--pg-rail) minmax(0, 1fr);
+	column-gap: var(--pg-space-8);
+	align-items: start;
+}
+
+/* The annotation is whichever run of chrome type the block puts first — a section
+   label on the front page, the live session status on a tool route. The rail places
+   it; what it says is the block's. */
+.pg-rail > :first-child {
+	padding-top: var(--pg-space);
+}
+
+@media (width < 60rem) {
+	.pg-rail {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.pg-rail > :first-child {
+		padding-top: 0;
+		margin-bottom: var(--pg-space-3);
+	}
+}
+
+/* ── Type recipes ──────────────────────────────────────────────────────────── */
+
+/* A run of chrome type: the rail's annotation, a panel's caption, the label over a
+   readout. Uppercase and tracked, which is what keeps an 11px run legible at the
+   ghost rung. */
+.pg-label {
+	font-family: var(--pg-font-mono);
+	font-size: var(--pg-text-meta);
+	line-height: var(--pg-leading-tight);
+	letter-spacing: var(--pg-track-label);
+	text-transform: uppercase;
+	color: var(--pg-ghost);
+	margin: 0;
+}
+
+/* A passage introducing a block: the title rung at body weight in the meta ink,
+   held to the measure. A rung of its own would be a sixth size for one job — the
+   deck is a COMBINATION of the ramp's axes, which is what keeps the ramp five
+   wide. */
+.pg-deck {
+	max-width: var(--pg-measure);
+	margin: 0;
+	font-size: var(--pg-text-title);
+	line-height: var(--pg-leading-body);
+	color: var(--pg-ink-meta);
+}
+
+/* A value read back out of the running session — an address, a page index, a
+   count. Monospace and tabular, because these are read by comparison: two
+   addresses one above the other line up character for character. */
+.pg-readout {
+	font-family: var(--pg-font-mono);
+	font-size: var(--pg-text-label);
+	line-height: var(--pg-leading-tight);
+	font-variant-numeric: tabular-nums;
+	color: var(--pg-ink);
+	overflow-wrap: anywhere;
+}
+
+/* The block form: a dump long enough to scroll, or a snippet. `pre` keeps the
+   wrapping the value came with; the plate is the page's own, one rung under the
+   panel it sits in. */
+pre.pg-readout {
+	background: var(--pg-page);
+	border: var(--pg-border-width) solid var(--pg-border);
+	border-radius: var(--pg-radius-inner);
+	padding: var(--pg-space-2);
+	margin: 0;
+	white-space: pre-wrap;
+	word-break: break-all;
+	max-height: 20rem;
+	overflow: auto;
+}
+
+/* ── Surfaces ──────────────────────────────────────────────────────────────── */
+
+/* The instrument plate: everything the playground reports about itself sits on
+   one, and nothing else does. A panel is the harness showing its work — the state
+   strip, the document dump, the boundary readout — so it is the one place on these
+   pages that takes a fill, and the reading column stays unboxed prose
+   (PLAYGROUND §"What takes a fill"). */
+.pg-panel {
+	box-sizing: border-box;
+	background: var(--pg-surface);
+	border: var(--pg-border-width) solid var(--pg-border);
+	border-radius: var(--pg-radius);
+	padding: var(--pg-space-4);
+}
+
+/* The mounting site: the frame a surface is dropped into, and the tone behind its
+   column. The four properties THEMING §"What is behind the column is yours" leaves
+   to the host are all here or on the route's own rule — never inside the package.
+
+   `border-box`, like the panel: both take a padding from here and a size from their
+   caller, so a stated height is the height they draw. The host declares no global
+   reset — an unlayered `*` rule would reach past its own chrome and re-box every
+   package element mounted inside it. */
+.pg-frame {
+	box-sizing: border-box;
+	background: var(--pg-desk);
+	border: var(--pg-border-width) solid var(--pg-border);
+	border-radius: var(--pg-radius);
+	overflow: hidden;
+}
+
+/* ── Controls ──────────────────────────────────────────────────────────────── */
+
+/* The host's controls ARE boxed, where the package's buttons are not: a box says
+   "type here" only where there is typing to be confused with, and there is none on
+   these pages — the reading column is prose and the panels are read-only readouts.
+   So a box here says "this is a control", which is the whole of what a harness's
+   strip of switches needs to say (PLAYGROUND §"The look"). */
+.pg-btn {
+	font: inherit;
+	font-family: var(--pg-font-mono);
+	font-size: var(--pg-text-label);
+	line-height: var(--pg-leading-tight);
+	color: var(--pg-ink);
+	background: var(--pg-page);
+	border: var(--pg-border-width) solid var(--pg-border);
+	border-radius: var(--pg-radius-inner);
+	padding: var(--pg-space) var(--pg-space-2);
+	cursor: pointer;
+	text-align: left;
+	transition: background-color var(--pg-duration) ease;
+}
+
+.pg-btn:hover {
+	background: var(--pg-surface-hover);
+}
+
+/* On, whichever way the control says so — a switch that is pressed, or the link to
+   the variant you are already in. */
+.pg-btn[aria-pressed='true'],
+.pg-btn[aria-current='true'] {
+	border-color: var(--pg-border-strong);
+	background: var(--pg-surface-hover);
+}
+
+/* The one filled element in the playground. It is the front page's single action —
+   open the surface the visitor came to see — and it is ink on page rather than a
+   hue, so it inverts with the scheme like everything else. */
+.pg-cta {
+	display: inline-block;
+	background: var(--pg-ink);
+	color: var(--pg-page);
+	border: var(--pg-border-width) solid var(--pg-ink);
+	border-radius: var(--pg-radius-inner);
+	padding: var(--pg-space-2) var(--pg-space-4);
+	font-weight: var(--pg-weight-mid);
+	text-decoration: none;
+	transition:
+		background-color var(--pg-duration) ease,
+		border-color var(--pg-duration) ease;
+}
+
+/* Hover steps the FILL down the ink ladder rather than fading the button out: an
+   opacity on a filled control lets the page read through what is meant to be
+   solid. */
+.pg-cta:hover {
+	background: var(--pg-ink-meta);
+	border-color: var(--pg-ink-meta);
+}
+
+/* A text link in the reading column: underlined at the border rung rather than
+   coloured, so the page keeps one ink and the link hue is left to mean a
+   destination off the playground. */
+.pg-link {
+	color: inherit;
+	text-decoration-color: var(--pg-border-strong);
+	text-underline-offset: 0.2em;
+}
+
+.pg-link:hover {
+	text-decoration-color: currentColor;
+}
+
+/* ── Session status ────────────────────────────────────────────────────────── */
+/* Three states of one line, and one of the two places the playground spends a hue:
+   what phase the WASM boundary is in is the question a harness exists to answer. */
+
+.pg-status {
+	font-family: var(--pg-font-mono);
+	font-size: var(--pg-text-meta);
+	line-height: var(--pg-leading-tight);
+	letter-spacing: var(--pg-track-label);
+	text-transform: uppercase;
+	margin: 0;
+}
+
+.pg-status.loading {
+	color: var(--pg-ghost);
+}
+
+.pg-status.ready {
+	color: var(--pg-ok);
+}
+
+/* An error carries a message rather than a state word, so it drops the label
+   treatment and reads as a sentence. */
+.pg-status.error {
+	color: var(--pg-alert);
+	font-size: var(--pg-text-label);
+	text-transform: none;
+	letter-spacing: normal;
+}
+
+/* ── Focus ─────────────────────────────────────────────────────────────────── */
+/* One visible indicator for the whole host, since none of these controls draws a
+   ring of its own. It reads the INK rung rather than the link hue: the page is
+   monochrome, and a focus ring is a position, not a destination. */
+:focus-visible {
+	outline: var(--pg-ring-width) solid var(--pg-ink);
+	outline-offset: var(--pg-space-half);
+}

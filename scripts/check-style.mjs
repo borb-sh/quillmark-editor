@@ -1,7 +1,7 @@
-// The style gate — one walk over `src/lib/**`, one rule: a component reads a rung,
-// it does not mint a value (SURFACES §"Preventing drift"). The axes share that rule
-// and differ only in which properties they own and which value betrays a mint, so
-// they are a table, not three scripts.
+// The style gate — one rule over two scopes: a stylesheet reads a rung, it does not
+// mint a value (SURFACES §"Preventing drift"; PLAYGROUND §"Preventing drift"). The
+// axes share that rule and differ only in which properties they own and which value
+// betrays a mint, so they are a table, not three scripts.
 //
 //   rhythm   padding / margin / gap / radius, every
 //            physical, logical and corner spelling    a px|rem length
@@ -16,24 +16,33 @@
 // Three rules sit outside the table, because they are about the scale itself rather
 // than one axis:
 //
-//   · `--_qm-*` is DEFINED only in the derivation — what makes one derivation safe
-//     for the roots that each carry its marker — and never twice in one rule.
+//   · A private rung is DEFINED only in its scope's derivation — what makes one
+//     derivation safe for every surface reading it — and never twice in one rule.
 //   · The consumed `--qm-*` set EQUALS the set documented in THEMING.md, both
 //     directions: an undocumented dial is drift, a documented-but-dead one is a
 //     promise nothing honors.
 //   · Every `--qm-*` named in `prose/canon/**` is a real dial. Canon names a subset,
 //     so this way only — but it is checked, because canon rots where nothing looks.
 //
-// Scope is `src/lib/**` for every axis — a violation must not become legal by
-// directory, nor by FILE TYPE. Three shapes carry style: a `.svelte` `<style>`
-// block, a plain `.css` file (the shared control recipes), and `.ts` — because
-// `preview/paint.ts` and `preview/overlay.ts` carry style declarations inside JS
-// strings and would otherwise escape. The first two are CSS, so the property name
-// decides which axis owns a line; in `.ts` a declaration is one string among code,
-// so a marker on the line stands in for the property name — which is why the
-// property-named axes run on CSS only.
+// TWO SCOPES, one table. The package derives `--_qm-*` from the dials for the
+// surfaces it ships; the playground derives `--pg-*` from the same dials for the
+// page it hosts them on. Both are closed scales a stylesheet reads rather than
+// mints, so both answer to the same axes — a rule that cannot be minted in a card
+// must not become mintable by being written one directory over, in the app whose
+// pages are the package's front door. What is NOT shared is the dial census: that
+// the consumed set equals THEMING.md's is a claim about the PACKAGE's contract, so
+// it is measured over the package scope alone, and a host reading a dial says
+// nothing about whether the package documents it.
 //
-// A `var()` fallback is legitimate only in the derivation, which is exempt from the
+// Within a scope a violation must not become legal by FILE TYPE either. Three shapes
+// carry style: a `.svelte` `<style>` block, a plain `.css` file (the shared
+// recipes), and `.ts` — because `preview/paint.ts` and `preview/overlay.ts` carry
+// style declarations inside JS strings and would otherwise escape. The first two are
+// CSS, so the property name decides which axis owns a line; in `.ts` a declaration is
+// one string among code, so a marker on the line stands in for the property name —
+// which is why the property-named axes run on CSS only.
+//
+// A `var()` fallback is legitimate only in a derivation, which is exempt from the
 // literal rules entirely — so outside it, a literal is a literal wherever it sits.
 // Zero deps; run via `npm run check:style`.
 
@@ -42,9 +51,27 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const LIB = join(ROOT, 'src', 'lib');
-const DERIVATION = 'src/lib/core/theme.css';
 const THEMING = join(ROOT, 'THEMING.md');
+
+/** The two closed scales, each with the tree that reads it and the one file that
+ *  mints it. `census` marks the scope the dial contract is measured over — the
+ *  package's, since THEMING.md documents what the PACKAGE consumes. */
+const SCOPES = [
+	{
+		dir: 'src/lib',
+		prefix: '--_qm-',
+		derivation: 'src/lib/core/theme.css',
+		doc: 'SURFACES §"Preventing drift"',
+		census: true
+	},
+	{
+		dir: 'src/routes',
+		prefix: '--pg-',
+		derivation: 'src/routes/playground.css',
+		doc: 'PLAYGROUND §"Preventing drift"',
+		census: false
+	}
+];
 
 /** A colour literal: hex, or a functional notation that names a colour space. */
 const COLOR_LITERAL = /#[0-9a-fA-F]{3,8}\b|\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(/;
@@ -54,9 +81,9 @@ const LENGTH_LITERAL = /\b\d*\.?\d+(px|rem|em)\b/;
 /** Colour properties as `Object.assign(el.style, …)` spells them — no trailing `\b`,
  *  so the camelCase compounds (`backgroundColor`, `borderTop`) match too. */
 const STYLE_MARKER = /\b(style|background|border|color|outline|boxShadow|textShadow)/;
-/** A `--_qm-x:` DEFINITION — a consumption is `var(--_qm-x)`, which has no colon. */
-const PRIVATE_DEF = /(--_qm-[\w-]+)\s*:/;
-const READS_RUNG = /var\(--_qm-/;
+/** A `--x:` DEFINITION — a consumption is `var(--x)`, which has no colon. */
+const privateDef = (prefix) => new RegExp(`(${prefix}[\\w-]+)\\s*:`);
+const readsRung = (prefix) => new RegExp(`var\\(${prefix}`);
 
 // Three shapes of rule. `literal` FORBIDS a pattern — most properties take values a
 // literal cannot be mistaken for, so naming the bad shape is enough. `allowBare`
@@ -172,19 +199,19 @@ const AXES = [
 	}
 ];
 
-/** Every `.svelte`/`.ts`/`.css` source under `src/lib`, test files excluded, sorted. */
-function sources() {
+/** Every `.svelte`/`.ts`/`.css` source under a scope's tree, tests excluded, sorted. */
+function sources(dir) {
 	const out = [];
-	(function walk(dir) {
-		for (const e of readdirSync(dir, { withFileTypes: true }).sort((a, b) =>
+	(function walk(at) {
+		for (const e of readdirSync(at, { withFileTypes: true }).sort((a, b) =>
 			a.name < b.name ? -1 : 1
 		)) {
-			const full = join(dir, e.name);
+			const full = join(at, e.name);
 			if (e.isDirectory()) walk(full);
 			else if (/\.spec\.ts$|\.test\.ts$/.test(e.name)) continue;
 			else if (/\.(svelte|ts|css)$/.test(e.name)) out.push(full);
 		}
-	})(LIB);
+	})(join(ROOT, dir));
 	return out;
 }
 
@@ -212,58 +239,68 @@ function styleRegion(text, file) {
 
 const errors = [];
 const consumed = new Set();
-const files = sources();
+let scanned = 0;
 
-for (const full of files) {
-	const file = relative(ROOT, full);
-	const region = styleRegion(readFileSync(full, 'utf8'), full);
-	if (!region) continue;
-	// CSS syntax — a `.svelte` style block or a `.css` file. The property-named axes
-	// run here; a `.ts` file's declarations are strings, matched by marker instead.
-	const css = /\.(svelte|css)$/.test(full);
+for (const scope of SCOPES) {
+	const READS_RUNG = readsRung(scope.prefix);
+	const PRIVATE_DEF = privateDef(scope.prefix);
+	// The axis table names the package's rungs; a host failure points at the same
+	// family under the host's prefix, and at the doc that states the rule there.
+	const hint = (text) =>
+		scope.prefix === '--_qm-' ? text : text.replaceAll('--_qm-', scope.prefix);
 
-	region.style.split('\n').forEach((line, i) => {
-		const ln = region.base + i + 1;
-		const fail = (msg) => errors.push(`${file}:${ln}: ${msg}`);
+	for (const full of sources(scope.dir)) {
+		const file = relative(ROOT, full);
+		const region = styleRegion(readFileSync(full, 'utf8'), full);
+		if (!region) continue;
+		scanned++;
+		// CSS syntax — a `.svelte` style block or a `.css` file. The property-named axes
+		// run here; a `.ts` file's declarations are strings, matched by marker instead.
+		const css = /\.(svelte|css)$/.test(full);
 
-		for (const m of line.matchAll(/var\(\s*(--qm-[\w-]+)/g)) consumed.add(m[1]);
-		if (file === DERIVATION) return; // it IS the derivation — literals here are the defaults
+		region.style.split('\n').forEach((line, i) => {
+			const ln = region.base + i + 1;
+			const fail = (msg) => errors.push(`${file}:${ln}: ${msg}`);
 
-		const decl = line.match(/^\s*([\w-]+)\s*:\s*([^;]*)/);
-		const prop = decl?.[1];
-		const value = decl?.[2] ?? '';
+			// The census is the PACKAGE's contract, so only its scope feeds it: a dial
+			// the host reads is not evidence that THEMING.md should document one.
+			if (scope.census) for (const m of line.matchAll(/var\(\s*(--qm-[\w-]+)/g)) consumed.add(m[1]);
+			if (file === scope.derivation) return; // literals here ARE the defaults
 
-		for (const axis of AXES) {
-			if (axis.cssOnly && !css) continue;
-			// In CSS the property name decides which axis owns the line; in `.ts` a
-			// style declaration is one string among code, so the marker does.
-			const owns = css ? axis.props.test(prop ?? '') : STYLE_MARKER.test(line);
-			if (!owns) continue;
-			const bad = axis.literal
-				? axis.literal.test(css ? value : line)
-				: axis.only
-					? !axis.only.test(value.trim())
-					: !READS_RUNG.test(value) && !axis.allowBare.test(value.trim());
-			if (bad)
-				fail(
-					`\`${prop ?? 'style'}\` mints a literal — ${axis.fix ?? `read a ${axis.rung} rung`} (${axis.doc})`
-				);
-		}
+			const decl = line.match(/^\s*([\w-]+)\s*:\s*([^;]*)/);
+			const prop = decl?.[1];
+			const value = decl?.[2] ?? '';
 
-		const def = line.match(PRIVATE_DEF);
-		if (def) fail(`defines \`${def[1]}\` — the scale is minted only in ${DERIVATION}`);
-	});
-}
+			for (const axis of AXES) {
+				if (axis.cssOnly && !css) continue;
+				// In CSS the property name decides which axis owns the line; in `.ts` a
+				// style declaration is one string among code, so the marker does.
+				const owns = css ? axis.props.test(prop ?? '') : STYLE_MARKER.test(line);
+				if (!owns) continue;
+				const bad = axis.literal
+					? axis.literal.test(css ? value : line)
+					: axis.only
+						? !axis.only.test(value.trim())
+						: !READS_RUNG.test(value) && !axis.allowBare.test(value.trim());
+				if (bad)
+					fail(
+						`\`${prop ?? 'style'}\` mints a literal — ${axis.fix ?? `read a ${hint(axis.rung)} rung`} (${axis.doc}; ${scope.doc})`
+					);
+			}
 
-// A rung defined twice is a silent last-wins drop, and CSS raises nothing for it
-// the way a duplicate object key does — so the check is explicit. Per RULE BLOCK,
-// so a rung a scoped rule legitimately retunes stays legal.
-{
-	const css = readFileSync(join(ROOT, DERIVATION), 'utf8');
-	for (const [, block] of css.matchAll(/\{([^{}]*)\}/g)) {
+			const def = line.match(PRIVATE_DEF);
+			if (def) fail(`defines \`${def[1]}\` — the scale is minted only in ${scope.derivation}`);
+		});
+	}
+
+	// A rung defined twice is a silent last-wins drop, and CSS raises nothing for it
+	// the way a duplicate object key does — so the check is explicit. Per RULE BLOCK,
+	// so a rung a scoped rule legitimately retunes stays legal.
+	const derivation = readFileSync(join(ROOT, scope.derivation), 'utf8');
+	for (const [, block] of derivation.matchAll(/\{([^{}]*)\}/g)) {
 		const seen = new Set();
-		for (const [, name] of block.matchAll(/^\s*(--_qm-[\w-]+)\s*:/gm))
-			if (seen.has(name)) errors.push(`${DERIVATION}: \`${name}\` defined twice in one rule`);
+		for (const [, name] of block.matchAll(new RegExp(`^\\s*(${scope.prefix}[\\w-]+)\\s*:`, 'gm')))
+			if (seen.has(name)) errors.push(`${scope.derivation}: \`${name}\` defined twice in one rule`);
 			else seen.add(name);
 	}
 }
@@ -294,4 +331,6 @@ if (errors.length) {
 	for (const e of errors) console.error(`  ✗ ${e}`);
 	process.exit(1);
 }
-console.log(`Style OK — ${files.length} files, ${consumed.size} public dials.`);
+console.log(
+	`Style OK — ${scanned} files over ${SCOPES.length} scopes, ${consumed.size} public dials.`
+);
