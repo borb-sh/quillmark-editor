@@ -261,20 +261,21 @@ export function groupSections(
 }
 
 /**
- * The group section a card's accordion opens on first mount, or
- * `null` for all-collapsed. Ungrouped fields render outside the accordion, so
- * only `group != null` sections count. The rule keeps exactly one section's
- * worth of fields visible when the card would otherwise read empty:
- *   • one group → open it (the sole-group auto-expand, even with a body);
- *   • many groups + a body leaf → all collapsed (the body carries the card);
- *   • many groups + no body → open the first (nothing else fills the card).
+ * The group section a card's accordion opens on first mount: the first in
+ * order, or `null` when the card declares none. Ungrouped fields render outside
+ * the accordion, so only `group != null` sections count.
+ *
+ * A card opens on fields. All-collapsed paints as a stack of chevrons that name
+ * their sections and disclose nothing of what is behind them, and a body leaf is
+ * no substitute — on a card carrying both, the fields are what the card is for.
+ * The first section is the one `ui.groups` already ranks highest, and it is the
+ * same section on every mount: a rule keyed on document state would move the
+ * opening under a user as they fill.
+ *
  * State is ephemeral session state the Card owns; this only seeds it.
  */
-export function initialExpandedGroup(sections: GroupSection[], hasBody: boolean): string | null {
-	const grouped = sections.filter((s) => s.group != null);
-	if (grouped.length === 0) return null;
-	if (grouped.length === 1) return grouped[0].group ?? null;
-	return hasBody ? null : (grouped[0].group ?? null);
+export function initialExpandedGroup(sections: GroupSection[]): string | null {
+	return sections.find((s) => s.group != null)?.group ?? null;
 }
 
 /** How wide a field sits in its section grid (VISUAL_EDITOR_UIUX §"Section grid"). */

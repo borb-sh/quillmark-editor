@@ -69,10 +69,12 @@ test.describe('correlation bloom', () => {
 	});
 
 	test('(c) preview → editor: the landing leaf is revealed and blooms', async ({ page }) => {
-		// `main.subject` sits inside the collapsed ADDRESSING group, so this is also
-		// the reveal case: without it the caret — and the cue — land in a panel
-		// clipped to zero height.
+		// This is also the reveal case: landing in a CLOSED panel puts the caret —
+		// and the cue with it — in a box clipped to zero height. `main.subject` is
+		// the only leaf the preview carries a field box for, and its ADDRESSING
+		// section is the card's first, so it opens at mount; shut it to set the case.
 		const group = page.getByTestId('group-main-addressing');
+		await group.click();
 		await expect(group).toHaveAttribute('aria-expanded', 'false');
 
 		await clickFieldBox(page, 'main.subject');
