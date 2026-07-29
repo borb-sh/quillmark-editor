@@ -160,6 +160,10 @@
 	}
 
 	// ── Focus + bridge outputs ──────────────────────────────────────────────────
+	// `activeCardId` is the id-keyed half of `activeAddr` (whose `card` is positional),
+	// and it feeds lookups only: the `activeController` seam below, and the clear on
+	// delete. Nothing draws it — a card's active treatment is its controls' reveal,
+	// which the card reads off `:focus-within` (SURFACES §"Focus and active state").
 	let activeAddr = $state<Addr | undefined>(undefined);
 	let activeCardId = $state<string | undefined>(undefined);
 
@@ -536,7 +540,6 @@
 		index={-1}
 		isFirst={true}
 		isLast={true}
-		active={activeCardId === 'main'}
 		{kinds}
 		ops={opsFor('main', true)}
 		onFocus={handleFocus}
@@ -570,7 +573,6 @@
 			index={i}
 			isFirst={i === 0}
 			isLast={i === model.cards.length - 1}
-			active={activeCardId === c.id}
 			{kinds}
 			ops={opsFor(c.id, false)}
 			onFocus={handleFocus}
