@@ -401,6 +401,9 @@ test.describe('visual editor', () => {
 	test('(i2) a press in the header free space enters the rename', async ({ page }) => {
 		const title = page.getByTestId('card-title-0');
 		const region = page.getByTestId('card-rename-0');
+		// `mouse.click` takes VIEWPORT coordinates and does not scroll to reach them,
+		// and the main card's open section carries this header past the fold.
+		await region.scrollIntoViewIfNeeded();
 		const box = (await region.boundingBox())!;
 		const titleBox = (await title.boundingBox())!;
 		// Past the title's right edge — the free width the autosize leaves beside it.
