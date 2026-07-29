@@ -152,6 +152,18 @@ inside it. Stacked regions — a card's header, its field list, its body — are
 separated by one gap, not per-region margins that drift. Pick from the scale; an
 in-between value is a review smell.
 
+**The action column** is the other half of that claim, on the side the gutter says
+nothing about. A field section reserves a trailing column — a row action's tap
+target plus the grid's own column gutter — held clear of the tracks: every control
+in the section ends on one right edge, and an array's rows put their remove past it,
+where it is never over the value it removes. Reserved as the grid's own inset rather
+than as a fifth track, because auto-placement walks every track it is given and a
+compact field overflowing the last column would land in the action column. Every
+section pays the width, including one with no action in it — a right edge that moved
+with a section's contents is the raggedness this removes. The left gutter is what a
+region STARTS on; the right edge is what a control ENDS on, and only an action sits
+outside it.
+
 **Stroke.** One width for every edge the chrome draws — `--_qm-border-width`, a
 threshold rather than a rhythm choice, so a hairline stays a hairline at any
 `--qm-space`. The card's edge, a control's box, a nested object's rule, and the

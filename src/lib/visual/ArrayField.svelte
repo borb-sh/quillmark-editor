@@ -8,11 +8,22 @@
   The add affordance sits in the label header row (space-between with the field
   label); {@link Field} skips its own label for array controls.
 
+  A row ends in the section's reserved action column (Card `--action-col`), which the
+  field reaches back across: the element controls stop where a scalar's does and the
+  remove sits beyond them, on the one right edge the section keeps (SURFACES §Rhythm).
+
+  Keys carry the list without the mouse (VISUAL_EDITOR_UIUX §Fields): Enter inserts a
+  sibling below and takes the caret there, Backspace on an EMPTY element removes it
+  and hands focus back up the list.
+
   No reorder: an array's order is fixed at declaration/entry order. Elements
-  carry a parallel session-id list so add/remove splices keyed editors rather
-  than remounting the tail; the ids only ever grow or shrink, never permute.
+  carry a parallel session-id list, spliced with the values as one operation at
+  whatever index a mutation names — so an element holds its id for life and the
+  surviving order never permutes, which is what lets a keyed prose element survive an
+  insert or a remove ABOVE it rather than remounting.
 -->
 <script lang="ts">
+	import { tick } from 'svelte';
 	import type { Content, QuillFieldSchema } from '../core/index.js';
 	import { emptyContent } from '../core/codec/index.js';
 	import { IdSeq, controlKind } from './structure.js';
@@ -59,6 +70,13 @@
 		else ids = ids.slice(0, n);
 	});
 
+	// The focus targets, keyed by element ID rather than index: an index goes stale on
+	// the splice that focus is chasing. An element control exposes `focus()` because
+	// the two disagree on what focusing is — a prose element is a PM view, whose own
+	// `focus()` restores a selection an `HTMLElement.focus()` leaves unplaced.
+	const els: Record<string, { focus: () => void } | undefined> = {};
+	let addEl: HTMLButtonElement | undefined = $state();
+
 	function emptyElement(): unknown {
 		if (control === 'prose') return emptyContent();
 		if (control === 'object') return {};
@@ -74,13 +92,64 @@
 		copy[k] = next === undefined ? emptyElement() : next;
 		onCommit(copy);
 	}
+	/** Insert an empty element after `k` (`-1` prepends) and take focus to it. */
+	function insertAfter(k: number): void {
+		const id = seq.next();
+		const at = k + 1;
+		ids = [...ids.slice(0, at), id, ...ids.slice(at)];
+		const next = arr.slice();
+		next.splice(at, 0, emptyElement());
+		onCommit(next);
+		focusAfterFlush(id);
+	}
 	function add(): void {
-		ids = [...ids, seq.next()];
-		onCommit([...arr, emptyElement()]);
+		insertAfter(ids.length - 1);
 	}
 	function remove(k: number): void {
-		ids = ids.filter((_, i) => i !== k);
+		const next = ids.filter((_, i) => i !== k);
+		ids = next;
 		onCommit(arr.filter((_, i) => i !== k));
+		// Focus lands on the element before the removed one, or on the one that slid
+		// into its place; on the add affordance once the list is empty, which is then
+		// the only thing left to hold it. Clicking the remove needs this as much as the
+		// key does — the button under the pointer is the element being destroyed.
+		focusAfterFlush(next[Math.max(k - 1, 0)]);
+	}
+	/** Focus element `id` after the flush, never in the same tick: a mutation commits
+	 * the array BY VALUE, so the parent re-derives and the row does not exist until
+	 * then. `undefined` is the empty list — the add affordance. */
+	async function focusAfterFlush(id: string | undefined): Promise<void> {
+		await tick();
+		if (id === undefined) addEl?.focus();
+		else els[id]?.focus();
+	}
+	/** Whether element `k` reads empty to the user. A text element's committed value
+	 * LAGS the input — a cleared field commits at `change`, not per keystroke
+	 * ({@link TextField}) — so the input's own value is the truth; a prose element
+	 * commits every edit, so the committed `Content` is. */
+	function elementEmpty(k: number, target: EventTarget | null): boolean {
+		if (control === 'prose') return !(arr[k] as Content | undefined)?.text;
+		return target instanceof HTMLInputElement && !target.value;
+	}
+	/**
+	 * The element keyboard contract. Both keys ride the element control's own keydown
+	 * — the input's, or the PM view's through `handleDOMEvents` — since neither
+	 * surface is a place a keymap of this component's could sit. The JSON element is
+	 * out: Enter is a newline in a textarea.
+	 */
+	function onElementKey(e: KeyboardEvent, k: number): void {
+		if (control === 'object' || e.isComposing) return;
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			insertAfter(k);
+		} else if (e.key === 'Backspace' && !e.repeat && elementEmpty(k, e.target)) {
+			// Destructive with nothing to undo it, so it takes a deliberate press:
+			// `repeat` is a held key running on past the character it just cleared, and
+			// the emptiness test reads the state BEFORE this keystroke applies — so the
+			// press that empties an element never also removes it.
+			e.preventDefault();
+			remove(k);
+		}
 	}
 </script>
 
@@ -95,6 +164,7 @@
 			type="button"
 			class="qm-add-el qm-add-affordance"
 			data-testid={testid ? `${testid}-add` : undefined}
+			bind:this={addEl}
 			onclick={add}>+ Add</button
 		>
 	</div>
@@ -102,10 +172,12 @@
 		<div class="qm-array-row">
 			{#if control === 'prose'}
 				<ProseArrayElement
+					bind:this={els[id]}
 					value={(arr[k] ?? emptyElement()) as Content}
 					{plaintext}
 					label={label != null ? `${label} ${k + 1}` : undefined}
 					onChange={(rt) => commitElement(k, rt)}
+					onKey={(e) => onElementKey(e, k)}
 					{onFocusEl}
 					testid={testid ? `${testid}-el-${k}` : undefined}
 				/>
@@ -124,14 +196,14 @@
 					}}
 				></textarea>
 			{:else}
-				<div class="qm-array-input">
-					<TextField
-						value={String(arr[k] ?? '')}
-						label={label != null ? `${label} ${k + 1}` : undefined}
-						onCommit={(v) => commitElement(k, v)}
-						testid={testid ? `${testid}-el-${k}` : undefined}
-					/>
-				</div>
+				<TextField
+					bind:this={els[id]}
+					value={String(arr[k] ?? '')}
+					label={label != null ? `${label} ${k + 1}` : undefined}
+					onCommit={(v) => commitElement(k, v)}
+					onKey={(e) => onElementKey(e, k)}
+					testid={testid ? `${testid}-el-${k}` : undefined}
+				/>
 			{/if}
 			<button
 				type="button"
@@ -149,6 +221,10 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space);
+		/* The one field that reaches across the section's reserved action column: its
+		   rows END in that column, so an element control stops exactly where the scalar
+		   above it does and the remove never sits over a long value. */
+		margin-right: calc(-1 * var(--action-col));
 	}
 	.qm-array-header {
 		display: flex;
@@ -156,13 +232,16 @@
 		justify-content: space-between;
 		gap: var(--_qm-space-2);
 	}
+	/* The element takes the section's tracks, the remove takes the action column, and
+	   the gutter between them is the section's own — the row is that column's only
+	   occupant, so it reads as one more column of the grid rather than a nested layout.
+	   `minmax(0, …)` because an element control must be allowed to be narrower than its
+	   content: a long unbroken value grows the track otherwise, and the edge with it. */
 	.qm-array-row {
-		display: flex;
-		align-items: flex-start;
-		gap: var(--_qm-space);
-	}
-	.qm-array-input {
-		flex: 1;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) var(--_qm-tap-min);
+		column-gap: var(--_qm-space-2);
+		align-items: start;
 	}
 	.qm-remove {
 		align-self: center;

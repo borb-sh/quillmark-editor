@@ -208,6 +208,28 @@ test.describe('section grid', () => {
 		}
 	});
 
+	// SURFACES §Rhythm — the section's trailing action column. Geometry, and only a
+	// laid-out page has it: the reservation is the grid's own inset, so nothing in the
+	// track model says whether an array's element control lands on the same edge as the
+	// scalar above it. The letterhead group carries all three shapes at once — a
+	// full-width scalar, a full-width array, and a packed run.
+	test('(h) one right edge serves the section, and the remove sits beyond it', async ({ page }) => {
+		const right = (testid: string) =>
+			page.getByTestId(testid).evaluate((el) => el.getBoundingClientRect().right);
+		const edge = await right('main-letterhead_title');
+		expect(await right('main-letterhead_caption-el-0'), 'an array element').toBe(edge);
+		// The last cell of a packed row lands there too: the action column is held clear
+		// of the tracks, so capacity is untouched and every row ends on one edge.
+		expect(await right('main-letterhead_seal_subtitle'), 'a packed compact cell').toBe(edge);
+
+		// The remove lives in the reserved column — past every control's edge, so it is
+		// never over a long value — and keeps the 24px target floor (WCAG 2.5.8).
+		const remove = (await page.getByTestId('main-letterhead_caption-remove-0').boundingBox())!;
+		expect(remove.x).toBeGreaterThanOrEqual(edge);
+		expect(remove.width).toBeGreaterThanOrEqual(24);
+		expect(remove.height).toBeGreaterThanOrEqual(24);
+	});
+
 	test('(g) the accordion still collapses under containment', async ({ page }) => {
 		// `.qm-group-panel-inner` is both the query container and the sliding panel's
 		// clipped inner, and `container-type` applies containment — so the 0fr↔1fr
