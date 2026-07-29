@@ -295,9 +295,22 @@ the editor holds, so the editor draws it and holds it. Correlation is an event �
 moment an address crossed between the panes — so a wash marks it and decays to
 nothing. **The preview carries no focus ink at all**: it claims to be the rendered
 output, and a border it draws on the page it is proving is a border the document did
-not ask for. What the overlay draws instead is in PREVIEW §Overlay. The active *card* is set apart
-separately — the `active` state that pins the reorder chevrons (VISUAL_EDITOR_UIUX
-§"Card stack").
+not ask for. What the overlay draws instead is in PREVIEW §Overlay.
+
+**Card scale takes no mark of its own.** The focused leaf's cue sits *inside* the
+card, so "which card" is answered by containment and a second mark would only
+restate it. The rungs rule out the obvious candidate besides:
+`--_qm-surface-hover` is the button recipe's hover ink (§Elevation), so an active
+card filled with it stands its controls two rungs off their card instead of the one
+the package guarantees, and leaves a hovered button on its own ground. Nor would a
+fill reach the case that argues for one — a tone step reads only against a
+neighbouring card, so a card taller than the viewport has nothing to compare and
+shows nothing. `main` settles the same question the same way: structure says which
+card it is, and no tone is minted to repeat it. What a card carries instead is its
+**controls' reveal** — pointer or caret inside brings the reorder chevrons up
+(VISUAL_EDITOR_UIUX §"Card stack"). That is an affordance surfacing where it can be
+used, not a state drawn on the section, and it is why `main` needs no equivalent:
+it has no controls to reveal.
 
 One ring width, therefore: `--_qm-ring-width` is focus, and nothing sits under it as
 a held-back tier.

@@ -38,7 +38,6 @@
 		index: number;
 		isFirst: boolean;
 		isLast: boolean;
-		active: boolean;
 		kinds: string[];
 		ops: CardOps;
 		onFocus?: (addr: Addr) => void;
@@ -52,7 +51,6 @@
 		index,
 		isFirst,
 		isLast,
-		active,
 		kinds,
 		ops,
 		onFocus,
@@ -136,7 +134,7 @@
 	// and resets only on a remount (reload). Not reconciled to later section changes —
 	// a retype is the one reshape, and the open group stays where it still exists.
 	// svelte-ignore state_referenced_locally
-	let expanded = $state<string | null>(initialExpandedGroup(card.sections, card.hasBody));
+	let expanded = $state<string | null>(initialExpandedGroup(card.sections));
 	function toggleGroup(group: string): void {
 		expanded = expanded === group ? null : group;
 	}
@@ -180,7 +178,6 @@
 	bind:this={el}
 	class="qm-card"
 	class:qm-main={card.isMain}
-	class:qm-active={active}
 	class:qm-unschemable={card.unschemable}
 >
 	{#if card.unschemable}
@@ -434,10 +431,14 @@
 		align-items: center;
 		gap: var(--_qm-space-2);
 	}
-	/* Reveal the reorder chevrons on hover or while active (CardControls owns the
-	   default hidden state). */
+	/* Reveal the reorder chevrons while the pointer or the caret is in the card
+	   (CardControls owns the default hidden state). Focus is read off the CARD, so a
+	   caret in any leaf, the title, or a chevron itself holds the reveal — hover
+	   alone would strand the pair on keyboard and touch (SURFACES §"Focus and active
+	   state"). This is the card's whole active treatment; nothing marks the section
+	   itself. */
 	.qm-card:hover :global(.qm-card-reorder),
-	.qm-card.qm-active :global(.qm-card-reorder) {
+	.qm-card:focus-within :global(.qm-card-reorder) {
 		opacity: 1;
 	}
 	/* The rename hit region: the header's free width, full height, so a

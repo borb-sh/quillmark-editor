@@ -41,6 +41,22 @@
 			: undefined
 	);
 
+	// A consumer empty-body wording stand-in, deliberately the WORST case for
+	// determinism: it samples at random and is a fresh closure on every re-derive.
+	// The editor consults it once per kind and keeps the answer, so the ghosts still
+	// hold still — which is the property e2e pins, and the reason a consumer may
+	// write a hook this careless without it showing.
+	let wittyGhosts = $state(false);
+	const WITTY = [
+		'Say something unforgettable…',
+		'Begin anywhere…',
+		'The blank page is bluffing…',
+		'Draft badly, revise later…'
+	];
+	const bodyPlaceholder = $derived(
+		wittyGhosts ? () => WITTY[Math.floor(Math.random() * WITTY.length)] : undefined
+	);
+
 	let toFree: Array<{ free(): void }> = [];
 
 	function refresh(): void {
@@ -196,6 +212,7 @@
 						onChange={refresh}
 						diagnostics={externalDiagnostics}
 						{enumOptionAllowed}
+						{bodyPlaceholder}
 					/>
 				{/if}
 			</div>
@@ -209,6 +226,11 @@
 					type="button"
 					data-testid="toggle-enum-policy"
 					onclick={() => (restrictEnums = !restrictEnums)}>Toggle enum policy (forbid CUI)</button
+				>
+				<button
+					type="button"
+					data-testid="toggle-body-placeholder"
+					onclick={() => (wittyGhosts = !wittyGhosts)}>Toggle custom body placeholder</button
 				>
 				<div class="state-label">doc state</div>
 				<pre data-testid="doc-json">{dump}</pre>

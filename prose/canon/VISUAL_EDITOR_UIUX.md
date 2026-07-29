@@ -37,9 +37,18 @@ header, its field list, and its body, with an add-card affordance between blocks
 
 **Card controls** carry web-app's placement (`EditorBlock`). Composable cards
 only — `main` has none. In the card header, right-aligned opposite the title: a
-hover-revealed move-up/move-down chevron pair, pinned visible while the card is
-active, each disabled at its edge (up on the first card, down on the last); then
+move-up/move-down chevron pair revealed while the pointer or the caret is in the
+card, each disabled at its edge (up on the first card, down on the last); then
 an always-visible delete. Reorder is buttons, not drag.
+
+The reveal is **pointer or focus**, not hover alone. The pair is hidden by opacity
+and so stays in the tab order: a hover-only rule hands a keyboard a focused control
+it cannot see, and hands a touch pointer — which never hovers — no path to reorder
+at all. Focus is read off the card (`:focus-within`), so the caret in any leaf, in
+the title, or on a chevron itself holds the reveal, and it drops when focus leaves
+the editor rather than resting on the last card edited. This reveal is the card's
+whole active treatment; SURFACES §"Focus and active state" declines a mark at card
+scale, so nothing tints or fills the section.
 
 Rename is the inline-editable title itself, not a separate control. The title
 autosizes to its text, so the **hit region** is the header's free width rather
@@ -144,9 +153,10 @@ is a separate concern (the island controls), not gated by this.
   editor carries web-app's density *hints* — `ui.group` and `ui.compact` — and not
   its layout pass: a section is ONE grid, capacity comes from a container query, and
   fields auto-place (§"Section grid").
-  `ui.group` sections are a collapsible accordion — one open at a time, the sole
-  group (or, body-less, the first) auto-expanded; ungrouped fields stay above it,
-  always visible. A section header is a heading, not metadata: sentence case at the
+  `ui.group` sections are a collapsible accordion — one open at a time, the first
+  in order open at mount; ungrouped fields stay above it, always visible. A card
+  opens on fields, never on chevrons alone: a body leaf does not stand in for one,
+  since on a card carrying both the fields are what the card is for. A section header is a heading, not metadata: sentence case at the
   field-label rung, its whole row the target, its label centred between the rule
   above it and the one it draws. Open and hover are ink steps; the chevron's
   rotation carries open/closed, and no hue enters (AESTHETIC §Rules). The open
@@ -158,6 +168,19 @@ is a separate concern (the island controls), not gated by this.
 - **Prose leaf** — each rich field as an inline WYSIWYG surface, and the body as
   paper: no label — "Body" names the surface, and the accessible name stays on the
   leaf — and no box, the bracket's bottom rule doing the separating a border was.
+- **An empty body invites; an empty field does not.** A body's ghost falls back
+  where a field's does not: the resolved `default:` when the kind declares one,
+  else the consumer's `bodyPlaceholder` wording, else `Write…`. A `default:` wins
+  over both — it alone says what prints if nothing is written, and an invitation
+  over it would hide that. A field keeps the opposite rule: its ghost is the
+  resolved default or nothing, because invented placeholder text in a control
+  reads as a value already entered. Both render at the ghost rung
+  (`--_qm-ink-ghost`, italic) and neither enters the document.
+  `bodyPlaceholder` is asked once per KIND and its answer held for the session,
+  so a consumer sampling a set at random still reads as deliberate — cards of a
+  kind agree, and a re-derive does not re-roll. Keyed by kind, not by card: two
+  empty cards of a kind are the same invitation. A retyped card takes its new
+  kind's wording in place, without remounting the leaf and losing the caret.
 - **Per-field state** — focus, inline diagnostics, a ghosted `default:`
   placeholder (never written back — it lives in the schema), a persistent required
   `*` on no-`default:` (Unendorsed) fields, and the field's `description:` as a
