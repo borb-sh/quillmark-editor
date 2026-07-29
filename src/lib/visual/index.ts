@@ -14,6 +14,12 @@ export type { CreateFieldOpts, FieldController } from '../core/codec/index.js';
 // The projection types — useful to a consumer building its own chrome.
 export type { ControlKind, FieldModel, GroupSection, CardModel } from './structure.js';
 
+// Empty-body wording: the `bodyPlaceholder` hook's shape and the built-in string
+// it replaces. Exported so a consumer can word one kind and defer to the package
+// on the rest by returning `undefined` — or compose against the built-in.
+export { DEFAULT_BODY_PLACEHOLDER } from './structure.js';
+export type { BodyPlaceholder, BodyPlaceholderContext } from './structure.js';
+
 // The `$ext.editor` write unit. A consumer seeding editor-side chrome
 // state — a card title, the tips channel — goes through this rather than
 // `storeExtNamespace`, which replaces the namespace and takes the sibling keys with
