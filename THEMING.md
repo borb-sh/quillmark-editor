@@ -99,9 +99,9 @@ A palette **pinned against** your own scheme is the one case needing a second
 line: the surfaces follow your dials, but native chrome follows `color-scheme`,
 so pin it with them — `.my-editor { color-scheme: dark }`. Skip that line and a
 typed value's own text still matches its card — `color` reads the same dial the
-card does, not `color-scheme` — but the selection highlight, the scrollbar, and
-the spinner a browser paints from `color-scheme` do not, and stay on whichever
-scheme the host happens to inherit.
+card does, not `color-scheme` — but what the browser paints from `color-scheme`
+does not: the selection highlight, the scrollbar and the spinner stay on
+whichever scheme the host happens to inherit.
 
 No JS runs and no media query: the derivation is emitted as `var()` references
 over `light-dark()`, so an ancestor's dials and the inherited scheme both resolve
@@ -117,8 +117,7 @@ contract: a rung can be re-tuned or renamed without notice.
 
 Leading is private for the reason the size ratio is: a typographic ratio is a
 convention, not a dial, and both rungs are unitless, so `--qm-font-size` already
-rescales the line boxes with the type. A leading dial would buy a consumer nothing
-it does not already have and cost every reader one more name.
+rescales the line boxes with the type.
 
 The rungs are declared **on** each root element, so setting one from an ancestor
 does nothing — an element's own declaration beats an inherited value at any

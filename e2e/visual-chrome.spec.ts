@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { pm, replaceProse, reveal, selectAndAwaitPopover } from './support.js';
+import { declareScheme, pm, replaceProse, reveal, selectAndAwaitPopover } from './support.js';
 
 // Phase 4b exit criteria (browser tier): the formatting selection popover and
 // diagnostics routing, over the SAME /visual playground e2e/visual.spec.ts uses
@@ -331,19 +331,21 @@ test.describe('visual editor chrome — diagnostics routing', () => {
 });
 
 test.describe('visual editor chrome — dark scheme', () => {
-	test.use({ colorScheme: 'dark' });
-
+	// Dark arrives as the HOST's declaration on `documentElement` (`declareScheme`),
+	// the signal the derivation's poles read — not as browser-level OS emulation,
+	// which reaches the poles only while the page leaves `color-scheme` at
+	// `light dark`. A consumer pinning a scheme is a documented pattern (THEMING.md),
+	// and under one this spec would render light while believing it configured dark.
 	test.beforeEach(async ({ page }) => {
 		await page.goto('/visual');
+		await declareScheme(page, 'dark');
 		await expect(page.getByTestId('status')).toHaveText('Ready.', { timeout: 30_000 });
 	});
 
-	// The cheapest regression guard against a typed value's box taking the UA's
-	// own text colour instead of the card's ink rung: every other spec in this
-	// tier runs at Playwright's default light scheme, where the UA's black and
-	// the light ink rung sit close enough that a divergence there is easy to
-	// miss. Dark is where a control stuck on the UA's colour and the card
-	// around it visibly disagree.
+	// A typed value's box takes the card's ink rung, not the UA's own text colour.
+	// Asserted in dark because that is where the two visibly disagree: every other
+	// spec in this tier runs at Playwright's default light scheme, where the UA's
+	// black and the light ink rung sit close enough to hide a divergence.
 	test("a text control's computed ink matches its card", async ({ page }) => {
 		await reveal(page, 'main-letterhead_title');
 		const color = (selector: string) =>
