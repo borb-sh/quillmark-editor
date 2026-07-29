@@ -142,12 +142,15 @@
 		position: relative;
 	}
 	/* A leaf the inline schema does NOT constrain — the body — is paper rather than a
-	   cell in a row of controls, so it opens at a few lines and grows. The floor is six
-	   LINE BOXES, not a length: size times leading is what one line measures, so both
-	   factors are named or the expression stops meaning the six lines it claims. It
-	   moves with the type ramp and with nothing else. */
+	   cell in a row of controls, so it opens at a few lines and grows. The floor is
+	   three LINE BOXES, not a length: size times leading is what one line measures, so
+	   both factors are named or the expression stops meaning the three lines it claims.
+	   It moves with the type ramp and with nothing else. Three is what an EMPTY body
+	   costs, which is the only state the floor is ever the height: the ghost takes the
+	   first line, so the opening reads as an invitation with room under it rather than
+	   as a drop. */
 	.qm-prose-block {
-		min-height: calc(var(--_qm-text-body) * var(--_qm-leading-body) * 6);
+		min-height: calc(var(--_qm-text-body) * var(--_qm-leading-body) * 3);
 	}
 	/* The caret is the prose leaf's focus indicator, not a ring — a ring around a
 	   contenteditable reads as the form chrome AESTHETIC strips. So the outline is

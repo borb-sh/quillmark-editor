@@ -144,9 +144,12 @@ line box and two hairlines, so that agreement is **leading's** as much as paddin
 a leading applied to one selector of the shared rule and not the other breaks the
 invariant with nothing minted for the gate to catch, and two `min-height` literals
 tuned to agree would drift the first time either box changed. The body is the one
-that is not a control at all: it draws no box and opens at a floor of six line
-boxes — size times leading times six, both factors named or the expression stops
-meaning the six lines it claims — then grows. The **type rungs** are a leaf's
+that is not a control at all: it draws no box and opens at a floor of three line
+boxes — size times leading times three, both factors named or the expression stops
+meaning the three lines it claims — then grows. The floor is only ever the height
+of an EMPTY body, where the ghost takes the first line
+([VISUAL_EDITOR_UIUX.md](VISUAL_EDITOR_UIUX.md) §Fields): what opens is an
+invitation with room under it, not a drop. The **type rungs** are a leaf's
 either way, size and leading alike, and sit on the leaf's own base rule rather than
 in the box it withholds: a leaf that inherits them lands on the host page's rhythm,
 minting no literal for `check:style` to catch. Paper reads the ramp exactly as a
