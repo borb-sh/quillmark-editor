@@ -149,21 +149,19 @@ describe('initialExpandedGroup', () => {
 	const sec = (group: string | undefined) =>
 		({ group, label: group ?? '', fields: [] }) as ReturnType<typeof groupSections>[number];
 
-	it('opens the sole group even when a body exists', () => {
-		expect(initialExpandedGroup([sec('a')], true)).toBe('a');
-		expect(initialExpandedGroup([sec('a')], false)).toBe('a');
+	it('opens the first group in order', () => {
+		expect(initialExpandedGroup([sec('a')])).toBe('a');
+		expect(initialExpandedGroup([sec('a'), sec('b')])).toBe('a');
 	});
-	it('collapses all when many groups sit above a body', () => {
-		expect(initialExpandedGroup([sec('a'), sec('b')], true)).toBeNull();
+	it('opens the first group whether or not the card carries a body', () => {
+		// A body leaf is no substitute for a field — the card opens on one either way.
+		expect(initialExpandedGroup([sec('a'), sec('b'), sec('c'), sec('d')])).toBe('a');
 	});
-	it('opens the first group when many groups and no body', () => {
-		expect(initialExpandedGroup([sec('a'), sec('b')], false)).toBe('a');
-	});
-	it('ignores ungrouped sections when counting groups', () => {
-		// One real group + an ungrouped section → still the sole-group case.
-		expect(initialExpandedGroup([sec(undefined), sec('a')], true)).toBe('a');
+	it('skips ungrouped sections, which render outside the accordion', () => {
+		expect(initialExpandedGroup([sec(undefined), sec('a')])).toBe('a');
 		// No groups at all → nothing to expand.
-		expect(initialExpandedGroup([sec(undefined)], false)).toBeNull();
+		expect(initialExpandedGroup([sec(undefined)])).toBeNull();
+		expect(initialExpandedGroup([])).toBeNull();
 	});
 });
 

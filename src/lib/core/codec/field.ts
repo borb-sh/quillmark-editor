@@ -39,9 +39,10 @@ export interface CreateFieldOpts {
 	noInputRules?: boolean;
 	/** Accessible name → `aria-label` on the `contenteditable` (the visual label is a sibling it can't reference). */
 	label?: string;
-	/** Ghost text shown on the empty leaf — the resolved `default:` a body ghosts
-	 * (VISUAL_EDITOR_UIUX §Fields). Captured at mount (a schema default is stable);
-	 * an empty/absent string adds no placeholder. */
+	/** Ghost text shown on the empty leaf — the resolved `default:` a field ghosts,
+	 * or a body's invitation (VISUAL_EDITOR_UIUX §Fields). The INITIAL value;
+	 * {@link FieldController.setPlaceholder} moves it after mount. Empty/absent
+	 * shows no ghost. */
 	placeholder?: string;
 	onFocus?(addr: Addr): void;
 	/** Fired with the new USV caret after an edit or a selection move. */
@@ -57,6 +58,15 @@ export interface FieldController {
 	setCaret(pos: number): void;
 	/** External content change → re-hydrate this leaf (gated by reconcile). */
 	applyExternal(): void;
+	/**
+	 * Move the empty-leaf ghost after mount — a card retyped to another kind takes
+	 * its new kind's wording without remounting, which it must not do (the leaf key
+	 * is the card's session id, so a remount would cost the caret).
+	 *
+	 * Refreshes the decoration WITHOUT a transaction: a placeholder is chrome, and
+	 * a transaction would fire `onCaretMove` at a moment the caret did not move.
+	 */
+	setPlaceholder(text: string | undefined): void;
 	focus(): void;
 	/** The current stored content for this addr (for tests / reconcile). */
 	getContent(): Content;
@@ -142,6 +152,9 @@ export function createField(opts: CreateFieldOpts): FieldController {
 
 	let index: LineIndex; // rebuilt on every structural change
 	let view: EditorView;
+	// The ghost's live cell — the placeholder plugin reads it per pass, so moving it
+	// is an assignment plus a re-render rather than a rebuilt plugin stack.
+	let placeholderText = opts.placeholder;
 
 	const state = buildState(reconciler.last);
 	index = buildLineIndex(state.doc);
@@ -187,7 +200,9 @@ export function createField(opts: CreateFieldOpts): FieldController {
 				inline,
 				plaintext,
 				noInputRules: opts.noInputRules,
-				placeholder: opts.placeholder,
+				// Always installed, so a leaf that mounts without a ghost can still be
+				// given one later; the plugin draws nothing while the text is empty.
+				placeholder: () => placeholderText,
 				afterHistory: [anchorPlugin(seededAnchors)]
 			})
 		});
@@ -261,6 +276,13 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			view.dispatch(view.state.tr.setSelection(Selection.near(fresh.doc.resolve(pm))));
 			reconciler.commit(current);
 		},
+		setPlaceholder(text: string | undefined): void {
+			if (text === placeholderText) return;
+			placeholderText = text;
+			// `setProps` re-runs the decoration pass against the unchanged state — no
+			// transaction, so nothing commits and no caret is reported.
+			view.setProps({});
+		},
 		focus(): void {
 			view.focus();
 		},
@@ -327,7 +349,10 @@ export function proseLeafPlugins(
 		inline: boolean;
 		plaintext: boolean;
 		noInputRules?: boolean;
-		placeholder?: string;
+		/** Read live, not captured: the ghost can move after mount
+		 *  ({@link FieldController.setPlaceholder}), and a re-hydration rebuilds this
+		 *  stack, so the plugin must ask rather than hold. */
+		placeholder?: () => string | undefined;
 		afterHistory?: Plugin[];
 	}
 ): Plugin[] {
@@ -345,11 +370,16 @@ export function proseLeafPlugins(
  * which CSS renders via `::before { content: attr(data-placeholder) }` — so the
  * text never enters the document, the caret path, or a `pmToContent` export. It
  * vanishes the instant the leaf holds any content (the emptiness test fails).
+ *
+ * `read` is called per decoration pass rather than closed over, so moving the
+ * ghost is a re-render and never a document edit.
  */
-function placeholderPlugin(text: string): Plugin {
+function placeholderPlugin(read: () => string | undefined): Plugin {
 	return new Plugin({
 		props: {
 			decorations(state) {
+				const text = read();
+				if (!text) return null;
 				const { doc } = state;
 				const first = doc.firstChild;
 				const empty =

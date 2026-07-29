@@ -27,7 +27,10 @@
 		unframed?: boolean;
 		/** Accessible name for the editable region (the visual label is a sibling span). */
 		label?: string;
-		/** Ghost shown on the empty leaf — the resolved `default:`. */
+		/** Ghost shown on the empty leaf. An inline leaf's is the resolved `default:`
+		 *  or nothing; a body's always has text, falling back to an invitation
+		 *  (`resolveBodyGhost`). Reactive — a change is pushed into the mounted view,
+		 *  never a remount. */
 		placeholder?: string;
 		/** Stable identity for the registry + a DOM stamp the e2e uses to prove no-remount. */
 		leafKey: string;
@@ -66,9 +69,10 @@
 	// by the codec itself — `createField` decodes an empty content and installs on
 	// the first edit — so this wrapper adds no pre-seeding, and an untouched field
 	// stays absent (its default rendering intact) until actually edited.
+	let controller: FieldController | undefined;
 	onMount(() => {
 		if (!containerEl) return;
-		const controller = createField({
+		controller = createField({
 			doc,
 			addr,
 			container: containerEl,
@@ -82,8 +86,17 @@
 		register?.(leafKey, controller);
 		return () => {
 			unregister?.(leafKey);
-			controller.destroy();
+			controller?.destroy();
+			controller = undefined;
 		};
+	});
+
+	// The ghost outlives no remount of its own: the leaf is keyed by the card's
+	// session id, so a card RETYPED to another kind keeps this view and would keep
+	// the old kind's wording. Push it instead — the caret is worth more than the
+	// simplicity of rebuilding.
+	$effect(() => {
+		controller?.setPlaceholder(placeholder);
 	});
 </script>
 

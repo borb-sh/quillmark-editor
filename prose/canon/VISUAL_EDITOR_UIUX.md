@@ -127,9 +127,10 @@ is a separate concern (the island controls), not gated by this.
   editor carries web-app's density *hints* — `ui.group` and `ui.compact` — and not
   its layout pass: a section is ONE grid, capacity comes from a container query, and
   fields auto-place (§"Section grid").
-  `ui.group` sections are a collapsible accordion — one open at a time, the sole
-  group (or, body-less, the first) auto-expanded; ungrouped fields stay above it,
-  always visible. A section header is a heading, not metadata: sentence case at the
+  `ui.group` sections are a collapsible accordion — one open at a time, the first
+  in order open at mount; ungrouped fields stay above it, always visible. A card
+  opens on fields, never on chevrons alone: a body leaf does not stand in for one,
+  since on a card carrying both the fields are what the card is for. A section header is a heading, not metadata: sentence case at the
   field-label rung, its whole row the target, its label centred between the rule
   above it and the one it draws. Open and hover are ink steps; the chevron's
   rotation carries open/closed, and no hue enters (AESTHETIC §Rules). The open
@@ -141,6 +142,19 @@ is a separate concern (the island controls), not gated by this.
 - **Prose leaf** — each rich field as an inline WYSIWYG surface, and the body as
   paper: no label — "Body" names the surface, and the accessible name stays on the
   leaf — and no box, the bracket's bottom rule doing the separating a border was.
+- **An empty body invites; an empty field does not.** A body's ghost falls back
+  where a field's does not: the resolved `default:` when the kind declares one,
+  else the consumer's `bodyPlaceholder` wording, else `Write…`. A `default:` wins
+  over both — it alone says what prints if nothing is written, and an invitation
+  over it would hide that. A field keeps the opposite rule: its ghost is the
+  resolved default or nothing, because invented placeholder text in a control
+  reads as a value already entered. Both render at the ghost rung
+  (`--_qm-ink-ghost`, italic) and neither enters the document.
+  `bodyPlaceholder` is asked once per KIND and its answer held for the session,
+  so a consumer sampling a set at random still reads as deliberate — cards of a
+  kind agree, and a re-derive does not re-roll. Keyed by kind, not by card: two
+  empty cards of a kind are the same invitation. A retyped card takes its new
+  kind's wording in place, without remounting the leaf and losing the caret.
 - **Per-field state** — focus, inline diagnostics, a ghosted `default:`
   placeholder (never written back — it lives in the schema), a persistent required
   `*` on no-`default:` (Unendorsed) fields, and the field's `description:` as a

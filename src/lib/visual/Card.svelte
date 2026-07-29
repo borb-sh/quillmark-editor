@@ -136,7 +136,7 @@
 	// and resets only on a remount (reload). Not reconciled to later section changes —
 	// a retype is the one reshape, and the open group stays where it still exists.
 	// svelte-ignore state_referenced_locally
-	let expanded = $state<string | null>(initialExpandedGroup(card.sections, card.hasBody));
+	let expanded = $state<string | null>(initialExpandedGroup(card.sections));
 	function toggleGroup(group: string): void {
 		expanded = expanded === group ? null : group;
 	}

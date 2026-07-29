@@ -49,7 +49,9 @@
 		resolvedByCardIndex,
 		ghostDefault,
 		stringifyGhost,
+		resolveBodyGhost,
 		NO_RESOLVED_ROWS,
+		type BodyPlaceholder,
 		type CardModel,
 		type ResolvedCardRows
 	} from './structure.js';
@@ -99,6 +101,18 @@
 		 * Absent → every schema option is offered (the default, zero behavior change).
 		 */
 		enumOptionAllowed?: (addr: Addr, value: string) => boolean;
+		/**
+		 * Consumer wording hook for an EMPTY BODY's ghost: given a card's kind,
+		 * return the invitation its empty body shows, or `undefined` to take the
+		 * built-in. A body with a resolved `default:` ghosts that and never consults
+		 * this — the default is the ghost that describes the render.
+		 *
+		 * Consulted ONCE PER KIND per session and cached, so a hook that samples a set
+		 * at random still reads as deliberate: two empty cards of a kind ghost the
+		 * same string, and a remount does not re-roll it. Absent → the built-in for
+		 * every kind.
+		 */
+		bodyPlaceholder?: BodyPlaceholder;
 		/** Appended to the root's own class — the surface is a mounted element the
 		 *  consumer positions, so it needs a handle for layout it owns. */
 		class?: string;
@@ -114,6 +128,7 @@
 		onChange,
 		diagnostics,
 		enumOptionAllowed,
+		bodyPlaceholder,
 		class: className,
 		style
 	}: Props = $props();
@@ -408,6 +423,32 @@
 		};
 	}
 
+	// ── The empty-body ghost's consumer wording ─────────────────────────────────
+	// The hook is consulted once per KIND and its answer kept for the session, which
+	// is the whole determinism guarantee: a hook that samples a witty set at random
+	// is impure by design, and this cache is what makes its answer look chosen —
+	// same string for every card of a kind, and the same one after a remount or any
+	// re-derive. Keyed by kind rather than by card id deliberately: two empty cards
+	// that are the same kind ARE the same invitation, and disagreeing ghosts read as
+	// a glitch. Retyping a card crosses to another key and re-asks, which is right —
+	// it is a different card now. Plain (non-`$state`) on purpose: memoization, so
+	// filling it during a derive must not feed back into one.
+	let ghostHook: BodyPlaceholder | undefined;
+	const ghostByKind = new Map<string, string | undefined>();
+	function customBodyGhost(kind: string, isMain: boolean): string | undefined {
+		// A swapped hook invalidates every answer the old one gave.
+		if (bodyPlaceholder !== ghostHook) {
+			ghostByKind.clear();
+			ghostHook = bodyPlaceholder;
+		}
+		if (!bodyPlaceholder) return undefined;
+		// `main` is not a `card_kinds` key, so a kind that spells it collides without
+		// the flag in the key.
+		const key = `${isMain ? '1' : '0'}\0${kind}`;
+		if (!ghostByKind.has(key)) ghostByKind.set(key, bodyPlaceholder({ kind, isMain }));
+		return ghostByKind.get(key);
+	}
+
 	// ── The derived card tree (schema × payload join) ───────────────────────────
 	function buildCard(
 		id: string,
@@ -428,6 +469,7 @@
 			? groupSections(fields, groupOrder(cardSchema), (g) => groupLabel(cardSchema, g))
 			: [];
 		const extEditor = card.ext?.editor as { title?: string } | undefined;
+		const hasBody = bodyEnabled(cardSchema);
 		return {
 			id,
 			isMain,
@@ -440,10 +482,19 @@
 			values,
 			provenance: provenanceMap(rows.fields),
 			sections,
-			hasBody: bodyEnabled(cardSchema),
+			hasBody,
 			// The body ghosts its resolved `default:` exactly as a scalar does — the
-			// same text-ghost projection `<Field>` applies to a field's row.
-			bodyGhost: stringifyGhost(ghostDefault(rows.body ?? undefined))
+			// same text-ghost projection `<Field>` applies to a field's row — and falls
+			// back to an invitation where a scalar shows nothing, because an empty body
+			// is a surface to write on and an empty control is a value not yet given.
+			// Asked only for a card that HAS a body, so the hook is never consulted
+			// about one that renders none.
+			bodyGhost: hasBody
+				? resolveBodyGhost(
+						stringifyGhost(ghostDefault(rows.body ?? undefined)),
+						customBodyGhost(kind, isMain)
+					)
+				: undefined
 		};
 	}
 
