@@ -37,9 +37,8 @@
 		/** The parked `description` (FieldLabel) — announced after the name. */
 		describedBy?: string;
 		onCommit: (v: number | string | undefined) => void;
-		testid?: string;
 	}
-	let { value, integer, fallback, label, id, describedBy, onCommit, testid }: Props = $props();
+	let { value, integer, fallback, label, id, describedBy, onCommit }: Props = $props();
 
 	// Local input state synced to `value` (as a string projection); own-typing
 	// stays local, only an external change reconciles back in (see `syncedLocal`).
@@ -66,7 +65,6 @@
 	placeholder={fallback != null ? String(fallback) : ''}
 	aria-label={id ? undefined : label}
 	aria-describedby={describedBy}
-	data-testid={testid}
 	oninput={(e) => {
 		local.value = (e.currentTarget as HTMLInputElement).value;
 	}}

@@ -28,9 +28,8 @@
 		 * keymap, so the state it reads is the one this keystroke has yet to change. */
 		onKey?: (e: KeyboardEvent) => void;
 		onFocusEl?: () => void;
-		testid?: string;
 	}
-	let { value, plaintext, label, onChange, onKey, onFocusEl, testid }: Props = $props();
+	let { value, plaintext, label, onChange, onKey, onFocusEl }: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let view: EditorView | undefined;
@@ -85,7 +84,7 @@
      an array of `string` render rows of equal height. No floor: the reset in
      `core/codec/prose.css` makes one line of prose measure one line. Width is the
      row's to give — the element fills the track it is placed in (`ArrayField`). -->
-<div bind:this={containerEl} class="qm-array-prose qm-control-box" data-testid={testid}></div>
+<div bind:this={containerEl} class="qm-array-prose qm-control-box"></div>
 
 <style>
 	/* Caret-primary, matching ProseField: the contenteditable outline is dropped

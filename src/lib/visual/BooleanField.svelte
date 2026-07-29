@@ -27,9 +27,8 @@
 		/** The parked `description` (FieldLabel) — announced after the name. */
 		describedBy?: string;
 		onCommit: (v: boolean) => void;
-		testid?: string;
 	}
-	let { value, fallback, label, id, describedBy, onCommit, testid }: Props = $props();
+	let { value, fallback, label, id, describedBy, onCommit }: Props = $props();
 
 	// Local toggle state synced to `value`; own-toggles stay local, only an external
 	// change reconciles back in (see `syncedLocal`). The primitive is driven
@@ -46,7 +45,6 @@
 		{id}
 		aria-label={id ? undefined : label}
 		aria-describedby={describedBy}
-		data-testid={testid}
 		onCheckedChange={(v) => {
 			local.value = v;
 			onCommit(v);

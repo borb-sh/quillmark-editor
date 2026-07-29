@@ -61,8 +61,6 @@
 		unregister
 	}: Props = $props();
 
-	const base = $derived(card.isMain ? 'main' : `card${index}`);
-
 	// Local title reconcile (external change only), like the scalar controls.
 	// svelte-ignore state_referenced_locally
 	let localTitle = $state(card.titleOverride);
@@ -191,11 +189,7 @@
 			     box. The autosize keeps that box exactly as wide as its
 			     text; this wrapper makes the rest of the row enter the edit too. -->
 				<!-- svelte-ignore a11y_no_static_element_interactions -->
-				<div
-					class="qm-card-rename"
-					data-testid={`card-rename-${index}`}
-					onmousedown={onRenameMousedown}
-				>
+				<div class="qm-card-rename" onmousedown={onRenameMousedown}>
 					<!-- Autosize: the sizer span's ::after mirrors the text and dictates the grid
 				     cell width, so the overlaid input grows with content and reads as text,
 				     not a persistent box. `data-value` falls back to the
@@ -207,7 +201,6 @@
 							placeholder={card.titlePlaceholder}
 							aria-label="Card title"
 							size="1"
-							data-testid={`card-title-${index}`}
 							onmousedown={onTitleMousedown}
 							onfocus={onTitleFocus}
 							onkeydown={onTitleKeydown}
@@ -225,7 +218,6 @@
 						onMoveUp={() => ops.move(-1)}
 						onMoveDown={() => ops.move(1)}
 						onDelete={() => ops.remove()}
-						testidPrefix={`card-${index}`}
 					/>
 				</div>
 			</header>
@@ -280,7 +272,6 @@
 										type="button"
 										class="qm-group-header"
 										aria-expanded={isOpen}
-										data-testid={`group-${base}-${section.group}`}
 										onclick={() => toggleGroup(section.group as string)}
 									>
 										<ChevronRight class="qm-group-chevron" size={14} />{section.label}
@@ -317,9 +308,8 @@
 						{onCaretMove}
 						{register}
 						{unregister}
-						testid={`prose-${base}-body`}
 					/>
-					<DiagnosticList diagnostics={ops.diagFor(undefined)} testid={`diag-${base}-body`} />
+					<DiagnosticList diagnostics={ops.diagFor(undefined)} />
 				</div>
 			{/if}
 		</div>
@@ -349,7 +339,6 @@
 				{register}
 				{unregister}
 				diagnostics={ops.diagFor(f.name)}
-				testid={`${base}-${f.name}`}
 			/>
 		{/each}
 	</div>
@@ -363,9 +352,7 @@
      no field is dropped; with no kinds to offer, delete is the only exit. -->
 {#snippet recoveryShell()}
 	<header class="qm-card-header">
-		<span class="qm-card-title-static" data-testid={`card-unschemable-title-${index}`}
-			>{humanize(card.kind)}</span
-		>
+		<span class="qm-card-title-static">{humanize(card.kind)}</span>
 		<div class="qm-card-header-right">
 			<CardControls
 				{isFirst}
@@ -373,11 +360,10 @@
 				onMoveUp={() => ops.move(-1)}
 				onMoveDown={() => ops.move(1)}
 				onDelete={() => ops.remove()}
-				testidPrefix={`card-${index}`}
 			/>
 		</div>
 	</header>
-	<div class="qm-card-recovery" data-testid={`card-recovery-${index}`}>
+	<div class="qm-card-recovery">
 		<p class="qm-recovery-note">
 			Unrecognized card type <code>{card.kind}</code>. Its content is preserved.
 		</p>
@@ -385,7 +371,6 @@
 			<label class="qm-recovery-retype">
 				Change to
 				<select
-					data-testid={`recovery-retype-${index}`}
 					onchange={(e) => {
 						const el = e.currentTarget as HTMLSelectElement;
 						if (el.value) ops.retype(el.value);

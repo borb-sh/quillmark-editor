@@ -6,8 +6,8 @@
 // through to bridge.ts's listener on the slot beneath — the overlay is
 // decoration, never an independent click target.
 //
-// The boxes carry NO resting ink. They exist for their geometry (bridge.ts and the
-// e2e read their rects) and to be bloomed: the preview is the rendered output, so
+// The boxes carry NO resting ink. They exist for their geometry (bridge.ts reads
+// their rects) and to be bloomed: the preview is the rendered output, so
 // correlation is marked as an event that decays, not as a border the document did
 // not ask for. See `core/bloom.ts` for why the wash resumes rather than restarts.
 import type { LiveSession } from '../core/index.js';

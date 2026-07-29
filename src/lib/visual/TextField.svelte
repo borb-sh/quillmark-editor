@@ -28,9 +28,8 @@
 		/** Raw keydown, for a container whose own keys run through this control — the
 		 * array repeater's Enter/Backspace (`ArrayField`). */
 		onKey?: (e: KeyboardEvent) => void;
-		testid?: string;
 	}
-	let { value, placeholder, label, id, describedBy, onCommit, onKey, testid }: Props = $props();
+	let { value, placeholder, label, id, describedBy, onCommit, onKey }: Props = $props();
 
 	// Local input state synced to `value`: own-typing stays local, only an external
 	// change reconciles back in (see `syncedLocal`).
@@ -52,7 +51,6 @@
 	{placeholder}
 	aria-label={id ? undefined : label}
 	aria-describedby={describedBy}
-	data-testid={testid}
 	onkeydown={onKey}
 	oninput={(e) => {
 		local.value = (e.currentTarget as HTMLInputElement).value;

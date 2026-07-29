@@ -53,7 +53,6 @@
 		"prepack": "svelte-kit sync && svelte-package && publint",
 		"test": "svelte-kit sync && vitest run",
 		"test:watch": "svelte-kit sync && vitest",
-		"test:e2e": "playwright test",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:canon": "node scripts/check-canon.mjs",
 		"check:style": "node scripts/check-style.mjs",
@@ -79,7 +78,6 @@
 		"prosemirror-view": "1.42.1"
 	},
 	"devDependencies": {
-		"@playwright/test": "^1.61.1",
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.22.0",
 		"@sveltejs/package": "^2.5.0",

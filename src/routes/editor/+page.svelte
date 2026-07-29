@@ -25,11 +25,11 @@
   recompiles to empty `dirtyPages` (apply on an unchanged doc is a cheap no-op),
   so the preview repaints nothing; only the geometry re-reads.
 
-  `data-testid` strip: the bridge outcomes e2e/editor.spec.ts asserts on
-  (last-hit, active-addr, last-focus, last-change). `inject-diagnostics` stands in
-  for a live render-error feed — a real consumer derives external diagnostics from
-  `session.warnings` (wired here, `[]` for usaf_memo) + render errors; the button
-  proves the shell threads them to inline rendering deterministically.
+  The state strip along the top reads the bridge's outcomes back out — last-hit,
+  active-addr, last-focus, last-change — so a round-trip that lands nowhere is
+  visible rather than silent. `inject-diagnostics` stands in for a live
+  render-error feed: a real consumer derives external diagnostics from
+  `session.warnings` (wired here, `[]` for usaf_memo) plus render errors.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -76,7 +76,7 @@
 		externalDiagnostics = session ? [...session.warnings, ...injected] : injected;
 	}
 
-	// Bridge observability (e2e).
+	// Bridge observability — what the state strip reads.
 	let lastHit = $state<ContentHit | undefined>();
 	let activeAddr = $state('none');
 	let lastFocus = $state('none');

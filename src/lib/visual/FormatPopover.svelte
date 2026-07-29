@@ -146,8 +146,8 @@
 	// final range) must coalesce to ONE settled check, not one `sync()` per
 	// event — reacting to each intermediate state mounts/unmounts
 	// `Popover.Content` repeatedly within a few event-loop turns, which is both
-	// visibly unstable (Playwright's actionability check sees a moving/detached
-	// target) and races bits-ui's own internal effects (observed: Svelte's
+	// visibly unstable (a moving, momentarily detached click target) and races
+	// bits-ui's own internal effects (observed: Svelte's
 	// `derived_inert` warning from a stale read after a too-fast unmount). A
 	// microtask is not late enough — those transient events are themselves
 	// separated by microtasks. `requestAnimationFrame` is: it runs once
@@ -259,14 +259,7 @@
 				onOpenAutoFocus={(e: Event) => e.preventDefault()}
 				onCloseAutoFocus={(e: Event) => e.preventDefault()}
 			>
-				<!-- `data-testid` lives on THIS div (ours, not bits-ui's own prop-merged
-				     wrapper) so its presence never depends on bits-ui's passthrough. -->
-				<div
-					bind:this={contentEl}
-					class="qm-format-popover qm-popover-surface"
-					data-qm-root
-					data-testid="format-popover"
-				>
+				<div bind:this={contentEl} class="qm-format-popover qm-popover-surface" data-qm-root>
 					{#if linkPromptOpen}
 						<form
 							class="qm-link-prompt"
@@ -279,16 +272,12 @@
 								class="qm-link-input"
 								type="text"
 								placeholder="https://…"
-								data-testid="mark-link-input"
 								bind:value={linkValue}
 							/>
-							<button type="submit" class="qm-icon-btn qm-mark-btn" data-testid="mark-link-apply"
-								>Apply</button
-							>
+							<button type="submit" class="qm-icon-btn qm-mark-btn">Apply</button>
 							<button
 								type="button"
 								class="qm-icon-btn qm-mark-btn"
-								data-testid="mark-link-cancel"
 								onmousedown={keepFocus}
 								onclick={cancelLink}>Cancel</button
 							>
@@ -306,7 +295,6 @@
 									class:active={activeMarks[m.name]}
 									title={m.title}
 									aria-label={m.title}
-									data-testid={`mark-${m.name}`}
 									onmousedown={keepFocus}
 									onclick={() => toggle(m.name)}><Icon size={GLYPH} /></button
 								>
@@ -317,7 +305,6 @@
 								class:active={activeMarks.anchor}
 								title="Anchor — an identity handle over the selection"
 								aria-label="Anchor"
-								data-testid="mark-anchor"
 								onmousedown={keepFocus}
 								onclick={toggleAnchor}><Hash size={GLYPH} /></button
 							>

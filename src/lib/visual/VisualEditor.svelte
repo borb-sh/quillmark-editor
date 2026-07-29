@@ -663,7 +663,6 @@
 			<button
 				type="button"
 				class="qm-add-btn qm-add-affordance"
-				data-testid={`add-card-${atIndex}`}
 				onclick={() => addCard(atIndex, kinds[0])}>+ Add {humanize(kinds[0])}</button
 			>
 		{:else}
@@ -673,21 +672,16 @@
 			     `<details>` does. The trigger is bits-ui's `<button>`, which is why the
 			     recede ladder below reaches it through `:global`. -->
 			<DropdownMenu.Root>
-				<DropdownMenu.Trigger
-					class="qm-add-btn qm-add-affordance"
-					data-testid={`add-card-${atIndex}`}>+ Add card</DropdownMenu.Trigger
-				>
+				<DropdownMenu.Trigger class="qm-add-btn qm-add-affordance">+ Add card</DropdownMenu.Trigger>
 				<DropdownMenu.Portal to={rootEl}>
 					<DropdownMenu.Content sideOffset={4}>
 						<!-- Portalled out of the row but INTO the stack's root, and carrying the
 						     marker itself: floating is still a detached subtree to the
 						     derivation, like FormatPopover and the enum listbox. -->
-						<div class="qm-menu-surface" data-qm-root data-testid={`add-card-${atIndex}-kinds`}>
+						<div class="qm-menu-surface" data-qm-root>
 							{#each kinds as k (k)}
-								<DropdownMenu.Item
-									class="qm-menu-item"
-									data-testid={`add-card-${atIndex}-${k}`}
-									onSelect={() => addCard(atIndex, k)}>{humanize(k)}</DropdownMenu.Item
+								<DropdownMenu.Item class="qm-menu-item" onSelect={() => addCard(atIndex, k)}
+									>{humanize(k)}</DropdownMenu.Item
 								>
 							{/each}
 						</div>

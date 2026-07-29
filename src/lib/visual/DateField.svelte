@@ -61,9 +61,8 @@
 		/** The parked `description` (FieldLabel) — announced after the name. */
 		describedBy?: string;
 		onCommit: (v: string | undefined) => void;
-		testid?: string;
 	}
-	let { value, fallback, label, labelledBy, describedBy, onCommit, testid }: Props = $props();
+	let { value, fallback, label, labelledBy, describedBy, onCommit }: Props = $props();
 
 	let wrapEl: HTMLElement | undefined = $state();
 	/** Take the caret — what the label click, and a parent placing focus here, calls.
@@ -152,7 +151,6 @@
 			aria-labelledby={labelledBy}
 			aria-describedby={describedBy}
 			data-ghosted={ghost ? '' : undefined}
-			data-testid={testid}
 		>
 			{#snippet children({ segments })}
 				<!-- Keyed by INDEX: `part` repeats — the `literal` separators between

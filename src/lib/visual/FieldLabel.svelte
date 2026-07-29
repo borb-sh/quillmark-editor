@@ -48,10 +48,8 @@
 		required?: boolean;
 		/** Schema `description`, or undefined — the affordance renders only when set. */
 		description?: string;
-		testid?: string;
 	}
-	let { label, controlId, id, descriptionId, onActivate, required, description, testid }: Props =
-		$props();
+	let { label, controlId, id, descriptionId, onActivate, required, description }: Props = $props();
 </script>
 
 <div class="qm-field-label-row">
@@ -66,15 +64,10 @@
 		{id}
 		for={controlId}
 		onclick={onActivate}
-		data-testid={testid ? `label-${testid}` : undefined}
 	>
 		<span>{label}</span>
 		{#if required}
-			<span
-				class="qm-field-required"
-				aria-label="required"
-				data-testid={testid ? `required-${testid}` : undefined}>*</span
-			>
+			<span class="qm-field-required" aria-label="required">*</span>
 		{/if}
 	</label>
 	{#if description}
@@ -84,12 +77,7 @@
 		     the spec makes a label's activation behaviour do nothing for a click
 		     targeted at interactive content inside it — but the naming is reason
 		     enough to keep both out. -->
-		<FieldHint
-			{description}
-			{label}
-			describedBy={descriptionId}
-			testid={testid ? `hint-${testid}` : undefined}
-		/>
+		<FieldHint {description} {label} describedBy={descriptionId} />
 		<span class="qm-visually-hidden" id={descriptionId}>{description}</span>
 	{/if}
 </div>

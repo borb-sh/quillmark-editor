@@ -40,13 +40,13 @@
 		 *  (`resolveBodyGhost`). Reactive — a change is pushed into the mounted view,
 		 *  never a remount. */
 		placeholder?: string;
-		/** Stable identity for the registry + a DOM stamp the e2e uses to prove no-remount. */
+		/** Stable identity for the registry, stamped on the DOM node so a remount is
+		 *  visible as one. */
 		leafKey: string;
 		onFocus?: (addr: Addr) => void;
 		onCaretMove?: (addr: Addr, pos: number) => void;
 		register?: (key: string, controller: FieldController) => void;
 		unregister?: (key: string) => void;
-		testid?: string;
 	}
 
 	let {
@@ -63,8 +63,7 @@
 		onFocus,
 		onCaretMove,
 		register,
-		unregister,
-		testid
+		unregister
 	}: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
@@ -126,7 +125,6 @@
 	class:qm-control-box={!unframed}
 	class:qm-prose-block={block}
 	data-leaf-key={leafKey}
-	data-testid={testid}
 ></div>
 
 <style>

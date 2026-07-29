@@ -18,9 +18,8 @@
 		onMoveUp: () => void;
 		onMoveDown: () => void;
 		onDelete: () => void;
-		testidPrefix?: string;
 	}
-	let { isFirst, isLast, onMoveUp, onMoveDown, onDelete, testidPrefix }: Props = $props();
+	let { isFirst, isLast, onMoveUp, onMoveDown, onDelete }: Props = $props();
 
 	/** Control-glyph size — the shared rule for the reorder/delete icons (AESTHETIC §Icons). */
 	const GLYPH = 14;
@@ -28,29 +27,19 @@
 
 <div class="qm-card-controls">
 	<div class="qm-card-reorder">
-		<button
-			type="button"
-			class="qm-icon-btn"
-			title="Move up"
-			disabled={isFirst}
-			data-testid={testidPrefix ? `${testidPrefix}-up` : undefined}
-			onclick={onMoveUp}><ChevronUp size={GLYPH} /></button
+		<button type="button" class="qm-icon-btn" title="Move up" disabled={isFirst} onclick={onMoveUp}
+			><ChevronUp size={GLYPH} /></button
 		>
 		<button
 			type="button"
 			class="qm-icon-btn"
 			title="Move down"
 			disabled={isLast}
-			data-testid={testidPrefix ? `${testidPrefix}-down` : undefined}
 			onclick={onMoveDown}><ChevronDown size={GLYPH} /></button
 		>
 	</div>
-	<button
-		type="button"
-		class="qm-icon-btn qm-card-delete"
-		title="Delete card"
-		data-testid={testidPrefix ? `${testidPrefix}-delete` : undefined}
-		onclick={onDelete}><X size={GLYPH} /></button
+	<button type="button" class="qm-icon-btn qm-card-delete" title="Delete card" onclick={onDelete}
+		><X size={GLYPH} /></button
 	>
 </div>
 

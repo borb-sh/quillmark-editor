@@ -38,9 +38,8 @@
 		 * A disallowed value already authored stays SELECTED and visible (disabled), never
 		 * stripped or mutated. The UNSET sentinel is exempt — clear-to-default always works. */
 		optionAllowed?: (value: string) => boolean;
-		testid?: string;
 	}
-	let { value, values, fallback, label, id, describedBy, onCommit, optionAllowed, testid }: Props =
+	let { value, values, fallback, label, id, describedBy, onCommit, optionAllowed }: Props =
 		$props();
 
 	// The sentinel's option value — a namespaced marker that no schema-authored
@@ -90,7 +89,6 @@
 			{id}
 			aria-label={id ? undefined : label}
 			aria-describedby={describedBy}
-			data-testid={testid}
 			data-ghosted={unset ? '' : undefined}
 		>
 			{shown}

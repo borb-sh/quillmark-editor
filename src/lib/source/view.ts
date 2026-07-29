@@ -35,7 +35,7 @@ export interface SourceViewController {
 }
 
 const CONTAINER_CLASS = 'qm-source';
-/** The text element's class — styled by `SourceView.svelte`, queried by the e2e spec. */
+/** The text element's class — `SourceView.svelte` styles it. */
 const TEXT_CLASS = 'qm-source-text';
 
 /** Serialize the document, or surface the error text rather than throwing into a paint. */

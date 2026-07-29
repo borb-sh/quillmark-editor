@@ -44,10 +44,17 @@ comments or docs — state the design fact itself, not where it's tracked.
 
 ## Verification
 
-Vitest for pure/core logic; the playground for what unit tests cannot reach
-(canvas paint, scroll virtualization, DPR, the click round-trip). Drive the
-playground headlessly — Chromium is preinstalled (`/opt/pw-browsers/chromium`,
+Vitest is the whole committed suite, and CI runs it in full. The playground is
+the surface for what a unit test cannot reach — canvas paint, scroll
+virtualization, DPR, the click round-trip — driven by hand or headlessly for the
+change in front of you. Chromium is preinstalled (`/opt/pw-browsers/chromium`,
 `PLAYWRIGHT_BROWSERS_PATH` preset; never run `playwright install`).
+
+Nothing browser-driven is committed. A browser assertion over chrome restates a
+doctrine value — a leading rung, a control height, a gutter — outside the CSS
+that single-sources it, so it fails on every retune of a dial it does not own,
+and the failure is answered by pasting the new number. What survives that is a
+suite of numbers agreeing with themselves.
 
 Everything runs against the reference quill
 [`fixtures/quills/usaf_memo/0.2.0`](fixtures/quills/usaf_memo/0.2.0) — dev
