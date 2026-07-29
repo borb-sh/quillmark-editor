@@ -30,6 +30,16 @@ decoration.
   (`--_qm-danger`, `--_qm-warning`), a focused control's ring (`--_qm-accent`) —
   never ornament. The three status hues are the only rungs that leave the two-pole
   greyscale.
+- **The authored document takes the same rule as the chrome around it.** A leaf
+  renders a heading by weight, a link by a dotted underline, code by
+  `--_qm-font-mono` — never by a size ramp, a fill, or a hue. Two reasons, and they
+  agree: the palette has no hue to spend, since `--_qm-accent` already means focus
+  and a fourth meaning mapped onto it would collide with the ring; and the package
+  cannot know what a quill's paper does with a level, so a size ramp in the leaf is
+  the editor predicting a hierarchy the rendered page may not set. The reference
+  quill collapses all six heading levels into a bold run-in. The level is not lost —
+  it is in the model, where the codec round-trips it — it is just not something type
+  claims to know.
 - **Colour that answers nothing is ornament, however faint.** The test is whether
   removing it loses an answer, not whether it is faint enough to tolerate. A hairline
   on every field box, present before anything is focused or clicked, answers nothing

@@ -191,14 +191,26 @@ syntax).
 
 The schema distinction is also what sizes the leaf. A constrained leaf holds one
 paragraph, so it is one line tall and draws the scalar control recipe (SURFACES
-§"The shared recipe"); the full schema grows. **The codec owns the block reset both
-depend on** — `codec/prose.css`, imported beside ProseMirror's own stylesheet, which
-carries no margins of its own and so leaves every block on UA defaults. The reset
-covers the block set `schema.ts` can produce, not `p` alone, and lives here rather
-than per component because every leaf in the package — field, body, array element,
-source view — mounts through the codec and inherits it without restating it. A leaf
-that then matches an input does so by drawing the same declarations, not by a floor
-tuned to agree.
+§"The shared recipe"); the full schema grows. **The codec owns the stylesheet both
+depend on** — `codec/prose.css`, imported beside ProseMirror's own, which carries no
+margins of its own and so leaves every block on UA defaults. It lives here rather
+than per component because every prose leaf in the package — field, body, array
+element — mounts through the codec and inherits it without restating it. The source
+view is not one of them: it is a `<pre>` holding serialized text, outside
+`.ProseMirror` and outside every rule in that file. A leaf that matches an input does
+so by drawing the same declarations, not by a floor tuned to agree.
+
+**The stylesheet's two halves answer to different things.** The reset covers the
+block set `schema.ts` can produce, not `p` alone, and is subtractive: it takes the UA
+boxes that make a leaf disagree with the control beside it. The positive half covers
+the rest of what the schema emits — `code`, `link`, `code_block`, `horizontal_rule`,
+the lists, the headings — and it reads the RENDERED document, not a browser default:
+the reference quill sets `raw` in a monospace face and nothing more, collapses every
+heading level into a bold run-in on the following paragraph, and decorates a link not
+at all. So the leaf states that a span is code and a line is a heading; it does not
+predict the size paper will set them at, which the package cannot know for a quill it
+has not seen. Marks the UA already renders correctly (`strong`, `em`, `underline`,
+`strike`) take no rule.
 
 ## Markdown at the edges
 
