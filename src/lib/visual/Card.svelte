@@ -13,6 +13,7 @@
 	import type { FieldController } from '../core/codec/index.js';
 	import type { CardModel, FieldModel } from './structure.js';
 	import { placeFields, humanize, initialExpandedGroup } from './structure.js';
+	import type { FieldDomIds } from './domid.js';
 	import Field from './Field.svelte';
 	import ProseField from './ProseField.svelte';
 	import CardControls from './CardControls.svelte';
@@ -22,6 +23,7 @@
 	interface CardOps {
 		makeAddr: (field?: string) => Addr;
 		leafKey: (field?: string) => string;
+		domIds: (field?: string) => FieldDomIds;
 		commit: (name: string, value: unknown) => void;
 		move: (dir: -1 | 1) => void;
 		remove: () => void;
@@ -339,6 +341,7 @@
 				{doc}
 				proseAddr={ops.makeAddr(f.name)}
 				leafKey={ops.leafKey(f.name)}
+				domIds={ops.domIds(f.name)}
 				onCommitScalar={(v) => ops.commit(f.name, v)}
 				optionAllowed={(v) => ops.enumAllowed(f.name, v)}
 				{onFocus}

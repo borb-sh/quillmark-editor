@@ -25,8 +25,16 @@
 		 * row of controls. Only the body is paper, and only its caller knows it is.
 		 */
 		unframed?: boolean;
-		/** Accessible name for the editable region (the visual label is a sibling span). */
+		/** Accessible name for a leaf NOTHING else names — an array element, or the
+		 * card body. A leaf with a field label takes `labelledBy` instead. */
 		label?: string;
+		/** The field label's own id → `aria-labelledby` on the editable region. `for`
+		 * cannot reach a `contenteditable` — not a labelable element — so the
+		 * association runs the other way, and the label's click comes back through
+		 * the controller's `focus`. */
+		labelledBy?: string;
+		/** The parked `description` (FieldLabel) → `aria-describedby`. */
+		describedBy?: string;
 		/** Ghost shown on the empty leaf. An inline leaf's is the resolved `default:`
 		 *  or nothing; a body's always has text, falling back to an invitation
 		 *  (`resolveBodyGhost`). Reactive — a change is pushed into the mounted view,
@@ -48,6 +56,8 @@
 		plaintext,
 		unframed,
 		label,
+		labelledBy,
+		describedBy,
 		placeholder,
 		leafKey,
 		onFocus,
@@ -70,6 +80,14 @@
 	// the first edit — so this wrapper adds no pre-seeding, and an untouched field
 	// stays absent (its default rendering intact) until actually edited.
 	let controller: FieldController | undefined;
+
+	/** Take the caret — what the label click calls. The CONTROLLER's focus, not the
+	 * container's: a PM view restores a selection that an `HTMLElement.focus()` on
+	 * the wrapper leaves unplaced. */
+	export function focus(): void {
+		controller?.focus();
+	}
+
 	onMount(() => {
 		if (!containerEl) return;
 		controller = createField({
@@ -79,6 +97,8 @@
 			inline,
 			plaintext,
 			label,
+			labelledBy,
+			describedBy,
 			placeholder,
 			onFocus,
 			onCaretMove

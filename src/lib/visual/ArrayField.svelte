@@ -42,12 +42,29 @@
 		required?: boolean;
 		/** Schema `description` — the label's help affordance. */
 		description?: string;
+		/** The label's own DOM id. An array is a GROUP — N inputs, no single `for`
+		 * target — so the label names the set and each element keeps its indexed
+		 * `aria-label`. */
+		labelId?: string;
+		/** Where the description parks, for the group's `aria-describedby`. */
+		descriptionId?: string;
 		onCommit: (arr: unknown[]) => void;
 		/** A prose element gained focus — joins the field in the focus federation. */
 		onFocusEl?: () => void;
 		testid?: string;
 	}
-	let { value, items, label, required, description, onCommit, onFocusEl, testid }: Props = $props();
+	let {
+		value,
+		items,
+		label,
+		required,
+		description,
+		labelId,
+		descriptionId,
+		onCommit,
+		onFocusEl,
+		testid
+	}: Props = $props();
 
 	// The ELEMENT control is the item schema's own; an array declaring no `items`
 	// has text elements.
@@ -76,6 +93,7 @@
 	// `focus()` restores a selection an `HTMLElement.focus()` leaves unplaced.
 	const els: Record<string, { focus: () => void } | undefined> = {};
 	let addEl: HTMLButtonElement | undefined = $state();
+	let rootEl: HTMLElement | undefined = $state();
 
 	function emptyElement(): unknown {
 		if (control === 'prose') return emptyContent();
@@ -115,6 +133,17 @@
 		// key does — the button under the pointer is the element being destroyed.
 		focusAfterFlush(next[Math.max(k - 1, 0)]);
 	}
+	/** A label click on an array, resolved rather than left to dangle: the FIRST
+	 * element, or the add affordance when the list is empty — which is then the only
+	 * thing there is to land on, and the next thing the user wants anyway. */
+	function activate(): void {
+		if (ids.length === 0) return void addEl?.focus();
+		const first = els[ids[0]];
+		if (first) return first.focus();
+		// The JSON element registers no controller — it is a plain textarea, with
+		// nothing about focusing it that the DOM does not already know.
+		rootEl?.querySelector<HTMLTextAreaElement>('.qm-array-row textarea')?.focus();
+	}
 	/** Focus element `id` after the flush, never in the same tick: a mutation commits
 	 * the array BY VALUE, so the parent re-derives and the row does not exist until
 	 * then. `undefined` is the empty list — the add affordance. */
@@ -153,10 +182,25 @@
 	}
 </script>
 
-<div class="qm-array" data-testid={testid}>
+<div
+	bind:this={rootEl}
+	class="qm-array"
+	role="group"
+	aria-labelledby={label != null ? labelId : undefined}
+	aria-describedby={description ? descriptionId : undefined}
+	data-testid={testid}
+>
 	<div class="qm-array-header">
 		{#if label != null}
-			<FieldLabel {label} {required} {description} {testid} />
+			<FieldLabel
+				{label}
+				id={labelId}
+				{descriptionId}
+				onActivate={activate}
+				{required}
+				{description}
+				{testid}
+			/>
 		{:else}
 			<span></span>
 		{/if}

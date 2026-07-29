@@ -45,12 +45,34 @@
 		/** The resolved `default:` in the boundary's currency (`YYYY-MM-DD`) — parsed
 		 * for display only, shown while unset, never written. */
 		fallback?: string;
-		/** Accessible name — the visual label is a bare span the segments can't reference. */
+		/** Accessible name for a field NOTHING else names — an object property, whose
+		 * name is the field label plus the property's. A field's own date takes
+		 * `labelledBy` instead. */
 		label?: string;
+		/** The field label's own id. `for` CANNOT reach this control — the segment
+		 * container is not a labelable element — so the association runs the other way,
+		 * and the label's click comes back through {@link focus}. It lands on the
+		 * container, which the primitive gives `role="group"`: the name belongs to the
+		 * SET of segments, and entering any of them announces it. (bits builds each
+		 * segment's own `aria-labelledby` from a `DateField.Label` inside its root —
+		 * unreachable from here, since the field's label is a grid child of the field,
+		 * not of the control.) */
+		labelledBy?: string;
+		/** The parked `description` (FieldLabel) — announced after the name. */
+		describedBy?: string;
 		onCommit: (v: string | undefined) => void;
 		testid?: string;
 	}
-	let { value, fallback, label, onCommit, testid }: Props = $props();
+	let { value, fallback, label, labelledBy, describedBy, onCommit, testid }: Props = $props();
+
+	let wrapEl: HTMLElement | undefined = $state();
+	/** Take the caret — what the label click, and a parent placing focus here, calls.
+	 * The FIRST segment, not the field: focus lives on a segment (which is why the
+	 * ring is `.qm-focus-ring-within`), and the container holds none. `literal` is the
+	 * separator between segments — present, never focusable. */
+	export function focus(): void {
+		wrapEl?.querySelector<HTMLElement>('[data-segment]:not([data-segment="literal"])')?.focus();
+	}
 
 	// The stored form may carry a time (`datetime`); the date half is what a date
 	// field edits, so anything past `YYYY-MM-DD` is not this control's. `parseDate`
@@ -108,7 +130,7 @@
 	}
 </script>
 
-<span class="qm-date-wrap">
+<span class="qm-date-wrap" bind:this={wrapEl}>
 	<BitsDateField.Root
 		value={parsed}
 		placeholder={fallbackDate}
@@ -126,7 +148,9 @@
 		     digits at full ink while the segments around them ghost. -->
 		<BitsDateField.Input
 			class="qm-date qm-control-box qm-focus-ring-within"
-			aria-label={label}
+			aria-label={labelledBy ? undefined : label}
+			aria-labelledby={labelledBy}
+			aria-describedby={describedBy}
 			data-ghosted={ghost ? '' : undefined}
 			data-testid={testid}
 		>

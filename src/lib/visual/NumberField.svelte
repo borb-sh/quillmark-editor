@@ -27,12 +27,19 @@
 		value: number | undefined;
 		integer?: boolean;
 		fallback?: number;
-		/** Accessible name — the visual label is a bare span the input can't reference. */
+		/** Accessible name for an input NOTHING else names — an object property, whose
+		 * name is the field label plus the property's. A field's own input takes `id`
+		 * instead and is named by the `<label for>` beside it. */
 		label?: string;
+		/** `<label for>` target. Set → the label names this input, so `aria-label`
+		 * comes off: two names is where implementations disagree about which wins. */
+		id?: string;
+		/** The parked `description` (FieldLabel) — announced after the name. */
+		describedBy?: string;
 		onCommit: (v: number | string | undefined) => void;
 		testid?: string;
 	}
-	let { value, integer, fallback, label, onCommit, testid }: Props = $props();
+	let { value, integer, fallback, label, id, describedBy, onCommit, testid }: Props = $props();
 
 	// Local input state synced to `value` (as a string projection); own-typing
 	// stays local, only an external change reconciles back in (see `syncedLocal`).
@@ -55,8 +62,10 @@
 	type="text"
 	inputmode={integer ? 'numeric' : 'decimal'}
 	value={local.value}
+	{id}
 	placeholder={fallback != null ? String(fallback) : ''}
-	aria-label={label}
+	aria-label={id ? undefined : label}
+	aria-describedby={describedBy}
 	data-testid={testid}
 	oninput={(e) => {
 		local.value = (e.currentTarget as HTMLInputElement).value;

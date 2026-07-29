@@ -164,10 +164,34 @@ is a separate concern (the island controls), not gated by this.
   kind agree, and a re-derive does not re-roll. Keyed by kind, not by card: two
   empty cards of a kind are the same invitation. A retyped card takes its new
   kind's wording in place, without remounting the leaf and losing the caret.
+- **The label NAMES the control.** A real `<label>`, not a span beside one: a click
+  lands the caret in the field, which is the widest target in the row and the most
+  conventional affordance a form has. `for` reaches a labelable control and the UA
+  does the rest; the prose leaf, the date field's segments, an array and an object
+  subform are not labelable, so the association runs the other way — the control
+  points back at the label with `aria-labelledby` (`role="group"` where the label
+  names a SET rather than one control), and the click hands off to the control's own
+  focus, which for a prose leaf places a selection and for a date lands the first
+  segment. A control named this way carries no `aria-label` of its own: two names is
+  where implementations disagree about which wins. One survives only where nothing
+  else names the control — an array element (the label plus its 1-based index), an
+  object property, the card body. The DOM ids come from the leaf key, so the label,
+  the control, the leaf registry and the diagnostics resolve to one identity.
+  The required `*` sits INSIDE the label and so names the control with it ("Subject
+  required"); the `description:` does NOT — it describes, through `aria-describedby`
+  against an always-present parked node, since a name is not where ~110 characters
+  of guidance belong.
 - **Per-field state** — focus, inline diagnostics, a ghosted `default:`
   placeholder (never written back — it lives in the schema), a persistent required
-  `*` on no-`default:` (Unendorsed) fields, and the field's `description:` as a
-  label tooltip. A `!must_fill` marker also surfaces as a routed
+  `*` on no-`default:` (Unendorsed) fields, and the field's `description:` on a
+  themed popover — hover, focus, and tap, one per input modality (SURFACES
+  §Elevation). Floating rather than inline under the label because the reference
+  quill's descriptions run past 250 characters at the tail, which in flow is several
+  wrapped lines under every field; a quill whose guidance is all one short line would
+  be better served inline. The surface is chrome, never the announcement — the parked
+  node above holds whether it is open or not, so no reader depends on a hover, which
+  is what the native `title` it replaces got wrong (unstyled, undismissable, and
+  absent on touch entirely). A `!must_fill` marker also surfaces as a routed
   `validate()` warning among those diagnostics — the `*` states required-ness, the
   warning reports unmet-ness; `example:` still gets no dedicated nudge. No field
   carries a tips surface: guidance that is not about one field belongs to the
