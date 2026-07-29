@@ -32,6 +32,35 @@
 		outline-offset: var(--_qm-ring-offset);
 	}
 
+	/* THE TYPE HALF, for both recipe families at once. A UA control inherits neither
+	   family nor size, so a control or a button that declares none renders in the UA
+	   face at the UA size — `--qm-font`, a documented dial, stopping short of the
+	   package's own surfaces with nothing raised, since an absence mints no literal
+	   for `check:style`. `font: inherit` first, then the BODY rung off the ramp:
+	   inheriting the size lands the surface on the host page's body size, a rung the
+	   scale never minted and one a consumer moves by restyling their page rather than
+	   by turning `--qm-font-size`.
+
+	   ONE rule over both families rather than the same two declarations in each,
+	   because the drift a copy invites here is a box and the button beside it reading
+	   DIFFERENT rungs, which no gate can see: `check:style`'s type axis holds that
+	   each side reads a rung, never that both read the same one.
+
+	   The list is wider than either recipe's chrome — the body leaf withholds the box
+	   and still reads the ramp (SURFACES §"The shared recipe"), so `.qm-prose` is
+	   here and not below.
+
+	   `font` is a shorthand carrying `line-height`, so each family's leading is
+	   declared in the rules BELOW and would be dropped in silence above them. */
+	.qm-control-box,
+	.qm-input,
+	.qm-prose,
+	.qm-icon-btn,
+	.qm-add-affordance {
+		font: inherit;
+		font-size: var(--_qm-text-body);
+	}
+
 	/* A typed value's box — every scalar control and every prose leaf: the text and
 	   numeric inputs, the array's JSON textarea, the enum trigger, the date field, and
 	   the inline richtext leaves (SURFACES §"The shared recipe"). ONE rule, because a
@@ -40,36 +69,21 @@
 	   edited, and nothing raises it — no literal is minted, so `check:style` stays
 	   green while a control renders subtly the wrong height.
 
-	   The type half is a WIDER list than the box, because it is not chrome: the body
-	   leaf withholds the box and still reads the ramp (SURFACES §"The shared recipe").
-	   `font: inherit` first, because a UA control inherits neither family nor face;
-	   then the SIZE off the ramp, because inheriting that lands the surface on the
-	   host page's body size — a rung the scale never minted, and one the consumer
-	   moves by restyling their page rather than by turning `--qm-font-size`.
-	   Splitting it here rather than restating it on the unframed leaf is
-	   the same argument the rule itself rests on: a second copy agrees until one is
-	   edited, and both copies read a rung, so `check:style` sees nothing either way.
+	   LEADING sits on the wide list rather than on the box's own, because a box's
+	   height is a padding rung plus a line box plus two hairlines — a leaf and the
+	   input beside it agree on height exactly as long as they agree on leading, which
+	   is the whole of what "by construction" buys.
 
-	   Size and LEADING both sit after `font`, and have to: `font` is a shorthand that
-	   carries `line-height`, so either declared above it is dropped with nothing
-	   raised. And leading sits on THIS rule rather than on one of its selectors,
-	   because a box's height is a padding rung plus a line box plus two hairlines — a
-	   leaf and the input beside it agree on height exactly as long as they agree on
-	   leading, which is the whole of what "by construction" buys.
-
-	   COLOUR is the same trap one property over: `font` does not carry it either, so
-	   an input or trigger left off this line falls to the UA's own text colour — a
-	   second black sitting beside the card's ink rather than the rung it renders on.
-	   `caret-color` is pinned to `currentColor` explicitly rather than left at its
-	   `auto` initial, which resolves the same way: the prose leaf's caret IS its
-	   focus indicator, the outline dropped in its favour (`ProseField`), so it has
-	   to track this rule's own ink on purpose, not by an initial value a future
-	   edit here could quietly change out from under it. */
+	   COLOUR is the trap one property over: `font` does not carry it either, so an
+	   input or trigger left off this line falls to the UA's own text colour — a second
+	   black sitting beside the card's ink rather than the rung it renders on.
+	   `caret-color` is pinned to `currentColor` rather than left at its `auto`
+	   initial, which resolves the same way: the prose leaf's caret IS its focus
+	   indicator, the outline dropped in its favour (`ProseField`), so it tracks
+	   this rule's own ink deliberately. */
 	.qm-control-box,
 	.qm-input,
 	.qm-prose {
-		font: inherit;
-		font-size: var(--_qm-text-body);
 		line-height: var(--_qm-leading-body);
 		color: var(--_qm-ink);
 		caret-color: currentColor;
@@ -115,27 +129,18 @@
 	   glyph button and an add affordance are not SOMETIMES flat, so a class they could
 	   be built without is a class one of them will eventually miss.
 
-	   The type half is the box recipe's shape above, for a sharper reason: a UA button
-	   inherits neither family nor size, so a button that declares none renders in the
-	   UA face at the UA size, `--qm-font` stops short of it, and nothing raises that —
-	   an absence mints no literal for `check:style` to catch. `font: inherit` then the
-	   BODY rung, the anchor the box reads, so a button and the input beside it agree
-	   on face and size. A caller whose button carries a LABEL restates the rung it
-	   wants from its own block — the tips foot takes the meta rung, which is that
-	   surface's decision, not the family's.
-
-	   Where the box's height is a line box, a button's is `--_qm-tap-min`: a label is
-	   one line and a glyph is not text at all, so the line box collapses onto its
-	   content (`1`) and the floor decides, rather than two height sources competing.
-	   That is the same structural `1` a glyph row takes, which is why it is here and
-	   not on one family. It has to sit after `font` — a shorthand carrying
-	   `line-height`, so a leading declared above it is dropped with nothing raised —
-	   and it is what keeps a button off the host page's leading, the way the size rung
-	   keeps it off the host page's body size. */
+	   The type half is the shared rule above, which both families are named in; what
+	   diverges is the LEADING. Where the box's height is a line box, a button's is
+	   `--_qm-tap-min`: a label is one line and a glyph is not text at all, so the line
+	   box collapses onto its content (`1`) and the floor decides, rather than two
+	   height sources competing. That is the same structural `1` a glyph row takes,
+	   which is why it is here and not on one family, and it is what keeps a button off
+	   the host page's leading the way the size rung keeps it off the host page's body
+	   size. A caller whose button carries a LABEL restates the rung it wants from its
+	   own block — the tips foot takes the meta rung, which is that surface's decision,
+	   not the family's. */
 	.qm-icon-btn,
 	.qm-add-affordance {
-		font: inherit;
-		font-size: var(--_qm-text-body);
 		line-height: 1;
 		box-sizing: border-box;
 		min-width: var(--_qm-tap-min);

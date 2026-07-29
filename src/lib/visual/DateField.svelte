@@ -152,14 +152,13 @@
 	/* A primitive renders its OWN element, which a scoped selector cannot reach —
 	   styled through the wrapper with `:global`. */
 	/* The box is `.qm-control-box` (controls.css), carried on the primitive's own
-	   element beside `.qm-focus-ring-within`; the segments inherit its size rung, so
-	   the field and its neighbours agree without a second rule. */
+	   element beside `.qm-focus-ring-within`; the segments inherit its size and ink
+	   rungs, so the field and its neighbours agree without a second rule. */
 	.qm-date-wrap :global(.qm-date) {
 		display: flex;
 		align-items: center;
 		width: 100%;
 		box-sizing: border-box;
-		color: var(--_qm-ink);
 	}
 	/* The ring rides `.qm-focus-ring-within` (controls.css) rather than the plain
 	   marker: focus lives on the SEGMENT, so it rings the field, not the segment

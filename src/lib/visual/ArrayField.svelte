@@ -67,13 +67,20 @@
 		const n = arr.length;
 		if (ids.length === n) return;
 		if (ids.length < n) ids = [...ids, ...seq.take(n - ids.length)];
-		else ids = ids.slice(0, n);
+		else {
+			for (const id of ids.slice(n)) delete els[id];
+			ids = ids.slice(0, n);
+		}
 	});
 
 	// The focus targets, keyed by element ID rather than index: an index goes stale on
-	// the splice that focus is chasing. An element control exposes `focus()` because
-	// the two disagree on what focusing is — a prose element is a PM view, whose own
-	// `focus()` restores a selection an `HTMLElement.focus()` leaves unplaced.
+	// the splice that focus is chasing. An element control exposes `focus()` because a
+	// text element and a prose element disagree on what focusing is — the difference
+	// is stated on `ProseArrayElement.focus`, which owns it.
+	//
+	// Every path that drops an id deletes its entry: `bind:this` teardown nulls the
+	// VALUE on unmount and leaves the key, so a card that outlives its elements
+	// accumulates one dead key per element ever created.
 	const els: Record<string, { focus: () => void } | undefined> = {};
 	let addEl: HTMLButtonElement | undefined = $state();
 
@@ -106,13 +113,15 @@
 		insertAfter(ids.length - 1);
 	}
 	function remove(k: number): void {
+		const dropped = ids[k];
 		const next = ids.filter((_, i) => i !== k);
 		ids = next;
+		delete els[dropped];
 		onCommit(arr.filter((_, i) => i !== k));
 		// Focus lands on the element before the removed one, or on the one that slid
 		// into its place; on the add affordance once the list is empty, which is then
 		// the only thing left to hold it. Clicking the remove needs this as much as the
-		// key does — the button under the pointer is the element being destroyed.
+		// key does — the button under the pointer is part of what it destroys.
 		focusAfterFlush(next[Math.max(k - 1, 0)]);
 	}
 	/** Focus element `id` after the flush, never in the same tick: a mutation commits

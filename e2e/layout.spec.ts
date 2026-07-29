@@ -208,11 +208,10 @@ test.describe('section grid', () => {
 		}
 	});
 
-	// SURFACES §Rhythm — the section's trailing action column. Geometry, and only a
-	// laid-out page has it: the reservation is the grid's own inset, so nothing in the
-	// track model says whether an array's element control lands on the same edge as the
-	// scalar above it. The letterhead group carries all three shapes at once — a
-	// full-width scalar, a full-width array, and a packed run.
+	// SURFACES §Rhythm — the section's trailing action column. The reservation is an
+	// inset on the query container rather than a track, so nothing in the track model
+	// says whether an array's element control lands on the same edge as the scalar
+	// above it.
 	test('(h) one right edge serves the section, and the remove sits beyond it', async ({ page }) => {
 		const right = (testid: string) =>
 			page.getByTestId(testid).evaluate((el) => el.getBoundingClientRect().right);
