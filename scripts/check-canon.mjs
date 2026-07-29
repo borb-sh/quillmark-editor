@@ -1,6 +1,7 @@
-// Canon spine lint — enforces the ratified shape of every `prose/canon/*.md`
-// (prose/README.md §"The canon doc spine"). A doc that drifts off the spine fails
-// CI here instead of being caught by eye. Zero deps; run via `npm run check:canon`.
+// Canon spine lint — enforces the ratified shape of every `prose/canon/*.md`. The
+// spine is stated here and nowhere else, so the rule and its enforcement cannot
+// drift apart. A doc that leaves it fails CI here instead of being caught by eye.
+// Zero deps; run via `npm run check:canon`.
 //
 // The spine, per doc (INDEX.md excepted):
 //   1. `# Title`

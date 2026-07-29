@@ -8,7 +8,8 @@ Start at [`prose/canon/INDEX.md`](prose/canon/INDEX.md) — the settled systems.
 Deferred and undesigned work lives in GitHub issues. Canon is **malleable**: no
 consumers, no compatibility promise. A doc that contradicts the design in hand
 gets rewritten in the same commit as the code. `npm run check:canon` gates the
-doc spine (see [`prose/README.md`](prose/README.md)), not the claims.
+doc spine — the shape `scripts/check-canon.mjs` states and enforces — not the
+claims.
 
 Comments and docs: use the `dense-prose` skill. No GitHub issue numbers in
 comments or docs — state the design fact itself, not where it's tracked.
