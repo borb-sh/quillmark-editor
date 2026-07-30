@@ -255,21 +255,13 @@
 </script>
 
 <main class="pg-width">
-	<header class="pg-rail head">
+	<header class="pg-head">
+		<h1 class="pg-title">Editor</h1>
 		{#if status.phase === 'loading'}
 			<p data-testid="status" class="pg-status loading">Opening…</p>
 		{:else if status.phase === 'error'}
 			<p data-testid="status" class="pg-status error">Error: {status.message}</p>
-		{:else}
-			<p data-testid="status" class="pg-status ready">Session open</p>
 		{/if}
-		<div>
-			<h1 class="pg-title">Editor</h1>
-			<p class="pg-deck">
-				Both surfaces over one session: an edit recompiles the page, a click on the page sets the
-				caret.
-			</p>
-		</div>
 	</header>
 
 	{#if status.phase === 'ready'}
@@ -369,14 +361,6 @@
 </main>
 
 <style>
-	.head {
-		padding-block: var(--pg-space-12) var(--pg-space-8);
-	}
-
-	h1 {
-		margin-bottom: var(--pg-space-2);
-	}
-
 	.strip {
 		display: flex;
 		flex-wrap: wrap;

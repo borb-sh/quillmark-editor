@@ -216,21 +216,13 @@
 </script>
 
 <main class="pg-width">
-	<header class="pg-rail head">
+	<header class="pg-head">
+		<h1 class="pg-title">Visual</h1>
 		{#if status.phase === 'loading'}
 			<p data-testid="status" class="pg-status loading">Opening…</p>
 		{:else if status.phase === 'error'}
 			<p data-testid="status" class="pg-status error">Error: {status.message}</p>
-		{:else}
-			<p data-testid="status" class="pg-status ready">Document seeded</p>
 		{/if}
-		<div>
-			<h1 class="pg-title">Visual</h1>
-			<p class="pg-deck">
-				Every content leaf its own ProseMirror surface, every scalar a form control. Commits land on
-				the Document; the dump reads it back.
-			</p>
-		</div>
 	</header>
 
 	{#if status.phase === 'ready'}
@@ -299,14 +291,6 @@
 </main>
 
 <style>
-	.head {
-		padding-block: var(--pg-space-12) var(--pg-space-8);
-	}
-
-	h1 {
-		margin-bottom: var(--pg-space-2);
-	}
-
 	.layout {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) 22rem;

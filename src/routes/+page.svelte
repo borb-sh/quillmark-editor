@@ -100,10 +100,6 @@
 	<section class="hero">
 		<div class="thesis">
 			<h1 class="pg-title">Editor + live preview for Quillmark</h1>
-			<p class="pg-deck">
-				The preview is the compiled page, repainted from the session as you type. A click on the
-				page resolves to a content position and sets the editor caret.
-			</p>
 			<div class="actions">
 				<a class="pg-cta" href="{base}/editor">Open the editor</a>
 				<a class="pg-link" href="https://github.com/borb-sh/quillmark-editor">Source</a>
@@ -157,7 +153,6 @@
 			{:else if status.phase === 'error'}
 				<p data-testid="status" class="pg-status error">Error: {status.message}</p>
 			{:else}
-				<p data-testid="status" class="pg-status ready">Session open</p>
 				<dl class="facts">
 					<dt>quill</dt>
 					<dd>{status.quillName}@{status.quillVersion}</dd>

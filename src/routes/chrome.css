@@ -45,6 +45,24 @@
 	}
 }
 
+/* ── The head ──────────────────────────────────────────────────────────────── */
+/* A tool route's whole heading on one line: which surface this is, and the
+   boundary's phase while it is not open. What the surface does is the surface
+   below, not a passage above it. */
+.pg-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: var(--pg-space-2) var(--pg-space-4);
+	padding-block: var(--pg-space-8) var(--pg-space-4);
+}
+
+/* The phase reads off the end of the line, so the title holds its position when
+   it clears. */
+.pg-head .pg-status {
+	margin-inline-start: auto;
+}
+
 /* ── Type recipes ──────────────────────────────────────────────────────────── */
 
 /* A run of chrome type: the rail's annotation, a panel's caption, the label over a
@@ -69,18 +87,6 @@
 	font-weight: var(--pg-weight-strong);
 	line-height: var(--pg-leading-tight);
 	letter-spacing: var(--pg-track-display);
-}
-
-/* A passage introducing a block: the title rung at body weight in the meta ink,
-   held to the measure. A rung of its own would be a sixth size for one job — the
-   deck is a COMBINATION of the ramp's axes, which is what keeps the ramp five
-   wide. */
-.pg-deck {
-	max-width: var(--pg-measure);
-	margin: 0;
-	font-size: var(--pg-text-title);
-	line-height: var(--pg-leading-body);
-	color: var(--pg-ink-meta);
 }
 
 /* A value read back out of the running session — an address, a page index, a
@@ -225,8 +231,8 @@ pre.pg-readout {
 }
 
 /* ── Session status ────────────────────────────────────────────────────────── */
-/* Three states of one line, and the only place the playground spends a hue: what
-   phase the WASM boundary is in is the question a harness exists to answer. */
+/* The two states worth a word — opening, and failed. An open session says so by
+   painting the page below, so it says nothing here. */
 
 .pg-status {
 	font-family: var(--pg-font-mono);
@@ -241,13 +247,9 @@ pre.pg-readout {
 	color: var(--pg-ghost);
 }
 
-.pg-status.ready {
-	color: var(--pg-ok);
-}
-
 /* An error carries a message rather than a state word, so it drops the label
-   treatment and reads as a sentence — and it breaks anywhere, because a WASM
-   error is one long token and the rail column it lands in is narrow. */
+   treatment and reads as a sentence — and it breaks anywhere, because a WASM error
+   is one long token in whatever room the line has left. */
 .pg-status.error {
 	color: var(--pg-alert);
 	font-size: var(--pg-text-label);

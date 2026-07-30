@@ -94,35 +94,21 @@
 </script>
 
 <main class="pg-width">
-	<header class="pg-rail head">
+	<header class="pg-head">
+		<h1 class="pg-title">Preview</h1>
 		{#if status.phase === 'loading'}
 			<p data-testid="status" class="pg-status loading">Opening…</p>
 		{:else if status.phase === 'error'}
 			<p data-testid="status" class="pg-status error">Error: {status.message}</p>
-		{:else}
-			<p data-testid="status" class="pg-status ready">Session open</p>
 		{/if}
-		<div>
-			<h1 class="pg-title">Preview</h1>
-			<p class="pg-deck">
-				One canvas per visible page, mounted by scroll position. Click text to resolve a content
-				position.
-			</p>
-		</div>
 	</header>
 
 	{#if status.phase === 'ready'}
 		<div class="layout">
-			<div>
-				<div class="pg-frame preview-frame">
-					{#if session}
-						<Preview bind:this={previewRef} {session} margin={0} onCaretPick={handleCaretPick} />
-					{/if}
-				</div>
-				<p class="note">
-					Deliberately short, with <code>margin=0</code>: scrolling must swap which page is mounted,
-					or the paint loop's bound is unfalsifiable.
-				</p>
+			<div class="pg-frame preview-frame">
+				{#if session}
+					<Preview bind:this={previewRef} {session} margin={0} onCaretPick={handleCaretPick} />
+				{/if}
 			</div>
 
 			<aside class="pg-panel pg-instruments">
@@ -156,14 +142,6 @@
 </main>
 
 <style>
-	.head {
-		padding-block: var(--pg-space-12) var(--pg-space-8);
-	}
-
-	h1 {
-		margin-bottom: var(--pg-space-2);
-	}
-
 	/* The surface, and the instruments beside it — the shape every tool route takes.
 	   */
 	.layout {
@@ -178,18 +156,6 @@
 	.preview-frame {
 		height: 31rem;
 		padding: var(--pg-space-4);
-	}
-
-	.note {
-		max-width: var(--pg-measure);
-		margin: var(--pg-space-3) 0 0;
-		color: var(--pg-ink-meta);
-		font-size: var(--pg-text-label);
-	}
-
-	code {
-		font-family: var(--pg-font-mono);
-		font-size: var(--pg-text-code);
 	}
 
 	.buttons {

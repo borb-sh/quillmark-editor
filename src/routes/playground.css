@@ -5,9 +5,8 @@
    the place the defaults are minted.
 
    `light dark` follows the OS, and every `[data-qm-root]` inside inherits it, so
-   page and surface invert together; the running head's scheme control pins
-   `color-scheme` on the document element — the declaration THEMING.md asks a host
-   app for, exercised rather than a mode implemented. The poles are the SYSTEM
+   page and surface invert together — the declaration THEMING.md asks a host app
+   for, made once here rather than a mode implemented. The poles are the SYSTEM
    colours, so unstyled text and a `--pg-*` rung land on the same tone — a host
    knows its canvas; the package does not, so it ships calibrated literals. The
    dials still sit in front, so `--qm-bg`/`--qm-fg` on the shell retunes page and
@@ -32,9 +31,8 @@
 	--pg-border: color-mix(in oklab, var(--pg-page), var(--pg-ink) 17%);
 	--pg-border-strong: color-mix(in oklab, var(--pg-page), var(--pg-ink) 40%);
 
-	/* The status hues: no dial derives them, and a single literal reads as a stain
-	   on one of the two schemes, so each is a pair. */
-	--pg-ok: light-dark(#137333, #5bd08a);
+	/* The alert hue: no dial derives it, and a single literal reads as a stain on
+	   one of the two schemes, so it is a pair. */
 	--pg-alert: light-dark(#c5221f, #ff9c94);
 
 	/* ── Rhythm ──────────────────────────────────────────────────────────────── */
@@ -78,13 +76,8 @@
 
 	--pg-text: 1rem;
 	--pg-text-display: clamp(1.9rem, 1.3rem + 1.9vw, 2.6rem);
-	--pg-text-title: 1.3125rem;
 	--pg-text-label: 0.8125rem;
 	--pg-text-meta: 0.6875rem;
-	/* A ratio beside the ramp rather than a step on it: an inline code run has to
-	   shrink against whatever it sits in — a deck at title size, a note at label
-	   size — so it cannot be an absolute rung. */
-	--pg-text-code: 0.9em;
 	--pg-weight-strong: 600;
 	--pg-weight-mid: 500;
 	--pg-leading-body: 1.6;

@@ -70,9 +70,13 @@ otherwise be a section heading moves out of the reading column, so the content
 starts at the top of its own block.
 
 The annotation earns its column by answering something the content does not
-repeat — a section label on the front page, the live session status on a tool
-route. A rail restating the title beside it would be the redundancy AESTHETIC
-strips, one scale up.
+repeat — the section labels down the front page. A rail restating the title
+beside it would be the redundancy AESTHETIC strips, one scale up.
+
+A tool route's head is **one line**: the surface's name, and the boundary's phase
+while it is not open. What the surface does is the surface, mounted below — a
+passage explaining it says nothing the page is not already showing, which is the
+same subtraction one scale up.
 
 ## What takes a fill
 
@@ -83,7 +87,7 @@ three lines of prose, not three cards.
 
 ## Colour
 
-Two poles and two hues. The poles are the **system** colours behind the dials —
+Two poles and one hue. The poles are the **system** colours behind the dials —
 a host knows what canvas it sits on, so `Canvas`/`CanvasText` put unstyled text and
 a `--pg-*` rung on the same tone, where the package has to ship calibrated
 literals. `--qm-bg` / `--qm-fg` still sit in front, so setting the dials on the
@@ -91,7 +95,8 @@ shell retunes page and surface together, and the shell's `color-scheme: light da
 is the host declaration THEMING.md asks for — every `[data-qm-root]` below inherits
 it, so page and surfaces invert together with no media query.
 
-The two hues answer one question: what phase the WASM boundary is in. Each is a
+The hue is spent on one thing: a boundary that failed. An open session takes no
+colour and no word — it paints the page, which is the claim. The hue is a
 light/dark pair, since a single literal reads as a stain on one of the two schemes.
 Everything else is a mix off the two poles, in oklab, so inverting the poles
 inverts the scale.
