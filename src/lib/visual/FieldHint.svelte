@@ -90,23 +90,35 @@
 
 <Popover.Root bind:open>
 	<Popover.Portal to={portalTarget}>
-		{#if open && triggerEl}
-			<Popover.Content
-				customAnchor={triggerEl}
-				side="top"
-				align="start"
-				sideOffset={6}
-				trapFocus={false}
-				onOpenAutoFocus={(e: Event) => e.preventDefault()}
-				onCloseAutoFocus={(e: Event) => e.preventDefault()}
-			>
-				<!-- `data-qm-root` because a portalled subtree is detached for the
-				     derivation's purposes, and the marker is what applies it. -->
-				<div class="qm-hint-popover qm-popover-surface" data-qm-root aria-hidden="true">
-					{description}
+		<Popover.Content
+			customAnchor={triggerEl ?? null}
+			side="top"
+			align="start"
+			sideOffset={6}
+			trapFocus={false}
+			onOpenAutoFocus={(e: Event) => e.preventDefault()}
+			onCloseAutoFocus={(e: Event) => e.preventDefault()}
+		>
+			<!-- The `child` snippet, the same shape {@link FormatPopover} takes and for
+			 the same reason: the surface is the primitive's own content node, so the
+			 dismissal animation is one the primitive waits on before unmounting
+			 (SURFACES §Motion). `data-qm-root` because a portalled subtree is
+			 detached for the derivation's purposes, and the marker is what applies
+			 it; `wrapperProps` is floating-ui's positioning box, spread and never
+			 styled. -->
+			{#snippet child({ props, wrapperProps })}
+				<div {...wrapperProps}>
+					<div
+						{...props}
+						class="qm-hint-popover qm-popover-surface"
+						data-qm-root
+						aria-hidden="true"
+					>
+						{description}
+					</div>
 				</div>
-			</Popover.Content>
-		{/if}
+			{/snippet}
+		</Popover.Content>
 	</Popover.Portal>
 </Popover.Root>
 
