@@ -77,7 +77,7 @@
 
 <style>
 	/* In-flow, like every other block in the column (SURFACES §Elevation): one
-	 hairline, no shadow, no fill beyond the card recipe. It reads as guidance
+	 hairline, no fill beyond the card recipe. It reads as guidance
 	 rather than as a field by TONE and TYPE: the label rung in the muted label
 	 colour; not by a badge or an accent (AESTHETIC §"Secondary text recedes").
 	 It mints no token of its own; every value here is an existing dial.

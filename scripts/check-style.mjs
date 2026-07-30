@@ -13,9 +13,12 @@
 //   recede   opacity                                  a step off the ladder
 //   motion   transition / animation                   an s|ms time
 //
-// Three rules sit outside the table, because they are about the scale itself rather
+// Four rules sit outside the table, because they are about the scale itself rather
 // than one axis:
 //
+//   · NOTHING casts a shadow, in either scope and in the derivations too: elevation
+//     is a tone rung and a hairline, so the property is illegal rather than one of
+//     its values, which is a shape the table has no column for.
 //   · A private rung is DEFINED only in its scope's derivation — what makes one
 //     derivation safe for every surface reading it — and never twice in one rule.
 //   · The consumed `--qm-*` set EQUALS the set documented in THEMING.md, both
@@ -261,6 +264,20 @@ for (const scope of SCOPES) {
 
 			// Only the package scope feeds the dial census (see SCOPES).
 			if (scope.census) for (const m of line.matchAll(/var\(\s*(--qm-[\w-]+)/g)) consumed.add(m[1]);
+
+			// Zero shadows, and BEFORE the derivation exemption, since what is forbidden
+			// is the property rather than one of its values: elevation is a tone rung and
+			// a hairline, so there is no shadow rung to mint and none to read (SURFACES
+			// §Elevation). The colour axis sees `box-shadow` but fires only on a hex or a
+			// colour function, so `0 1px 4px black` and one mixed from `var()` rungs both
+			// walk through it; that gap is why this sits outside the table. Both
+			// spellings, since `preview/paint.ts` carries declarations as JS strings.
+			const shade = line.match(/^\s*(box-shadow|text-shadow|boxShadow|textShadow)\s*:\s*([^;,]*)/);
+			if (shade && !/^'?(none|inherit|initial|unset|revert)'?$/.test(shade[2].trim()))
+				fail(
+					`\`${shade[1]}\` — lift with a surface rung and a hairline, not a shadow (SURFACES §Elevation; ${scope.doc})`
+				);
+
 			if (file === scope.derivation) return; // literals here ARE the defaults
 
 			const decl = line.match(/^\s*([\w-]+)\s*:\s*([^;]*)/);

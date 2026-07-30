@@ -67,14 +67,23 @@ export function createPaintLoop(
 
 	function makeSlot(page: number): PageSlot {
 		const size = session.pageSize(page);
+		// The sheet's own edge, and the only thing separating it from the desk: the
+		// page is at `--_qm-surface`, and the tone behind it is the host's, which
+		// THEMING permits to be plain `--qm-bg` (the same value). A hairline holds at
+		// both poles where a shadow's offset does not (SURFACES §Elevation), and the
+		// boundary of the paper is not a mark on it, so the overlay's no-ink-at-rest
+		// rule is untouched (PREVIEW §Overlay). `border-box`, so the stroke lands
+		// inside the width the container gives and `clientWidth` below still measures
+		// the paper.
 		const el = document.createElement('div');
 		el.className = 'qm-page';
 		Object.assign(el.style, {
 			position: 'relative',
+			boxSizing: 'border-box',
 			width: '100%',
 			aspectRatio: `${size.widthPt} / ${size.heightPt}`,
 			background: 'var(--_qm-surface)',
-			boxShadow: 'var(--_qm-shadow-page)'
+			border: 'var(--_qm-border-width) solid var(--_qm-border)'
 		});
 		if (page > 0) el.style.marginTop = `${PAGE_GAP_PX}px`;
 		container.appendChild(el);
