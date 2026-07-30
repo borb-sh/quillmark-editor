@@ -40,7 +40,7 @@ That is why no card's fill is a bet on your backdrop: every card sits one rung o
 
 ## The surface follows your colour scheme
 
-Surfaces step `bg → fg` and ink steps `fg → bg`, mixed in **oklab**, so inverting the two poles inverts the whole scale, including borders and the popover's translucent fill. Nothing casts a shadow: an offset states a light source the poles do not carry, so it would read as a lit surface under one palette and a glow under its inverse. Every surface separates by stroke and tone, which invert cleanly.
+Surfaces step `bg → fg` and ink steps `fg → bg`, mixed in **oklab**, so inverting the two poles inverts the whole scale, including borders and the popover's translucent fill. Elevation inverts with them, because it is produced with surfaces and lines — a tone rung and a hairline — and never with a shadow: an offset states a light source the poles do not carry, so one declaration would read as lit from above under a light palette and as a glow under its inverse. A rung and a stroke say the same thing at both, so depth survives the swap along with everything else.
 
 Which way the poles default is **your `color-scheme`**, not the operating system's. Declare the scheme your app is in and the surface lands on it, along with native chrome, which reads the same property:
 
@@ -84,4 +84,4 @@ A knob becomes a dial when a real consumer needs it. The surface stays the minim
 
 `@layer`, `color-mix()` and `light-dark()`: Baseline since 2022, 2023 and 2024 respectively.
 
-`npm run check:style` gates all of it: no component may mint a colour, shadow, or opacity literal; nothing outside the derivation may define a `--_qm-*`; and the consumed dial set must match this document exactly, in both directions.
+`npm run check:style` gates all of it: no component may mint a colour or opacity literal, and no surface may cast a shadow at all; nothing outside the derivation may define a `--_qm-*`; and the consumed dial set must match this document exactly, in both directions.

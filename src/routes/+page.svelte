@@ -209,8 +209,8 @@
 		gap: var(--pg-space-2);
 	}
 
-	/* The desk inset: the painted page carries its own edge and shadow, so what the
-	   host owes it is room to sit in and a tone to read against. US Letter's ratio
+	/* The desk inset: the painted page carries its own edge, so what the host owes
+	   it is room to sit in and a tone to read against. US Letter's ratio
 	   on the border box, so the whole first page fits the frame: the padding's
 	   worth of spare (~10px) is under the page-gap the paint loop puts before page
 	   2, which is what keeps the fold clean. */
