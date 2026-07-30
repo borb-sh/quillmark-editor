@@ -305,12 +305,15 @@
 			</span>
 		</div>
 
+		<!-- The split rides a custom property rather than `grid-template-columns`
+		     itself, so the narrow-width rule below can stack the panes: an inline
+		     track list would outrank any stylesheet. -->
 		<div
 			class="shell"
 			bind:this={shellEl}
-			style="grid-template-columns: minmax(0, {splitPct}fr) 11px minmax(0, {100 - splitPct}fr)"
+			style="--split: minmax(0, {splitPct}fr) var(--pg-resizer) minmax(0, {100 - splitPct}fr)"
 		>
-			<section class="editor-pane" aria-label="Visual editor">
+			<section class="pg-frame editor-pane" aria-label="Visual editor">
 				{#if VisualEditor && docHandle && quillHandle}
 					<VisualEditor
 						bind:this={editorRef}
@@ -342,7 +345,7 @@
 			>
 				<span class="grip" aria-hidden="true">⋮</span>
 			</div>
-			<section class="preview-pane" aria-label="Live preview">
+			<section class="pg-frame preview-pane" aria-label="Live preview">
 				{#if session}
 					<Preview bind:this={previewRef} {session} onCaretPick={handleCaretPick} />
 				{/if}
@@ -386,40 +389,33 @@
 		margin-inline-start: auto;
 	}
 
+	/* `--split` comes in inline from `splitPct`: the middle track holds the resizer,
+	   the two side tracks are the panes. */
 	.shell {
 		display: grid;
-		/* grid-template-columns is set inline from `splitPct` — the middle track
-		   holds the resizer, the two side tracks are the panes. */
+		grid-template-columns: var(--split);
 		align-items: start;
-		height: 72vh;
+		height: var(--pg-mount-tall);
 	}
 
-	/* All four mounting-site properties are on this one rule (ARCHITECTURE
-	   §Playground). The end padding is the scroll TAIL: dead space under the last
-	   card so it can reach the middle of the pane rather than stopping at the
-	   bottom edge. The page tone is plain `--qm-bg` — THEMING §"What is behind the
-	   column is yours" names that a supported case, and this pane is where the
-	   playground demonstrates it. */
+	/* Both panes are the shell's frame; what each states here is the mounting site
+	   THEMING §"What is behind the column is yours" leaves to the host — the gutter,
+	   the scroll container, the page tone, the tail. This one puts plain `--qm-bg`
+	   behind the column, the supported bare case, and its end padding is the tail. */
 	.editor-pane {
 		min-width: 0;
 		height: 100%;
 		overflow: auto;
-		padding: var(--pg-space-2) var(--pg-space-2) 40vh;
-		border: var(--pg-border-width) solid var(--pg-border);
-		border-radius: var(--pg-radius);
+		padding: var(--pg-space-2) var(--pg-space-2) var(--pg-tail);
 		background: var(--pg-page);
 	}
 
-	/* The other mounting site, and the other half of the demonstration: a page tone
-	   of the host's own, with the painted sheet inset on it. */
+	/* The other half of the demonstration: a page tone of the host's own, with the
+	   painted sheet inset on it. The frame carries the rest. */
 	.preview-pane {
 		min-width: 0;
 		height: 100%;
 		padding: var(--pg-space-2);
-		border: var(--pg-border-width) solid var(--pg-border);
-		border-radius: var(--pg-radius);
-		overflow: hidden;
-		background: var(--pg-surface);
 	}
 
 	/* Reference resizer — a hairline in an 11px hit track, thickening on
@@ -436,7 +432,7 @@
 
 	.resizer::before {
 		content: '';
-		width: 3px;
+		width: var(--pg-rule);
 		height: 100%;
 		border-radius: var(--pg-radius-pill);
 		background: var(--pg-border);
@@ -448,7 +444,7 @@
 	.resizer:hover::before,
 	.resizer:focus-visible::before,
 	.resizer.dragging::before {
-		width: 5.5px;
+		width: var(--pg-rule-strong);
 		background: var(--pg-border-strong);
 	}
 
@@ -485,7 +481,28 @@
 	}
 
 	.source-host {
-		height: 22rem;
+		height: var(--pg-mount);
 		background: var(--pg-page);
+	}
+
+	/* Below the width that fits two panes side by side, the split stops being one: the
+	   tracks stack, the divider has nothing left to divide, and each pane takes the
+	   short mount so both are reachable by scrolling the page. Same threshold as the
+	   aside on every other route. */
+	@media (width < 60rem) {
+		.shell {
+			grid-template-columns: minmax(0, 1fr);
+			gap: var(--pg-space-4);
+			height: auto;
+		}
+
+		.resizer {
+			display: none;
+		}
+
+		.editor-pane,
+		.preview-pane {
+			height: var(--pg-mount);
+		}
 	}
 </style>

@@ -67,6 +67,34 @@
 	   running head in and out over the surface it sits above. */
 	--pg-max: 84rem;
 
+	/* ── Containers ──────────────────────────────────────────────────────────── */
+	/* The columns and mounting sites every route is built from. One aside width for
+	   the whole shell: the front page's paper and a tool route's instruments are the
+	   same right-hand column under the same running head, so a second width would
+	   step that column in and out between routes exactly as a per-route `--pg-max`
+	   steps the head. */
+	--pg-aside: 26rem;
+	/* Two mount heights. The short one stays under a painted page BY DESIGN: usaf_memo
+	   is two pages, and a frame shorter than one of them is what makes scrolling swap
+	   which page is mounted, which is what keeps the paint loop's bound falsifiable by
+	   hand. The ceiling is the page itself — ~1053px at the fixture's scale, so this
+	   has room to grow and none to double. The tall one is the split shell — a whole
+	   route rather than one instrument on one. */
+	--pg-mount: 38rem;
+	--pg-mount-tall: 75vh;
+	/* The cap on an instrument column: the viewport less the head above it, so a
+	   document dump scrolls in place instead of running the page long. */
+	--pg-mount-max: calc(100dvh - var(--pg-space-24));
+	/* The scroll TAIL — dead space under the last card so it can reach the middle of
+	   a pane rather than stopping at its bottom edge. One of the four properties
+	   THEMING §"What is behind the column is yours" leaves to the host. */
+	--pg-tail: 40vh;
+	/* The split's hit track, and the hairline in it at rest and engaged. A pointer
+	   target is a reach, not a rhythm, so these do not read the spacing ramp. */
+	--pg-resizer: 11px;
+	--pg-rule: 3px;
+	--pg-rule-strong: 5.5px;
+
 	/* ── Type ────────────────────────────────────────────────────────────────── */
 	/* Two faces with a job each: prose is sans, chrome is mono (PLAYGROUND §"Two
 	   faces"). Both are system stacks — a downloaded face would put the front door
