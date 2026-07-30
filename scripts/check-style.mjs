@@ -200,13 +200,19 @@ const AXES = [
 		cssOnly: true
 	},
 	{
-		// The curve is DERIVED from what the endpoints are — reversible, arriving,
-		// leaving — so the three keywords are the whole set and a fourth is a mint
-		// whatever it spells. No rung escape: a curve is not a scale with steps
-		// between its values, and a dial over it would make the derivation optional.
+		// A curve is a rung like any other value: minted in the derivation, read
+		// everywhere else. `ease` is not the neutral choice it looks like — it is a UA
+		// default (and not symmetric), so a surface spelling it has picked a curve
+		// without saying which role it is for, and the retune that would soften every
+		// arrival at once has 11 edit sites instead of one.
+		//
+		// Forbidding the bare keyword is what the rung-REQUIRED shape cannot do here: a
+		// `transition` value already reads the duration rung, so a value-level "does it
+		// read a rung" test passes with the curve still spelled out beside it. The
+		// lookbehind is what keeps `--_qm-ease-arrive` from matching itself.
 		props: /^(transition|animation)(-timing-function)?$/,
-		literal: /\b(linear|ease-in-out|cubic-bezier|steps)\b/,
-		fix: 'read the curve off the endpoints — `ease` reversible, `ease-out` arriving, `ease-in` leaving',
+		literal: /(?<![-\w])(ease|linear|cubic-bezier|steps|step-(start|end))\b/,
+		rung: '`var(--_qm-ease-…)`',
 		doc: 'SURFACES §Motion',
 		cssOnly: true
 	},
@@ -282,6 +288,13 @@ for (const scope of SCOPES) {
 		// run here; a `.ts` file's declarations are strings, matched by marker instead.
 		const css = /\.(svelte|css)$/.test(full);
 
+		// A declaration the author broke across lines is still one declaration, and the
+		// property naming its axis sits on the first of them. Without this the gate is
+		// bypassed by a newline: `transition:\n\tcolor 200ms ease,` carries a minted
+		// duration and a minted curve on a line whose property is nothing at all — and
+		// a list of transitions is exactly where a value wants to be broken up.
+		let carry = null;
+
 		region.style.split('\n').forEach((line, i) => {
 			const ln = region.base + i + 1;
 			const fail = (msg) => errors.push(`${file}:${ln}: ${msg}`);
@@ -291,8 +304,10 @@ for (const scope of SCOPES) {
 			if (file === scope.derivation) return; // literals here ARE the defaults
 
 			const decl = line.match(/^\s*([\w-]+)\s*:\s*([^;]*)/);
-			const prop = decl?.[1];
-			const value = decl?.[2] ?? '';
+			const prop = decl?.[1] ?? carry;
+			const value = decl ? decl[2] : carry ? line : '';
+			// A brace ends whatever was open: a value never spans one.
+			carry = /[{}]/.test(line) || line.includes(';') ? null : (prop ?? null);
 
 			for (const axis of AXES) {
 				if (axis.cssOnly && !css) continue;

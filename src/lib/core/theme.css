@@ -98,14 +98,24 @@
 		--_qm-ring-offset: 1px;
 
 		/* ── Motion (SURFACES §Motion) ───────────────────────────────────────────
-		   Three rungs, by what the eye is doing. `fast` is a state toggling under the
-		   pointer, not watched; `slow` is a size or position the eye tracks; `linger`
-		   is the correlation bloom, the one duration a user waits out. Read from JS
-		   too (`core/bloom.ts` animates over WAAPI), so the scale stays single-sourced
-		   across the CSS/script split rather than forking a number into each. */
+		   Two rungs, by what the trip disturbs: `fast` stays inside the element's own
+		   box, `slow` moves the layout around it. */
 		--_qm-duration-fast: 120ms;
 		--_qm-duration-slow: 200ms;
-		--_qm-duration-linger: 1100ms;
+		/* The bloom's whole rise-hold-decay, and NOT a third rung: one consumer, and
+		   5.5× its nearest neighbour, so a scale is the wrong shape for it and naming
+		   it as one invites a reach nothing would justify. Read from JS
+		   (`core/bloom.ts` animates over WAAPI), which is why it is a custom property
+		   at all rather than a constant in that module. */
+		--_qm-bloom-dwell: 1100ms;
+
+		/* One curve per role, and the roles are what the endpoints ARE, so a surface
+		   picks by reading its own two rest states rather than by taste. `reverse` is
+		   symmetric because both its endpoints are rest states and the trip turns
+		   around mid-flight; the other two run once, into a frame or away from one. */
+		--_qm-ease-reverse: cubic-bezier(0.4, 0, 0.6, 1);
+		--_qm-ease-arrive: cubic-bezier(0, 0, 0.2, 1);
+		--_qm-ease-depart: cubic-bezier(0.4, 0, 1, 1);
 
 		/* ── Geometry (SURFACES §Rhythm) ─────────────────────────────────────────*/
 		/* ONE stroke width for every edge the chrome draws: a card's, a control's,
@@ -191,5 +201,24 @@
 		font-family: var(--_qm-font);
 		color: var(--_qm-ink);
 		line-height: var(--_qm-leading-body);
+	}
+
+	/* Reduced motion collapses the SCALE, never a list of selectors. Every animated
+	   rule already reads a rung, so one override reaches all of them, a motion added
+	   later is covered the day it is written, and there is no roster to fall out of
+	   date, which is the failure a per-component `@media` block invites and gets.
+	   No `*` rule and no `transition: none`: the transitions still run, over a beat
+	   nobody perceives, so a surface that reads its own transition state (a raise
+	   waiting on `transitionend`) is not left waiting for an event that stops firing.
+
+	   The bloom shortens rather than collapsing: its reduced form holds at full and
+	   cuts (`core/bloom.ts` swaps the ramps out), and a hold is a duration, so 1ms
+	   would delete the beat the gesture is made of. */
+	@media (prefers-reduced-motion: reduce) {
+		:where([data-qm-root]) {
+			--_qm-duration-fast: 1ms;
+			--_qm-duration-slow: 1ms;
+			--_qm-bloom-dwell: 200ms;
+		}
 	}
 }

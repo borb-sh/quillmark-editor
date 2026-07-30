@@ -205,7 +205,7 @@ pre.pg-readout {
 	padding: var(--pg-space) var(--pg-space-2);
 	cursor: pointer;
 	text-align: left;
-	transition: background-color var(--pg-duration) ease;
+	transition: background-color var(--pg-duration) var(--pg-ease-reverse);
 }
 
 .pg-btn:hover {
@@ -233,8 +233,8 @@ pre.pg-readout {
 	font-weight: var(--pg-weight-mid);
 	text-decoration: none;
 	transition:
-		background-color var(--pg-duration) ease,
-		border-color var(--pg-duration) ease;
+		background-color var(--pg-duration) var(--pg-ease-reverse),
+		border-color var(--pg-duration) var(--pg-ease-reverse);
 }
 
 /* Hover steps the FILL down the ink ladder rather than fading the button out: an

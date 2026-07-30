@@ -661,7 +661,7 @@
 	 same open or shut and a toggle moves no text. */
 	.qm-group {
 		border-left: var(--_qm-border-width) solid transparent;
-		transition: border-color var(--_qm-duration-slow) ease;
+		transition: border-color var(--_qm-duration-slow) var(--_qm-ease-reverse);
 	}
 	.qm-group.qm-open {
 		border-left-color: var(--_qm-border);
@@ -706,11 +706,11 @@
 		cursor: pointer;
 		color: var(--_qm-ink-meta);
 		text-align: left;
-		transition: color var(--_qm-duration-fast) ease;
+		transition: color var(--_qm-duration-fast) var(--_qm-ease-reverse);
 	}
 	.qm-group-header :global(.qm-group-chevron) {
 		flex-shrink: 0;
-		transition: transform var(--_qm-duration-slow) ease;
+		transition: transform var(--_qm-duration-slow) var(--_qm-ease-reverse);
 	}
 	/* An ink step, not a hue: AESTHETIC §Rules keeps the three status hues as the only
 	   exits from the greyscale, and a section standing open is not a status anyway.
@@ -735,7 +735,7 @@
 	.qm-group-panel {
 		display: grid;
 		grid-template-rows: 0fr;
-		transition: grid-template-rows var(--_qm-duration-slow) ease;
+		transition: grid-template-rows var(--_qm-duration-slow) var(--_qm-ease-reverse);
 	}
 	.qm-group.qm-open .qm-group-panel {
 		grid-template-rows: 1fr;
@@ -755,19 +755,10 @@
 		 it is what the capacity query reads, so a panel that animated it would animate
 		 its own breakpoints. */
 		padding: 0 var(--action-col) 0 0;
-		transition: padding var(--_qm-duration-slow) ease;
+		transition: padding var(--_qm-duration-slow) var(--_qm-ease-reverse);
 	}
 	.qm-group.qm-open .qm-group-panel-inner {
 		padding: var(--_qm-space-2) var(--action-col) 0 var(--_qm-space-3);
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.qm-group-panel,
-		.qm-group-panel-inner,
-		.qm-group,
-		.qm-group-header,
-		.qm-group-header :global(.qm-group-chevron) {
-			transition: none;
-		}
 	}
 	.qm-body-leaf {
 		display: flex;

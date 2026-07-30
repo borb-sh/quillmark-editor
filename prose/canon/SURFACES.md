@@ -93,23 +93,26 @@ Buttons (reorder, delete, mark, add) keep the UA `:focus-visible` ring: already 
 
 **The animated properties are the ones that differ between the frames, and only those.** There is no list to enumerate; the two rules are the list. `transition: all` is refused, not for cost but because it is the absence of the decision: it says the difference was never read, and it animates whatever a later edit adds to either frame.
 
-**The curve says which way the trip runs.** It is derived, not chosen, so there are three and no dial:
+**The curve says which way the trip runs**, so which curve a surface takes is read off its own two endpoints rather than chosen. Three roles, and a rung for each:
 
-- Both endpoints are rest states, so the trip is REVERSIBLE (a pointer leaves mid-fade, a second click lands mid-slide). Symmetric `ease`, because an asymmetric curve visibly stutters when it turns around.
-- One endpoint is absence and the element is ARRIVING: `ease-out`, decelerating into the frame it will hold.
-- One endpoint is absence and the element is LEAVING: `ease-in`, accelerating away from the frame it held.
+- `--_qm-ease-reverse`: both endpoints are rest states, so the trip REVERSES mid-flight (a pointer leaves mid-fade, a second click lands mid-slide). Symmetric, because an asymmetric curve stutters visibly when it turns around.
+- `--_qm-ease-arrive`: one endpoint is absence and the element is arriving. Decelerating into the frame it will hold.
+- `--_qm-ease-depart`: one endpoint is absence and the element is leaving. Accelerating away from the frame it held.
 
-`check:style` gates the set, since a minted `cubic-bezier`, a `linear` or an `ease-in-out` is a fourth curve nothing derived.
+A curve is a rung like every other value, minted in the derivation and read everywhere else, which `check:style` holds by refusing the bare keyword outright. `ease` is the one that has to be argued: it looks like the absence of a choice and is a UA default (`cubic-bezier(0.25, 0.1, 0.25, 1)`, not symmetric), so a surface spelling it has picked a curve without saying which role it is for, and softening every arrival at once becomes an edit per site instead of one number.
 
-Three duration rungs, and **the rung belongs to the gesture rather than to the property**: every rule one gesture spans reads the same one, or the gesture arrives in pieces.
+Two duration rungs, and **the rung belongs to the gesture rather than to the property**: every rule one gesture spans reads the same one, or the gesture arrives in pieces.
 
 - `--_qm-duration-fast`: the trip stays inside the element's own box and moves nothing around it: a hover-revealed control, a switch's knob, a popover's scale-in over the page.
 - `--_qm-duration-slow`: the trip moves the layout around it, so the eye tracks it and everything downstream of it: the group accordion's `0fr↔1fr` row, and with it the chevron, the section's bracket and the panel's insets.
-- `--_qm-duration-linger`: the endpoints are identical, so nothing but time carries the gesture: the correlation bloom, the one duration a user waits out.
+
+`--_qm-bloom-dwell` is not a third rung. One consumer and 5.5× its nearest neighbour is a constant wearing a scale's name, and a member that far out invites a reach no motion would justify. It is also a shape rather than a length: what it sizes is a rise, a hold and a decay, so what shortens it is not what shortens a transition.
 
 **A property carries one gesture.** A property is one transition declaration, so two gestures sharing it get one rung between them and one of the two is wrong. Dropping a gesture is the resolution, never averaging the rungs: the group header's ink is hover's, open being the chevron's rotation to say.
 
-Duration is the axis with no units of its own: every value looks plausible, so a surface picking its own drifts silently. `check:style` gates it in CSS, and in the script that animates the bloom over WAAPI (`core/bloom.ts` reads the rung off the element rather than forking the number).
+Duration is the axis with no units of its own: every value looks plausible, so a surface picking its own drifts silently. `check:style` gates it in CSS, and in the script that animates the bloom over WAAPI (`core/bloom.ts` reads the dwell off the element rather than forking the number).
+
+**Quiet is bought on the irreversible trips, never on the reversible ones.** An interrupted CSS transition restarts at its full duration over whatever distance is left, so reversing a long trip crawls: flick past a hover at 500ms and it oozes back for half a second over a sliver of ground. At the fast rung that artifact is imperceptible, which is what makes a transition the honest mechanism for a reversible trip in the first place. So a softer feel is a curve, and slower ARRIVALS and DEPARTURES, which have nothing to interrupt. Genuinely slow reversible motion is a different mechanism, not a bigger number: only something velocity-preserving (`svelte/motion`'s `Spring`) reverses a long trip without the crawl, and reaching for one is the admission that the rung outgrew CSS.
 
 **The endpoints pick the mechanism**, so it is not a per-motion judgment:
 
@@ -121,7 +124,9 @@ Duration is the axis with no units of its own: every value looks plausible, so a
 
 The package is all first row. CSS reaches half of the second (`@starting-style` gives an entrance, and a node the markup unmounts has no exit at all), which is why the popover raises with a keyframe and dismisses by vanishing; the fade it does not have is a directive's to give it. The third is a trip no CSS rule can see, because the two frames belong to different elements.
 
-Under `prefers-reduced-motion: reduce` a transition is dropped and the bloom loses its ramps; it holds at full for a beat and cuts. That degradation is available because both endpoints are rest states: cutting to one is landing on a frame the design already owns, and a motion that settled where neither of its rules named would have nowhere honest to land.
+**Under `prefers-reduced-motion: reduce` the SCALE collapses, never a list of selectors.** Every animated rule reads a rung, so one override in the derivation reaches all of them, a motion written later is covered the day it is written, and there is no roster to fall out of date. A per-component `@media` block is the alternative, and its roster is a second place to remember: a motion written without one is silently exempt, which is the same failure as a component minting its own duration and arrives by the same route. The rungs go to a beat nobody perceives rather than to `none`, so a surface reading its own transition state is not left waiting on an event that stopped firing.
+
+The bloom shortens instead of collapsing: its reduced form holds at full and cuts, and a hold is a duration, so the dwell keeps a beat while `core/bloom.ts` swaps the ramps out. That degradation is available at all because both endpoints are rest states: cutting to one lands on a frame the design already owns, and a motion that settled where neither of its rules named would have nowhere honest to land.
 
 ## Preventing drift
 

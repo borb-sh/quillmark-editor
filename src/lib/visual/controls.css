@@ -149,7 +149,7 @@
 		background: transparent;
 		border-radius: var(--_qm-radius-inner);
 		cursor: pointer;
-		transition: background-color var(--_qm-duration-fast) ease;
+		transition: background-color var(--_qm-duration-fast) var(--_qm-ease-reverse);
 	}
 	.qm-icon-btn:hover:not(:disabled),
 	.qm-add-affordance:hover:not(:disabled) {
@@ -180,8 +180,8 @@
 		border-radius: var(--_qm-radius-pill);
 		color: var(--_qm-ink-label);
 		transition:
-			opacity var(--_qm-duration-fast) ease,
-			background-color var(--_qm-duration-fast) ease;
+			opacity var(--_qm-duration-fast) var(--_qm-ease-reverse),
+			background-color var(--_qm-duration-fast) var(--_qm-ease-reverse);
 	}
 	.qm-add-affordance:hover {
 		color: var(--_qm-ink);
@@ -236,7 +236,7 @@
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
 		box-shadow: var(--_qm-shadow-popover);
-		animation: qm-pop-in var(--_qm-duration-fast) ease-out;
+		animation: qm-pop-in var(--_qm-duration-fast) var(--_qm-ease-arrive);
 	}
 	@keyframes qm-pop-in {
 		from {
@@ -246,17 +246,6 @@
 		to {
 			opacity: 1;
 			transform: none;
-		}
-	}
-	/* Every motion this file mints, opted out in one place: a raise's scale-in and
-	 the button families' hover fade. */
-	@media (prefers-reduced-motion: reduce) {
-		.qm-popover-surface {
-			animation: none;
-		}
-		.qm-icon-btn,
-		.qm-add-affordance {
-			transition: none;
 		}
 	}
 }

@@ -114,10 +114,13 @@
 	--pg-track-label: 0.08em;
 
 	/* ── Motion ──────────────────────────────────────────────────────────────── */
-	/* One rung: every transition on these pages is a state toggling under the
-	   pointer that nobody watches. A second would need something the eye tracks,
-	   and the playground's chrome has none. */
+	/* One rung of each: every transition on these pages is a state toggling under
+	   the pointer that nobody watches, so every one of them is a trip between two
+	   rest states that reverses mid-flight (SURFACES §Motion). A second duration
+	   would need something the eye tracks and a second curve something that arrives
+	   or leaves, and the playground's chrome has neither. */
 	--pg-duration: 140ms;
+	--pg-ease-reverse: cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 /* Collapse the SCALE, not each transition: every animated rule reads the rung,
