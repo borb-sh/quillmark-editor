@@ -139,8 +139,8 @@
 	// The accordion's two elements per group, by group id. A closing panel goes
 	// `inert` with whatever it held still focused, and `inert` does not say where
 	// focus should go — the browser drops it on the body, losing the user's place in
-	// the card. So the close hands it to the header, which is the section the user
-	// just acted on and the thing that reopens it.
+	// the card. So the close hands focus to the header, which is what reopens the
+	// section.
 	let headers = $state<Record<string, HTMLButtonElement | undefined>>({});
 	let panels = $state<Record<string, HTMLElement | undefined>>({});
 	/**
@@ -161,7 +161,7 @@
 	/**
 	 * Open the group holding leaf `key`, if this card has one. A collapsed panel is
 	 * clipped to zero height and `inert` rather than unmounted, so a caret placed
-	 * inside it does not land at all and the arrival wash lands unseen.
+	 * inside it does not land at all and the arrival wash goes unseen.
 	 * `VisualEditor.setCaret` calls this on every card and then waits a flush before
 	 * landing — `inert` clears when the panel renders open, not when `expanded` is
 	 * assigned. The card keeps owning `expanded`, and a card that does not hold the
@@ -301,15 +301,11 @@
 									>
 										<ChevronRight class="qm-group-chevron" size={14} />{section.label}
 									</button>
-									<!-- `inert` is what makes closed mean CLOSED. The panel is clipped, not
-								     unmounted, so without it every field in a hidden section keeps its
-								     place in the tab order and in the a11y tree — a user tabs into an
-								     input nobody can see, and reaches an array's remove control they were
-								     never shown, under a header announcing `aria-expanded="false"`. It
-								     suppresses focus, hit-testing and AT together while leaving PAINT
-								     untouched, so the 0fr↔1fr slide is the same slide; and it changes no
-								     control's own state, so commits, diagnostics and the leaf registry
-								     are indifferent to it. -->
+									<!-- `inert` is what makes closed mean CLOSED (SURFACES §"Focus and active
+								     state"): the panel is clipped, not unmounted, so without it every field
+								     in a hidden section keeps its place in the tab order and in the a11y
+								     tree, under a header announcing `aria-expanded="false"`. Paint is
+								     untouched, so the 0fr↔1fr slide is the same slide. -->
 									<div
 										class="qm-group-panel"
 										id={panelId}

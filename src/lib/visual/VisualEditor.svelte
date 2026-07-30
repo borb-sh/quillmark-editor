@@ -568,9 +568,9 @@
 		if (!key) return;
 		const leaf = leaves.get(key);
 		if (!leaf) return;
-		// Reveal first: a leaf in a collapsed group is clipped to zero height and taken
-		// out of the document entirely by `inert`, so both the caret and the cue below
-		// would land on nothing. Exactly one card holds the key.
+		// Reveal first: a leaf in a collapsed group is clipped to zero height and sits
+		// inside an `inert` panel, so both the caret and the cue below would land on
+		// nothing. Exactly one card holds the key.
 		mainCard?.revealLeaf(key);
 		for (const card of cardRefs) card?.revealLeaf(key);
 		await tick();
