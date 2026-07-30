@@ -35,10 +35,10 @@ export function fieldDomIds(uid: string, leafKey: string): FieldDomIds {
 }
 
 /**
- * A group panel's own id — what its header's `aria-expanded` names through
- * `aria-controls`, and the only name in the DOM that is a card's rather than a
- * field's. `card` follows the leaf key's convention (`undefined` is the main
- * card), so a panel and the fields inside it carry the same card token.
+ * A group panel's own id — what its header's `aria-controls` names, and the only
+ * name in the DOM that is a card's rather than a field's. `card` follows the leaf
+ * key's convention (`undefined` is the main card), so a panel and the fields
+ * inside it carry the same card token.
  *
  * The `-g-` infix cannot land on a field id: a field's is the escaped
  * `card:field`, whose separator escapes to `-3a-`, and the two differ at exactly

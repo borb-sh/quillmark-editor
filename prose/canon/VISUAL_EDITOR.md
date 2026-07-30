@@ -187,8 +187,8 @@ parent to survive remounts (the prior art's workaround). Both directions
 - **preview → editor** — `visualEditor.setCaret(hit)` resolves `hit.field` to a
   leaf, which runs `codec.usvToPM(hit.pos)` and sets its PM caret; a `'segment'`
   hit just focuses the leaf (`hit.pos` is a segment start, not a cluster-exact
-  caret). It reveals before it lands and awaits the render between the two, so it
-  is the one async entry point (VISUAL_EDITOR_UIUX §"Editor↔preview").
+  caret). It reveals first and awaits the render before landing, so it is the one
+  async entry point (VISUAL_EDITOR_UIUX §"Editor↔preview").
 - **editor → preview** — a caret move in the active leaf emits `onCaretMove(addr,
   pos)`; the consumer maps `addr` to the canonical `DocPath` field address with
   `fieldPathForAddr` (`caret.ts`, built on `formatDocPath`) and calls
