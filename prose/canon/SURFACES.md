@@ -106,26 +106,28 @@ A curve is a rung like every other value, minted in the derivation and read ever
 
 Two duration rungs, and **the rung belongs to the gesture rather than to the property**: every rule one gesture spans reads the same one, or the gesture arrives in pieces.
 
-- `--_qm-duration-fast`: the trip stays inside the element's own box and moves nothing around it: a hover-revealed control, a switch's knob, a popover's scale-in over the page.
-- `--_qm-duration-slow`: the trip moves the layout around it, so the eye tracks it and everything downstream of it: the group accordion's `0fr↔1fr` row, and with it the chevron, the section's bracket and the panel's insets.
+- `--_qm-duration-fast`: the trip stays inside the element's own box and moves nothing around it: a hover-revealed control, a switch's knob, a popover scaling in and back out over the page.
+- `--_qm-duration-slow`: the trip moves the layout around it, so the eye tracks it and everything downstream of it: the group accordion's `0fr↔1fr` row, and with it the chevron, the section's bracket and the panel's insets; and a card's slide past its neighbour, which moves the stack under both.
 
 `--_qm-bloom-dwell` is not a third rung. One consumer and 5.5× its nearest neighbour is a constant wearing a scale's name, and a member that far out invites a reach no motion would justify. It is also a shape rather than a length: what it sizes is a rise, a hold and a decay, so what shortens it is not what shortens a transition.
 
 **A property carries one gesture.** A property is one transition declaration, so two gestures sharing it get one rung between them and one of the two is wrong. Dropping a gesture is the resolution, never averaging the rungs: the group header's ink is hover's, open being the chevron's rotation to say.
 
-Duration is the axis with no units of its own: every value looks plausible, so a surface picking its own drifts silently. `check:style` gates it in CSS, and in the script that animates the bloom over WAAPI (`core/bloom.ts` reads the dwell off the element rather than forking the number).
+Duration is the axis with no units of its own: every value looks plausible, so a surface picking its own drifts silently. `check:style` gates it in CSS; the two scripts that animate over WAAPI read their rung off the element instead of forking the number (`core/bloom.ts` the dwell, `visual/motion.ts` the slow rung and the reversible curve), so the derivation stays the one place either is stated and the collapse below reaches a script it never names. Where a rung is out of reach (an unstyled root, or jsdom, where `getComputedStyle` reports custom properties as empty) the bloom falls back to a beat and the reorder to no motion at all: a fallback is the absence of the scale, never a copy of it.
 
 **Quiet is bought on the irreversible trips, never on the reversible ones.** An interrupted CSS transition restarts at its full duration over whatever distance is left, so reversing a long trip crawls: flick past a hover at 500ms and it oozes back for half a second over a sliver of ground. At the fast rung that artifact is imperceptible, which is what makes a transition the honest mechanism for a reversible trip in the first place. So a softer feel is a curve, and slower ARRIVALS and DEPARTURES, which have nothing to interrupt. Genuinely slow reversible motion is a different mechanism, not a bigger number: only something velocity-preserving (`svelte/motion`'s `Spring`) reverses a long trip without the crawl, and reaching for one is the admission that the rung outgrew CSS.
 
 **The endpoints pick the mechanism**, so it is not a per-motion judgment:
 
-| Endpoints | Mechanism |
-| --- | --- |
-| two rest states of one element | a CSS transition |
-| existence ↔ absence | a Svelte `transition:` directive |
-| a keyed list's position ↔ position | `animate:flip` |
+| Endpoints | Mechanism | What it needs |
+| --- | --- | --- |
+| two rest states of one element | a CSS transition | nothing |
+| existence ↔ absence | a keyframe each way | something that delays the unmount |
+| a keyed list's position ↔ position | `animate:`, WAAPI under it | the rects either side of the reconcile |
 
-The package is all first row. CSS reaches half of the second (`@starting-style` gives an entrance, and a node the markup unmounts has no exit at all), which is why the popover raises with a keyframe and dismisses by vanishing; the fade it does not have is a directive's to give it. The third is a trip no CSS rule can see, because the two frames belong to different elements.
+Most of the package is the first row. The second is the popovers, and what makes it CSS rather than a `transition:` directive is that neither mounts itself: a presence layer does, and it holds the node until the node's own animations finish. So `.qm-popover-surface` carries a keyframe each way (`qm-pop-in` on arrival, `qm-pop-out` under the layer's `data-ending-style`), and the class goes on the PRESENCE node, since an animation one level in is a fade the layer never sees and unmounts through. Markup that mounts a surface itself keeps the other shape: `{#if}` deletes a node mid-frame, so an exit there is a directive's to give.
+
+The third is a trip no CSS rule can see, because the two frames belong to different elements: `animate:` supplies the two rects, and the run is WAAPI reading the rungs off the element (`visual/motion.ts`) rather than Svelte's own keyframes, which are sampled through a JS easing function and would fork the curve out of the derivation. The trip is the card stack's reorder, and the reorder COMMAND arms it rather than the reconcile: `animate:` fires wherever a slot's rect moved, and a card growing under the caret moves every slot below it, which is a layout change with no trip in it and one that would draw those slots over the content that displaced them. Two positions in the list, not two positions on the page.
 
 **Under `prefers-reduced-motion: reduce` the SCALE collapses, never a list of selectors.** Every animated rule reads a rung, so one override in the derivation reaches all of them, a motion written later is covered the day it is written, and there is no roster to fall out of date. A per-component `@media` block is the alternative, and its roster is a second place to remember: a motion written without one is silently exempt, which is the same failure as a component minting its own duration and arrives by the same route. The rungs go to a beat nobody perceives rather than to `none`, so a surface reading its own transition state is not left waiting on an event that stopped firing.
 

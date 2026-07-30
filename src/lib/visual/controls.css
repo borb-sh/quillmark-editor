@@ -225,7 +225,7 @@
 
 	 The raise and the dismissal are the recipe's too, one existence↔absence trip
 	 taken twice (SURFACES §Motion), which is why the class goes on the PRESENCE
-	 node — bits-ui's own content element, reached through its `child` snippet —
+	 node (bits-ui's own content element, reached through its `child` snippet)
 	 rather than on a pill inside it: the node's animations are what the primitive
 	 waits on before unmounting, and an animation one level in is a fade it never
 	 sees. Both frames are the inner box's own; floating-ui's outer wrapper, whose
@@ -233,10 +233,10 @@
 	 is its own inset, its measure, and its type.
 
 	 `data-ending-style` is the primitive's mark for the leaving half. The ink is
-	 not all that leaves with it — a surface fading out is no longer a thing to
-	 click or to read — but that half is the caller's `inert`, not a rule here: the
+	 not all that leaves with it: a surface fading out is not a thing to click or to
+	 read. That half is the caller's `inert` rather than a rule here, because the
 	 primitive styles the same node inline with `pointer-events: auto`, which no
-	 layered rule outranks, and an attribute settles it without a cascade fight and
+	 layered rule outranks; the attribute settles it without a cascade fight and
 	 takes the leaving surface out of the tab order and the a11y tree with it. */
 	.qm-popover-surface {
 		background: var(--_qm-surface-popover);
