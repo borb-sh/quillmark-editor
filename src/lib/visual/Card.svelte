@@ -621,8 +621,15 @@
 	.qm-group.qm-open {
 		border-left-color: var(--_qm-border);
 	}
-	/* Symmetric padding: WCAG 2.5.8's 24×24 floor, and the header is the whole row
-	   so adjacent labels share one rhythm with no dead strip outside the button.
+	/* Vertical padding is symmetric: WCAG 2.5.8's 24×24 floor, and the header is the
+	   whole row so adjacent labels share one rhythm with no dead strip outside the
+	   button. Horizontal is one rung left and zero right. Left, because the section's
+	   vertical runs down this row: at zero the chevron stands on the stroke with only
+	   the icon box's own bearing between them, which is neither a rung nor a constant —
+	   the glyph's rotation swaps which bearing faces the stroke, so the clearance moves
+	   as the section opens. Right stays at zero because the row is the target and an
+	   inset there is target given back; the left one is inside the button and costs
+	   none.
 
 	   A button by tag and NEITHER button family by recipe — it reads no
 	   `--_qm-tap-min` (the padding above already clears the floor) and takes no hover
@@ -646,7 +653,7 @@
 		width: 100%;
 		border: none;
 		background: transparent;
-		padding: var(--_qm-space-2) 0;
+		padding: var(--_qm-space-2) 0 var(--_qm-space-2) var(--_qm-space);
 		font: inherit;
 		font-size: var(--_qm-text-label);
 		font-weight: var(--_qm-weight-soft);
