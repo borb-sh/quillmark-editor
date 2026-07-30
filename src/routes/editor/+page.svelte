@@ -64,7 +64,7 @@
 	let fieldPathForAddr: ((addr: Addr, kinds: readonly string[]) => string | undefined) | undefined;
 
 	// Surface handles for the imperative bridge hops.
-	let editorRef: { setCaret(hit: ContentHit): void } | undefined = $state();
+	let editorRef: { setCaret(hit: ContentHit): Promise<void> } | undefined = $state();
 	let previewRef: ReturnType<typeof Preview> | undefined = $state();
 	let sourceRef: ReturnType<typeof SourceView> | undefined = $state();
 

@@ -65,7 +65,7 @@
 		type FieldKey,
 		type RoutedDiagnostic
 	} from './diagnostics.js';
-	import { fieldDomIds } from './domid.js';
+	import { fieldDomIds, groupPanelId } from './domid.js';
 	import { tipsChannel } from './tips.js';
 	import { patchEditorExt } from './ext.js';
 	import Card from './Card.svelte';
@@ -426,6 +426,7 @@
 			makeAddr: (field?: string) => makeAddr(id, isMain, field),
 			leafKey,
 			domIds: (field?: string) => fieldDomIds(uid, leafKey(field)),
+			panelId: (group: string) => groupPanelId(uid, isMain ? undefined : id, group),
 			commit: (name: string, value: unknown) => commitScalar(id, isMain, name, value),
 			move: (dir: -1 | 1) => moveCardById(id, dir),
 			remove: () => removeCardById(id),
@@ -553,29 +554,38 @@
 	});
 
 	// ── Public entry points ─────────────────────────────────────────────────────
-	/** Resolve a preview `ContentHit` to a mounted leaf and place its caret (Phase 5). */
-	export function setCaret(hit: ContentHit): void {
+	/**
+	 * Resolve a preview `ContentHit` to a mounted leaf and place its caret (Phase 5).
+	 *
+	 * Async because the reveal has to RENDER before the landing: a collapsed group
+	 * is `inert`, which swallows a focus silently, so a caret placed in the same
+	 * tick as the reveal would go nowhere and report nothing. The consumer's
+	 * `onCaretPick` ignores the promise — awaiting it is for a caller that wants to
+	 * observe where the caret went.
+	 */
+	export async function setCaret(hit: ContentHit): Promise<void> {
 		const key = leafKeyForHit(hit.field);
 		if (!key) return;
 		const leaf = leaves.get(key);
 		if (!leaf) return;
+		// Reveal first: a leaf in a collapsed group is clipped to zero height and taken
+		// out of the document entirely by `inert`, so both the caret and the cue below
+		// would land on nothing. Exactly one card holds the key.
+		mainCard?.revealLeaf(key);
+		for (const card of cardRefs) card?.revealLeaf(key);
+		await tick();
 		// A `'segment'` hit landed on origin-less ink (list markers, a code fence's
 		// interior): `pos` is the segment START, not a cluster-exact caret
 		// (HitGranularity), so just focus the leaf rather than snap the caret to a
 		// spot the click did not resolve. `'cluster'` (and an absent granularity —
 		// the backend did not report it, treat as exact) places the caret.
-		// Reveal first: a leaf in a collapsed group is clipped to zero height, so both
-		// the caret and the cue below land unseen. Exactly one card holds the key.
-		mainCard?.revealLeaf(key);
-		for (const card of cardRefs) card?.revealLeaf(key);
 		if (hit.granularity === 'segment') leaf.focus();
 		else leaf.setCaret(hit.pos);
 		// The arrival cue. Unconditional, unlike the preview side's change-guarded
 		// bloom: a preview click is one discrete act, and its commonest target is the
 		// leaf ALREADY focused — where landing a caret changes nothing on screen — or
 		// one off-screen, where the browser's focus-scroll moves the page and leaves
-		// the caret to be hunted for in a long form. The panel opens on the next flush
-		// and the wash outlasts it, so a revealed landing is cued once it settles.
+		// the caret to be hunted for in a long form.
 		bloomInside(leaf.el);
 	}
 	/** The active leaf's controller — the formatting popover's observation seam. */

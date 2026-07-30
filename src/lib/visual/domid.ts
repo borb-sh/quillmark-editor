@@ -33,3 +33,17 @@ export function fieldDomIds(uid: string, leafKey: string): FieldDomIds {
 	const base = `qm-${uid}-${escapeId(leafKey)}`;
 	return { control: base, label: `${base}-label`, description: `${base}-desc` };
 }
+
+/**
+ * A group panel's own id — what its header's `aria-expanded` names through
+ * `aria-controls`, and the only name in the DOM that is a card's rather than a
+ * field's. `card` follows the leaf key's convention (`undefined` is the main
+ * card), so a panel and the fields inside it carry the same card token.
+ *
+ * The `-g-` infix cannot land on a field id: a field's is the escaped
+ * `card:field`, whose separator escapes to `-3a-`, and the two differ at exactly
+ * that position for every card token the id space mints.
+ */
+export function groupPanelId(uid: string, card: string | undefined, group: string): string {
+	return `qm-${uid}-${escapeId(card ?? 'main')}-g-${escapeId(group)}`;
+}
