@@ -87,15 +87,15 @@ Buttons (reorder, delete, mark, add) keep the UA `:focus-visible` ring: already 
 
 ## Motion
 
-**A motion is the interpolation between two rest states.** Both endpoints are static frames the design justifies on their own, and the motion is only the trip between them. Nothing here is choreography: no motion originates in itself, and none has a shape that outlives the two states it connects. Everything below is that one sentence answering a different question.
+**A motion is the interpolation between two rest states.** Both endpoints are static frames the design justifies on their own, and the motion is only the trip between them: nothing here is choreography, and no motion carries a shape that outlives the two states it connects.
 
-**Two rest states or it does not ship.** The admission test is the AESTHETIC colour test applied to time — a pulse, a bounce, an attention-getter has one endpoint, so there is nothing for it to be the interpolation OF. The correlation bloom looks like the exception and is the proof: it runs `0→peak→0`, and zero is a rest state, which is also what leaves it an honest reduced-motion form (below).
+**Two rest states or it does not ship.** The admission test is the AESTHETIC colour test applied to time: a pulse, a bounce, an attention-getter has one endpoint, so there is nothing for it to be the interpolation OF. The correlation bloom looks like the exception and is the proof: it runs `0→peak→0`, and zero is a rest state, which is also what leaves it an honest reduced-motion form (below).
 
-**The animated properties are the ones that differ between the frames, and only those.** There is no list to enumerate — the two rules are the list. `transition: all` is refused, not for cost but because it is the absence of the decision: it says the difference was never read, and it animates whatever a later edit adds to either frame.
+**The animated properties are the ones that differ between the frames, and only those.** There is no list to enumerate; the two rules are the list. `transition: all` is refused, not for cost but because it is the absence of the decision: it says the difference was never read, and it animates whatever a later edit adds to either frame.
 
 **The curve says which way the trip runs.** It is derived, not chosen, so there are three and no dial:
 
-- Both endpoints are rest states, so the trip is REVERSIBLE — a pointer leaves mid-fade, a second click lands mid-slide. Symmetric `ease`, because an asymmetric curve visibly stutters when it turns around.
+- Both endpoints are rest states, so the trip is REVERSIBLE (a pointer leaves mid-fade, a second click lands mid-slide). Symmetric `ease`, because an asymmetric curve visibly stutters when it turns around.
 - One endpoint is absence and the element is ARRIVING: `ease-out`, decelerating into the frame it will hold.
 - One endpoint is absence and the element is LEAVING: `ease-in`, accelerating away from the frame it held.
 
@@ -103,15 +103,15 @@ Buttons (reorder, delete, mark, add) keep the UA `:focus-visible` ring: already 
 
 Three duration rungs, and **the rung belongs to the gesture rather than to the property**: every rule one gesture spans reads the same one, or the gesture arrives in pieces.
 
-- `--_qm-duration-fast`: the trip stays inside the element's own box and moves nothing around it — a hover-revealed control, a switch's knob, a popover's scale-in over the page.
-- `--_qm-duration-slow`: the trip moves the layout around it, so the eye tracks it and everything downstream of it — the group accordion's `0fr↔1fr` row, and with it the chevron, the section's bracket and the panel's insets.
-- `--_qm-duration-linger`: the endpoints are identical, so nothing but time carries the gesture — the correlation bloom, the one duration a user waits out.
+- `--_qm-duration-fast`: the trip stays inside the element's own box and moves nothing around it: a hover-revealed control, a switch's knob, a popover's scale-in over the page.
+- `--_qm-duration-slow`: the trip moves the layout around it, so the eye tracks it and everything downstream of it: the group accordion's `0fr↔1fr` row, and with it the chevron, the section's bracket and the panel's insets.
+- `--_qm-duration-linger`: the endpoints are identical, so nothing but time carries the gesture: the correlation bloom, the one duration a user waits out.
 
-**A property carries one gesture.** A property is one transition declaration, so two gestures sharing it get one rung between them and one of the two is wrong. Dropping a gesture is the resolution, never averaging the rungs: the group header's ink read both hover and open on one `color`, and the chevron's rotation already said open, so the ink is hover's alone.
+**A property carries one gesture.** A property is one transition declaration, so two gestures sharing it get one rung between them and one of the two is wrong. Dropping a gesture is the resolution, never averaging the rungs: the group header's ink is hover's, open being the chevron's rotation to say.
 
 Duration is the axis with no units of its own: every value looks plausible, so a surface picking its own drifts silently. `check:style` gates it in CSS, and in the script that animates the bloom over WAAPI (`core/bloom.ts` reads the rung off the element rather than forking the number).
 
-**The endpoints pick the mechanism**, which leaves no per-motion judgment in it:
+**The endpoints pick the mechanism**, so it is not a per-motion judgment:
 
 | Endpoints | Mechanism |
 | --- | --- |
@@ -119,7 +119,7 @@ Duration is the axis with no units of its own: every value looks plausible, so a
 | existence ↔ absence | a Svelte `transition:` directive |
 | a keyed list's position ↔ position | `animate:flip` |
 
-The package is all first row. CSS reaches half of the second — `@starting-style` gives an entrance, and a node the markup unmounts has no exit at all — which is why the popover raises with a keyframe and dismisses by vanishing; the fade it does not have is a directive's to give it. The third is a trip no CSS rule can see, because the two frames belong to different elements.
+The package is all first row. CSS reaches half of the second (`@starting-style` gives an entrance, and a node the markup unmounts has no exit at all), which is why the popover raises with a keyframe and dismisses by vanishing; the fade it does not have is a directive's to give it. The third is a trip no CSS rule can see, because the two frames belong to different elements.
 
 Under `prefers-reduced-motion: reduce` a transition is dropped and the bloom loses its ramps; it holds at full for a beat and cuts. That degradation is available because both endpoints are rest states: cutting to one is landing on a frame the design already owns, and a motion that settled where neither of its rules named would have nowhere honest to land.
 

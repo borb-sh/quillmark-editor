@@ -715,12 +715,12 @@
 	/* An ink step, not a hue: AESTHETIC §Rules keeps the three status hues as the only
 	   exits from the greyscale, and a section standing open is not a status anyway.
 
-	   HOVER'S ALONE, though the step would suit open as well. `color` is one transition
-	   declaration and open is the accordion's gesture while hover is its own, so the two
-	   would share a rung and one would be wrong: an ink step at the slow rung lags the
-	   pointer, and at the fast one it lands a fifth of a second before the panel it
-	   belongs to (SURFACES §Motion). The chevron's rotation already says open, so hover
-	   keeps the property — it needs a cue, a bigger borderless target having no other. */
+	   HOVER'S ALONE, though the step suits open as well. `color` is one transition
+	   declaration, and open is the accordion's gesture where hover is its own, so the two
+	   share a rung and one of them is wrong: an ink step at the slow rung lags the
+	   pointer, and at the fast one it settles 80ms before the panel it belongs to
+	   (SURFACES §Motion). Hover keeps the property because open has another cue in the
+	   chevron's rotation and hover has none, a big borderless target drawing no box. */
 	.qm-group-header:hover {
 		color: var(--_qm-ink);
 	}
