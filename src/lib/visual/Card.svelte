@@ -439,11 +439,10 @@
 	   card's gutter with the field list, the bracket's rules and the body's first
 	   character (SURFACES §Rhythm). The title is the one region that carries a box —
 	   it has to, since the box IS the rename affordance — and a box on the gutter puts
-	   its text a padding and a hairline right of it, which at the card's largest type
-	   is the misalignment the eye finds first. Pulling the region rather than the input
-	   keeps the autosize mirror in register with what it measures, and the flex basis
-	   grows by what the margin took, so the right edge does not move. The negative
-	   margin is exactly the box it cancels, so the two move together at any dial. */
+	   its text a padding and a hairline right of it. The REGION hangs, not the input:
+	   the autosize mirror stays in register with what it measures, and the flex basis
+	   grows by what the margin took, so the right edge holds. The margin is exactly the
+	   box it cancels, so the two move together at any dial. */
 	.qm-card-rename {
 		flex: 1;
 		min-width: 0;
