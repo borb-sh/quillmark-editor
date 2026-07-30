@@ -63,21 +63,14 @@ gap to fix, and exercising the subpaths proves their seams are clean), and it
 stays a harness, not a product (pick a quill, edit, preview, diagnostics — no
 auth, persistence, or multi-doc management).
 
-The routes are `/preview` (paint + overlay + click bridge), `/visual` (the
-VisualEditor over a seeded document), and `/editor` — the reference **split-pane
-shell**: one `LiveSession`, the VisualEditor and Preview over one document, the
-caret bridge wired both ways, the preview following edits on a debounced
-`session.apply`, `session.warnings` routed to inline diagnostics, and the source
-view. The bridge is consumer-layer glue: the editor emits addresses and carets,
-the preview surfaces hits, and the shell joins them (`fieldPathForAddr` maps an
-editor `Addr` to the preview's field-path grammar) — neither surface imports the
-other.
-
-`/editor` carries all four of THEMING.md's mounting-site properties on the single
-`.editor-pane` rule — gutter and scroll tail as the two ends of one `padding`,
-scroll container as `overflow: auto`, page tone as `--pg-main-bg`. That the column
-around the cards is the consumer's, not the package's, is what makes the reference
-shell the place those four are demonstrated.
+Its routes, and the host-side visual language they share, are
+[PLAYGROUND.md](PLAYGROUND.md). One of them is architectural: `/editor` is the
+reference **split-pane shell**, where the caret bridge is consumer-layer glue —
+the editor emits addresses and carets, the preview surfaces hits, and the shell
+joins them (`fieldPathForAddr` maps an editor `Addr` to the preview's field-path
+grammar), so neither surface imports the other. That the column around the cards
+is the consumer's, not the package's, is what makes that route the place
+THEMING.md's four mounting-site properties are demonstrated.
 
 ## Theming
 

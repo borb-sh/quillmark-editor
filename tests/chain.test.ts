@@ -22,7 +22,9 @@ describe('substrate chain', () => {
 		expect(quill.schema.card_kinds).toHaveProperty('indorsement');
 
 		const doc = quill.seedDocument();
-		expect(doc.quillRef).toBe('usaf_memo@0.2.0');
+		// Composed from the quill's own metadata — the contract is `name@version`,
+		// not the version the fixture happens to sit at.
+		expect(doc.quillRef).toBe(`${quill.metadata.name}@${quill.metadata.version}`);
 
 		const engine = new Engine();
 		expect(await engine.supportsCanvas(quill)).toBe(true);

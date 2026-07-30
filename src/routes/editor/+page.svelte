@@ -1,6 +1,6 @@
 <!--
-  Phase 5 playground — the reference SPLIT-PANE SHELL. One consumer-owned
-  LiveSession drives all three surfaces over one seeded document:
+  The reference SPLIT-PANE SHELL. One consumer-owned LiveSession drives all three
+  surfaces over one seeded document:
     • <VisualEditor> (left)   — the edit surface; commits land on `doc`.
     • <Preview>      (right)  — a pure view of the session; never mutates it.
     • <SourceView>   (drawer) — read-only canonical markdown of `doc`.
@@ -25,7 +25,7 @@
   recompiles to empty `dirtyPages` (apply on an unchanged doc is a cheap no-op),
   so the preview repaints nothing; only the geometry re-reads.
 
-  The state strip along the top reads the bridge's outcomes back out — last-hit,
+  The strip above the panes reads the bridge's outcomes back out — last-hit,
   active-addr, last-focus, last-change — so a round-trip that lands nowhere is
   visible rather than silent. `inject-diagnostics` stands in for a live
   render-error feed: a real consumer derives external diagnostics from
@@ -76,7 +76,7 @@
 		externalDiagnostics = session ? [...session.warnings, ...injected] : injected;
 	}
 
-	// Bridge observability — what the state strip reads.
+	// Bridge observability — what the strip reads.
 	let lastHit = $state<ContentHit | undefined>();
 	let activeAddr = $state('none');
 	let lastFocus = $state('none');
@@ -84,8 +84,8 @@
 	let showSource = $state(false);
 
 	// ── Split resizer (playground reference) ─────────────────────────────────────
-	// The editor|preview divider: a 3px line thickening to 5.5px on hover/drag with
-	// an ellipsis grip. A press only becomes a drag past a small dead-zone (swallows
+	// The editor|preview divider: a hairline thickening on hover/drag with an
+	// ellipsis grip. A press only becomes a drag past a small dead-zone (swallows
 	// click-jitter), the ratio clamps to 30–70% so neither pane collapses, and the
 	// body takes a cursor/user-select lock for the drag so it reads as one gesture
 	// and no text selects under the pointer. Playground-only; the split shell is the
@@ -254,36 +254,63 @@
 	});
 </script>
 
-<main>
-	<h1>@quillmark/editor — Editor</h1>
-	<p class="sub">Phase 5 — the split-pane shell: edit ⇄ preview, one session.</p>
+<main class="pg-width">
+	<header class="pg-rail head">
+		{#if status.phase === 'loading'}
+			<p data-testid="status" class="pg-status loading">Opening…</p>
+		{:else if status.phase === 'error'}
+			<p data-testid="status" class="pg-status error">Error: {status.message}</p>
+		{:else}
+			<p data-testid="status" class="pg-status ready">Session open</p>
+		{/if}
+		<div>
+			<h1 class="pg-title">Editor</h1>
+			<p class="pg-deck">
+				Both surfaces over one session: an edit recompiles the page, a click on the page sets the
+				caret.
+			</p>
+		</div>
+	</header>
 
-	{#if status.phase === 'loading'}
-		<p data-testid="status" class="loading">Loading reference quill…</p>
-	{:else if status.phase === 'error'}
-		<p data-testid="status" class="error">Error: {status.message}</p>
-	{:else}
-		<p data-testid="status" class="ready">Session open.</p>
-
-		<div class="bridge-state">
-			<span>active: <code data-testid="active-addr">{activeAddr}</code></span>
-			<span
-				>hit: <code data-testid="last-hit"
-					>{lastHit ? JSON.stringify({ field: lastHit.field, pos: lastHit.pos }) : 'none'}</code
+	{#if status.phase === 'ready'}
+		<!-- The bridge, read back out: each hop's last outcome, so a round-trip that
+		     lands nowhere is visible rather than silent. -->
+		<div class="pg-panel strip">
+			<span class="stat"
+				><span class="pg-label">active</span>
+				<span class="pg-readout" data-testid="active-addr">{activeAddr}</span></span
+			>
+			<span class="stat"
+				><span class="pg-label">hit</span>
+				<span class="pg-readout" data-testid="last-hit"
+					>{lastHit ? JSON.stringify({ field: lastHit.field, pos: lastHit.pos }) : 'none'}</span
 				></span
 			>
-			<span>focus→preview: <code data-testid="last-focus">{lastFocus}</code></span>
-			<span
-				>dirtyPages: <code data-testid="last-change"
-					>{lastChange ? JSON.stringify(lastChange.dirtyPages) : 'none'}</code
+			<span class="stat"
+				><span class="pg-label">focus→preview</span>
+				<span class="pg-readout" data-testid="last-focus">{lastFocus}</span></span
+			>
+			<span class="stat"
+				><span class="pg-label">dirty pages</span>
+				<span class="pg-readout" data-testid="last-change"
+					>{lastChange ? JSON.stringify(lastChange.dirtyPages) : 'none'}</span
 				></span
 			>
-			<button type="button" data-testid="inject-diagnostics" onclick={injectDiagnostics}
-				>Inject diagnostics</button
-			>
-			<button type="button" data-testid="toggle-source" onclick={() => (showSource = !showSource)}
-				>{showSource ? 'Hide' : 'Show'} source</button
-			>
+			<span class="strip-actions">
+				<button
+					class="pg-btn"
+					type="button"
+					data-testid="inject-diagnostics"
+					onclick={injectDiagnostics}>Inject diagnostics</button
+				>
+				<button
+					class="pg-btn"
+					type="button"
+					data-testid="toggle-source"
+					aria-pressed={showSource}
+					onclick={() => (showSource = !showSource)}>Source</button
+				>
+			</span>
 		</div>
 
 		<div
@@ -331,8 +358,8 @@
 		</div>
 
 		{#if showSource && docHandle}
-			<section class="source-drawer" aria-label="Debug source view" data-testid="source-drawer">
-				<div class="drawer-label">Canonical markdown (read-only)</div>
+			<section class="pg-frame drawer" aria-label="Debug source view" data-testid="source-drawer">
+				<p class="pg-label drawer-label">Canonical markdown — read only</p>
 				<div class="source-host">
 					<SourceView bind:this={sourceRef} doc={docHandle} />
 				</div>
@@ -342,35 +369,39 @@
 </main>
 
 <style>
-	/* The shell's palette is the host's, shared across the routes
-	   (`routes/playground.css`); this block is the split-pane's own geometry. */
-	main {
-		max-width: 88rem;
-		margin: 1.25rem auto;
+	.head {
+		padding-block: var(--pg-space-12) var(--pg-space-8);
 	}
-	.bridge-state {
+
+	h1 {
+		margin-bottom: var(--pg-space-2);
+	}
+
+	.strip {
 		display: flex;
 		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.75rem;
-		margin: 0.75rem 0;
-		font-size: 0.72rem;
+		align-items: baseline;
+		gap: var(--pg-space-2) var(--pg-space-6);
+		margin-bottom: var(--pg-space-4);
+	}
+
+	.stat {
+		display: flex;
+		align-items: baseline;
+		gap: var(--pg-space-2);
+		min-width: 0;
+	}
+
+	.stat .pg-readout {
 		color: var(--pg-ink-meta);
 	}
-	.bridge-state code {
-		background: var(--pg-card-bg);
-		border-radius: 3px;
-		padding: 0.05rem 0.3rem;
-		font-size: 0.7rem;
+
+	.strip-actions {
+		display: flex;
+		gap: var(--pg-space);
+		margin-inline-start: auto;
 	}
-	.bridge-state button {
-		font-size: 0.72rem;
-		padding: 0.2rem 0.5rem;
-		border: 1px solid var(--pg-border);
-		border-radius: 5px;
-		background: var(--pg-card-bg);
-		cursor: pointer;
-	}
+
 	.shell {
 		display: grid;
 		/* grid-template-columns is set inline from `splitPct` — the middle track
@@ -378,27 +409,35 @@
 		align-items: start;
 		height: 72vh;
 	}
+
+	/* All four mounting-site properties are on this one rule (ARCHITECTURE
+	   §Playground). The end padding is the scroll TAIL: dead space under the last
+	   card so it can reach the middle of the pane rather than stopping at the
+	   bottom edge. The page tone is plain `--qm-bg` — THEMING §"What is behind the
+	   column is yours" names that a supported case, and this pane is where the
+	   playground demonstrates it. */
 	.editor-pane {
 		min-width: 0;
 		height: 100%;
 		overflow: auto;
-		/* All four mounting-site properties are on this one rule (ARCHITECTURE
-		   §Playground). The end padding is the scroll TAIL: dead space under the last
-		   card so it can reach the middle of the pane rather than stopping at the
-		   bottom edge. */
-		padding: 0.5rem 0.5rem 40vh;
-		border: 1px solid var(--pg-border);
-		border-radius: var(--qm-radius, 8px);
+		padding: var(--pg-space-2) var(--pg-space-2) 40vh;
+		border: var(--pg-border-width) solid var(--pg-border);
+		border-radius: var(--pg-radius);
 		background: var(--pg-page);
 	}
+
+	/* The other mounting site, and the other half of the demonstration: a page tone
+	   of the host's own, with the painted sheet inset on it. */
 	.preview-pane {
 		min-width: 0;
 		height: 100%;
-		border: 1px solid var(--pg-border);
-		border-radius: var(--qm-radius, 8px);
+		padding: var(--pg-space-2);
+		border: var(--pg-border-width) solid var(--pg-border);
+		border-radius: var(--pg-radius);
 		overflow: hidden;
-		background: var(--pg-card-bg);
+		background: var(--pg-surface);
 	}
+
 	/* Reference resizer — a hairline in an 11px hit track, thickening on
 	   hover/drag, with an ellipsis grip that fades in over the line. */
 	.resizer {
@@ -410,58 +449,59 @@
 		cursor: col-resize;
 		touch-action: none; /* pointer drag owns the gesture, not scroll/pan */
 	}
+
 	.resizer::before {
 		content: '';
 		width: 3px;
 		height: 100%;
-		border-radius: 999px;
+		border-radius: var(--pg-radius-pill);
 		background: var(--pg-border);
 		transition:
-			width 0.1s ease,
-			background-color 0.1s ease;
+			width var(--pg-duration) ease,
+			background-color var(--pg-duration) ease;
 	}
+
 	.resizer:hover::before,
 	.resizer:focus-visible::before,
 	.resizer.dragging::before {
 		width: 5.5px;
 		background: var(--pg-border-strong);
 	}
+
 	.resizer:focus-visible {
 		outline: none;
 	}
+
 	.grip {
 		position: absolute;
-		font-size: 0.8rem;
+		font-size: var(--pg-text-label);
 		line-height: 1;
 		color: var(--pg-ghost);
 		background: var(--pg-page);
-		padding: 0.15rem 0;
-		border-radius: 999px;
+		padding-block: var(--pg-space-half);
+		border-radius: var(--pg-radius-pill);
 		opacity: 0;
-		transition: opacity 0.1s ease;
+		transition: opacity var(--pg-duration) ease;
 		pointer-events: none;
 	}
+
 	.resizer:hover .grip,
 	.resizer:focus-visible .grip,
 	.resizer.dragging .grip {
 		opacity: 1;
 	}
-	.source-drawer {
-		margin-top: 1rem;
-		border: 1px solid var(--pg-border);
-		border-radius: var(--qm-radius, 8px);
-		overflow: hidden;
+
+	.drawer {
+		margin-top: var(--pg-space-4);
 	}
+
 	.drawer-label {
-		font-size: 0.68rem;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		color: var(--pg-ink-meta);
-		padding: 0.4rem 0.6rem;
-		background: var(--pg-card-bg);
-		border-bottom: 1px solid var(--pg-border);
+		padding: var(--pg-space-2) var(--pg-space-3);
+		border-bottom: var(--pg-border-width) solid var(--pg-border);
 	}
+
 	.source-host {
 		height: 22rem;
+		background: var(--pg-page);
 	}
 </style>
