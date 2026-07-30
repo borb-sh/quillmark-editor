@@ -127,6 +127,17 @@ spec fixes rather than a step on the space scale, so it does not move when
 `--qm-space` does, and `min-*` is outside every `check:style` axis — a second
 expression of the same floor would have nothing watching it.
 
+**A target is a region, not a paint box**, and the two part company on the one glyph
+button that sits in a line of text rather than a row of its own. The floor is half
+again the label rung's line box, so the guidance marker taking it as its BOX would
+overhang the line at each end by most of the field's label-to-control gap — its fill
+landing on the control's top border, its ring crossing it. The marker's box is
+therefore its glyph, and the floor is an out-of-flow pseudo-element centred on it:
+the press stays at the floor, the mark shrinks to the glyph, and the row keeps the
+line box's height. It takes no fill either — the ink step says hover, and the surface
+opens on it. Every other glyph button has a row to itself and keeps the floor as its
+box.
+
 **Type is the button recipes' too, not the box's alone.** A UA button inherits
 neither family nor size, so a button that declares no type renders in the UA face at
 the UA size — the same failure the shared rule prevents for chrome, and quieter,
@@ -140,11 +151,16 @@ line box collapses onto its content and one height source decides instead of two
 it or dropped in silence — the same ordering the box recipe keeps.
 
 **The section header is a button by tag and neither family by recipe.** It reads no
-`--_qm-tap-min` — its symmetric padding already clears the floor, and the whole row
-is the target — and takes no hover fill (an ink step instead), so it declares its own
-type rather than joining a family it would then have to unpick: the field-label rung
-at the tight leading, on the button, with the label a text run beside the chevron. A
-wrapper carrying only the size is indirection between a header and its own label.
+`--_qm-tap-min` — its symmetric vertical padding already clears the floor, and the
+whole row is the target — and takes no hover fill (an ink step instead), so it
+declares its own type rather than joining a family it would then have to unpick: the
+field-label rung at the tight leading, on the button, with the label a text run
+beside the chevron. A wrapper carrying only the size is indirection between a header
+and its own label. Horizontally it insets one rung on the left and none on the right:
+the section's vertical runs down this row, and at zero the chevron stands on that
+stroke with only the icon box's own bearing between them — a clearance that is off
+the scale and that the glyph's rotation moves as the section opens. An inset inside
+the button costs no target; one on the right would give the row's edge back.
 
 **An inline prose leaf is inside that recipe, not beside it.** A field constrained
 to one paragraph is a control in a row of controls, so it draws the same
@@ -171,7 +187,12 @@ control does.
 multiples — is the shared rhythm. Card padding is uniform on every side, so a
 body-shown card and a body-hidden card stay symmetric, and the card's content edge
 is the gutter every top-level region starts on: the field list, the metadata
-bracket's two horizontals, and the body's first character alike. What indents from
+bracket's two horizontals, the card title's first character, and the body's first
+character alike. The title is the one region carrying a box — it has to, since the
+box is the rename affordance — so its region HANGS by exactly that box, padding and
+hairline, and the glyphs land on the gutter rather than a rung right of it. At the
+card's largest type that rung is the misalignment the eye finds first. The recovery
+shell's title carries no box and needs no hang. What indents from
 that gutter is **containment, stated geometrically** — a grouped field sits inside
 its section's rule, a section label sits right of its disclosure chevron — and it
 is the one cue that survives a section being open. One gutter, then, is a claim

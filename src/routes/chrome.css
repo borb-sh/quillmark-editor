@@ -293,3 +293,13 @@ pre.pg-readout {
 	outline: var(--pg-ring-width) solid var(--pg-ink);
 	outline-offset: var(--pg-space-half);
 }
+/* The package's surfaces are the exception, and the rule above is why: an unlayered
+   host declaration beats `@layer qm.chrome` by design (controls.css), so a ring
+   written for controls that draw none repaints the ones that do — over
+   `--_qm-ring-focus`, on the one surface the package is checked by eye.
+   `revert-layer` hands each control back to the layer under this one, which is the
+   package's own ring at its own offset. */
+[data-qm-root] :focus-visible {
+	outline: revert-layer;
+	outline-offset: revert-layer;
+}
