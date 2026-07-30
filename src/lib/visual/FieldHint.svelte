@@ -105,14 +105,17 @@
 			 (SURFACES §Motion). `data-qm-root` because a portalled subtree is
 			 detached for the derivation's purposes, and the marker is what applies
 			 it; `wrapperProps` is floating-ui's positioning box, spread and never
-			 styled. -->
-			{#snippet child({ props, wrapperProps })}
+			 styled. `inert` is the half of the dismissal the recipe cannot carry: the
+			 surface is still on screen for the length of the fade, and one on its way
+			 out is not a thing to click. -->
+			{#snippet child({ props, wrapperProps, open: raised })}
 				<div {...wrapperProps}>
 					<div
 						{...props}
 						class="qm-hint-popover qm-popover-surface"
 						data-qm-root
 						aria-hidden="true"
+						inert={!raised}
 					>
 						{description}
 					</div>

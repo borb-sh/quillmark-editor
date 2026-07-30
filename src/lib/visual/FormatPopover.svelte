@@ -265,14 +265,18 @@
 			 (SURFACES §Motion). It also keeps the recipe reachable from this
 			 component's scoped styles, which a class handed to a primitive as a
 			 string never picks up the scoping hash for. `wrapperProps` is
-			 floating-ui's positioning box: spread, never styled. -->
-			{#snippet child({ props, wrapperProps })}
+			 floating-ui's positioning box: spread, never styled. `inert` is the half
+			 of the dismissal the recipe cannot carry: the surface is still on screen
+			 for the length of the fade, and a surface on its way out is not a thing
+			 to click, tab into, or read. -->
+			{#snippet child({ props, wrapperProps, open: raised })}
 				<div {...wrapperProps}>
 					<div
 						bind:this={contentEl}
 						{...props}
 						class="qm-format-popover qm-popover-surface"
 						data-qm-root
+						inert={!raised}
 					>
 						{#if linkPromptOpen}
 							<form
