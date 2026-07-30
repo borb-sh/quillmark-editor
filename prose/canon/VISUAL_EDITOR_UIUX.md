@@ -65,17 +65,22 @@ retype.
 **The add affordance is the strip, not the label.** The trigger spans the gap it
 sits in, because a gap is found by POSITION — a button sized to `+ Add
 Indorsement` is a word to aim at in the middle of a row the eye reads as empty.
-It paints a strip instead of a word — reveal and hit region the same full-bleed
-row — and the strip's height is the tap floor.
+It paints a strip marked with a `+` and no text — reveal and hit region the same
+full-bleed row — and the strip's height is the tap floor. The kind is the
+accessible name, the one reading with no geometry to carry it.
+
+**The strip is the gutter, not a control inside it.** It takes the stack's gap
+back on both sides (SURFACES §Rhythm), so what separates two cards is the strip
+and nothing else, and the pill it fills on hover covers edge to edge the space
+the new card opens into. No band is held back as miss-tolerance: gutter that
+reads as the strip and inserts nothing unsays what the fill claims, so a press
+anywhere between two cards inserts.
 
 The recede ladder is **dim at rest on every gap**, full ink on hover or focus.
 Dim rather than absent, and every gap rather than the last one only: an insert
 point that surfaces under the pointer is reachable only by a reader who already
 knows it is there, and a card goes anywhere in the stack, not just after the
-end. The same rung serves a touch pointer, which never hovers. What is
-left of the stack's gap around the strip is miss-tolerance: the strip's ink is
-its label, its hit region is the whole row, so a click just under a card's edge
-must land on neither.
+end. The same rung serves a touch pointer, which never hovers.
 
 Under **more than one declared kind** the trigger raises a menu of them. A menu,
 not a disclosure: it floats, so raising it moves no card, and it dismisses on

@@ -180,15 +180,15 @@ inside it. Stacked regions — a card's header, its field list, its body — are
 separated by one gap, not per-region margins that drift. Pick from the scale; an
 in-between value is a review smell.
 
-**The card stack's gutter is mostly the add strip.** Between two cards sits a
-full-bleed insert trigger at the tap floor, and its own height is most of what
-separates them — so it ABSORBS one space rung of the stack's gap on each side
-rather than adding to it. Absorbed, not removed: the gap is also what separates
-the two seams no strip sits in — `main` from the tips card, and every card from
-the next under a quill that declares no kinds, where the affordance does not
-render (VISUAL_EDITOR_UIUX §"Card stack"). A negative margin reading a scale step
-is the one place the rhythm subtracts, and it is why: two spacings meet, and the
-taller one is the separation.
+**The card stack's gutter IS the add strip.** Between two cards sits a full-bleed
+insert trigger at the tap floor, and it ABSORBS the stack's gap on each side
+rather than adding to it — so the trigger's own height is the whole separation,
+and the pill it fills on hover is the whole gutter. Absorbed, not removed: the
+gap is also what separates the two seams no strip sits in — `main` from the tips
+card, and every card from the next under a quill that declares no kinds, where
+the affordance does not render (VISUAL_EDITOR_UIUX §"Card stack"). A negative
+margin reading a scale step is the one place the rhythm subtracts, and it is why:
+two spacings meet, and the taller one is the separation.
 
 **The action column** is the other half of that claim, on the side the gutter says
 nothing about. A field section reserves a trailing column — a row action's tap
