@@ -60,7 +60,13 @@
 	<div class="qm-tips-body" aria-live="polite" bind:this={bodyEl}></div>
 	<div class="qm-tips-foot">
 		{#if tips.length > 1}
-			<span class="qm-tips-count">{index + 1} of {tips.length}</span>
+			<!-- The dots are the count's picture, so the count's WORDS ride the pager's
+			     own label: the position stays in the tree, and no dot carries any of it. -->
+			<span class="qm-tips-pager" role="img" aria-label="Tip {index + 1} of {tips.length}">
+				{#each tips as _, i (i)}
+					<span class="qm-tips-dot" class:current={i === index}></span>
+				{/each}
+			</span>
 		{/if}
 		<button type="button" class="qm-icon-btn qm-tips-next" onclick={advance}>
 			{isLast ? 'Got it' : 'Next'}
@@ -76,16 +82,18 @@
 </aside>
 
 <style>
-	/* In-flow, like every other block in the column (SURFACES §Elevation): one
-	 hairline, no fill beyond the card recipe. It reads as guidance
-	 rather than as a field by TONE and TYPE: the label rung in the muted label
-	 colour; not by a badge or an accent (AESTHETIC §"Secondary text recedes").
-	 It mints no token of its own; every value here is an existing dial.
+	/* In-flow like every other block in the column, and the only one with no edge
+	 (SURFACES §Elevation): a hairline is what a field wears, and guidance is not one
+	 — the same rule that leaves the body leaf unframed inside the card above, and
+	 what keeps the card the column's only container. The card TONE stays, so the
+	 block sits on the cards' plane rather than on a page the consumer owns. It reads
+	 as guidance rather than as a field by that absence and by TYPE: the label rung in
+	 the muted label colour; not by a badge or an accent (AESTHETIC §"Secondary text
+	 recedes"). It mints no token of its own; every value here is an existing dial.
 
 	 Leading is the reading rung, not the tight one the label SIZE would suggest: a
 	 tip is a passage that wraps, and the two axes are independent (SURFACES §Rhythm). */
 	.qm-tips {
-		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
 		padding: var(--_qm-space-3) var(--_qm-space-4);
 		background: var(--_qm-surface-raised);
@@ -117,10 +125,28 @@
 		justify-content: flex-end;
 		gap: var(--_qm-space-2);
 	}
-	.qm-tips-count {
+	/* Position as a shape: the dots take less width than `1 of 4` and are read without
+	 being read. The current one carries it by WIDTH, not by contrast — at four pixels
+	 an ink step is a shade of grey to squint at, where a mark twice as long as its
+	 neighbours is the one thing the eye lands on. The ink step rides along, both rungs
+	 off the ink ramp so the pager recedes with the rest of the foot and no hue enters
+	 (AESTHETIC §Rules). Sized off the space scale: a dot is a measure like any other,
+	 and no type or radius rung describes one. */
+	.qm-tips-pager {
 		margin-right: auto;
-		font-size: var(--_qm-text-meta);
-		color: var(--_qm-ink-ghost);
+		display: flex;
+		align-items: center;
+		gap: var(--_qm-space);
+	}
+	.qm-tips-dot {
+		width: var(--_qm-space);
+		height: var(--_qm-space);
+		border-radius: var(--_qm-radius-pill);
+		background: var(--_qm-ink-ghost);
+	}
+	.qm-tips-dot.current {
+		width: var(--_qm-space-2);
+		background: var(--_qm-ink-label);
 	}
 	/* Box and disabled state come from `.qm-icon-btn` (controls.css); the foot's
 	   buttons carry a label and so widen their inset and take the meta type rung. */

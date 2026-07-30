@@ -44,7 +44,7 @@ One tip at a time, with an advance and a dismiss; both exits clear the channel, 
 
 The cursor is **local**, not the channel: advancing writes nothing. A per-tip write would round-trip the boundary and dirty the document on what is a read gesture, so exactly one write happens, at dismissal. A dismissal therefore persists in `$ext`: what "does not reappear" costs. The tip *string* is derived before the render effect reads it, so an unrelated commit elsewhere in the document does not re-parse the tip or rebuild its live region.
 
-Visually it is in-flow like every other block (SURFACES §Elevation): one hairline, no lift, no new token. It recedes by tone and type: the label rung in the muted label colour (AESTHETIC §"Secondary text recedes"), so it reads as guidance beside the fields rather than as another one.
+Visually it is in-flow like every other block and the only one with **no edge** (SURFACES §Elevation): no lift, no new token, and no hairline, because a hairline is what a field wears and guidance is not one — the same rule that leaves the body unframed inside the card above, and what keeps the card the column's only container. It keeps the card tone, so it sits on the cards' plane rather than on a page the consumer owns, and recedes by that absence and by type: the label rung in the muted label colour (AESTHETIC §"Secondary text recedes"), so it reads as guidance beside the fields rather than as another one. Position is a **dot pager**, not a count: the dots take less width than `1 of 4` and are read without being read, with the words kept as the pager's own label so the position stays in the accessibility tree. One dot is not a shape, so the pager disappears at a single tip exactly as the count did.
 
 ## Formatting
 
