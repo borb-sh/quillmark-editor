@@ -97,7 +97,7 @@
 </script>
 
 <main class="pg-width">
-	<section class="hero">
+	<section class="pg-layout hero">
 		<div class="thesis">
 			<h1 class="pg-title">Editor + live preview for Quillmark</h1>
 			<div class="actions">
@@ -175,13 +175,11 @@
 </main>
 
 <style>
-	/* The thesis and the artifact it describes, side by side; the sheet drops under
-	   the text where the two no longer fit. */
+	/* The thesis and the artifact it describes, on the shell's two columns; the sheet
+	   drops under the text where they no longer fit. The route sets only the room
+	   around the block — a front page opens on air, where a tool route opens on its
+	   surface. */
 	.hero {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) 26rem;
-		gap: var(--pg-space-16);
-		align-items: start;
 		padding-block: var(--pg-space-16);
 	}
 
@@ -282,12 +280,13 @@
 
 	@media (width < 60rem) {
 		.hero {
-			grid-template-columns: minmax(0, 1fr);
-			gap: var(--pg-space-8);
 			padding-block: var(--pg-space-12) var(--pg-space-8);
 		}
+		/* Stacked, the sheet keeps the width it had beside the thesis rather than
+		   spanning the page — a painted page blown up to full width reads as a
+		   backdrop, not as an artifact. */
 		.sheet {
-			max-width: 26rem;
+			max-width: var(--pg-aside);
 		}
 	}
 </style>
