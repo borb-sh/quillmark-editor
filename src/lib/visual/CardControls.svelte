@@ -21,7 +21,7 @@
 	}
 	let { isFirst, isLast, onMoveUp, onMoveDown, onDelete }: Props = $props();
 
-	/** Control-glyph size — the shared rule for the reorder/delete icons (AESTHETIC §Icons). */
+	/** Control-glyph size: the shared rule for the reorder/delete icons (AESTHETIC §Icons). */
 	const GLYPH = 14;
 </script>
 
@@ -63,8 +63,8 @@
 		opacity: 1;
 	}
 	/* Box and disabled state come from `.qm-icon-btn` (controls.css); only the ink
-	   is this component's — the reorder pair recedes to the label tone, delete
-	   carries the danger hue (scoped, so both beat the layered base). */
+	 is this component's: the reorder pair recedes to the label tone, delete
+	 carries the danger hue (scoped, so both beat the layered base). */
 	.qm-icon-btn {
 		color: var(--_qm-ink-label);
 	}

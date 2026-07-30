@@ -1,4 +1,4 @@
-// Node-side fixture loading for Vitest — walk a quill directory into the
+// Node-side fixture loading for Vitest: walk a quill directory into the
 // `Map<string, Uint8Array>` `Quill.fromTree` accepts. The browser playground has
 // its own `?url`-glob loader (a fetch path); this is the filesystem twin, so a
 // test builds the reference quill without a running Vite server.
@@ -14,7 +14,7 @@ const REPO_ROOT = join(HERE, '..', '..');
 export const USAF_MEMO_ROOT = join(REPO_ROOT, 'fixtures', 'quills', 'usaf_memo', '0.2.0');
 
 /**
- * Walk `root` into a `Map` keyed by `"/"`-joined paths relative to it — binary
+ * Walk `root` into a `Map` keyed by `"/"`-joined paths relative to it; binary
  * bytes intact (fonts/seals are read as raw `Uint8Array`, never decoded). Skips
  * `__golden__`, the repo's schema-snapshot artifact, which is not part of the
  * quill (`.quillignore` covers build/OS noise, not this).
@@ -40,7 +40,7 @@ export function loadFixtureTree(root: string = USAF_MEMO_ROOT): Map<string, Uint
 /**
  * The reference quill, parsed once per worker. `Quill.fromTree` re-parses the
  * whole fixture tree, and a suite only ever reads its schema or seeds fresh
- * documents off it — so the handle is shared and never freed, rather than each
+ * documents off it; so the handle is shared and never freed, rather than each
  * suite keeping its own copy of this cache.
  */
 let cachedQuill: Quill | undefined;

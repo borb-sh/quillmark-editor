@@ -1,8 +1,7 @@
-// The Phase 1 exit test: drive the whole substrate chain end-to-end against the
-// reference quill — fixture tree → Quill.fromTree → seedDocument → Engine.open →
-// LiveSession — and prove handles free without leaking across repeated cycles.
-// Runs in Node against the real Typst backend (no browser, no canvas), so it
-// guards the boundary the other phases stand on. Imports the surface through
+// Drive the whole substrate chain end-to-end against the reference quill:
+// fixture tree → Quill.fromTree → seedDocument → Engine.open → LiveSession, and
+// prove handles free without leaking across repeated cycles. Runs in Node against
+// the real Typst backend (no browser, no canvas). Imports the surface through
 // `$lib/core` exactly as a consumer does.
 import { describe, it, expect } from 'vitest';
 import { Engine, Quill, init } from '$lib/core';
@@ -22,7 +21,7 @@ describe('substrate chain', () => {
 		expect(quill.schema.card_kinds).toHaveProperty('indorsement');
 
 		const doc = quill.seedDocument();
-		// Composed from the quill's own metadata — the contract is `name@version`,
+		// Composed from the quill's own metadata; the contract is `name@version`,
 		// not the version the fixture happens to sit at.
 		expect(doc.quillRef).toBe(`${quill.metadata.name}@${quill.metadata.version}`);
 
@@ -44,7 +43,7 @@ describe('substrate chain', () => {
 		const tree = loadFixtureTree();
 		const seal = tree.get('assets/dow_seal.png');
 		expect(seal).toBeInstanceOf(Uint8Array);
-		// PNG magic number — proves the byte path did not decode/re-encode as text.
+		// PNG magic number; proves the byte path did not decode/re-encode as text.
 		expect(Array.from(seal!.slice(0, 4))).toEqual([0x89, 0x50, 0x4e, 0x47]);
 	});
 
@@ -52,7 +51,7 @@ describe('substrate chain', () => {
 		const tree = loadFixtureTree();
 		const quill = Quill.fromTree(tree);
 		const engine = new Engine();
-		// Repeated open/close on one cached quill clone — a leak or use-after-free
+		// Repeated open/close on one cached quill clone; a leak or use-after-free
 		// would surface as a throw or a corrupt compile by the last iteration.
 		for (let i = 0; i < 5; i++) {
 			const doc = quill.seedDocument();

@@ -1,11 +1,11 @@
-// The PM schema — the codec OWNS it; decode/encode target it. Nodes mirror the
+// The PM schema: the codec OWNS it; decode/encode target it. Nodes mirror the
 // content block kinds (para/heading/code/rule/island) and its container nesting
 // (list_item/quote → lists/blockquote); marks mirror the content formatting set.
 // Each of the three open sets gets an inert carrier so an unrecognized value
 // survives a round-trip: the `unknown` mark, the paragraph's `unknown` attribute,
 // and the `unknown_container` node. `blockSchema` is the full field; `inlineSchema`
 // is the constrained single-textblock form for `richtext(inline)` / `plaintext`
-// (one paragraph, no block split, no containers, no islands) — same decode/lower/
+// (one paragraph, no block split, no containers, no islands): same decode/lower/
 // position machinery, narrower shape. Anchors are NOT marks here (decorations).
 import { Schema } from 'prosemirror-model';
 import type { MarkSpec, NodeSpec } from 'prosemirror-model';
@@ -45,7 +45,7 @@ const blockNodes: Record<string, NodeSpec> = {
 	// `unknown` carries a line `kind` this build does not know (`{ kind, attrs }`,
 	// else null). A paragraph IS how such a line renders, so the carrier is an
 	// attribute rather than a node type: every paragraph command already reaches it,
-	// and retyping it to a heading or a list drops the attribute — an explicit
+	// and retyping it to a heading or a list drops the attribute: an explicit
 	// conversion, which is the one place the unknown kind SHOULD be lost.
 	paragraph: {
 		content: 'inline*',
@@ -135,14 +135,14 @@ const inlineLeafNodes: Record<string, NodeSpec> = {
 	island_inline: islandInlineSpec
 };
 
-/** The full field schema — every block kind, container, mark, and island. */
+/** The full field schema: every block kind, container, mark, and island. */
 export const blockSchema = new Schema({
 	nodes: { ...blockNodes, ...inlineLeafNodes },
 	marks
 });
 
 /**
- * The constrained inline schema — one paragraph, no block splitting, no
+ * The constrained inline schema: one paragraph, no block splitting, no
  * containers, no islands. `doc: "paragraph"` (exactly one child) is what makes an
  * Enter a no-op at the model level: there is no second block for a split to land.
  * Marks are present; `plaintext` fields strip them at decode and mount no
@@ -157,7 +157,7 @@ export const inlineSchema = new Schema({
 	marks
 });
 
-/** True for the constrained inline schema (no block containers) — decode branches on it. */
+/** True for the constrained inline schema (no block containers); decode branches on it. */
 export function isInlineSchema(schema: Schema): boolean {
 	return !schema.nodes.blockquote;
 }

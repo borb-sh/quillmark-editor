@@ -1,17 +1,17 @@
 <!--
-  Type dispatch (VISUAL_EDITOR §"A control per field type"). Given one projected
-  {@link FieldModel} and its live value, render the label + the control the type
-  maps to. Array controls own their label (paired with the add affordance in
-  {@link ArrayField}); other types render the label here. Prose leaves take a
-  parent-built LIVE `addr` (its `card` a getter over the stable-id→index map) so
-  a reorder re-targets without a remount; scalars, arrays, and objects commit
-  their value UP through `onCommitScalar`, which the parent lowers to the typed
-  writer.
+ Type dispatch (VISUAL_EDITOR §"A control per field type"). Given one projected
+ {@link FieldModel} and its live value, render the label + the control the type
+ maps to. Array controls own their label (paired with the add affordance in
+ {@link ArrayField}); other types render the label here. Prose leaves take a
+ parent-built LIVE `addr` (its `card` a getter over the stable-id→index map) so
+ a reorder re-targets without a remount; scalars, arrays, and objects commit
+ their value UP through `onCommitScalar`, which the parent lowers to the typed
+ writer.
 
-  `diagnostics` is the routed `Diagnostic[]` for this field (VisualEditor's
-  `diagByKey`, merging `quill.validate`, local commit errors, and the external
-  `diagnostics` prop — VISUAL_EDITOR §Diagnostics) — rendered via the shared
-  `DiagnosticList`, severity-styled, NON-GATING.
+ `diagnostics` is the routed `Diagnostic[]` for this field (VisualEditor's
+ `diagByKey`, merging `quill.validate`, local commit errors, and the external
+ `diagnostics` prop (VISUAL_EDITOR §Diagnostics)) rendered via the shared
+ `DiagnosticList`, severity-styled, NON-GATING.
 -->
 <script lang="ts">
 	import type { Document, Addr, Diagnostic, ResolvedField } from '../core/index.js';
@@ -35,14 +35,14 @@
 		/** This field's width in the section grid, from `placeFields`. */
 		span: FieldSpan;
 		value: unknown;
-		/** This field's resolved provenance row (FIELD_PROVENANCE) — the ghost's
+		/** This field's resolved provenance row (FIELD_PROVENANCE): the ghost's
 		 * source. Feeds the placeholder / fallback only, never `value`. */
 		provenance?: ResolvedField;
 		doc: Document;
 		/** LIVE prose address (getter-`card`); used only when control === 'prose'. */
 		proseAddr: Addr;
 		leafKey: string;
-		/** This field's three DOM names, derived from `leafKey` (see `domid.ts`) — how
+		/** This field's three DOM names, derived from `leafKey` (see `domid.ts`): how
 		 * the label and the control find each other. */
 		domIds: FieldDomIds;
 		onCommitScalar: (value: unknown) => void;
@@ -75,14 +75,14 @@
 
 	// The ghost the control shows when unset: the resolved `default:` (provenance,
 	// `source === 'default'`). `ghost` is the raw typed value (enum/number/boolean
-	// fallbacks); `defaultStr` its string form — the text placeholder and the date
+	// fallbacks); `defaultStr` its string form: the text placeholder and the date
 	// control's `YYYY-MM-DD`. An object-valued default does not ghost.
 	const ghost = $derived(ghostDefault(provenance));
 	const defaultStr = $derived(stringifyGhost(ghost));
 
 	// `for` reaches a LABELABLE control and the browser does the rest. The other four
-	// are not labelable — the prose leaf's `contenteditable`, the date field's segment
-	// container, the object subform, an array's N inputs — so `for` there would be
+	// are not labelable (the prose leaf's `contenteditable`, the date field's segment
+	// container, the object subform, an array's N inputs) so `for` there would be
 	// both inert and invalid markup; they take `aria-labelledby` and a click handoff.
 	const labelable = $derived(
 		field.control === 'text' ||
@@ -91,7 +91,7 @@
 			field.control === 'boolean'
 	);
 	// The parked description node renders only when the schema carries one, so the
-	// reference must vanish with it — `aria-describedby` pointing at nothing describes
+	// reference must vanish with it: `aria-describedby` pointing at nothing describes
 	// nothing, and silently.
 	const describedBy = $derived(field.description ? domIds.description : undefined);
 
@@ -219,13 +219,13 @@
 		min-width: 0;
 	}
 	/* A row-sharing field subgrids onto the section's row tracks instead of sizing its
-	   own: three tracks — label, control, diagnostics — taken from the parent, so every
-	   control in a visual row starts at the same y however tall a neighbour's label
-	   wrapped, and one field's diagnostic lifts none of the others out of line. Source
-	   order IS track order; `align-items: start` keeps a short control from stretching
-	   to a taller sibling's track. `row-gap` overrides the section's inter-row gutter
-	   for the tracks this field spans: inside a field the rhythm is tighter than
-	   between rows. */
+	 own: three tracks (label, control, diagnostics) taken from the parent, so every
+	 control in a visual row starts at the same y however tall a neighbour's label
+	 wrapped, and one field's diagnostic lifts none of the others out of line. Source
+	 order IS track order; `align-items: start` keeps a short control from stretching
+	 to a taller sibling's track. `row-gap` overrides the section's inter-row gutter
+	 for the tracks this field spans: inside a field the rhythm is tighter than
+	 between rows. */
 	.qm-field.cell,
 	.qm-field.lone {
 		display: grid;
@@ -237,8 +237,8 @@
 	.qm-field.cell {
 		grid-column: span 1;
 	}
-	/* A run of one takes half the capacity from column 1 — `--cols-half` is the section's
-	   capacity halved, so the edge lands on a track boundary at every capacity. */
+	/* A run of one takes half the capacity from column 1: `--cols-half` is the section's
+	 capacity halved, so the edge lands on a track boundary at every capacity. */
 	.qm-field.lone {
 		grid-column: span var(--cols-half);
 	}

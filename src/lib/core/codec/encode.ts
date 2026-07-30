@@ -1,4 +1,4 @@
-// Encode — PM → a `ChangeBundle` for `applyChange` (CODEC §Encode). Direction:
+// Encode: PM → a `ChangeBundle` for `applyChange` (CODEC §Encode). Direction:
 // content is truth, PM its projection, edits are OPS. We do NOT re-`install`; we
 // lower to `{ delta?, lineOps?, markOps? }` so identity anchors rebase through the
 // splice.
@@ -6,7 +6,7 @@
 // Implementation (per the phase brief's permitted route): `pmToContent` is a pure
 // inverse of decode; `lower` diffs old→new into ops. Empirically grounded (see
 // scratchpad probes): a raw `\n` in the `delta` splits a line and a deleted `\n`
-// joins — so ALL text routes through `delta`, `lineOps` carry per-line `setKind` /
+// joins: so ALL text routes through `delta`, `lineOps` carry per-line `setKind` /
 // `setContainers` / `setContinues` metadata, and every op reads in ONE coordinate
 // space, the post-delta (final) USV content. `applyChange` auto-rebases existing
 // marks with start-assoc `after` / end-assoc `before` (== `mapPos`), so the mark
@@ -51,7 +51,7 @@ export interface Scan {
 }
 
 /** A working accumulator threaded through the walk. `usvEnd` is the RUNNING USV
- * length of `text` — every run's `usvStart` reads it and every append advances it.
+ * length of `text`: every run's `usvStart` reads it and every append advances it.
  * It is a counter rather than a measurement of `text` because the walk runs twice
  * per keystroke and `usvLength` is O(n): measuring per run makes the scan
  * quadratic in the field's length. */
@@ -88,7 +88,7 @@ export function scanDoc(doc: PMNode): Scan {
 	return acc;
 }
 
-/** `pmToContent` — the pure inverse of decode (drops the position runs). */
+/** `pmToContent`: the pure inverse of decode (drops the position runs). */
 export function pmToContent(doc: PMNode): Content {
 	const { text, lines, marks, islands } = scanDoc(doc);
 	return { text, lines, marks, islands };
@@ -181,7 +181,7 @@ function scanBlock(acc: Acc, node: PMNode, nodePos: number, containers: ContentC
 	}
 }
 
-/** A textblock's line kind: a heading's `level`, or — for a paragraph — `para`, or
+/** A textblock's line kind: a heading's `level`, or (for a paragraph) `para`, or
  * the unknown kind it carries (schema.ts) re-emitted verbatim. */
 function textblockKind(node: PMNode): KindPart {
 	if (node.type.name === 'heading') return { kind: 'heading', level: node.attrs.level as number };
@@ -251,7 +251,7 @@ function emitText(acc: Acc, s: string, pmStart: number, marks: readonly Mark[]):
 	}
 }
 
-/** The line-kind half a scanned block contributes — `ContentLineKind` as this
+/** The line-kind half a scanned block contributes: `ContentLineKind` as this
  * encoder emits it, the unknown arm included (a paragraph carrying one re-emits it
  * verbatim rather than flattening to `para`). */
 type KindPart =
@@ -263,7 +263,7 @@ type KindPart =
 	| { kind: string; attrs: unknown };
 
 /**
- * Merge adjacent/overlapping same-descriptor marks into maximal ranges — the
+ * Merge adjacent/overlapping same-descriptor marks into maximal ranges: the
  * per-text-node marks the walk emits, folded into the content's normalized form.
  * Same two primitives the mark diff runs on (`groupFormatting` + `union`), so the
  * projection and the diff group and merge by one rule.
@@ -280,14 +280,14 @@ function mergeMarks(raw: ContentMark[]): ContentMark[] {
 // ── Lowering: diff old→new into a ChangeBundle ──────────────────────────────
 
 interface LowerOpts {
-	/** Anchor decoration positions before the edit (post-nothing) — see field.ts. */
+	/** Anchor decoration positions before the edit (post-nothing); see field.ts. */
 	oldAnchors?: { id: string; pos: number }[];
 	/** Anchor decoration positions after the edit, in FINAL (new) USV coords. */
 	newAnchors?: { id: string; pos: number }[];
 }
 
 /**
- * Lower an edit to a `ChangeBundle` — the diff old→new content into ops.
+ * Lower an edit to a `ChangeBundle`: the diff old→new content into ops.
  *
  * BOTH sides are content, never a PM doc. The caller has already projected the new
  * doc (`pmToContent`) to gate the island-slot fallback, so the projection is
@@ -332,7 +332,7 @@ function diffLines(oldRt: Content, newRt: Content): LineOp[] {
 	// Force every new line's metadata. Redundant ops are safe no-ops (verified),
 	// so this is correct regardless of how the delta's split/join inheritance left
 	// the intermediate metadata. `continues` is a boundary property of the `\n`
-	// preceding a line — line 0 has no predecessor, never carries it, and the op
+	// preceding a line: line 0 has no predecessor, never carries it, and the op
 	// rejects it there, so it's set only for lines ≥ 1.
 	for (let i = 0; i < newRt.lines.length; i++) {
 		const l = newRt.lines[i];
@@ -343,7 +343,7 @@ function diffLines(oldRt: Content, newRt: Content): LineOp[] {
 	return ops;
 }
 
-/** A line minus its `containers` / `continues` envelope — exactly `setKind`'s
+/** A line minus its `containers` / `continues` envelope: exactly `setKind`'s
  * payload. Lifting it whole is what keeps this arm-agnostic: `kind` is an OPEN
  * set, so an arm-by-arm switch would have to guess at the unknown arm's payload
  * and would drift on every arm upstream adds. The core build names this shape
@@ -368,7 +368,7 @@ function lineMetaEqual(a: ContentLine[], b: ContentLine[]): boolean {
 	return true;
 }
 
-/** A line kind's comparison key — key-order-insensitive, because the two sides come
+/** A line kind's comparison key: key-order-insensitive, because the two sides come
  * from different producers (a WASM read and this scan). */
 function kindKey(l: ContentLine): string {
 	return JSON.stringify(Object.entries(kindPart(l)).sort(([x], [y]) => (x < y ? -1 : 1)));
@@ -376,8 +376,8 @@ function kindKey(l: ContentLine): string {
 
 /**
  * The one edit outside the op vocabulary: a `delta` insert that (re)introduces an
- * island slot. `applyChange` throws `IslandSlotInInsert`, so island *creation* —
- * and any single splice that spans a slot and re-inserts it — must fall back to
+ * island slot. `applyChange` throws `IslandSlotInInsert`, so island *creation*
+ * (and any single splice that spans a slot and re-inserts it) must fall back to
  * `install` (paying that field's anchors). Every other structural edit, including
  * a new hard break or a code-interior line, lowers op-wise via `setContinues`.
  */

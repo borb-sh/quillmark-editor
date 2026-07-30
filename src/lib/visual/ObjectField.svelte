@@ -1,15 +1,15 @@
 <!--
-  An `object` field → a nested subform over `properties` (declaration order),
-  committing the WHOLE object by value on any nested change. No object field
-  exists in the reference quill, so this is implemented to the schema contract
-  for SCALAR properties and is UNTESTED against a real leaf; nested
-  prose/array/object properties render a placeholder rather than recurse.
+ An `object` field → a nested subform over `properties` (declaration order),
+ committing the WHOLE object by value on any nested change. No object field
+ exists in the reference quill, so this is implemented to the schema contract
+ for SCALAR properties and is UNTESTED against a real leaf; nested
+ prose/array/object properties render a placeholder rather than recurse.
 
-  A property's ghosted `default:` is the static schema `sub.default`, not the
-  resolved provenance the top-level ghosts read (FIELD_PROVENANCE) — `resolve`
-  carries no per-property row (an object field resolves as one row whose value is
-  the whole object). Thread it through `ghostDefault` once resolve exposes
-  per-property provenance.
+ A property's ghosted `default:` is the static schema `sub.default`, not the
+ resolved provenance the top-level ghosts read (FIELD_PROVENANCE): `resolve`
+ carries no per-property row (an object field resolves as one row whose value is
+ the whole object). Thread it through `ghostDefault` once resolve exposes
+ per-property provenance.
 -->
 <script lang="ts">
 	import type { QuillFieldSchema } from '../core/index.js';
@@ -29,7 +29,7 @@
 		 * `for` could reach, so the field's label names the set and each property
 		 * control keeps its own composed `aria-label`. */
 		labelledBy?: string;
-		/** The parked `description` (FieldLabel) — announced on entering the group. */
+		/** The parked `description` (FieldLabel): announced on entering the group. */
 		describedBy?: string;
 		onCommit: (obj: Record<string, unknown>) => void;
 	}
@@ -41,7 +41,7 @@
 	function commitProp(key: string, v: unknown): void {
 		if (v === undefined) {
 			// A nested control cleared (the unset rung): drop the key so the property
-			// is ABSENT in the committed object — resolving to its own `default:` —
+			// is ABSENT in the committed object (resolving to its own `default:`)
 			// rather than an `undefined` hole carried through `writer.set`.
 			const rest = { ...obj };
 			delete rest[key];

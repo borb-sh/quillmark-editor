@@ -3,7 +3,7 @@
 // hit via `session.positionAt`, surfaced through `onCaretPick`. Also the
 // editor->preview scroll commands (`scrollToField`/`focusPosition`), which
 // place an ephemeral marker at the target's % position and let the DOM scroll
-// to it — unaffected by zoom/resize since it reads the SAME percent geometry the
+// to it, unaffected by zoom/resize since it reads the SAME percent geometry the
 // overlay draws, not a hand-rolled pixel offset.
 import type { LiveSession, ContentHit } from '../core/index.js';
 import type { PageSlot } from './paint.js';
@@ -44,7 +44,7 @@ export function createBridge(
 		}
 	}
 
-	// Scroll `slot` so the % rect `pct` centers in view, via a throwaway marker —
+	// Scroll `slot` so the % rect `pct` centers in view, via a throwaway marker:
 	// reuses native scrollIntoView instead of hand-rolling a scroll offset.
 	function scrollToPercentRect(slot: PageSlot, pct: PercentRect): void {
 		const marker = document.createElement('div');

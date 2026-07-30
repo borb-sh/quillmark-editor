@@ -1,31 +1,31 @@
-/* The control recipes more than one component draws — the focus ring, the box a
-   typed value sits in, and the square icon button. They live here rather than per
-   component because Svelte scopes a `<style>` block to the component that owns the
-   markup: a component that carries a shared class without also carrying its rule
-   ships unstyled, and nothing raises it.
+/* The control recipes more than one component draws: the focus ring, the box a
+ typed value sits in, and the square icon button. They live here rather than per
+ component because Svelte scopes a `<style>` block to the component that owns the
+ markup: a component that carries a shared class without also carrying its rule
+ ships unstyled, and nothing raises it.
 
-   NOT in `core/theme.css`: that file is the DERIVATION — public dials in, the
-   private `--_qm-*` scale out — and it mints values. This file mints none; every
-   declaration reads a rung, exactly as a component's own block must
-   (SURFACES §"Preventing drift", enforced by `check:style` over `.css` too).
+ NOT in `core/theme.css`: that file is the DERIVATION (public dials in, the
+ private `--_qm-*` scale out) and it mints values. This file mints none; every
+ declaration reads a rung, exactly as a component's own block must
+ (SURFACES §"Preventing drift", enforced by `check:style` over `.css` too).
 
-   `@layer qm.chrome` is the second layer `theme.css` declares. Layered rules lose
-   to unlayered ones, which is the point twice over: a consumer's stylesheet beats
-   the chrome without `!important`, and a component's own scoped block still
-   overrides its shared base — `.qm-card-delete` recolours a `.qm-icon-btn`, and
-   `.qm-json` adds the monospace face over `.qm-input`, with no specificity fight. */
+ `@layer qm.chrome` is the second layer `theme.css` declares. Layered rules lose
+ to unlayered ones, which is the point twice over: a consumer's stylesheet beats
+ the chrome without `!important`, and a component's own scoped block still
+ overrides its shared base: `.qm-card-delete` recolours a `.qm-icon-btn`, and
+ `.qm-json` adds the monospace face over `.qm-input`, with no specificity fight. */
 
 @layer qm.chrome {
 	/* The themed focus ring in place of the raw UA outline (SURFACES §Focus), as a
-	   RULE rather than a pair of rungs each control assembles. `--_qm-ring-focus`
-	   fixes the VALUE; which properties draw a ring, and on what state, is the other
-	   half of the decision, and `check:style` sees a minted literal but never a
-	   divergent rule. A control opts in by carrying the marker class.
+	 RULE rather than a pair of rungs each control assembles. `--_qm-ring-focus`
+	 fixes the VALUE; which properties draw a ring, and on what state, is the other
+	 half of the decision, and `check:style` sees a minted literal but never a
+	 divergent rule. A control opts in by carrying the marker class.
 
-	   Two selectors, because focus lands in two places. Usually on the control
-	   itself; but the date field's focus lives on a SEGMENT, so it rings the field
-	   around it — a per-segment ring flickers across the field as the caret walks
-	   it. That is the only distinction, and this pair is the whole of it. */
+	 Two selectors, because focus lands in two places. Usually on the control
+	 itself; but the date field's focus lives on a SEGMENT, so it rings the field
+	 around it: a per-segment ring flickers across the field as the caret walks
+	 it. That is the only distinction, and this pair is the whole of it. */
 	.qm-focus-ring:focus-visible,
 	.qm-focus-ring-within:focus-within {
 		outline: var(--_qm-ring-focus);
@@ -33,25 +33,25 @@
 	}
 
 	/* THE TYPE HALF, for both recipe families at once. A UA control inherits neither
-	   family nor size, so a control or a button that declares none renders in the UA
-	   face at the UA size — `--qm-font`, a documented dial, stopping short of the
-	   package's own surfaces with nothing raised, since an absence mints no literal
-	   for `check:style`. `font: inherit` first, then the BODY rung off the ramp:
-	   inheriting the size lands the surface on the host page's body size, a rung the
-	   scale never minted and one a consumer moves by restyling their page rather than
-	   by turning `--qm-font-size`.
+	 family nor size, so a control or a button that declares none renders in the UA
+	 face at the UA size: `--qm-font`, a documented dial, stopping short of the
+	 package's own surfaces with nothing raised, since an absence mints no literal
+	 for `check:style`. `font: inherit` first, then the BODY rung off the ramp:
+	 inheriting the size lands the surface on the host page's body size, a rung the
+	 scale never minted and one a consumer moves by restyling their page rather than
+	 by turning `--qm-font-size`.
 
-	   ONE rule over both families rather than the same two declarations in each,
-	   because the drift a copy invites here is a box and the button beside it reading
-	   DIFFERENT rungs, which no gate can see: `check:style`'s type axis holds that
-	   each side reads a rung, never that both read the same one.
+	 ONE rule over both families rather than the same two declarations in each,
+	 because the drift a copy invites here is a box and the button beside it reading
+	 DIFFERENT rungs, which no gate can see: `check:style`'s type axis holds that
+	 each side reads a rung, never that both read the same one.
 
-	   The list is wider than either recipe's chrome — the body leaf withholds the box
-	   and still reads the ramp (SURFACES §"The shared recipe"), so `.qm-prose` is
-	   here and not below.
+	 The list is wider than either recipe's chrome: the body leaf withholds the box
+	 and still reads the ramp (SURFACES §"The shared recipe"), so `.qm-prose` is
+	 here and not below.
 
-	   `font` is a shorthand carrying `line-height`, so each family's leading is
-	   declared in the rules BELOW and would be dropped in silence above them. */
+	 `font` is a shorthand carrying `line-height`, so each family's leading is
+	 declared in the rules BELOW and would be dropped in silence above them. */
 	.qm-control-box,
 	.qm-input,
 	.qm-prose,
@@ -61,26 +61,26 @@
 		font-size: var(--_qm-text-body);
 	}
 
-	/* A typed value's box — every scalar control and every prose leaf: the text and
-	   numeric inputs, the array's JSON textarea, the enum trigger, the date field, and
-	   the inline richtext leaves (SURFACES §"The shared recipe"). ONE rule, because a
-	   leaf that agrees with the input beside it "by construction" has to draw the same
-	   declarations, not a copy of them: five hand-kept copies agree until one is
-	   edited, and nothing raises it — no literal is minted, so `check:style` stays
-	   green while a control renders subtly the wrong height.
+	/* A typed value's box (every scalar control and every prose leaf): the text and
+	 numeric inputs, the array's JSON textarea, the enum trigger, the date field, and
+	 the inline richtext leaves (SURFACES §"The shared recipe"). ONE rule, because a
+	 leaf that agrees with the input beside it "by construction" has to draw the same
+	 declarations, not a copy of them: five hand-kept copies agree until one is
+	 edited, and nothing raises it (no literal is minted, so `check:style` stays
+	 green while a control renders subtly the wrong height).
 
-	   LEADING sits on the wide list rather than on the box's own, because a box's
-	   height is a padding rung plus a line box plus two hairlines — a leaf and the
-	   input beside it agree on height exactly as long as they agree on leading, which
-	   is the whole of what "by construction" buys.
+	 LEADING sits on the wide list rather than on the box's own, because a box's
+	 height is a padding rung plus a line box plus two hairlines: a leaf and the
+	 input beside it agree on height exactly as long as they agree on leading, which
+	 is the whole of what "by construction" buys.
 
-	   COLOUR is the trap one property over: `font` does not carry it either, so an
-	   input or trigger left off this line falls to the UA's own text colour — a second
-	   black sitting beside the card's ink rather than the rung it renders on.
-	   `caret-color` is pinned to `currentColor` rather than left at its `auto`
-	   initial, which resolves the same way: the prose leaf's caret IS its focus
-	   indicator, the outline dropped in its favour (`ProseField`), so it tracks
-	   this rule's own ink deliberately. */
+	 COLOUR is the trap one property over: `font` does not carry it either, so an
+	 input or trigger left off this line falls to the UA's own text colour: a second
+	 black sitting beside the card's ink rather than the rung it renders on.
+	 `caret-color` is pinned to `currentColor` rather than left at its `auto`
+	 initial, which resolves the same way: the prose leaf's caret IS its focus
+	 indicator, the outline dropped in its favour (`ProseField`), so it tracks
+	 this rule's own ink deliberately. */
 	.qm-control-box,
 	.qm-input,
 	.qm-prose {
@@ -109,36 +109,36 @@
 	}
 
 	/* The second recipe, and it is not the box above: a field is a box because you
-	   type into it, a button is not a box because you press it. No resting border and
-	   no resting fill (AESTHETIC §Rules, "prefer removing chrome to adding it"); the
-	   surface arrives on hover, off the rung the enum listbox already highlights with.
-	   Deliberately no `color`: the callers disagree on purpose (the card delete is
-	   `--_qm-danger`, the array remove inherits its row's ink), and a base colour here
-	   would flatten that distinction rather than share a recipe.
+	 type into it, a button is not a box because you press it. No resting border and
+	 no resting fill (AESTHETIC §Rules, "prefer removing chrome to adding it"); the
+	 surface arrives on hover, off the rung the enum listbox already highlights with.
+	 Deliberately no `color`: the callers disagree on purpose (the card delete is
+	 `--_qm-danger`, the array remove inherits its row's ink), and a base colour here
+	 would flatten that distinction rather than share a recipe.
 
-	   `--_qm-tap-min` is WCAG 2.5.8's floor, read rather than re-expressed per
-	   control — `min-*` is outside every `check:style` axis, so a second expression of
-	   the same threshold has nothing watching it. `box-sizing` is what makes it a BOX
-	   floor: a `<button>` takes border-box from the UA sheet and a plain element does
-	   not, so a control on this recipe that is not a button clears the threshold on its
-	   CONTENT box and stands a padding taller than the button beside it. Declared here,
-	   the floor means the same height whatever element carries it — and a caller that
-	   stretches one of these to its row gets a width the padding sits inside.
+	 `--_qm-tap-min` is WCAG 2.5.8's floor, read rather than re-expressed per
+	 control: `min-*` is outside every `check:style` axis, so a second expression of
+	 the same threshold has nothing watching it. `box-sizing` is what makes it a BOX
+	 floor: a `<button>` takes border-box from the UA sheet and a plain element does
+	 not, so a control on this recipe that is not a button clears the threshold on its
+	 CONTENT box and stands a padding taller than the button beside it. Declared here,
+	 the floor means the same height whatever element carries it; and a caller that
+	 stretches one of these to its row gets a width the padding sits inside.
 
-	   Both button families are named here rather than opting in through a marker: a
-	   glyph button and an add affordance are not SOMETIMES flat, so a class they could
-	   be built without is a class one of them will eventually miss.
+	 Both button families are named here rather than opting in through a marker: a
+	 glyph button and an add affordance are not SOMETIMES flat, so a class they could
+	 be built without is a class one of them will eventually miss.
 
-	   The type half is the shared rule above, which both families are named in; what
-	   diverges is the LEADING. Where the box's height is a line box, a button's is
-	   `--_qm-tap-min`: a label is one line and a glyph is not text at all, so the line
-	   box collapses onto its content (`1`) and the floor decides, rather than two
-	   height sources competing. That is the same structural `1` a glyph row takes,
-	   which is why it is here and not on one family, and it is what keeps a button off
-	   the host page's leading the way the size rung keeps it off the host page's body
-	   size. A caller whose button carries a LABEL restates the rung it wants from its
-	   own block — the tips foot takes the meta rung, which is that surface's decision,
-	   not the family's. */
+	 The type half is the shared rule above, which both families are named in; what
+	 diverges is the LEADING. Where the box's height is a line box, a button's is
+	 `--_qm-tap-min`: a label is one line and a glyph is not text at all, so the line
+	 box collapses onto its content (`1`) and the floor decides, rather than two
+	 height sources competing. That is the same structural `1` a glyph row takes,
+	 which is why it is here and not on one family, and it is what keeps a button off
+	 the host page's leading the way the size rung keeps it off the host page's body
+	 size. A caller whose button carries a LABEL restates the rung it wants from its
+	 own block: the tips foot takes the meta rung, which is that surface's decision,
+	 not the family's. */
 	.qm-icon-btn,
 	.qm-add-affordance {
 		line-height: 1;
@@ -161,8 +161,8 @@
 		cursor: default;
 	}
 
-	/* A glyph button — card reorder/delete, array remove, the field label's guidance
-	   marker, the tips card's foot. */
+	/* A glyph button: card reorder/delete, array remove, the field label's guidance
+	 marker, the tips card's foot. */
 	.qm-icon-btn {
 		display: inline-flex;
 		align-items: center;
@@ -171,11 +171,11 @@
 		padding: var(--_qm-space-half) var(--_qm-space);
 	}
 
-	/* An add affordance — the between-card trigger and the array foot's. A pill rather
-	   than the inner radius, because it FILLS on hover instead of tinting ink: both rest
-	   unfilled on `--_qm-opacity-idle`, so a hover shifting ink alone would have little
-	   to shift. The recede ladder itself stays with each caller — it is driven by their
-	   own hover/focus state. */
+	/* An add affordance: the between-card trigger and the array foot's. A pill rather
+	 than the inner radius, because it FILLS on hover instead of tinting ink: both rest
+	 unfilled on `--_qm-opacity-idle`, so a hover shifting ink alone would have little
+	 to shift. The recede ladder itself stays with each caller: it is driven by their
+	 own hover/focus state. */
 	.qm-add-affordance {
 		border-radius: var(--_qm-radius-pill);
 		color: var(--_qm-ink-label);
@@ -187,17 +187,17 @@
 		color: var(--_qm-ink);
 	}
 
-	/* A floating list of choices — the enum's listbox and the card stack's kind menu.
-	   Both portal into the nearest `[data-qm-root]`, and both are PICKED FROM, so the
-	   surface (its lift, its inset, its ink) and the item (its pad, its radius, the
-	   rung a highlight fills with) are one recipe rather than two that agree until one
-	   is edited. What a caller adds over it is its own: the enum sizes itself off its
-	   trigger and weights the stored value.
+	/* A floating list of choices: the enum's listbox and the card stack's kind menu.
+	 Both portal into the nearest `[data-qm-root]`, and both are PICKED FROM, so the
+	 surface (its lift, its inset, its ink) and the item (its pad, its radius, the
+	 rung a highlight fills with) are one recipe rather than two that agree until one
+	 is edited. What a caller adds over it is its own: the enum sizes itself off its
+	 trigger and weights the stored value.
 
-	   `[data-highlighted]` is bits-ui's mark and it is the ONLY hover lane: an item
-	   under the pointer and an item under the keyboard cursor are one state to a menu,
-	   so the primitive marks both and a `:hover` rule beside it would paint a second
-	   highlight the keyboard cannot reach. */
+	 `[data-highlighted]` is bits-ui's mark and it is the ONLY hover lane: an item
+	 under the pointer and an item under the keyboard cursor are one state to a menu,
+	 so the primitive marks both and a `:hover` rule beside it would paint a second
+	 highlight the keyboard cannot reach. */
 	.qm-menu-surface {
 		padding: var(--_qm-space-half);
 		border: var(--_qm-border-width) solid var(--_qm-border);
@@ -217,18 +217,18 @@
 		background: var(--_qm-surface-hover);
 	}
 
-	/* A floating surface that is READ rather than picked from — the selection popover
-	   and the field label's guidance. The theme surface mixed toward transparent
-	   behind a backdrop blur, so the page reads faintly through it and the surface
-	   rung stays the mix base, which is what keeps `--qm-bg` tinting it. The lists
-	   above stay opaque instead: a row of choices reads through a blur worse than a
-	   row of glyphs does.
+	/* A floating surface that is READ rather than picked from: the selection popover
+	 and the field label's guidance. The theme surface mixed toward transparent
+	 behind a backdrop blur, so the page reads faintly through it and the surface
+	 rung stays the mix base, which is what keeps `--qm-bg` tinting it. The lists
+	 above stay opaque instead: a row of choices reads through a blur worse than a
+	 row of glyphs does.
 
-	   The scale-in is the recipe's too — each of these mounts fresh on every raise
-	   (an `{#if open}` guard), so the keyframe runs once per appearance, and it
-	   animates the INNER pill only, never floating-ui's outer wrapper, whose
-	   transform is doing the positioning. What a caller adds over this is its own
-	   inset, its measure, and its type. */
+	 The scale-in is the recipe's too: each of these mounts fresh on every raise
+	 (an `{#if open}` guard), so the keyframe runs once per appearance, and it
+	 animates the INNER pill only, never floating-ui's outer wrapper, whose
+	 transform is doing the positioning. What a caller adds over this is its own
+	 inset, its measure, and its type. */
 	.qm-popover-surface {
 		background: var(--_qm-surface-popover);
 		backdrop-filter: blur(var(--_qm-blur));
@@ -248,8 +248,8 @@
 			transform: none;
 		}
 	}
-	/* Every motion this file mints, opted out in one place — a raise's scale-in and
-	   the button families' hover fade. */
+	/* Every motion this file mints, opted out in one place: a raise's scale-in and
+	 the button families' hover fade. */
 	@media (prefers-reduced-motion: reduce) {
 		.qm-popover-surface {
 			animation: none;

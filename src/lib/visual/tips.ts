@@ -1,6 +1,6 @@
 // The tips channel: `$ext.editor.tips`, a list of authoring hints a
 // quill or consumer seeds, which the editor only ever RENDERS and CLEARS.
-// Editor-only chrome — never reaches the render backend, never gates, absent when
+// Editor-only chrome; never reaches the render backend, never gates, absent when
 // the channel is empty (VISUAL_EDITOR §"Card operations").
 //
 // The channel narrowing the derive reads and the render the card paints. The write
@@ -10,7 +10,7 @@ import { renderContent, inlineSchema } from '../core/codec/index.js';
 
 /**
  * Narrow a raw `$ext.editor.tips` value to the renderable channel. The channel is
- * CONSUMER-authored and opaque to the schema — nothing validates it on the way in —
+ * CONSUMER-authored and opaque to the schema (nothing validates it on the way in)
  * so anything unusable drops here rather than reaching the card: a non-array, a
  * non-string element, a blank string. `[]` reads as "no tips" everywhere downstream.
  */
@@ -27,11 +27,11 @@ export function tipsChannel(raw: unknown): string[] {
  *
  * The INLINE schema, not the block one: a tip is a one-line hint, and
  * `decodeInline` folds stray lines to a space and drops island slots, so any string
- * produces one paragraph — no tip can change the card's block structure as the
+ * produces one paragraph: no tip can change the card's block structure as the
  * cursor advances.
  *
  * Raw HTML does not survive the round-trip, so this is not the injection seam an
- * `{@html}` of the same string would be. A throw degrades to the literal text —
+ * `{@html}` of the same string would be. A throw degrades to the literal text:
  * chrome never breaks the editor.
  */
 export function renderTip(markdown: string): Node {

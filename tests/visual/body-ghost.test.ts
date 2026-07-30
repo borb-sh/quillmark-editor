@@ -1,6 +1,6 @@
 // The empty body's ghost: the three-way precedence `resolveBodyGhost` settles
 // (resolved `default:` › consumer wording › the built-in invitation), and the
-// fixture fact that motivates the fallback existing at all — the reference quill
+// fixture fact that motivates the fallback existing at all; the reference quill
 // declares NO body `default:` on any kind, so the resolved channel is empty for
 // exactly the cards a user adds. The caching that makes an impure hook read as
 // deliberate is the editor's, asserted in the playground; here the pure
@@ -17,7 +17,7 @@ import { quill } from '../helpers/fixtures.js';
 describe('resolveBodyGhost', () => {
 	it('prefers a resolved `default:` over both the consumer and the built-in', () => {
 		// The default is the only ghost that describes the render, so wording never
-		// displaces it — a consumer cannot hide what prints when nothing is written.
+		// displaces it; a consumer cannot hide what prints when nothing is written.
 		expect(resolveBodyGhost('THE DEFAULT', 'witty')).toBe('THE DEFAULT');
 	});
 

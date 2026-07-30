@@ -1,45 +1,45 @@
 <!--
-  The formatting selection popover (VISUAL_EDITOR §Chrome, VISUAL_EDITOR_UIUX
-  §Formatting). ONE popover, shell-owned, observing the ACTIVE leaf through
-  `getActiveLeaf` — the VisualEditor's accessor over its `leaves` registry, and
-  the whole of what this surface knows about the editor. A non-empty selection in
-  the active leaf raises it over
-  that leaf's selection rect; each button dispatches a PM `toggleMark` command
-  straight at the leaf's `EditorView`. The codec's own `dispatchTransaction`
-  (field.ts, read-only from here) lowers the resulting transaction to
-  `markOps` and commits via `applyChange` — this component never touches the
-  content. The keymap mirror (Mod-b/i/u) already lives in the codec's keymap
-  (field.ts); this is the pointer affordance for all six marks.
+ The formatting selection popover (VISUAL_EDITOR §Chrome, VISUAL_EDITOR_UIUX
+ §Formatting). ONE popover, shell-owned, observing the ACTIVE leaf through
+ `getActiveLeaf`: the VisualEditor's accessor over its `leaves` registry, and
+ the whole of what this surface knows about the editor. A non-empty selection in
+ the active leaf raises it over
+ that leaf's selection rect; each button dispatches a PM `toggleMark` command
+ straight at the leaf's `EditorView`. The codec's own `dispatchTransaction`
+ (field.ts, read-only from here) lowers the resulting transaction to
+ `markOps` and commits via `applyChange`: this component never touches the
+ content. The keymap mirror (Mod-b/i/u) already lives in the codec's keymap
+ (field.ts); this is the pointer affordance for all six marks.
 
-  SELECTION OBSERVATION. The view's `dispatchTransaction` is the codec's
-  (read-only), so there is no hook to observe transactions from outside.
-  Fallback: a document-level `selectionchange` listener, coalesced to one
-  `requestAnimationFrame`-deferred check (see `deferredSync` below — a bare
-  microtask is NOT late enough; verified a "select all" gesture fires several
-  transient `selectionchange` events first). `focusout`/scroll/resize keep the
-  popover honest when focus leaves the leaf or the page scrolls.
+ SELECTION OBSERVATION. The view's `dispatchTransaction` is the codec's
+ (read-only), so there is no hook to observe transactions from outside.
+ Fallback: a document-level `selectionchange` listener, coalesced to one
+ `requestAnimationFrame`-deferred check (see `deferredSync` below: a bare
+ microtask is NOT late enough; verified a "select all" gesture fires several
+ transient `selectionchange` events first). `focusout`/scroll/resize keep the
+ popover honest when focus leaves the leaf or the page scrolls.
 
-  FOCUS DISCIPLINE. Three failure modes a naive Popover.Content invites:
-    (1) its default `trapFocus` (true) redirects any focus landing outside its
-        DOM back inside — which would make it impossible to click back into
-        the editor to change the selection while the popover is showing. Fixed
-        by `trapFocus={false}`.
-    (2) its open-auto-focus (unconditional on mount, regardless of trapFocus —
-        verified against bits-ui's FocusScope) would steal focus from the
-        editor onto the first button the instant the popover appears. Fixed by
-        `onOpenAutoFocus` calling `preventDefault()`.
-    (3) its default `onCloseAutoFocus` returns focus to the element focused
-        before open — the prose leaf holding the selection. Clicking a native
-        input (card-title, TextField, NumberField) while the popover is open
-        bounces focus off that input back to the leaf; ProseMirror re-asserts
-        the retained selection and the browser scrolls it into view, yanking
-        the viewport off the clicked field. Fixed by `onCloseAutoFocus`
-        calling `preventDefault()` — the intentional returns after mark toggle
-        / link submit go through `view.focus()` in `toggle()`/`submitLink()`.
-  A mark button ALSO swallows its own `mousedown` (prosemirror-menu's own
-  trick): without it, the browser's default mousedown action focuses the
-  button before `click` fires, blurring the editor and collapsing the
-  selection the command is supposed to act on.
+ FOCUS DISCIPLINE. Three failure modes a naive Popover.Content invites:
+ (1) its default `trapFocus` (true) redirects any focus landing outside its
+ DOM back inside; which would make it impossible to click back into
+ the editor to change the selection while the popover is showing. Fixed
+ by `trapFocus={false}`.
+ (2) its open-auto-focus (unconditional on mount, regardless of trapFocus;
+ verified against bits-ui's FocusScope) would steal focus from the
+ editor onto the first button the instant the popover appears. Fixed by
+ `onOpenAutoFocus` calling `preventDefault`.
+ (3) its default `onCloseAutoFocus` returns focus to the element focused
+ before open (the prose leaf holding the selection). Clicking a native
+ input (card-title, TextField, NumberField) while the popover is open
+ bounces focus off that input back to the leaf; ProseMirror re-asserts
+ the retained selection and the browser scrolls it into view, yanking
+ the viewport off the clicked field. Fixed by `onCloseAutoFocus`
+ calling `preventDefault`: the intentional returns after mark toggle
+ / link submit go through `view.focus` in `toggle`/`submitLink`.
+ A mark button ALSO swallows its own `mousedown` (prosemirror-menu's own
+ trick): without it, the browser's default mousedown action focuses the
+ button before `click` fires, blurring the editor and collapsing the
+ selection the command is supposed to act on.
 -->
 <script lang="ts">
 	import { toggleMark } from 'prosemirror-commands';
@@ -65,9 +65,9 @@
 	}
 	let { getActiveLeaf }: Props = $props();
 
-	/** Mark size — the shared control-glyph rule for the popover icons (AESTHETIC §Icons). */
+	/** Mark size: the shared control-glyph rule for the popover icons (AESTHETIC §Icons). */
 	const GLYPH = 15;
-	/** The six content formatting marks (VISUAL_EDITOR_UIUX §Formatting); `anchor` is a 7th, rendered separately (a decoration toggle, not a PM `toggleMark` — see the button below). Each carries its Lucide glyph — the icon *is* the label (AESTHETIC §Icons: a glyph names its action). */
+	/** The six content formatting marks (VISUAL_EDITOR_UIUX §Formatting); `anchor` is a 7th, rendered separately (a decoration toggle, not a PM `toggleMark` (see the button below). Each carries its Lucide glyph) the icon *is* the label (AESTHETIC §Icons: a glyph names its action). */
 	const MARKS: { name: string; icon: Component; title: string }[] = [
 		{ name: 'strong', icon: Bold, title: 'Bold (Mod-B)' },
 		{ name: 'em', icon: Italic, title: 'Emphasis (Mod-I)' },
@@ -85,14 +85,14 @@
 	let linkPromptOpen = $state(false);
 	let linkValue = $state('');
 	let contentEl = $state<HTMLElement | undefined>(undefined);
-	/** The root to portal INTO — `document.body` escapes the editor's subtree and
-	 *  the consumer's dials with it, so a pane-scoped palette misses this surface.
-	 *  Resolved from the active leaf's own DOM, so the popover lands inside whichever
-	 *  root raised it; `undefined` falls back to bits-ui's `document.body` for a leaf
-	 *  mounted outside any root. */
+	/** The root to portal INTO: `document.body` escapes the editor's subtree and
+	 * the consumer's dials with it, so a pane-scoped palette misses this surface.
+	 * Resolved from the active leaf's own DOM, so the popover lands inside whichever
+	 * root raised it; `undefined` falls back to bits-ui's `document.body` for a leaf
+	 * mounted outside any root. */
 	let portalTarget = $state<HTMLElement | undefined>(undefined);
 
-	/** A floating-ui `Measurable` virtual anchor over the selection rect — a NEW object each time `rect` changes, so bits-ui's `watch(() => opts.customAnchor.current, …)` sees the change and repositions (a mutated-in-place object would not). */
+	/** A floating-ui `Measurable` virtual anchor over the selection rect: a NEW object each time `rect` changes, so bits-ui's `watch( => opts.customAnchor.current, …)` sees the change and repositions (a mutated-in-place object would not). */
 	const anchor = $derived.by(() => {
 		const r = rect;
 		if (!r) return null;
@@ -109,7 +109,7 @@
 	function sync(): void {
 		const insidePopover =
 			!!contentEl && !!document.activeElement && contentEl.contains(document.activeElement);
-		if (insidePopover) return; // interacting with the popover itself (e.g. the link input) — leave state as-is
+		if (insidePopover) return; // interacting with the popover itself (e.g. the link input): leave state as-is
 		const leaf = getActiveLeaf();
 		const view = (leaf as LeafWithView | undefined)?.view;
 		if (!view || !view.hasFocus() || view.state.selection.empty) {
@@ -145,12 +145,12 @@
 	// A burst of DOM events (verified: browser "select all" processing fires
 	// `selectionchange` several times, transiently EMPTY before landing on the
 	// final range) must coalesce to ONE settled check, not one `sync()` per
-	// event — reacting to each intermediate state mounts/unmounts
+	// event: reacting to each intermediate state mounts/unmounts
 	// `Popover.Content` repeatedly within a few event-loop turns, which is both
 	// visibly unstable (a moving, momentarily detached click target) and races
 	// bits-ui's own internal effects (observed: Svelte's
 	// `derived_inert` warning from a stale read after a too-fast unmount). A
-	// microtask is not late enough — those transient events are themselves
+	// microtask is not late enough: those transient events are themselves
 	// separated by microtasks. `requestAnimationFrame` is: it runs once
 	// per-frame, after the browser has finished dispatching every synchronous
 	// consequence of the user gesture, so it always reads the FINAL, settled
@@ -184,7 +184,7 @@
 	});
 
 	// Any close path that bypasses `sync` (e.g. Escape while the link input holds
-	// focus — bits-ui flips `open` itself) must not leave a stale prompt for the
+	// focus: bits-ui flips `open` itself) must not leave a stale prompt for the
 	// next open.
 	$effect(() => {
 		if (!open) linkPromptOpen = false;
@@ -211,11 +211,11 @@
 	}
 
 	/**
-	 * Toggle an identity anchor over the selection — the `anchor`
+	 * Toggle an identity anchor over the selection: the `anchor`
 	 * button's answer to a formatting toggle. If the selection already covers
 	 * anchors, remove them; else insert one at its start with a freshly-minted
 	 * unique id (the caller-supplied, invariant id the 0.97 policy settles).
-	 * Zero-width and glyph-less (CODEC §Marks) — the identity handle persists in
+	 * Zero-width and glyph-less (CODEC §Marks): the identity handle persists in
 	 * the content, its chrome awaiting comment-thread UX.
 	 */
 	function toggleAnchor(): void {
@@ -335,10 +335,10 @@
 		gap: var(--_qm-space-half);
 	}
 	/* Chrome, type, target floor, hover fill and disabled recede come from
-	   `.qm-icon-btn` (controls.css); what is here is this surface's own. The border is
-	   drawn transparent rather than absent so the active inversion adds no width and
-	   shifts no glyph, and the ink is stated because the family deliberately declares
-	   none — its callers disagree, and a popover over content reads at the card's. */
+	 `.qm-icon-btn` (controls.css); what is here is this surface's own. The border is
+	 drawn transparent rather than absent so the active inversion adds no width and
+	 shifts no glyph, and the ink is stated because the family deliberately declares
+	 none: its callers disagree, and a popover over content reads at the card's. */
 	.qm-mark-btn {
 		border: var(--_qm-border-width) solid transparent;
 		padding: var(--_qm-space) var(--_qm-space-2);

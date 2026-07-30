@@ -2,7 +2,7 @@
 
 Editor + live-preview component library for Quillmark WASM consumers. SvelteKit lib/app repo: `src/lib` → `svelte-package` → the published package; `src/routes` → the dev playground, never published.
 
-Start at [`prose/canon/INDEX.md`](prose/canon/INDEX.md), the settled systems; deferred and undesigned work lives in GitHub issues. Canon is **malleable** (no consumers, no compatibility promise): a doc that contradicts the design in hand gets rewritten in the same commit as the code.
+Start at [`prose/canon/INDEX.md`](prose/canon/INDEX.md), the settled systems; work that is not settled lives in GitHub issues. Canon is **malleable** (no consumers, no compatibility promise): a doc that contradicts the design in hand gets rewritten in the same commit as the code.
 
 ## Prose
 

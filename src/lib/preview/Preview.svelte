@@ -1,10 +1,10 @@
 <!--
-  `@quillmark/editor/preview`'s Svelte wrapper — mounts `createPreview` over a
+  `@quillmark/editor/preview`'s Svelte wrapper: mounts `createPreview` over a
   container div on mount and tears it down on unmount. No logic beyond wiring;
   paint.ts/overlay.ts/bridge.ts/controller.ts own the behavior. Exposes the
   `PreviewController` verbs as instance methods (`bind:this`) for a consumer
   that drives `refresh`/`scrollToField`/`focusPosition`/`setZoom` imperatively
-  (e.g. after `session.apply` elsewhere) — pure passthrough, no added logic.
+  (e.g. after `session.apply` elsewhere); pure passthrough, no added logic.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -19,11 +19,11 @@
 	 */
 	interface Props {
 		session: LiveSession;
-		/** Appended to the root's own class — the surface is a mounted element the
+		/** Appended to the root's own class: the surface is a mounted element the
 		 *  consumer positions, so it needs a handle for layout it owns. */
 		class?: string;
-		/** Merged onto the root. Free because the derivation moved off this attribute
-		 *  and onto `data-qm-root` (core/theme.css). */
+		/** Merged onto the root. Free: theming lands on `data-qm-root` (core/theme.css),
+		 *  not this attribute. */
 		style?: string;
 		margin?: number;
 		overlays?: boolean;
@@ -61,7 +61,7 @@
 <div bind:this={containerEl} class="qm-preview {className ?? ''}" {style} data-qm-root></div>
 
 <style>
-	/* A DETACHED root — the preview is not a descendant of the editor, so it carries
+	/* A DETACHED root: the preview is not a descendant of the editor, so it carries
 	   `data-qm-root` for the page/overlay rungs paint.ts and overlay.ts read
 	   (core/theme.css). */
 	.qm-preview {

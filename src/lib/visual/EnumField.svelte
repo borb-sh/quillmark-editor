@@ -1,16 +1,16 @@
 <!--
-  A `string`+`enum` (or `type: 'enum'`) field → a styled listbox over `enum ??
-  values`, on bits-ui. When nothing is authored the list shows a distinct UNSET
-  sentinel that GHOSTS the `default:` (muted, shown-never-written), distinguishable
-  from an authored pick and re-selectable — so re-picking the default fires a
-  change. The sentinel commits nothing; any real pick — INCLUDING the
-  value that equals the default — commits via the parent's typed `writer.set`.
-  Explicitly picking the default is the one place "commit the default" is genuine
-  intent, expressible. The sentinel stays in the list once a value is authored, as
-  the "clear back to default" (unset) affordance.
+ A `string`+`enum` (or `type: 'enum'`) field → a styled listbox over `enum ??
+ values`, on bits-ui. When nothing is authored the list shows a distinct UNSET
+ sentinel that GHOSTS the `default:` (muted, shown-never-written), distinguishable
+ from an authored pick and re-selectable; so re-picking the default fires a
+ change. The sentinel commits nothing; any real pick: INCLUDING the
+ value that equals the default: commits via the parent's typed `writer.set`.
+ Explicitly picking the default is the one place "commit the default" is genuine
+ intent, expressible. The sentinel stays in the list once a value is authored, as
+ the "clear back to default" (unset) affordance.
 
-  Styled rather than a native `<select>`: the dropdown list is UA-owned and reaches
-  no dial. Listbox semantics and typeahead come with the primitive.
+ Styled rather than a native `<select>`: the dropdown list is UA-owned and reaches
+ no dial. Listbox semantics and typeahead come with the primitive.
 -->
 <script lang="ts">
 	import { Select } from 'bits-ui';
@@ -22,27 +22,27 @@
 		value: string | undefined;
 		values: string[];
 		fallback?: string;
-		/** Accessible name for a trigger NOTHING else names — an object property, whose
+		/** Accessible name for a trigger NOTHING else names: an object property, whose
 		 * name is the field label plus the property's. A field's own trigger takes `id`
 		 * instead and is named by the `<label for>` beside it (the trigger is a
-		 * `<button>`, so `for` reaches it and a label click opens the list — what the
+		 * `<button>`, so `for` reaches it and a label click opens the list: what the
 		 * native `<select>` this replaces would have done). */
 		label?: string;
 		/** `<label for>` target. Set → the label names this trigger, so `aria-label`
 		 * comes off: two names is where implementations disagree about which wins. */
 		id?: string;
-		/** The parked `description` (FieldLabel) — announced after the name. */
+		/** The parked `description` (FieldLabel): announced after the name. */
 		describedBy?: string;
 		onCommit: (v: string | undefined) => void;
 		/** Consumer policy: `false` disables an option so it can't be picked.
 		 * A disallowed value already authored stays SELECTED and visible (disabled), never
-		 * stripped or mutated. The UNSET sentinel is exempt — clear-to-default always works. */
+		 * stripped or mutated. The UNSET sentinel is exempt: clear-to-default always works. */
 		optionAllowed?: (value: string) => boolean;
 	}
 	let { value, values, fallback, label, id, describedBy, onCommit, optionAllowed }: Props =
 		$props();
 
-	// The sentinel's option value — a namespaced marker that no schema-authored
+	// The sentinel's option value: a namespaced marker that no schema-authored
 	// enum member would ever be (`values` are classification markings, seal ids, and
 	// the like), so it never collides with a real option.
 	const UNSET = '__qm_unset__';
@@ -58,20 +58,20 @@
 
 	const unset = $derived(local.value === UNSET);
 	const ghostText = $derived(dash(fallback));
-	/** What the closed trigger shows — the pick, or the ghosted default while unset. */
+	/** What the closed trigger shows: the pick, or the ghosted default while unset. */
 	const shown = $derived(unset ? ghostText : dash(local.value));
 
-	/** The root to portal INTO — `document.body` would escape the consumer's dials
-	 *  along with the editor's subtree. `undefined` falls back to bits-ui's default. */
+	/** The root to portal INTO: `document.body` would escape the consumer's dials
+	 * along with the editor's subtree. `undefined` falls back to bits-ui's default. */
 	let wrapEl = $state<HTMLElement | undefined>(undefined);
 	const portalTarget = $derived(wrapEl?.closest<HTMLElement>('[data-qm-root]') ?? undefined);
 </script>
 
 <span class="qm-select-wrap" bind:this={wrapEl}>
 	<!-- `allowDeselect={false}`: the UNSET sentinel is the clear-to-default
-	     affordance, so the primitive's own deselect must stay off. It reports a
-	     deselect as `''` — INDISTINGUISHABLE from picking the empty-string enum
-	     member the reference quill actually declares. -->
+	 affordance, so the primitive's own deselect must stay off. It reports a
+	 deselect as `''`: INDISTINGUISHABLE from picking the empty-string enum
+	 member the reference quill actually declares. -->
 	<Select.Root
 		type="single"
 		allowDeselect={false}
@@ -125,8 +125,8 @@
 </span>
 
 <style>
-	/* A primitive renders its OWN element, which a scoped selector cannot reach —
-	   styled through the wrapper with `:global`. */
+	/* A primitive renders its OWN element, which a scoped selector cannot reach:
+	 styled through the wrapper with `:global`. */
 	/* The box is `.qm-control-box` (controls.css), carried on the primitive's own
 	   element the same way `.qm-focus-ring` is; only what a TRIGGER adds over a typed
 	   value's box is here. */
@@ -146,10 +146,10 @@
 	.qm-select-wrap :global(.qm-select[data-ghosted]) {
 		color: var(--_qm-ink-ghost);
 	}
-	/* The open list is `.qm-menu-surface` and its rows `.qm-menu-item` (controls.css) —
-	   the lift, the inset and the highlight are the shared menu recipe. What a LISTBOX
-	   adds over a menu is here: it spans its trigger rather than its own content, it
-	   scrolls past a screenful, and it marks the value already stored. */
+	/* The open list is `.qm-menu-surface` and its rows `.qm-menu-item` (controls.css):
+	 the lift, the inset and the highlight are the shared menu recipe. What a LISTBOX
+	 adds over a menu is here: it spans its trigger rather than its own content, it
+	 scrolls past a screenful, and it marks the value already stored. */
 	.qm-select-content {
 		min-width: var(--bits-select-anchor-width);
 		max-height: 16rem;
@@ -158,7 +158,7 @@
 	.qm-select-content :global(.qm-select-item[data-selected]) {
 		font-weight: var(--_qm-weight-label);
 	}
-	/* Consumer policy — offered but unpickable, never hidden. */
+	/* Consumer policy: offered but unpickable, never hidden. */
 	.qm-select-content :global(.qm-select-item[data-disabled]) {
 		opacity: var(--_qm-opacity-muted);
 		cursor: default;

@@ -2,11 +2,11 @@
 // as pure math (synthetic rects, exact round-trip) and against a real compiled
 // session (subject's fieldBoxes rect -> % -> a simulated click at its center ->
 // positionAt), proving the overlay's forward transform and the bridge's inverse
-// never drift apart. No canvas needed — geometry and positionAt are session
+// never drift apart. No canvas needed; geometry and positionAt are session
 // queries, so this runs in Node against the real Typst backend.
 //
 // geometry.ts is reached directly (not through the `$lib/preview` barrel, which
-// only re-exports the public `createPreview`/`Preview` surface per PREVIEW.md —
+// only re-exports the public `createPreview`/`Preview` surface per PREVIEW.md;
 // the transform is an internal correctness seam, not part of that surface).
 import { describe, it, expect } from 'vitest';
 import { Engine, Quill } from '$lib/core';
@@ -18,7 +18,7 @@ describe('geometry: synthetic round-trip', () => {
 	const pageSize: PageSize = { widthPt: 612, heightPt: 792 }; // US Letter
 
 	it('rectToPercent places a known rect at the expected %', () => {
-		// A 100x50pt box with its bottom-left corner at (50,700) — near the
+		// A 100x50pt box with its bottom-left corner at (50,700): near the
 		// top-left of the page (y is bottom-left origin, so a high y sits near the top).
 		const rect: [number, number, number, number] = [50, 700, 150, 750];
 		const pct = rectToPercent(rect, pageSize);
@@ -30,7 +30,7 @@ describe('geometry: synthetic round-trip', () => {
 
 	it('clickToPdfPt is the exact inverse of rectToPercent, for points across the page', () => {
 		// Model a point as a zero-size rect so both directions compose through the
-		// SAME forward transform the overlay uses — not a hand-derived inverse.
+		// SAME forward transform the overlay uses; not a hand-derived inverse.
 		const cssW = 612;
 		const cssH = 792;
 		const points: Array<[number, number]> = [
@@ -103,7 +103,7 @@ describe('geometry: against a real compiled session (usaf_memo)', () => {
 		const session = await engine.open(quill, doc);
 		try {
 			// subject -> 2 boxes (page 0 header + page 1 continuation),
-			// same span — the exact case overlay.ts's "group by field" exists for.
+			// same span; the exact case overlay.ts's "group by field" exists for.
 			const boxes = session.fieldBoxes('main.subject');
 			expect(boxes.length).toBeGreaterThanOrEqual(2);
 			const pages = new Set(boxes.map((b) => b.page));

@@ -1,19 +1,19 @@
-/* The HOST's derivation — public dials in, the `--pg-*` scale the playground's
+/* The HOST's derivation: public dials in, the `--pg-*` scale the playground's
    chrome reads out (PLAYGROUND.md is the language; the recipes are
    `routes/chrome.css`). Literals live here and nowhere else under `src/routes`:
    `check:style` runs its axes over the host scope too, with this file exempt as
    the place the defaults are minted.
 
    `light dark` follows the OS, and every `[data-qm-root]` inside inherits it, so
-   page and surface invert together — the declaration THEMING.md asks a host app
+   page and surface invert together; the declaration THEMING.md asks a host app
    for, made once here rather than a mode implemented. The poles are the SYSTEM
-   colours, so unstyled text and a `--pg-*` rung land on the same tone — a host
+   colours, so unstyled text and a `--pg-*` rung land on the same tone; a host
    knows its canvas; the package does not, so it ships calibrated literals. The
    dials still sit in front, so `--qm-bg`/`--qm-fg` on the shell retunes page and
    surface at once; nothing here reads a `--_qm-*` rung.
 
    The mid-tones are mixes, not picks. `--pg-ink-meta` lands at 7.5:1 on the page
-   in light and 7.3:1 in dark — a grey chosen by eye holds one of those at best. */
+   in light and 7.3:1 in dark; a grey chosen by eye holds one of those at best. */
 
 :root {
 	color-scheme: light dark;
@@ -24,7 +24,7 @@
 	--pg-ink-meta: color-mix(in oklab, var(--pg-ink), var(--pg-page) 45%);
 	--pg-ghost: color-mix(in oklab, var(--pg-ink), var(--pg-page) 60%);
 	/* Two planes behind content, stepping toward the ink exactly as the package's
-	   surfaces do and at the same 4pp apart (SURFACES §Elevation) — so a host plate
+	   surfaces do and at the same 4pp apart (SURFACES §Elevation), so a host plate
 	   and a card on it agree about which way "raised" goes in both schemes. */
 	--pg-surface: color-mix(in oklab, var(--pg-page), var(--pg-ink) 4%);
 	--pg-surface-hover: color-mix(in oklab, var(--pg-page), var(--pg-ink) 8%);
@@ -59,11 +59,11 @@
 
 	/* The two widths the layout is built from: the measure a passage wraps at, and
 	   the margin the annotation column sits in (PLAYGROUND §"The rail"). Both are
-	   reading geometry — what a line of text needs — so neither derives from the
+	   reading geometry (what a line of text needs), so neither derives from the
 	   spacing dial, the same reason the package's capacity ramp does not. */
 	--pg-measure: 34rem;
 	--pg-rail: 8rem;
-	/* ONE page width for the whole shell — a per-route maximum would step the
+	/* ONE page width for the whole shell; a per-route maximum would step the
 	   running head in and out over the surface it sits above. */
 	--pg-max: 84rem;
 
@@ -77,15 +77,15 @@
 	/* Two mount heights. The short one stays under a painted page BY DESIGN: usaf_memo
 	   is two pages, and a frame shorter than one of them is what makes scrolling swap
 	   which page is mounted, which is what keeps the paint loop's bound falsifiable by
-	   hand. The ceiling is the page itself — ~1053px at the fixture's scale, so this
-	   has room to grow and none to double. The tall one is the split shell — a whole
+	   hand. The ceiling is the page itself (~1053px at the fixture's scale), so this
+	   has room to grow and none to double. The tall one is the split shell: a whole
 	   route rather than one instrument on one. */
 	--pg-mount: 38rem;
 	--pg-mount-tall: 75vh;
 	/* The cap on an instrument column: the viewport less the head above it, so a
 	   document dump scrolls in place instead of running the page long. */
 	--pg-mount-max: calc(100dvh - var(--pg-space-24));
-	/* The scroll TAIL — dead space under the last card so it can reach the middle of
+	/* The scroll TAIL: dead space under the last card so it can reach the middle of
 	   a pane rather than stopping at its bottom edge. One of the four properties
 	   THEMING §"What is behind the column is yours" leaves to the host. */
 	--pg-tail: 40vh;
@@ -97,7 +97,7 @@
 
 	/* ── Type ────────────────────────────────────────────────────────────────── */
 	/* Two faces with a job each: prose is sans, chrome is mono (PLAYGROUND §"Two
-	   faces"). Both are system stacks — a downloaded face would put the front door
+	   faces"). Both are system stacks; a downloaded face would put the front door
 	   on a network request the static build otherwise does not make. */
 	--pg-font: ui-sans-serif, system-ui, sans-serif;
 	--pg-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -129,7 +129,7 @@
 	}
 }
 
-/* The page's own baseline, which every route inherits by sitting in the document —
+/* The page's own baseline, which every route inherits by sitting in the document;
    the same job `core/theme.css`'s root rule does for a mounted surface. */
 body {
 	margin: 0;

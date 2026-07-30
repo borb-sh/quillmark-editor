@@ -1,7 +1,7 @@
 // Shared codec test helpers. A REAL Document is the normalizer: the content
-// normalizes on write, so round-trips are idempotent only up to normalization —
+// normalizes on write, so round-trips are idempotent only up to normalization:
 // `normalize` installs a Content and reads it back through the WASM content so
-// tests assert POST-NORMALIZE equality (per the phase brief).
+// tests assert POST-NORMALIZE equality.
 import { expect } from 'vitest';
 import type { Node as PMNode } from 'prosemirror-model';
 import { EditorState, TextSelection, type Command } from 'prosemirror-state';
@@ -25,7 +25,7 @@ export function freshDoc(): Document {
 	return quill().seedDocument();
 }
 
-/** Install `rt` into a fresh main body and read it back — the canonical (normalized) form. */
+/** Install `rt` into a fresh main body and read it back; the canonical (normalized) form. */
 export function normalize(rt: Content): Content {
 	const doc = freshDoc();
 	doc.install({}, rt);
@@ -35,7 +35,7 @@ export function normalize(rt: Content): Content {
 /** Content value-equality (key-order-insensitive), re-exported for assertions. */
 export { contentEqual };
 
-/** A content from markdown — a guaranteed-valid `Content` for test inputs. */
+/** A content from markdown; a guaranteed-valid `Content` for test inputs. */
 export function md(markdown: string): Content {
 	return importMarkdown(markdown);
 }
@@ -69,7 +69,7 @@ export function textblocks(doc: PMNode): { node: PMNode; start: number }[] {
 	return out;
 }
 
-/** A state with the caret at the START of the `index`-th textblock — where every
+/** A state with the caret at the START of the `index`-th textblock; where every
  * structural key branches, and the only way to address an EMPTY item (it carries
  * no text to anchor on). */
 export function atBlock(doc: PMNode, index: number): EditorState {
@@ -92,7 +92,7 @@ export function run(state: EditorState, cmd: Command): EditorState | null {
 	return handled ? out : null;
 }
 
-/** `doc(bullet_list(list_item(paragraph("a"))))` — PM's own compact rendering. */
+/** `doc(bullet_list(list_item(paragraph("a"))))`: PM's own compact rendering. */
 export const shape = (state: EditorState): string => state.doc.toString();
 
 /** The mutation survives the boundary: encode → normalize → decode is a fixpoint. A
@@ -104,7 +104,7 @@ export function representable(state: EditorState): boolean {
 }
 
 /**
- * A press-and-check driver over one bound keymap — the leaf's own bindings, falling
+ * A press-and-check driver over one bound keymap: the leaf's own bindings, falling
  * through to `baseKeymap` exactly as the plugin stack does (`proseLeafPlugins`
  * mounts `editorKeymap` over `baseKeymap`).
  *

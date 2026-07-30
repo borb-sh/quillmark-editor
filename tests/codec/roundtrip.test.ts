@@ -1,10 +1,9 @@
-// The two structural gaps the Phase 3 brief implies but the
-// fixed-example suites miss:
-//   (1) the decode → lower round-trip had no randomized coverage — a SEEDED
-//       generator over random line kinds / containers / continues / marks asserts
+// Two structural properties the fixed-example suites miss:
+//   (1) decode → lower round-trip under a SEEDED generator over random line
+//       kinds / containers / continues / marks:
 //       `normalize(pmToContent(decode(rt))) == normalize(rt)`;
-//   (2) the position map was only scanned over STATIC docs — these split/join/wrap
-//       a block, REBUILD `buildLineIndex`, and re-assert the clean-inverse property.
+//   (2) the position map after split/join/wrap: rebuild `buildLineIndex` and
+//       re-assert the clean-inverse property.
 import { describe, it, expect } from 'vitest';
 import { EditorState } from 'prosemirror-state';
 import { wrapIn } from 'prosemirror-commands';
@@ -13,7 +12,7 @@ import { decode, blockSchema, pmToContent } from '$lib/core/codec';
 import { md, normalize, contentEqual, assertPositionInverse } from './_util.js';
 
 // ── A deterministic PRNG (mulberry32) ───────────────────────────────────────
-// Seeded so any failure is reproducible from the reported seed — `Math.random`
+// Seeded so any failure is reproducible from the reported seed: `Math.random`
 // would make a red build un-rerunnable.
 function rng(seed: number): () => number {
 	let a = seed >>> 0;
@@ -27,7 +26,7 @@ function rng(seed: number): () => number {
 
 // ── A small markdown content generator ───────────────────────────────────────
 // Markdown (not raw `Content`) is the source so every sample is a guaranteed-
-// valid content via `importMarkdown` — the generator explores line kinds, list/
+// valid content via `importMarkdown`: the generator explores line kinds, list/
 // quote containers, the hard-break `continues` flag, and inline marks, while
 // staying clear of islands (own round-trip concerns) and mark-on-code
 // overlap (a separate normalization edge). At most one mark per word, so no
@@ -86,14 +85,14 @@ describe('generative decode → lower round-trip', () => {
 });
 
 // ── Position map across a structural edit + index rebuild ────────────────────
-// The inverse property itself is `assertPositionInverse` (_util.ts) — what these
+// The inverse property itself is `assertPositionInverse` (_util.ts): what these
 // add over positions.test.ts is that the index is REBUILT after a structural
 // mutation, not read off a fresh decode.
 
 describe('position map across structural edits + rebuild', () => {
 	it('holds after splitting a paragraph', () => {
 		const doc = decode(md('First 😀 para body 漢.'), blockSchema);
-		// PM pos 4 is inside the first textblock (after "Fir") — split into two paras.
+		// PM pos 4 is inside the first textblock (after "Fir"): split into two paras.
 		const newDoc = EditorState.create({ doc }).tr.split(4).doc;
 		expect(newDoc.childCount).toBe(2);
 		assertPositionInverse(newDoc, 'split');
@@ -129,7 +128,7 @@ describe('position map across structural edits + rebuild', () => {
 			try {
 				newDoc = EditorState.create({ doc }).tr.split(pos).doc;
 			} catch {
-				continue; // not a splittable position — skip
+				continue; // not a splittable position; skip
 			}
 			assertPositionInverse(newDoc, `split@${pos}`);
 		}

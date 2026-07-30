@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // A zero-page session must not be a permanent empty-state stub. These
 // drive the count transitions and assert the "No pages" element and the page
-// slots both track the LIVE count — 0→N escapes the empty state, N→0 returns.
+// slots both track the LIVE count; 0→N escapes the empty state, N→0 returns.
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
 import { createPreview } from '$lib/preview/controller';
 import type { LiveSession, ChangeSet } from '$lib/core';
@@ -74,7 +74,7 @@ describe('preview controller empty-state across page-count transitions', () => {
 		expect(isEmpty()).toBe(true);
 		expect(pages()).toBe(0);
 
-		// …and back up again — the toggle is not one-way.
+		// …and back up again; the toggle is not one-way.
 		preview.refresh(change(1));
 		expect(isEmpty()).toBe(false);
 		expect(pages()).toBe(1);
@@ -93,7 +93,7 @@ describe('preview controller empty-state across page-count transitions', () => {
 
 // `supportsCanvas` must gate the view (runtime.d.ts says re-check the
 // getter after `open`), and the gate is re-read per compile so a non-paintable
-// compile that later becomes paintable recovers — the zero-page escape, generalized.
+// compile that later becomes paintable recovers; the zero-page escape, generalized.
 describe('preview controller supportsCanvas gating', () => {
 	let container: HTMLDivElement;
 	beforeEach(() => {
@@ -133,7 +133,7 @@ describe('preview controller supportsCanvas gating', () => {
 	});
 });
 
-// A `session.paint` that throws must not abort the band sweep — it is
+// A `session.paint` that throws must not abort the band sweep: it is
 // caught per-slot and surfaced as an error state instead of an unhandled throw
 // inside the IntersectionObserver callback.
 describe('preview controller paint resilience', () => {
@@ -142,7 +142,7 @@ describe('preview controller paint resilience', () => {
 	let prevIO: unknown;
 	let prevGetContext: typeof HTMLCanvasElement.prototype.getContext;
 
-	// A capturing IntersectionObserver whose callback the test fires on demand —
+	// A capturing IntersectionObserver whose callback the test fires on demand:
 	// jsdom has none, and this path needs a page to actually reach `paint`.
 	class CapturingIO {
 		cb: (entries: { target: Element; isIntersecting: boolean }[]) => void;

@@ -1,13 +1,13 @@
 <!--
-  One element of an array-of-`richtext` field (fixture `references`). Array
-  elements are NOT `applyChange`-addressable — `Addr.field` is a flat name, so
-  `references.0` has no op address. So
-  this is NOT a `createField` leaf: it mounts a minimal PM view over the codec's
-  decode/encode + inline schema, and on every edit hands the re-encoded
-  `Content` UP to the parent {@link ArrayField}, which commits the WHOLE array
-  by value (`writer.set(field, arrayWithElementReplaced)`). Anchors within an
-  element are dropped on that value write — acceptable for inline refs. Mounts
-  ONCE per stable element id (no reset on the parent's re-derive).
+ One element of an array-of-`richtext` field (fixture `references`). Array
+ elements are NOT `applyChange`-addressable: `Addr.field` is a flat name, so
+ `references.0` has no op address. So
+ this is NOT a `createField` leaf: it mounts a minimal PM view over the codec's
+ decode/encode + inline schema, and on every edit hands the re-encoded
+ `Content` UP to the parent {@link ArrayField}, which commits the WHOLE array
+ by value (`writer.set(field, arrayWithElementReplaced)`). Anchors within an
+ element are dropped on that value write: acceptable for inline refs. Mounts
+ ONCE per stable element id (no reset on the parent's re-derive).
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -23,7 +23,7 @@
 		/** Accessible name for the editable region (the array has no per-element label). */
 		label?: string;
 		onChange: (rt: Content) => void;
-		/** Raw keydown, for a container whose own keys run through this element — the
+		/** Raw keydown, for a container whose own keys run through this element: the
 		 * array repeater's Enter/Backspace (`ArrayField`). Fires BEFORE the view's own
 		 * keymap, so the state it reads is the one this keystroke has yet to change. */
 		onKey?: (e: KeyboardEvent) => void;
@@ -33,7 +33,7 @@
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let view: EditorView | undefined;
-	/** Take the caret — what a parent placing focus on this element calls. The VIEW's
+	/** Take the caret: what a parent placing focus on this element calls. The VIEW's
 	 * focus, not the element's: a PM view restores its selection, where a bare DOM
 	 * focus on a contenteditable leaves the caret unplaced. */
 	export function focus(): void {
@@ -42,7 +42,7 @@
 
 	onMount(() => {
 		if (!containerEl) return;
-		// An array element is an inline, value-by-value leaf — the SAME keymap and
+		// An array element is an inline, value-by-value leaf: the SAME keymap and
 		// plugin stack a `createField` leaf mounts (shared `proseLeafPlugins`), minus
 		// the anchor-position plugin (element anchors are dropped on the array's value
 		// write, per the header). Its own `dispatchTransaction` hands `Content` up.
@@ -81,9 +81,9 @@
 </script>
 
 <!-- `.qm-control-box` (controls.css) is the whole box, so an array of `richtext` and
-     an array of `string` render rows of equal height. No floor: the reset in
-     `core/codec/prose.css` makes one line of prose measure one line. Width is the
-     row's to give — the element fills the track it is placed in (`ArrayField`). -->
+ an array of `string` render rows of equal height. No floor: the reset in
+ `core/codec/prose.css` makes one line of prose measure one line. Width is the
+ row's to give: the element fills the track it is placed in (`ArrayField`). -->
 <div bind:this={containerEl} class="qm-array-prose qm-control-box"></div>
 
 <style>

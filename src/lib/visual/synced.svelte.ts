@@ -1,7 +1,7 @@
 // The controlled-local reconcile shared by the scalar controls (TextField /
 // NumberField / DateField / BooleanField / EnumField). Each seeds a local from a
 // projection of its `value` prop and reconciles ONLY an external change back into
-// the local — own edits stay `untrack`ed, so typing never re-runs the sync and
+// the local: own edits stay `untrack`ed, so typing never re-runs the sync and
 // resets the caret. The five controls carried a character-identical block; this
 // is the one copy (VISUAL_EDITOR §Surface).
 import { untrack } from 'svelte';
@@ -13,13 +13,13 @@ export interface SyncedLocal<T> {
 }
 
 /**
- * Seed a local from `project()` and reconcile only an EXTERNAL change into it.
- * `project` reads the reactive source (a prop) and maps it to the local's type —
- * `() => value ?? ''`, `() => (value != null ? String(value) : '')`, etc. The
+ * Seed a local from `project` and reconcile only an EXTERNAL change into it.
+ * `project` reads the reactive source (a prop) and maps it to the local's type:
+ * ` => value ?? ''`, ` => (value != null ? String(value) : '')`, etc. The
  * seed is `untrack`ed (the ongoing sync is the `$effect`, not the initializer),
  * and each reconcile is `untrack`ed so an own-edit write never re-triggers it.
  * Reassignment through the `value` setter is a plain local write; only a changed
- * `project()` result flows the other way.
+ * `project` result flows the other way.
  */
 export function syncedLocal<T>(project: () => T): SyncedLocal<T> {
 	let local = $state(untrack(project));

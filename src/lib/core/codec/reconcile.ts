@@ -1,9 +1,9 @@
-// Reconciliation — the field-scoped external-change gate (CODEC §Reconciliation).
+// Reconciliation: the field-scoped external-change gate (CODEC §Reconciliation).
 // The content normalizes on write, so `decode ∘ lower` is idempotent only up to
 // normalization: the optimistic PM state and the re-decoded stored content agree
 // after normalize, not byte-for-byte. So the field holds its PM state and
 // re-hydrates ONLY on an EXTERNAL content change (another edit source, a paste, a
-// `revise`), gated by canonical-content equality scoped to the leaf's addr — the
+// `revise`), gated by canonical-content equality scoped to the leaf's addr: the
 // analog of web-app's whole-document `Document.equals`, narrowed to one field.
 // Caret continuity across the field's OWN edits is the PM `StepMap`, not this.
 import type { Content } from '@quillmark/wasm';
@@ -15,7 +15,7 @@ export interface Reconciler {
 	/** Record `rt` as the codec's known state (after its own edit or a re-hydrate). */
 	commit(rt: Content): void;
 	/** The last known content. Seeded at construction and only ever replaced, so it
-	 * is never absent — the field reads it directly rather than through a cast. */
+	 * is never absent: the field reads it directly rather than through a cast. */
 	readonly last: Content;
 }
 
@@ -36,7 +36,7 @@ export function createReconciler(initial: Content): Reconciler {
 }
 
 /**
- * Canonical content equality — a structural deep-equal, key-order-insensitive so a
+ * Canonical content equality: a structural deep-equal, key-order-insensitive so a
  * WASM read (`doc.get`) and a codec projection (`pmToContent`) compare by value.
  * This is the per-field twin of `Document.equals`.
  */

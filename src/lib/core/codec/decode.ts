@@ -1,10 +1,10 @@
-// Decode — content → PM, a pure function (CODEC §Decode). Fold the flat lines into
+// Decode: content → PM, a pure function (CODEC §Decode). Fold the flat lines into
 // the tree: group a `continues` run into one block (para hard breaks → `hard_break`
 // nodes; a code fence's lines → one `code_block`), nest by shared `containers`
 // prefix (`list_item`/`quote` → lists/blockquote), select the block node by
 // `kind`, apply marks over their `[start,end)` USV ranges (PM splits inline nodes
 // at mark boundaries), and lower island slots to leaf nodes (inline in a `para`
-// line, block on an `island` line). Anchors are NOT applied here — they are
+// line, block on an `island` line). Anchors are NOT applied here; they are
 // decorations (field.ts). Positions throughout are USV; `Array.from` iterates by
 // code point so an astral char is one unit, never a surrogate half.
 import { DOMSerializer, type Mark, type Node as PMNode, type Schema } from 'prosemirror-model';
@@ -14,7 +14,7 @@ import { descriptorOf, markKey, pmMarkFromContent } from './marks.js';
 import { isInlineSchema } from './schema.js';
 import { isAnchorMark, isCodeLine, isHeadingLine, isListItemContainer } from '../index.js';
 
-/** Code points of `s` (USV units) — the iteration granularity the content speaks. */
+/** Code points of `s` (USV units): the iteration granularity the content speaks. */
 export function codePoints(s: string): string[] {
 	return Array.from(s);
 }
@@ -42,8 +42,8 @@ interface DecodeOpts {
 
 /**
  * A `Content` as READ-ONLY DOM: decode under `schema`, then the nodes' own `toDOM`.
- * The rendering half of the codec's job with no editing attached — no PM view, no
- * plugins, no `contenteditable` — for chrome that must show content in the same
+ * The rendering half of the codec's job with no editing attached (no PM view, no
+ * plugins, no `contenteditable`) for chrome that must show content in the same
  * mark vocabulary a leaf edits it in (the tips card, VISUAL_EDITOR_UIUX §"Tips
  * card"). A second renderer over the same content would drift from `decode`; this
  * cannot.
@@ -98,8 +98,8 @@ function decodeInline(
 	cursor: IslandCursor
 ): PMNode {
 	// An inline field is single-line; join any stray lines with a space (no
-	// hard_break node exists in this schema). Islands are not representable inline
-	// — the slot char is dropped and its entry skipped.
+	// hard_break node exists in this schema). Islands are not representable inline:
+	// the slot char is dropped and its entry skipped.
 	const inline: PMNode[] = [];
 	for (let i = 0; i < lineTexts.length; i++) {
 		if (i > 0) inline.push(schema.text(' '));
@@ -130,7 +130,7 @@ function groupBlocks(
 		// `ContentContainer` is an OPEN set: a bare `here.container === 'x'` does not
 		// narrow, so the two arms this schema builds are claimed by the boundary's
 		// guard and a literal check, and everything else is an unknown the inert
-		// wrapper carries (CODEC §Open sets) — no branch degrades silently.
+		// wrapper carries (CODEC §Open sets); no branch degrades silently.
 		if (isListItemContainer(here)) {
 			// Gather the maximal run of sibling `list_item` leaves at this depth
 			// (same ordered/start), then split it into items by `ordinal`.
@@ -141,7 +141,7 @@ function groupBlocks(
 				const c = atDepth(leaves[j], depth);
 				if (!c || !isListItemContainer(c) || c.ordered !== ordered || c.start !== start) break;
 				// An ordinal reset is an ADJACENT SIBLING list (content preserves the
-				// shape) — merging it here would re-encode `[0,1,0]` as `[0,1,2]`,
+				// shape): merging it here would re-encode `[0,1,0]` as `[0,1,2]`,
 				// breaking the decode round-trip on the first edit.
 				if (c.ordinal < prevOrd) break;
 				prevOrd = c.ordinal;
@@ -167,7 +167,7 @@ function groupBlocks(
 			i = j;
 			continue;
 		}
-		// quote and every unknown container share one shape — a wrapper over the run
+		// quote and every unknown container share one shape: a wrapper over the run
 		// of leaves carrying the IDENTICAL container here (identity by `containerKey`,
 		// so two adjacent unknowns differing only in `attrs` stay two wrappers).
 		const key = containerKey(here);
@@ -195,7 +195,7 @@ function atDepth(leaf: Leaf, depth: number): ContentContainer | undefined {
 	return leaf.containers[depth];
 }
 
-/** The `ordinal` of a leaf's `list_item` at `depth` — only called inside a run the
+/** The `ordinal` of a leaf's `list_item` at `depth`: only called inside a run the
  * guard has already established, so a miss is unreachable. */
 function ordinalAt(leaf: Leaf, depth: number): number {
 	const c = atDepth(leaf, depth);
@@ -299,7 +299,7 @@ function buildInline(
 /** A stable key for a mark set (order-independent) to detect run boundaries. */
 function markSetKey(active: ContentMark[]): string {
 	if (!active.length) return '';
-	// Per-mark keys via the shared descriptor + NUL-delimited `markKey` — the same
+	// Per-mark keys via the shared descriptor + NUL-delimited `markKey`: the same
 	// pair the mark diff groups families by, so a run boundary and a mark family are
 	// one rule. The set is JSON-joined so no url/attrs content collides with a
 	// delimiter: a `link:a|strong` url stays distinct from `{link:a} + {strong}`.

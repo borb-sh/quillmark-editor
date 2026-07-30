@@ -1,18 +1,18 @@
-// The theme derivation — the public dials → the private `--_qm-*` scale, applied
+// The theme derivation: the public dials → the private `--_qm-*` scale, applied
 // to every `data-qm-root` element. Imported HERE because `core/` is the one module
 // both `preview/` and `visual/` already pull, so a consumer cannot forget it and
 // the derivation is minted once rather than re-declared per detached root
 // (THEMING.md).
 import './theme.css';
 
-// `@quillmark/editor/core` — the vanilla-TS substrate seam.
+// `@quillmark/editor/core`: the vanilla-TS substrate seam.
 //
 // This is the one boundary the rest of the package (and a vanilla consumer)
 // crosses to reach `@quillmark/wasm`: the `Engine`/`Quill`/`Document` handles,
 // the document-free content codec, and every boundary type the editor threads
-// through its surfaces. Handles stay quillmark's — no wrapper types — per
-// DOCUMENT_MODEL §What the editor owns. The codec (Phase 3) and the paint loop's
-// core (Phase 2's `createPreview`) grow here as their phases land.
+// through its surfaces. Handles stay quillmark's (no wrapper types) per
+// DOCUMENT_MODEL §What the editor owns. The codec and the paint loop's
+// `createPreview` grow here.
 
 export { init } from './lifecycle.js';
 
@@ -34,9 +34,9 @@ export {
 } from '@quillmark/wasm';
 
 // ── Document-free content codec (values) ─────────────────────────────────────
-// The markdown edges and position-map primitives Phase 3 composes, plus the
+// The markdown edges and position-map primitives the codec composes, plus the
 // `DocPath` parser/serializer the address routing (diagnostics + caret bridge)
-// runs on — re-exported so the codec never reaches around `/core` to the package
+// runs on: re-exported so the codec never reaches around `/core` to the package
 // root.
 export {
 	importMarkdown,
@@ -81,11 +81,11 @@ export type {
 	QuillmarkError
 } from '@quillmark/wasm';
 
-// Content + op-grained edit (Codec consumes these) — the whole vocabulary
+// Content + op-grained edit (Codec consumes these): the whole vocabulary
 // `Document`'s methods speak, re-exported verbatim from the runtime root. The
 // island-props triple (`TableProps` / `ImageProps` / `TableCell`) is pinned
-// upstream as of 0.96.0 (`ContentIsland.props` is the typed union, no longer
-// `unknown`), so the codec reads it instead of hand-rolling the shape.
+// upstream (`ContentIsland.props` is the typed union), so the codec reads it
+// instead of hand-rolling the shape.
 export type {
 	Content,
 	ContentLine,
@@ -107,9 +107,9 @@ export type {
 	DocPathSeg
 } from '@quillmark/wasm';
 
-// Resolved-value view (`quill.resolve(doc)`) — value + provenance per declared
+// Resolved-value view (`quill.resolve(doc)`): value + provenance per declared
 // field. The form reads AUTHORED values (`values`), not this render projection;
-// the VisualEditor consumes `resolve` on a parallel channel for provenance only —
+// the VisualEditor consumes `resolve` on a parallel channel for provenance only:
 // the ghosted `default:` and the `FieldSource` rung (FIELD_PROVENANCE), never the
 // control value.
 export type {
@@ -120,10 +120,10 @@ export type {
 	Resolved
 } from '@quillmark/wasm';
 
-// `DeltaOp` is the one type the root does not carry — it exports `Delta`, not its
-// op union — so it is derived here.
+// `DeltaOp` is the one type the root does not carry (it exports `Delta`, not its
+// op union), so it is derived here.
 import type { Delta } from '@quillmark/wasm';
-/** One text-delta op — `retain` / `insert` / `delete`. */
+/** One text-delta op: `retain` / `insert` / `delete`. */
 export type DeltaOp = Delta['ops'][number];
 
 // Cards, schema, diagnostics (VisualEditor consumes these). All on the runtime

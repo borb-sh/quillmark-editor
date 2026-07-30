@@ -1,9 +1,9 @@
 <!--
-  `@quillmark/editor/source`'s Svelte wrapper — mounts `createSourceView` over a
+  `@quillmark/editor/source`'s Svelte wrapper: mounts `createSourceView` over a
   container div on mount, tears it down on unmount. No logic beyond wiring;
   view.ts owns the text mirror and the `toMarkdown()` serialize. Exposes
   `refresh()` (re-serialize after an edit lands) as an instance method
-  (`bind:this`) — pure passthrough.
+  (`bind:this`); pure passthrough.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -19,7 +19,7 @@
 		doc: Document;
 		/** Appended to the root's own class (see `Preview`). */
 		class?: string;
-		/** Merged onto the root — free since the derivation moved to `data-qm-root`. */
+		/** Merged onto the root; free because theming lands on `data-qm-root`. */
 		style?: string;
 	}
 	let { doc, class: className, style }: Props = $props();
@@ -44,7 +44,7 @@
 <div bind:this={containerEl} class="qm-source {className ?? ''}" {style} data-qm-root></div>
 
 <style>
-	/* A DETACHED root — marked `data-qm-root` (core/theme.css). The container is
+	/* A DETACHED root, marked `data-qm-root` (core/theme.css). The container is
 	   the scroller; view.ts holds its offset across a refresh. */
 	.qm-source {
 		width: 100%;
@@ -53,7 +53,7 @@
 		background: var(--_qm-surface-raised);
 		font-size: var(--_qm-text-label);
 	}
-	/* The mirror is text, so the chrome is the monospace face and wrapping — a long
+	/* The mirror is text, so the chrome is the monospace face and wrapping: a long
 	   line folds rather than scrolling the drawer sideways, and the reader still
 	   sees where the canonical serialize put its breaks. `:global` because view.ts
 	   creates the element, so Svelte's scoping hash never lands on it. */

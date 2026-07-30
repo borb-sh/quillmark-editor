@@ -1,7 +1,7 @@
-// Playground-only fixture loading — the browser twin of tests/helpers/fixtures.ts.
+// Playground-only fixture loading: the browser twin of tests/helpers/fixtures.ts.
 // An eager `?url` asset glob keeps the reference quill a plain input the bundler
 // fingerprints as assets, not a served directory; at runtime each URL is fetched
-// into raw bytes (binary-safe for the fonts and seals). Dev harness only — never
+// into raw bytes (binary-safe for the fonts and seals). Dev harness only; never
 // part of the published package.
 const QUILL_ROOT = '/fixtures/quills/usaf_memo/0.2.0';
 
@@ -11,7 +11,7 @@ const urls = import.meta.glob('/fixtures/quills/usaf_memo/0.2.0/**/*', {
 	eager: true
 }) as Record<string, string>;
 
-// The main `date` field's declaration up to its default's value — the anchor the
+// The main `date` field's declaration up to its default's value: the anchor the
 // schema variant below rewrites, split here so the rewrite substitutes a value
 // rather than measuring characters off the end. The indorsement card declares a
 // `date` too, one indent level deeper, so the 4-space key pins this to the main
@@ -22,7 +22,7 @@ const MAIN_DATE_KEY = '\n    date:\n      type: date\n      default: ';
  * Playground-only schema variant: give the main `date` field a literal `default:`.
  * The reference quill declares `default: ""` (blank → `datetime.today()` at render,
  * which ghosts nothing), so nothing in it exercises the date control's ghosted
- * default — this rewrites that one line in the loaded bytes so the rung is
+ * default; this rewrites that one line in the loaded bytes so the rung is
  * reachable in the browser, leaving the quill on disk alone. Throws
  * rather than silently no-op'ing if the anchor moves.
  */
@@ -37,8 +37,8 @@ export function withMainDateDefault(tree: Map<string, Uint8Array>, iso: string):
 }
 
 // The `card_kinds:` map opener, and a second kind to drop under it. The reference
-// quill declares exactly ONE kind, so the add affordance's multi-kind branch — a
-// menu rather than a direct insert — is a code path no fixture reaches.
+// quill declares exactly ONE kind, so the add affordance's multi-kind branch (a
+// menu rather than a direct insert) is a code path no fixture reaches.
 // Inserted at the opener rather than appended, so it does not depend on
 // `card_kinds` staying the last block in the file.
 const CARD_KINDS_KEY = '\ncard_kinds:\n';

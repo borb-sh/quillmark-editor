@@ -1,4 +1,4 @@
-// Criteria 3 & 4 — lower∘apply matches the optimistic PM up to normalization, and
+// Criteria 3 & 4: lower∘apply matches the optimistic PM up to normalization, and
 // formatting / anchor / unknown marks each survive decode→lower→apply→decode.
 // Uses a REAL Document so `applyChange` actually runs. PM transactions are built
 // on a DOM-free EditorState (works in node).
@@ -96,7 +96,7 @@ describe('formatting marks round-trip', () => {
 		const { stored } = lowerApply(md('**all bold** here'), (s) =>
 			s.tr.removeMark(1, 5, blockSchema.marks.strong)
 		);
-		// The removed sub-range is no longer fully covered.
+		// The removed sub-range is not fully covered.
 		const strong = stored.marks.filter((m) => m.type === 'strong');
 		expect(strong.every((m) => m.start >= 4)).toBe(true);
 	});
@@ -133,7 +133,7 @@ describe('unknown mark round-trip (verbatim)', () => {
 describe('unknown line kind and container round-trip (verbatim)', () => {
 	// The 0.98 open block vocabulary, from the codec's side: a `kind` and a
 	// `container` this build does not know. Both render as their nearest safe
-	// neighbor (a paragraph; nothing) and both must come back out unchanged — an
+	// neighbor (a paragraph; nothing) and both must come back out unchanged; an
 	// edit anywhere in the field restates EVERY line's metadata, so a carrier that
 	// only survives decode would still lose them on the first keystroke.
 	const openRt: Content = {
@@ -145,7 +145,7 @@ describe('unknown line kind and container round-trip (verbatim)', () => {
 		marks: [],
 		islands: []
 	};
-	/** The line at `i`, minus the envelope — what a `setKind` restates. */
+	/** The line at `i`, minus the envelope: what a `setKind` restates. */
 	const kindOf = (rt: Content, i: number) => {
 		const { containers: _c, continues: _k, ...kind } = rt.lines[i];
 		return kind;
@@ -264,7 +264,7 @@ describe('insertReintroducesIslandSlot — the one op-unreachable edit', () => {
 
 	it('flags a splice whose insert re-carries an island slot (IslandSlotInInsert)', () => {
 		// Two edits (X after `b`, Y before `r`) collapse to one splice spanning the
-		// slot, so its insert contains U+FFFC — `applyChange` would throw.
+		// slot, so its insert contains U+FFFC; `applyChange` would throw.
 		const oldRt = mkIsland(`before ${island} after`);
 		const newRt = mkIsland(`bXefore ${island} afteYr`);
 		expect(insertReintroducesIslandSlot(oldRt, newRt)).toBe(true);

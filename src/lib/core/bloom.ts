@@ -1,5 +1,5 @@
 // The correlation bloom: a soft accent wash that rises over a target and decays to
-// nothing. The editor↔preview address is an EVENT, not a state — the preview claims
+// nothing. The editor↔preview address is an EVENT, not a state: the preview claims
 // to be the rendered output, so it carries no resting ink, and a highlight that
 // outlives the hop that caused it is ink the document did not ask for. Both
 // directions land here: the preview's field boxes bloom themselves (they are already
@@ -16,7 +16,7 @@
 // keystroke burst, so a bloom re-STARTED per rebuild would re-bloom continuously
 // while the user writes; a rebuilt node resumes at the offset the old one reached.
 
-/** Marks a transient wash node — the wash is decoration, never a hit target. */
+/** Marks a transient wash node: the wash is decoration, never a hit target. */
 const BLOOM_CLASS = 'qm-bloom';
 
 const WASH = 'var(--_qm-accent-wash)';
@@ -27,7 +27,7 @@ const FALLBACK_MS = 1100;
 
 // Rise fast, hold, then leave slowly: a highlighter's decay, not a linear fade. A
 // keyframe's easing governs the segment that STARTS at it. Under reduced motion the
-// ramps are dropped entirely — the wash holds at full for a beat and cuts, which
+// ramps are dropped entirely: the wash holds at full for a beat and cuts, which
 // still answers "here" with nothing to track.
 const FRAMES: Keyframe[] = [
 	{ opacity: 0, offset: 0, easing: 'ease-out' },
@@ -68,7 +68,7 @@ export function bloomTiming(el: HTMLElement): BloomTiming {
 }
 
 /**
- * Bloom the wash on `el` itself — the caller owns the element and has primed it
+ * Bloom the wash on `el` itself: the caller owns the element and has primed it
  * ({@link primeWash}). Returns the running animation, or `undefined` when there is
  * nothing left to run: `elapsed` past the decay, or an environment without WAAPI.
  * Pass `timing` to share one resolve across a batch.
@@ -83,11 +83,11 @@ export function bloom(el: HTMLElement, elapsed = 0, timing?: BloomTiming): Anima
 }
 
 /**
- * Bloom over `host`'s CONTENT — an inset child, so the wash neither tints the host's
+ * Bloom over `host`'s CONTENT: an inset child, so the wash neither tints the host's
  * own background nor fades the text under it. `host` must be positioned.
  *
  * ONE wash node per host, reused while it lives: two quick landings on the same leaf
- * must not stack two alphas over it. No `elapsed` seam — the surfaces that use this
+ * must not stack two alphas over it. No `elapsed` seam: the surfaces that use this
  * (editor leaves) are not rebuilt under the animation the way the preview's boxes are.
  */
 export function bloomInside(host: HTMLElement): void {

@@ -1,4 +1,4 @@
-// The prose leaf — `createField` (VISUAL_EDITOR §Surface). One content field, one
+// The prose leaf: `createField` (VISUAL_EDITOR §Surface). One content field, one
 // PM `EditorState`/`EditorView`, wired to the WASM edit surface. It reads the
 // leaf's `Content`, decodes to a PM state, mounts a view + plugin stack (history,
 // keymap, input rules, the anchor-position plugin), and `dispatchTransaction`:
@@ -7,8 +7,8 @@
 //       one structural edit the op vocabulary cannot represent),
 //   (c) commit via `doc.applyChange(addr, bundle)`,
 //   (d) fire `onCaretMove` with the new USV caret.
-// On an `applyChange` throw the optimistic PM state stays and the error is logged
-// — never a crash. Caret continuity across own-edits is the PM `StepMap`; an
+// On an `applyChange` throw the optimistic PM state stays and the error is logged:
+// never a crash. Caret continuity across own-edits is the PM `StepMap`; an
 // EXTERNAL content change re-hydrates through `applyExternal`, gated by `reconcile`.
 import { baseKeymap, toggleMark } from 'prosemirror-commands';
 import { history, redo, undo } from 'prosemirror-history';
@@ -38,7 +38,7 @@ export interface CreateFieldOpts {
 	/** Suppress the markdown-shorthand input rules. */
 	noInputRules?: boolean;
 	/** Accessible name → `aria-label` on the `contenteditable`. For a leaf NOTHING
-	 * else names — an array element (the field label plus its 1-based index), the
+	 * else names: an array element (the field label plus its 1-based index), the
 	 * card body (no visible label at all). A leaf with a field label takes
 	 * `labelledBy` instead: `for` cannot reach a `contenteditable`, which is not a
 	 * labelable element, so the association runs the other way. */
@@ -47,7 +47,7 @@ export interface CreateFieldOpts {
 	labelledBy?: string;
 	/** The parked `description` → `aria-describedby`; announced after the name. */
 	describedBy?: string;
-	/** Ghost text shown on the empty leaf — the resolved `default:` a field ghosts,
+	/** Ghost text shown on the empty leaf: the resolved `default:` a field ghosts,
 	 * or a body's invitation (VISUAL_EDITOR_UIUX §Fields). The INITIAL value;
 	 * {@link FieldController.setPlaceholder} moves it after mount. Empty/absent
 	 * shows no ghost. */
@@ -59,7 +59,7 @@ export interface CreateFieldOpts {
 
 /** The prose-leaf handle (VISUAL_EDITOR §Surface). */
 export interface FieldController {
-	/** The mounted `container` — the leaf's element, for a caller that has to reach the
+	/** The mounted `container`: the leaf's element, for a caller that has to reach the
 	 *  DOM the view sits in (the arrival wash, `core/bloom.ts`) rather than re-find it. */
 	readonly el: HTMLElement;
 	/** Place the caret at USV `pos` (preview onCaretPick → usvToPM → here). */
@@ -67,7 +67,7 @@ export interface FieldController {
 	/** External content change → re-hydrate this leaf (gated by reconcile). */
 	applyExternal(): void;
 	/**
-	 * Move the empty-leaf ghost after mount — a card retyped to another kind takes
+	 * Move the empty-leaf ghost after mount: a card retyped to another kind takes
 	 * its new kind's wording without remounting, which it must not do (the leaf key
 	 * is the card's session id, so a remount would cost the caret).
 	 *
@@ -79,7 +79,7 @@ export interface FieldController {
 	/** The current stored content for this addr (for tests / reconcile). */
 	getContent(): Content;
 	/**
-	 * Insert an identity anchor `id` at USV `pos` — the seam that gives
+	 * Insert an identity anchor `id` at USV `pos`: the seam that gives
 	 * `anchor` the toggle the six formatting marks have. Zero-width; it folds into the
 	 * plugin's position set and commits through the mark-diff `anchor` op, so it
 	 * survives later edits like any anchor. The id is caller-supplied and must be
@@ -88,7 +88,7 @@ export interface FieldController {
 	insertAnchor(id: string, pos: number): void;
 	/** Remove the identity anchor `id` (the inverse of {@link insertAnchor}); a no-op if absent. */
 	removeAnchor(id: string): void;
-	/** Ids of the anchors within USV range `[from, to]` — a selection's anchor state. */
+	/** Ids of the anchors within USV range `[from, to]`: a selection's anchor state. */
 	anchorsInRange(from: number, to: number): string[];
 	/** The current PM selection as a USV `{ from, to }` range (the boundary currency). */
 	selectionRange(): { from: number; to: number };
@@ -97,7 +97,7 @@ export interface FieldController {
 
 const anchorKey = new PluginKey<AnchorPos[]>('quill-anchors');
 
-/** An anchor mutation carried on a transaction's `anchorKey` meta — the seam that
+/** An anchor mutation carried on a transaction's `anchorKey` meta: the seam that
  * folds a new identity anchor (or a removal) into the plugin's position set, so
  * the next commit lowers it through the mark diff exactly as a toggled formatting
  * mark does. Ids are caller-supplied, unique, invariant (the 0.97
@@ -124,11 +124,11 @@ function anchorPlugin(seed: AnchorPos[]): Plugin<AnchorPos[]> {
 	});
 }
 
-/** Read the leaf's raw stored `Content` for `addr` — the unified `doc.getStored(addr)`
+/** Read the leaf's raw stored `Content` for `addr`: the unified `doc.getStored(addr)`
  * read (DOCUMENT_MODEL): a field value, or the body `Content` when `addr.field` is
  * absent, without materializing the whole card. Reads are total over the field
- * axis, so an absent field — a default-only richtext field (e.g. `tag_line`, no
- * stored value until first edited) — reads `undefined`; decode an empty content
+ * axis, so an absent field, a default-only richtext field (e.g. `tag_line`, no
+ * stored value until first edited), reads `undefined`; decode an empty content
  * rather than crash, and the first edit installs it. Only an out-of-range
  * `addr.card` throws, unreachable here: a removed card unmounts its keyed leaf
  * before a stale index is read. */
@@ -136,21 +136,21 @@ function readLeaf(doc: Document, addr: Addr): Content {
 	return (doc.getStored(addr) as Content | undefined) ?? emptyContent();
 }
 
-/** The canonical empty `Content` — one empty `para` line. The zero value a prose
+/** The canonical empty `Content`: one empty `para` line. The zero value a prose
  * leaf (or an array's prose element) seeds from. */
 export function emptyContent(): Content {
 	return { text: '', lines: [{ containers: [], kind: 'para' }], marks: [], islands: [] };
 }
 
-/** Whether the leaf's field currently holds a stored value — `doc.getStored` is total, so
+/** Whether the leaf's field currently holds a stored value: `doc.getStored` is total, so
  * an unset field reads `undefined`; a body always reads its `Content` (present). */
 function leafPresent(doc: Document, addr: Addr): boolean {
 	return doc.getStored(addr) !== undefined;
 }
 
 /** The naming attributes for the `contenteditable`. `aria-labelledby` supersedes
- * `aria-label` — a leaf carrying both is the ambiguity where implementations
- * disagree about which wins — and `undefined` is returned whole when a leaf takes
+ * `aria-label`: a leaf carrying both is the ambiguity where implementations
+ * disagree about which wins, and `undefined` is returned whole when a leaf takes
  * neither, since ProseMirror reads the absence, not an empty object. */
 function proseAttributes(opts: CreateFieldOpts): Record<string, string> | undefined {
 	const attrs: Record<string, string> = {};
@@ -166,13 +166,13 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	const plaintext = !!opts.plaintext;
 	const schema: Schema = inline ? inlineSchema : blockSchema;
 
-	// `known` is the codec's view of the stored content — kept in sync after every
+	// `known` is the codec's view of the stored content: kept in sync after every
 	// own-edit so `reconcile` can tell an external change from the field's own.
 	const reconciler: Reconciler = createReconciler(readLeaf(doc, addr));
 
 	let index: LineIndex; // rebuilt on every structural change
 	let view: EditorView;
-	// The ghost's live cell — the placeholder plugin reads it per pass, so moving it
+	// The ghost's live cell: the placeholder plugin reads it per pass, so moving it
 	// is an assignment plus a re-render rather than a rebuilt plugin stack.
 	let placeholderText = opts.placeholder;
 
@@ -189,12 +189,12 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			index = buildLineIndex(next.doc);
 
 			// Commit a content edit OR an anchor mutation. An anchor insert/remove is
-			// zero-width, so `docChanged` is false — the `anchorKey` meta is what
+			// zero-width, so `docChanged` is false: the `anchorKey` meta is what
 			// routes it through the same commit path (the diff emits the anchor op).
 			if (tr.docChanged || tr.getMeta(anchorKey)) {
 				commitEdit(oldRt, next.doc);
 			}
-			// (d) caret — for both structural and selection-only changes.
+			// (d) caret: for both structural and selection-only changes.
 			opts.onCaretMove?.(addr, pmToUsv(index, next.selection.head));
 		},
 		handleDOMEvents: {
@@ -228,13 +228,13 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		});
 	}
 
-	// (b)+(c): lower the edit to ops and commit — or `install` for a structural
+	// (b)+(c): lower the edit to ops and commit, or `install` for a structural
 	// edit the op vocabulary cannot express. Keep the optimistic PM on throw.
 	function commitEdit(oldRt: Content, newDoc: PMNode): void {
 		const newRt = pmToContent(newDoc);
 		try {
 			// `applyChange` throws on an absent declared field (verified), so the FIRST
-			// edit to one installs the value (creating it — no prior anchors to lose);
+			// edit to one installs the value (creating it; no prior anchors to lose);
 			// island creation is the other install case (`insertReintroducesIslandSlot`).
 			if (!leafPresent(doc, addr) || insertReintroducesIslandSlot(oldRt, newRt)) {
 				doc.install(addr, newRt); // create-or-structural fallback; pays this field's anchors
@@ -243,14 +243,14 @@ export function createField(opts: CreateFieldOpts): FieldController {
 				// anchors are the plugin's positions (mapped through the tr) as USV.
 				const oldAnchors = plaintext ? [] : anchorsFromContent(oldRt);
 				const newAnchors = plaintext ? [] : readAnchorsUsv(newDoc);
-				// `newRt` above is the projection `lower` diffs against — projecting the
+				// `newRt` above is the projection `lower` diffs against: projecting the
 				// doc a second time here would double the per-keystroke tree walk.
 				doc.applyChange(addr, lower(oldRt, newRt, { oldAnchors, newAnchors }));
 			}
 			reconciler.commit(readLeaf(doc, addr));
 		} catch (e) {
 			// Bound the damage: an op path the gates missed leaves the store STALE
-			// while PM keeps the edit — and because the reconciler then re-diffs
+			// while PM keeps the edit; and because the reconciler then re-diffs
 			// from that stale content, every later edit re-throws and the field
 			// silently stops persisting. Install the full projection instead
 			// (correct store, pays this field's anchors).
@@ -299,7 +299,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		setPlaceholder(text: string | undefined): void {
 			if (text === placeholderText) return;
 			placeholderText = text;
-			// `setProps` re-runs the decoration pass against the unchanged state — no
+			// `setProps` re-runs the decoration pass against the unchanged state: no
 			// transaction, so nothing commits and no caret is reported.
 			view.setProps({});
 		},
@@ -314,14 +314,14 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			if (heldAnchors().some((a) => a.id === id)) return; // ids are unique + invariant (0.97 policy)
 			// An anchor commits through `applyChange` (present field); a still-unset
 			// default-only field is materialized first, else the commit's create-branch
-			// `install` — value semantics — would drop the just-added anchor.
+			// `install` (value semantics) would drop the just-added anchor.
 			if (!leafPresent(doc, addr)) doc.install(addr, reconciler.last);
 			const pm = usvToPM(index, pos);
 			view.dispatch(view.state.tr.setMeta(anchorKey, { op: 'add', id, pos: pm } as AnchorEdit));
 		},
 		removeAnchor(id: string): void {
 			if (plaintext) return;
-			if (!heldAnchors().some((a) => a.id === id)) return; // absent — nothing to commit
+			if (!heldAnchors().some((a) => a.id === id)) return; // absent: nothing to commit
 			view.dispatch(view.state.tr.setMeta(anchorKey, { op: 'remove', id } as AnchorEdit));
 		},
 		anchorsInRange(from: number, to: number): string[] {
@@ -350,10 +350,10 @@ export function createField(opts: CreateFieldOpts): FieldController {
 }
 
 /**
- * The prose-leaf plugin stack (VISUAL_EDITOR §Surface) — shared by
+ * The prose-leaf plugin stack (VISUAL_EDITOR §Surface): shared by
  * {@link createField} and the array-element inline editor (`ProseArrayElement`),
  * so the two never fork the keymap/plugin ordering. History first, then any
- * leaf-specific plugins (`afterHistory` — the addressed leaf passes its
+ * leaf-specific plugins (`afterHistory`: the addressed leaf passes its
  * anchor-position plugin; a by-value array element passes none), the
  * markdown-shorthand input rules, then the field keymap over the base keymap.
  *
@@ -361,7 +361,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
  * Mod-b/i/u), so it also skips the input rules: `inlineSchema` still declares the
  * mark types, so a `**bold**` rule would apply a strong mark AND eat the literal
  * delimiters. The inline schema has no block nodes, so those rules are the ONLY
- * ones it would add — skip all.
+ * ones it would add: skip all.
  */
 export function proseLeafPlugins(
 	schema: Schema,
@@ -387,7 +387,7 @@ export function proseLeafPlugins(
 /**
  * The empty-leaf ghost placeholder (VISUAL_EDITOR_UIUX §Fields). A
  * node decoration stamps the sole empty textblock with a class + the ghost text,
- * which CSS renders via `::before { content: attr(data-placeholder) }` — so the
+ * which CSS renders via `::before { content: attr(data-placeholder) }`: so the
  * text never enters the document, the caret path, or a `pmToContent` export. It
  * vanishes the instant the leaf holds any content (the emptiness test fails).
  *
@@ -421,10 +421,10 @@ function placeholderPlugin(read: () => string | undefined): Plugin {
  * suppressed inline.
  *
  * Tab forks on the leaf's ROLE, not on the caret's position. An inline/plaintext
- * leaf is a form field: Tab stays unbound, so the deferred structural keymap owns
- * field navigation outright. A block-schema body is a document: Tab is structural,
- * a chain each nested surface prepends to (`keymap.ts`). One key never means two
- * things within one surface.
+ * leaf is a form field: Tab stays unbound, so field navigation is open for a shell
+ * keymap (VISUAL_EDITOR §Settled and open). A block-schema body is a document: Tab
+ * is structural, a chain each nested surface prepends to (`keymap.ts`). One key
+ * never means two things within one surface.
  */
 function editorKeymap(
 	schema: Schema,

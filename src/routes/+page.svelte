@@ -6,7 +6,7 @@
   panel at the foot reports the boundary quantities off the same handles
   (pageCount / supportsCanvas / warnings).
 
-  Clicking the hero sheet is the package's thesis in one gesture — a hit on the
+  Clicking the hero sheet is the package's thesis in one gesture: a hit on the
   painted page resolves to a content address, printed under it. Nothing else on
   the page claims anything the session is not already proving.
 -->
@@ -47,7 +47,7 @@
 	onMount(() => {
 		let cancelled = false;
 		(async () => {
-			// Handles created so far, newest first — freed in reverse creation
+			// Handles created so far, newest first; freed in reverse creation
 			// order on unmount-during-open AND on a mid-chain failure (e.g.
 			// `engine.open` throwing after `quill`/`doc` already exist).
 			const created: Array<{ free(): void }> = [];
@@ -107,7 +107,7 @@
 		</div>
 
 		<!-- The sheet: the reference quill, compiled and painted, on a page tone the
-		     host supplies. Sized to the first page and non-scrolling — a wheel over
+		     host supplies. Sized to the first page and non-scrolling; a wheel over
 		     the hero scrolls the PAGE, not the paper (PLAYGROUND §"The routes"). -->
 		<figure class="sheet">
 			<div class="pg-frame sheet-frame">
@@ -176,9 +176,9 @@
 
 <style>
 	/* The thesis and the artifact it describes, on the shell's two columns; the sheet
-	   drops under the text where they no longer fit. The route sets only the room
-	   around the block — a front page opens on air, where a tool route opens on its
-	   surface. */
+	   drops under the text where the columns do not fit side by side. The route sets
+	   only the room around the block: a front page opens on air, where a tool route
+	   opens on its surface. */
 	.hero {
 		padding-block: var(--pg-space-16);
 	}
@@ -283,7 +283,7 @@
 			padding-block: var(--pg-space-12) var(--pg-space-8);
 		}
 		/* Stacked, the sheet keeps the width it had beside the thesis rather than
-		   spanning the page — a painted page blown up to full width reads as a
+		   spanning the page; a painted page blown up to full width reads as a
 		   backdrop, not as an artifact. */
 		.sheet {
 			max-width: var(--pg-aside);

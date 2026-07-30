@@ -1,15 +1,14 @@
 // The `/preview` reserved-package invariant, enforced (ARCHITECTURE §Packaging):
-// the `/preview` subpath imports no editor-side code,
-// so the eventual `@quillmark/preview` promotion is a re-export, not a refactor.
-// "Editor-side" is concretely the heavy library a viewer-only consumer must not
-// pull — ProseMirror — plus the codec and the `/visual`/`/source` surfaces, which
-// are editor surfaces whether or not they carry weight of their own.
+// the `/preview` subpath imports no editor-side code, so a `@quillmark/preview`
+// promotion is a re-export, not a refactor. "Editor-side" is concretely the heavy
+// library a viewer-only consumer must not pull (ProseMirror) plus the codec and
+// the `/visual`/`/source` surfaces, which are editor surfaces whether or not they
+// carry weight of their own.
 //
 // A direct-import scan is not enough: preview importing the `/core` barrel, which
-// in a later phase re-exports the codec, would slip ProseMirror in transitively.
-// So this walks preview's import graph *within* `src/lib` and fails if any reached
-// module imports a forbidden external. The rule holds through Phases 2–5 without a
-// retroactive audit.
+// re-exports the codec, would slip ProseMirror in transitively. So this walks
+// preview's import graph *within* `src/lib` and fails if any reached module
+// imports a forbidden external.
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -51,10 +50,10 @@ function resolveInLib(spec: string, fromFile: string): string | null {
 	else if (spec === '$lib' || spec === SELF) base = LIB;
 	else if (spec.startsWith(`${SELF}/`)) base = join(LIB, spec.slice(SELF.length + 1));
 	else if (spec.startsWith('.')) base = resolve(dirname(fromFile), spec);
-	else return null; // bare specifier — checked against FORBIDDEN_EXTERNAL, not walked
+	else return null; // bare specifier; checked against FORBIDDEN_EXTERNAL, not walked
 	// TS-ESM specifiers carry the EMITTED extension (`./paint.js` → `paint.ts`,
 	// `./Preview.svelte`), so strip a trailing `.js`/`.ts`/`.svelte` before
-	// building candidates — else a `.js` specifier resolves to nothing and the
+	// building candidates; else a `.js` specifier resolves to nothing and the
 	// transitive walk (this test's whole reason to exist over a grep) never leaves
 	// `src/lib/preview`, silently passing a relative reach into the codec/core.
 	const stem = base.replace(/\.(js|ts|svelte)$/, '');

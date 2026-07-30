@@ -38,7 +38,7 @@ describe('createField over a real usaf_memo leaf', () => {
 		});
 		const before = (doc.getStored('subject') as { text: string }).text;
 		const view = viewOf(field);
-		// Place the caret after the first char (USV 1), then type "X" there —
+		// Place the caret after the first char (USV 1), then type "X" there;
 		// the caret advances to USV 2 as real typing would.
 		field.setCaret(1);
 		view.dispatch(view.state.tr.insertText('X', view.state.selection.head));
@@ -75,7 +75,7 @@ describe('createField over a real usaf_memo leaf', () => {
 		const head0 = view.state.selection.head;
 		expect(head0).toBe(6); // inline single paragraph: USV k ↔ PM k+1
 		view.dispatch(view.state.tr.insertText('AB', 1)); // insert before the caret
-		// The selection mapped forward by 2 (StepMap) — caret continuity across own-edits.
+		// The selection mapped forward by 2 (StepMap): caret continuity across own-edits.
 		expect(view.state.selection.head).toBe(head0 + 2);
 		field.destroy();
 	});
@@ -119,7 +119,7 @@ describe('field-level reconciliation', () => {
 describe('plaintext fields mount no markdown input rules', () => {
 	// `inlineSchema` still declares the mark types, so before the fix a `**x**`
 	// input rule would fire in a plaintext field, applying a strong mark and eating
-	// the literal delimiters. The rule is triggered the way a keystroke does — via
+	// the literal delimiters. The rule is triggered the way a keystroke does; via
 	// `handleTextInput` with the char that completes the pattern.
 	function fireClosingStar(view: EditorView): unknown {
 		const pos = view.state.selection.head;
@@ -286,13 +286,13 @@ describe('createField accessible name (a11y follow-up)', () => {
 
 // The ghost is chrome: it decorates an empty leaf, never enters the document, and
 // moves without an edit. `setPlaceholder` is what a RETYPED card uses to take its
-// new kind's wording — the leaf is keyed by card id, so it cannot remount to pick
+// new kind's wording; the leaf is keyed by card id, so it cannot remount to pick
 // one up.
 describe('the empty-leaf ghost', () => {
 	const ghostOf = (f: FieldController): string | null =>
 		viewOf(f).dom.querySelector('.qm-prose-placeholder')?.getAttribute('data-placeholder') ?? null;
 
-	/** A freshly added card's body — empty, which the seeded MAIN body is not.
+	/** A freshly added card's body: empty, which the seeded MAIN body is not.
 	 *  This is the very leaf the fallback exists for. */
 	function emptyBodyDoc(): Document {
 		const q = quill();
@@ -342,7 +342,7 @@ describe('the empty-leaf ghost', () => {
 	it('clears and re-installs the ghost on a leaf mounted without one', () => {
 		const doc = emptyBodyDoc();
 		const field = emptyBody(doc);
-		// Installed late — the plugin rides every leaf, so a ghost can arrive after
+		// Installed late; the plugin rides every leaf, so a ghost can arrive after
 		// mount rather than needing one at creation to be possible at all.
 		field.setPlaceholder('Write…');
 		expect(ghostOf(field)).toBe('Write…');
@@ -357,7 +357,7 @@ describe('the empty-leaf ghost', () => {
 		const view = viewOf(field);
 		view.dispatch(view.state.tr.insertText('typed', view.state.selection.head));
 		expect(ghostOf(field)).toBeNull();
-		// Moving it while non-empty stays invisible — emptiness gates the decoration.
+		// Moving it while non-empty stays invisible; emptiness gates the decoration.
 		field.setPlaceholder('Another…');
 		expect(ghostOf(field)).toBeNull();
 		// And emptying the leaf brings it back: the gate is the content, not the mount.

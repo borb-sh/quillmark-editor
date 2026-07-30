@@ -1,44 +1,45 @@
 <!--
-  A field's label plus its guidance chrome.
+ A field's label plus its guidance chrome.
 
-  IT NAMES THE CONTROL. A real `<label>`, so a click lands the caret in the field —
-  the widest, easiest target in a dense row, and the most conventional affordance a
-  form has. `for` reaches a LABELABLE control (the inputs, the enum trigger, the
-  switch) and the browser does the rest; a control `for` cannot reach — the prose
-  leaf's `contenteditable`, the date field's segments, an array's N inputs — leaves
-  `controlId` unset, points `aria-labelledby` back at this label's own `id`, and
-  hands the click to `onActivate`. Both halves are needed: `for` on a non-labelable
-  element is inert AND invalid.
+ IT NAMES THE CONTROL. A real `<label>`, so a click lands the caret in the field:
+ the widest, easiest target in a dense row, and the most conventional affordance a
+ form has. `for` reaches a LABELABLE control (the inputs, the enum trigger, the
+ switch) and the browser does the rest; a control `for` cannot reach (the prose
+ leaf's `contenteditable`, the date field's segments, an array's N inputs) leaves
+ `controlId` unset, points `aria-labelledby` back at this label's own `id`, and
+ hands the click to `onActivate`. Both halves are needed: `for` on a non-labelable
+ element is inert AND invalid.
 
-  Two non-gating label decorations:
-    • a persistent required `*` when the field has no `default:` — the
-      "Unendorsed"/must_fill set (DOCUMENT_MODEL: no separate `required` axis). Its
-      accessible name is "required", so a screen reader announces the word, not the
-      glyph; INSIDE the `<label>`, so it names the control along with the text —
-      "Subject required" — rather than announcing as a node adjacent to it;
-    • the `description` as an info marker raising a themed popover
-      ({@link FieldHint}).
+ Two non-gating label decorations:
+ • a persistent required `*` when the field has no `default:`: the
+ "Unendorsed"/must_fill set (DOCUMENT_MODEL: no separate `required` axis). Its
+ accessible name is "required", so a screen reader announces the word, not the
+ glyph; INSIDE the `<label>`, so it names the control along with the text
+ ("Subject required") rather than announcing as a node adjacent to it;
 
-  THE DESCRIPTION DESCRIBES, IT DOES NOT NAME. It is parked in an always-present
-  visually-hidden node here and the control carries `aria-describedby` — name then
-  role then description, which is the announcement the markup visually implies. In
-  the name it would instead prepend ~110 characters of guidance (the reference
-  quill's median) to every field's label on every focus. Parked rather than read off
-  the popover because the popover exists only while open, and a dangling
-  `aria-describedby` describes nothing.
+ • the `description` as an info marker raising a themed popover
+ ({@link FieldHint}).
 
-  Shared by {@link Field} (scalars, object, prose) and {@link ArrayField} so every
-  control's label decorates the same way.
+ THE DESCRIPTION DESCRIBES, IT DOES NOT NAME. It is parked in an always-present
+ visually-hidden node here and the control carries `aria-describedby`: name then
+ role then description, which is the announcement the markup visually implies. In
+ the name it would instead prepend ~110 characters of guidance (the reference
+ quill's median) to every field's label on every focus. Parked rather than read off
+ the popover because the popover exists only while open, and a dangling
+ `aria-describedby` describes nothing.
+
+ Shared by {@link Field} (scalars, object, prose) and {@link ArrayField} so every
+ control's label decorates the same way.
 -->
 <script lang="ts">
 	import FieldHint from './FieldHint.svelte';
 
 	interface Props {
 		label: string;
-		/** The labelable control this names — a `for` target. Unset for a control
+		/** The labelable control this names: a `for` target. Unset for a control
 		 * `for` cannot reach, which takes `id` + `onActivate` instead. */
 		controlId?: string;
-		/** This label's own id — what such a control's `aria-labelledby` points at. */
+		/** This label's own id: what such a control's `aria-labelledby` points at. */
 		id?: string;
 		/** Where the description parks for the control's `aria-describedby`. */
 		descriptionId?: string;
@@ -46,7 +47,7 @@
 		onActivate?: () => void;
 		/** No-default field → a persistent required `*`. */
 		required?: boolean;
-		/** Schema `description`, or undefined — the affordance renders only when set. */
+		/** Schema `description`, or undefined: the affordance renders only when set. */
 		description?: string;
 	}
 	let { label, controlId, id, descriptionId, onActivate, required, description }: Props = $props();
@@ -72,24 +73,24 @@
 	</label>
 	{#if description}
 		<!-- OUTSIDE the `<label>`, both of them: a trigger inside it would put its own
-		     name in the control's, and the parked copy would put all ~110 characters
-		     there. A `<button>` in a label is at least safe from the other hazard —
-		     the spec makes a label's activation behaviour do nothing for a click
-		     targeted at interactive content inside it — but the naming is reason
-		     enough to keep both out. -->
+		 name in the control's, and the parked copy would put all ~110 characters
+		 there. A `<button>` in a label is at least safe from the other hazard:
+		 the spec makes a label's activation behaviour do nothing for a click
+		 targeted at interactive content inside it; but the naming is reason
+		 enough to keep both out. -->
 		<FieldHint {description} {label} describedBy={descriptionId} />
 		<span class="qm-visually-hidden" id={descriptionId}>{description}</span>
 	{/if}
 </div>
 
 <style>
-	/* The row, not the label, is the field's grid child — `Field`'s subgrid counts
-	   three tracks and the hint sits beside the label rather than under it.
+	/* The row, not the label, is the field's grid child: `Field`'s subgrid counts
+	 three tracks and the hint sits beside the label rather than under it.
 
-	   A rung wider than the label's own gap below, so the two separations rank: the
-	   required glyph is part of the name and sits at the tighter one, the guidance
-	   marker is a second affordance beside it. The marker's box is its glyph
-	   (`FieldHint`), so this gap is the whole of what stands between them. */
+	 A rung wider than the label's own gap below, so the two separations rank: the
+	 required glyph is part of the name and sits at the tighter one, the guidance
+	 marker is a second affordance beside it. The marker's box is its glyph
+	 (`FieldHint`), so this gap is the whole of what stands between them. */
 	.qm-field-label-row {
 		display: flex;
 		align-items: center;
@@ -111,8 +112,8 @@
 	.qm-field-label.targeted {
 		cursor: pointer;
 	}
-	/* Required marker: a quiet accent glyph, not an alarm — required-ness is guidance,
-	   the document still edits and renders unmet. */
+	/* Required marker: a quiet accent glyph, not an alarm; required-ness is guidance,
+	 the document still edits and renders unmet. */
 	.qm-field-required {
 		display: inline-flex;
 		align-items: center;
@@ -120,10 +121,10 @@
 		line-height: 1;
 	}
 	/* The parked description: in the accessibility tree, out of the layout, and never
-	   a focus stop. Clipped rather than `display: none` / `hidden`, which take a node
-	   out of the tree entirely and would make the `aria-describedby` dangle. Out of
-	   flow, so the classic recipe's `margin: -1px` has nothing left to counteract —
-	   and it would mint a literal off every rung. */
+	 a focus stop. Clipped rather than `display: none` / `hidden`, which take a node
+	 out of the tree entirely and would make the `aria-describedby` dangle. Out of
+	 flow, so the classic recipe's `margin: -1px` has nothing left to counteract:
+	 and it would mint a literal off every rung. */
 	.qm-visually-hidden {
 		position: absolute;
 		width: 1px;

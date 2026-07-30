@@ -6,7 +6,7 @@
 //
 // jsdom has no WAAPI, so `bloom()` returns `undefined` there and no animation runs.
 // That is exactly the seam these tests want: they assert the CONTROL FLOW around the
-// wash — which elements it is asked for, and when — with a stub `Element.animate`
+// wash (which elements it is asked for, and when) with a stub `Element.animate`
 // recording the calls. The paint itself is playground territory (CLAUDE.md's two
 // tiers).
 import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
@@ -16,7 +16,7 @@ import type { PageSlot } from '$lib/preview/paint';
 
 interface AnimateCall {
 	field: string | null;
-	/** `currentTime` after the call — the offset a resumed bloom picked up at. */
+	/** `currentTime` after the call; the offset a resumed bloom picked up at. */
 	offset: number;
 }
 
@@ -105,7 +105,7 @@ describe('overlay: the bloom', () => {
 		calls = [];
 		now += 300;
 		overlay.refresh();
-		// Resumed, NOT restarted — a restart here is the bug that would make the wash
+		// Resumed, NOT restarted: a restart here is the bug that would make the wash
 		// re-bloom on every keystroke burst.
 		expect(calls).toEqual([{ field: 'main.body', offset: 300 }]);
 
@@ -116,7 +116,7 @@ describe('overlay: the bloom', () => {
 		const overlay = createOverlay(mockSession(), mockSlots());
 		overlay.flashField('main.body');
 
-		// Nothing clears the flash — it stays on as the change guard, and a spent
+		// Nothing clears the flash: it stays on as the change guard, and a spent
 		// elapsed is refused, so the rebuild a later recompile triggers is silent.
 		calls = [];
 		now += 5000; // well past `--_qm-duration-linger`
@@ -141,7 +141,7 @@ describe('overlay: the bloom', () => {
 		overlay.flashField('main.subject');
 		expect(calls.map((c) => c.field)).toEqual(['main.subject', 'main.subject']);
 
-		// And so is coming back — the guard is the LAST address, not a visited set.
+		// And so is coming back; the guard is the LAST address, not a visited set.
 		calls = [];
 		overlay.flashField('main.body');
 		expect(calls.map((c) => c.field)).toEqual(['main.body']);

@@ -1,7 +1,7 @@
 // `createPreview` wires paint.ts + overlay.ts + bridge.ts over one `LiveSession`
 // and `opts.container`, and is the only thing that composes them: the paint
 // loop owns the page slots; overlay and bridge attach their own DOM/listeners
-// to those same slots. A pure view — never calls `session.apply`, never
+// to those same slots. A pure view: never calls `session.apply`, never
 // mutates the session; the consumer drives edits and hands the resulting
 // `ChangeSet` to `refresh`.
 import type { LiveSession, ChangeSet, ContentHit } from '../core/index.js';
@@ -10,7 +10,7 @@ import { createOverlay, type OverlayController } from './overlay.js';
 import { createBridge, type BridgeController } from './bridge.js';
 
 export interface PreviewOptions {
-	/** The element the preview mounts into — becomes the scroll viewport. */
+	/** The element the preview mounts into; becomes the scroll viewport. */
 	container: HTMLElement;
 	/** Pages kept painted beyond the visible band. Default 1. */
 	margin?: number;
@@ -21,7 +21,7 @@ export interface PreviewOptions {
 }
 
 export interface PreviewController {
-	/** Repaint `dirtyPages ∩ visible` and re-read geometry — the only apply-driven hop. */
+	/** Repaint `dirtyPages ∩ visible` and re-read geometry; the only apply-driven hop. */
 	refresh(change: ChangeSet): void;
 	/** Scroll `field`'s first box into view and bloom it. */
 	scrollToField(field: string): void;
@@ -47,7 +47,7 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	const overlaysEnabled = opts.overlays ?? true;
 	container.classList.add(CONTAINER_CLASS);
 
-	// The full-container message slot, shared by every non-paint state — the empty
+	// The full-container message slot, shared by every non-paint state: the empty
 	// seed / drop-to-zero, a compile that cannot paint (`supportsCanvas` false),
 	// and a paint that threw. One element, restamped; these states are mutually
 	// exclusive, and the zero-page case keeps its `qm-preview-empty` hook.
@@ -70,13 +70,13 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	// there. A paint that unexpectedly throws is caught per-slot and surfaced
 	// through the shared message rather than aborting the observer callback
 	// mid-sweep (runtime.d.ts: even a `supportsCanvas` compile can hit a paint
-	// the boundary refuses — brittle to leave uncaught).
+	// the boundary refuses; brittle to leave uncaught).
 	const paintLoop: PaintLoop = createPaintLoop(session, container, margin, (page, err) => {
 		console.error(`[quillmark] preview paint failed for page ${page}`, err);
 		showMessage('Preview failed to render.', ERROR_CLASS);
 	});
 	// overlay/bridge query geometry at build (`session.regions()`), so they are
-	// held until slots exist — (re)built by `render` when a compile is paintable.
+	// held until slots exist; (re)built by `render` when a compile is paintable.
 	let overlay: OverlayController | undefined;
 	let bridge: BridgeController | undefined;
 
@@ -98,7 +98,7 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	// when there is something to paint, the shared message otherwise. Called at
 	// construction and after every `apply`, so `supportsCanvas` is re-read per
 	// compile (runtime.d.ts: re-check after `open`) and a 0-page or non-canvas
-	// compile that later gains paintable pages recovers — the check spans the
+	// compile that later gains paintable pages recovers; the check spans the
 	// paint capability generally, not just the page count.
 	function render(pageCount: number, dirtyPages: readonly number[]): void {
 		if (!session.supportsCanvas || pageCount === 0) {
@@ -121,7 +121,7 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 		paintLoop.refresh(dirtyPages, pageCount);
 		if (countChanged || !bridge) {
 			// The slot set moved under overlay/bridge's feet (pages added/removed,
-			// or we are leaving a message state) — rebuild both against the
+			// or we are leaving a message state): rebuild both against the
 			// reconciled slots rather than patch a stale snapshot in place.
 			detach();
 			attach();

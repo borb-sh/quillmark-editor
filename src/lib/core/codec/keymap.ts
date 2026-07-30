@@ -1,11 +1,11 @@
-// The body leaf's structural keymap — where the chains are composed, and the one
+// The body leaf's structural keymap: where the chains are composed, and the one
 // place that fixes their precedence (VISUAL_EDITOR §Chrome).
 //
 // A body is a document, so its structural keys are STRUCTURAL; a surface nested in
 // it that owns a key more locally joins the chain rather than rewriting the binding.
 // Precedence is inner surface first: the `code_block` link, then the
 // list links, and an island's cell traversal once added. Each link
-// declines outside its surface, so the first link that claims the key gets it — and
+// declines outside its surface, so the first link that claims the key gets it; and
 // where none does, the key is not swallowed at all and leaves the body a keyboard
 // exit.
 //
@@ -30,7 +30,7 @@ function chainKeymaps(...maps: Record<string, Command>[]): Record<string, Comman
 	return out;
 }
 
-/** The block-schema body's structural keys — `{}` for the inline/plaintext schemas,
+/** The block-schema body's structural keys: `{}` for the inline/plaintext schemas,
  * whose leaves declare neither lists nor code blocks. The argument list IS the
  * precedence order VISUAL_EDITOR §Chrome states, so a new link is one more argument
  * at its place in that order rather than a nesting to read inside out. */

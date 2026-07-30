@@ -1,12 +1,12 @@
 <!--
   The reference SPLIT-PANE SHELL. One consumer-owned LiveSession drives all three
   surfaces over one seeded document:
-    • <VisualEditor> (left)   — the edit surface; commits land on `doc`.
-    • <Preview>      (right)  — a pure view of the session; never mutates it.
-    • <SourceView>   (drawer) — read-only canonical markdown of `doc`.
+    • <VisualEditor> (left): the edit surface; commits land on `doc`.
+    • <Preview>      (right): a pure view of the session; never mutates it.
+    • <SourceView>   (drawer): read-only canonical markdown of `doc`.
 
   It wires the glue the primitives push outward (ARCHITECTURE §Playground), all
-  through the PUBLIC API — no reach-through:
+  through the PUBLIC API; no reach-through:
 
     edit ─► (debounced) session.apply(doc) ─► preview.refresh(change)
                                             └► sourceView.refresh()
@@ -20,13 +20,13 @@
   editor (it only surfaces hits). This route is the seam that joins them.
 
   Recompile is debounced and fed by BOTH `onChange` (scalar/structure mutations)
-  and `onCaretMove` (prose edits surface here — a prose leaf commits directly and
+  and `onCaretMove` (prose edits surface here; a prose leaf commits directly and
   does not bump the editor's revision). A caret move with no content change
   recompiles to empty `dirtyPages` (apply on an unchanged doc is a cheap no-op),
   so the preview repaints nothing; only the geometry re-reads.
 
-  The strip above the panes reads the bridge's outcomes back out — last-hit,
-  active-addr, last-focus, last-change — so a round-trip that lands nowhere is
+  The strip above the panes reads the bridge's outcomes back out (last-hit,
+  active-addr, last-focus, last-change), so a round-trip that lands nowhere is
   visible rather than silent. `inject-diagnostics` stands in for a live
   render-error feed: a real consumer derives external diagnostics from
   `session.warnings` (wired here, `[]` for usaf_memo) plus render errors.
@@ -56,11 +56,11 @@
 	let quillHandle: Quill | undefined = $state();
 	let docHandle: Document | undefined = $state();
 
-	// The editor→preview address mapping — captured from the dynamic `$lib/visual`
+	// The editor→preview address mapping: captured from the dynamic `$lib/visual`
 	// import (below) rather than statically imported, so the route module never
-	// pulls VisualEditor's WASM top-level await — Safari/dev doesn't TDZ on Kit's
-	// `component` export, the reason for the dynamic-import dance. This IS the
-	// public `/visual` surface, just deferred.
+	// pulls VisualEditor's WASM top-level await (Safari/dev doesn't TDZ on Kit's
+	// `component` export, the reason for the dynamic-import dance). This is the
+	// public `/visual` surface, loaded after mount.
 	let fieldPathForAddr: ((addr: Addr, kinds: readonly string[]) => string | undefined) | undefined;
 
 	// Surface handles for the imperative bridge hops.
@@ -76,7 +76,7 @@
 		externalDiagnostics = session ? [...session.warnings, ...injected] : injected;
 	}
 
-	// Bridge observability — what the strip reads.
+	// Bridge observability: what the strip reads.
 	let lastHit = $state<ContentHit | undefined>();
 	let activeAddr = $state('none');
 	let lastFocus = $state('none');
@@ -189,7 +189,7 @@
 			previewRef?.focusPosition(field, pos);
 			lastFocus = JSON.stringify({ field, pos });
 		}
-		// A prose edit surfaces only as a caret move — recompile to follow it.
+		// A prose edit surfaces only as a caret move; recompile to follow it.
 		scheduleRecompile();
 	}
 
@@ -399,7 +399,7 @@
 	}
 
 	/* Both panes are the shell's frame; what each states here is the mounting site
-	   THEMING §"What is behind the column is yours" leaves to the host — the gutter,
+	   THEMING §"What is behind the column is yours" leaves to the host: the gutter,
 	   the scroll container, the page tone, the tail. This one puts plain `--qm-bg`
 	   behind the column, the supported bare case, and its end padding is the tail. */
 	.editor-pane {
@@ -418,7 +418,7 @@
 		padding: var(--pg-space-2);
 	}
 
-	/* Reference resizer — a hairline in an 11px hit track, thickening on
+	/* Reference resizer: a hairline in an 11px hit track, thickening on
 	   hover/drag, with an ellipsis grip that fades in over the line. */
 	.resizer {
 		position: relative;

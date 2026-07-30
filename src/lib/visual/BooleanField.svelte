@@ -1,11 +1,11 @@
 <!--
-  A `boolean` field → a styled switch on bits-ui. No boolean field exists in the
-  reference quill, so this control is implemented to the schema contract and is
-  UNTESTED against a real leaf.
+ A `boolean` field → a styled switch on bits-ui. No boolean field exists in the
+ reference quill, so this control is implemented to the schema contract and is
+ UNTESTED against a real leaf.
 
-  Styled rather than a native checkbox: the native box's face is UA-owned shadow
-  DOM, so no dial reaches it. The a11y comes with the primitive —
-  Switch.Root renders `role="switch"` with its checked state and keyboard handling.
+ Styled rather than a native checkbox: the native box's face is UA-owned shadow
+ DOM, so no dial reaches it. The a11y comes with the primitive:
+ Switch.Root renders `role="switch"` with its checked state and keyboard handling.
 -->
 <script lang="ts">
 	import { Switch } from 'bits-ui';
@@ -15,16 +15,16 @@
 	interface Props {
 		value: boolean | undefined;
 		fallback?: boolean;
-		/** Accessible name for a switch NOTHING else names — an object property, whose
+		/** Accessible name for a switch NOTHING else names: an object property, whose
 		 * name is the field label plus the property's. A field's own switch takes `id`
 		 * instead and is named by the `<label for>` beside it. */
 		label?: string;
 		/** `<label for>` target. `Switch.Root` renders a `<button>`, which IS labelable,
-		 * so the click a label forwards toggles the switch — correct for this control,
+		 * so the click a label forwards toggles the switch: correct for this control,
 		 * and single-fire: the label is a sibling, not a wrapper, so there is no second
 		 * click bubbling back up to be re-dispatched. */
 		id?: string;
-		/** The parked `description` (FieldLabel) — announced after the name. */
+		/** The parked `description` (FieldLabel): announced after the name. */
 		describedBy?: string;
 		onCommit: (v: boolean) => void;
 	}
@@ -33,7 +33,7 @@
 	// Local toggle state synced to `value`; own-toggles stay local, only an external
 	// change reconciles back in (see `syncedLocal`). The primitive is driven
 	// CONTROLLED (`checked` + `onCheckedChange`, never `bind:`) so reconciliation
-	// stays the package's — a two-way bind hands the primitive a lane around it,
+	// stays the package's: a two-way bind hands the primitive a lane around it,
 	// which repeats the reconciliation hazard in miniature.
 	const local = syncedLocal(() => value ?? fallback ?? false);
 </script>
@@ -55,8 +55,8 @@
 </span>
 
 <style>
-	/* A primitive renders its OWN element, which a scoped selector cannot reach —
-	   styled through the wrapper with `:global`. */
+	/* A primitive renders its OWN element, which a scoped selector cannot reach:
+	 styled through the wrapper with `:global`. */
 	.qm-switch-wrap :global(.qm-switch) {
 		display: inline-flex;
 		align-items: center;

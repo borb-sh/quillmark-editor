@@ -1,26 +1,26 @@
 <!--
-  An `array` field → an add/remove repeater. Elements commit by VALUE: every
-  edit / add / remove rebuilds the whole array and hands it to the parent's typed
-  `writer.set(field, wholeArray)` (arrays are not op-addressed). Element control
-  by `items.type`: `string` → text input, `richtext` → a prose element
-  ({@link ProseArrayElement}), `object` → a minimal JSON editor (no
-  array-of-object field exists in the fixture — implemented minimally, UNTESTED).
-  The add affordance sits in the label header row (space-between with the field
-  label); {@link Field} skips its own label for array controls.
+ An `array` field → an add/remove repeater. Elements commit by VALUE: every
+ edit / add / remove rebuilds the whole array and hands it to the parent's typed
+ `writer.set(field, wholeArray)` (arrays are not op-addressed). Element control
+ by `items.type`: `string` → text input, `richtext` → a prose element
+ ({@link ProseArrayElement}), `object` → a minimal JSON editor (no
+ array-of-object field exists in the fixture: implemented minimally, UNTESTED).
+ The add affordance sits in the label header row (space-between with the field
+ label); {@link Field} skips its own label for array controls.
 
-  A row ends in the section's reserved action column (Card `--action-col`), which the
-  field reaches back across: the element controls stop where a scalar's does and the
-  remove sits beyond them, on the one right edge the section keeps (SURFACES §Rhythm).
+ A row ends in the section's reserved action column (Card `--action-col`), which the
+ field reaches back across: the element controls stop where a scalar's does and the
+ remove sits beyond them, on the one right edge the section keeps (SURFACES §Rhythm).
 
-  Keys carry the list without the mouse (VISUAL_EDITOR_UIUX §Fields): Enter inserts a
-  sibling below and takes the caret there, Backspace on an EMPTY element removes it
-  and hands focus back up the list.
+ Keys carry the list without the mouse (VISUAL_EDITOR_UIUX §Fields): Enter inserts a
+ sibling below and takes the caret there, Backspace on an EMPTY element removes it
+ and hands focus back up the list.
 
-  No reorder: an array's order is fixed at declaration/entry order. Elements
-  carry a parallel session-id list, spliced with the values as one operation at
-  whatever index a mutation names — so an element holds its id for life and the
-  surviving order never permutes, which is what lets a keyed prose element survive an
-  insert or a remove ABOVE it rather than remounting.
+ No reorder: an array's order is fixed at declaration/entry order. Elements
+ carry a parallel session-id list, spliced with the values as one operation at
+ whatever index a mutation names; so an element holds its id for life and the
+ surviving order never permutes, which is what lets a keyed prose element survive an
+ insert or a remove ABOVE it rather than remounting.
 -->
 <script lang="ts">
 	import { tick } from 'svelte';
@@ -40,16 +40,16 @@
 		label?: string;
 		/** No-default field → a persistent required `*` on the label. */
 		required?: boolean;
-		/** Schema `description` — the label's help affordance. */
+		/** Schema `description`: the label's help affordance. */
 		description?: string;
-		/** The label's own DOM id. An array is a GROUP — N inputs, no single `for`
-		 * target — so the label names the set and each element keeps its indexed
+		/** The label's own DOM id. An array is a GROUP (N inputs, no single `for`
+		 * target) so the label names the set and each element keeps its indexed
 		 * `aria-label`. */
 		labelId?: string;
 		/** Where the description parks, for the group's `aria-describedby`. */
 		descriptionId?: string;
 		onCommit: (arr: unknown[]) => void;
-		/** A prose element gained focus — joins the field in the focus federation. */
+		/** A prose element gained focus: joins the field in the focus federation. */
 		onFocusEl?: () => void;
 	}
 	let {
@@ -71,7 +71,7 @@
 	const arr = $derived((value ?? []) as unknown[]);
 
 	// Parallel stable ids, one per element, kept in lockstep with the data below.
-	// Seeded eagerly so a non-empty array renders its rows on the FIRST pass —
+	// Seeded eagerly so a non-empty array renders its rows on the FIRST pass:
 	// an effect-only seed mounts every element editor in a second render.
 	const seq = new IdSeq();
 	// svelte-ignore state_referenced_locally
@@ -90,7 +90,7 @@
 
 	// The focus targets, keyed by element ID rather than index: an index goes stale on
 	// the splice that focus is chasing. An element control exposes `focus()` because a
-	// text element and a prose element disagree on what focusing is — the difference
+	// text element and a prose element disagree on what focusing is: the difference
 	// is stated on `ProseArrayElement.focus`, which owns it.
 	//
 	// Every path that drops an id deletes its entry: `bind:this` teardown nulls the
@@ -109,7 +109,7 @@
 	function commitElement(k: number, next: unknown): void {
 		const copy = arr.slice();
 		// A cleared element control commits `undefined` (the unset rung), but an
-		// array slot is positional — an array defaults as a whole (`[]`), no
+		// array slot is positional: an array defaults as a whole (`[]`), no
 		// per-element `default:` to fall back to. Keep the slot as the type's empty
 		// element, not an array hole.
 		copy[k] = next === undefined ? emptyElement() : next;
@@ -137,31 +137,31 @@
 		// Focus lands on the element before the removed one, or on the one that slid
 		// into its place; on the add affordance once the list is empty, which is then
 		// the only thing left to hold it. Clicking the remove needs this as much as the
-		// key does — the button under the pointer is part of what it destroys.
+		// key does: the button under the pointer is part of what it destroys.
 		focusAfterFlush(next[Math.max(k - 1, 0)]);
 	}
 	/** A label click on an array, resolved rather than left to dangle: the FIRST
-	 * element, or the add affordance when the list is empty — which is then the only
+	 * element, or the add affordance when the list is empty; which is then the only
 	 * thing there is to land on, and the next thing the user wants anyway. */
 	function activate(): void {
 		if (ids.length === 0) return void addEl?.focus();
 		const first = els[ids[0]];
 		if (first) return first.focus();
-		// The JSON element registers no controller — it is a plain textarea, with
+		// The JSON element registers no controller: it is a plain textarea, with
 		// nothing about focusing it that the DOM does not already know.
 		rootEl?.querySelector<HTMLTextAreaElement>('.qm-array-row textarea')?.focus();
 	}
 	/** Focus element `id` after the flush, never in the same tick: a mutation commits
 	 * the array BY VALUE, so the parent re-derives and the row does not exist until
-	 * then. `undefined` is the empty list — the add affordance. */
+	 * then. `undefined` is the empty list: the add affordance. */
 	async function focusAfterFlush(id: string | undefined): Promise<void> {
 		await tick();
 		if (id === undefined) addEl?.focus();
 		else els[id]?.focus();
 	}
 	/** Whether element `k` reads empty to the user. A text element's committed value
-	 * LAGS the input — a cleared field commits at `change`, not per keystroke
-	 * ({@link TextField}) — so the input's own value is the truth; a prose element
+	 * LAGS the input: a cleared field commits at `change`, not per keystroke
+	 * ({@link TextField}); so the input's own value is the truth; a prose element
 	 * commits every edit, so the committed `Content` is. */
 	function elementEmpty(k: number, target: EventTarget | null): boolean {
 		if (control === 'prose') return !(arr[k] as Content | undefined)?.text;
@@ -169,7 +169,7 @@
 	}
 	/**
 	 * The element keyboard contract. Both keys ride the element control's own keydown
-	 * — the input's, or the PM view's through `handleDOMEvents` — since neither
+	 * (the input's, or the PM view's through `handleDOMEvents`) since neither
 	 * surface is a place a keymap of this component's could sit. The JSON element is
 	 * out: Enter is a newline in a textarea.
 	 */
@@ -181,7 +181,7 @@
 		} else if (e.key === 'Backspace' && !e.repeat && elementEmpty(k, e.target)) {
 			// Destructive with nothing to undo it, so it takes a deliberate press:
 			// `repeat` is a held key running on past the character it just cleared, and
-			// the emptiness test reads the state BEFORE this keystroke applies — so the
+			// the emptiness test reads the state BEFORE this keystroke applies; so the
 			// press that empties an element never also removes it.
 			e.preventDefault();
 			remove(k);
@@ -271,10 +271,10 @@
 		gap: var(--_qm-space-2);
 	}
 	/* The element takes the section's tracks, the remove takes the action column, and
-	   the gutter between them is the section's own — the row is that column's only
-	   occupant, so it reads as one more column of the grid rather than a nested layout.
-	   `minmax(0, …)` because an element control must be allowed to be narrower than its
-	   content: a long unbroken value grows the track otherwise, and the edge with it. */
+	 the gutter between them is the section's own: the row is that column's only
+	 occupant, so it reads as one more column of the grid rather than a nested layout.
+	 `minmax(0, …)` because an element control must be allowed to be narrower than its
+	 content: a long unbroken value grows the track otherwise, and the edge with it. */
 	.qm-array-row {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) var(--_qm-tap-min);
@@ -284,17 +284,17 @@
 	.qm-remove {
 		align-self: center;
 	}
-	/* The JSON element is a `.qm-input` (controls.css) — box, focus ring, and all;
-	   what a textarea adds over an input is the face and a floor on its height. */
+	/* The JSON element is a `.qm-input` (controls.css): box, focus ring, and all;
+	 what a textarea adds over an input is the face and a floor on its height. */
 	.qm-json {
 		font-family: var(--_qm-font-mono);
 		min-height: 2.5rem;
 	}
 	/* Chrome, hover fill and target come from `.qm-add-affordance` (controls.css);
-	   what is here is this trigger's own inset and recede ladder — the foot add rests
-	   dim like the card stack's gap triggers, and comes up on hover of the field or on
-	   focus. The field, not the button: one trigger at the foot of a row of controls
-	   is found by looking at the array, not by grazing its last line. */
+	 what is here is this trigger's own inset and recede ladder: the foot add rests
+	 dim like the card stack's gap triggers, and comes up on hover of the field or on
+	 focus. The field, not the button: one trigger at the foot of a row of controls
+	 is found by looking at the array, not by grazing its last line. */
 	.qm-add-el {
 		padding: var(--_qm-space) var(--_qm-space-2);
 		opacity: var(--_qm-opacity-idle);
@@ -303,7 +303,7 @@
 	.qm-add-el:focus-visible {
 		opacity: 1;
 	}
-	/* Touch has no hover — keep a faint always-on affordance so add stays reachable. */
+	/* Touch has no hover: keep a faint always-on affordance so add stays reachable. */
 	@media (hover: none) {
 		.qm-add-el {
 			opacity: var(--_qm-opacity-muted);

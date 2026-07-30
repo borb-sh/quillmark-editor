@@ -1,4 +1,4 @@
-// caret.ts — the editor→preview field-path mapping (Phase 5). Pure address math:
+// caret.ts: the editor→preview field-path mapping. Pure address math:
 // the canonical `DocPath` grammar and its inverse relationship with the
 // `parsePath` route.
 import { describe, it, expect } from 'vitest';
@@ -46,7 +46,7 @@ describe('fieldPathForAddr', () => {
 			expect(path).toBeDefined();
 			const parsed = parsePath(path!);
 			expect(parsed).toBeDefined();
-			// The absolute index and field survive the round-trip directly — no
+			// The absolute index and field survive the round-trip directly; no
 			// per-kind resolution, since `DocPath` addresses cards by document index.
 			expect(parsed!.card).toBe(addr.card == null ? undefined : addr.card);
 			expect(parsed!.field).toBe('field' in addr ? addr.field : undefined);

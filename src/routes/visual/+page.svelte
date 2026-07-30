@@ -7,7 +7,7 @@
 
   The panel's buttons stand in for consumer-supplied channels the reference quill
   has no way to declare: `inject-diagnostics` for the consumer `diagnostics` prop
-  (VISUAL_EDITOR §Diagnostics — a real consumer derives it from
+  (VISUAL_EDITOR §Diagnostics; a real consumer derives it from
   `LiveSession.warnings` and render errors), plus the enum policy and the body
   wording below.
 
@@ -25,7 +25,7 @@
 	type VisualEditorComponent = typeof import('$lib/visual').VisualEditor;
 
 	// What each flag changes about the document under the editor. Named for the
-	// branch it reaches — the reference quill on disk reaches none of them.
+	// branch it reaches; the reference quill on disk reaches none of them.
 	const VARIANTS = [
 		{ flag: 'tips', label: 'tips', hint: 'seed the guidance channel on main' },
 		{ flag: 'kinds2', label: 'kinds2', hint: 'a second card kind, so add takes its menu branch' },
@@ -55,7 +55,7 @@
 	// A consumer empty-body wording stand-in, deliberately the WORST case for
 	// determinism: it samples at random and is a fresh closure on every re-derive.
 	// The editor consults it once per kind and keeps the answer, so the ghosts hold
-	// still anyway — the reason a consumer may write a hook this careless without
+	// still anyway: the reason a consumer may write a hook this careless without
 	// it showing.
 	let wittyGhosts = $state(false);
 	const WITTY = [
@@ -88,7 +88,7 @@
 	}
 
 	// A consumer-supplied diagnostic feed stand-in (the split-pane shell derives
-	// this from LiveSession.warnings / render errors) — one main-field path, one
+	// this from LiveSession.warnings / render errors): one main-field path, one
 	// card-field DocPath, proving the external producer routes to both.
 	function injectDiagnostics(): void {
 		externalDiagnostics = [
@@ -101,7 +101,7 @@
 		];
 	}
 
-	// Curated read of the live doc for assertions — re-derives on any commit
+	// Curated read of the live doc for assertions; re-derives on any commit
 	// (onChange) or caret move (a prose edit).
 	const dump = $derived.by(() => {
 		dumpTick; // dependency
@@ -154,31 +154,31 @@
 				init();
 				const tree = await loadUsafMemoTree();
 				// The reference quill's `date` declares a blank `default:`, which ghosts
-				// nothing — `?dateDefault=YYYY-MM-DD` rewrites it so the date control's
+				// nothing; `?dateDefault=YYYY-MM-DD` rewrites it so the date control's
 				// ghosted default is reachable at all. A SCHEMA variant, so it patches the
 				// tree before the quill is built, unlike the document seeds below.
 				const params = new URLSearchParams(window.location.search);
 				const dateDefault = params.get('dateDefault');
 				if (dateDefault) withMainDateDefault(tree, dateDefault);
 				// The other schema variant: `?kinds2` declares a second card kind, so the
-				// add affordance takes its MENU branch — the one the reference quill's
+				// add affordance takes its MENU branch: the one the reference quill's
 				// single kind means nothing on disk reaches.
 				if (params.has('kinds2')) withSecondCardKind(tree);
 				const quill = Quill.fromTree(tree);
 				const doc = quill.seedDocument();
-				// `?foreign` seeds a card whose `kind` the schema can't project (as a
-				// document predating a schema change would carry). `Document.insertCard`
-				// is schema-agnostic, so it can hold a foreign kind the Quill-bound writer
-				// would reject — the exact un-schemable case the recovery shell handles.
+				// `?foreign` seeds a card whose `kind` the schema can't project.
+				// `Document.insertCard` is schema-agnostic, so it can hold a foreign kind
+				// the Quill-bound writer would reject: the exact un-schemable case the
+				// recovery shell handles.
 				if (params.has('foreign')) {
 					doc.insertCard(Document.makeCard('legacy_kind', {}, 'Trapped legacy body.'));
 				}
 				// `?tips` seeds the channel a quill or consumer supplies. The reference
-				// quill declares none — tips are `$ext`, not schema — so the
+				// quill declares none (tips are `$ext`, not schema), so the
 				// playground stands in for the seeding consumer, off by default so the
 				// default view stays the plain card stack.
 				if (params.has('tips')) {
-					// Through `patchEditorExt`, not a bare `storeExtNamespace` — a consumer
+					// Through `patchEditorExt`, not a bare `storeExtNamespace`: a consumer
 					// seeding one key must not replace the namespace either.
 					visual.patchEditorExt(doc, MAIN_CARD_ADDR, {
 						tips: [

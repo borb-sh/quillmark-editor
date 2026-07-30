@@ -1,9 +1,9 @@
 // Field-box overlay: absolutely-positioned % divs per page, one per
 // `session.fieldBoxes(field)` entry, grouped by `field` via a `data-qm-field`
-// attribute (a field can surface several boxes — header/continuation/repeat,
+// attribute (a field can surface several boxes: header/continuation/repeat,
 // see PREVIEW.md). Reads geometry off the session; never mutates it. Each
 // page's layer sits over its canvas with `pointer-events:none` so clicks fall
-// through to bridge.ts's listener on the slot beneath — the overlay is
+// through to bridge.ts's listener on the slot beneath; the overlay is
 // decoration, never an independent click target.
 //
 // The boxes carry NO resting ink. They exist for their geometry (bridge.ts reads
@@ -16,9 +16,9 @@ import type { PageSlot } from './paint.js';
 import { rectToPercent, applyPercentRect } from './geometry.js';
 
 export interface OverlayController {
-	/** Re-read geometry and rebuild every box — call after a layout-affecting refresh. */
+	/** Re-read geometry and rebuild every box; call after a layout-affecting refresh. */
 	refresh(): void;
-	/** Bloom `field`'s boxes — transient, and a no-op when `field` is already the marked one. */
+	/** Bloom `field`'s boxes: transient, and a no-op when `field` is already the marked one. */
 	flashField(field: string): void;
 	destroy(): void;
 }
@@ -38,15 +38,15 @@ export function createOverlay(session: LiveSession, slots: readonly PageSlot[]):
 	// the change guard has to outlive the decay (a caret move after the wash ended
 	// must not re-mark the same field), and `bloom` refuses an `elapsed` past the
 	// decay, so a spent flash is inert on every later rebuild and never needs
-	// clearing. The editor→preview signal is continuous — every caret move, so every
-	// keystroke — and only a change of address is an event; marking the field being
+	// clearing. The editor→preview signal is continuous (every caret move, so every
+	// keystroke), and only a change of address is an event; marking the field being
 	// typed into is noise the recompile already answers, since the changed text
 	// repaints under the caret 120ms later.
 	let flash: { field: string; startedAt: number } | undefined;
 	/** field → its boxes, rebuilt with them. The bloom's only lookup. */
 	let byField = new Map<string, HTMLElement[]>();
 
-	// Start or RESUME the bloom on whatever boxes exist for it now — one path, because
+	// Start or RESUME the bloom on whatever boxes exist for it now: one path, because
 	// starting is resuming at ~0. A field surfaces several boxes and they share
 	// `startedAt`, so they bloom in step rather than shimmering unevenly.
 	function applyFlash(): void {
@@ -58,7 +58,7 @@ export function createOverlay(session: LiveSession, slots: readonly PageSlot[]):
 	}
 
 	// Field names come from `regions()` (the only session query that enumerates
-	// them — Preview carries no schema); the boxes themselves come from
+	// them; Preview carries no schema); the boxes themselves come from
 	// `fieldBoxes(field)`, which is content-only and `[]` for a scalar-reference
 	// or widget field, so a nameless-of-content field contributes no boxes.
 	function build(): void {

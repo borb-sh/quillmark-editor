@@ -1,14 +1,14 @@
-/* The host's shared recipes — the declarations more than one route draws, so a
+/* The host's shared recipes: the declarations more than one route draws, so a
    route carries a class instead of restating a rule. The rungs are minted in
    `routes/playground.css`; this file mints nothing (PLAYGROUND §"Preventing
    drift"). Not merged into the derivation, which is exempt from the literal
-   rules — a recipe beside it would inherit the exemption. */
+   rules; a recipe beside it would inherit the exemption. */
 
-/* Every band of the shell — head, route, foot — starts on the same two edges.
+/* Every band of the shell (head, route, foot) starts on the same two edges.
    The width must be stated: a band is a grid item and `margin-inline: auto`
    switches its stretch alignment off, so `auto` sizes it to content. The gutter
    sits inside the width (`border-box`), or a narrow viewport overflows by the two
-   gutters — declared here, not as a `*` reset that would re-box every package
+   gutters; declared here, not as a `*` reset that would re-box every package
    element mounted inside the host. */
 .pg-width {
 	box-sizing: border-box;
@@ -19,8 +19,8 @@
 }
 
 /* ── The two-column layout ─────────────────────────────────────────────────── */
-/* Every route's body: the thing the page is about, and the aside beside it —
-   instruments on a tool route, the live sheet on the front page. One recipe, so
+/* Every route's body: the thing the page is about, and the aside beside it
+   (instruments on a tool route, the live sheet on the front page). One recipe, so
    the aside sits on the same edge and collapses at the same width whichever route
    the visitor is on. Margins are the route's own; this places the columns and
    nothing more. */
@@ -32,7 +32,7 @@
 }
 
 /* Below the width where the aside stops fitting, it drops under the content it
-   annotates — the same stack the rail takes, at the same threshold. */
+   annotates; the same stack the rail takes, at the same threshold. */
 @media (width < 60rem) {
 	.pg-layout {
 		grid-template-columns: minmax(0, 1fr);
@@ -50,7 +50,7 @@
 	align-items: start;
 }
 
-/* The annotation is whatever the block puts first — a section label, a status
+/* The annotation is whatever the block puts first: a section label, a status
    line; the rail only places it. */
 .pg-rail > :first-child {
 	padding-top: var(--pg-space);
@@ -99,7 +99,7 @@
 	margin: 0;
 }
 
-/* A page's one display run — the landing thesis, a tool route's title. The type
+/* A page's one display run: the landing thesis, a tool route's title. The type
    is the recipe; margins are layout and stay the route's own (a route sets its
    measure and the layout inside it, nothing more). */
 .pg-title {
@@ -110,7 +110,7 @@
 	letter-spacing: var(--pg-track-display);
 }
 
-/* A value read back out of the running session — an address, a page index, a
+/* A value read back out of the running session: an address, a page index, a
    count. Monospace and tabular, because these are read by comparison: two
    addresses one above the other line up character for character. */
 .pg-readout {
@@ -139,7 +139,7 @@ pre.pg-readout {
 
 /* ── Surfaces ──────────────────────────────────────────────────────────────── */
 
-/* The instrument plate — the one thing on these pages that takes a fill, and the
+/* The instrument plate: the one thing on these pages that takes a fill, and the
    reading column stays unboxed prose (PLAYGROUND §"What takes a fill"). */
 .pg-panel {
 	box-sizing: border-box;
@@ -149,7 +149,7 @@ pre.pg-readout {
 	padding: var(--pg-space-4);
 }
 
-/* The instrument column — the switches and readouts beside a mounted surface, on
+/* The instrument column: the switches and readouts beside a mounted surface, on
    a panel: sticky under the running head, each label sitting on its value with
    the space between the groups. It caps at the viewport and scrolls in place,
    because a column carrying a document dump is the one thing on these pages that
@@ -177,7 +177,7 @@ pre.pg-readout {
 }
 
 /* The mounting site: the frame a surface is dropped into, and the tone behind its
-   column — the properties THEMING §"What is behind the column is yours" leaves to
+   column; the properties THEMING §"What is behind the column is yours" leaves to
    the host. `border-box`, like the panel: both take a padding from here and a
    size from their caller, so a stated height is the height they draw. */
 .pg-frame {
@@ -212,7 +212,7 @@ pre.pg-readout {
 	background: var(--pg-surface-hover);
 }
 
-/* On, whichever way the control says so — a switch that is pressed, or the link to
+/* On, whichever way the control says so: a switch that is pressed, or the link to
    the variant you are already in. */
 .pg-btn[aria-pressed='true'],
 .pg-btn[aria-current='true'] {
@@ -220,8 +220,8 @@ pre.pg-readout {
 	background: var(--pg-surface-hover);
 }
 
-/* The one filled element in the playground. It is the front page's single action —
-   open the surface the visitor came to see — and it is ink on page rather than a
+/* The one filled element in the playground. It is the front page's single action
+   (open the surface the visitor came to see), and it is ink on page rather than a
    hue, so it inverts with the scheme like everything else. */
 .pg-cta {
 	display: inline-block;
@@ -258,7 +258,7 @@ pre.pg-readout {
 }
 
 /* ── Session status ────────────────────────────────────────────────────────── */
-/* The two states worth a word — opening, and failed. An open session says so by
+/* The two states worth a word: opening, and failed. An open session says so by
    painting the page below, so it says nothing here. */
 
 .pg-status {
@@ -275,7 +275,7 @@ pre.pg-readout {
 }
 
 /* An error carries a message rather than a state word, so it drops the label
-   treatment and reads as a sentence — and it breaks anywhere, because a WASM error
+   treatment and reads as a sentence; and it breaks anywhere, because a WASM error
    is one long token in whatever room the line has left. */
 .pg-status.error {
 	color: var(--pg-alert);
@@ -295,7 +295,7 @@ pre.pg-readout {
 }
 /* The package's surfaces are the exception, and the rule above is why: an unlayered
    host declaration beats `@layer qm.chrome` by design (controls.css), so a ring
-   written for controls that draw none repaints the ones that do — over
+   written for controls that draw none repaints the ones that do, over
    `--_qm-ring-focus`, on the one surface the package is checked by eye.
    `revert-layer` hands each control back to the layer under this one, which is the
    package's own ring at its own offset. */

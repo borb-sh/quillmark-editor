@@ -1,6 +1,6 @@
 // List-shape round-trip coverage. The decode-idempotence suite carries one
-// two-level bullet case; these are the shapes structural list commands produce —
-// deeper nesting, mixed kinds, multi-block items, sibling splits. The list
+// two-level bullet case; these are the shapes structural list commands produce
+// (deeper nesting, mixed kinds, multi-block items, sibling splits). The list
 // editing is additive only while these hold, so they are the
 // invariant it builds on.
 import { describe, it, expect } from 'vitest';
@@ -20,7 +20,7 @@ describe('list shapes round-trip', () => {
 		// Toggling an inner list to ordered while the outer stays bullet.
 		mixedOrderedInBullet: md('- outer\n    1. one\n    2. two'),
 		mixedBulletInOrdered: md('1. outer\n    - inner'),
-		// list_item is `block+` — Enter inside an item makes a second paragraph.
+		// list_item is `block+`: Enter inside an item makes a second paragraph.
 		multiParagraphItem: md('- first para\n\n    second para\n\n- next item'),
 		// An item carrying BOTH a nested list and a trailing paragraph.
 		nestedThenParagraph: md('- outer\n    - inner\n\n    tail para'),
@@ -38,7 +38,7 @@ describe('list shapes round-trip', () => {
 	}
 });
 
-// Two adjacent lists of the SAME type — the shape the cleanup invariant must not
+// Two adjacent lists of the SAME type; the shape the cleanup invariant must not
 // fuse (`lists.ts` §cleanup). Markdown has no spelling for it (a blank line between
 // two bullet runs makes one loose list), so it cannot come from `md()` and every
 // case above is blind to it. An ordinal DECREASE is the boundary: `decode` breaks

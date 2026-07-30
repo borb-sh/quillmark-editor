@@ -1,4 +1,4 @@
-// domid.ts — the leaf key's crossing into `id` syntax. Pure string math, so it
+// domid.ts: the leaf key's crossing into `id` syntax. Pure string math, so it
 // pins here what the browser tier cannot cheaply enumerate: that no two distinct
 // fields can ever land on one DOM id, which is the failure mode `for` resolves
 // silently and wrongly rather than reporting.
@@ -61,7 +61,7 @@ describe('fieldDomIds', () => {
 
 describe('groupPanelId', () => {
 	// A group panel's id is what its header's `aria-controls` names, so the same
-	// collision that breaks `for` breaks the accordion's announced state — pointing
+	// collision that breaks `for` breaks the accordion's announced state; pointing
 	// a header at a field is worse than pointing it nowhere.
 	it('spends only `id`-safe characters', () => {
 		expect(groupPanelId('u1', undefined, 'letterhead')).toMatch(/^[A-Za-z][A-Za-z0-9_-]*$/);

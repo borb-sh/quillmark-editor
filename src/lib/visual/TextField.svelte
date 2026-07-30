@@ -1,12 +1,12 @@
 <!--
-  A `string` field → text input. Commits a non-empty edit LIVE (on input) via the
-  parent's typed `writer.set`, so the preview tracks typing. A cleared field is the
-  UNSET rung of the commitment ladder (VISUAL_EDITOR §"the commitment ladder"): it
-  commits `undefined` (the parent removes the field, ghosted `default:` renders) —
-  but at `change` (blur), NOT per keystroke, so select-all-and-retype doesn't flash
-  the field through its default between the delete and the first typed char.
-  Trade-off (recorded in VISUAL_EDITOR): an explicit empty string OVER a non-empty
-  default is inexpressible from the UI — clear and unset collapse to one gesture.
+ A `string` field → text input. Commits a non-empty edit LIVE (on input) via the
+ parent's typed `writer.set`, so the preview tracks typing. A cleared field is the
+ UNSET rung of the commitment ladder (VISUAL_EDITOR §"the commitment ladder"): it
+ commits `undefined` (the parent removes the field, ghosted `default:` renders):
+ but at `change` (blur), NOT per keystroke, so select-all-and-retype doesn't flash
+ the field through its default between the delete and the first typed char.
+ Trade-off (recorded in VISUAL_EDITOR): an explicit empty string OVER a non-empty
+ default is inexpressible from the UI: clear and unset collapse to one gesture.
 -->
 <script lang="ts">
 	import { syncedLocal } from './synced.svelte.js';
@@ -15,17 +15,17 @@
 	interface Props {
 		value: string | undefined;
 		placeholder?: string;
-		/** Accessible name for an input NOTHING else names — an array element, whose
+		/** Accessible name for an input NOTHING else names: an array element, whose
 		 * name is the field label plus its 1-based index. A field's own input takes
 		 * `id` instead and is named by the `<label for>` beside it. */
 		label?: string;
 		/** `<label for>` target. Set → the label names this input, so `aria-label`
 		 * comes off: two names is where implementations disagree about which wins. */
 		id?: string;
-		/** The parked `description` (FieldLabel) — announced after the name. */
+		/** The parked `description` (FieldLabel): announced after the name. */
 		describedBy?: string;
 		onCommit: (v: string | undefined) => void;
-		/** Raw keydown, for a container whose own keys run through this control — the
+		/** Raw keydown, for a container whose own keys run through this control: the
 		 * array repeater's Enter/Backspace (`ArrayField`). */
 		onKey?: (e: KeyboardEvent) => void;
 	}
@@ -36,7 +36,7 @@
 	const local = syncedLocal(() => value ?? '');
 
 	let inputEl: HTMLInputElement | undefined = $state();
-	/** Take the caret — what a parent placing focus on this control calls. */
+	/** Take the caret: what a parent placing focus on this control calls. */
 	export function focus(): void {
 		inputEl?.focus();
 	}

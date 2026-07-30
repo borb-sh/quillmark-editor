@@ -1,7 +1,7 @@
 <!--
   The playground shell: the host-side stylesheets and the running head every route
   is reached from. Both stylesheets are global imports, so the shared chrome
-  reaches every route's markup rather than being scoped out of it —
+  reaches every route's markup rather than being scoped out of it:
   `playground.css` derives the `--pg-*` scale, `chrome.css` is the recipes that
   read it. Nothing here mounts, loads, or frees a session: the routes own that.
 -->
@@ -13,7 +13,7 @@
 
 	let { children } = $props();
 
-	// Named for what the page shows, not the phase that built it.
+	// Named for what the page shows.
 	const ROUTES = [
 		{ path: '/', label: 'Overview' },
 		{ path: '/preview', label: 'Preview' },
@@ -21,7 +21,7 @@
 		{ path: '/editor', label: 'Editor' }
 	];
 
-	// The path with the deploy's base prefix removed — a project-subpath host
+	// The path with the deploy's base prefix removed: a project-subpath host
 	// (`/quillmark-editor`) leaves the root as the bare base, so the empty
 	// remainder is `/`.
 	const here = $derived(page.url.pathname.slice(base.length) || '/');
@@ -46,7 +46,7 @@
 
 <style>
 	/* A running head, sticky so the switch between surfaces is always one click
-	   away; one hairline, no fill — a rule on the page, not a bar over it. */
+	   away; one hairline, no fill; a rule on the page, not a bar over it. */
 	.head {
 		position: sticky;
 		top: 0;

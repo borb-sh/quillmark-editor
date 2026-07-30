@@ -1,7 +1,7 @@
 // The pure join/ordering/identity math (VisualEditor's projection). Unit-tested
-// in isolation — no runes, no Document — including against the REAL usaf_memo
+// in isolation (no runes, no Document) including against the REAL usaf_memo
 // schema so the ordering contract and group layout are asserted on the fixture
-// the whole phase runs against.
+// the suite runs against.
 import { describe, it, expect } from 'vitest';
 import type { QuillFieldSchema } from '$lib/core';
 import {
@@ -154,7 +154,7 @@ describe('initialExpandedGroup', () => {
 		expect(initialExpandedGroup([sec('a'), sec('b')])).toBe('a');
 	});
 	it('opens the first group whether or not the card carries a body', () => {
-		// A body leaf is no substitute for a field — the card opens on one either way.
+		// A body leaf is no substitute for a field: the card opens on one either way.
 		expect(initialExpandedGroup([sec('a'), sec('b'), sec('c'), sec('d')])).toBe('a');
 	});
 	it('skips ungrouped sections, which render outside the accordion', () => {
@@ -272,7 +272,7 @@ describe('against the real usaf_memo schema', () => {
 		const sections = groupSections(models, groupOrder(schema), (g) => groupLabel(schema, g));
 		// Grouped sections follow the registry; an ungrouped one may trail them.
 		expect(sections.map((s) => s.group).filter((g) => g != null)).toEqual(groupOrder(schema));
-		// And it is a PARTITION — every projected field lands in exactly one section.
+		// And it is a PARTITION; every projected field lands in exactly one section.
 		expect(sections.flatMap((s) => s.fields.map((m) => m.name)).sort()).toEqual(
 			models.map((m) => m.name).sort()
 		);

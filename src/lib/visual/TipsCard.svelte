@@ -1,14 +1,14 @@
 <!--
-  The ephemeral tips card (VISUAL_EDITOR_UIUX §"Tips card"). Renders the
-  `$ext.editor.tips` channel one tip at a time with an advance and a dismiss; both
-  exits call `onDismiss`, which CLEARS the channel in the Document, so the card is
-  gone and does not reappear.
+ The ephemeral tips card (VISUAL_EDITOR_UIUX §"Tips card"). Renders the
+ `$ext.editor.tips` channel one tip at a time with an advance and a dismiss; both
+ exits call `onDismiss`, which CLEARS the channel in the Document, so the card is
+ gone and does not reappear.
 
-  The cursor is LOCAL state, not the channel. Advancing writes nothing: a per-tip
-  write would round-trip the boundary, re-derive the card tree, and dirty the
-  document (firing a consumer's autosave) on what is a read gesture. Exactly one
-  write happens, at dismissal — and this component unmounts with it, so the cursor
-  needs no reset.
+ The cursor is LOCAL state, not the channel. Advancing writes nothing: a per-tip
+ write would round-trip the boundary, re-derive the card tree, and dirty the
+ document (firing a consumer's autosave) on what is a read gesture. Exactly one
+ write happens, at dismissal, and this component unmounts with it, so the cursor
+ needs no reset.
 -->
 <script lang="ts">
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
@@ -17,14 +17,14 @@
 	import './controls.css';
 
 	interface Props {
-		/** The narrowed channel (`tipsChannel`) — never empty; the parent gates on length. */
+		/** The narrowed channel (`tipsChannel`); never empty; the parent gates on length. */
 		tips: string[];
-		/** Clear `$ext.editor.tips` — the patch-write that preserves the `title` sibling. */
+		/** Clear `$ext.editor.tips`: the patch-write that preserves the `title` sibling. */
 		onDismiss: () => void;
 	}
 	let { tips, onDismiss }: Props = $props();
 
-	/** Control-glyph size — the shared rule (AESTHETIC §Icons), as CardControls. */
+	/** Control-glyph size: the shared rule (AESTHETIC §Icons), as CardControls. */
 	const GLYPH = 14;
 
 	let cursor = $state(0);
@@ -35,12 +35,12 @@
 
 	// The tip STRING is derived before the effect reads it, and that is load-bearing.
 	// Reading `tips[index]` inside the effect makes the parent's `model` derive the
-	// dependency — a fresh object every `revision` bump — so the effect would re-run
+	// dependency (a fresh object every `revision` bump) so the effect would re-run
 	// on every unrelated commit, re-crossing the WASM boundary and rebuilding this
 	// `aria-live` region per keystroke. A derived string short-circuits on `===`.
 	const tip = $derived(tips[index] ?? '');
 
-	// The tip is DOM, not text — `renderTip` returns a fragment the codec's own
+	// The tip is DOM, not text: `renderTip` returns a fragment the codec's own
 	// `toDOM` built, so it is written in rather than interpolated.
 	let bodyEl: HTMLDivElement | undefined = $state();
 	$effect(() => {
@@ -77,13 +77,13 @@
 
 <style>
 	/* In-flow, like every other block in the column (SURFACES §Elevation): one
-	   hairline, no shadow, no fill beyond the card recipe. It reads as guidance
-	   rather than as a field by TONE and TYPE — the label rung in the muted label
-	   colour — not by a badge or an accent (AESTHETIC §"Secondary text recedes").
-	   It mints no token of its own; every value here is an existing dial.
+	 hairline, no shadow, no fill beyond the card recipe. It reads as guidance
+	 rather than as a field by TONE and TYPE: the label rung in the muted label
+	 colour; not by a badge or an accent (AESTHETIC §"Secondary text recedes").
+	 It mints no token of its own; every value here is an existing dial.
 
-	   Leading is the reading rung, not the tight one the label SIZE would suggest: a
-	   tip is a passage that wraps, and the two axes are independent (SURFACES §Rhythm). */
+	 Leading is the reading rung, not the tight one the label SIZE would suggest: a
+	 tip is a passage that wraps, and the two axes are independent (SURFACES §Rhythm). */
 	.qm-tips {
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
@@ -97,11 +97,11 @@
 		color: var(--_qm-ink-label);
 	}
 	/* The rendered tip is injected DOM (the codec's `toDOM` output), so its element
-	   styles are `:global` — the compiler never sees these tags in the markup. Three
-	   rules restated from `core/codec/prose.css`, which is where they are argued and
-	   which cannot reach here: its selectors are scoped to `.ProseMirror` and a tip is
-	   not a view. The one deliberate divergence is the link, which takes no underline —
-	   a tip is not editable, so a hidden `href` costs its reader nothing. */
+	 styles are `:global`: the compiler never sees these tags in the markup. Three
+	 rules restated from `core/codec/prose.css`, which is where they are argued and
+	 which cannot reach here: its selectors are scoped to `.ProseMirror` and a tip is
+	 not a view. The one deliberate divergence is the link, which takes no underline:
+	 a tip is not editable, so a hidden `href` costs its reader nothing. */
 	.qm-tips-body :global(p) {
 		margin: 0;
 	}

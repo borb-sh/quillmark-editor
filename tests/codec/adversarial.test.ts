@@ -1,7 +1,7 @@
 // Independent adversarial validation of the codec (NOT the implementing agent's
 // tests). Targets the seam CODEC.md flags as highest-risk: USV↔UTF-16 drift (an
 // astral char is 1 USV but 2 UTF-16 units) surviving a REAL Document's
-// applyChange — so a miscounted offset surfaces as wrong STORED text, not just a
+// applyChange; so a miscounted offset surfaces as wrong STORED text, not just a
 // unit-test artifact. That end-to-end route is what these add; the position map's
 // own inverse is positions.test.ts, over a strictly wider corpus.
 import { describe, it, expect } from 'vitest';
@@ -26,7 +26,7 @@ describe('codec adversarial — lower∘apply through a real Document (independe
 
 		const bundle = lower(oldRt, rt('a😀Xb')); // insert 'X' at USV index 2
 		// The delta must be USV-coordinate: retain 2 ('a' + the emoji as ONE unit),
-		// not retain 3 (its UTF-16 width) — the exact drift CODEC.md warns about.
+		// not retain 3 (its UTF-16 width): the exact drift CODEC.md warns about.
 		expect(bundle.delta?.ops).toEqual([{ retain: 2 }, { insert: 'X' }, { retain: 1 }]);
 
 		doc.applyChange({}, bundle);

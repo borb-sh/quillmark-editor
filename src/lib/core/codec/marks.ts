@@ -1,10 +1,10 @@
-// Mark algebra — two content classes to two PM mechanisms.
+// Mark algebra: two content classes to two PM mechanisms.
 //   formatting (strong/emph/underline/strike/code/link)  ↔ PM marks
 //   identity   (anchor{id}, zero-width)                  ↔ decorations (see field.ts)
 //   unknown    ({type, attrs})                           ↔ the inert `unknown` PM mark
 // This module owns the type-name translation and the descriptor keying the mark
 // diff groups by; the anchor↔decoration bridge is field.ts, the mark ops are
-// encode.ts. `emph` is the content name; `em` the PM name — the one asymmetry.
+// encode.ts. `emph` is the content name; `em` the PM name: the one asymmetry.
 import type { Mark, Schema } from 'prosemirror-model';
 import type { ContentMark } from '@quillmark/wasm';
 import { isAnchorMark, isLinkMark } from '../index.js';
@@ -26,7 +26,7 @@ export function pmMarkFromContent(schema: Schema, m: ContentMark): Mark | null {
 }
 
 /**
- * A content mark descriptor from a PM mark (range-free) — the `{ type, … }` half
+ * A content mark descriptor from a PM mark (range-free): the `{ type, … }` half
  * of a `ContentMark` / `MarkOp`. `strong`/`emph`/… collapse to their content
  * name; the `unknown` mark re-emits its stored `type`/`attrs` verbatim.
  */
@@ -40,7 +40,7 @@ export function contentDescriptorFromPM(mark: Mark): Record<string, unknown> {
 }
 
 /**
- * The range-free `{ type, … }` half of a content mark — `contentDescriptorFromPM`'s
+ * The range-free `{ type, … }` half of a content mark: `contentDescriptorFromPM`'s
  * content-side twin, and what a `MarkOp` carries beside its range. An anchor keys
  * on its type alone: its `id` is identity, not a formatting family, and the diff
  * routes anchors by id on a separate channel.
@@ -52,7 +52,7 @@ export function descriptorOf(m: ContentMark): Record<string, unknown> {
 }
 
 /**
- * A stable grouping key for the mark diff — marks sharing a key union into one
+ * A stable grouping key for the mark diff: marks sharing a key union into one
  * coverage set. Formatting keys on its type; a link keys on type+url and an
  * unknown on type+attrs, because `applyChange`'s `remove` matches type AND attrs
  * (verified), so different urls / attrs are independent mark families.
@@ -71,7 +71,7 @@ export interface AnchorPos {
 }
 
 /**
- * The identity anchors of a `Content` as `{ id, pos }` in USV — the seed for the
+ * The identity anchors of a `Content` as `{ id, pos }` in USV: the seed for the
  * field's anchor-position plugin and the `oldAnchors` the mark diff rebases.
  * Anchors are zero-width, so `start` is the position.
  */

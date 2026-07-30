@@ -1,9 +1,9 @@
 <!--
-  Inline diagnostic display (VISUAL_EDITOR §Diagnostics), severity-styled via
-  CSS vars, NON-GATING — purely additive, never disables the field it sits
-  under. Shared by `Field.svelte` (a scalar/prose field) and `Card.svelte` (the
-  body leaf, which has no `Field.svelte` wrapper), so a card's body diagnostics
-  render the same way a field's do.
+ Inline diagnostic display (VISUAL_EDITOR §Diagnostics), severity-styled via
+ CSS vars, NON-GATING: purely additive, never disables the field it sits
+ under. Shared by `Field.svelte` (a scalar/prose field) and `Card.svelte` (the
+ body leaf, which has no `Field.svelte` wrapper), so a card's body diagnostics
+ render the same way a field's do.
 -->
 <script lang="ts">
 	import type { Diagnostic } from '../core/index.js';

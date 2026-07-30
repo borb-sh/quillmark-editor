@@ -1,15 +1,15 @@
-/* ProseMirror's own base stylesheet is imported beside this one (`codec/index.ts`)
-   — the structural rules a view needs to render at all: `white-space:
+/* ProseMirror's own base stylesheet is imported beside this one (`codec/index.ts`):
+   the structural rules a view needs to render at all: `white-space:
    break-spaces`, `li { position: relative }` for list markers, the
    hidden-selection and separator-image guards. It is imported whole; the rules are
    interdependent and which ones a given schema needs is not visible from here.
 
    What it does NOT carry is a block reset, so without the rules below every leaf
-   inherits the UA `p { margin: 1em 0 }` — 32px of margin in a box drawn to hold one
-   line, which is enough on its own to make an inline richtext field twice the height
+   inherits the UA `p { margin: 1em 0 }` (32px of margin in a box drawn to hold one
+   line), which is enough on its own to make an inline richtext field twice the height
    of the input beside it. The reset lives here rather than per component because every
-   prose leaf in the package mounts through the codec — a field, the body, an array
-   element — and picks it up without restating it, and a leaf that carries the
+   prose leaf in the package mounts through the codec (a field, the body, an array
+   element) and picks it up without restating it, and a leaf that carries the
    control recipe (`visual/ProseField.svelte`) can then match `.qm-input` by
    construction instead of by a tuned `min-height`. The source view is NOT one of
    them: it is a `<pre>` holding `textContent` (`source/view.ts`), outside
@@ -18,7 +18,7 @@
    It also carries hard-coded VALUES that answer to no rung: a `#8cf` node-selection
    outline, twice, and the `-32px` placing a selected list item's. Retinted and
    re-measured here rather than in `theme.css` because a layered rule loses to that
-   unlayered stylesheet — equal specificity and a later import is what wins. */
+   unlayered stylesheet: equal specificity and a later import is what wins. */
 .ProseMirror-selectednode {
 	outline: var(--_qm-ring-width) solid var(--_qm-accent);
 }
@@ -32,7 +32,7 @@ li.ProseMirror-selectednode::after {
 
 /* Everything starts flush. Not a list of the block tags: the subtree is entirely
    what the codec emits, a paragraph-only reset leaves headings and lists on UA
-   margins (two rhythms in one leaf), and an enumeration silently lags the schema —
+   margins (two rhythms in one leaf), and an enumeration silently lags the schema:
    `island_block` renders a bare `div` (`islands.ts`) and would match no such list. */
 .ProseMirror * {
 	margin: 0;
@@ -42,7 +42,7 @@ li.ProseMirror-selectednode::after {
    PARENT rather than by tag, which is what keeps it true as the schema grows: the
    four containers below are every node whose content is `block+` (`schema.ts`), so
    their children are blocks by definition, whatever kinds exist. `ul`/`ol` are
-   deliberately absent — a run of list items is tight, and the gap before a list is
+   deliberately absent: a run of list items is tight, and the gap before a list is
    the list's, not each item's. */
 .ProseMirror > * + *,
 .ProseMirror :is(blockquote, li, [data-qm-unknown-container]) > * + * {
@@ -50,7 +50,7 @@ li.ProseMirror-selectednode::after {
 }
 
 /* A blockquote's UA indent was its only mark, and the reset above takes it. The rule
-   and the inset carry it instead — the same hairline every surface reads, so a quote
+   and the inset carry it instead: the same hairline every surface reads, so a quote
    reads as set apart without a fill or a second box (SURFACES §Elevation). */
 .ProseMirror blockquote {
 	padding-left: var(--_qm-space-3);
@@ -67,12 +67,12 @@ li.ProseMirror-selectednode::after {
    content. `usaf_memo` sets `raw` in a monospace face and adds nothing; it renders a
    heading as a bold RUN-IN prepended to the following paragraph, with the level
    never read; it gives a link no decoration at all. So a leaf shows that a span IS
-   code and a line IS a heading — never a prediction of the size paper will set it
+   code and a line IS a heading: never a prediction of the size paper will set it
    at, which the package cannot know for a quill it has not seen.
 
    Scoping is by TAG, and the schema does the rest: `h1`–`h6`, `hr` and the lists
    cannot exist under the inline schema, so no rule for them can land on a `subject`
-   field however that field is mounted. The two MARKS are the exception — `code` and
+   field however that field is mounted. The two MARKS are the exception: `code` and
    `link` are in both schemas, and a `plaintext` leaf strips them at DECODE while
    mounting a schema that still carries them, so a paste can put either in one. The
    rules stand there too, and correctly: they say the leaf holds code, or a link,
@@ -81,29 +81,29 @@ li.ProseMirror-selectednode::after {
    `visual/TipsCard.svelte` restates the two mark rules by hand, over the same
    `toDOM` output injected outside any view. */
 
-/* Code is a FACE — no chip, no fill, no inset, no size step. The blockquote above
+/* Code is a FACE: no chip, no fill, no inset, no size step. The blockquote above
    already argues the general form: a span reads as set apart without a fill or a
    second box, on the one surface in the card with no edge of its own (SURFACES
-   §Elevation). A chip has nowhere to come from in any case — the card is
+   §Elevation). A chip has nowhere to come from in any case: the card is
    `--_qm-surface-raised` and the only rung over it is `--_qm-surface-hover`, the
    hover lane, so a chip at rest would read as a hovered button.
 
    ONE selector for the mark and the block: a `code_block` renders `pre > code`
    (`schema.ts`), so every character of it is inside a `code` element and the `pre`
    needs no face of its own. `pre` takes no `overflow-x` either, because there is no
-   overflow — ProseMirror's own stylesheet sets `white-space: pre-wrap` there, so a
+   overflow: ProseMirror's own stylesheet sets `white-space: pre-wrap` there, so a
    long line wraps. A scroller means overriding that to `pre` inside an editable
    `code` textblock, which is an editing change, not a display rule. */
 .ProseMirror code {
 	font-family: var(--_qm-font-mono);
 }
 
-/* A link takes the surface's ink — the UA's blue is the `#8cf` defect again — and a
+/* A link takes the surface's ink (the UA's blue is the `#8cf` defect again) and a
    DOTTED underline. Dotted rather than solid because `underline` is a mark in the
    same schema, and a solid rule renders an authored `<u>` and a link identically in a
    paragraph that can hold both. An underline at all, where the tips card's link takes
    none, because this leaf is EDITABLE: the `href` is otherwise imperceptible, so
-   removing the rule loses an answer rather than ornament (AESTHETIC §Rules). No hue —
+   removing the rule loses an answer rather than ornament (AESTHETIC §Rules). No hue:
    `--_qm-accent` already means focus, and a body of accent-coloured links collides
    with the ring and with the correlation wash. */
 .ProseMirror a {
@@ -119,8 +119,8 @@ li.ProseMirror-selectednode::after {
 	border-top: var(--_qm-border-width) solid var(--_qm-border);
 }
 
-/* The UA's 40px list indent is the one box the reset above does not take — it is
-   padding, not margin — and it is a length nothing chose. A rung replaces it. The
+/* The UA's 40px list indent is the one box the reset above does not take (it is
+   padding, not margin), and it is a length nothing chose. A rung replaces it. The
    MARKERS stay the UA's: `disc` and `decimal` are already right, and restating them
    buys nothing. Per-item spacing is untouched, which is the point of putting this on
    the list rather than the item: the sibling-gap rule deliberately omits `ul`/`ol`,
@@ -132,7 +132,7 @@ li.ProseMirror-selectednode::after {
 /* Six levels, one weight, no size step. The quill reads no level at all, so a size
    ramp here would be the editor predicting a hierarchy the paper does not set; the
    level stays in the model, which is where the codec round-trips it. It is also all
-   the ramp could carry — `--_qm-text-title` is one 1.125 step over the body, the
+   the ramp could carry: `--_qm-text-title` is one 1.125 step over the body, the
    body sits on `--_qm-text-body` by decision, and leading alone is what separates
    paper from chrome (AESTHETIC §"The look"). Six levels do not fit in one step, and
    minting five more is the drift the scale exists to prevent. */

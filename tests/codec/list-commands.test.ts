@@ -1,4 +1,4 @@
-// The list structure keys — Tab/Shift-Tab indent-outdent, and what
+// The list structure keys: Tab/Shift-Tab indent-outdent, and what
 // Enter/Backspace mean inside a list. Driven through the bound commands
 // `listKeymap` returns, not through re-derived copies of them, so a rebinding
 // breaks these.
@@ -16,7 +16,7 @@ import { md, atBlock, startOf, run, shape, keyDriver } from './_util.js';
 const keys = listKeymap(blockSchema);
 const { press, expectPress } = keyDriver(keys);
 
-/** A state over `markdown` with the caret just after the first `caretAfter` — the
+/** A state over `markdown` with the caret just after the first `caretAfter`: the
  * mid-text position, where the keys keep their ordinary meaning. */
 function after(markdown: string, caretAfter: string): EditorState {
 	const doc = decode(md(markdown), blockSchema);
@@ -31,7 +31,7 @@ function after(markdown: string, caretAfter: string): EditorState {
 	return EditorState.create({ doc, selection: TextSelection.create(doc, pos) });
 }
 
-// Hand-built nodes for the empty-item shapes — markdown has no spelling for an
+// Hand-built nodes for the empty-item shapes: markdown has no spelling for an
 // item with no content, so these cases cannot come from `md()`.
 const n = blockSchema.nodes;
 const p = (text?: string) => n.paragraph.create(null, text ? blockSchema.text(text) : undefined);

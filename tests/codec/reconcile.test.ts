@@ -1,4 +1,4 @@
-// Criterion 7 (gate logic) — the field-scoped external-change gate. The reconciler
+// Criterion 7 (gate logic): the field-scoped external-change gate. The reconciler
 // re-hydrates only when the stored content diverges from what the codec last knew;
 // the field's own edit (which it commits) does not look external. Field-level
 // behavior over a live view is in field.test.ts.
@@ -19,7 +19,7 @@ describe('reconciliation gate', () => {
 		expect(rec.shouldRehydrate(md('hello WORLD'))).toBe(true);
 	});
 
-	it('commit moves the known state (own edit no longer looks external)', () => {
+	it('commit moves the known state (own edit is not treated as external)', () => {
 		const rec = createReconciler(md('v1'));
 		const edited = md('v2');
 		expect(rec.shouldRehydrate(edited)).toBe(true);

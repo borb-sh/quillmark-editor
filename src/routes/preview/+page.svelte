@@ -1,6 +1,6 @@
 <!--
   Mount <Preview> over a live session of the reference quill and exercise the
-  three responsibilities in a real browser — paint (canvas per page), overlay
+  three responsibilities in a real browser: paint (canvas per page), overlay
   (field-box rects), and the click bridge (positionAt → a ContentHit, written to
   the panel beside it).
 
@@ -14,7 +14,7 @@
   The "edit subject" button exercises the OTHER half of the exit criteria (an
   apply repaints dirty ∩ visible pages) without reaching into the codec:
   `doc.revise` is a substrate primitive, so this stays in the playground route's
-  lane, not Preview's — Preview never calls `apply`.
+  lane, not Preview's; Preview never calls `apply`.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -46,7 +46,7 @@
 	}
 
 	// Exercises the two remaining command-surface verbs the click bridge does not
-	// reach: `setZoom` (density, not layout — the canvas backing store should grow)
+	// reach: `setZoom` (density, not layout; the canvas backing store should grow)
 	// and `scrollToField` (fieldBoxes -> scroll into view).
 	function zoomIn(): void {
 		previewRef?.setZoom(2);

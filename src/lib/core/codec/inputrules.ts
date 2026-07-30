@@ -1,9 +1,8 @@
-// Input rules — the markdown-shorthand plugin (a Phase-3 deliverable the codec
-// OWNS; Phase 4 decides which are mounted). `**`→strong, `*`→em, `~~`→strike,
-// `` ` ``→code, `# `→heading, `- `/`1. `→lists, `> `→blockquote. Mark rules are
-// hand-rolled (prosemirror-inputrules ships only node rules); block rules reuse
-// `wrappingInputRule` / `textblockTypeInputRule`. These produce transactions the
-// codec already lowers — they add no new lowering surface.
+// Input rules: the markdown-shorthand plugin the codec owns (`**`→strong, `*`→em,
+// `~~`→strike, `` ` ``→code, `# `→heading, `- `/`1. `→lists, `> `→blockquote).
+// Mark rules are hand-rolled (prosemirror-inputrules ships only node rules); block
+// rules reuse `wrappingInputRule` / `textblockTypeInputRule`. These produce
+// transactions the codec already lowers: they add no new lowering surface.
 import {
 	InputRule,
 	inputRules,
@@ -18,7 +17,7 @@ import type { EditorState, Plugin, Transaction } from 'prosemirror-state';
  * A mark input rule: when `regexp` (ending in the closing delimiter) matches
  * before the caret, wrap capture group 1 in `markType` and drop the delimiters.
  * `delimLen` is the delimiter length (opening == closing for every rule here).
- * `match[0]` anatomy is `prefix? open captured close` — the em rule's
+ * `match[0]` anatomy is `prefix? open captured close`: the em rule's
  * `(?:^|[^*])` guard consumes ONE non-delimiter prefix char into the match, so
  * positions are derived from the KNOWN delimiter/capture lengths, never from
  * `indexOf` (which both deletes that prefix char and mis-anchors when it
@@ -57,7 +56,7 @@ function markInputRule(regexp: RegExp, markType: MarkType, delimLen: number): In
  * `heading` being wrapped becomes a `paragraph` first.
  *
  * `list_item` is `block+`, so `list_item > heading` is *representable* and a bare
- * wrap mints it — a shape no quill renders: the reference quill derives an item's
+ * wrap mints it (a shape no quill renders): the reference quill derives an item's
  * numbering and indent from the container path and typesets the item's blocks as
  * body paragraphs (`usaf_memo`'s `render-body`), where a heading resolves to
  * nothing. This is the wrap-side route into that shape; the `# ` rule guards the
@@ -84,7 +83,7 @@ function listWrappingRule(
 			const wrapping = range && findWrapping(range, listType, attrs);
 			if (!range || !wrapping) return null;
 			tr.wrap(range, wrapping);
-			// Join a preceding list of the same type — the one boundary this rule
+			// Join a preceding list of the same type: the one boundary this rule
 			// itself opens (`lists.ts` §cleanup: command-local, never a global pass).
 			const before = tr.doc.resolve(start - 1).nodeBefore;
 			if (
@@ -111,7 +110,7 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 	if (m.strike) rules.push(markInputRule(/~~([^~]+)~~$/, m.strike, 2));
 	if (m.code) rules.push(markInputRule(/`([^`]+)`$/, m.code, 1));
 
-	// Block shorthands (only where the schema has the node — the inline schema
+	// Block shorthands (only where the schema has the node; the inline schema
 	// omits them, so this stays a no-op there).
 	if (schema.nodes.heading) {
 		// `textblockTypeInputRule`'s body plus one guard: inside a list item, `# `

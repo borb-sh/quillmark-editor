@@ -1,25 +1,25 @@
 <!--
-  The federated WYSIWYG surface (VISUAL_EDITOR). A THIN composition over many
-  small editors — NOT one PM document spanning the page. It owns:
-    • structure — the schema × payload join, re-derived from the live `Document`;
-    • stable card identity — a session-id array reordered in lockstep with the
-      content, resolved to an index ONLY at the mutation boundary;
-    • commit routing — prose leaves lower to `applyChange` (in the codec); scalars/
-      arrays/objects go through the typed `writer`; structure through the mutators;
-    • focus + the bridge outputs (`onActiveAddrChange`, `onCaretMove`) and the
-      `setCaret(hit)` entry Phase 5 wires to the preview;
-    • the ONE formatting popover (`FormatPopover`, mounted once, observing the
-      active leaf via `getActiveLeaf`) and diagnostics routing (`diagnostics.ts`:
-      quill.validate + local commit errors + the external `diagnostics` prop,
-      merged into `diagByKey` and threaded to each `<Field>`/card body).
+ The federated WYSIWYG surface (VISUAL_EDITOR). A THIN composition over many
+ small editors; NOT one PM document spanning the page. It owns:
+ • structure: the schema × payload join, re-derived from the live `Document`;
+ • stable card identity: a session-id array reordered in lockstep with the
+ content, resolved to an index ONLY at the mutation boundary;
+ • commit routing: prose leaves lower to `applyChange` (in the codec); scalars/
+ arrays/objects go through the typed `writer`; structure through the mutators;
+ • focus + the bridge outputs (`onActiveAddrChange`, `onCaretMove`) and the
+ `setCaret(hit)` entry wired to the preview;
+ • the ONE formatting popover (`FormatPopover`, mounted once, observing the
+ active leaf via `getActiveLeaf`) and diagnostics routing (`diagnostics.ts`:
+ quill.validate + local commit errors + the external `diagnostics` prop,
+ merged into `diagByKey` and threaded to each `<Field>`/card body).
 
-  REACTIVITY ACROSS THE WASM HANDLE. The `Document` is opaque to Svelte, so a
-  `revision` counter is bumped after every scalar/structure mutation and the card
-  tree is `$derived` by RE-READING `doc.main`/`doc.cards`/`quill.schema`. Prose
-  leaves are mounted ONCE per stable leaf key (keyed `<Card>`/`<ProseField>`);
-  they commit to the doc directly and do NOT bump `revision`, so a re-derive never
-  remounts them or drops a caret. `doc.main`/`doc.cards` allocate per read — read
-  once per derive.
+ REACTIVITY ACROSS THE WASM HANDLE. The `Document` is opaque to Svelte, so a
+ `revision` counter is bumped after every scalar/structure mutation and the card
+ tree is `$derived` by RE-READING `doc.main`/`doc.cards`/`quill.schema`. Prose
+ leaves are mounted ONCE per stable leaf key (keyed `<Card>`/`<ProseField>`);
+ they commit to the doc directly and do NOT bump `revision`, so a re-derive never
+ remounts them or drops a caret. `doc.main`/`doc.cards` allocate per read: read
+ once per derive.
 -->
 <script lang="ts">
 	import { tick } from 'svelte';
@@ -80,7 +80,7 @@
 	 * REMOUNT CONTRACT. `cardIds`, the id `seq`, and the leaf registry seed ONCE
 	 * from the initial `doc` (see the reactivity note above); swapping `doc`/`quill`
 	 * in place is NOT observed and silently desyncs the card tree. Swap by
-	 * REMOUNTING (`{#key doc}`, as the playground does) — edits flow the other way,
+	 * REMOUNTING (`{#key doc}`, as the playground does): edits flow the other way,
 	 * mutating the passed-in `doc` handle directly.
 	 */
 	interface Props {
@@ -88,13 +88,12 @@
 		quill: Quill;
 		/** The active leaf's address (normalized to a plain `{card?, field?}`). */
 		onActiveAddrChange?: (addr: Addr) => void;
-		/** A caret move in the active leaf → the preview bridge (Phase 5). */
+		/** A caret move in the active leaf → the preview bridge. */
 		onCaretMove?: (addr: Addr, pos: number) => void;
-		/** Fired after every scalar/structure mutation — a change signal for a host. */
+		/** Fired after every scalar/structure mutation: a change signal for a host. */
 		onChange?: () => void;
 		/**
-		 * External diagnostics (Phase 5: `LiveSession.warnings` + render errors via
-		 * `FieldRegion.field`), routed by `.path` and merged with `quill.validate`
+		 * External diagnostics, routed by `.path` and merged with `quill.validate`
 		 * and local commit errors (VISUAL_EDITOR §Diagnostics).
 		 */
 		diagnostics?: Diagnostic[];
@@ -102,7 +101,7 @@
 		 * Consumer policy hook: given a field `addr` and an enum option,
 		 * return `false` to mark that option unavailable. A disallowed option renders
 		 * DISABLED (never stripped), so an already-authored value stays visible and its
-		 * stored payload is untouched — the schema is unchanged, this is runtime policy.
+		 * stored payload is untouched: the schema is unchanged, this is runtime policy.
 		 * Absent → every schema option is offered (the default, zero behavior change).
 		 */
 		enumOptionAllowed?: (addr: Addr, value: string) => boolean;
@@ -110,7 +109,7 @@
 		 * Consumer wording hook for an EMPTY BODY's ghost: given a card's kind,
 		 * return the invitation its empty body shows, or `undefined` to take the
 		 * built-in. A body with a resolved `default:` ghosts that and never consults
-		 * this — the default is the ghost that describes the render.
+		 * this: the default is the ghost that describes the render.
 		 *
 		 * Consulted ONCE PER KIND per session and cached, so a hook that samples a set
 		 * at random still reads as deliberate: two empty cards of a kind ghost the
@@ -118,8 +117,8 @@
 		 * every kind.
 		 */
 		bodyPlaceholder?: BodyPlaceholder;
-		/** Appended to the root's own class — the surface is a mounted element the
-		 *  consumer positions, so it needs a handle for layout it owns. */
+		/** Appended to the root's own class: the surface is a mounted element the
+		 * consumer positions, so it needs a handle for layout it owns. */
 		class?: string;
 		/** Merged onto the root. Free because the derivation moved off this attribute
 		 *  and onto `data-qm-root` (core/theme.css). */
@@ -156,8 +155,8 @@
 	// the next successful one for that field. Id-keyed (not positional) so an
 	// error stays pinned to its field across a card reorder.
 	let commitErrors = $state(new Map<string, RoutedDiagnostic>());
-	/** Edit the commit-error map copy-on-write — a `$state` Map is not deeply
-	 *  reactive, so a mutation in place re-derives nothing. */
+	/** Edit the commit-error map copy-on-write: a `$state` Map is not deeply
+	 * reactive, so a mutation in place re-derives nothing. */
 	function editCommitErrors(edit: (m: Map<string, RoutedDiagnostic>) => void): void {
 		const next = new Map(commitErrors);
 		edit(next);
@@ -166,14 +165,14 @@
 
 	const kinds = $derived(Object.keys(quill.schema.card_kinds ?? {}));
 
-	/** Control-glyph size — the shared rule (AESTHETIC §Icons), as CardControls. */
+	/** Control-glyph size: the shared rule (AESTHETIC §Icons), as CardControls. */
 	const GLYPH = 14;
 
 	function bump(): void {
 		revision++;
 		onChange?.();
 	}
-	/** Resolve a stable card id to its current content index, or -1 if gone — read
+	/** Resolve a stable card id to its current content index, or -1 if gone: read
 	 * at the mutation boundary, never cached (VISUAL_EDITOR §"The address is the spine"). */
 	function cardIndexOf(id: string): number {
 		return cardIds.indexOf(id);
@@ -181,7 +180,7 @@
 
 	// ── Leaf registry (setCaret target lookup + the active-leaf seam) ───────────
 	const leaves = new Map<string, FieldController>();
-	// Card handles, for `setCaret`'s reveal hop — the one thing a leaf's own controller
+	// Card handles, for `setCaret`'s reveal hop: the one thing a leaf's own controller
 	// cannot do, since which group is open is the card's state (Card §revealLeaf).
 	type CardHandle = {
 		revealLeaf(key: string): void;
@@ -189,8 +188,8 @@
 	};
 	let mainCard = $state<CardHandle | undefined>(undefined);
 	let cardRefs = $state<(CardHandle | undefined)[]>([]);
-	/** The stack's own element — it carries `data-qm-root`, so it is what the kind
-	 *  menu portals INTO, the way each leaf's surface resolves its nearest root. */
+	/** The stack's own element: it carries `data-qm-root`, so it is what the kind
+	 * menu portals INTO, the way each leaf's surface resolves its nearest root. */
 	let rootEl = $state<HTMLElement | undefined>(undefined);
 	function register(key: string, controller: FieldController): void {
 		leaves.set(key, controller);
@@ -202,7 +201,7 @@
 	// ── Focus + bridge outputs ──────────────────────────────────────────────────
 	// `activeCardId` is the id-keyed half of `activeAddr` (whose `card` is positional),
 	// and it feeds lookups only: the `activeController` seam below, and the clear on
-	// delete. Nothing draws it — a card's active treatment is its controls' reveal,
+	// delete. Nothing draws it: a card's active treatment is its controls' reveal,
 	// which the card reads off `:focus-within` (SURFACES §"Focus and active state").
 	let activeAddr = $state<Addr | undefined>(undefined);
 	let activeCardId = $state<string | undefined>(undefined);
@@ -225,15 +224,15 @@
 	// ── Commit routing ──────────────────────────────────────────────────────────
 	// Scalars / arrays / objects → the typed writer (schema-checked). Prose leaves
 	// commit themselves via the codec (applyChange) and do NOT pass through here.
-	// A scalar control commits `undefined` for a cleared entry — the unset lane
+	// A scalar control commits `undefined` for a cleared entry: the unset lane
 	// below (`doc.removeField`), not a write.
 	//
 	// A bad value makes `writer.set` THROW a `QuillmarkError`, whose
 	// `diagnostics[0]` carries a `code` and a canonical `path` (e.g.
 	// `edit::field_conform` at `main.font_size`, or `edit::unknown_field`). The
 	// editor already KNOWS the field/card being committed, so it KEYS the entry
-	// from THAT address — id-keyed so it survives a later card reorder, never
-	// parsed from the positional path — while surfacing the thrown diagnostic
+	// from THAT address: id-keyed so it survives a later card reorder, never
+	// parsed from the positional path; while surfacing the thrown diagnostic
 	// verbatim (its `code`/`message`) as the payload (VISUAL_EDITOR §Diagnostics,
 	// producer #2). It is stashed in `commitErrors`; a subsequent SUCCESSFUL commit
 	// for the same field clears it. Nothing here gates: the value is not written
@@ -248,7 +247,7 @@
 				// VISUAL_EDITOR §"the commitment ladder"): REMOVE the field so the
 				// engine's authored › `default:` › zero-fill resolve renders the
 				// default, rather than baking a snapshot the schema can't track
-				// (canon SCHEMAS.md — the engine never persists a default; nor do we).
+				// (canon SCHEMAS.md: the engine never persists a default; nor do we).
 				// Removal writes no value, so there is nothing for a schema to conform:
 				// it goes through the quill-free `doc.removeField` (bare string = main
 				// `{ field }`; `{ card, field }` for a card), NOT the typed writer.
@@ -340,7 +339,7 @@
 			activeCardId = undefined;
 			activeAddr = undefined;
 		}
-		// Drop any commit-error diagnostics id-keyed to the now-gone card — id-keying
+		// Drop any commit-error diagnostics id-keyed to the now-gone card: id-keying
 		// (VISUAL_EDITOR §"The address is the spine") avoids mis-attributing them to
 		// whichever card next takes this position, but an orphaned entry would
 		// otherwise sit in the map forever (ids are never reused).
@@ -367,7 +366,7 @@
 		bump();
 	}
 	/**
-	 * Clear the tips channel — the dismissal write, and the ONLY write
+	 * Clear the tips channel: the dismissal write, and the ONLY write
 	 * tips make. `undefined` drops the key while `title` and any later sibling ride
 	 * through; `ext.ts` holds why that matters.
 	 */
@@ -399,7 +398,7 @@
 
 	// ── Diagnostics routing (VISUAL_EDITOR §Diagnostics) ────────────────────────
 	// Producer #1: quill.validate(doc), re-run every revision (empirically always
-	// `[]` for usaf_memo — no field in the fixture carries a `!must_fill` marker —
+	// `[]` for usaf_memo (no field in the fixture carries a `!must_fill` marker)
 	// but the routing exists for the general contract, not just this fixture).
 	const validation = $derived.by(() => {
 		revision; // re-run on every mutation, per VISUAL_EDITOR §Diagnostics
@@ -414,7 +413,7 @@
 	// Merge all three producers: validate() + external (both positional `.path`,
 	// resolved to the live stable-id keying) + local commit errors (already
 	// id-keyed). Precedence is errors-before-warnings within a field's list
-	// (mergeDiagnostics sorts; nothing is dropped — diagnostics never gate, so
+	// (mergeDiagnostics sorts; nothing is dropped: diagnostics never gate, so
 	// nothing here hides one either).
 	const diagByKey = $derived.by(() => {
 		const fromValidate = routeAndResolve(validation, cardIds);
@@ -447,11 +446,11 @@
 	// ── The empty-body ghost's consumer wording ─────────────────────────────────
 	// The hook is consulted once per KIND and its answer kept for the session, which
 	// is the whole determinism guarantee: a hook that samples a witty set at random
-	// is impure by design, and this cache is what makes its answer look chosen —
+	// is impure by design, and this cache is what makes its answer look chosen:
 	// same string for every card of a kind, and the same one after a remount or any
 	// re-derive. Keyed by kind rather than by card id deliberately: two empty cards
 	// that are the same kind ARE the same invitation, and disagreeing ghosts read as
-	// a glitch. Retyping a card crosses to another key and re-asks, which is right —
+	// a glitch. Retyping a card crosses to another key and re-asks, which is right:
 	// it is a different card now. Plain (non-`$state`) on purpose: memoization, so
 	// filling it during a derive must not feed back into one.
 	let ghostHook: BodyPlaceholder | undefined;
@@ -504,8 +503,8 @@
 			provenance: provenanceMap(rows.fields),
 			sections,
 			hasBody,
-			// The body ghosts its resolved `default:` exactly as a scalar does — the
-			// same text-ghost projection `<Field>` applies to a field's row — and falls
+			// The body ghosts its resolved `default:` exactly as a scalar does: the
+			// same text-ghost projection `<Field>` applies to a field's row; and falls
 			// back to an invitation where a scalar shows nothing, because an empty body
 			// is a surface to write on and an empty control is a value not yet given.
 			// Asked only for a card that HAS a body, so the hook is never consulted
@@ -525,7 +524,7 @@
 		const main = doc.main; // allocate once
 		const cards = doc.cards; // allocate once
 		// The provenance channel (FIELD_PROVENANCE): one whole-doc resolve per
-		// derive, feeding the ghosted `default:` only. Guarded — provenance is
+		// derive, feeding the ghosted `default:` only. Guarded: provenance is
 		// chrome, so a resolve failure degrades to no ghosts, never a blank form.
 		let resolved: Resolved | undefined;
 		try {
@@ -559,12 +558,12 @@
 
 	// ── Public entry points ─────────────────────────────────────────────────────
 	/**
-	 * Resolve a preview `ContentHit` to a mounted leaf and place its caret (Phase 5).
+	 * Resolve a preview `ContentHit` to a mounted leaf and place its caret.
 	 *
 	 * Async because the reveal has to RENDER before the landing: a collapsed group
 	 * is `inert`, which swallows a focus silently, so a caret placed in the same
 	 * tick as the reveal would go nowhere and report nothing. The consumer's
-	 * `onCaretPick` ignores the promise — awaiting it is for a caller that wants to
+	 * `onCaretPick` ignores the promise: awaiting it is for a caller that wants to
 	 * observe where the caret went.
 	 */
 	export async function setCaret(hit: ContentHit): Promise<void> {
@@ -581,25 +580,25 @@
 		// A `'segment'` hit landed on origin-less ink (list markers, a code fence's
 		// interior): `pos` is the segment START, not a cluster-exact caret
 		// (HitGranularity), so just focus the leaf rather than snap the caret to a
-		// spot the click did not resolve. `'cluster'` (and an absent granularity —
+		// spot the click did not resolve. `'cluster'` (and an absent granularity:
 		// the backend did not report it, treat as exact) places the caret.
 		if (hit.granularity === 'segment') leaf.focus();
 		else leaf.setCaret(hit.pos);
 		// The arrival cue. Unconditional, unlike the preview side's change-guarded
 		// bloom: a preview click is one discrete act, and its commonest target is the
-		// leaf ALREADY focused — where landing a caret changes nothing on screen — or
+		// leaf ALREADY focused (where landing a caret changes nothing on screen) or
 		// one off-screen, where the browser's focus-scroll moves the page and leaves
 		// the caret to be hunted for in a long form.
 		bloomInside(leaf.el);
 	}
-	/** The active leaf's controller — the formatting popover's observation seam. */
+	/** The active leaf's controller: the formatting popover's observation seam. */
 	export function getActiveLeaf(): FieldController | undefined {
 		if (!activeAddr) return undefined;
 		const card = activeAddr.card != null ? activeCardId : undefined;
 		return leaves.get(fieldKeyToString({ card, field: activeAddr.field }));
 	}
 
-	/** Map a `ContentHit.field` (a canonical `DocPath`) to a mounted leaf key — the
+	/** Map a `ContentHit.field` (a canonical `DocPath`) to a mounted leaf key: the
 	 * same `parseDocPath` route the diagnostics take, the absolute card index
 	 * resolved to its live stable id, then the shared `fieldKeyToString` form. */
 	function leafKeyForHit(field: string): string | undefined {
@@ -627,9 +626,9 @@
 	/>
 
 	<!-- The tips card: a fixed slot after `main`, ahead of the cards, so
-	     document-level guidance reads as document-level and never displaces a field.
-	     Absent when the channel is empty — which is what dismissal makes it, so the
-	     card leaves for good (VISUAL_EDITOR §"Card operations"). -->
+	 document-level guidance reads as document-level and never displaces a field.
+	 Absent when the channel is empty; which is what dismissal makes it, so the
+	 card leaves for good (VISUAL_EDITOR §"Card operations"). -->
 	{#if model.tips.length}
 		<TipsCard tips={model.tips} onDismiss={dismissTips} />
 	{/if}
@@ -657,18 +656,18 @@
 <FormatPopover {getActiveLeaf} />
 
 <!-- Cards always render; the ADD affordance is gated on the schema declaring
-     `card_kinds`, since there is nothing to seed otherwise. A card already in the
-     document shows regardless of its kind — a kind with no schema (foreign, or a
-     schema with no `card_kinds` at all) degrades to a recovery shell inside <Card>
-     (retype + delete), never gated away, so its content is neither dropped nor
-     trapped. The gate lives HERE rather than at each call site: the strip is one
-     decision, and two copies of it drift into a stack with a gap at one end. -->
+ `card_kinds`, since there is nothing to seed otherwise. A card already in the
+ document shows regardless of its kind: a kind with no schema (foreign, or a
+ schema with no `card_kinds` at all) degrades to a recovery shell inside <Card>
+ (retype + delete), never gated away, so its content is neither dropped nor
+ trapped. The gate lives HERE rather than at each call site: the strip is one
+ decision, and two copies of it drift into a stack with a gap at one end. -->
 {#snippet addAffordance(atIndex: number)}
 	{#if kinds.length}
 		<div class="qm-add-card">
 			<!-- A glyph and no word: the strip IS the gap, so the pill it fills on hover
-			     shows what a label would state — the space the new card takes. The kind is
-			     the accessible name, the one reading with no geometry to carry it. -->
+			 shows what a label would state: the space the new card takes. The kind is
+			 the accessible name, the one reading with no geometry to carry it. -->
 			{#if kinds.length === 1}
 				<button
 					type="button"
@@ -678,10 +677,10 @@
 				>
 			{:else}
 				<!-- Multi-kind add: pick the kind, then seed + insert. A MENU rather than a
-			     disclosure — it floats out of the stack, so raising it moves no card, and
-			     it dismisses on pick, on Escape and on a click outside, none of which a
-			     `<details>` does. The trigger is bits-ui's `<button>`, which is why the
-			     recede ladder below reaches it through `:global`. -->
+			 disclosure: it floats out of the stack, so raising it moves no card, and
+			 it dismisses on pick, on Escape and on a click outside, none of which a
+			 `<details>` does. The trigger is bits-ui's `<button>`, which is why the
+			 recede ladder below reaches it through `:global`. -->
 				<DropdownMenu.Root>
 					<DropdownMenu.Trigger class="qm-add-btn qm-add-affordance" aria-label="Add card"
 						><Plus size={GLYPH} /></DropdownMenu.Trigger
@@ -707,10 +706,10 @@
 {/snippet}
 
 <style>
-	/* The private scale lands via `data-qm-root` on the root element above — this is
-	   a DETACHED root, one of those core/theme.css applies the derivation to. The
-	   root rule also carries the baseline font and colour, so nothing here restates
-	   them. Nothing here mints; `check:style` enforces that. */
+	/* The private scale lands via `data-qm-root` on the root element above: this is
+	 a DETACHED root, one of those core/theme.css applies the derivation to. The
+	 root rule also carries the baseline font and colour, so nothing here restates
+	 them. Nothing here mints; `check:style` enforces that. */
 	.qm-editor {
 		display: flex;
 		flex-direction: column;
@@ -718,34 +717,34 @@
 		color: var(--_qm-ink);
 	}
 	/* The strip between two blocks, and the whole of it is the target: a gap is found
-	   by POSITION, so reveal and hit region are the full-bleed row rather than a word
-	   to aim at in the middle of it. It takes the editor's gap back on BOTH sides, so
-	   it is not a control sitting in the gutter — it IS the gutter: what separates two
-	   cards is the trigger's own height at the tap floor and nothing else, and the
-	   pill it fills on hover is edge to edge the space the new card opens into. No
-	   band is held back as miss-tolerance: gutter that reads as the trigger and
-	   inserts nothing unsays what the fill claims, so a press anywhere between two
-	   cards inserts. Absorbed rather than removed, because `gap` is also what separates
-	   the two seams no strip sits in: `main` from the tips card, and every card from
-	   the next under a quill declaring no kinds, where the affordance does not render
-	   at all. */
+	 by POSITION, so reveal and hit region are the full-bleed row rather than a word
+	 to aim at in the middle of it. It takes the editor's gap back on BOTH sides, so
+	 it is not a control sitting in the gutter; it IS the gutter: what separates two
+	 cards is the trigger's own height at the tap floor and nothing else, and the
+	 pill it fills on hover is edge to edge the space the new card opens into. No
+	 band is held back as miss-tolerance: gutter that reads as the trigger and
+	 inserts nothing unsays what the fill claims, so a press anywhere between two
+	 cards inserts. Absorbed rather than removed, because `gap` is also what separates
+	 the two seams no strip sits in: `main` from the tips card, and every card from
+	 the next under a quill declaring no kinds, where the affordance does not render
+	 at all. */
 	.qm-add-card {
 		display: flex;
 		margin-top: calc(var(--_qm-space-2) * -1);
 		margin-bottom: calc(var(--_qm-space-2) * -1);
 	}
 	/* Unboxed, like every button (SURFACES §"The shared recipe"), and not dashed: a
-	   dashed edge is the PLACEHOLDER idiom — "nothing is here yet" — which on a button
-	   reads as disabled or as a drop target. It stays honest in one place, the
-	   un-schemable card (`Card.svelte`), which is a state rather than a control. Hover
-	   fills a pill: the trigger rests dim and unfilled, so a hover that only shifted its
-	   ink would have little to shift. The pill fills the strip because the strip is what
-	   was pressed, and the strip is the gap — the fill is the card-to-be, drawn where it
-	   will land.
+	 dashed edge is the PLACEHOLDER idiom ("nothing is here yet") which on a button
+	 reads as disabled or as a drop target. It stays honest in one place, the
+	 un-schemable card (`Card.svelte`), which is a state rather than a control. Hover
+	 fills a pill: the trigger rests dim and unfilled, so a hover that only shifted its
+	 ink would have little to shift. The pill fills the strip because the strip is what
+	 was pressed, and the strip is the gap: the fill is the card-to-be, drawn where it
+	 will land.
 
-	   `:global`, because the multi-kind trigger is bits-ui's own element and a `class`
-	   passed to a primitive is a plain string that never picks up the scoping hash —
-	   the same seam the enum trigger is styled through. */
+	 `:global`, because the multi-kind trigger is bits-ui's own element and a `class`
+	 passed to a primitive is a plain string that never picks up the scoping hash:
+	 the same seam the enum trigger is styled through. */
 	/* The recede ladder, in source order: every rung after the first ties on
 	   specificity with the one before it, so the later rule wins and no state needs
 	   restating per gap. Rest, then engaged. */
@@ -757,12 +756,12 @@
 		justify-content: center;
 		width: 100%;
 		/* Recede until engaged (AESTHETIC §"minimal UI"): the glyph rests on the idle
-		   rung and comes to full ink on hover or keyboard focus, so the stack reads as
-		   content rather than a toolbar per gap. Dim, not absent: an insert point that
-		   surfaces under the pointer is reachable only by a reader who already knows it
-		   is there, and every gap is an equal entry point — a card goes anywhere in the
-		   stack, not just after the last one. This rung is also what a touch pointer
-		   gets, which never hovers. */
+		 rung and comes to full ink on hover or keyboard focus, so the stack reads as
+		 content rather than a toolbar per gap. Dim, not absent: an insert point that
+		 surfaces under the pointer is reachable only by a reader who already knows it
+		 is there, and every gap is an equal entry point: a card goes anywhere in the
+		 stack, not just after the last one. This rung is also what a touch pointer
+		 gets, which never hovers. */
 		opacity: var(--_qm-opacity-idle);
 	}
 	.qm-add-card:hover :global(.qm-add-btn),

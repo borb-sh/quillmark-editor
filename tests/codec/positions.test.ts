@@ -1,4 +1,4 @@
-// Criterion 1 — the position map, the highest-value UTF-16/USV seam. For every USV
+// Criterion 1: the position map, the highest-value UTF-16/USV seam. For every USV
 // offset (including across astral chars and structural shapes) the map is a clean
 // inverse, and offsets land on the right code point.
 import { describe, it, expect } from 'vitest';
@@ -48,7 +48,7 @@ describe('positions: UTF-16 / USV inverse', () => {
 		// PM: doc>paragraph, content start at 1. "a"=[1,2], "😀"=[2,4] (2 UTF-16), "b"=[4,5].
 		expect(usvToPM(index, 0)).toBe(1); // before 'a'
 		expect(usvToPM(index, 1)).toBe(2); // before '😀'
-		expect(usvToPM(index, 2)).toBe(4); // before 'b' — skipped the surrogate pair
+		expect(usvToPM(index, 2)).toBe(4); // before 'b'; skipped the surrogate pair
 		expect(usvToPM(index, 3)).toBe(5); // after 'b'
 		// Inverse: the PM position after the emoji is USV 2, not 3 (no surrogate drift).
 		expect(pmToUsv(index, 4)).toBe(2);

@@ -1,4 +1,4 @@
-// diagnostics.ts routing/merge/precedence — pure logic, no Document. VisualEditor's
+// diagnostics.ts routing/merge/precedence; pure logic, no Document. VisualEditor's
 // `$derived.by` glue is the thin part; the math it feeds on is here.
 import { describe, it, expect } from 'vitest';
 import type { Diagnostic } from '$lib/core';

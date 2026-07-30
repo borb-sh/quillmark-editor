@@ -1,4 +1,4 @@
-// Criteria 2, 4 (overlap), 5, 6 — decode idempotence up to normalization,
+// Criteria 2, 4 (overlap), 5, 6; decode idempotence up to normalization,
 // overlapping-mark inline splits, island round-trip, inline/plaintext constraints.
 import { describe, it, expect } from 'vitest';
 import { decode, pmToContent, blockSchema, inlineSchema } from '$lib/core/codec';
@@ -140,7 +140,7 @@ describe('adjacent sibling lists (ordinal reset)', () => {
 });
 
 describe('mark-set run keying', () => {
-	it('does not alias a link url containing a legacy delimiter with a mark set', () => {
+	it('does not alias a link url containing `|` with a mark set', () => {
 		// url "a|strong" on [0,1) next to {link "a", strong} on [1,2): the two mark
 		// sets must key differently, or the runs merge and the second set is dropped.
 		const rt: Content = {

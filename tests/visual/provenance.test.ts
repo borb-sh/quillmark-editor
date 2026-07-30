@@ -2,7 +2,7 @@
 // editor's name-keyed `provenance` map and the ghosted `default:` it feeds. The
 // pure helpers are unit-tested; the resolve behavior is asserted against the REAL
 // usaf_memo schema, so the authored↔default flip the ghost turns on is pinned to
-// the fixture the phase runs against, not a mock.
+// the fixture the suite runs against, not a mock.
 import { describe, it, expect } from 'vitest';
 import type { ResolvedField, Resolved } from '$lib/core';
 import {
@@ -28,7 +28,7 @@ describe('provenanceMap', () => {
 });
 
 describe('resolvedByCardIndex', () => {
-	// Array position 1 carries document index 2 — the map keys on `index`, and one
+	// Array position 1 carries document index 2; the map keys on `index`, and one
 	// entry carries both channels (fields and the `body` sibling).
 	const resolved = {
 		main: { fields: [], body: null },
@@ -73,7 +73,7 @@ describe('the ghost projection', () => {
 		expect(stringifyGhost('Write it here')).toBe('Write it here');
 		expect(stringifyGhost(12)).toBe('12');
 		expect(stringifyGhost(undefined)).toBeUndefined();
-		// Only text ghosts render a placeholder — a richtext body resolves to a text
+		// Only text ghosts render a placeholder: a richtext body resolves to a text
 		// render, so an object-shaped default is not one.
 		expect(stringifyGhost({ lines: [] })).toBeUndefined();
 	});
@@ -101,7 +101,7 @@ describe('resolve over the real usaf_memo schema', () => {
 			source: 'authored',
 			value: 'ACME MEMORANDUMS'
 		});
-		// An authored field ghosts nothing — the control shows its own value.
+		// An authored field ghosts nothing; the control shows its own value.
 		expect(ghostDefault(authored.letterhead_title)).toBeUndefined();
 
 		doc.removeField('letterhead_title');

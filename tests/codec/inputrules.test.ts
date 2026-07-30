@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Behavioral input-rule coverage — the rule COUNT test (edges.test.ts) cannot
+// Behavioral input-rule coverage: the rule COUNT test (edges.test.ts) cannot
 // catch a rule that fires with wrong positions. Typing is simulated the way the
 // browser drives it: per-char through `handleTextInput` (the inputrules plugin's
 // entry), falling back to a plain insert when no rule claims the char.
@@ -127,7 +127,7 @@ describe('mark input rules fire with exact positions', () => {
 	});
 });
 
-// `list_item` is `block+`, so `list_item > heading` is representable — and renders
+// `list_item` is `block+`, so `list_item > heading` is representable; and renders
 // as nothing (the reference quill typesets an item's blocks as body paragraphs).
 // Both routes into the shape are closed: the list shorthands normalize a heading
 // they wrap, and `# ` declines inside an item.
