@@ -165,6 +165,71 @@ describe('initialExpandedGroup', () => {
 	});
 });
 
+describe('groupOrder', () => {
+	it('takes the typed ui.groups registry, in registry order', () => {
+		const schema = {
+			fields: { a: f({ ui: { group: 'two' } }) },
+			ui: { groups: { one: {}, two: {} } }
+		} as unknown as Parameters<typeof groupOrder>[0];
+		expect(groupOrder(schema)).toEqual(['one', 'two']);
+	});
+
+	it('falls back to first-declaration order when no registry is declared', () => {
+		const schema = {
+			fields: {
+				a: f({ ui: { group: 'second' } }),
+				b: f({ ui: { group: 'first' } }),
+				c: f({ ui: { group: 'second' } }),
+				d: f({})
+			}
+		} as unknown as Parameters<typeof groupOrder>[0];
+		// Order of first appearance, each group once, and an ungrouped field adds none.
+		expect(groupOrder(schema)).toEqual(['second', 'first']);
+	});
+});
+
+describe('groupLabel', () => {
+	it('takes the registry title override, else humanizes the group id', () => {
+		const schema = {
+			fields: {},
+			ui: { groups: { memo_for: { title: 'Memo For' }, addressing: {} } }
+		} as unknown as Parameters<typeof groupLabel>[0];
+		expect(groupLabel(schema, 'memo_for')).toBe('Memo For');
+		expect(groupLabel(schema, 'addressing')).toBe('Addressing');
+	});
+});
+
+describe('bodyEnabled', () => {
+	it('is true unless the card schema turns it off explicitly', () => {
+		const body = (enabled?: boolean) =>
+			({ fields: {}, body: enabled === undefined ? {} : { enabled } }) as unknown as Parameters<
+				typeof bodyEnabled
+			>[0];
+		expect(bodyEnabled(body(false))).toBe(false);
+		expect(bodyEnabled(body(true))).toBe(true);
+		expect(bodyEnabled(body())).toBe(true);
+		expect(bodyEnabled({ fields: {} } as unknown as Parameters<typeof bodyEnabled>[0])).toBe(true);
+		expect(bodyEnabled(undefined)).toBe(true);
+	});
+});
+
+describe('required', () => {
+	it('is the absence of a `default:`, which an empty string or array still counts as', () => {
+		const byName = Object.fromEntries(
+			fieldModels({
+				fields: {
+					none: f({}),
+					empty: f({ default: '' }),
+					list: f({ type: 'array', default: [] })
+				}
+			} as unknown as Parameters<typeof fieldModels>[0]).map((m) => [m.name, m])
+		);
+		expect(byName.none.required).toBe(true);
+		expect(byName.empty.required).toBe(false);
+		expect(byName.list.required).toBe(false);
+	});
+});
+
 describe('IdSeq identity', () => {
 	it('takes unique ids, and keeps taking them across calls', () => {
 		const seq = new IdSeq();
@@ -173,97 +238,43 @@ describe('IdSeq identity', () => {
 	});
 });
 
+// The real schema is here to prove the fixture's YAML shapes reach the projection
+// as the synthetic cases above assume. It asserts CONTRACTS, never the fixture's
+// inventory: a count, a group list or a field's copy pinned here fails on every
+// edit to the reference quill, and the failure is answered by pasting the new
+// value (CLAUDE.md §Verification).
 describe('against the real usaf_memo schema', () => {
-	it('projects main fields in declaration order with correct controls', () => {
-		const schema = quill().schema;
-		const models = fieldModels(schema.main);
-		// 22 declared main fields, key order = declaration order (the contract).
-		expect(models.length).toBe(22);
-		expect(models[0].name).toBe('memo_for');
-		expect(models[0].control).toBe('array');
+	const main = () => quill().schema.main;
+
+	it('projects fields in declaration order, with the real shapes mapping to controls', () => {
+		const schema = main();
+		const models = fieldModels(schema);
+		expect(models.map((m) => m.name)).toEqual(Object.keys(schema.fields));
 		const byName = Object.fromEntries(models.map((m) => [m.name, m]));
+		// One of each shape the synthetic table covers: an inline richtext leaf, an
+		// enum, and an array whose items are themselves richtext.
 		expect(byName.subject.control).toBe('prose');
 		expect(byName.subject.inline).toBe(true);
 		expect(byName.classification.control).toBe('enum');
-		expect(enumValues(byName.classification.schema)).toContain('UNCLASSIFIED');
-		expect(byName.font_size.control).toBe('number');
-		expect(byName.date.control).toBe('date');
 		expect(byName.references.control).toBe('array');
 		expect(byName.references.schema.items?.type).toBe('richtext');
 	});
 
-	it('projects each field schema description into the model', () => {
-		const schema = quill().schema;
-		const byName = Object.fromEntries(fieldModels(schema.main).map((m) => [m.name, m]));
-		// `memo_from` carries a description in the fixture; it threads verbatim.
+	it('threads a field schema description into the model verbatim', () => {
+		const byName = Object.fromEntries(fieldModels(main()).map((m) => [m.name, m]));
 		expect(byName.memo_from.description).toBe(byName.memo_from.schema.description);
-		expect(byName.memo_from.description).toMatch(/office symbol/i);
+		expect(byName.memo_from.description).toBeTruthy(); // the fixture declares one to thread
 	});
 
-	it('marks a no-default field required, a defaulted field not', () => {
-		const schema = quill().schema;
-		const byName = Object.fromEntries(fieldModels(schema.main).map((m) => [m.name, m]));
-		// No `default:` → required (Unendorsed); a declared `default:` (incl. `""`/`[]`)
-		// → not required. `subject`/`memo_for` declare none; `memo_from`/`letterhead_title` do.
-		expect(byName.subject.required).toBe(true);
-		expect(byName.memo_for.required).toBe(true);
-		expect(byName.memo_from.required).toBe(false);
-		expect(byName.letterhead_title.required).toBe(false);
-	});
-
-	it('reads group order from the typed ui.groups registry', () => {
-		const schema = quill().schema;
-		expect(groupOrder(schema.main)).toEqual([
-			'addressing',
-			'letterhead',
-			'classification',
-			'additional'
-		]);
-	});
-
-	it('labels a group from its ui.groups title override, else the humanized id', () => {
-		const schema = quill().schema;
-		// The fixture's group registry carries no title overrides, so the label
-		// humanizes the id.
-		expect(groupLabel(schema.main, 'addressing')).toBe('Addressing');
-		// A registry that declares a title override wins over the humanized id.
-		const withTitle = {
-			fields: {},
-			ui: { groups: { memo_for: { title: 'Memo For' } } }
-		} as unknown as Parameters<typeof groupLabel>[0];
-		expect(groupLabel(withTitle, 'memo_for')).toBe('Memo For');
-	});
-
-	it('sections fields into the declared group order', () => {
-		const schema = quill().schema;
-		const models = fieldModels(schema.main);
-		const sections = groupSections(models, groupOrder(schema.main), (g) =>
-			groupLabel(schema.main, g)
+	it('sections every field into the declared group order, losing none', () => {
+		const schema = main();
+		const models = fieldModels(schema);
+		const sections = groupSections(models, groupOrder(schema), (g) => groupLabel(schema, g));
+		// Grouped sections follow the registry; an ungrouped one may trail them.
+		expect(sections.map((s) => s.group).filter((g) => g != null)).toEqual(groupOrder(schema));
+		// And it is a PARTITION — every projected field lands in exactly one section.
+		expect(sections.flatMap((s) => s.fields.map((m) => m.name)).sort()).toEqual(
+			models.map((m) => m.name).sort()
 		);
-		expect(sections.map((s) => s.group)).toEqual([
-			'addressing',
-			'letterhead',
-			'classification',
-			'additional'
-		]);
-		// `addressing` carries memo_for, memo_from, subject, signature_block (in order).
-		expect(sections[0].fields.map((m) => m.name)).toEqual([
-			'memo_for',
-			'memo_from',
-			'subject',
-			'signature_block'
-		]);
-	});
-
-	it('main and indorsement bodies are enabled (no body.enabled:false)', () => {
-		const schema = quill().schema;
-		expect(bodyEnabled(schema.main)).toBe(true);
-		expect(bodyEnabled(schema.card_kinds?.indorsement)).toBe(true);
-	});
-
-	it('indorsement title resolves to its schema ui.title', () => {
-		const schema = quill().schema;
-		const k = schema.card_kinds!.indorsement;
-		expect(cardTitle(k, 'indorsement', {}, undefined)).toBe('Routing indorsement');
 	});
 });
