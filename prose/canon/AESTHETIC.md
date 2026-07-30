@@ -4,7 +4,7 @@
 
 ## TL;DR
 
-The visual language of the editor surfaces: the look a consumer sees before theming, and the rules a restyle preserves; styles live in component `<style>` blocks, and the `/visual` playground route is the reference surface. The surface chrome it governs (background, border, shadow, padding, radius) is [SURFACES.md](SURFACES.md); the public dials behind it are [`THEMING.md`](../../THEMING.md).
+The visual language of the editor surfaces: the look a consumer sees before theming, and the rules a restyle preserves; styles live in component `<style>` blocks, and the `/visual` playground route is the reference surface. The surface chrome it governs (background, border, padding, radius) is [SURFACES.md](SURFACES.md); the public dials behind it are [`THEMING.md`](../../THEMING.md).
 
 ## The look
 

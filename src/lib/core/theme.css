@@ -72,12 +72,13 @@
 		--_qm-accent-wash: color-mix(in oklab, var(--_qm-accent) 18%, transparent);
 
 		/* ── Ratios and effects ──────────────────────────────────────────────────
-		   No palette fixes these, so they are their own rungs. Shadows mix from the
-		   INK pole rather than black, so they track the palette instead of turning
-		   into a smudge on a dark surface. */
+		   No palette fixes these, so they are their own rungs. There is no shadow
+		   rung: a shadow is a light source stated as geometry, and the poles carry
+		   colour only, so one offset reads as a lit surface under one palette and as
+		   a glow pooling under the element in its inverse. Stroke and tone say the
+		   same things at both poles, and every surface separates by those two
+		   (SURFACES §Elevation). */
 		--_qm-blur: 8px;
-		--_qm-shadow-page: 0 1px 4px color-mix(in oklab, var(--_qm-fg) 20%, transparent);
-		--_qm-shadow-popover: 0 4px 16px color-mix(in oklab, var(--_qm-fg) 14%, transparent);
 		/* The popover's translucency: the raised surface mixed toward transparent, so
 		   the page reads faintly through the pill (SURFACES §Elevation). */
 		--_qm-surface-popover: color-mix(in oklab, var(--_qm-surface-raised) 82%, transparent);

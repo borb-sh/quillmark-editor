@@ -20,7 +20,7 @@ Nothing to import: the package pulls its own stylesheet, which applies the deriv
 | Token            | Default                                | What it sets                                                                                            |
 | ---------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `--qm-bg`        | `#fff` / `#14171c`                     | Base surface. Cards, fields, the painted page, and the popover step off it.                             |
-| `--qm-fg`        | `#1a1a1a` / `#e8eaed`                  | Base ink. Body text, labels, borders, and shadows step off it.                                          |
+| `--qm-fg`        | `#1a1a1a` / `#e8eaed`                  | Base ink. Body text, labels, and borders step off it.                                                   |
 | `--qm-accent`    | `#2563eb`                              | Focus rings, active marks, the preview's active field box.                                              |
 | `--qm-danger`    | `#c5221f`                              | Error diagnostics, the required marker, the delete glyph.                                               |
 | `--qm-warning`   | `#b25000`                              | Warning diagnostics.                                                                                    |
@@ -40,7 +40,7 @@ That is why no card's fill is a bet on your backdrop: every card sits one rung o
 
 ## The surface follows your colour scheme
 
-Surfaces step `bg → fg` and ink steps `fg → bg`, mixed in **oklab**, so inverting the two poles inverts the whole scale, including borders, the popover's translucent fill, and the page shadow (which mixes from the ink pole rather than from black, and so does not become a smudge on a dark surface).
+Surfaces step `bg → fg` and ink steps `fg → bg`, mixed in **oklab**, so inverting the two poles inverts the whole scale, including borders and the popover's translucent fill. Nothing casts a shadow: an offset states a light source the poles do not carry, so it would read as a lit surface under one palette and a glow under its inverse. Every surface separates by stroke and tone, which invert cleanly.
 
 Which way the poles default is **your `color-scheme`**, not the operating system's. Declare the scheme your app is in and the surface lands on it, along with native chrome, which reads the same property:
 

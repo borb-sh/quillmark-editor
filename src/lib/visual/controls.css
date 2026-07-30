@@ -189,7 +189,7 @@
 
 	/* A floating list of choices: the enum's listbox and the card stack's kind menu.
 	 Both portal into the nearest `[data-qm-root]`, and both are PICKED FROM, so the
-	 surface (its lift, its inset, its ink) and the item (its pad, its radius, the
+	 surface (its edge, its inset, its ink) and the item (its pad, its radius, the
 	 rung a highlight fills with) are one recipe rather than two that agree until one
 	 is edited. What a caller adds over it is its own: the enum sizes itself off its
 	 trigger and weights the stored value.
@@ -203,7 +203,6 @@
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
 		background: var(--_qm-surface);
-		box-shadow: var(--_qm-shadow-popover);
 		font-size: var(--_qm-text-body);
 		color: var(--_qm-ink);
 	}
@@ -235,7 +234,6 @@
 		-webkit-backdrop-filter: blur(var(--_qm-blur));
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
-		box-shadow: var(--_qm-shadow-popover);
 		animation: qm-pop-in var(--_qm-duration-fast) ease-out;
 	}
 	@keyframes qm-pop-in {
