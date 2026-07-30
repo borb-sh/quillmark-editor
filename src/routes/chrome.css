@@ -18,6 +18,27 @@
 	padding-inline: var(--pg-space-6);
 }
 
+/* ── The two-column layout ─────────────────────────────────────────────────── */
+/* Every route's body: the thing the page is about, and the aside beside it —
+   instruments on a tool route, the live sheet on the front page. One recipe, so
+   the aside sits on the same edge and collapses at the same width whichever route
+   the visitor is on. Margins are the route's own; this places the columns and
+   nothing more. */
+.pg-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) var(--pg-aside);
+	gap: var(--pg-space-8);
+	align-items: start;
+}
+
+/* Below the width where the aside stops fitting, it drops under the content it
+   annotates — the same stack the rail takes, at the same threshold. */
+@media (width < 60rem) {
+	.pg-layout {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
 /* ── The rail ──────────────────────────────────────────────────────────────── */
 /* A block is an annotation in the margin and the content it names (PLAYGROUND
    §"The rail"). Below the width where the margin stops fitting, the rail stacks
@@ -130,13 +151,17 @@ pre.pg-readout {
 
 /* The instrument column — the switches and readouts beside a mounted surface, on
    a panel: sticky under the running head, each label sitting on its value with
-   the space between the groups. */
+   the space between the groups. It caps at the viewport and scrolls in place,
+   because a column carrying a document dump is the one thing on these pages that
+   can outgrow the page it sits on. */
 .pg-instruments {
 	position: sticky;
 	top: var(--pg-space-16);
 	display: flex;
 	flex-direction: column;
 	gap: var(--pg-space-half);
+	max-height: var(--pg-mount-max);
+	overflow: auto;
 }
 
 .pg-instruments .pg-label:not(:first-child) {
@@ -146,6 +171,8 @@ pre.pg-readout {
 @media (width < 60rem) {
 	.pg-instruments {
 		position: static;
+		max-height: none;
+		overflow: visible;
 	}
 }
 
@@ -265,4 +292,14 @@ pre.pg-readout {
 :focus-visible {
 	outline: var(--pg-ring-width) solid var(--pg-ink);
 	outline-offset: var(--pg-space-half);
+}
+/* The package's surfaces are the exception, and the rule above is why: an unlayered
+   host declaration beats `@layer qm.chrome` by design (controls.css), so a ring
+   written for controls that draw none repaints the ones that do — over
+   `--_qm-ring-focus`, on the one surface the package is checked by eye.
+   `revert-layer` hands each control back to the layer under this one, which is the
+   package's own ring at its own offset. */
+[data-qm-root] :focus-visible {
+	outline: revert-layer;
+	outline-offset: revert-layer;
 }

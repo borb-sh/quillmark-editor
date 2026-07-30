@@ -226,7 +226,7 @@
 	</header>
 
 	{#if status.phase === 'ready'}
-		<div class="layout">
+		<div class="pg-layout">
 			<div class="editor-shell">
 				{#if VisualEditor && docHandle && quillHandle}
 					<VisualEditor
@@ -291,22 +291,8 @@
 </main>
 
 <style>
-	.layout {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) 22rem;
-		gap: var(--pg-space-8);
-		align-items: start;
-	}
-
 	.editor-shell {
 		min-width: 0;
-	}
-
-	/* The document dump makes this the one column that can outgrow the viewport, so
-	   it caps and scrolls; the recipe carries the rest. */
-	.pg-instruments {
-		max-height: calc(100dvh - var(--pg-space-24));
-		overflow: auto;
 	}
 
 	.buttons {
@@ -319,14 +305,5 @@
 	   lose the anchor's underline with it. */
 	a.pg-btn {
 		text-decoration: none;
-	}
-
-	@media (width < 60rem) {
-		.layout {
-			grid-template-columns: minmax(0, 1fr);
-		}
-		.pg-instruments {
-			max-height: none;
-		}
 	}
 </style>

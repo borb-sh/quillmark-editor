@@ -104,7 +104,7 @@
 	</header>
 
 	{#if status.phase === 'ready'}
-		<div class="layout">
+		<div class="pg-layout">
 			<div class="pg-frame preview-frame">
 				{#if session}
 					<Preview bind:this={previewRef} {session} margin={0} onCaretPick={handleCaretPick} />
@@ -142,19 +142,10 @@
 </main>
 
 <style>
-	/* The surface, and the instruments beside it — the shape every tool route takes.
-	   */
-	.layout {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) 22rem;
-		gap: var(--pg-space-8);
-		align-items: start;
-	}
-
-	/* Short by design, and inset so the painted page reads against the desk tone
-	   rather than bleeding into the frame's own edge. */
+	/* Inset, so the painted page reads against the desk tone rather than bleeding
+	   into the frame's own edge; the height is the shell's short mount. */
 	.preview-frame {
-		height: 31rem;
+		height: var(--pg-mount);
 		padding: var(--pg-space-4);
 	}
 
@@ -163,11 +154,5 @@
 		flex-direction: column;
 		align-items: start;
 		gap: var(--pg-space);
-	}
-
-	@media (width < 60rem) {
-		.layout {
-			grid-template-columns: minmax(0, 1fr);
-		}
 	}
 </style>
