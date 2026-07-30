@@ -237,8 +237,8 @@ control: inputs, the select trigger, the date field, both prose leaves, add
 affordances), `--_qm-text-label` (field labels, section headers),
 `--_qm-text-meta` (diagnostics, mini controls) — with weight a fixed convention
 over them (`--_qm-weight-label` on a field label and on a heading in the body,
-`--_qm-weight-soft` on a nested object prop's secondary label), not per-file. Four rungs carry every surface; an
-in-between size is the drift this prevents.
+`--_qm-weight-soft` on a nested object prop's secondary label), not per-file. Four
+rungs carry every surface; an in-between size is the drift this prevents.
 
 **Leading** is the ramp's third axis, at two rungs rather than four: a wrapped
 label and a wrapped paragraph want different rhythms, and nothing wants a rung per

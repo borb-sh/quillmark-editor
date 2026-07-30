@@ -70,13 +70,13 @@ li.ProseMirror-selectednode::after {
    code and a line IS a heading — never a prediction of the size paper will set it
    at, which the package cannot know for a quill it has not seen.
 
-   Scoping is by TAG, and the schema does the rest: `h1`–`h6`, `pre`, `hr` and the
-   lists cannot exist under the inline schema, so no rule for them can land on a
-   `subject` field however that field is mounted. The two MARKS are the exception —
-   `code` and `link` are in both schemas, and a `plaintext` leaf strips them at
-   DECODE while mounting a schema that still carries them, so a paste can put either
-   in one. The rules stand there too, and correctly: they say the leaf holds code, or
-   a link, which is exactly what it then holds.
+   Scoping is by TAG, and the schema does the rest: `h1`–`h6`, `hr` and the lists
+   cannot exist under the inline schema, so no rule for them can land on a `subject`
+   field however that field is mounted. The two MARKS are the exception — `code` and
+   `link` are in both schemas, and a `plaintext` leaf strips them at DECODE while
+   mounting a schema that still carries them, so a paste can put either in one. The
+   rules stand there too, and correctly: they say the leaf holds code, or a link,
+   which is exactly what it then holds.
 
    `visual/TipsCard.svelte` restates the two mark rules by hand, over the same
    `toDOM` output injected outside any view. */
