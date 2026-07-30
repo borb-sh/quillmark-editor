@@ -43,6 +43,16 @@ The card is the container; nothing inside it is a second box.
   all**: it is the one surface in the card with no edge, which is what makes it read
   as the paper the card is printed on rather than as one more field. Being unframed
   is the statement, not a saving.
+- **What the paper does to a block is a stroke or a face, never a panel.** The rule
+  reaches inside the body too, over the nodes the codec emits (CODEC.md): a
+  blockquote is an inset and one hairline, a horizontal rule is that same hairline,
+  a code span or code block is `--_qm-font-mono` and nothing else. No fill, because
+  a filled block on unframed paper is the second box this section removes — and
+  there is no rung for one in any case: the card sits at `--_qm-surface-raised` and
+  the only step above it is `--_qm-surface-hover`, the hover lane, so a chip at rest
+  would read as a hovered button. What separates one block kind from the next is a
+  stroke, a face, an inset off the space scale, or weight — the same four the chrome
+  outside the body has.
 - **The metadata bracket is strokes, not a box.** The card's chrome brackets the
   fields, and the body is what falls outside it: a rule under the card title, a rule
   dividing the fields from the body, and a left rule on the open section spanning its
@@ -226,9 +236,9 @@ derive four rungs — `--_qm-text-title` (card title), `--_qm-text-body` (every
 control: inputs, the select trigger, the date field, both prose leaves, add
 affordances), `--_qm-text-label` (field labels, section headers),
 `--_qm-text-meta` (diagnostics, mini controls) — with weight a fixed convention
-over them (`--_qm-weight-label` on a field label, `--_qm-weight-soft` on a nested
-object prop's secondary label), not per-file. Four rungs carry every surface; an
-in-between size is the drift this prevents.
+over them (`--_qm-weight-label` on a field label and on a heading in the body,
+`--_qm-weight-soft` on a nested object prop's secondary label), not per-file. Four
+rungs carry every surface; an in-between size is the drift this prevents.
 
 **Leading** is the ramp's third axis, at two rungs rather than four: a wrapped
 label and a wrapped paragraph want different rhythms, and nothing wants a rung per
