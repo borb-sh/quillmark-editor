@@ -111,19 +111,48 @@
 </Popover.Root>
 
 <style>
-	/* Chrome, type, tap floor, hover fill and ring are the glyph-button family's
-	   (`.qm-icon-btn` + `.qm-focus-ring`, controls.css) — this trigger is one more
-	   glyph button and assembles none of that itself. Three facts are its own. */
+	/* Chrome, type and ring are the glyph-button family's (`.qm-icon-btn` +
+	   `.qm-focus-ring`, controls.css) — this trigger is one more glyph button and
+	   assembles none of that itself. What it does NOT take is the family's tap floor
+	   and the fill that floor sizes, because this is the one glyph button that sits in
+	   a LINE OF TEXT rather than in a row of its own: the label rung's line box is
+	   16.16px at the default scale and the floor is 24, so a target-sized paint box
+	   overhangs the line by ~4px at each end and spends the field's whole 4px
+	   label-to-control gap — the hover fill lands on the input's top border and the
+	   focus ring crosses it.
+
+	   So the box is the GLYPH and the target is the `::after` below. A target is a
+	   region of the screen, not a paint box, and separating them is what lets both be
+	   correct at once; the negative `margin-block` this replaces held only the first
+	   half, taking the floor out of the row's HEIGHT while leaving it in the row's
+	   paint. Every other glyph button keeps the family's floor as its box, because
+	   every other one has a row to itself.
+
+	   Dropping the fill costs no feedback: the ink step below says hover, and the
+	   surface itself opens on it. */
 	.qm-field-hint {
 		/* The marker recedes to the label's ghost tone; the surface carries the text. */
 		color: var(--_qm-ink-ghost);
 		/* Not the family's `pointer`: the glyph raises guidance, it does not act. */
 		cursor: help;
-		/* Off the row's rhythm. The tap floor is a target, not a line box, and it
-		   would otherwise set the height of every label row in the card — the array
-		   header, which stands a real button beside its label, is the one row that
-		   genuinely is that tall. */
-		margin-block: calc(var(--_qm-tap-min) / -2);
+		position: relative;
+		min-width: 0;
+		min-height: 0;
+		padding: 0;
+		background: none;
+	}
+	/* The tap floor, out of flow and centred on the glyph: WCAG 2.5.8 measures the
+	   target, and this is it. `aria-hidden` chrome by construction — a pseudo-element
+	   has no node — and it takes no paint, so it enlarges the press without enlarging
+	   the mark. */
+	.qm-field-hint::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: var(--_qm-tap-min);
+		height: var(--_qm-tap-min);
+		transform: translate(-50%, -50%);
 	}
 	.qm-field-hint:hover,
 	.qm-field-hint:focus-visible {

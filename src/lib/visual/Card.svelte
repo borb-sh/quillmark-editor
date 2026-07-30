@@ -433,7 +433,17 @@
 	   press anywhere left of the controls enters the title edit. `min-width: 0` lets
 	   it shrink past the title's intrinsic width; `align-self: stretch` beats the
 	   header's `align-items: center` so the region is the row's whole height rather
-	   than the input's. */
+	   than the input's.
+
+	   It HANGS by the title's own box, so the title's first character lands on the
+	   card's gutter with the field list, the bracket's rules and the body's first
+	   character (SURFACES §Rhythm). The title is the one region that carries a box —
+	   it has to, since the box IS the rename affordance — and a box on the gutter puts
+	   its text a padding and a hairline right of it, which at the card's largest type
+	   is the misalignment the eye finds first. Pulling the region rather than the input
+	   keeps the autosize mirror in register with what it measures, and the flex basis
+	   grows by what the margin took, so the right edge does not move. The negative
+	   margin is exactly the box it cancels, so the two move together at any dial. */
 	.qm-card-rename {
 		flex: 1;
 		min-width: 0;
@@ -441,6 +451,7 @@
 		display: flex;
 		align-items: center;
 		cursor: text;
+		margin-left: calc(-1 * (var(--_qm-space) + var(--_qm-border-width)));
 	}
 	/* Autosize sizer: an inline-grid whose ::after mirrors the text
 	   into the single cell, so the overlaid input tracks its content width. Bounded
