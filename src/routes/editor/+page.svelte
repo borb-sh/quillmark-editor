@@ -437,8 +437,8 @@
 		border-radius: var(--pg-radius-pill);
 		background: var(--pg-border);
 		transition:
-			width var(--pg-duration) ease,
-			background-color var(--pg-duration) ease;
+			width var(--pg-duration) var(--pg-ease-reverse),
+			background-color var(--pg-duration) var(--pg-ease-reverse);
 	}
 
 	.resizer:hover::before,
@@ -461,7 +461,7 @@
 		padding-block: var(--pg-space-half);
 		border-radius: var(--pg-radius-pill);
 		opacity: 0;
-		transition: opacity var(--pg-duration) ease;
+		transition: opacity var(--pg-duration) var(--pg-ease-reverse);
 		pointer-events: none;
 	}
 

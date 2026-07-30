@@ -91,7 +91,7 @@
 		text-decoration: none;
 		padding-block: var(--pg-space-half);
 		border-bottom: var(--pg-ring-width) solid transparent;
-		transition: color var(--pg-duration) ease;
+		transition: color var(--pg-duration) var(--pg-ease-reverse);
 	}
 
 	.nav-link:hover {

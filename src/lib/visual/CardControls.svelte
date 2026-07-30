@@ -53,7 +53,7 @@
 		display: flex;
 		gap: var(--_qm-space-half);
 		opacity: 0;
-		transition: opacity var(--_qm-duration-fast) ease;
+		transition: opacity var(--_qm-duration-fast) var(--_qm-ease-reverse);
 	}
 	/* Opacity hides the pair without taking it out of the tab order, so the
 	   component holds its own floor: a chevron that has focus is drawn, and its ring

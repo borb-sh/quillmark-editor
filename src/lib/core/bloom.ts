@@ -20,9 +20,9 @@
 const BLOOM_CLASS = 'qm-bloom';
 
 const WASH = 'var(--_qm-accent-wash)';
-/** The one duration used when the derivation is out of reach (an unstyled root, or
- *  jsdom, where `getComputedStyle` reports custom properties as empty). One number,
- *  not one per rung: a fallback is the absence of the scale, not a copy of it. */
+/** The dwell used when the derivation is out of reach (an unstyled root, or jsdom,
+ *  where `getComputedStyle` reports custom properties as empty). A fallback is the
+ *  absence of the scale, not a copy of it. */
 const FALLBACK_MS = 1100;
 
 // Rise fast, hold, then leave slowly: a highlighter's decay, not a linear fade. A
@@ -50,7 +50,12 @@ export interface BloomTiming {
 }
 
 /**
- * Resolve the timing off `el`, so the duration scale is single-sourced in CSS.
+ * Resolve the timing off `el`, so the dwell is single-sourced in CSS.
+ *
+ * ONE property, both motion preferences: `--_qm-bloom-dwell` already shortens under
+ * `prefers-reduced-motion` in the derivation, so what is left to `matchMedia` here is
+ * the SHAPE: a hold and a cut carry no ramps, which is a frame list rather than a
+ * number and the one half CSS cannot hand over.
  *
  * Read ONCE PER BATCH, not per element: `getComputedStyle` forces a style recalc and
  * `animate` re-dirties style, so a read inside a loop flushes once per element (~0.15ms
@@ -59,9 +64,7 @@ export interface BloomTiming {
 export function bloomTiming(el: HTMLElement): BloomTiming {
 	const reduced =
 		typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-	const raw = getComputedStyle(el)
-		.getPropertyValue(reduced ? '--_qm-duration-slow' : '--_qm-duration-linger')
-		.trim();
+	const raw = getComputedStyle(el).getPropertyValue('--_qm-bloom-dwell').trim();
 	const n = Number.parseFloat(raw);
 	const duration = !Number.isFinite(n) ? FALLBACK_MS : raw.endsWith('ms') ? n : n * 1000;
 	return { duration, frames: reduced ? FRAMES_REDUCED : FRAMES };

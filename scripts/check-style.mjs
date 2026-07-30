@@ -12,6 +12,8 @@
 //   colour   color / background / border / shadow …   a hex or a colour function
 //   recede   opacity                                  a step off the ladder
 //   motion   transition / animation                   an s|ms time
+//            …-timing-function, and the shorthands     a curve off the derived three
+//            transition / transition-property         `all`
 //
 // Four rules sit outside the table, because they are about the scale itself rather
 // than one axis:
@@ -92,6 +94,9 @@ const readsRung = (prefix) => new RegExp(`var\\(${prefix}`);
 // there is no literal shape to enumerate. `only` REQUIRES one of a fixed set and
 // takes NO rung escape, for the one property where naming a rung is not enough to
 // make a value safe.
+//
+// A failure reads "`prop` mints a literal — <fix>". `lead` replaces the middle for
+// the axis where the value forbidden is a keyword rather than a minted number.
 const AXES = [
 	{
 		// Every spelling of the same decision: the physical longhands, the logical ones
@@ -196,6 +201,31 @@ const AXES = [
 		rung: '`var(--_qm-duration-…)`',
 		doc: 'SURFACES §Motion',
 		cssOnly: true
+	},
+	{
+		// A curve is a rung like any other value, `ease` included: SURFACES §Motion has
+		// why the UA keyword is a mint rather than the absence of one.
+		//
+		// Forbidding the bare keyword is what the rung-REQUIRED shape cannot do here: a
+		// `transition` value already reads the duration rung, so a value-level "does it
+		// read a rung" test passes with the curve still spelled out beside it. The
+		// lookbehind is what keeps `--_qm-ease-arrive` from matching itself.
+		props: /^(transition|animation)(-timing-function)?$/,
+		literal: /(?<![-\w])(ease|linear|cubic-bezier|steps|step-(start|end))\b/,
+		rung: '`var(--_qm-ease-…)`',
+		doc: 'SURFACES §Motion',
+		cssOnly: true
+	},
+	{
+		// `all` is not a property list, it is the absence of one: it animates whatever
+		// a later edit adds to either rest state, which is the one drift no reviewer
+		// sees in the diff that causes it.
+		props: /^(transition|transition-property)$/,
+		literal: /\ball\b/,
+		lead: 'animates an open set',
+		fix: 'name the properties that differ between the two rest states',
+		doc: 'SURFACES §Motion',
+		cssOnly: true
 	}
 ];
 
@@ -258,6 +288,13 @@ for (const scope of SCOPES) {
 		// run here; a `.ts` file's declarations are strings, matched by marker instead.
 		const css = /\.(svelte|css)$/.test(full);
 
+		// A declaration the author broke across lines is still one declaration, and the
+		// property naming its axis sits on the first of them. Without this the gate is
+		// bypassed by a newline: `transition:\n\tcolor 200ms ease,` carries a minted
+		// duration and a minted curve on a line whose property is nothing at all — and
+		// a list of transitions is exactly where a value wants to be broken up.
+		let carry = null;
+
 		region.style.split('\n').forEach((line, i) => {
 			const ln = region.base + i + 1;
 			const fail = (msg) => errors.push(`${file}:${ln}: ${msg}`);
@@ -281,8 +318,10 @@ for (const scope of SCOPES) {
 			if (file === scope.derivation) return; // literals here ARE the defaults
 
 			const decl = line.match(/^\s*([\w-]+)\s*:\s*([^;]*)/);
-			const prop = decl?.[1];
-			const value = decl?.[2] ?? '';
+			const prop = decl?.[1] ?? carry;
+			const value = decl ? decl[2] : carry ? line : '';
+			// A brace ends whatever was open: a value never spans one.
+			carry = /[{}]/.test(line) || line.includes(';') ? null : (prop ?? null);
 
 			for (const axis of AXES) {
 				if (axis.cssOnly && !css) continue;
@@ -297,7 +336,7 @@ for (const scope of SCOPES) {
 						: !READS_RUNG.test(value) && !axis.allowBare.test(value.trim());
 				if (bad)
 					fail(
-						`\`${prop ?? 'style'}\` mints a literal — ${axis.fix ?? `read a ${hint(axis.rung)} rung`} (${axis.doc}; ${scope.doc})`
+						`\`${prop ?? 'style'}\` ${axis.lead ?? 'mints a literal'} — ${axis.fix ?? `read a ${hint(axis.rung)} rung`} (${axis.doc}; ${scope.doc})`
 					);
 			}
 

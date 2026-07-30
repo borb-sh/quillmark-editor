@@ -67,7 +67,7 @@
 		border-radius: var(--_qm-radius-pill);
 		background: var(--_qm-surface-hover);
 		cursor: pointer;
-		transition: background var(--_qm-duration-fast) ease;
+		transition: background var(--_qm-duration-fast) var(--_qm-ease-reverse);
 	}
 	.qm-switch-wrap :global(.qm-switch[data-state='checked']) {
 		background: var(--_qm-accent);
@@ -82,7 +82,7 @@
 		height: 0.75rem;
 		border-radius: var(--_qm-radius-pill);
 		background: var(--_qm-surface);
-		transition: translate var(--_qm-duration-fast) ease;
+		transition: translate var(--_qm-duration-fast) var(--_qm-ease-reverse);
 	}
 	.qm-switch-wrap :global(.qm-switch-thumb[data-state='checked']) {
 		translate: 0.75rem;
