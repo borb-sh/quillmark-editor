@@ -620,7 +620,7 @@
 		<TipsCard tips={model.tips} onDismiss={dismissTips} />
 	{/if}
 
-	{@render addAffordance(0, model.cards.length === 0)}
+	{@render addAffordance(0)}
 	{#each model.cards as c, i (c.id)}
 		<Card
 			bind:this={cardRefs[i]}
@@ -636,7 +636,7 @@
 			{register}
 			{unregister}
 		/>
-		{@render addAffordance(i + 1, i === model.cards.length - 1)}
+		{@render addAffordance(i + 1)}
 	{/each}
 </div>
 
@@ -649,9 +649,9 @@
      (retype + delete), never gated away, so its content is neither dropped nor
      trapped. The gate lives HERE rather than at each call site: the strip is one
      decision, and two copies of it drift into a stack with a gap at one end. -->
-{#snippet addAffordance(atIndex: number, isLast: boolean)}
+{#snippet addAffordance(atIndex: number)}
 	{#if kinds.length}
-		<div class="qm-add-card" class:is-last={isLast}>
+		<div class="qm-add-card">
 			{#if kinds.length === 1}
 				<button
 					type="button"
@@ -718,39 +718,32 @@
 	   dashed edge is the PLACEHOLDER idiom — "nothing is here yet" — which on a button
 	   reads as disabled or as a drop target. It stays honest in one place, the
 	   un-schemable card (`Card.svelte`), which is a state rather than a control. Hover
-	   fills a pill: this trigger is invisible at rest, so a hover that only shifted
-	   its ink would have nothing to shift. The pill fills the strip because the strip
-	   is what was pressed; the padding sits inside the width, which is the button
-	   recipe's `box-sizing` doing the work.
+	   fills a pill: the trigger rests dim and unfilled, so a hover that only shifted its
+	   ink would have little to shift. The pill fills the strip because the strip is what
+	   was pressed; the padding sits inside the width, which is the button recipe's
+	   `box-sizing` doing the work.
 
 	   `:global`, because the multi-kind trigger is bits-ui's own element and a `class`
 	   passed to a primitive is a plain string that never picks up the scoping hash —
 	   the same seam the enum trigger is styled through. */
 	/* The recede ladder, in source order: every rung after the first ties on
 	   specificity with the one before it, so the later rule wins and no state needs
-	   restating per gap. Rest, then the last gap's exception, then engaged. */
+	   restating per gap. Rest, then engaged. */
 	.qm-add-card :global(.qm-add-btn) {
 		width: 100%;
 		padding: var(--_qm-space) var(--_qm-space-4);
-		/* Recede until engaged (AESTHETIC §"minimal UI"): each gap's trigger is
-		   invisible at rest and surfaces on hover or keyboard focus, so the stack reads
-		   as content, not a toolbar per gap. Opacity (not display) so the pill reserves
-		   its height and the row does not jump on reveal. */
-		opacity: 0;
-	}
-	/* The LAST gap keeps a dim label — exactly one entry point stays visible. */
-	.qm-add-card.is-last :global(.qm-add-btn) {
+		/* Recede until engaged (AESTHETIC §"minimal UI"): the label rests on the idle
+		   rung and comes to full ink on hover or keyboard focus, so the stack reads as
+		   content rather than a toolbar per gap. Dim, not absent: an insert point that
+		   surfaces under the pointer is reachable only by a reader who already knows it
+		   is there, and every gap is an equal entry point — a card goes anywhere in the
+		   stack, not just after the last one. This rung is also what a touch pointer
+		   gets, which never hovers. */
 		opacity: var(--_qm-opacity-idle);
 	}
 	.qm-add-card:hover :global(.qm-add-btn),
 	.qm-add-card :global(.qm-add-btn:focus-visible) {
 		opacity: 1;
-	}
-	/* Touch has no hover — keep a faint always-on affordance so add stays reachable. */
-	@media (hover: none) {
-		.qm-add-card :global(.qm-add-btn) {
-			opacity: var(--_qm-opacity-idle);
-		}
 	}
 	/* An open menu keeps its trigger lit, and this rule comes last so it outranks the
 	   two above it: the menu portals out of the strip, so a pointer moving onto an item

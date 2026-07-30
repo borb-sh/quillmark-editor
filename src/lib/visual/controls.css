@@ -172,10 +172,10 @@
 	}
 
 	/* An add affordance — the between-card trigger and the array foot's. A pill rather
-	   than the inner radius, because it FILLS on hover instead of tinting ink: both
-	   rest transparent (`--_qm-opacity-idle`, or invisible for the card stack's
-	   interior gaps), so there is no ink for a hover to shift. The recede ladder
-	   itself stays with each caller — it is driven by their own hover/focus state. */
+	   than the inner radius, because it FILLS on hover instead of tinting ink: both rest
+	   unfilled on `--_qm-opacity-idle`, so a hover shifting ink alone would have little
+	   to shift. The recede ladder itself stays with each caller — it is driven by their
+	   own hover/focus state. */
 	.qm-add-affordance {
 		border-radius: var(--_qm-radius-pill);
 		color: var(--_qm-ink-label);

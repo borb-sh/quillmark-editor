@@ -291,9 +291,10 @@
 		min-height: 2.5rem;
 	}
 	/* Chrome, hover fill and target come from `.qm-add-affordance` (controls.css);
-	   what is here is this trigger's own inset and recede ladder — the sole foot add
-	   rests dim, like the card stack's LAST
-	   trigger, and surfaces on hover of the field or on focus. */
+	   what is here is this trigger's own inset and recede ladder — the foot add rests
+	   dim like the card stack's gap triggers, and comes up on hover of the field or on
+	   focus. The field, not the button: one trigger at the foot of a row of controls
+	   is found by looking at the array, not by grazing its last line. */
 	.qm-add-el {
 		padding: var(--_qm-space) var(--_qm-space-2);
 		opacity: var(--_qm-opacity-idle);
