@@ -20,7 +20,7 @@ Nothing to import: the package pulls its own stylesheet, which applies the deriv
 | Token            | Default                                | What it sets                                                                                            |
 | ---------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `--qm-bg`        | `#fff` / `#14171c`                     | Base surface. Cards, fields, the painted page, and the popover step off it.                             |
-| `--qm-fg`        | `#1a1a1a` / `#e8eaed`                  | Base ink. Body text, labels, borders, and shadows step off it.                                          |
+| `--qm-fg`        | `#1a1a1a` / `#e8eaed`                  | Base ink. Body text, labels, and borders step off it.                                                   |
 | `--qm-accent`    | `#2563eb`                              | Focus rings, active marks, the preview's active field box.                                              |
 | `--qm-danger`    | `#c5221f`                              | Error diagnostics, the required marker, the delete glyph.                                               |
 | `--qm-warning`   | `#b25000`                              | Warning diagnostics.                                                                                    |
@@ -40,7 +40,7 @@ That is why no card's fill is a bet on your backdrop: every card sits one rung o
 
 ## The surface follows your colour scheme
 
-Surfaces step `bg → fg` and ink steps `fg → bg`, mixed in **oklab**, so inverting the two poles inverts the whole scale, including borders, the popover's translucent fill, and the page shadow (which mixes from the ink pole rather than from black, and so does not become a smudge on a dark surface).
+Surfaces step `bg → fg` and ink steps `fg → bg`, mixed in **oklab**, so inverting the two poles inverts the whole scale, including borders and the popover's translucent fill. Elevation inverts with them, because it is produced with surfaces and lines (a tone rung and a hairline) and never with a shadow: an offset states a light source the poles do not carry, so one declaration would read as lit from above under a light palette and as a glow under its inverse.
 
 Which way the poles default is **your `color-scheme`**, not the operating system's. Declare the scheme your app is in and the surface lands on it, along with native chrome, which reads the same property:
 
@@ -84,4 +84,4 @@ A knob becomes a dial when a real consumer needs it. The surface stays the minim
 
 `@layer`, `color-mix()` and `light-dark()`: Baseline since 2022, 2023 and 2024 respectively.
 
-`npm run check:style` gates all of it: no component may mint a colour, shadow, or opacity literal; nothing outside the derivation may define a `--_qm-*`; and the consumed dial set must match this document exactly, in both directions.
+`npm run check:style` gates all of it: no component may mint a colour or opacity literal, and no surface may cast a shadow at all; nothing outside the derivation may define a `--_qm-*`; and the consumed dial set must match this document exactly, in both directions.

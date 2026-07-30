@@ -74,12 +74,14 @@
 		border-color: var(--_qm-accent);
 	}
 	/* The focus ring rides `.qm-focus-ring` on the switch (controls.css). */
+	/* The thumb reads on tone alone: the base surface over the track's `hover` rung
+	 unchecked, and over `--_qm-accent` checked. No edge of its own: a hairline around
+	 a 12px pill is a second box inside the track's (SURFACES §Elevation). */
 	.qm-switch-wrap :global(.qm-switch-thumb) {
 		width: 0.75rem;
 		height: 0.75rem;
 		border-radius: var(--_qm-radius-pill);
 		background: var(--_qm-surface);
-		box-shadow: var(--_qm-shadow-popover);
 		transition: translate var(--_qm-duration-fast) var(--_qm-ease-reverse);
 	}
 	.qm-switch-wrap :global(.qm-switch-thumb[data-state='checked']) {

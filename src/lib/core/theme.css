@@ -72,12 +72,13 @@
 		--_qm-accent-wash: color-mix(in oklab, var(--_qm-accent) 18%, transparent);
 
 		/* ── Ratios and effects ──────────────────────────────────────────────────
-		   No palette fixes these, so they are their own rungs. Shadows mix from the
-		   INK pole rather than black, so they track the palette instead of turning
-		   into a smudge on a dark surface. */
+		   No palette fixes these, so they are their own rungs. There is no shadow
+		   rung: elevation is a tone rung and a hairline, which say the same thing at
+		   both poles, where a shadow's offset states a light source the poles do not
+		   carry (SURFACES §Elevation). `check:style` forbids the property outright,
+		   here as well as over the surfaces, so the absence is gated rather than
+		   remembered. */
 		--_qm-blur: 8px;
-		--_qm-shadow-page: 0 1px 4px color-mix(in oklab, var(--_qm-fg) 20%, transparent);
-		--_qm-shadow-popover: 0 4px 16px color-mix(in oklab, var(--_qm-fg) 14%, transparent);
 		/* The popover's translucency: the raised surface mixed toward transparent, so
 		   the page reads faintly through the pill (SURFACES §Elevation). */
 		--_qm-surface-popover: color-mix(in oklab, var(--_qm-surface-raised) 82%, transparent);
