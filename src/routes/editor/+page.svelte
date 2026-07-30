@@ -266,8 +266,8 @@
 		<div>
 			<h1 class="pg-title">Editor</h1>
 			<p class="pg-deck">
-				Both surfaces over one session. Type on the left and the page recompiles; click the page and
-				the caret lands in the field that drew it.
+				Both surfaces over one session: an edit recompiles the page, a click on the page sets the
+				caret.
 			</p>
 		</div>
 	</header>

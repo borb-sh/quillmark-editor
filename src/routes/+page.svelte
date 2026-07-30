@@ -34,9 +34,9 @@
 
 	// The running head routes to these; what it cannot carry is what each one is.
 	const SURFACES = [
-		{ path: '/preview', name: 'Preview', line: 'the compiled page, painted and clickable' },
-		{ path: '/visual', name: 'Visual', line: 'the federated WYSIWYG over one document' },
-		{ path: '/editor', name: 'Editor', line: 'both, over one session, caret bridged' }
+		{ path: '/preview', name: 'Preview', line: 'paint, overlay, click bridge' },
+		{ path: '/visual', name: 'Visual', line: 'the WYSIWYG over a seeded document' },
+		{ path: '/editor', name: 'Editor', line: 'both surfaces, one session, caret bridged' }
 	];
 
 	let status = $state<Status>({ phase: 'loading' });
@@ -99,16 +99,14 @@
 <main class="pg-width">
 	<section class="hero">
 		<div class="thesis">
-			<h1 class="pg-title">A WYSIWYG editor whose preview is the compiled page.</h1>
+			<h1 class="pg-title">Editor + live preview for Quillmark</h1>
 			<p class="pg-deck">
-				Quillmark compiles a structured document to a typeset, paginated page.
-				<code>@quillmark/editor</code> puts an editing surface on one side of that session and the painted
-				output on the other, and carries the caret between them — click a word on the page and land in
-				the field that produced it.
+				The preview is the compiled page, repainted from the session as you type. A click on the
+				page resolves to a content position and sets the editor caret.
 			</p>
 			<div class="actions">
-				<a class="pg-cta" href="{base}/editor">Open the split-pane editor</a>
-				<a class="pg-link" href="https://github.com/borb-sh/quillmark-editor">Read the source</a>
+				<a class="pg-cta" href="{base}/editor">Open the editor</a>
+				<a class="pg-link" href="https://github.com/borb-sh/quillmark-editor">Source</a>
 			</div>
 		</div>
 
@@ -152,7 +150,7 @@
 	</section>
 
 	<section class="pg-rail block">
-		<h2 class="pg-label">This page</h2>
+		<h2 class="pg-label">Session</h2>
 		<div class="pg-panel readout-panel">
 			{#if status.phase === 'loading'}
 				<p data-testid="status" class="pg-status loading">Loading reference quill…</p>
@@ -258,11 +256,6 @@
 
 	.install {
 		max-width: var(--pg-measure);
-	}
-
-	code {
-		font-family: var(--pg-font-mono);
-		font-size: var(--pg-text-code);
 	}
 
 	.readout-panel {

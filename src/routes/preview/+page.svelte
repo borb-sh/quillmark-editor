@@ -105,8 +105,8 @@
 		<div>
 			<h1 class="pg-title">Preview</h1>
 			<p class="pg-deck">
-				One canvas per visible page, painted from the session and mounted as you scroll. Click any
-				text on the page to resolve a content position.
+				One canvas per visible page, mounted by scroll position. Click text to resolve a content
+				position.
 			</p>
 		</div>
 	</header>
@@ -120,9 +120,8 @@
 					{/if}
 				</div>
 				<p class="note">
-					The frame is deliberately short and the page margin is <code>0</code>, so scrolling swaps
-					which page is mounted instead of keeping both alive — the bound the paint loop claims is
-					only falsifiable at this size.
+					Deliberately short, with <code>margin=0</code>: scrolling must swap which page is mounted,
+					or the paint loop's bound is unfalsifiable.
 				</p>
 			</div>
 

@@ -227,8 +227,8 @@
 		<div>
 			<h1 class="pg-title">Visual</h1>
 			<p class="pg-deck">
-				A federated WYSIWYG over one document — every content leaf its own ProseMirror surface,
-				every scalar a form control, the card stack the document's structure.
+				Every content leaf its own ProseMirror surface, every scalar a form control. Commits land on
+				the Document; the dump reads it back.
 			</p>
 		</div>
 	</header>
