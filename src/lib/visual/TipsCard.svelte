@@ -97,7 +97,11 @@
 		color: var(--_qm-ink-label);
 	}
 	/* The rendered tip is injected DOM (the codec's `toDOM` output), so its element
-	   styles are `:global` — the compiler never sees these tags in the markup. */
+	   styles are `:global` — the compiler never sees these tags in the markup. Three
+	   rules restated from `core/codec/prose.css`, which is where they are argued and
+	   which cannot reach here: its selectors are scoped to `.ProseMirror` and a tip is
+	   not a view. The one deliberate divergence is the link, which takes no underline —
+	   a tip is not editable, so a hidden `href` costs its reader nothing. */
 	.qm-tips-body :global(p) {
 		margin: 0;
 	}
