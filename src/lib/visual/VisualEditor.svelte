@@ -24,7 +24,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { DropdownMenu } from 'bits-ui';
-	import Plus from '@lucide/svelte/icons/plus';
 	import { isQuillmarkError, MAIN_CARD_ADDR } from '../core/index.js';
 	import { bloomInside } from '../core/bloom.js';
 	import type {
@@ -165,9 +164,6 @@
 	}
 
 	const kinds = $derived(Object.keys(quill.schema.card_kinds ?? {}));
-
-	/** Control-glyph size — the shared rule (AESTHETIC §Icons), as CardControls. */
-	const GLYPH = 14;
 
 	function bump(): void {
 		revision++;
@@ -666,16 +662,16 @@
 {#snippet addAffordance(atIndex: number)}
 	{#if kinds.length}
 		<div class="qm-add-card">
-			<!-- A glyph and no word: the strip IS the gap, so the pill it fills on hover
-			     shows what a label would state — the space the new card takes. The kind is
-			     the accessible name, the one reading with no geometry to carry it. -->
+			<!-- No word: the strip IS the gap, so the pill it fills on hover shows what a
+			     label would state — the space the new card takes. The kind is the accessible
+			     name, the one reading with no geometry to carry it. -->
 			{#if kinds.length === 1}
 				<button
 					type="button"
 					class="qm-add-btn qm-add-affordance"
 					aria-label="Add {humanize(kinds[0])}"
-					onclick={() => addCard(atIndex, kinds[0])}><Plus size={GLYPH} /></button
-				>
+					onclick={() => addCard(atIndex, kinds[0])}
+				></button>
 			{:else}
 				<!-- Multi-kind add: pick the kind, then seed + insert. A MENU rather than a
 			     disclosure — it floats out of the stack, so raising it moves no card, and
@@ -684,8 +680,7 @@
 			     recede ladder below reaches it through `:global`. -->
 				<DropdownMenu.Root>
 					<DropdownMenu.Trigger class="qm-add-btn qm-add-affordance" aria-label="Add card"
-						><Plus size={GLYPH} /></DropdownMenu.Trigger
-					>
+					></DropdownMenu.Trigger>
 					<DropdownMenu.Portal to={rootEl}>
 						<DropdownMenu.Content sideOffset={4}>
 							<!-- Portalled out of the row but INTO the stack's root, and carrying the
@@ -751,12 +746,12 @@
 	   restating per gap. Rest, then engaged. */
 	.qm-add-card :global(.qm-add-btn) {
 		/* No inset of its own: the pill and the gap are the same rectangle, and the tap
-		   floor is what gives the glyph the height it centres in. */
+		   floor is the strip's height. */
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		width: 100%;
-		/* Recede until engaged (AESTHETIC §"minimal UI"): the glyph rests on the idle
+		/* Recede until engaged (AESTHETIC §"minimal UI"): the strip rests on the idle
 		   rung and comes to full ink on hover or keyboard focus, so the stack reads as
 		   content rather than a toolbar per gap. Dim, not absent: an insert point that
 		   surfaces under the pointer is reachable only by a reader who already knows it
