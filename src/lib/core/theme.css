@@ -73,13 +73,11 @@
 
 		/* ── Ratios and effects ──────────────────────────────────────────────────
 		   No palette fixes these, so they are their own rungs. There is no shadow
-		   rung, and its absence is the enforcement: elevation is produced with
-		   surfaces and lines, a tone rung and a hairline, which say the same thing at
-		   both poles (SURFACES §Elevation). A shadow does not — it states a light
-		   source as geometry, and the poles carry colour only, so one offset reads as
-		   lit from above under a light palette and as a glow pooling underneath in
-		   its inverse. `check:style` forbids the property outright, in here as well as
-		   over the surfaces, so the absence is gated rather than remembered. */
+		   rung: elevation is a tone rung and a hairline, which say the same thing at
+		   both poles, where a shadow's offset states a light source the poles do not
+		   carry (SURFACES §Elevation). `check:style` forbids the property outright,
+		   here as well as over the surfaces, so the absence is gated rather than
+		   remembered. */
 		--_qm-blur: 8px;
 		/* The popover's translucency: the raised surface mixed toward transparent, so
 		   the page reads faintly through the pill (SURFACES §Elevation). */

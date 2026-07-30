@@ -266,12 +266,12 @@ for (const scope of SCOPES) {
 			if (scope.census) for (const m of line.matchAll(/var\(\s*(--qm-[\w-]+)/g)) consumed.add(m[1]);
 
 			// Zero shadows, and BEFORE the derivation exemption, since what is forbidden
-			// is the property rather than the value: elevation is a tone rung and a
-			// hairline, so there is no shadow rung to mint and none to read. The colour
-			// axis sees `box-shadow` but only fires on a hex or a colour function, so
-			// `0 1px 4px black` and one mixed from `var()` rungs both walk through it —
-			// which is the whole reason this sits outside the table. Both spellings, since
-			// `preview/paint.ts` carries declarations as JS strings.
+			// is the property rather than one of its values: elevation is a tone rung and
+			// a hairline, so there is no shadow rung to mint and none to read (SURFACES
+			// §Elevation). The colour axis sees `box-shadow` but fires only on a hex or a
+			// colour function, so `0 1px 4px black` and one mixed from `var()` rungs both
+			// walk through it; that gap is why this sits outside the table. Both
+			// spellings, since `preview/paint.ts` carries declarations as JS strings.
 			const shade = line.match(/^\s*(box-shadow|text-shadow|boxShadow|textShadow)\s*:\s*([^;,]*)/);
 			if (shade && !/^'?(none|inherit|initial|unset|revert)'?$/.test(shade[2].trim()))
 				fail(
