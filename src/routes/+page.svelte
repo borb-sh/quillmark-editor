@@ -32,30 +32,12 @@
 				warnings: Diagnostic[];
 		  };
 
+	// The running head routes to these; what it cannot carry is what each one is.
 	const SURFACES = [
-		{
-			path: '/preview',
-			name: 'Preview',
-			line: 'One canvas per visible page, painted from the session. Clicks resolve to a content position; field boxes bloom where the caret lands.'
-		},
-		{
-			path: '/visual',
-			name: 'Visual',
-			line: 'The federated WYSIWYG — every content leaf its own ProseMirror surface, every scalar a form control, over one document.'
-		},
-		{
-			path: '/editor',
-			name: 'Editor',
-			line: 'Both surfaces over one session, the caret bridged in each direction, and the canonical markdown underneath.'
-		}
+		{ path: '/preview', name: 'Preview', line: 'the compiled page, painted and clickable' },
+		{ path: '/visual', name: 'Visual', line: 'the federated WYSIWYG over one document' },
+		{ path: '/editor', name: 'Editor', line: 'both, over one session, caret bridged' }
 	];
-
-	const OPEN_SNIPPET = `import { Engine, Quill, init } from '@quillmark/editor/core';
-
-init();
-const quill = Quill.fromTree(tree);
-const doc = quill.seedDocument();
-const session = await new Engine().open(quill, doc);`;
 
 	let status = $state<Status>({ phase: 'loading' });
 	let session = $state<LiveSession | undefined>();
@@ -158,11 +140,7 @@ const session = await new Engine().open(quill, doc);`;
 		<ul class="surfaces">
 			{#each SURFACES as surface (surface.path)}
 				<li>
-					<a class="surface" href="{base}{surface.path}">
-						<span class="surface-name">{surface.name}</span>
-						<span class="surface-line">{surface.line}</span>
-						<span class="surface-go">Open</span>
-					</a>
+					<a class="pg-link" href="{base}{surface.path}">{surface.name}</a> — {surface.line}
 				</li>
 			{/each}
 		</ul>
@@ -170,18 +148,7 @@ const session = await new Engine().open(quill, doc);`;
 
 	<section class="pg-rail block">
 		<h2 class="pg-label">Install</h2>
-		<div class="install">
-			<pre class="pg-readout">npm install @quillmark/editor</pre>
-			<p class="note">
-				<code>svelte@^5</code> is a peer dependency; <code>@quillmark/wasm</code> comes as a dependency.
-				The heavy machinery is vanilla TS, so a non-Svelte consumer wraps a core in a few lines.
-			</p>
-			<pre class="pg-readout">{OPEN_SNIPPET}</pre>
-			<p class="note">
-				The consumer owns the session and every handle. Each page here runs exactly that, then
-				mounts a surface over the result — no route reaches past the public subpaths.
-			</p>
-		</div>
+		<pre class="pg-readout install">npm install @quillmark/editor</pre>
 	</section>
 
 	<section class="pg-rail block">
@@ -279,80 +246,24 @@ const session = await new Engine().open(quill, doc);`;
 		border-top: var(--pg-border-width) solid var(--pg-border);
 	}
 
+	/* Three lines of prose, not three cards: the running head already routes here,
+	   so what is left to say is one clause each. */
 	.surfaces {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-		gap: var(--pg-space-8);
-	}
-
-	/* No plate: an entry is a rule with type under it, and the rule carries the
-	   hover (PLAYGROUND §"What takes a fill"). */
-	.surface {
-		display: flex;
-		flex-direction: column;
-		align-items: start;
-		gap: var(--pg-space-2);
-		height: 100%;
-		padding-top: var(--pg-space-3);
-		border-top: var(--pg-ring-width) solid var(--pg-border-strong);
-		color: inherit;
-		text-decoration: none;
-		transition: border-color var(--pg-duration) ease;
-	}
-
-	.surface:hover {
-		border-top-color: var(--pg-ink);
-	}
-
-	.surface-name {
-		font-size: var(--pg-text-title);
-		font-weight: var(--pg-weight-strong);
-		line-height: var(--pg-leading-tight);
-	}
-
-	.surface-line {
+		max-width: var(--pg-measure);
 		color: var(--pg-ink-meta);
-		font-size: var(--pg-text-label);
-	}
-
-	/* Pushed to the foot of its entry, so the three read on one line whatever their
-	   descriptions wrap to. */
-	.surface-go {
-		margin-top: auto;
-		padding-top: var(--pg-space-2);
-		font-family: var(--pg-font-mono);
-		font-size: var(--pg-text-meta);
-		letter-spacing: var(--pg-track-label);
-		text-transform: uppercase;
-		color: var(--pg-ghost);
-	}
-
-	.surface-go::after {
-		content: ' →';
 	}
 
 	.install {
-		display: flex;
-		flex-direction: column;
-		gap: var(--pg-space-4);
 		max-width: var(--pg-measure);
-	}
-
-	.note {
-		margin: 0;
-		color: var(--pg-ink-meta);
-		font-size: var(--pg-text-label);
 	}
 
 	code {
 		font-family: var(--pg-font-mono);
 		font-size: var(--pg-text-code);
 	}
-
-	/* ── The boundary readout ───────────────────────────────────────────────── */
 
 	.readout-panel {
 		display: flex;

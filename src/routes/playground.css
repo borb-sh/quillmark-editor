@@ -29,9 +29,6 @@
 	   and a card on it agree about which way "raised" goes in both schemes. */
 	--pg-surface: color-mix(in oklab, var(--pg-page), var(--pg-ink) 4%);
 	--pg-surface-hover: color-mix(in oklab, var(--pg-page), var(--pg-ink) 8%);
-	/* The page tone the host puts behind a mounted column (THEMING §"What is
-	   behind the column is yours") — the plate's rung, named for the other job. */
-	--pg-desk: var(--pg-surface);
 	--pg-border: color-mix(in oklab, var(--pg-page), var(--pg-ink) 17%);
 	--pg-border-strong: color-mix(in oklab, var(--pg-page), var(--pg-ink) 40%);
 

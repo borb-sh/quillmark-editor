@@ -435,7 +435,7 @@
 		border: var(--pg-border-width) solid var(--pg-border);
 		border-radius: var(--pg-radius);
 		overflow: hidden;
-		background: var(--pg-desk);
+		background: var(--pg-surface);
 	}
 
 	/* Reference resizer — a hairline in an 11px hit track, thickening on

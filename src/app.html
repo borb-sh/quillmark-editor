@@ -8,19 +8,6 @@
 			href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%AA%B6%3C/text%3E%3C/svg%3E"
 		/>
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<!-- The scheme control's stored choice, applied before first paint — without
-		     this the shell renders on the OS scheme until the control mounts, and a
-		     pinned dark flashes light on every load. Same key and same write as
-		     SchemeControl; storage may be denied, hence the guard. -->
-		<script>
-			try {
-				var pgScheme = localStorage.getItem('pg-scheme');
-				if (pgScheme === 'light' || pgScheme === 'dark')
-					document.documentElement.style.colorScheme = pgScheme;
-			} catch (e) {
-				/* not persisted */
-			}
-		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

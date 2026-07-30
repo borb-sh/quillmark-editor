@@ -149,7 +149,7 @@ pre.pg-readout {
    size from their caller, so a stated height is the height they draw. */
 .pg-frame {
 	box-sizing: border-box;
-	background: var(--pg-desk);
+	background: var(--pg-surface);
 	border: var(--pg-border-width) solid var(--pg-border);
 	border-radius: var(--pg-radius);
 	overflow: hidden;
