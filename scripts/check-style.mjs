@@ -12,6 +12,8 @@
 //   colour   color / background / border / shadow …   a hex or a colour function
 //   recede   opacity                                  a step off the ladder
 //   motion   transition / animation                   an s|ms time
+//            …-timing-function, and the shorthands     a curve off the derived three
+//            transition / transition-property         `all`
 //
 // Three rules sit outside the table, because they are about the scale itself rather
 // than one axis:
@@ -89,6 +91,9 @@ const readsRung = (prefix) => new RegExp(`var\\(${prefix}`);
 // there is no literal shape to enumerate. `only` REQUIRES one of a fixed set and
 // takes NO rung escape, for the one property where naming a rung is not enough to
 // make a value safe.
+//
+// A failure reads "`prop` mints a literal — <fix>". `lead` replaces the middle for
+// the axis where the value forbidden is a keyword rather than a minted number.
 const AXES = [
 	{
 		// Every spelling of the same decision: the physical longhands, the logical ones
@@ -193,6 +198,28 @@ const AXES = [
 		rung: '`var(--_qm-duration-…)`',
 		doc: 'SURFACES §Motion',
 		cssOnly: true
+	},
+	{
+		// The curve is DERIVED from what the endpoints are — reversible, arriving,
+		// leaving — so the three keywords are the whole set and a fourth is a mint
+		// whatever it spells. No rung escape: a curve is not a scale with steps
+		// between its values, and a dial over it would make the derivation optional.
+		props: /^(transition|animation)(-timing-function)?$/,
+		literal: /\b(linear|ease-in-out|cubic-bezier|steps)\b/,
+		fix: 'read the curve off the endpoints — `ease` reversible, `ease-out` arriving, `ease-in` leaving',
+		doc: 'SURFACES §Motion',
+		cssOnly: true
+	},
+	{
+		// `all` is not a property list, it is the absence of one: it animates whatever
+		// a later edit adds to either rest state, which is the one drift no reviewer
+		// sees in the diff that causes it.
+		props: /^(transition|transition-property)$/,
+		literal: /\ball\b/,
+		lead: 'animates an open set',
+		fix: 'name the properties that differ between the two rest states',
+		doc: 'SURFACES §Motion',
+		cssOnly: true
 	}
 ];
 
@@ -280,7 +307,7 @@ for (const scope of SCOPES) {
 						: !READS_RUNG.test(value) && !axis.allowBare.test(value.trim());
 				if (bad)
 					fail(
-						`\`${prop ?? 'style'}\` mints a literal — ${axis.fix ?? `read a ${hint(axis.rung)} rung`} (${axis.doc}; ${scope.doc})`
+						`\`${prop ?? 'style'}\` ${axis.lead ?? 'mints a literal'} — ${axis.fix ?? `read a ${hint(axis.rung)} rung`} (${axis.doc}; ${scope.doc})`
 					);
 			}
 
