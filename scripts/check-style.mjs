@@ -203,11 +203,8 @@ const AXES = [
 		cssOnly: true
 	},
 	{
-		// A curve is a rung like any other value: minted in the derivation, read
-		// everywhere else. `ease` is not the neutral choice it looks like — it is a UA
-		// default (and not symmetric), so a surface spelling it has picked a curve
-		// without saying which role it is for, and the retune that would soften every
-		// arrival at once has 11 edit sites instead of one.
+		// A curve is a rung like any other value, `ease` included: SURFACES §Motion has
+		// why the UA keyword is a mint rather than the absence of one.
 		//
 		// Forbidding the bare keyword is what the rung-REQUIRED shape cannot do here: a
 		// `transition` value already reads the duration rung, so a value-level "does it

@@ -103,17 +103,14 @@
 		   box, `slow` moves the layout around it. */
 		--_qm-duration-fast: 120ms;
 		--_qm-duration-slow: 200ms;
-		/* The bloom's whole rise-hold-decay, and NOT a third rung: one consumer, and
-		   5.5× its nearest neighbour, so a scale is the wrong shape for it and naming
-		   it as one invites a reach nothing would justify. Read from JS
-		   (`core/bloom.ts` animates over WAAPI), which is why it is a custom property
-		   at all rather than a constant in that module. */
+		/* The bloom's whole rise-hold-decay, and deliberately not a third rung. A
+		   custom property rather than a constant in `core/bloom.ts` because that module
+		   animates over WAAPI and reads it from here. */
 		--_qm-bloom-dwell: 1100ms;
 
-		/* One curve per role, and the roles are what the endpoints ARE, so a surface
-		   picks by reading its own two rest states rather than by taste. `reverse` is
-		   symmetric because both its endpoints are rest states and the trip turns
-		   around mid-flight; the other two run once, into a frame or away from one. */
+		/* One curve per role, the role being what the trip's two endpoints ARE.
+		   `reverse` is the only one that has to be symmetric: it is the only one an
+		   interruption turns around. */
 		--_qm-ease-reverse: cubic-bezier(0.4, 0, 0.6, 1);
 		--_qm-ease-arrive: cubic-bezier(0, 0, 0.2, 1);
 		--_qm-ease-depart: cubic-bezier(0.4, 0, 1, 1);
@@ -204,17 +201,16 @@
 		line-height: var(--_qm-leading-body);
 	}
 
-	/* Reduced motion collapses the SCALE, never a list of selectors. Every animated
-	   rule already reads a rung, so one override reaches all of them, a motion added
-	   later is covered the day it is written, and there is no roster to fall out of
-	   date, which is the failure a per-component `@media` block invites and gets.
-	   No `*` rule and no `transition: none`: the transitions still run, over a beat
-	   nobody perceives, so a surface that reads its own transition state (a raise
-	   waiting on `transitionend`) is not left waiting for an event that stops firing.
+	/* Reduced motion collapses the SCALE, never a list of selectors (SURFACES §Motion).
+	   Two values here are not the rung they look like:
 
-	   The bloom shortens rather than collapsing: its reduced form holds at full and
-	   cuts (`core/bloom.ts` swaps the ramps out), and a hold is a duration, so 1ms
-	   would delete the beat the gesture is made of. */
+	   `1ms` rather than `none`, because a collapsed transition still FIRES: a surface
+	   waiting on `transitionend` keeps its event, where `transition: none` would strand
+	   it. The beat is under perception either way.
+
+	   `200ms` rather than `1ms` for the dwell, because the bloom's reduced form is a
+	   hold and a cut (`core/bloom.ts` swaps the ramps out), and a hold is a duration:
+	   collapsing it deletes the gesture instead of shortening it. */
 	@media (prefers-reduced-motion: reduce) {
 		:where([data-qm-root]) {
 			--_qm-duration-fast: 1ms;
