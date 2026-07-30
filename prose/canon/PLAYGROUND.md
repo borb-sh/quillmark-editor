@@ -23,9 +23,7 @@ wants a page a stranger can read.
 
 The resolution is placement, not subtraction. **Every instrument stays and every
 instrument is demoted**: a readout sits on a plate in the margin of a reading
-column, never in it. A playground that hid its instruments to look finished would
-stop being the thing it is, and its front page would then be describing a package
-rather than running one.
+column, never in it.
 
 So the front page **proves rather than claims**. It opens a session over the
 reference quill exactly as the tool routes do and mounts `<Preview>` on it, so the
@@ -33,7 +31,6 @@ first thing above the fold is a real compiled page painted by the library — an
 clicking it resolves a content address, which is the package's whole thesis in one
 gesture. The boundary quantities the harness reports (`pageCount`,
 `supportsCanvas`, `warnings`) read off the same handles, at the foot, on a plate.
-Nothing on that page asserts anything the running session is not already showing.
 
 ## The look
 
@@ -71,9 +68,8 @@ actually read. It also keeps the host's chrome from competing with the mounted
 surface, which is sans throughout: the two faces are the seam between the page and
 the thing on it.
 
-Both faces are system stacks. A downloaded display face would land the front door
-on a network request the static build otherwise does not make, and the two poles
-below already rule out the warm-ground-and-serif look that decision usually buys.
+Both faces are system stacks: a downloaded display face would land the front door
+on a network request the static build otherwise does not make.
 
 ## The rail
 
@@ -117,8 +113,7 @@ The running head's scheme control is **the host's `color-scheme` declaration, no
 mode**: it writes the property THEMING.md asks a host app for onto the document
 element, every `[data-qm-root]` below inherits it, and page and surfaces invert
 together with no media query and no JS inside the package. `system` is the absence
-of the declaration rather than a third value. The playground implements no theme —
-it exercises the contract.
+of the declaration rather than a third value.
 
 ## The routes
 
@@ -137,8 +132,8 @@ it exercises the contract.
 - **`/editor`** — the reference **split-pane shell**: one `LiveSession`, both
   surfaces over one document, the caret bridged in each direction, the preview
   following edits on a debounced `session.apply`, `session.warnings` routed to
-  inline diagnostics, and the source view. The bridge is consumer-layer glue —
-  neither surface imports the other, and this route is the seam that joins them.
+  inline diagnostics, and the source view. The bridge's architecture is
+  ARCHITECTURE §Playground's.
 
 Two guardrails hold across all four: the playground consumes only the public
 subpath API (a needed internal is an API gap to fix, and exercising the subpaths

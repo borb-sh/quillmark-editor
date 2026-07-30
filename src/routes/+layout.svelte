@@ -15,8 +15,7 @@
 
 	let { children } = $props();
 
-	// Named for what the page SHOWS, not for the phase that built it — the visitor
-	// reading this bar has no phase numbering to place a page in.
+	// Named for what the page shows, not the phase that built it.
 	const ROUTES = [
 		{ path: '/', label: 'Overview' },
 		{ path: '/preview', label: 'Preview' },
@@ -72,10 +71,8 @@
 		min-height: 100dvh;
 	}
 
-	/* A running head: the artifact's name on the left, where it is in the document
-	   on the right. It stays put while a route scrolls, so the switch between
-	   surfaces is always one click away — and it carries one hairline, no fill and
-	   no shadow, since it is a rule on the page rather than a bar over it. */
+	/* A running head, sticky so the switch between surfaces is always one click
+	   away; one hairline, no fill — a rule on the page, not a bar over it. */
 	.head {
 		position: sticky;
 		top: 0;
@@ -111,9 +108,7 @@
 		gap: var(--pg-space-4);
 	}
 
-	/* The current route is marked by a rule under it, not a fill: an editor's mark
-	   on the page, and the one device that still reads when the ink is the only
-	   colour on it. */
+	/* The current route takes a rule under it, not a fill. */
 	.nav-link {
 		font-family: var(--pg-font-mono);
 		font-size: var(--pg-text-label);

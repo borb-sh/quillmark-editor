@@ -21,8 +21,6 @@
 		// Empty string clears the inline declaration, leaving the stylesheet's
 		// `light dark` — following the OS is what "system" means.
 		document.documentElement.style.colorScheme = next === 'system' ? '' : next;
-		// Storage throws rather than no-ops where it is denied, and a blank
-		// playground is a steep price for a preference.
 		try {
 			localStorage.setItem(KEY, next);
 		} catch {

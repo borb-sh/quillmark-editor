@@ -68,10 +68,8 @@
 	   spacing dial, the same reason the package's capacity ramp does not. */
 	--pg-measure: 34rem;
 	--pg-rail: 8rem;
-	/* ONE page width for the whole shell — the running head, every route and the
-	   foot start and end on the same two edges. A per-route maximum is the
-	   raggedness this removes: the head would step in and out over a surface it
-	   sits above. */
+	/* ONE page width for the whole shell — a per-route maximum would step the
+	   running head in and out over the surface it sits above. */
 	--pg-max: 84rem;
 
 	/* ── Type ────────────────────────────────────────────────────────────────── */
@@ -104,10 +102,9 @@
 	--pg-duration: 140ms;
 }
 
-/* Reduced motion collapses the SCALE, not each transition. Every animated rule
-   reads the rung, so one override reaches all of them — where a blanket `*` rule
-   would also reach past the host's own chrome and into every package element
-   mounted inside it. */
+/* Collapse the SCALE, not each transition: every animated rule reads the rung,
+   so one override reaches all of them with no `*` rule touching mounted package
+   elements. */
 @media (prefers-reduced-motion: reduce) {
 	:root {
 		--pg-duration: 1ms;

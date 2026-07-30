@@ -288,9 +288,8 @@ const session = await new Engine().open(quill, doc);`;
 		gap: var(--pg-space-8);
 	}
 
-	/* No plate and no box: the reading column stays unboxed, so an entry is a rule
-	   with type under it. The rule is what carries the hover — it is the only ink
-	   the entry has that is not doing another job. */
+	/* No plate: an entry is a rule with type under it, and the rule carries the
+	   hover (PLAYGROUND §"What takes a fill"). */
 	.surface {
 		display: flex;
 		flex-direction: column;

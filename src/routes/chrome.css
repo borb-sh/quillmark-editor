@@ -29,9 +29,8 @@
 	align-items: start;
 }
 
-/* The annotation is whichever run of chrome type the block puts first — a section
-   label on the front page, the live session status on a tool route. The rail places
-   it; what it says is the block's. */
+/* The annotation is whatever the block puts first — a section label, a status
+   line; the rail only places it. */
 .pg-rail > :first-child {
 	padding-top: var(--pg-space);
 }

@@ -27,12 +27,9 @@
 // TWO SCOPES, one table. The package derives `--_qm-*` from the dials for the
 // surfaces it ships; the playground derives `--pg-*` from the same dials for the
 // page it hosts them on. Both are closed scales a stylesheet reads rather than
-// mints, so both answer to the same axes — a rule that cannot be minted in a card
-// must not become mintable by being written one directory over, in the app whose
-// pages are the package's front door. What is NOT shared is the dial census: that
-// the consumed set equals THEMING.md's is a claim about the PACKAGE's contract, so
-// it is measured over the package scope alone, and a host reading a dial says
-// nothing about whether the package documents it.
+// mints, so both answer to the same axes — a value that cannot be minted in a card
+// must not become mintable one directory over. What is NOT shared is the dial
+// census — a package-contract claim, measured over the package scope alone.
 //
 // Within a scope a violation must not become legal by FILE TYPE either. Three shapes
 // carry style: a `.svelte` `<style>` block, a plain `.css` file (the shared
@@ -262,8 +259,7 @@ for (const scope of SCOPES) {
 			const ln = region.base + i + 1;
 			const fail = (msg) => errors.push(`${file}:${ln}: ${msg}`);
 
-			// The census is the PACKAGE's contract, so only its scope feeds it: a dial
-			// the host reads is not evidence that THEMING.md should document one.
+			// Only the package scope feeds the dial census (see SCOPES).
 			if (scope.census) for (const m of line.matchAll(/var\(\s*(--qm-[\w-]+)/g)) consumed.add(m[1]);
 			if (file === scope.derivation) return; // literals here ARE the defaults
 
