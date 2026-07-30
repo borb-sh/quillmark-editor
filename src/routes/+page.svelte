@@ -119,7 +119,7 @@ const session = await new Engine().open(quill, doc);`;
 		<!-- No eyebrow over the title: the running head already says whose page this
 		     is, and a label that repeats it is chrome restating chrome. -->
 		<div class="thesis">
-			<h1>A WYSIWYG editor whose preview is the compiled page.</h1>
+			<h1 class="pg-title">A WYSIWYG editor whose preview is the compiled page.</h1>
 			<p class="pg-deck">
 				Quillmark compiles a structured document to a typeset, paginated page.
 				<code>@quillmark/editor</code> puts an editing surface on one side of that session and the painted
@@ -133,11 +133,19 @@ const session = await new Engine().open(quill, doc);`;
 		</div>
 
 		<!-- The sheet: the reference quill, compiled and painted, on a page tone the
-		     host supplies (THEMING §"What is behind the column is yours"). -->
+		     host supplies (THEMING §"What is behind the column is yours"). Sized to
+		     the whole first page and non-scrolling — a wheel over the hero must
+		     scroll the PAGE, not the paper — while the click bridge keeps working on
+		     what is shown. The scrolling case is /preview's. -->
 		<figure class="sheet">
 			<div class="pg-frame sheet-frame">
 				{#if session}
-					<Preview {session} onCaretPick={(hit) => (lastHit = hit)} />
+					<Preview
+						{session}
+						margin={0}
+						style="overflow-y: hidden"
+						onCaretPick={(hit) => (lastHit = hit)}
+					/>
 				{/if}
 			</div>
 			<figcaption class="sheet-caption">
@@ -229,11 +237,6 @@ const session = await new Engine().open(quill, doc);`;
 	}
 
 	h1 {
-		margin: 0;
-		font-size: var(--pg-text-display);
-		font-weight: var(--pg-weight-strong);
-		line-height: var(--pg-leading-tight);
-		letter-spacing: var(--pg-track-display);
 		text-wrap: balance;
 	}
 
@@ -253,9 +256,12 @@ const session = await new Engine().open(quill, doc);`;
 	}
 
 	/* The desk inset: the painted page carries its own edge and shadow, so what the
-	   host owes it is room to sit in and a tone to read against. */
+	   host owes it is room to sit in and a tone to read against. US Letter's ratio
+	   on the border box, so the whole first page fits the frame: the padding's
+	   worth of spare (~10px) is under the page-gap the paint loop puts before page
+	   2, which is what keeps the fold clean. */
 	.sheet-frame {
-		height: 32rem;
+		aspect-ratio: 17 / 22;
 		padding: var(--pg-space-4);
 	}
 

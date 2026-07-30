@@ -123,7 +123,9 @@ it exercises the contract.
 ## The routes
 
 - **`/`** — the overview: the thesis, the live sheet, the three surfaces, install,
-  and the session readout.
+  and the session readout. The sheet is sized to the whole first page and does not
+  scroll — a wheel over the hero scrolls the page, not the paper — while the click
+  bridge keeps working on what is shown; the scrolling case is `/preview`'s.
 - **`/preview`** — paint, overlay and the click bridge. The frame is deliberately
   short and `margin={0}`, so scrolling swaps which page is mounted; the paint
   loop's bound is only falsifiable at that size.

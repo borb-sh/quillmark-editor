@@ -264,7 +264,7 @@
 			<p data-testid="status" class="pg-status ready">Session open</p>
 		{/if}
 		<div>
-			<h1>Editor</h1>
+			<h1 class="pg-title">Editor</h1>
 			<p class="pg-deck">
 				Both surfaces over one session. Type on the left and the page recompiles; click the page and
 				the caret lands in the field that drew it.
@@ -374,11 +374,7 @@
 	}
 
 	h1 {
-		margin: 0 0 var(--pg-space-2);
-		font-size: var(--pg-text-display);
-		font-weight: var(--pg-weight-strong);
-		line-height: var(--pg-leading-tight);
-		letter-spacing: var(--pg-track-display);
+		margin-bottom: var(--pg-space-2);
 	}
 
 	.strip {

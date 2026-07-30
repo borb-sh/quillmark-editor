@@ -72,6 +72,17 @@
 	margin: 0;
 }
 
+/* A page's one display run — the landing thesis, a tool route's title. The type
+   is the recipe; margins are layout and stay the route's own (a route sets its
+   measure and the layout inside it, nothing more). */
+.pg-title {
+	margin: 0;
+	font-size: var(--pg-text-display);
+	font-weight: var(--pg-weight-strong);
+	line-height: var(--pg-leading-tight);
+	letter-spacing: var(--pg-track-display);
+}
+
 /* A passage introducing a block: the title rung at body weight in the meta ink,
    held to the measure. A rung of its own would be a sixth size for one job — the
    deck is a COMBINATION of the ramp's axes, which is what keeps the ramp five
@@ -124,6 +135,28 @@ pre.pg-readout {
 	border: var(--pg-border-width) solid var(--pg-border);
 	border-radius: var(--pg-radius);
 	padding: var(--pg-space-4);
+}
+
+/* The instrument column — the switches and readouts beside a mounted surface, on
+   a panel. Sticky under the running head while the surface scrolls; a label sits
+   on its value, and the space belongs between the groups. Below the stacking
+   width it rides the flow like everything else. */
+.pg-instruments {
+	position: sticky;
+	top: var(--pg-space-16);
+	display: flex;
+	flex-direction: column;
+	gap: var(--pg-space-half);
+}
+
+.pg-instruments .pg-label:not(:first-child) {
+	margin-top: var(--pg-space-4);
+}
+
+@media (width < 60rem) {
+	.pg-instruments {
+		position: static;
+	}
 }
 
 /* The mounting site: the frame a surface is dropped into, and the tone behind its
@@ -236,12 +269,14 @@ pre.pg-readout {
 }
 
 /* An error carries a message rather than a state word, so it drops the label
-   treatment and reads as a sentence. */
+   treatment and reads as a sentence — and it breaks anywhere, because a WASM
+   error is one long token and the rail column it lands in is narrow. */
 .pg-status.error {
 	color: var(--pg-alert);
 	font-size: var(--pg-text-label);
 	text-transform: none;
 	letter-spacing: normal;
+	overflow-wrap: anywhere;
 }
 
 /* ── Focus ─────────────────────────────────────────────────────────────────── */

@@ -106,7 +106,7 @@
 			<p data-testid="status" class="pg-status ready">Session open</p>
 		{/if}
 		<div>
-			<h1>Preview</h1>
+			<h1 class="pg-title">Preview</h1>
 			<p class="pg-deck">
 				One canvas per visible page, painted from the session and mounted as you scroll. Click any
 				text on the page to resolve a content position.
@@ -129,7 +129,7 @@
 				</p>
 			</div>
 
-			<aside class="pg-panel instruments">
+			<aside class="pg-panel pg-instruments">
 				<p class="pg-label">Commands</p>
 				<div class="buttons">
 					<button class="pg-btn" type="button" onclick={applySubjectEdit}>
@@ -165,11 +165,7 @@
 	}
 
 	h1 {
-		margin: 0 0 var(--pg-space-2);
-		font-size: var(--pg-text-display);
-		font-weight: var(--pg-weight-strong);
-		line-height: var(--pg-leading-tight);
-		letter-spacing: var(--pg-track-display);
+		margin-bottom: var(--pg-space-2);
 	}
 
 	/* The surface, and the instruments beside it — the shape every tool route takes.
@@ -200,19 +196,6 @@
 		font-size: var(--pg-text-code);
 	}
 
-	.instruments {
-		position: sticky;
-		top: var(--pg-space-16);
-		display: flex;
-		flex-direction: column;
-		gap: var(--pg-space-half);
-	}
-
-	/* A label sits on its value; the space belongs between the groups. */
-	.instruments .pg-label:not(:first-child) {
-		margin-top: var(--pg-space-4);
-	}
-
 	.buttons {
 		display: flex;
 		flex-direction: column;
@@ -223,9 +206,6 @@
 	@media (width < 60rem) {
 		.layout {
 			grid-template-columns: minmax(0, 1fr);
-		}
-		.instruments {
-			position: static;
 		}
 	}
 </style>

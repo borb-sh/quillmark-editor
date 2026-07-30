@@ -13,6 +13,8 @@
 	type Scheme = 'system' | 'light' | 'dark';
 
 	const SCHEMES: Scheme[] = ['system', 'light', 'dark'];
+	// `app.html`'s head script reads the same key and makes the same write before
+	// first paint, so a pinned scheme does not flash the OS default on load.
 	const KEY = 'pg-scheme';
 
 	let scheme = $state<Scheme>('system');

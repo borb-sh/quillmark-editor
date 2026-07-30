@@ -225,7 +225,7 @@
 			<p data-testid="status" class="pg-status ready">Document seeded</p>
 		{/if}
 		<div>
-			<h1>Visual</h1>
+			<h1 class="pg-title">Visual</h1>
 			<p class="pg-deck">
 				A federated WYSIWYG over one document — every content leaf its own ProseMirror surface,
 				every scalar a form control, the card stack the document's structure.
@@ -250,7 +250,7 @@
 				{/if}
 			</div>
 
-			<aside class="pg-panel instruments">
+			<aside class="pg-panel pg-instruments">
 				<p class="pg-label">Consumer channels</p>
 				<div class="buttons">
 					<button
@@ -304,11 +304,7 @@
 	}
 
 	h1 {
-		margin: 0 0 var(--pg-space-2);
-		font-size: var(--pg-text-display);
-		font-weight: var(--pg-weight-strong);
-		line-height: var(--pg-leading-tight);
-		letter-spacing: var(--pg-track-display);
+		margin-bottom: var(--pg-space-2);
 	}
 
 	.layout {
@@ -322,19 +318,11 @@
 		min-width: 0;
 	}
 
-	.instruments {
-		position: sticky;
-		top: var(--pg-space-16);
-		display: flex;
-		flex-direction: column;
-		gap: var(--pg-space-half);
+	/* The document dump makes this the one column that can outgrow the viewport, so
+	   it caps and scrolls; the recipe carries the rest. */
+	.pg-instruments {
 		max-height: calc(100dvh - var(--pg-space-24));
 		overflow: auto;
-	}
-
-	/* A label sits on its value; the space belongs between the groups. */
-	.instruments .pg-label:not(:first-child) {
-		margin-top: var(--pg-space-4);
 	}
 
 	.buttons {
@@ -353,8 +341,7 @@
 		.layout {
 			grid-template-columns: minmax(0, 1fr);
 		}
-		.instruments {
-			position: static;
+		.pg-instruments {
 			max-height: none;
 		}
 	}
