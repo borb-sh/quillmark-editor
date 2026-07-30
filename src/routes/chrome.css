@@ -1,23 +1,15 @@
 /* The host's shared recipes — the declarations more than one route draws, so a
-   route carries a class instead of restating a rule. The rungs they read are minted
-   in `routes/playground.css`; this file mints nothing, exactly as a component's own
-   block must not (PLAYGROUND §"Preventing drift", enforced by `check:style` over
-   the host scope).
+   route carries a class instead of restating a rule. The rungs are minted in
+   `routes/playground.css`; this file mints nothing (PLAYGROUND §"Preventing
+   drift"). Not merged into the derivation, which is exempt from the literal
+   rules — a recipe beside it would inherit the exemption. */
 
-   Not merged into the derivation: that file is exempt from the literal rules,
-   because it IS where the defaults are stated. A recipe living beside them would
-   inherit the exemption and become the one place a minted grey could hide. */
-
-/* Every band of the shell — head, route, foot — starts on the same two edges: a
-   stated width, a maximum, and the gutter taken out of the INSIDE.
-
-   Both halves of that are load-bearing. The width has to be stated because a band
-   is a grid item of the shell and `margin-inline: auto` switches its stretch
-   alignment off — left to `auto` it sizes to its content, which collapses a route's
-   panes to whatever they happen to hold. And the gutter has to be inside, or a
-   viewport narrower than the maximum overflows by exactly the two gutters. That is
-   `border-box`, declared here rather than as a global `*` reset, which would reach
-   past the host's own chrome and re-box every package element mounted inside it. */
+/* Every band of the shell — head, route, foot — starts on the same two edges.
+   The width must be stated: a band is a grid item and `margin-inline: auto`
+   switches its stretch alignment off, so `auto` sizes it to content. The gutter
+   sits inside the width (`border-box`), or a narrow viewport overflows by the two
+   gutters — declared here, not as a `*` reset that would re-box every package
+   element mounted inside the host. */
 .pg-width {
 	box-sizing: border-box;
 	width: 100%;
@@ -27,12 +19,9 @@
 }
 
 /* ── The rail ──────────────────────────────────────────────────────────────── */
-/* The layout device the playground is built on: a block is an annotation in the
-   margin and the content it names. The label is what a section heading would
-   otherwise be, moved out of the reading column so the content starts at the top of
-   its own block — and it earns the column by answering something the content does
-   not repeat (PLAYGROUND §"The rail"). Below the width where the margin stops
-   fitting, the rail stacks and the annotation stays the same run of type. */
+/* A block is an annotation in the margin and the content it names (PLAYGROUND
+   §"The rail"). Below the width where the margin stops fitting, the rail stacks
+   and the annotation stays the same run of type. */
 .pg-rail {
 	display: grid;
 	grid-template-columns: var(--pg-rail) minmax(0, 1fr);
@@ -124,11 +113,8 @@ pre.pg-readout {
 
 /* ── Surfaces ──────────────────────────────────────────────────────────────── */
 
-/* The instrument plate: everything the playground reports about itself sits on
-   one, and nothing else does. A panel is the harness showing its work — the state
-   strip, the document dump, the boundary readout — so it is the one place on these
-   pages that takes a fill, and the reading column stays unboxed prose
-   (PLAYGROUND §"What takes a fill"). */
+/* The instrument plate — the one thing on these pages that takes a fill, and the
+   reading column stays unboxed prose (PLAYGROUND §"What takes a fill"). */
 .pg-panel {
 	box-sizing: border-box;
 	background: var(--pg-surface);
@@ -138,9 +124,8 @@ pre.pg-readout {
 }
 
 /* The instrument column — the switches and readouts beside a mounted surface, on
-   a panel. Sticky under the running head while the surface scrolls; a label sits
-   on its value, and the space belongs between the groups. Below the stacking
-   width it rides the flow like everything else. */
+   a panel: sticky under the running head, each label sitting on its value with
+   the space between the groups. */
 .pg-instruments {
 	position: sticky;
 	top: var(--pg-space-16);
@@ -160,13 +145,9 @@ pre.pg-readout {
 }
 
 /* The mounting site: the frame a surface is dropped into, and the tone behind its
-   column. The four properties THEMING §"What is behind the column is yours" leaves
-   to the host are all here or on the route's own rule — never inside the package.
-
-   `border-box`, like the panel: both take a padding from here and a size from their
-   caller, so a stated height is the height they draw. The host declares no global
-   reset — an unlayered `*` rule would reach past its own chrome and re-box every
-   package element mounted inside it. */
+   column — the properties THEMING §"What is behind the column is yours" leaves to
+   the host. `border-box`, like the panel: both take a padding from here and a
+   size from their caller, so a stated height is the height they draw. */
 .pg-frame {
 	box-sizing: border-box;
 	background: var(--pg-desk);
@@ -177,11 +158,9 @@ pre.pg-readout {
 
 /* ── Controls ──────────────────────────────────────────────────────────────── */
 
-/* The host's controls ARE boxed, where the package's buttons are not: a box says
-   "type here" only where there is typing to be confused with, and there is none on
-   these pages — the reading column is prose and the panels are read-only readouts.
-   So a box here says "this is a control", which is the whole of what a harness's
-   strip of switches needs to say (PLAYGROUND §"The look"). */
+/* The host's controls ARE boxed, where the package's buttons are not: with no
+   typing on these pages to be confused with, the box says "this is a control",
+   which is all a harness's strip of switches needs (PLAYGROUND §"The look"). */
 .pg-btn {
 	font: inherit;
 	font-family: var(--pg-font-mono);
@@ -235,8 +214,7 @@ pre.pg-readout {
 }
 
 /* A text link in the reading column: underlined at the border rung rather than
-   coloured, so the page keeps one ink and the link hue is left to mean a
-   destination off the playground. */
+   coloured, so the page keeps one ink. */
 .pg-link {
 	color: inherit;
 	text-decoration-color: var(--pg-border-strong);
@@ -248,8 +226,8 @@ pre.pg-readout {
 }
 
 /* ── Session status ────────────────────────────────────────────────────────── */
-/* Three states of one line, and one of the two places the playground spends a hue:
-   what phase the WASM boundary is in is the question a harness exists to answer. */
+/* Three states of one line, and the only place the playground spends a hue: what
+   phase the WASM boundary is in is the question a harness exists to answer. */
 
 .pg-status {
 	font-family: var(--pg-font-mono);

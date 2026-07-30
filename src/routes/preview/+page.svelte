@@ -18,7 +18,7 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Quill, Document, LiveSession, ContentHit, ChangeSet } from '$lib/core';
+	import type { Document, LiveSession, ContentHit, ChangeSet } from '$lib/core';
 	import { Preview } from '$lib/preview';
 	import { loadUsafMemoTree } from '../fixture';
 
@@ -31,7 +31,6 @@
 	let previewRef: ReturnType<typeof Preview> | undefined = $state();
 
 	let toFree: Array<{ free(): void }> = [];
-	let quillHandle: Quill | undefined;
 	let docHandle: Document | undefined;
 
 	function handleCaretPick(hit: ContentHit): void {
@@ -76,7 +75,6 @@
 					return;
 				}
 				session = openedSession;
-				quillHandle = quill;
 				docHandle = doc;
 				toFree = [openedSession, doc, quill];
 				status = { phase: 'ready' };
@@ -90,7 +88,6 @@
 			for (const h of toFree) h.free();
 			toFree = [];
 			session = undefined;
-			quillHandle = undefined;
 			docHandle = undefined;
 		};
 	});

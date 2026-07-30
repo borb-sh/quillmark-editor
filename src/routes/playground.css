@@ -1,34 +1,20 @@
-/* The HOST's derivation — public dials in, the `--pg-*` scale the playground's own
-   chrome reads out. The recipes that consume it are `routes/chrome.css`; the split
-   is the one `core/theme.css` and `visual/controls.css` make, and for the same
-   reason: a rung fixes a VALUE, a recipe fixes which declarations make a thing, and
-   only the second can be checked against the first. Literals live here and nowhere
-   else under `src/routes` — `check:style` runs its axes over the host scope too,
-   with this file exempt as the place the defaults are minted (PLAYGROUND
-   §"Preventing drift").
+/* The HOST's derivation — public dials in, the `--pg-*` scale the playground's
+   chrome reads out (PLAYGROUND.md is the language; the recipes are
+   `routes/chrome.css`). Literals live here and nowhere else under `src/routes`:
+   `check:style` runs its axes over the host scope too, with this file exempt as
+   the place the defaults are minted.
 
-   The playground plays the host's part, which is three things: declare a colour
-   scheme, derive the page's own chrome from the same signal the mounted surface
-   follows (THEMING.md §"The surface follows your colour scheme"), and put a page
-   tone behind the column where a route mounts one.
-
-   `light dark` is the answer for an app with no theme of its own: it follows the
-   OS, and every `[data-qm-root]` inside inherits it, so page and surface invert
-   together with no media query on either side. The running head's scheme control
-   pins `color-scheme` on the document element, which is the same declaration a host
-   app makes — so flipping it is the contract being exercised, not a mode the
-   playground implements.
-
-   The page's poles are the SYSTEM colours, so unstyled text and a `--pg-*` rung
-   land on the same tone — a host knows what canvas it sits on; the package does
-   not, so it ships calibrated literals. Dials still sit in front, so `--qm-bg` /
-   `--qm-fg` on the shell retunes page and surface at once. Only the ten `--qm-*`
-   dials are package surface: nothing here reads a `--_qm-*` rung, and everything
-   the shell mints is namespaced `--pg-*`.
+   `light dark` follows the OS, and every `[data-qm-root]` inside inherits it, so
+   page and surface invert together; the running head's scheme control pins
+   `color-scheme` on the document element — the declaration THEMING.md asks a host
+   app for, exercised rather than a mode implemented. The poles are the SYSTEM
+   colours, so unstyled text and a `--pg-*` rung land on the same tone — a host
+   knows its canvas; the package does not, so it ships calibrated literals. The
+   dials still sit in front, so `--qm-bg`/`--qm-fg` on the shell retunes page and
+   surface at once; nothing here reads a `--_qm-*` rung.
 
    The mid-tones are mixes, not picks. `--pg-ink-meta` lands at 7.5:1 on the page
-   in light and 7.3:1 in dark — a grey chosen by eye holds one of those at best,
-   since it is calibrated against the scheme it was chosen in. */
+   in light and 7.3:1 in dark — a grey chosen by eye holds one of those at best. */
 
 :root {
 	color-scheme: light dark;
@@ -43,17 +29,14 @@
 	   and a card on it agree about which way "raised" goes in both schemes. */
 	--pg-surface: color-mix(in oklab, var(--pg-page), var(--pg-ink) 4%);
 	--pg-surface-hover: color-mix(in oklab, var(--pg-page), var(--pg-ink) 8%);
-	/* The page tone THEMING §"What is behind the column is yours" leaves to the
-	   host: the ground a mounted surface's own paper reads against. The same rung a
-	   plate takes, named for the other job — a third step between the two would buy
-	   a fourth grey and cost the ladder its even spacing. */
+	/* The page tone the host puts behind a mounted column (THEMING §"What is
+	   behind the column is yours") — the plate's rung, named for the other job. */
 	--pg-desk: var(--pg-surface);
 	--pg-border: color-mix(in oklab, var(--pg-page), var(--pg-ink) 17%);
 	--pg-border-strong: color-mix(in oklab, var(--pg-page), var(--pg-ink) 40%);
 
-	/* Status and link hues: no dial derives them, and a single literal reads as a
-	   stain on one of the two schemes, so each is a pair. */
-	--pg-link: light-dark(#1a56db, #93b4ff);
+	/* The status hues: no dial derives them, and a single literal reads as a stain
+	   on one of the two schemes, so each is a pair. */
 	--pg-ok: light-dark(#137333, #5bd08a);
 	--pg-alert: light-dark(#c5221f, #ff9c94);
 

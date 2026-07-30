@@ -1,11 +1,8 @@
 <!--
-  The host's colour-scheme declaration, as a control. `color-scheme` on the
-  document element is exactly the line THEMING.md §"The surface follows your
-  colour scheme" asks a host app for: every `[data-qm-root]` below inherits it,
-  so page and surfaces invert together with no prop, no media query and no JS
-  inside the package. Flipping it here is that contract being exercised — the
-  playground implements no mode of its own, and `system` is the absence of the
-  declaration, not a third value.
+  The host's colour-scheme declaration, as a control: it writes `color-scheme`
+  on the document element — the line THEMING.md asks a host app for — and every
+  `[data-qm-root]` below inherits it (PLAYGROUND §Colour). `system` is the
+  absence of the declaration, not a third value.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';

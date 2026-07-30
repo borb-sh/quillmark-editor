@@ -116,8 +116,6 @@ const session = await new Engine().open(quill, doc);`;
 
 <main class="pg-width">
 	<section class="hero">
-		<!-- No eyebrow over the title: the running head already says whose page this
-		     is, and a label that repeats it is chrome restating chrome. -->
 		<div class="thesis">
 			<h1 class="pg-title">A WYSIWYG editor whose preview is the compiled page.</h1>
 			<p class="pg-deck">
@@ -133,10 +131,8 @@ const session = await new Engine().open(quill, doc);`;
 		</div>
 
 		<!-- The sheet: the reference quill, compiled and painted, on a page tone the
-		     host supplies (THEMING §"What is behind the column is yours"). Sized to
-		     the whole first page and non-scrolling — a wheel over the hero must
-		     scroll the PAGE, not the paper — while the click bridge keeps working on
-		     what is shown. The scrolling case is /preview's. -->
+		     host supplies. Sized to the first page and non-scrolling — a wheel over
+		     the hero scrolls the PAGE, not the paper (PLAYGROUND §"The routes"). -->
 		<figure class="sheet">
 			<div class="pg-frame sheet-frame">
 				{#if session}

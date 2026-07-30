@@ -101,17 +101,17 @@ what are links, and the page would lose the one distinction its fills carry.
 
 ## Colour
 
-Two poles and three hues, and the poles are the **system** colours behind the
+Two poles and two hues, and the poles are the **system** colours behind the
 dials — a host knows what canvas it sits on, so `Canvas`/`CanvasText` put unstyled
 text and a `--pg-*` rung on the same tone, where the package has to ship
 calibrated literals. `--qm-bg` / `--qm-fg` still sit in front, so setting the dials
 on the shell retunes page and surface together.
 
-The three hues each answer something: what phase the WASM boundary is in (the
-session status, the one question a harness exists to answer) and a destination off
-the playground. Each is a light/dark pair, since a single literal reads as a stain
-on one of the two schemes. Everything else is a mix off the two poles, in oklab,
-so inverting the poles inverts the scale.
+The two hues answer one question: what phase the WASM boundary is in — the
+session status, the thing a harness exists to report. Each is a light/dark pair,
+since a single literal reads as a stain on one of the two schemes. Everything
+else is a mix off the two poles, in oklab, so inverting the poles inverts the
+scale.
 
 The running head's scheme control is **the host's `color-scheme` declaration, not a
 mode**: it writes the property THEMING.md asks a host app for onto the document
