@@ -3,8 +3,10 @@
 // fields can ever land on one DOM id, which is the failure mode `for` resolves
 // silently and wrongly rather than reporting.
 import { describe, it, expect } from 'vitest';
-import { fieldDomIds } from '$lib/visual/domid';
+import { fieldDomIds, groupPanelId } from '$lib/visual/domid';
 import { fieldKeyToString } from '$lib/visual/diagnostics';
+import { groupOrder } from '$lib/visual/structure';
+import { quill } from '../helpers/fixtures.js';
 
 describe('fieldDomIds', () => {
 	it('spends only `id`-safe characters, whatever the key held', () => {
@@ -54,5 +56,37 @@ describe('fieldDomIds', () => {
 		expect(fieldDomIds('u1', 'main:subject').control).not.toBe(
 			fieldDomIds('u2', 'main:subject').control
 		);
+	});
+});
+
+describe('groupPanelId', () => {
+	// A group panel's id is what its header's `aria-controls` names, so the same
+	// collision that breaks `for` breaks the accordion's announced state — pointing
+	// a header at a field is worse than pointing it nowhere.
+	it('spends only `id`-safe characters', () => {
+		expect(groupPanelId('u1', undefined, 'letterhead')).toMatch(/^[A-Za-z][A-Za-z0-9_-]*$/);
+	});
+
+	it('gives each card its own panel per group, and each editor its own card', () => {
+		const ids = [
+			groupPanelId('u1', undefined, 'letterhead'),
+			groupPanelId('u1', undefined, 'addressing'),
+			groupPanelId('u1', 'c1', 'letterhead'),
+			groupPanelId('u2', undefined, 'letterhead')
+		];
+		expect(new Set(ids).size).toBe(ids.length);
+	});
+
+	it('cannot land on a field id — the reference quill, every group against every field', () => {
+		const schema = quill().schema.main;
+		const fields = Object.keys(schema.fields);
+		const cards: (string | undefined)[] = [undefined, 'c1', 'c2'];
+		const panels = cards.flatMap((c) => groupOrder(schema).map((g) => groupPanelId('u1', c, g)));
+		const controls = cards.flatMap((card) =>
+			[...fields, undefined].map((field) => fieldDomIds('u1', fieldKeyToString({ card, field })))
+		);
+		const taken = new Set(controls.flatMap((ids) => [ids.control, ids.label, ids.description]));
+		expect(panels.length).toBeGreaterThan(0); // the fixture declares groups to test against
+		for (const id of panels) expect(taken.has(id)).toBe(false);
 	});
 });

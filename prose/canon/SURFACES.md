@@ -333,6 +333,18 @@ case, and one rule for both would conflate them:
   it mounts as an inset child of the leaf (`core/bloom.ts`), needing the leaf to be
   positioned and nothing else, so the editor↔preview address keeps its cue on paper.
 
+**A surface that is not shown must not take focus.** The rules above are about
+which surfaces DRAW a focus indicator; the prior question is which may receive
+focus at all, and a surface hidden by geometry answers it only for the eye. A
+collapsed accordion panel is clipped to zero height and still mounted, so
+`inert` is what takes it out of the tab order, out of hit-testing and out of the
+accessibility tree — one attribute for all three, and none of them a thing CSS
+can say. It leaves painting alone, so the slide that hid the panel is the same
+slide, and it leaves every control's own state alone, so nothing downstream of a
+commit reads differently. A close that would strand focus inside the closing
+surface says where focus goes rather than letting the browser drop it on the
+body.
+
 One hue carries "active" across the panes: the editor's focus ring and the
 correlation bloom both resolve `--_qm-accent`, so a field reads as engaged with the
 same colour on either side (the editor↔preview active address, VISUAL_EDITOR_UIUX

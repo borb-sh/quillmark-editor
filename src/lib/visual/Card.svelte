@@ -24,6 +24,7 @@
 		makeAddr: (field?: string) => Addr;
 		leafKey: (field?: string) => string;
 		domIds: (field?: string) => FieldDomIds;
+		panelId: (group: string) => string;
 		commit: (name: string, value: unknown) => void;
 		move: (dir: -1 | 1) => void;
 		remove: () => void;
@@ -135,16 +136,36 @@
 	// a retype is the one reshape, and the open group stays where it still exists.
 	// svelte-ignore state_referenced_locally
 	let expanded = $state<string | null>(initialExpandedGroup(card.sections));
+	// The accordion's two elements per group, by group id. A closing panel goes
+	// `inert` with whatever it held still focused, and `inert` does not say where
+	// focus should go — the browser drops it on the body, losing the user's place in
+	// the card. So the close hands focus to the header, which is what reopens the
+	// section.
+	let headers = $state<Record<string, HTMLButtonElement | undefined>>({});
+	let panels = $state<Record<string, HTMLElement | undefined>>({});
+	/**
+	 * Move to `next` (`null` = all closed), evacuating focus from the group this
+	 * closes. Every write to `expanded` goes through here: a group also closes when
+	 * ANOTHER opens, which is not a gesture the user aimed at the closing section.
+	 */
+	function setExpanded(next: string | null): void {
+		const closing = expanded;
+		if (closing !== null && closing !== next && panels[closing]?.contains(document.activeElement))
+			headers[closing]?.focus();
+		expanded = next;
+	}
 	function toggleGroup(group: string): void {
-		expanded = expanded === group ? null : group;
+		setExpanded(expanded === group ? null : group);
 	}
 
 	/**
 	 * Open the group holding leaf `key`, if this card has one. A collapsed panel is
-	 * clipped to zero height rather than unmounted, so a caret placed inside it — and
-	 * the arrival wash with it — lands where nobody can see it. `VisualEditor.setCaret`
-	 * calls this on every card before landing; the card keeps owning `expanded`, and a
-	 * card that does not hold the key does nothing.
+	 * clipped to zero height and `inert` rather than unmounted, so a caret placed
+	 * inside it does not land at all and the arrival wash goes unseen.
+	 * `VisualEditor.setCaret` calls this on every card and then waits a flush before
+	 * landing — `inert` clears when the panel renders open, not when `expanded` is
+	 * assigned. The card keeps owning `expanded`, and a card that does not hold the
+	 * key does nothing.
 	 *
 	 * A call, not a prop: a reveal is an event, and modelling it as state needs a
 	 * fresh-identity wrapper to re-fire and an `untrack` to keep the per-keystroke
@@ -152,7 +173,7 @@
 	 */
 	export function revealLeaf(key: string): void {
 		const section = grouped.find((s) => s.fields.some((f) => ops.leafKey(f.name) === key));
-		if (section?.group) expanded = section.group;
+		if (section?.group) setExpanded(section.group);
 	}
 
 	let el = $state<HTMLElement | undefined>(undefined);
@@ -266,17 +287,31 @@
 					{#if grouped.length}
 						<div class="qm-groups">
 							{#each grouped as section (section.group)}
-								{@const isOpen = expanded === section.group}
+								{@const group = section.group as string}
+								{@const isOpen = expanded === group}
+								{@const panelId = ops.panelId(group)}
 								<div class="qm-group" class:qm-open={isOpen}>
 									<button
 										type="button"
 										class="qm-group-header"
+										bind:this={headers[group]}
 										aria-expanded={isOpen}
-										onclick={() => toggleGroup(section.group as string)}
+										aria-controls={panelId}
+										onclick={() => toggleGroup(group)}
 									>
 										<ChevronRight class="qm-group-chevron" size={14} />{section.label}
 									</button>
-									<div class="qm-group-panel">
+									<!-- `inert` is what makes closed mean CLOSED (SURFACES §"Focus and active
+								     state"): the panel is clipped, not unmounted, so without it every field
+								     in a hidden section keeps its place in the tab order and in the a11y
+								     tree, under a header announcing `aria-expanded="false"`. Paint is
+								     untouched, so the 0fr↔1fr slide is the same slide. -->
+									<div
+										class="qm-group-panel"
+										id={panelId}
+										inert={!isOpen}
+										bind:this={panels[group]}
+									>
 										<div class="qm-group-panel-inner">
 											{@render sectionFields(section.fields)}
 										</div>
@@ -689,8 +724,10 @@
 		transform: rotate(90deg);
 	}
 	/* Sliding panel: the grid track goes 0fr→1fr; the inner clips at min-height 0.
-	   The panel draws no rule of its own — the vertical is the section's (`.qm-group`),
-	   which is what spans the header too. */
+	   Clipping is the whole of what CSS does here — what a closed panel is OUT of is
+	   `inert`'s to say, on the element (SURFACES §"Focus and active state"). The panel
+	   draws no rule of its own — the vertical is the section's (`.qm-group`), which is
+	   what spans the header too. */
 	.qm-group-panel {
 		display: grid;
 		grid-template-rows: 0fr;

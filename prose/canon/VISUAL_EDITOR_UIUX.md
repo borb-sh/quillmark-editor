@@ -166,16 +166,22 @@ is a separate concern (the island controls), not gated by this.
   `ui.group` sections are a collapsible accordion — one open at a time, the
   first in order open at mount; ungrouped fields stay above it, always visible.
   A card opens on fields, never on chevrons alone: a body leaf does not stand in
-  for one, since on a card carrying both the fields are what the card is for. A
-  section header is a heading, not metadata: sentence case at the field-label
-  rung, its whole row the target, its label centred between the rule above it
-  and the one it draws. Open and hover are ink steps; the chevron's rotation
-  carries open/closed, and no hue enters (AESTHETIC §Rules). The open section
-  also draws the bracket's vertical, down its header and its panel together
-  (SURFACES §Elevation) — which is what gives it a corner to close into where
-  the bracket's horizontal meets it, at the top of the first section or the
-  bottom of the last. A section in between meets neither and does not try to:
-  the stroke reads by being the same stroke, not by terminating.
+  for one, since on a card carrying both the fields are what the card is for.
+  **A closed section is closed, not merely unpainted.** Its panel is `inert`, so
+  the fields inside it leave the tab order and the accessibility tree as well as
+  the view (SURFACES §"Focus and active state"): a header announcing
+  `aria-expanded="false"` over reachable focus stops — an array's remove control
+  among them — states what its content contradicts. The header names the panel it
+  controls, and a close that would strand focus inside the closing panel hands it
+  to that header first. A section header is a heading, not metadata: sentence
+  case at the field-label rung, its whole row the target, its label centred
+  between the rule above it and the one it draws. Open and hover are ink steps;
+  the chevron's rotation carries open/closed, and no hue enters (AESTHETIC
+  §Rules). The open section also draws the bracket's vertical, down its header
+  and its panel together (SURFACES §Elevation) — which is what gives it a corner
+  to close into where the bracket's horizontal meets it, at the top of the first
+  section or the bottom of the last. A section in between meets neither and does
+  not try to: the stroke reads by being the same stroke, not by terminating.
 - **Prose leaf** — each rich field as an inline WYSIWYG surface, and the body as
   paper: no label — "Body" names the surface, and the accessible name stays on the
   leaf — and no box, the bracket's bottom rule doing the separating a border was.
@@ -302,12 +308,15 @@ SURFACES §Motion). The two sides differ in exactly one way, because their input
   hairline to `--_qm-accent` on `:focus-within`, so in the common case the border it
   would flash to is the colour it already is.
 
-A landing REVEALS itself first. A collapsed accordion group clips its panel to zero
-height without unmounting it, so a caret placed inside one is a caret nobody can see
-— `main.subject` on the reference memo is exactly this case. `setCaret` asks the
-owning card to open the group holding its target (§"Card stack" keeps `expanded` the
-card's own state; the editor only asks), then lands. Focus alone cannot substitute:
-the browser scrolls to a clipped box without unclipping it.
+A landing REVEALS itself first, and WAITS for the reveal. A collapsed accordion
+group clips its panel to zero height and marks it `inert` without unmounting it, so
+a caret placed inside one never lands at all — `main.subject` on the reference memo
+is exactly this case. `setCaret` asks the owning card to open the group holding its
+target (§"Card stack" keeps `expanded` the card's own state; the editor only asks),
+lets the panel render, then lands: `inert` clears on the render, not on the ask, and
+a focus into an inert subtree fails silently. So the landing is async — the one
+public entry point that is. Focus alone cannot substitute for the reveal either: the
+browser scrolls to a clipped box without unclipping it.
 
 ## Source view
 
