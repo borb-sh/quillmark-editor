@@ -193,7 +193,7 @@ The schema distinction is also what sizes the leaf. A constrained leaf holds one
 paragraph, so it is one line tall and draws the scalar control recipe (SURFACES
 §"The shared recipe"); the full schema grows. **The codec owns the stylesheet both
 depend on** — `codec/prose.css`, imported beside ProseMirror's own, which carries no
-margins of its own and so leaves every block on UA defaults. It lives here rather
+block reset and so leaves every block on UA defaults. It lives here rather
 than per component because every prose leaf in the package — field, body, array
 element — mounts through the codec and inherits it without restating it. The source
 view is not one of them: it is a `<pre>` holding serialized text, outside
