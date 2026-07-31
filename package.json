@@ -13,14 +13,15 @@
 	],
 	"scripts": {
 		"dev": "npm run dev -w packages/playground",
-		"build": "npm run build -w packages/quiver && npm run build -w packages/ui && npm run build -w packages/playground",
-		"check": "npm run check -w packages/quiver && npm run check -w packages/ui && npm run check -w packages/playground",
+		"build": "npm run build -w packages/quiver -w packages/ui && npm run build -w packages/playground",
+		"check": "npm run check --workspaces --if-present",
 		"test": "npm run test --workspaces --if-present",
 		"lint": "prettier --check .",
 		"format": "prettier --write .",
 		"check:canon": "node scripts/check-canon.mjs",
 		"check:style": "node scripts/check-style.mjs",
 		"check:deps": "node scripts/check-deps.mjs",
+		"gate": "npm run lint && npm run check && npm run check:canon && npm run check:style && npm run check:deps && npm test",
 		"changeset": "changeset",
 		"version": "changeset version && npm install --package-lock-only",
 		"release": "npm run build && changeset publish"

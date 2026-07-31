@@ -147,12 +147,14 @@
 				// Dynamic: keep WASM's top-level await out of the route module so
 				// Safari/dev doesn't TDZ on Kit's `component` export.
 				// VisualEditor pulls the codec → `mapPos`, so it rides the same import.
+				// The fixture fetch is independent of both, so it runs alongside them.
+				const treeP = loadUsafMemoTree();
 				const [{ Quill, Document, init, MAIN_CARD_ADDR }, visual] = await Promise.all([
 					import('@quillmark/ui/core'),
 					import('@quillmark/ui/visual')
 				]);
 				init();
-				const tree = await loadUsafMemoTree();
+				const tree = await treeP;
 				// The reference quill's `date` declares a blank `default:`, which ghosts
 				// nothing; `?dateDefault=YYYY-MM-DD` rewrites it so the date control's
 				// ghosted default is reachable at all. A SCHEMA variant, so it patches the

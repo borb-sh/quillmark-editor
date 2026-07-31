@@ -50,7 +50,7 @@
 
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { ROOT, canonDocs, canonRoots } from './canon-roots.mjs';
+import { ROOT, canonDocs, canonRoots, report } from './workspace.mjs';
 
 const THEMING = join(ROOT, 'packages', 'ui', 'THEMING.md');
 
@@ -374,11 +374,8 @@ for (const [abs, rel] of canonRoots().flatMap(canonDocs))
 	for (const t of [...dialsIn(abs)].filter((t) => !consumed.has(t)).sort())
 		errors.push(`${rel}: \`${t}\` named but not a dial`);
 
-if (errors.length) {
-	console.error(`Style check failed (${errors.length}):`);
-	for (const e of errors) console.error(`  ✗ ${e}`);
-	process.exit(1);
-}
-console.log(
+report(
+	'Style check',
+	errors,
 	`Style OK — ${scanned} files over ${SCOPES.length} scopes, ${consumed.size} public dials.`
 );

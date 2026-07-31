@@ -13,7 +13,6 @@
 	"homepage": "https://github.com/borb-sh/quillmark-js/tree/main/packages/ui#readme",
 	"license": "MIT",
 	"type": "module",
-	"packageManager": "npm@10.9.7",
 	"engines": {
 		"node": ">=22"
 	},
@@ -47,17 +46,15 @@
 		}
 	},
 	"files": [
-		"dist",
-		"!dist/**/*.test.*",
-		"!dist/**/*.spec.*"
+		"dist"
 	],
 	"sideEffects": [
 		"**/*.css"
 	],
 	"scripts": {
 		"build": "svelte-package",
-		"prepare": "svelte-package",
-		"prepack": "svelte-package && publint",
+		"prepare": "npm run build",
+		"prepack": "npm run build && publint",
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"check": "svelte-check --tsconfig ./tsconfig.json"

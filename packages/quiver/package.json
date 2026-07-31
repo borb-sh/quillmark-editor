@@ -67,8 +67,8 @@
 	},
 	"scripts": {
 		"build": "tsc",
-		"prepare": "tsc",
-		"prepack": "rm -rf dist && tsc",
+		"prepare": "npm run build",
+		"prepack": "rm -rf dist && npm run build",
 		"test": "vitest run",
 		"check": "tsc --noEmit"
 	}

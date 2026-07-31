@@ -16,7 +16,7 @@
 
 import { readFileSync } from 'node:fs';
 import { basename } from 'node:path';
-import { canonDocs, canonRoots } from './canon-roots.mjs';
+import { canonDocs, canonRoots, report } from './workspace.mjs';
 
 const SOURCE_EXT = /\.(ts|tsx|js|jsx|mjs|cjs|svelte|rs|md|json|css|html|py)(?=$|[)`,\s])/;
 
@@ -63,11 +63,8 @@ for (const [abs, rel] of docs) {
 	if (!lines.some((l) => /^## TL;DR\s*$/.test(l))) fail('no `## TL;DR` section');
 }
 
-if (errors.length) {
-	console.error(`Canon spine check failed (${errors.length}):`);
-	for (const e of errors) console.error(`  ✗ ${e}`);
-	process.exit(1);
-}
-console.log(
+report(
+	'Canon spine check',
+	errors,
 	`Canon spine OK — ${docs.length} docs over ${roots.length} tier${roots.length === 1 ? '' : 's'}.`
 );

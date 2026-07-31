@@ -39,14 +39,10 @@ jobs:
 
       - run: npm ci
 
+      # The same verbs ci.yml names as separate steps; there they buy failure
+      # attribution, here they only need to pass.
       - name: Gate
-        run: |
-          npm run lint
-          npm run check
-          npm run check:canon
-          npm run check:style
-          npm run check:deps
-          npm test
+        run: npm run gate
 
       - uses: changesets/action@v1
         with:

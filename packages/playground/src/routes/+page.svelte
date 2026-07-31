@@ -53,11 +53,12 @@
 			const created: Array<{ free(): void }> = [];
 			try {
 				// Dynamic: keep WASM's top-level await out of the route module so
-				// Safari/dev doesn't TDZ on Kit's `component` export.
+				// Safari/dev doesn't TDZ on Kit's `component` export. The fixture fetch is
+				// independent of it, so it runs alongside rather than behind it.
+				const treeP = loadUsafMemoTree();
 				const { Engine, Quill, init } = await import('@quillmark/ui/core');
 				init();
-				const tree = await loadUsafMemoTree();
-				const quill = Quill.fromTree(tree);
+				const quill = Quill.fromTree(await treeP);
 				created.unshift(quill);
 				const doc = quill.seedDocument();
 				created.unshift(doc);

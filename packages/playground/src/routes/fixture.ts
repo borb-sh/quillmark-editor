@@ -15,6 +15,17 @@ function quiver(): Promise<Quiver> {
 	return (quiverP ??= Quiver.fromBuiltUrl(`${base}/quiver/`));
 }
 
+/**
+ * Substitute `find` once in the loaded `Quill.yaml`, leaving the quill on disk alone.
+ * Every schema variant below is this: the anchors differ, the mechanism does not.
+ * Throws rather than silently no-op'ing if an anchor moves.
+ */
+function rewriteSchema(tree: Map<string, Uint8Array>, find: string, into: string): void {
+	const yaml = new TextDecoder().decode(tree.get('Quill.yaml'));
+	if (!yaml.includes(find)) throw new Error(`fixture: anchor not found — ${JSON.stringify(find)}`);
+	tree.set('Quill.yaml', new TextEncoder().encode(yaml.replace(find, into)));
+}
+
 // The main `date` field's declaration up to its default's value: the anchor the
 // schema variant below rewrites, split here so the rewrite substitutes a value
 // rather than measuring characters off the end. The indorsement card declares a
@@ -26,18 +37,10 @@ const MAIN_DATE_KEY = '\n    date:\n      type: date\n      default: ';
  * Playground-only schema variant: give the main `date` field a literal `default:`.
  * The reference quill declares `default: ""` (blank → `datetime.today()` at render,
  * which ghosts nothing), so nothing in it exercises the date control's ghosted
- * default; this rewrites that one line in the loaded bytes so the rung is
- * reachable in the browser, leaving the quill on disk alone. Throws
- * rather than silently no-op'ing if the anchor moves.
+ * default; this makes the rung reachable in the browser.
  */
 export function withMainDateDefault(tree: Map<string, Uint8Array>, iso: string): void {
-	const yaml = new TextDecoder().decode(tree.get('Quill.yaml'));
-	const anchor = `${MAIN_DATE_KEY}""`;
-	if (!yaml.includes(anchor)) throw new Error('fixture: main `date` anchor not found');
-	tree.set(
-		'Quill.yaml',
-		new TextEncoder().encode(yaml.replace(anchor, `${MAIN_DATE_KEY}"${iso}"`))
-	);
+	rewriteSchema(tree, `${MAIN_DATE_KEY}""`, `${MAIN_DATE_KEY}"${iso}"`);
 }
 
 // The `card_kinds:` map opener, and a second kind to drop under it. The reference
@@ -60,16 +63,10 @@ const SECOND_KIND = `  attachment:
 /**
  * Playground-only schema variant: declare a second card kind. The reference quill's
  * one kind means `kinds.length === 1` always wins in `VisualEditor`, so nothing on
- * disk exercises the kind menu, its dismissal, or its item chrome. Throws rather
- * than silently no-op'ing if the anchor moves.
+ * disk exercises the kind menu, its dismissal, or its item chrome.
  */
 export function withSecondCardKind(tree: Map<string, Uint8Array>): void {
-	const yaml = new TextDecoder().decode(tree.get('Quill.yaml'));
-	if (!yaml.includes(CARD_KINDS_KEY)) throw new Error('fixture: `card_kinds` anchor not found');
-	tree.set(
-		'Quill.yaml',
-		new TextEncoder().encode(yaml.replace(CARD_KINDS_KEY, CARD_KINDS_KEY + SECOND_KIND))
-	);
+	rewriteSchema(tree, CARD_KINDS_KEY, CARD_KINDS_KEY + SECOND_KIND);
 }
 
 /**

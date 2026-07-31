@@ -27,7 +27,7 @@
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
-import { ROOT } from './canon-roots.mjs';
+import { ROOT, packages, report } from './workspace.mjs';
 
 /** The graph. An edge absent from this table is a violation; an edge in it is optional. */
 const ALLOWED = {
@@ -42,22 +42,13 @@ const DEP_FIELDS = ['dependencies', 'devDependencies', 'peerDependencies', 'opti
 const errors = [];
 const fail = (msg) => errors.push(msg);
 
-const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'));
-const root = readJson(join(ROOT, 'package.json'));
-
-const packages = readdirSync(join(ROOT, 'packages'))
-	.sort()
-	.map((dir) => ({
-		dir,
-		at: join(ROOT, 'packages', dir),
-		json: readJson(join(ROOT, 'packages', dir, 'package.json'))
-	}));
-
-const names = new Set(packages.map((p) => p.json.name));
+const root = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
+const PACKAGES = packages();
+const names = PACKAGES.map((p) => p.json.name);
 
 // ── 1. The graph ────────────────────────────────────────────────────────────────
 
-for (const { dir, json } of packages) {
+for (const { dir, json } of PACKAGES) {
 	const allowed = ALLOWED[json.name];
 	if (!allowed) {
 		fail(
@@ -67,7 +58,7 @@ for (const { dir, json } of packages) {
 	}
 	for (const field of DEP_FIELDS)
 		for (const dep of Object.keys(json[field] ?? {}))
-			if (names.has(dep) && !allowed.includes(dep))
+			if (names.includes(dep) && !allowed.includes(dep))
 				fail(
 					`packages/${dir}/package.json: \`${field}.${dep}\` — \`${json.name}\` has no edge to \`${dep}\``
 				);
@@ -88,23 +79,27 @@ const floorOf = (range) => {
 	const m = /^>=\s*(\d+)\.(\d+)\.(\d+)(-[\w.]+)?$/.exec(range.trim());
 	return m ? [+m[1], +m[2], +m[3]] : null;
 };
-const below = (a, b) => a.some((n, i) => n !== b[i] && n < b[i]);
+/** Lexicographic, not per-position: `0.99.0` is above the floor `0.98.5`, and a
+ *  per-position `some` would call it below on the patch. */
+const below = (a, b) => {
+	for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] < b[i];
+	return false;
+};
 
-for (const { dir, json } of packages) {
-	const declared = DEP_FIELDS.filter((f) => json[f]?.[WASM]);
+for (const { dir, json } of PACKAGES) {
 	if (json.private) {
 		// The app is not a published claim; it installs the artifact like any consumer.
-		if (declared.some((f) => f === 'peerDependencies'))
+		if (json.peerDependencies?.[WASM])
 			fail(
 				`packages/${dir}/package.json: \`${WASM}\` is a peer of a private package — depend on it`
 			);
 		continue;
 	}
-	const wrong = declared.filter((f) => f !== 'peerDependencies');
-	for (const f of wrong)
-		fail(
-			`packages/${dir}/package.json: \`${f}.${WASM}\` — the artifact is peered, never depended on`
-		);
+	for (const f of DEP_FIELDS)
+		if (f !== 'peerDependencies' && json[f]?.[WASM])
+			fail(
+				`packages/${dir}/package.json: \`${f}.${WASM}\` — the artifact is peered, never depended on`
+			);
 	const range = json.peerDependencies?.[WASM];
 	if (!range) {
 		fail(
@@ -158,9 +153,9 @@ function sources(dir) {
 }
 
 /** The workspace package a bare specifier names, or null. */
-const packageOf = (spec) => [...names].find((n) => spec === n || spec.startsWith(`${n}/`)) ?? null;
+const packageOf = (spec) => names.find((n) => spec === n || spec.startsWith(`${n}/`)) ?? null;
 
-for (const { at, json } of packages) {
+for (const { at, json } of PACKAGES) {
 	const allowed = ALLOWED[json.name] ?? [];
 	for (const file of sources(at))
 		for (const spec of specifiersOf(file)) {
@@ -176,9 +171,18 @@ for (const { at, json } of packages) {
 
 const LIB = join(ROOT, 'packages', 'ui', 'src', 'lib');
 const SELF = '@quillmark/ui';
-// The heavy library a viewer-only consumer must not pull, plus the codec and the
-// editing surfaces, which are editor-side whether or not they carry weight of their own.
-const FORBIDDEN = new RegExp(`^(prosemirror-|${SELF}/(visual|source))`);
+// The subpaths a viewer may reach. Every OTHER subpath ui exports is editor-side and
+// forbidden, derived rather than listed so the rule fails closed the way the graph
+// rule does: a new editing surface is forbidden the moment it is exported, instead of
+// waiting for someone to remember this line.
+const NEUTRAL = new Set(['.', './core', './preview']);
+const uiExports = PACKAGES.find((p) => p.json.name === SELF)?.json.exports ?? {};
+const editorSide = Object.keys(uiExports)
+	.filter((k) => !NEUTRAL.has(k))
+	.map((k) => k.replace(/^\.\//, ''));
+// ProseMirror is the weight itself; the editing subpaths are editor-side whether or
+// not they carry weight of their own.
+const FORBIDDEN = new RegExp(`^(prosemirror-|${SELF}/(${editorSide.join('|')}))`);
 
 /** Resolve a specifier to a file inside src/lib, or null if it leaves the tree. */
 function resolveInLib(spec, fromFile) {
@@ -222,11 +226,8 @@ const walk = (file) => {
 // re-export is still shipped inside the module root a bundler pulls.
 for (const file of sources(join(LIB, 'preview'))) walk(file);
 
-if (errors.length) {
-	console.error(`Dependency law check failed (${errors.length}):`);
-	for (const e of errors) console.error(`  ✗ ${e}`);
-	process.exit(1);
-}
-console.log(
-	`Dependency law OK — ${packages.length} packages, ${WASM} pinned at ${pin}, /preview reaches ${seen.size} modules.`
+report(
+	'Dependency law check',
+	errors,
+	`Dependency law OK — ${PACKAGES.length} packages, ${WASM} pinned at ${pin}, /preview reaches ${seen.size} modules.`
 );
