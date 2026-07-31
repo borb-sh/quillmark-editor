@@ -53,7 +53,7 @@ describe('preview controller empty-state across page-count transitions', () => {
 	const isEmpty = () => !!container.querySelector('.qm-preview-empty');
 
 	it('a session that opens empty escapes the empty state on a later apply', () => {
-		const preview = createPreview(mockSession(0), { container });
+		const preview = createPreview({ session: mockSession(0), container });
 		expect(isEmpty()).toBe(true);
 		expect(pages()).toBe(0);
 
@@ -66,7 +66,7 @@ describe('preview controller empty-state across page-count transitions', () => {
 	});
 
 	it('a session that drops to zero pages returns to the empty state', () => {
-		const preview = createPreview(mockSession(3), { container });
+		const preview = createPreview({ session: mockSession(3), container });
 		expect(isEmpty()).toBe(false);
 		expect(pages()).toBe(3);
 
@@ -83,7 +83,7 @@ describe('preview controller empty-state across page-count transitions', () => {
 	});
 
 	it('destroy clears the empty state and the container class', () => {
-		const preview = createPreview(mockSession(0), { container });
+		const preview = createPreview({ session: mockSession(0), container });
 		expect(isEmpty()).toBe(true);
 		preview.destroy();
 		expect(isEmpty()).toBe(false);
@@ -103,7 +103,7 @@ describe('preview controller supportsCanvas gating', () => {
 	const pages = () => container.querySelectorAll('.qm-page').length;
 
 	it('a compile with pages the boundary cannot raster shows the unsupported message, not blank pages', () => {
-		const preview = createPreview(mockSession(2, false), { container });
+		const preview = createPreview({ session: mockSession(2, false), container });
 		expect(container.querySelector('.qm-preview-unsupported')).toBeTruthy();
 		expect(container.querySelector('.qm-preview-empty')).toBeFalsy();
 		expect(pages()).toBe(0);
@@ -121,7 +121,7 @@ describe('preview controller supportsCanvas gating', () => {
 			}
 		} as unknown as LiveSession;
 
-		const preview = createPreview(session, { container });
+		const preview = createPreview({ session: session, container });
 		expect(container.querySelector('.qm-preview-unsupported')).toBeTruthy();
 		expect(pages()).toBe(0);
 
@@ -192,7 +192,7 @@ describe('preview controller paint resilience', () => {
 	}
 
 	it('a paint that throws surfaces an error state without aborting the observer sweep', () => {
-		const preview = createPreview(throwingSession(2), { container });
+		const preview = createPreview({ session: throwingSession(2), container });
 		expect(container.querySelectorAll('.qm-page').length).toBe(2);
 
 		const io = ioInstances[ioInstances.length - 1];
@@ -218,7 +218,8 @@ describe('preview message state reporting', () => {
 
 	it('reports entering and leaving a state, and takes the consumer wording', () => {
 		const states: (string | null)[] = [];
-		const preview = createPreview(mockSession(0), {
+		const preview = createPreview({
+			session: mockSession(0),
 			container,
 			strings: { empty: 'Rien à prévisualiser.' },
 			onState: (s) => states.push(s)
@@ -233,7 +234,8 @@ describe('preview message state reporting', () => {
 
 	it('draws nothing under `messages: false`, and still reports', () => {
 		const states: (string | null)[] = [];
-		const preview = createPreview(mockSession(0), {
+		const preview = createPreview({
+			session: mockSession(0),
 			container,
 			messages: false,
 			onState: (s) => states.push(s)

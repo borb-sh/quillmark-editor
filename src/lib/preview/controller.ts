@@ -50,10 +50,18 @@ export const DEFAULT_PREVIEW_STRINGS: PreviewStrings = {
 };
 
 export interface PreviewOptions {
+	/** The compiled session this is a view of. In the OPTIONS, like every other
+	 *  handle the package's constructors take (`createSourceView`, `createField`):
+	 *  the first line a consumer writes should not be the one that is different. */
+	session: LiveSession;
 	/** The element the preview mounts into; becomes the scroll viewport. */
 	container: HTMLElement;
 	/** Pages kept painted beyond the visible band. Default 1. */
 	margin?: number;
+	/** The initial density multiplier (crispness, not layout), as
+	 *  {@link PreviewController.setZoom} sets it later. Default 1; a preview that
+	 *  opens at another zoom would otherwise cost a mount and a repaint. */
+	zoom?: number;
 	/** Draw field-box overlays. Default true. */
 	overlays?: boolean;
 	/** A click resolved to a content position; the hook does not fire off-ink. */
@@ -101,8 +109,8 @@ const EMPTY_CLASS = 'qm-preview-empty';
 const UNSUPPORTED_CLASS = 'qm-preview-unsupported';
 const ERROR_CLASS = 'qm-preview-error';
 
-export function createPreview(session: LiveSession, opts: PreviewOptions): PreviewController {
-	const container = opts.container;
+export function createPreview(opts: PreviewOptions): PreviewController {
+	const { session, container } = opts;
 	const margin = opts.margin ?? 1;
 	const overlaysEnabled = opts.overlays ?? true;
 	const words: PreviewStrings = { ...DEFAULT_PREVIEW_STRINGS, ...opts.strings };
@@ -212,6 +220,7 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 		}
 	}
 
+	if (opts.zoom != null && opts.zoom !== 1) paintLoop.setDensityZoom(opts.zoom);
 	render(session.pageCount, []);
 
 	return {

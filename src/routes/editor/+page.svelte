@@ -42,6 +42,7 @@
 		EditorError
 	} from '$lib/core';
 	import type { ActiveField, CaretMove, EditorChange } from '$lib/visual';
+	import { connect, type Connection } from '$lib/bridge';
 	import { Preview } from '$lib/preview';
 	import { SourceView } from '$lib/source';
 	import { loadUsafMemoTree } from '../fixture';
@@ -56,10 +57,10 @@
 	let quillHandle: Quill | undefined = $state();
 	let docHandle: Document | undefined = $state();
 
-	// Surface handles for the imperative bridge hops.
-	let editorRef: { setCaret(hit: ContentHit): Promise<void> } | undefined = $state();
-	let previewRef: ReturnType<typeof Preview> | undefined = $state();
-	let sourceRef: ReturnType<typeof SourceView> | undefined = $state();
+	// The bundled wiring (`@quillmark/editor/bridge`): it owns the debounced
+	// recompile, the repaint, the re-serialize and both caret hops, and it holds the
+	// three surface handles the shell binds to. Built once the session is open.
+	let bridge: Connection | undefined = $state();
 
 	// External diagnostics fed to the editor = live `session.warnings` + any
 	// injected render-error stand-ins (recomputed on every recompile).
@@ -147,53 +148,24 @@
 
 	let toFree: Array<{ free(): void }> = [];
 
-	// ── Debounced recompile ─────────────────────────────────────────────────────
-	// One session, many edit sources → one apply per settled burst. The timer is
-	// cleared on unmount so a pending recompile never touches a freed session.
-	let recompileTimer: ReturnType<typeof setTimeout> | undefined;
-	function scheduleRecompile(): void {
-		if (recompileTimer != null) clearTimeout(recompileTimer);
-		recompileTimer = setTimeout(recompileNow, 120);
-	}
-	function recompileNow(): void {
-		if (recompileTimer != null) clearTimeout(recompileTimer);
-		recompileTimer = undefined;
-		if (!session || !docHandle) return;
-		try {
-			const change = session.apply(docHandle);
-			lastChange = change;
-			previewRef?.refresh(change);
-			sourceRef?.refresh();
-			syncDiagnostics(); // re-read live warnings each compile, merged with the stand-ins
-		} catch (e) {
-			// A failed recompile keeps the last-good preview (the session is
-			// transactional); surface it without crashing the shell.
-			console.error('[playground] recompile failed', e);
-		}
-	}
-
-	// ── Bridge: preview → editor ────────────────────────────────────────────────
+	// ── Reading the wiring back out ─────────────────────────────────────────────
+	// Each hop the bridge owns, observed WITHOUT replacing it: the shell's handler
+	// records, then hands the event on. That the strip below reads every hop is the
+	// point of this route; a real consumer spreads the props and writes none of this.
 	function handleCaretPick(hit: ContentHit): void {
 		lastHit = hit;
-		editorRef?.setCaret(hit);
+		bridge?.previewProps.onCaretPick(hit);
 	}
-
-	// ── Bridge: editor → preview ────────────────────────────────────────────────
 	function handleActiveAddr(at: ActiveField): void {
 		activeAddr = JSON.stringify(at.addr);
 	}
 	function handleCaretMove(at: CaretMove): void {
-		// The whole bridge: the editor emits the preview's own address grammar, so
-		// this hop translates nothing and reads no `doc.cards`.
-		previewRef?.focusPosition(at);
 		lastFocus = JSON.stringify({ field: at.field, pos: at.pos });
+		bridge?.editorProps.onCaretMove(at);
 	}
-	// Every edit, whatever lane it came down. A structure op is one gesture and
-	// recompiles at once; prose and scalars arrive in bursts and settle first.
 	function handleChange(change: EditorChange): void {
 		lastChangeSource = change.source;
-		if (change.source === 'structure') recompileNow();
-		else scheduleRecompile();
+		bridge?.editorProps.onChange(change);
 	}
 
 	function injectDiagnostics(): void {
@@ -233,6 +205,15 @@
 					return;
 				}
 				VisualEditor = visual.VisualEditor;
+				bridge = connect({
+					session: openedSession,
+					doc,
+					onApply: (change) => {
+						lastChange = change;
+						syncDiagnostics(); // live warnings, re-read per compile
+					},
+					onError: handleError
+				});
 				session = openedSession;
 				quillHandle = quill;
 				docHandle = doc;
@@ -246,7 +227,8 @@
 		})();
 		return () => {
 			cancelled = true;
-			if (recompileTimer != null) clearTimeout(recompileTimer);
+			bridge?.destroy(); // no pending recompile against a freed session
+			bridge = undefined;
 			for (const h of toFree) h.free();
 			toFree = [];
 			session = undefined;
@@ -316,9 +298,9 @@
 			style="--split: minmax(0, {splitPct}fr) var(--pg-resizer) minmax(0, {100 - splitPct}fr)"
 		>
 			<section class="pg-frame editor-pane" aria-label="Visual editor">
-				{#if VisualEditor && docHandle && quillHandle}
+				{#if VisualEditor && docHandle && quillHandle && bridge}
 					<VisualEditor
-						bind:this={editorRef}
+						bind:this={bridge.editor}
 						doc={docHandle}
 						quill={quillHandle}
 						onActiveAddrChange={handleActiveAddr}
@@ -349,9 +331,9 @@
 				<span class="grip" aria-hidden="true">⋮</span>
 			</div>
 			<section class="pg-frame preview-pane" aria-label="Live preview">
-				{#if session}
+				{#if session && bridge}
 					<Preview
-						bind:this={previewRef}
+						bind:this={bridge.preview}
 						{session}
 						onCaretPick={handleCaretPick}
 						onError={handleError}
@@ -360,11 +342,11 @@
 			</section>
 		</div>
 
-		{#if showSource && docHandle}
+		{#if showSource && docHandle && bridge}
 			<section class="pg-frame drawer" aria-label="Debug source view" data-testid="source-drawer">
 				<p class="pg-label drawer-label">Canonical markdown — read only</p>
 				<div class="source-host">
-					<SourceView bind:this={sourceRef} doc={docHandle} onError={handleError} />
+					<SourceView bind:this={bridge.source} doc={docHandle} onError={handleError} />
 				</div>
 			</section>
 		{/if}

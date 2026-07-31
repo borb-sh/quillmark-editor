@@ -80,6 +80,12 @@ function collectFiles(dir: string): string[] {
 	return out;
 }
 
+// The bundled bridge joins the two surfaces at the SHELL layer, so it must import
+// neither of them: what it takes are structural handles, which is the property
+// that keeps the surfaces mutually unaware while a consumer wires them in one line.
+const BRIDGE = join(LIB, 'bridge');
+const BRIDGE_FORBIDDEN = /^(prosemirror-|@quillmark\/editor\/(visual|source|preview))/;
+
 describe('/preview reserved-package boundary', () => {
 	it('never reaches ProseMirror or the editor surfaces (transitively)', () => {
 		const seen = new Set<string>();
@@ -97,6 +103,32 @@ describe('/preview reserved-package boundary', () => {
 			}
 		};
 		for (const f of collectFiles(PREVIEW)) walk(f);
+		expect(violations, violations.join('\n')).toEqual([]);
+	});
+});
+
+describe('/bridge couples no surface to another', () => {
+	it('reaches `/core` and nothing else (transitively)', () => {
+		const seen = new Set<string>();
+		const violations: string[] = [];
+		const walk = (file: string): void => {
+			if (seen.has(file)) return;
+			seen.add(file);
+			const inside = relative(LIB, file);
+			if (/^(visual|preview|source)\b/.test(inside)) {
+				violations.push(`reaches ${inside}`);
+				return;
+			}
+			for (const spec of specifiersOf(file)) {
+				if (BRIDGE_FORBIDDEN.test(spec)) {
+					violations.push(`${inside} imports "${spec}"`);
+					continue;
+				}
+				const next = resolveInLib(spec, file);
+				if (next) walk(next);
+			}
+		};
+		for (const f of collectFiles(BRIDGE)) walk(f);
 		expect(violations, violations.join('\n')).toEqual([]);
 	});
 });

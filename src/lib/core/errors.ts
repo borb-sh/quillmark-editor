@@ -34,6 +34,10 @@ export type EditorErrorCode =
 	| 'serialize'
 	/** A tip's markdown did not render; the card shows the literal text. */
 	| 'render'
+	/** A recompile (`session.apply`) threw. Reported by the bundled bridge, which
+	 *  is the only part of the package that calls it; a consumer driving `apply`
+	 *  itself catches its own throw. */
+	| 'apply'
 	/** A handle swapped in place, against the remount contract. DEV ONLY, and the
 	 *  one code that is a contract violation rather than a failure. */
 	| 'rebind';

@@ -35,6 +35,11 @@
 			"types": "./dist/source/index.d.ts",
 			"svelte": "./dist/source/index.js",
 			"default": "./dist/source/index.js"
+		},
+		"./bridge": {
+			"types": "./dist/bridge/index.d.ts",
+			"svelte": "./dist/bridge/index.js",
+			"default": "./dist/bridge/index.js"
 		}
 	},
 	"files": [

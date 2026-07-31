@@ -20,6 +20,7 @@ Each subpath is its own module root; a bundler pulls only what the entry you imp
 | `@quillmark/editor/preview` | The live preview: `createPreview` + `<Preview>`. Reaches `/core` and nothing editor-side, so `@quillmark/preview` can promote to a re-export. |
 | `@quillmark/editor/visual`  | The federated WYSIWYG: `<VisualEditor>`, the codec's `createField` prose leaf, the emitted payload types.                                     |
 | `@quillmark/editor/source`  | The read-only debug source view: `createSourceView` + `<SourceView>`.                                                                         |
+| `@quillmark/editor/bridge`  | `connect()`: the shell wiring (recompile, repaint, re-serialize, both caret hops). Structural handles, so it couples no surface to another.   |
 | `@quillmark/editor`         | Re-exports `/core` (the shared substrate).                                                                                                    |
 
 ## Open a session
@@ -44,7 +45,8 @@ const session = await new Engine().open(quill, doc);
 ```ts
 import { createPreview } from '@quillmark/editor/preview';
 
-const preview = createPreview(session, {
+const preview = createPreview({
+	session,
 	container: document.querySelector('#preview')!,
 	onCaretPick: (hit) => {
 		/* a click resolved to a content position; see the bridge below */
@@ -89,9 +91,26 @@ Every surface takes an `onError`. The surfaces recover from what goes wrong insi
 
 Swap `doc`/`quill` by **remounting** (`{#key doc}`); edits flow the other way, mutating the passed-in handle. Swapping in place is not observed; in a dev build the surface says so on the console.
 
-## The caret bridge
+## Wiring the three together
 
-The bridge lives at the **consumer** layer and is opt-in; the editor is unaware of the preview, the preview unaware of the editor. Wire the two directions:
+`connect()` is the shell wiring, bundled: one debounced recompile per settled burst (a card operation applies at once), the repaint and the re-serialize that follow it, and both caret hops.
+
+```svelte
+<script lang="ts">
+	import { connect } from '@quillmark/editor/bridge';
+	const bridge = connect({ session, doc });
+</script>
+
+<VisualEditor bind:this={bridge.editor} {doc} {quill} {...bridge.editorProps} />
+<Preview bind:this={bridge.preview} {session} {...bridge.previewProps} />
+<SourceView bind:this={bridge.source} {doc} />
+```
+
+It takes **structural handles**, so it imports neither surface and couples neither to the other; a consumer with only a preview passes only a preview. Call `bridge.flush()` after mutating the document yourself, and `bridge.destroy()` on teardown.
+
+## The caret bridge, by hand
+
+What `connect` does for the two carets, for a consumer wiring it itself. The editor is unaware of the preview, the preview unaware of the editor:
 
 Each surface emits the argument the other one takes, so both directions are pass-throughs:
 

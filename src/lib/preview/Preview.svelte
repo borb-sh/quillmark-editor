@@ -38,6 +38,8 @@
 		style?: string;
 		margin?: number;
 		overlays?: boolean;
+		/** The initial density multiplier; `setZoom` moves it after mount. */
+		zoom?: number;
 		onCaretPick?: (hit: ContentHit) => void;
 		/** Paint failures and the remount contract; absent → the console. */
 		onError?: EditorErrorHandler;
@@ -60,6 +62,7 @@
 		session,
 		margin,
 		overlays,
+		zoom,
 		onCaretPick,
 		onError,
 		strings,
@@ -83,10 +86,12 @@
 
 	onMount(() => {
 		if (!containerEl) return;
-		controller = createPreview(session, {
+		controller = createPreview({
+			session,
 			container: containerEl,
 			margin,
 			overlays,
+			zoom,
 			onCaretPick,
 			onError,
 			strings,

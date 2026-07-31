@@ -17,9 +17,11 @@ The heavy machinery (ProseMirror, canvas paint) is already framework-agnostic, s
 
 ## Packaging
 
-**One package, `@quillmark/editor`, with subpath exports**: `/core`, `/preview`, `/visual`, `/source` ship; `/form` is reserved for the metadata surface. Not split into `@quillmark/preview` etc.
+**One package, `@quillmark/editor`, with subpath exports**: `/core`, `/preview`, `/visual`, `/source`, `/bridge` ship; `/form` is reserved for the metadata surface. Not split into `@quillmark/preview` etc.
 
 Subpaths, not separate packages, because the thing a split would buy (a preview-only consumer not pulling ProseMirror) is a dependency-graph concern that subpath entries already solve: each subpath is its own module root, so a bundler pulls only what the imported entry reaches. The one thing separate packages add, independent versioning, is a cost here: the surfaces share a substrate (Document model, engine boundary, `ContentHit`/`ChangeSet` types) and co-evolve, so a per-package version matrix is tax with no payer.
+
+`/bridge` is the shell wiring bundled (`connect()`): the debounced recompile, the repaint and re-serialize behind it, and both caret hops. It is a subpath rather than a helper inside a surface because it is the layer ABOVE both, and it takes structural handles rather than importing either — so the two surfaces stay mutually unaware, a consumer with one surface passes one, and the `/preview` promotion below is untouched. Bundled rather than described in a README because the debounce, the structure-op fast path and the teardown are exactly what a hand-copied bridge gets wrong, and the playground consuming it proves the seam better than the playground reimplementing it.
 
 Reserved, not taken: `@quillmark/preview` as its own package. Preview is the one surface with a distinct audience (read-only viewer, share page, CI screenshot) that wants neither a dep named "editor" nor the editor deps. Keep the `/preview` subpath free of any editor-side import so the promotion stays a re-export, not a refactor; pay it when a viewer-only consumer appears.
 

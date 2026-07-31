@@ -18,7 +18,7 @@ The **consumer** owns the session and drives edits, from any source (source edit
 
 ```ts
 const session = engine.open(quill, doc);            // consumer owns
-const preview = createPreview(session, { container });
+const preview = createPreview({ session, container });
 // …
 const changeSet = session.apply(nextDoc);           // edit from any source
 preview.refresh(changeSet);                         // repaint dirty ∩ visible
@@ -63,13 +63,19 @@ click → PDF-pt → session.positionAt(p, x, y) → ContentHit → onCaretPick(
 ## Minimal surface
 
 ```ts
-function createPreview(session: LiveSession, opts: PreviewOptions): PreviewController;
+function createPreview(opts: PreviewOptions): PreviewController;
 
 interface PreviewOptions {
+  session: LiveSession;   // in the options, like every other constructor's handle
   container: HTMLElement;
   margin?: number;        // pages kept painted beyond the viewport; default 1
   overlays?: boolean;     // draw field-box overlays; default true
+  zoom?: number;          // initial density multiplier; default 1
   onCaretPick?(hit: ContentHit): void;   // preview → editor
+  onState?(state: PreviewState | null): void;  // the message states, for a host drawing its own
+  messages?: boolean;     // draw the built-in message; default true
+  strings?: Partial<PreviewStrings>;
+  onError?: EditorErrorHandler;
 }
 
 interface PreviewController {
