@@ -148,14 +148,14 @@ function anchorPlugin(seed: AnchorPos[]): Plugin<AnchorPos[]> {
  * `addr.card` throws, unreachable here: a removed card unmounts its keyed leaf
  * before a stale index is read.
  *
- * A richtext leaf is stored EITHER as content or as the markdown string a
- * document carries verbatim when it was parsed rather than seeded
- * (`Document.fromMarkdown` / `fromJson`, the door a consumer opens a saved
- * document through). `getStored` is the verbatim read, so it hands back whichever
- * is there; a string goes through the boundary's own markdown door, which is the
- * same projection the codec exports back out. Without this the leaf crashes on
- * every field of a loaded document — a form the editor never sees while a document
- * is only ever seeded. */
+ * A parsed document (`Document.fromMarkdown` / `fromJson`) reads a richtext FIELD
+ * back as the markdown string it parsed, against `getStored`'s own documented
+ * return ("a content object for a richtext field") and against the same document's
+ * body, which reads as `Content`. An upstream deviation, not a second legal form
+ * (DOCUMENT_MODEL): the write path already normalizes. Until it moves, a string
+ * goes through the boundary's own markdown door here — the same projection the
+ * codec exports back out — because without it the decode crashes on every field of
+ * every loaded document. */
 function readLeaf(doc: Document, addr: Addr): Content {
 	const stored = doc.getStored(addr);
 	if (stored == null) return emptyContent();
