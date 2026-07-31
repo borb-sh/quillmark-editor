@@ -118,6 +118,19 @@ describe("renderQuiverSamples", () => {
     expect(files).toContain("memo@1.0.0.svg");
   });
 
+  it("rejects an unsupported output format before rendering", async () => {
+    // `txt` was a valid OutputFormat until wasm 0.98 removed it. It now fails
+    // up front rather than once per quill at render time.
+    await expect(
+      renderQuiverSamples(PREVIEW_FIXTURE, {
+        engine: makeEngine(),
+        outDir: makeOutDir(),
+        format: "txt",
+        quiet: true,
+      }),
+    ).rejects.toThrow(/Unknown output format 'txt'.*pdf, svg, png/s);
+  });
+
   it("records a render failure without aborting the run", async () => {
     const outDir = makeOutDir();
     const engine = explodingEngine(() => {

@@ -36,6 +36,25 @@ import type { Engine, RenderResult, OutputFormat } from "@quillmark/wasm";
 /** Default directory rendered artifacts are written to. */
 const DEFAULT_OUT_DIR = "preview";
 
+/** Output formats the engine supports. `txt` was removed in wasm 0.98. */
+const OUTPUT_FORMATS: readonly OutputFormat[] = ["pdf", "svg", "png"];
+
+/**
+ * Narrows the CLI's free-form `--format` string to an `OutputFormat`.
+ *
+ * The engine rejects anything else at render time with a per-quill diagnostic,
+ * which would report the same typo once per quill. Checking up front turns that
+ * into one clear error before any rendering starts.
+ */
+function parseFormat(format: string): OutputFormat {
+  if ((OUTPUT_FORMATS as readonly string[]).includes(format)) {
+    return format as OutputFormat;
+  }
+  throw new Error(
+    `Unknown output format '${format}'. Expected one of: ${OUTPUT_FORMATS.join(", ")}.`,
+  );
+}
+
 export interface RenderQuiverSamplesOptions {
   /**
    * Canonical render engine (`new Engine()` from `@quillmark/wasm`). It takes the
@@ -45,7 +64,7 @@ export interface RenderQuiverSamplesOptions {
   engine: Engine;
   /** Directory to write rendered artifacts into. Default: `preview`. */
   outDir?: string;
-  /** Force an output format (`pdf`/`svg`/`png`/`txt`). Default: engine's choice. */
+  /** Force an output format (`pdf`/`svg`/`png`). Default: engine's choice. */
   format?: string;
   /** Suppress the console summary. Default: false. */
   quiet?: boolean;
@@ -94,6 +113,7 @@ export async function renderQuiverSamples(
   opts: RenderQuiverSamplesOptions,
 ): Promise<RenderedSample[]> {
   const outDir = opts.outDir ?? DEFAULT_OUT_DIR;
+  const format = opts.format === undefined ? undefined : parseFormat(opts.format);
   const quiver = await Quiver.fromDir(metaUrlOrDir);
   await mkdir(outDir, { recursive: true });
 
@@ -101,7 +121,9 @@ export async function renderQuiverSamples(
   for (const name of quiver.quillNames()) {
     for (const version of quiver.versionsOf(name)) {
       if (!isSelected(name, `${name}@${version}`, opts)) continue;
-      results.push(await renderOne(quiver, name, version, outDir, opts));
+      results.push(
+        await renderOne(quiver, name, version, outDir, opts.engine, format),
+      );
     }
   }
 
@@ -144,7 +166,8 @@ async function renderOne(
   name: string,
   version: string,
   outDir: string,
-  opts: RenderQuiverSamplesOptions,
+  engine: Engine,
+  format: OutputFormat | undefined,
 ): Promise<RenderedSample> {
   const ref = `${name}@${version}`;
 
@@ -155,10 +178,10 @@ async function renderOne(
     const quill = await quiver.getQuill(ref);
     const doc = quill.seedDocument();
     try {
-      result = await opts.engine.render(
+      result = await engine.render(
         quill,
         doc,
-        opts.format ? { format: opts.format as OutputFormat } : undefined,
+        format ? { format } : undefined,
       );
     } finally {
       doc.free();
