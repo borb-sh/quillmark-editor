@@ -1,8 +1,8 @@
-# @quillmark/ui
+# quillmark-js
 
-Editor + live-preview component library for Quillmark WASM consumers. SvelteKit lib/app repo: `src/lib` → `svelte-package` → the published package; `src/routes` → the dev playground, never published.
+The JS tier downstream of the `@quillmark/wasm` artifact: `packages/ui` (surfaces over a session), `packages/quiver` (collections → quills), `packages/playground` (the private app that composes them). One npm workspace, one install, one gate.
 
-Start at [`prose/canon/INDEX.md`](prose/canon/INDEX.md), the settled systems; work that is not settled lives in GitHub issues. Canon is **malleable** (no consumers, no compatibility promise): a doc that contradicts the design in hand gets rewritten in the same commit as the code.
+Start at [`prose/canon/INDEX.md`](prose/canon/INDEX.md) for the rules spanning packages, then the package's own `prose/canon/`; work that is not settled lives in GitHub issues. Canon is **malleable** (no consumers, no compatibility promise): a doc that contradicts the design in hand gets rewritten in the same commit as the code.
 
 ## Prose
 
@@ -10,25 +10,26 @@ Comments and docs are dense, present-tense, unsold: state what is, not how it go
 
 ## Commands
 
-Scripts are `package.json`'s. CI (`.github/workflows/ci.yml`) gates `lint`, `check`, `check:canon`, `check:style`, `test`, and `build`.
+Every command is the root's; a package script is reached with `-w packages/<name>`. CI (`.github/workflows/ci.yml`) gates `lint`, `check`, `check:canon`, `check:style`, `check:deps`, `test`, and `build`. A verb name means one thing across the workspace; the implementations differ per package.
 
 ## Boundaries
 
-- The editor consumes the published `@quillmark/wasm` pinned in `package.json`; the sibling `quillmark` checkout is reference only: read it, never build against it.
+- `ui ↛ quiver` and `quiver ↛ ui`, both directions; only the playground has edges to both. `check:deps` holds it.
+- Every published package peers `@quillmark/wasm` and none depends on it; root `overrides` pins the developed-against version. The sibling `quillmark` checkout is reference only: read it, never build against it.
 - The playground uses only the public subpath API; a needed internal is an API gap to fix, not a reach-in.
-- `/preview` imports no editor-side code (the reserved `@quillmark/preview` promotion stays a re-export).
+- `/preview` imports no editor-side code, transitively: a preview consumer does not pull ProseMirror.
 
 ## The WASM boundary
 
-- Boundary ledger (consumed surface, canon homes, stability): [`prose/canon/DOCUMENT_MODEL.md`](prose/canon/DOCUMENT_MODEL.md).
-- `DocumentWriter` and the ergonomic verbs live in the package's hand-written runtime layer; `node_modules/@quillmark/wasm/runtime/runtime.d.ts` is the canonical typing. Read it before assuming a verb's shape.
+- Boundary ledger (consumed surface, canon homes, stability): [`packages/ui/prose/canon/DOCUMENT_MODEL.md`](packages/ui/prose/canon/DOCUMENT_MODEL.md).
+- `DocumentWriter` and the ergonomic verbs live in the artifact's hand-written runtime layer; `node_modules/@quillmark/wasm/runtime/runtime.d.ts` is the canonical typing. Read it before assuming a verb's shape.
 
 ## Verification
 
-Vitest is the whole committed suite (real WASM under node; `vitest.config.ts` documents the setup), and CI runs it in full. The playground is the surface for what a unit test cannot reach (canvas paint, scroll virtualization, DPR, the click round-trip), driven by hand or headlessly for the change in front of you. Chromium is preinstalled (`/opt/pw-browsers/chromium`, `PLAYWRIGHT_BROWSERS_PATH` preset; never run `playwright install`).
+Vitest is the whole committed suite (real WASM under node; each package's `vitest.config.ts` documents its setup), and CI runs it in full. The playground is the surface for what a unit test cannot reach (canvas paint, scroll virtualization, DPR, the click round-trip), driven by hand or headlessly for the change in front of you. Chromium is preinstalled (`/opt/pw-browsers/chromium`, `PLAYWRIGHT_BROWSERS_PATH` preset; never run `playwright install`).
 
 Nothing browser-driven is committed: a browser assertion over chrome restates a doctrine value (a leading rung, a control height, a gutter) outside the CSS that single-sources it, so it fails on every retune of a dial it does not own, and the failure is answered by pasting the new number; what survives that is a suite of numbers agreeing with themselves.
 
-Everything runs against the reference quill [`fixtures/quills/usaf_memo/0.2.0`](fixtures/quills/usaf_memo/0.2.0), a dev fixture, never published.
+Everything runs against the reference quill [`fixtures/quills/usaf_memo/0.2.0`](fixtures/quills/usaf_memo/0.2.0), a dev fixture at the workspace root, never published.
 
 In a cloud environment, commit early and often.
