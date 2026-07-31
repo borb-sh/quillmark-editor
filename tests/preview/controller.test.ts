@@ -205,3 +205,42 @@ describe('preview controller paint resilience', () => {
 		preview.destroy();
 	});
 });
+
+// The message states as a REPORTED state, not only a drawn one: the seam a Svelte
+// wrapper (or any host) draws its own empty state through, since a vanilla core
+// cannot take a snippet.
+describe('preview message state reporting', () => {
+	let container: HTMLDivElement;
+	beforeEach(() => {
+		container = document.createElement('div');
+		document.body.appendChild(container);
+	});
+
+	it('reports entering and leaving a state, and takes the consumer wording', () => {
+		const states: (string | null)[] = [];
+		const preview = createPreview(mockSession(0), {
+			container,
+			strings: { empty: 'Rien à prévisualiser.' },
+			onState: (s) => states.push(s)
+		});
+		expect(states).toEqual(['empty']);
+		expect(container.textContent).toContain('Rien à prévisualiser.');
+
+		preview.refresh(change(2));
+		expect(states).toEqual(['empty', null]);
+		preview.destroy();
+	});
+
+	it('draws nothing under `messages: false`, and still reports', () => {
+		const states: (string | null)[] = [];
+		const preview = createPreview(mockSession(0), {
+			container,
+			messages: false,
+			onState: (s) => states.push(s)
+		});
+		expect(states).toEqual(['empty']);
+		expect(container.querySelector('.qm-preview-message')).toBeNull();
+		expect(container.textContent).toBe('');
+		preview.destroy();
+	});
+});

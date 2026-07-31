@@ -39,6 +39,8 @@
 		describedBy?: string;
 	}
 	let { description, label, describedBy }: Props = $props();
+	import { strings } from './context.js';
+	const s = strings();
 
 	let open = $state(false);
 	let triggerEl = $state<HTMLButtonElement | undefined>(undefined);
@@ -56,7 +58,7 @@
 	bind:this={triggerEl}
 	type="button"
 	class="qm-field-hint qm-icon-btn qm-focus-ring"
-	aria-label="{label} guidance"
+	aria-label={s().fieldGuidance(label)}
 	aria-expanded={open}
 	aria-describedby={describedBy}
 	onpointerenter={(e) => {

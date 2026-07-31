@@ -3,7 +3,7 @@
 // nothing here imports it; what the two share is `/core`'s address grammar, which
 // is what lets a consumer wire the bridge as a pass-through rather than a
 // translation.
-import type { Addr } from '../core/index.js';
+import type { Addr, CardInput } from '../core/index.js';
 
 /**
  * Where a caret is, in BOTH addressings: the canonical `DocPath` (`field`, what
@@ -47,4 +47,29 @@ export interface EditorChange {
 	/** Where it landed, when the change has one place: absent for a card removal
 	 *  and a tips dismissal, which are the stack's change rather than a leaf's. */
 	addr?: Addr;
+}
+
+/**
+ * What a consumer snippet is handed for the card it renders into: the card's
+ * IDENTITY (the address a consumer's own reads take, and the kind that keys its
+ * schema), and the three structure verbs.
+ *
+ * The verbs are here rather than left to `doc.insertCard` because the editor owns
+ * card identity: a consumer mutating the card array behind it leaves the stable-id
+ * array a position short and every later address off by one, with nothing raised.
+ * An extension point over a structure the surface owns has to hand over the
+ * surface's own verbs, or it hands over a footgun.
+ *
+ * `main` has no position: its `remove`/`move` are no-ops, and `insertAfter` puts
+ * the card at the front of the stack.
+ */
+export interface CardContext {
+	addr: Addr;
+	kind: string;
+	isMain: boolean;
+	/** Insert after this card. A `Card` read off `doc.cards` is a valid `CardInput`,
+	 *  so "duplicate" is `insertAfter(doc.cards[i])`. */
+	insertAfter(card: CardInput): void;
+	remove(): void;
+	move(dir: -1 | 1): void;
 }

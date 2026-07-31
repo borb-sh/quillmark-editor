@@ -63,6 +63,8 @@
 		onCommit,
 		onFocusEl
 	}: Props = $props();
+	import { strings } from './context.js';
+	const s = strings();
 
 	// The ELEMENT control is the item schema's own; an array declaring no `items`
 	// has text elements.
@@ -220,7 +222,7 @@
 					bind:this={els[id]}
 					value={(arr[k] ?? emptyElement()) as Content}
 					{plaintext}
-					label={label != null ? `${label} ${k + 1}` : undefined}
+					label={label != null ? s().arrayItem(label, k + 1) : undefined}
 					onChange={(rt) => commitElement(k, rt)}
 					onKey={(e) => onElementKey(e, k)}
 					{onFocusEl}
@@ -228,7 +230,7 @@
 			{:else if control === 'object'}
 				<textarea
 					class="qm-input qm-json qm-focus-ring"
-					aria-label={label != null ? `${label} ${k + 1}` : undefined}
+					aria-label={label != null ? s().arrayItem(label, k + 1) : undefined}
 					value={JSON.stringify(arr[k] ?? {})}
 					onchange={(e) => {
 						try {
@@ -247,8 +249,11 @@
 					onKey={(e) => onElementKey(e, k)}
 				/>
 			{/if}
-			<button type="button" class="qm-icon-btn qm-remove" title="Remove" onclick={() => remove(k)}
-				><X size={14} /></button
+			<button
+				type="button"
+				class="qm-icon-btn qm-remove"
+				title={s().arrayItemRemove}
+				onclick={() => remove(k)}><X size={14} /></button
 			>
 		</div>
 	{/each}

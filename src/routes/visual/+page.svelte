@@ -19,6 +19,7 @@
 	import { base } from '$app/paths';
 	import { page } from '$app/state';
 	import type { Quill, Document, Addr, CardAddr, Content, Diagnostic } from '$lib/core';
+	import type { ActiveField, CardContext, EditorStrings } from '$lib/visual';
 	import { loadUsafMemoTree, withMainDateDefault, withSecondCardKind } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
@@ -52,11 +53,11 @@
 			: undefined
 	);
 
-	// A consumer empty-body wording stand-in, deliberately the WORST case for
-	// determinism: it samples at random and is a fresh closure on every re-derive.
-	// The editor consults it once per kind and keeps the answer, so the ghosts hold
-	// still anyway: the reason a consumer may write a hook this careless without
-	// it showing.
+	// The wording channel, both halves of it. `bodyPlaceholder` is deliberately the
+	// WORST case for determinism: it samples at random and is a fresh closure on
+	// every re-derive. The editor consults it once per kind and keeps the answer, so
+	// the ghosts hold still anyway: the reason a consumer may write a hook this
+	// careless without it showing.
 	let wittyGhosts = $state(false);
 	const WITTY = [
 		'Say something unforgettable…',
@@ -64,9 +65,54 @@
 		'The blank page is bluffing…',
 		'Draft badly, revise later…'
 	];
-	const bodyPlaceholder = $derived(
-		wittyGhosts ? () => WITTY[Math.floor(Math.random() * WITTY.length)] : undefined
+	// A translated surface, standing in for a product that ships in two languages:
+	// a handful of keys, the rest inherited. Partial on purpose — an override set
+	// is a `Partial`, so a consumer translates what it has words for.
+	let french = $state(false);
+	const FRENCH: Partial<EditorStrings> = {
+		cardMoveUp: 'Monter',
+		cardMoveDown: 'Descendre',
+		cardDelete: 'Supprimer la carte',
+		cardTitle: 'Titre de la carte',
+		cardBody: 'Corps',
+		addCard: 'Ajouter une carte',
+		addCardOfKind: (_kind, humanized) => `Ajouter ${humanized}`,
+		arrayItem: (label, index) => `${label} ${index}`,
+		arrayItemRemove: 'Retirer',
+		fieldGuidance: (label) => `Aide : ${label}`,
+		formatGroup: 'Mise en forme',
+		markStrong: 'Gras (Mod-B)',
+		markEm: 'Italique (Mod-I)',
+		markUnderline: 'Souligné (Mod-U)',
+		markStrike: 'Barré',
+		markCode: 'Code',
+		markLink: 'Lien',
+		linkApply: 'Appliquer',
+		linkCancel: 'Annuler',
+		tips: "Conseils de l'éditeur",
+		tipPosition: (index, total) => `Conseil ${index} sur ${total}`,
+		tipNext: 'Suivant',
+		tipDismiss: 'Fermer',
+		bodyPlaceholder: () => 'Écrivez…'
+	};
+	// Two consumer channels over one contract: the translation, then the ghost hook
+	// on top of it, since `strings` merges key by key.
+	const strings = $derived<Partial<EditorStrings> | undefined>(
+		french || wittyGhosts
+			? {
+					...(french ? FRENCH : {}),
+					...(wittyGhosts
+						? { bodyPlaceholder: () => WITTY[Math.floor(Math.random() * WITTY.length)] }
+						: {})
+				}
+			: undefined
 	);
+
+	// A consumer extension in the card header, and the reason the extension point
+	// carries verbs: duplicating a card is a `Card` read off `doc.cards` pushed back
+	// in as a `CardInput` (they are the same shape), but the INSERT has to go through
+	// the editor, which owns the stable ids the addresses resolve against.
+	let duplicateAction = $state(false);
 
 	// A variant link flips its own flag and leaves the rest of the query alone, so
 	// the three compose.
@@ -135,8 +181,8 @@
 		return JSON.stringify(obj);
 	});
 
-	function handleActiveAddr(addr: Addr): void {
-		lastAddr = JSON.stringify(addr);
+	function handleActiveAddr(at: ActiveField): void {
+		lastAddr = JSON.stringify(at.addr);
 		refresh();
 	}
 
@@ -237,7 +283,8 @@
 						onChange={refresh}
 						diagnostics={externalDiagnostics}
 						{enumOptionAllowed}
-						{bodyPlaceholder}
+						{strings}
+						{cardActions}
 					/>
 				{/if}
 			</div>
@@ -265,6 +312,20 @@
 						aria-pressed={wittyGhosts}
 						onclick={() => (wittyGhosts = !wittyGhosts)}>Custom body placeholder</button
 					>
+					<button
+						class="pg-btn"
+						type="button"
+						data-testid="toggle-card-actions"
+						aria-pressed={duplicateAction}
+						onclick={() => (duplicateAction = !duplicateAction)}>Duplicate action</button
+					>
+					<button
+						class="pg-btn"
+						type="button"
+						data-testid="toggle-strings"
+						aria-pressed={french}
+						onclick={() => (french = !french)}>Français</button
+					>
 				</div>
 
 				<p class="pg-label">Fixture variants</p>
@@ -289,6 +350,22 @@
 		</div>
 	{/if}
 </main>
+
+{#snippet cardActions(card: CardContext)}
+	{#if duplicateAction && !card.isMain}
+		<button
+			class="pg-btn"
+			type="button"
+			data-testid="duplicate-card"
+			onclick={() => {
+				if (card.addr.card == null || !docHandle) return;
+				// Read the card back out and push the same shape in: `Card` IS a
+				// `CardInput`, so the duplicate needs no field-by-field copy.
+				card.insertAfter(docHandle.cards[card.addr.card]);
+			}}>Duplicate</button
+		>
+	{/if}
+{/snippet}
 
 <style>
 	.editor-shell {

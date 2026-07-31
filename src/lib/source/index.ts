@@ -6,5 +6,6 @@
 // a thin `<SourceView>` Svelte wrapper. Reaches `/core` (the `Document` handle)
 // and nothing else: no third-party dependency, no `/preview` or `/visual` import.
 export { createSourceView } from './view.js';
-export type { SourceViewOptions, SourceViewController } from './view.js';
+export type { SourceViewOptions, SourceViewController, SourceViewStrings } from './view.js';
+export { DEFAULT_SOURCE_STRINGS } from './view.js';
 export { default as SourceView } from './SourceView.svelte';

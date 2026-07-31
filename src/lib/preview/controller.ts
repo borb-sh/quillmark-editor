@@ -24,6 +24,31 @@ export interface CaretTarget {
 	pos: number;
 }
 
+/**
+ * The preview's own words: its three message states, which are the only text it
+ * renders. Same shape as the editor's `strings` (a `Partial`, merged over the
+ * package's English), so a consumer wires one wording contract per surface rather
+ * than one per string.
+ */
+/** A state the preview is IN instead of painting. `null` is painting. */
+export type PreviewState = 'empty' | 'unsupported' | 'error';
+
+export interface PreviewStrings {
+	/** A compile with zero pages: recoverable, and the state a seeded document opens in. */
+	empty: string;
+	/** A compile whose pages the backend cannot raster at all. */
+	unsupported: string;
+	/** A page that threw mid-paint. */
+	error: string;
+}
+
+/** The package's own words, to compose against rather than restate. */
+export const DEFAULT_PREVIEW_STRINGS: PreviewStrings = {
+	empty: 'No pages to preview.',
+	unsupported: 'Preview is not available for this document.',
+	error: 'Preview failed to render.'
+};
+
 export interface PreviewOptions {
 	/** The element the preview mounts into; becomes the scroll viewport. */
 	container: HTMLElement;
@@ -36,6 +61,21 @@ export interface PreviewOptions {
 	/** Paint failures, which the preview recovers from by showing its message
 	 *  state; absent → the console (`core/errors.ts`). */
 	onError?: EditorErrorHandler;
+	/** The message states' wording; unset keys take the package's English. */
+	strings?: Partial<PreviewStrings>;
+	/**
+	 * Told whenever the preview enters or leaves a message state (`null` while it
+	 * paints). The seam a host draws its own empty state through: a vanilla core
+	 * cannot take a Svelte snippet, so it reports the state and lets the layer that
+	 * can render it do so ({@link PreviewOptions.messages}).
+	 */
+	onState?(state: PreviewState | null): void;
+	/**
+	 * Draw the built-in message element. Default true; `false` reports the state
+	 * through {@link PreviewOptions.onState} and draws nothing, which is what
+	 * `<Preview>` passes when the consumer gave it a `message` snippet.
+	 */
+	messages?: boolean;
 }
 
 export interface PreviewController {
@@ -65,6 +105,7 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	const container = opts.container;
 	const margin = opts.margin ?? 1;
 	const overlaysEnabled = opts.overlays ?? true;
+	const words: PreviewStrings = { ...DEFAULT_PREVIEW_STRINGS, ...opts.strings };
 	container.classList.add(CONTAINER_CLASS);
 
 	// The full-container message slot, shared by every non-paint state: the empty
@@ -72,17 +113,30 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	// and a paint that threw. One element, restamped; these states are mutually
 	// exclusive, and the zero-page case keeps its `qm-preview-empty` hook.
 	let message: HTMLElement | undefined;
-	function showMessage(text: string, state: string): void {
-		if (!message) {
-			message = document.createElement('div');
-			container.appendChild(message);
+	// The state is reported whether or not it is drawn: a host that draws its own
+	// still needs to know, and a host that draws none still gets the class hook.
+	let state: PreviewState | null = null;
+	function showMessage(text: string, cls: string, next: PreviewState): void {
+		if (opts.messages !== false) {
+			if (!message) {
+				message = document.createElement('div');
+				container.appendChild(message);
+			}
+			message.className = `${MESSAGE_CLASS} ${cls}`;
+			message.textContent = text;
 		}
-		message.className = `${MESSAGE_CLASS} ${state}`;
-		message.textContent = text;
+		if (state !== next) {
+			state = next;
+			opts.onState?.(next);
+		}
 	}
 	function hideMessage(): void {
 		message?.remove();
 		message = undefined;
+		if (state !== null) {
+			state = null;
+			opts.onState?.(null);
+		}
 	}
 
 	// The paint loop is safe at any page count: zero pages reconciles to zero
@@ -98,7 +152,7 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 			cause: err,
 			page
 		});
-		showMessage('Preview failed to render.', ERROR_CLASS);
+		showMessage(words.error, ERROR_CLASS, 'error');
 	});
 	// overlay/bridge query geometry at build (`session.regions()`), so they are
 	// held until slots exist; (re)built by `render` when a compile is paintable.
@@ -133,8 +187,9 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 			paintLoop.refresh([], 0);
 			detach();
 			showMessage(
-				pageCount === 0 ? 'No pages to preview.' : 'Preview is not available for this document.',
-				pageCount === 0 ? EMPTY_CLASS : UNSUPPORTED_CLASS
+				pageCount === 0 ? words.empty : words.unsupported,
+				pageCount === 0 ? EMPTY_CLASS : UNSUPPORTED_CLASS,
+				pageCount === 0 ? 'empty' : 'unsupported'
 			);
 			return;
 		}

@@ -26,6 +26,8 @@
 		onError?: EditorErrorHandler;
 	}
 	let { tips, onDismiss, onError }: Props = $props();
+	import { strings } from './context.js';
+	const s = strings();
 
 	/** Control-glyph size: the shared rule (AESTHETIC §Icons), as CardControls. */
 	const GLYPH = 14;
@@ -57,7 +59,7 @@
 	}
 </script>
 
-<aside class="qm-tips" aria-label="Editor tips">
+<aside class="qm-tips" aria-label={s().tips}>
 	<!-- Advancing swaps the text under a button that keeps focus, so the region
 	     announces rather than the change passing silently. -->
 	<div class="qm-tips-body" aria-live="polite" bind:this={bodyEl}></div>
@@ -70,7 +72,7 @@
 					<button
 						type="button"
 						class="qm-tips-dot"
-						aria-label={`Tip ${i + 1} of ${tips.length}`}
+						aria-label={s().tipPosition(i + 1, tips.length)}
 						aria-current={i === index}
 						onclick={() => (cursor = i)}
 					></button>
@@ -81,9 +83,9 @@
 		     and its end is the exit. -->
 		<button type="button" class="qm-icon-btn qm-tips-action" onclick={advance}>
 			{#if isLast}
-				Dismiss <X size={GLYPH} />
+				{s().tipDismiss} <X size={GLYPH} />
 			{:else}
-				Next <ChevronRight size={GLYPH} />
+				{s().tipNext} <ChevronRight size={GLYPH} />
 			{/if}
 		</button>
 	</div>

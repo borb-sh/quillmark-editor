@@ -20,6 +20,17 @@
 import type { Document } from '../core/index.js';
 import { reportError, type EditorErrorHandler } from '../core/errors.js';
 
+/** The mirror's own words: the one text it renders that is not the document. */
+export interface SourceViewStrings {
+	/** Shown in place of the markdown when the serialize threw. */
+	unavailable: (message: string) => string;
+}
+
+/** The package's own words. */
+export const DEFAULT_SOURCE_STRINGS: SourceViewStrings = {
+	unavailable: (message) => `# source view unavailable\n\n${message}`
+};
+
 /** Options for {@link createSourceView}. */
 export interface SourceViewOptions {
 	/** The element the read-only mirror mounts into. */
@@ -29,6 +40,8 @@ export interface SourceViewOptions {
 	/** A serialize that threw, which the mirror recovers from by showing the error
 	 *  text; absent → the console (`core/errors.ts`). */
 	onError?: EditorErrorHandler;
+	/** The failure text's wording; unset keys take the package's English. */
+	strings?: Partial<SourceViewStrings>;
 }
 
 /** The debug source-view handle. */
@@ -43,22 +56,23 @@ const CONTAINER_CLASS = 'qm-source';
 const TEXT_CLASS = 'qm-source-text';
 
 /** Serialize the document, or surface the error text rather than throwing into a paint. */
-function serialize(doc: Document, onError?: EditorErrorHandler): string {
+function serialize(doc: Document, words: SourceViewStrings, onError?: EditorErrorHandler): string {
 	try {
 		return doc.toMarkdown();
 	} catch (e) {
 		// `toMarkdown` is round-trip safe for any valid document, but a boundary
 		// error must not crash the debug view; show it in place instead.
 		reportError(onError, { code: 'serialize', message: 'toMarkdown failed', cause: e });
-		return `# source view unavailable\n\n${e instanceof Error ? e.message : String(e)}`;
+		return words.unavailable(e instanceof Error ? e.message : String(e));
 	}
 }
 
 export function createSourceView(opts: SourceViewOptions): SourceViewController {
 	const { container, doc, onError } = opts;
+	const words: SourceViewStrings = { ...DEFAULT_SOURCE_STRINGS, ...opts.strings };
 	container.classList.add(CONTAINER_CLASS);
 
-	let current = serialize(doc, onError);
+	let current = serialize(doc, words, onError);
 	const text = container.ownerDocument.createElement('pre');
 	text.className = TEXT_CLASS;
 	text.textContent = current;
@@ -66,7 +80,7 @@ export function createSourceView(opts: SourceViewOptions): SourceViewController 
 
 	return {
 		refresh(): void {
-			const next = serialize(doc, onError);
+			const next = serialize(doc, words, onError);
 			if (next === current) return; // no re-render when the serialize is unchanged
 			current = next;
 			// The container is the scroller, so a shorter document clamps its offset;

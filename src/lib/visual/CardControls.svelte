@@ -20,6 +20,8 @@
 		onDelete: () => void;
 	}
 	let { isFirst, isLast, onMoveUp, onMoveDown, onDelete }: Props = $props();
+	import { strings } from './context.js';
+	const s = strings();
 
 	/** Control-glyph size: the shared rule for the reorder/delete icons (AESTHETIC §Icons). */
 	const GLYPH = 14;
@@ -27,18 +29,22 @@
 
 <div class="qm-card-controls">
 	<div class="qm-card-reorder">
-		<button type="button" class="qm-icon-btn" title="Move up" disabled={isFirst} onclick={onMoveUp}
-			><ChevronUp size={GLYPH} /></button
+		<button
+			type="button"
+			class="qm-icon-btn"
+			title={s().cardMoveUp}
+			disabled={isFirst}
+			onclick={onMoveUp}><ChevronUp size={GLYPH} /></button
 		>
 		<button
 			type="button"
 			class="qm-icon-btn"
-			title="Move down"
+			title={s().cardMoveDown}
 			disabled={isLast}
 			onclick={onMoveDown}><ChevronDown size={GLYPH} /></button
 		>
 	</div>
-	<button type="button" class="qm-icon-btn qm-card-delete" title="Delete card" onclick={onDelete}
+	<button type="button" class="qm-icon-btn qm-card-delete" title={s().cardDelete} onclick={onDelete}
 		><X size={GLYPH} /></button
 	>
 </div>

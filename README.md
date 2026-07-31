@@ -121,6 +121,36 @@ source.refresh();
 
 Or `<SourceView {doc} />` with a `refresh()` method.
 
+## Wording, and the two extension points
+
+Every user-visible string the surfaces draw is one key in a `strings` contract, overridden key by key; unset keys take the package's English. Several are accessible names, not decoration.
+
+```svelte
+<VisualEditor {doc} {quill} strings={{ cardDelete: t('card.delete'), tipNext: t('tip.next') }} />
+<Preview {session} strings={{ empty: t('preview.empty') }} />
+```
+
+`DEFAULT_STRINGS` / `DEFAULT_PREVIEW_STRINGS` / `DEFAULT_SOURCE_STRINGS` are exported to compose against. The empty-body ghost is the entry that takes a function: `strings={{ bodyPlaceholder: ({ kind }) => … }}`, consulted once per kind and cached.
+
+Two snippets reach inside the chrome:
+
+```svelte
+<VisualEditor {doc} {quill}>
+	{#snippet cardActions(card)}
+		<!-- card: { addr, kind, isMain, insertAfter, remove, move } -->
+		<button onclick={() => card.insertAfter(doc.cards[card.addr.card])}>Duplicate</button>
+	{/snippet}
+</VisualEditor>
+
+<Preview {session}>
+	{#snippet message({ state, text })}
+		{#if state === 'empty'}<EmptyIllustration />{:else}<p>{text}</p>{/if}
+	{/snippet}
+</Preview>
+```
+
+The card snippet is handed **verbs**, not only an address: the editor owns card identity, so a consumer inserting into `doc.cards` behind it desyncs the card tree silently. All three surface roots take rest props, so `id`, `data-*` and `aria-*` land on the mounted element.
+
 ## Theming
 
 The surfaces carry the behavior against a neutral, overridable visual baseline: a set of `--qm-*` CSS custom properties you override on any ancestor. See [`THEMING.md`](THEMING.md).

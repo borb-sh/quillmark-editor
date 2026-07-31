@@ -14,9 +14,10 @@ export type { CreateFieldOpts, FieldController } from '../core/codec/index.js';
 // The projection types: useful to a consumer building its own chrome.
 export type { ControlKind, FieldModel, GroupSection, CardModel } from './structure.js';
 
-// Empty-body wording: the `bodyPlaceholder` hook's shape and the built-in string
-// it replaces. Exported so a consumer can word one kind and defer to the package
-// on the rest by returning `undefined`, or compose against the built-in.
+// Wording: the whole set the surface says, the package's own words to compose
+// against, and the empty-body hook that is one entry in it (`strings.ts`).
+export { DEFAULT_STRINGS, resolveStrings } from './strings.js';
+export type { EditorStrings } from './strings.js';
 export { DEFAULT_BODY_PLACEHOLDER } from './structure.js';
 export type { BodyPlaceholder, BodyPlaceholderContext } from './structure.js';
 
@@ -32,5 +33,5 @@ export { tipsChannel } from './tips.js';
 // argument, so the bridge is `onCaretMove={preview.focusPosition}`; the mapping
 // behind it is exported as the escape hatch, for a consumer addressing a leaf the
 // editor has not just reported (a saved cursor, a deep link).
-export type { CaretMove, ActiveField, EditorChange } from './signals.js';
+export type { CaretMove, ActiveField, EditorChange, CardContext } from './signals.js';
 export { fieldPathForAddr } from './caret.js';

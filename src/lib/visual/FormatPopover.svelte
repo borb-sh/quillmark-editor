@@ -64,17 +64,19 @@
 		getActiveLeaf: () => FieldController | undefined;
 	}
 	let { getActiveLeaf }: Props = $props();
+	import { strings } from './context.js';
+	const s = strings();
 
 	/** Mark size: the shared control-glyph rule for the popover icons (AESTHETIC §Icons). */
 	const GLYPH = 15;
 	/** The six content formatting marks (VISUAL_EDITOR_UIUX §Formatting); `anchor` is a 7th, rendered separately (a decoration toggle, not a PM `toggleMark` (see the button below). Each carries its Lucide glyph) the icon *is* the label (AESTHETIC §Icons: a glyph names its action). */
-	const MARKS: { name: string; icon: Component; title: string }[] = [
-		{ name: 'strong', icon: Bold, title: 'Bold (Mod-B)' },
-		{ name: 'em', icon: Italic, title: 'Emphasis (Mod-I)' },
-		{ name: 'underline', icon: Underline, title: 'Underline (Mod-U)' },
-		{ name: 'strike', icon: Strikethrough, title: 'Strikethrough' },
-		{ name: 'code', icon: Code, title: 'Code' },
-		{ name: 'link', icon: Link, title: 'Link' }
+	const MARKS: { name: string; icon: Component; title: () => string }[] = [
+		{ name: 'strong', icon: Bold, title: () => s().markStrong },
+		{ name: 'em', icon: Italic, title: () => s().markEm },
+		{ name: 'underline', icon: Underline, title: () => s().markUnderline },
+		{ name: 'strike', icon: Strikethrough, title: () => s().markStrike },
+		{ name: 'code', icon: Code, title: () => s().markCode },
+		{ name: 'link', icon: Link, title: () => s().markLink }
 	];
 
 	let open = $state(false);
@@ -289,30 +291,30 @@
 								<input
 									class="qm-link-input"
 									type="text"
-									placeholder="https://…"
+									placeholder={s().linkUrlPlaceholder}
 									bind:value={linkValue}
 								/>
-								<button type="submit" class="qm-icon-btn qm-mark-btn">Apply</button>
+								<button type="submit" class="qm-icon-btn qm-mark-btn">{s().linkApply}</button>
 								<button
 									type="button"
 									class="qm-icon-btn qm-mark-btn"
 									onmousedown={keepFocus}
-									onclick={cancelLink}>Cancel</button
+									onclick={cancelLink}>{s().linkCancel}</button
 								>
 							</form>
 						{:else}
 							<!-- `role="group"`, not `toolbar`: these buttons carry no roving-tabindex /
 							     arrow-key navigation, so the ARIA toolbar contract would be a lie;
 							     a labelled group is the honest description. -->
-							<div class="qm-format-buttons" role="group" aria-label="Formatting">
+							<div class="qm-format-buttons" role="group" aria-label={s().formatGroup}>
 								{#each MARKS as m (m.name)}
 									{@const Icon = m.icon}
 									<button
 										type="button"
 										class="qm-icon-btn qm-mark-btn"
 										class:active={activeMarks[m.name]}
-										title={m.title}
-										aria-label={m.title}
+										title={m.title()}
+										aria-label={m.title()}
 										onmousedown={keepFocus}
 										onclick={() => toggle(m.name)}><Icon size={GLYPH} /></button
 									>
@@ -321,8 +323,8 @@
 									type="button"
 									class="qm-icon-btn qm-mark-btn"
 									class:active={activeMarks.anchor}
-									title="Anchor — an identity handle over the selection"
-									aria-label="Anchor"
+									title={s().anchorHint}
+									aria-label={s().anchor}
 									onmousedown={keepFocus}
 									onclick={toggleAnchor}><Hash size={GLYPH} /></button
 								>

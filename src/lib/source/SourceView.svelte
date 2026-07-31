@@ -7,26 +7,29 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { createSourceView, type SourceViewController } from './view.js';
+	import { createSourceView, type SourceViewController, type SourceViewStrings } from './view.js';
 	import { rebindGuard } from '../core/rebind.js';
 	import type { Document } from '../core/index.js';
 	import type { EditorErrorHandler } from '../core/errors.js';
+	import type { HTMLAttributes } from 'svelte/elements';
 
 	/**
 	 * REMOUNT CONTRACT. `createSourceView` binds once in `onMount`; a later change
 	 * to `doc` is NOT observed. Swap the document by REMOUNTING (`{#key doc}`);
 	 * reflect in-place edits through the `refresh()` method.
 	 */
-	interface Props {
+	interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'class' | 'style'> {
 		doc: Document;
 		/** A serialize that threw, and the remount contract; absent → the console. */
 		onError?: EditorErrorHandler;
+		/** The failure text's wording; unset keys take the package's English. */
+		strings?: Partial<SourceViewStrings>;
 		/** Appended to the root's own class (see `Preview`). */
 		class?: string;
 		/** Merged onto the root; free because theming lands on `data-qm-root`. */
 		style?: string;
 	}
-	let { doc, onError, class: className, style }: Props = $props();
+	let { doc, onError, strings, class: className, style, ...rest }: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let controller: SourceViewController | undefined;
@@ -38,7 +41,7 @@
 
 	onMount(() => {
 		if (!containerEl) return;
-		controller = createSourceView({ container: containerEl, doc, onError });
+		controller = createSourceView({ container: containerEl, doc, onError, strings });
 		return () => {
 			controller?.destroy();
 			controller = undefined;
@@ -50,7 +53,15 @@
 	}
 </script>
 
-<div bind:this={containerEl} class="qm-source {className ?? ''}" {style} data-qm-root></div>
+<!-- `rest` first, so an `id`/`data-*`/`aria-*` lands without overwriting the class
+     or the theming marker (see `Preview`). -->
+<div
+	{...rest}
+	bind:this={containerEl}
+	class="qm-source {className ?? ''}"
+	{style}
+	data-qm-root
+></div>
 
 <style>
 	/* A DETACHED root, marked `data-qm-root` (core/theme.css). The container is

@@ -8,7 +8,16 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { createPreview, type PreviewController, type CaretTarget } from './controller.js';
+	import {
+		createPreview,
+		DEFAULT_PREVIEW_STRINGS,
+		type PreviewController,
+		type CaretTarget,
+		type PreviewState,
+		type PreviewStrings
+	} from './controller.js';
+	import type { Snippet } from 'svelte';
+	import type { HTMLAttributes } from 'svelte/elements';
 	import { rebindGuard } from '../core/rebind.js';
 	import type { LiveSession, ContentHit, ChangeSet } from '../core/index.js';
 	import type { EditorErrorHandler } from '../core/errors.js';
@@ -19,7 +28,7 @@
 	 * session by REMOUNTING (`{#key session}`, as the playground does); drive
 	 * in-place edits through the `refresh(change)` method, not a prop change.
 	 */
-	interface Props {
+	interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'class' | 'style'> {
 		session: LiveSession;
 		/** Appended to the root's own class: the surface is a mounted element the
 		 *  consumer positions, so it needs a handle for layout it owns. */
@@ -32,6 +41,19 @@
 		onCaretPick?: (hit: ContentHit) => void;
 		/** Paint failures and the remount contract; absent → the console. */
 		onError?: EditorErrorHandler;
+		/** The message states' wording; unset keys take the package's English. */
+		strings?: Partial<PreviewStrings>;
+		/**
+		 * What to draw INSTEAD of the built-in message, when the preview is in one of
+		 * its three non-painting states. Told which state and the text it would have
+		 * drawn, so a consumer restyling only the empty case still has the other two
+		 * words: `{#if state === 'empty'}<Illustration />{:else}<p>{text}</p>{/if}`.
+		 *
+		 * One snippet for three states rather than three props: the states are
+		 * mutually exclusive and share a slot, and the core reports which one it is in
+		 * (`onState`) precisely so this layer can render it.
+		 */
+		message?: Snippet<[{ state: PreviewState; text: string }]>;
 	}
 
 	let {
@@ -40,11 +62,17 @@
 		overlays,
 		onCaretPick,
 		onError,
+		strings,
+		message,
 		class: className,
-		style
+		style,
+		...rest
 	}: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
+	// The state the core reports, for the `message` snippet; `null` while painting.
+	let messageState: PreviewState | null = $state(null);
+	const words = $derived({ ...DEFAULT_PREVIEW_STRINGS, ...strings });
 	let controller: PreviewController | undefined;
 
 	// The remount contract, made loud in dev (`core/rebind.ts`): swapping `session`
@@ -60,7 +88,12 @@
 			margin,
 			overlays,
 			onCaretPick,
-			onError
+			onError,
+			strings,
+			// The core draws the message only when nothing better will: a snippet here
+			// means this layer owns the slot, and two texts in one box is the bug.
+			messages: !message,
+			onState: (next) => (messageState = next)
 		});
 		return () => {
 			controller?.destroy();
@@ -82,7 +115,16 @@
 	}
 </script>
 
-<div bind:this={containerEl} class="qm-preview {className ?? ''}" {style} data-qm-root></div>
+<!-- `rest` FIRST: an `id`, a `data-testid`, an `aria-*` the consumer needs on the
+     mounted element, without letting it overwrite the class or the theming marker
+     the surface depends on. -->
+<div {...rest} bind:this={containerEl} class="qm-preview {className ?? ''}" {style} data-qm-root>
+	{#if message && messageState}
+		<div class="qm-preview-message qm-preview-{messageState}">
+			{@render message({ state: messageState, text: words[messageState] })}
+		</div>
+	{/if}
+</div>
 
 <style>
 	/* A DETACHED root: the preview is not a descendant of the editor, so it carries

@@ -32,6 +32,7 @@
 		Quill,
 		Addr,
 		CardAddr,
+		CardInput,
 		Diagnostic,
 		ContentHit,
 		Resolved,
@@ -53,7 +54,6 @@
 		stringifyGhost,
 		resolveBodyGhost,
 		NO_RESOLVED_ROWS,
-		type BodyPlaceholder,
 		type CardModel,
 		type ResolvedCardRows
 	} from './structure.js';
@@ -69,10 +69,14 @@
 	import { fieldDomIds, groupPanelId } from './domid.js';
 	import { reorder } from './motion.js';
 	import { fieldPathForAddr } from './caret.js';
-	import type { CaretMove, ActiveField, EditorChange } from './signals.js';
+	import type { CaretMove, ActiveField, EditorChange, CardContext } from './signals.js';
+	import type { Snippet } from 'svelte';
+	import type { HTMLAttributes } from 'svelte/elements';
 	import { tipsChannel } from './tips.js';
 	import { patchEditorExt } from './ext.js';
 	import { rebindGuard } from '../core/rebind.js';
+	import { resolveStrings, type EditorStrings } from './strings.js';
+	import { provideStrings } from './context.js';
 	import { reportError, type EditorErrorHandler } from '../core/errors.js';
 	import Card from './Card.svelte';
 	import TipsCard from './TipsCard.svelte';
@@ -88,7 +92,7 @@
 	 * REMOUNTING (`{#key doc}`, as the playground does): edits flow the other way,
 	 * mutating the passed-in `doc` handle directly.
 	 */
-	interface Props {
+	interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'class' | 'style'> {
 		doc: Document;
 		quill: Quill;
 		/** The active leaf, in both addressings. */
@@ -129,17 +133,21 @@
 		 */
 		enumOptionAllowed?: (addr: Addr, value: string) => boolean;
 		/**
-		 * Consumer wording hook for an EMPTY BODY's ghost: given a card's kind,
-		 * return the invitation its empty body shows, or `undefined` to take the
-		 * built-in. A body with a resolved `default:` ghosts that and never consults
-		 * this: the default is the ghost that describes the render.
-		 *
-		 * Consulted ONCE PER KIND per session and cached, so a hook that samples a set
-		 * at random still reads as deliberate: two empty cards of a kind ghost the
-		 * same string, and a remount does not re-roll it. Absent → the built-in for
-		 * every kind.
+		 * Every word the surface says, overridable key by key (`strings.ts`): the
+		 * card controls' titles, the add trigger, the formatting popover, the tips
+		 * card, and the empty body's ghost, which is the entry that takes a function.
+		 * Unset keys take the package's English. Several are accessible NAMES, not
+		 * decoration.
 		 */
-		bodyPlaceholder?: BodyPlaceholder;
+		strings?: Partial<EditorStrings>;
+		/**
+		 * Consumer controls in EVERY card's header, beside the package's own
+		 * reorder/delete: the extension point a "duplicate card" or an app-side menu
+		 * lands in. Told the card's identity (`{ addr, kind, isMain }`) and nothing
+		 * about the editor's internals; it acts through the consumer's own `Document`
+		 * verbs, exactly as the shell around the surface does.
+		 */
+		cardActions?: Snippet<[CardContext]>;
 		/** Appended to the root's own class: the surface is a mounted element the
 		 * consumer positions, so it needs a handle for layout it owns. */
 		class?: string;
@@ -156,9 +164,11 @@
 		onError,
 		diagnostics,
 		enumOptionAllowed,
-		bodyPlaceholder,
+		strings: stringOverrides,
+		cardActions,
 		class: className,
-		style
+		style,
+		...rest
 	}: Props = $props();
 
 	// ── Reactivity + session identity ───────────────────────────────────────────
@@ -198,6 +208,11 @@
 		guardDoc(doc);
 		guardQuill(quill);
 	});
+
+	// The resolved words, provided to the subtree as a GETTER so a consumer swapping
+	// `strings` after mount reaches every component that says one (`context.ts`).
+	const words = $derived(resolveStrings(stringOverrides));
+	provideStrings(() => words);
 
 	const kinds = $derived(Object.keys(quill.schema.card_kinds ?? {}));
 
@@ -410,6 +425,29 @@
 		// there, so a card that never left the viewport does not move it at all.
 		void scrollCardIntoView(id, 'nearest');
 	}
+	/**
+	 * Insert `card` immediately after the card `id` (at the front, for `main`).
+	 * The seam a consumer extension needs: the editor owns card IDENTITY, so a
+	 * consumer calling `doc.insertCard` behind its back leaves the id array a
+	 * position short and every later address off by one, silently. Routing the
+	 * insert through here is what keeps the two in lockstep, and it is why the
+	 * card-header extension point is handed verbs rather than only an address.
+	 *
+	 * A `Card` read off `doc.cards` IS a valid `CardInput` (runtime.d.ts), so
+	 * "duplicate this card" is a consumer one-liner over this verb.
+	 */
+	function insertCardAfter(id: string, card: CardInput): void {
+		const at = cardIndexOf(id) + 1; // `main` resolves to -1: insert at the front
+		try {
+			doc.insertCard(card, at);
+			const newId = seq.next();
+			cardIds = [...cardIds.slice(0, at), newId, ...cardIds.slice(at)];
+			mutate('structure', { card: at });
+			void scrollCardIntoView(newId, 'center');
+		} catch (e) {
+			reportError(onError, { code: 'structure', message: 'insertCard failed', cause: e });
+		}
+	}
 	function removeCardById(id: string): void {
 		const i = cardIndexOf(id);
 		if (i < 0) return;
@@ -522,6 +560,7 @@
 			commit: (name: string, value: unknown) => commitScalar(id, isMain, name, value),
 			move: (dir: -1 | 1) => moveCardById(id, dir),
 			remove: () => removeCardById(id),
+			insertAfter: (card: CardInput) => insertCardAfter(id, card),
 			retype: (kind: string) => retypeCardById(id, kind),
 			rename: (title: string) => renameCardById(id, title),
 			diagFor: (field?: string) => diagByKey.get(leafKey(field)),
@@ -542,19 +581,19 @@
 	// a glitch. Retyping a card crosses to another key and re-asks, which is right:
 	// it is a different card now. Plain (non-`$state`) on purpose: memoization, so
 	// filling it during a derive must not feed back into one.
-	let ghostHook: BodyPlaceholder | undefined;
+	let ghostHook: EditorStrings['bodyPlaceholder'] | undefined;
 	const ghostByKind = new Map<string, string | undefined>();
 	function customBodyGhost(kind: string, isMain: boolean): string | undefined {
 		// A swapped hook invalidates every answer the old one gave.
-		if (bodyPlaceholder !== ghostHook) {
+		const hook = words.bodyPlaceholder;
+		if (hook !== ghostHook) {
 			ghostByKind.clear();
-			ghostHook = bodyPlaceholder;
+			ghostHook = hook;
 		}
-		if (!bodyPlaceholder) return undefined;
 		// `main` is not a `card_kinds` key, so a kind that spells it collides without
 		// the flag in the key.
 		const key = `${isMain ? '1' : '0'}\0${kind}`;
-		if (!ghostByKind.has(key)) ghostByKind.set(key, bodyPlaceholder({ kind, isMain }));
+		if (!ghostByKind.has(key)) ghostByKind.set(key, hook({ kind, isMain }));
 		return ghostByKind.get(key);
 	}
 
@@ -710,7 +749,9 @@
 	}
 </script>
 
-<div class="qm-editor {className ?? ''}" {style} data-qm-root bind:this={rootEl}>
+<!-- `rest` first: an `id`, a `data-testid`, an `aria-*` the consumer needs on the
+     mounted element, and never the class or the theming marker the surface reads. -->
+<div {...rest} class="qm-editor {className ?? ''}" {style} data-qm-root bind:this={rootEl}>
 	<!-- `main` and the tips card are ONE block in the stack: the tips card tucks under
 	 `main`'s bottom corners, so the two share a seam rather than a gutter and the
 	 wrapper is what holds them to it. -->
@@ -728,6 +769,7 @@
 			onCaretMove={handleCaret}
 			onProseChange={proseChanged}
 			{onError}
+			{cardActions}
 			{register}
 			{unregister}
 		/>
@@ -761,6 +803,7 @@
 				onCaretMove={handleCaret}
 				onProseChange={proseChanged}
 				{onError}
+				{cardActions}
 				{register}
 				{unregister}
 			/>
@@ -788,7 +831,7 @@
 				<button
 					type="button"
 					class="qm-add-btn qm-add-affordance"
-					aria-label="Add {humanize(kinds[0])}"
+					aria-label={words.addCardOfKind(kinds[0], humanize(kinds[0]))}
 					onclick={() => addCard(atIndex, kinds[0])}><Plus size={GLYPH} /></button
 				>
 			{:else}
@@ -798,7 +841,7 @@
 			 `<details>` does. The trigger is bits-ui's `<button>`, which is why the
 			 recede ladder below reaches it through `:global`. -->
 				<DropdownMenu.Root>
-					<DropdownMenu.Trigger class="qm-add-btn qm-add-affordance" aria-label="Add card"
+					<DropdownMenu.Trigger class="qm-add-btn qm-add-affordance" aria-label={words.addCard}
 						><Plus size={GLYPH} /></DropdownMenu.Trigger
 					>
 					<DropdownMenu.Portal to={rootEl}>

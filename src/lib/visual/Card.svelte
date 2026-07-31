@@ -9,10 +9,12 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import type { Document, Addr, Diagnostic } from '../core/index.js';
+	import type { CardInput, Document, Addr, Diagnostic } from '../core/index.js';
 	import type { EditorErrorHandler } from '../core/errors.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import type { CardModel, FieldModel } from './structure.js';
+	import type { Snippet } from 'svelte';
+	import type { CardContext } from './signals.js';
 	import { placeFields, humanize, initialExpandedGroup } from './structure.js';
 	import type { FieldDomIds } from './domid.js';
 	import Field from './Field.svelte';
@@ -29,6 +31,7 @@
 		commit: (name: string, value: unknown) => void;
 		move: (dir: -1 | 1) => void;
 		remove: () => void;
+		insertAfter: (card: CardInput) => void;
 		retype: (kind: string) => void;
 		rename: (title: string) => void;
 		diagFor: (field?: string) => Diagnostic[] | undefined;
@@ -38,6 +41,9 @@
 
 	interface Props {
 		card: CardModel;
+		/** Consumer controls in this card's header, beside the package's own
+		 *  (`VisualEditor` §"Extension points"). */
+		cardActions?: Snippet<[CardContext]>;
 		doc: Document;
 		index: number;
 		isFirst: boolean;
@@ -55,6 +61,7 @@
 	}
 	let {
 		card,
+		cardActions,
 		doc,
 		index,
 		isFirst,
@@ -68,6 +75,19 @@
 		register,
 		unregister
 	}: Props = $props();
+	import { strings } from './context.js';
+	const s = strings();
+
+	/** What a consumer snippet is told about the card it is rendering into: its
+	 *  IDENTITY, resolved at render, never the internals. */
+	const context = $derived<CardContext>({
+		addr: card.isMain ? {} : { card: index },
+		kind: card.kind,
+		isMain: card.isMain,
+		insertAfter: (input) => ops.insertAfter(input),
+		remove: () => ops.remove(),
+		move: (dir) => ops.move(dir)
+	});
 
 	// Local title reconcile (external change only), like the scalar controls.
 	// svelte-ignore state_referenced_locally
@@ -227,7 +247,7 @@
 							class="qm-card-title"
 							value={localTitle}
 							placeholder={card.titlePlaceholder}
-							aria-label="Card title"
+							aria-label={s().cardTitle}
 							size="1"
 							onmousedown={onTitleMousedown}
 							onfocus={onTitleFocus}
@@ -240,6 +260,7 @@
 					</span>
 				</div>
 				<div class="qm-card-header-right">
+					{@render cardActions?.(context)}
 					<CardControls
 						{isFirst}
 						{isLast}
@@ -343,7 +364,7 @@
 						{doc}
 						addr={ops.makeAddr(undefined)}
 						unframed
-						label="Body"
+						label={s().cardBody}
 						placeholder={card.bodyGhost}
 						leafKey={ops.leafKey(undefined)}
 						{onFocus}
@@ -400,6 +421,7 @@
 	<header class="qm-card-header">
 		<span class="qm-card-title-static">{humanize(card.kind)}</span>
 		<div class="qm-card-header-right">
+			{@render cardActions?.(context)}
 			<CardControls
 				{isFirst}
 				{isLast}
@@ -415,20 +437,20 @@
 		</p>
 		{#if kinds.length}
 			<label class="qm-recovery-retype">
-				Change to
+				{s().recoveryRetype}
 				<select
 					onchange={(e) => {
 						const el = e.currentTarget as HTMLSelectElement;
 						if (el.value) ops.retype(el.value);
 					}}
 				>
-					<option value="" disabled selected>Choose a type…</option>
+					<option value="" disabled selected>{s().recoveryChoose}</option>
 					{@render kindOptions()}
 				</select>
 			</label>
 		{:else}
 			<p class="qm-recovery-note qm-recovery-muted">
-				This document declares no card types — delete this card to remove it.
+				{s().recoveryNoKinds}
 			</p>
 		{/if}
 	</div>

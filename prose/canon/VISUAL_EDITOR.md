@@ -77,6 +77,15 @@ Editing chrome is thin and **per-leaf**; structural chrome is Svelte in the shel
 - **Tables / islands**: driven from the PM model (a `CellSelection`, decorations), not reconstructed from DOM geometry. An island is one PM leaf node over one content `U+FFFC` slot ([CODEC.md](CODEC.md) §Islands).
 - **Structure**: add-card affordance, headers, move/delete/retype controls, group sections, over the document mutators.
 
+## Extension points
+
+Two seams, and one rule behind both: an extension point over a structure the surface owns has to hand over the surface's own verbs, or it hands over a footgun.
+
+- **Wording** (`strings.ts`): every string the surface draws is one key in `EditorStrings`, resolved over the package's English key by key, and provided to the subtree as a getter through Svelte context (`context.ts`) rather than threaded as a prop through five components that only pass it on. Several keys are accessible NAMES: a glyph-only control is named here or is unnamed in the reader's language. The empty-body ghost is one entry, a function, and keeps its once-per-kind cache. The preview and the source mirror carry the same shape over their own smaller sets.
+- **`cardActions`** (`CardContext`): a consumer snippet in every card's header, handed the card's identity AND the three structure verbs (`insertAfter`, `remove`, `move`). The verbs are the point: the editor resolves addresses through a stable-id array it maintains itself, so a consumer calling `doc.insertCard` directly leaves that array a position short and every later address off by one, with nothing raised. A `Card` read off `doc.cards` is a valid `CardInput`, so "duplicate" is one call over `insertAfter`.
+
+The preview's states are the same rule at the other layer: a vanilla-TS core cannot take a Svelte snippet, so `createPreview` REPORTS its message state (`onState`) and offers to draw nothing (`messages: false`), and `<Preview>`'s `message` snippet is what renders it. The extension point belongs to the layer that can render; what the core owes it is the state.
+
 ## Diagnostics
 
 Three sources, each routed to a field address and shown inline: `quill.validate(doc)` (`Diagnostic[]` keyed on a canonical `DocPath` `.path`: type errors fatal, `must_fill` a soft warning), `LiveSession.warnings`, and render errors mapped through `FieldRegion.field`. Routing runs on the boundary's `parseDocPath` (`diagnostics.ts`), resolving the absolute card index to the editor's stable-id keying; a local commit error is keyed at its known call-site address and carries the thrown diagnostic's `code` (0.96 mutator failures carry one). `must_fill` and present-null never gate; a value that fails coercion is the only hard field error (canon: `SCHEMAS.md`).
