@@ -3,9 +3,11 @@
 // fingerprints as assets, not a served directory; at runtime each URL is fetched
 // into raw bytes (binary-safe for the fonts and seals). Dev harness only; never
 // part of the published package.
-const QUILL_ROOT = '/fixtures/quills/usaf_memo/0.2.0';
+// Relative to this module, since the fixture tree sits at the workspace root, above
+// the app the glob is rooted in.
+const QUILL_ROOT = '../../../../fixtures/quills/usaf_memo/0.2.0';
 
-const urls = import.meta.glob('/fixtures/quills/usaf_memo/0.2.0/**/*', {
+const urls = import.meta.glob('../../../../fixtures/quills/usaf_memo/0.2.0/**/*', {
 	query: '?url',
 	import: 'default',
 	eager: true

@@ -16,11 +16,11 @@ export default defineConfig({
 	assetsInclude: ['**/fixtures/**'],
 	server: {
 		fs: {
-			// The reference quill lives outside `src/` (a dev fixture, never in
+			// The reference quill lives at the workspace root (a dev fixture, never in
 			// `static/`, never published). SvelteKit narrows `fs.allow` to the app
 			// source, so the playground's `?url` asset glob over `fixtures/**` 403s
 			// without this — they stay bundled `?url` inputs, not a served directory.
-			allow: [fileURLToPath(new URL('./fixtures', import.meta.url))]
+			allow: [fileURLToPath(new URL('../../fixtures', import.meta.url))]
 		}
 	}
 });

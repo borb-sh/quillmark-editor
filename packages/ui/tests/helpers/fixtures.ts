@@ -7,8 +7,10 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join, relative, sep } from 'node:path';
 import { Quill } from '$lib/core';
 
+// `fixtures/` is the workspace's, not this package's: the playground reads the same
+// tree, so it sits above both.
 const HERE = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = join(HERE, '..', '..');
+const REPO_ROOT = join(HERE, '..', '..', '..', '..');
 
 /** The one reference quill (dev fixture, never published). */
 export const USAF_MEMO_ROOT = join(REPO_ROOT, 'fixtures', 'quills', 'usaf_memo', '0.2.0');
