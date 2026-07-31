@@ -41,10 +41,10 @@ function specifiersOf(file: string): string[] {
 
 // Resolve a specifier to a file inside src/lib, or null if it leaves the tree
 // (a bare package, an alias we do not follow). `$lib/x` → src/lib/x. The
-// package self-reference (`@quillmark/editor/x`, legal under Node/Vite) maps
+// package self-reference (`@quillmark/ui/x`, legal under Node/Vite) maps
 // the same way, so it cannot smuggle the core barrel past the walk.
 function resolveInLib(spec: string, fromFile: string): string | null {
-	const SELF = '@quillmark/editor';
+	const SELF = '@quillmark/ui';
 	let base: string | null = null;
 	if (spec.startsWith('$lib/')) base = join(LIB, spec.slice('$lib/'.length));
 	else if (spec === '$lib' || spec === SELF) base = LIB;

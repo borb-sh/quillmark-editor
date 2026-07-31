@@ -11,8 +11,8 @@ const config = {
 		// fallback below is the whole app — no per-route prerender, no server.
 		adapter: adapter({ fallback: 'index.html' }),
 		// Root-relative by default (empty base). A project-subpath host — the
-		// GitHub Pages project site at `borb-sh.github.io/quillmark-editor` — sets
-		// BASE_PATH=/quillmark-editor at build time (the Pages workflow feeds it
+		// GitHub Pages project site at `borb-sh.github.io/quillmark-js` — sets
+		// BASE_PATH=/quillmark-js at build time (the Pages workflow feeds it
 		// from `configure-pages`) so assets and links resolve under the subpath.
 		// Dev, `preview`, and `svelte-package` leave it unset and stay at root.
 		paths: {

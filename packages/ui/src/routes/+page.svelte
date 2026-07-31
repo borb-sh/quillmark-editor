@@ -102,7 +102,7 @@
 			<h1 class="pg-title">Editor + live preview for Quillmark</h1>
 			<div class="actions">
 				<a class="pg-cta" href="{base}/editor">Open the editor</a>
-				<a class="pg-link" href="https://github.com/borb-sh/quillmark-editor">Source</a>
+				<a class="pg-link" href="https://github.com/borb-sh/quillmark-js">Source</a>
 			</div>
 		</div>
 
@@ -142,7 +142,7 @@
 
 	<section class="pg-rail block">
 		<h2 class="pg-label">Install</h2>
-		<pre class="pg-readout install">npm install @quillmark/editor</pre>
+		<pre class="pg-readout install">npm install @quillmark/ui</pre>
 	</section>
 
 	<section class="pg-rail block">

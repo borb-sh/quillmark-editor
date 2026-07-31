@@ -1,4 +1,4 @@
-// `@quillmark/editor/preview`: the live-preview surface.
+// `@quillmark/ui/preview`: the live-preview surface.
 //
 // `createPreview(session)` (vanilla-TS core) + a thin `<Preview>` Svelte wrapper
 // land here. RESERVED-PACKAGE INVARIANT: this subpath imports no editor-side code

@@ -1,6 +1,6 @@
 # Theming
 
-`@quillmark/editor` ships **complex UX over a thin skin** (VISUAL_EDITOR_UIUX §"Complex UX, minimal UI"): the surfaces carry the behavior (direct manipulation, the caret bridge, per-field state) against a neutral, overridable visual baseline a consumer restyles to its brand without fighting baked-in design.
+`@quillmark/ui` ships **complex UX over a thin skin** (VISUAL_EDITOR_UIUX §"Complex UX, minimal UI"): the surfaces carry the behavior (direct manipulation, the caret bridge, per-field state) against a neutral, overridable visual baseline a consumer restyles to its brand without fighting baked-in design.
 
 The whole contract is **ten CSS custom properties**. They are dials, not a palette: each derives a closed private scale (`--_qm-*`) that every component reads, so one override rescales or recolors the whole surface. Set them on any ancestor of a mounted surface (the app, or one pane):
 

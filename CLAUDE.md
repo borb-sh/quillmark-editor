@@ -1,4 +1,4 @@
-# @quillmark/editor
+# @quillmark/ui
 
 Editor + live-preview component library for Quillmark WASM consumers. SvelteKit lib/app repo: `src/lib` → `svelte-package` → the published package; `src/routes` → the dev playground, never published.
 

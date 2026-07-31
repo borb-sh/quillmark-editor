@@ -4,7 +4,7 @@
 
 ## TL;DR
 
-What `@quillmark/editor` is: the VisualEditor and Preview surfaces, the shared document/engine substrate beneath them, the data flow between them, and the package's public API (the minimal source editor lives here as a debug view). `src/lib/` → `svelte-package` → `dist/` is the published tarball; `src/routes/` is the playground.
+What `@quillmark/ui` is: the VisualEditor and Preview surfaces, the shared document/engine substrate beneath them, the data flow between them, and the package's public API (the minimal source editor lives here as a debug view). `src/lib/` → `svelte-package` → `dist/` is the published tarball; `src/routes/` is the playground.
 
 ## Core vs chrome
 
@@ -17,7 +17,7 @@ The heavy machinery (ProseMirror, canvas paint) is already framework-agnostic, s
 
 ## Packaging
 
-**One package, `@quillmark/editor`, with subpath exports**: `/core`, `/preview`, `/visual`, `/source` ship; `/form` is reserved for the metadata surface. Not split into `@quillmark/preview` etc.
+**One package, `@quillmark/ui`, with subpath exports**: `/core`, `/preview`, `/visual`, `/source` ship; `/form` is reserved for the metadata surface. Not split into `@quillmark/preview` etc.
 
 Subpaths, not separate packages, because the thing a split would buy (a preview-only consumer not pulling ProseMirror) is a dependency-graph concern that subpath entries already solve: each subpath is its own module root, so a bundler pulls only what the imported entry reaches. The one thing separate packages add, independent versioning, is a cost here: the surfaces share a substrate (Document model, engine boundary, `ContentHit`/`ChangeSet` types) and co-evolve, so a per-package version matrix is tax with no payer.
 

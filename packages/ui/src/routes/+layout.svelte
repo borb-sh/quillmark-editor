@@ -22,7 +22,7 @@
 	];
 
 	// The path with the deploy's base prefix removed: a project-subpath host
-	// (`/quillmark-editor`) leaves the root as the bare base, so the empty
+	// (`/quillmark-js`) leaves the root as the bare base, so the empty
 	// remainder is `/`.
 	const here = $derived(page.url.pathname.slice(base.length) || '/');
 </script>

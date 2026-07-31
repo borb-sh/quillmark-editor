@@ -1,7 +1,7 @@
 # Deploys the playground (src/routes → adapter-static SPA) to GitHub Pages on
 # every push to main. Separate from ci.yml, which gates PRs and never deploys.
 # The Actions-based Pages pipeline (no gh-pages branch): build → upload artifact
-# → deploy. `configure-pages` feeds the project-subpath base (`/quillmark-editor`)
+# → deploy. `configure-pages` feeds the project-subpath base (`/quillmark-js`)
 # to the build as BASE_PATH; svelte.config.js reads it into kit.paths.base so
 # assets and links resolve under the subpath.
 name: Deploy playground
@@ -42,7 +42,7 @@ jobs:
 
       - name: Build playground
         env:
-          # `/quillmark-editor` for the project site; svelte.config.js reads it
+          # `/quillmark-js` for the project site; svelte.config.js reads it
           # into kit.paths.base.
           BASE_PATH: ${{ steps.pages.outputs.base_path }}
         run: npm run build:app

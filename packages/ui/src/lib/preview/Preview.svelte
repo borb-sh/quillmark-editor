@@ -1,5 +1,5 @@
 <!--
-  `@quillmark/editor/preview`'s Svelte wrapper: mounts `createPreview` over a
+  `@quillmark/ui/preview`'s Svelte wrapper: mounts `createPreview` over a
   container div on mount and tears it down on unmount. No logic beyond wiring;
   paint.ts/overlay.ts/bridge.ts/controller.ts own the behavior. Exposes the
   `PreviewController` verbs as instance methods (`bind:this`) for a consumer

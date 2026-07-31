@@ -1,4 +1,4 @@
-// `@quillmark/editor/source`: the debug source view.
+// `@quillmark/ui/source`: the debug source view.
 //
 // A read-only text mirror of `Document.toMarkdown()`: a whole-document serialize
 // the layer federation deletes, kept for debugging only (never an editable dual

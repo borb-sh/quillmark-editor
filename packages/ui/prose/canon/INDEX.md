@@ -1,6 +1,6 @@
 # Quillmark Editor Canon Index
 
-Canonical documentation for the `@quillmark/editor` package: the settled systems, describing what *is* and pointing into the code.
+Canonical documentation for the `@quillmark/ui` package: the settled systems, describing what *is* and pointing into the code.
 
 A thin overview, the two headline surfaces with their interaction and visual doctrine, the dev app around them, and the supporting docs for the shared substrate:
 

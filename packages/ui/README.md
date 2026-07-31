@@ -1,11 +1,11 @@
-# @quillmark/editor
+# @quillmark/ui
 
 Editor + live-preview components for [Quillmark](https://github.com/borb-sh/quillmark) WASM consumers. A WYSIWYG **VisualEditor**, a canvas **Preview** that paints the compiled document and round-trips clicks to the editor, and a read-only debug **source view**, over one `@quillmark/wasm` session. Vanilla-TS cores with thin Svelte 5 wrappers.
 
 ## Install
 
 ```sh
-npm install @quillmark/editor
+npm install @quillmark/ui
 ```
 
 `svelte@^5` and `@quillmark/wasm` are peer dependencies: the session's handles cross the package boundary, so the consumer supplies the one copy both sides mint them from. ProseMirror and the canvas paint loop live in the vanilla-TS cores, so the Svelte wrappers stay thin and a non-Svelte consumer wraps a core in a few lines.
@@ -14,20 +14,20 @@ npm install @quillmark/editor
 
 Each subpath is its own module root; a bundler pulls only what the entry you import reaches.
 
-| Import                      | Surface                                                                                                                                       |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@quillmark/editor/core`    | The `@quillmark/wasm` boundary: `Engine`/`Quill`/`Document` handles, the content codec, and every boundary type. Framework-free.              |
-| `@quillmark/editor/preview` | The live preview: `createPreview` + `<Preview>`. Reaches `/core` and nothing editor-side, so `@quillmark/preview` can promote to a re-export. |
-| `@quillmark/editor/visual`  | The federated WYSIWYG: `<VisualEditor>`, the codec's `createField` prose leaf, `fieldPathForAddr`.                                            |
-| `@quillmark/editor/source`  | The read-only debug source view: `createSourceView` + `<SourceView>`.                                                                         |
-| `@quillmark/editor`         | Re-exports `/core` (the shared substrate).                                                                                                    |
+| Import                  | Surface                                                                                                                                       |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@quillmark/ui/core`    | The `@quillmark/wasm` boundary: `Engine`/`Quill`/`Document` handles, the content codec, and every boundary type. Framework-free.              |
+| `@quillmark/ui/preview` | The live preview: `createPreview` + `<Preview>`. Reaches `/core` and nothing editor-side, so `@quillmark/preview` can promote to a re-export. |
+| `@quillmark/ui/visual`  | The federated WYSIWYG: `<VisualEditor>`, the codec's `createField` prose leaf, `fieldPathForAddr`.                                            |
+| `@quillmark/ui/source`  | The read-only debug source view: `createSourceView` + `<SourceView>`.                                                                         |
+| `@quillmark/ui`         | Re-exports `/core` (the shared substrate).                                                                                                    |
 
 ## Open a session
 
 The **consumer** owns the session and the handles, and drives every edit; the surfaces are views over it.
 
 ```ts
-import { Engine, Quill, init } from '@quillmark/editor/core';
+import { Engine, Quill, init } from '@quillmark/ui/core';
 
 init(); // one-time WASM init
 
@@ -42,7 +42,7 @@ const session = await new Engine().open(quill, doc);
 `createPreview` supplies exactly the layer `LiveSession` omits: viewport, DOM, DPR, click mapping. It is a pure view: it never calls `session.apply`; you drive the edit and hand it the resulting `ChangeSet`.
 
 ```ts
-import { createPreview } from '@quillmark/editor/preview';
+import { createPreview } from '@quillmark/ui/preview';
 
 const preview = createPreview(session, {
 	container: document.querySelector('#preview')!,
@@ -63,7 +63,7 @@ In Svelte, `<Preview {session} onCaretPick={…} />` exposes the same verbs (`re
 
 ```svelte
 <script lang="ts">
-	import { VisualEditor } from '@quillmark/editor/visual';
+	import { VisualEditor } from '@quillmark/ui/visual';
 </script>
 
 <VisualEditor
@@ -93,7 +93,7 @@ The bridge lives at the **consumer** layer and is opt-in; the editor is unaware 
 onCaretPick: (hit) => visualEditor.setCaret(hit);
 
 // editor → preview: a caret move scrolls the preview to follow it.
-import { fieldPathForAddr } from '@quillmark/editor/visual';
+import { fieldPathForAddr } from '@quillmark/ui/visual';
 onCaretMove: (addr, pos) => {
 	const field = fieldPathForAddr(
 		addr,
@@ -110,7 +110,7 @@ onCaretMove: (addr, pos) => {
 A read-only mirror of `Document.toMarkdown()`: the canonical Quillmark markdown, not an editable dual mode.
 
 ```ts
-import { createSourceView } from '@quillmark/editor/source';
+import { createSourceView } from '@quillmark/ui/source';
 
 const source = createSourceView({ container: el, doc });
 // after an edit lands:

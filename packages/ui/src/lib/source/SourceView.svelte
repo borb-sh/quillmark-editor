@@ -1,5 +1,5 @@
 <!--
-  `@quillmark/editor/source`'s Svelte wrapper: mounts `createSourceView` over a
+  `@quillmark/ui/source`'s Svelte wrapper: mounts `createSourceView` over a
   container div on mount, tears it down on unmount. No logic beyond wiring;
   view.ts owns the text mirror and the `toMarkdown()` serialize. Exposes
   `refresh()` (re-serialize after an edit lands) as an instance method

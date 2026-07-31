@@ -5,7 +5,7 @@
 // (THEMING.md).
 import './theme.css';
 
-// `@quillmark/editor/core`: the vanilla-TS substrate seam.
+// `@quillmark/ui/core`: the vanilla-TS substrate seam.
 //
 // This is the one boundary the rest of the package (and a vanilla consumer)
 // crosses to reach `@quillmark/wasm`: the `Engine`/`Quill`/`Document` handles,

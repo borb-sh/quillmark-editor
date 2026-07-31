@@ -1,7 +1,16 @@
 {
-	"name": "@quillmark/editor",
+	"name": "@quillmark/ui",
 	"version": "0.0.0",
-	"description": "Open-source editor + live preview components for Quillmark WASM consumers.",
+	"description": "Editor, live-preview and source surfaces over a Quillmark WASM session.",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/borb-sh/quillmark-js.git",
+		"directory": "packages/ui"
+	},
+	"bugs": {
+		"url": "https://github.com/borb-sh/quillmark-js/issues"
+	},
+	"homepage": "https://github.com/borb-sh/quillmark-js/tree/main/packages/ui#readme",
 	"license": "MIT",
 	"type": "module",
 	"packageManager": "npm@10.9.7",

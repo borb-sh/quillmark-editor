@@ -1,4 +1,4 @@
-// `@quillmark/editor/visual`: the WYSIWYG surface.
+// `@quillmark/ui/visual`: the WYSIWYG surface.
 //
 // The federated VisualEditor: a thin Svelte composition over many small editors.
 // Each content leaf is the codec's `createField` prose leaf; scalar fields are
