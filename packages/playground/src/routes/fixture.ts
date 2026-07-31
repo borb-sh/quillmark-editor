@@ -1,17 +1,20 @@
-// Playground-only fixture loading: the browser twin of tests/helpers/fixtures.ts.
-// An eager `?url` asset glob keeps the reference quill a plain input the bundler
-// fingerprints as assets, not a served directory; at runtime each URL is fetched
-// into raw bytes (binary-safe for the fonts and seals). Dev harness only; never
-// part of the published package.
-// Relative to this module, since the fixture tree sits at the workspace root, above
-// the app the glob is rooted in.
-const QUILL_ROOT = '../../../../fixtures/quills/usaf_memo/0.2.0';
+// Where the playground's quills come from: a built quiver served under `/quiver/`,
+// packed from the workspace fixture tree by `scripts/build-quiver.mjs`. This is the
+// browser consumer path in full (pointer → manifest → content-addressed bundle),
+// which is the point: the harness reaches the reference quill the way an app would,
+// not through a bundler affordance no consumer has.
+//
+// One `Quiver` for the page. Its quill cache is per canonical ref and lives as long
+// as the quiver does, so routes share one materialization across client-side
+// navigation instead of paying for their own.
+import { Quiver } from '@quillmark/quiver';
+import { base } from '$app/paths';
 
-const urls = import.meta.glob('../../../../fixtures/quills/usaf_memo/0.2.0/**/*', {
-	query: '?url',
-	import: 'default',
-	eager: true
-}) as Record<string, string>;
+let quiverP: Promise<Quiver> | undefined;
+
+function quiver(): Promise<Quiver> {
+	return (quiverP ??= Quiver.fromBuiltUrl(`${base}/quiver/`));
+}
 
 // The main `date` field's declaration up to its default's value: the anchor the
 // schema variant below rewrites, split here so the rewrite substitutes a value
@@ -70,14 +73,17 @@ export function withSecondCardKind(tree: Map<string, Uint8Array>): void {
 	);
 }
 
-/** Fetch the reference quill into the `Map` `Quill.fromTree` accepts (keys `"/"`-joined, relative to the quill root). */
+/**
+ * The reference quill's file tree, from the quiver: the `Map` `Quill.fromTree`
+ * accepts, keyed `"/"`-joined relative to the quill root.
+ *
+ * A tree rather than the `Quill` `getQuill` hands back, because the two variants
+ * above rewrite schema bytes and a materialized quill has no seam for that. The
+ * caller mints and owns its quill; the quiver's cached one stays the quiver's,
+ * unfreed for the page's lifetime, which is the documented contract rather than a
+ * leak. The cost is one materialization the caller discards, and it is the shape
+ * quiver already names for a consumer that needs raw bytes.
+ */
 export async function loadUsafMemoTree(): Promise<Map<string, Uint8Array>> {
-	const tree = new Map<string, Uint8Array>();
-	for (const [path, url] of Object.entries(urls)) {
-		if (path.includes('/__golden__/')) continue; // repo schema snapshot, not part of the quill
-		const key = path.slice(QUILL_ROOT.length + 1);
-		const bytes = new Uint8Array(await (await fetch(url)).arrayBuffer());
-		tree.set(key, bytes);
-	}
-	return tree;
+	return (await (await quiver()).getQuill('usaf_memo')).toTree();
 }

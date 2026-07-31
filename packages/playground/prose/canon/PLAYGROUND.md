@@ -57,6 +57,14 @@ The hue is spent on one thing: a boundary that failed. An open session takes no 
 
 Two guardrails hold across all four: the playground consumes only the public subpath API (a needed internal is an API gap to fix), and it stays a harness, not a product: no auth, persistence, or multi-doc management.
 
+## Where the quills come from
+
+Every route opens its session over the reference quill, and gets it from a **quiver**, not from the bundler. `scripts/build-quiver.mjs` packs the workspace's `fixtures/` tree into `static/quiver/` before dev and before build, and the app reads it back with `Quiver.fromBuiltUrl`: pointer, manifest, one content-addressed bundle, fonts dehydrated into a store. That is the whole path a browser consumer of a quiver takes, and taking it is the point. The quill also stops being a bundler input, so the JS no longer carries a megabyte of Typst source and font bytes inlined as assets.
+
+This is the workspace's one edge to `@quillmark/quiver`. The library has none ([DEPENDENCIES.md](../../../../prose/canon/DEPENDENCIES.md)), so the app is where the two tiers meet, and the harness is the demonstration that they compose without an edge between them.
+
+One `Quiver` serves the page. Its quill cache is per canonical ref and lives as long as the quiver does, so a client-side navigation between routes reuses one materialization rather than paying for its own. Routes still mint and free their own `Quill` from the tree: the `/visual` fixture variants rewrite schema bytes, which a materialized quill has no seam for, so the loader hands back `getQuill(ref).toTree()` and the caller owns what it builds from it. The discarded materialization is the cost of that seam.
+
 THEMING.md §"What is behind the column is yours" leaves four properties to the host, and the playground demonstrates **both** documented answers to the page tone rather than leaving one on paper: `/editor`'s editor pane carries all four on its single rule with plain `--qm-bg` behind the column (the supported bare case), while the front page's sheet, `/preview`'s frame and `/editor`'s preview pane put a tone of the host's own behind the paper, inset so the painted page reads against it.
 
 ## Preventing drift

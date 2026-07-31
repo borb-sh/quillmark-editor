@@ -30,6 +30,6 @@ Vitest is the whole committed suite (real WASM under node; each package's `vites
 
 Nothing browser-driven is committed: a browser assertion over chrome restates a doctrine value (a leading rung, a control height, a gutter) outside the CSS that single-sources it, so it fails on every retune of a dial it does not own, and the failure is answered by pasting the new number; what survives that is a suite of numbers agreeing with themselves.
 
-Everything runs against the reference quill [`fixtures/quills/usaf_memo/0.2.0`](fixtures/quills/usaf_memo/0.2.0), a dev fixture at the workspace root, never published.
+Everything runs against the reference quill [`fixtures/quills/usaf_memo/0.2.0`](fixtures/quills/usaf_memo/0.2.0), a dev fixture at the workspace root, never published. `fixtures/` is a source quiver: the suite walks the version directory into a tree, the playground packs it and fetches it back over HTTP.
 
 In a cloud environment, commit early and often.

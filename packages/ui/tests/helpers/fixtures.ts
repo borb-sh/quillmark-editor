@@ -17,9 +17,10 @@ export const USAF_MEMO_ROOT = join(REPO_ROOT, 'fixtures', 'quills', 'usaf_memo',
 
 /**
  * Walk `root` into a `Map` keyed by `"/"`-joined paths relative to it; binary
- * bytes intact (fonts/seals are read as raw `Uint8Array`, never decoded). Skips
- * `__golden__`, the repo's schema-snapshot artifact, which is not part of the
- * quill (`.quillignore` covers build/OS noise, not this).
+ * bytes intact (fonts/seals are read as raw `Uint8Array`, never decoded). The
+ * version directory is quill content throughout: the schema snapshot the repo
+ * keeps for diffing lives beside `quills/`, not inside it, so there is nothing
+ * here to skip.
  */
 export function loadFixtureTree(root: string = USAF_MEMO_ROOT): Map<string, Uint8Array> {
 	const tree = new Map<string, Uint8Array>();
@@ -27,7 +28,6 @@ export function loadFixtureTree(root: string = USAF_MEMO_ROOT): Map<string, Uint
 		for (const name of readdirSync(dir)) {
 			const abs = join(dir, name);
 			if (statSync(abs).isDirectory()) {
-				if (name === '__golden__') continue;
 				walk(abs);
 			} else {
 				const key = relative(root, abs).split(sep).join('/');

@@ -24,7 +24,7 @@ npm run check:style        # the closed `--_qm-*` / `--pg-*` scales
 npm run check:deps         # the dependency law
 ```
 
-Everything runs against the one reference quill, [`fixtures/quills/usaf_memo/0.2.0`](fixtures/quills/usaf_memo), a dev fixture at the workspace root, never published.
+Everything runs against the one reference quill, [`fixtures/quills/usaf_memo/0.2.0`](fixtures/quills/usaf_memo), a dev fixture at the workspace root, never published. `fixtures/` is a source quiver, which is how the playground loads it.
 
 ## Canon
 
