@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: Release type (semver bump)
+        required: true
+        type: choice
+        default: patch
+        options:
+          - patch
+          - minor
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      # Required for npm Trusted Publishing (OIDC token exchange).
+      id-token: write
+      # Required to push the version-bump commit and tag.
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      # Trusted Publishing requires npm >= 11.5.1.
+      - run: npm install -g npm@latest
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+      - name: Configure git identity
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        run: 'npm version ${{ inputs.release_type }} -m "chore(release): %s"'
+
+      - name: Push commit and tag
+        run: git push --follow-tags
+
+      - name: Publish
+        run: npm publish --provenance --access public

@@ -1,0 +1,75 @@
+{
+  "name": "@quillmark/quiver",
+  "version": "0.16.0",
+  "description": "Quiver registry and build tooling for Quillmark",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/borb-sh/quiver.git"
+  },
+  "bugs": {
+    "url": "https://github.com/borb-sh/quiver/issues"
+  },
+  "homepage": "https://github.com/borb-sh/quiver#readme",
+  "keywords": [
+    "quillmark",
+    "quiver",
+    "typst",
+    "markdown"
+  ],
+  "author": "Quillmark Contributors",
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js"
+    },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "import": "./dist/preview.js"
+    }
+  },
+  "sideEffects": [
+    "./dist/node.js",
+    "./dist/testing.js",
+    "./dist/preview.js"
+  ],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "@quillmark/wasm": ">=0.98.0-0"
+  },
+  "dependencies": {
+    "fflate": "^0.8.2",
+    "yaml": "^2.8.3"
+  },
+  "devDependencies": {
+    "@quillmark/wasm": "0.98.0",
+    "@types/node": "^25.3.3",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "bin": {
+    "quiver": "./dist/bin/quiver.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepare": "tsc",
+    "prepack": "rm -rf dist && tsc",
+    "test": "vitest run",
+    "lint": "tsc --noEmit"
+  }
+}
