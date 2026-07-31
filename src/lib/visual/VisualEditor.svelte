@@ -624,28 +624,33 @@
 </script>
 
 <div class="qm-editor {className ?? ''}" {style} data-qm-root bind:this={rootEl}>
-	<Card
-		bind:this={mainCard}
-		card={model.main}
-		{doc}
-		index={-1}
-		isFirst={true}
-		isLast={true}
-		{kinds}
-		ops={opsFor('main', true)}
-		onFocus={handleFocus}
-		onCaretMove={handleCaret}
-		{register}
-		{unregister}
-	/>
+	<!-- `main` and the tips card are ONE block in the stack: the tips card tucks under
+	 `main`'s bottom corners, so the two share a seam rather than a gutter and the
+	 wrapper is what holds them to it. -->
+	<div class="qm-primary">
+		<Card
+			bind:this={mainCard}
+			card={model.main}
+			{doc}
+			index={-1}
+			isFirst={true}
+			isLast={true}
+			{kinds}
+			ops={opsFor('main', true)}
+			onFocus={handleFocus}
+			onCaretMove={handleCaret}
+			{register}
+			{unregister}
+		/>
 
-	<!-- The tips card: a fixed slot after `main`, ahead of the cards, so
-	 document-level guidance reads as document-level and never displaces a field.
-	 Absent when the channel is empty; which is what dismissal makes it, so the
-	 card leaves for good (VISUAL_EDITOR §"Card operations"). -->
-	{#if model.tips.length}
-		<TipsCard tips={model.tips} onDismiss={dismissTips} />
-	{/if}
+		<!-- The tips card: a fixed slot after `main`, ahead of the cards, so
+		 document-level guidance reads as document-level and never displaces a field.
+		 Absent when the channel is empty; which is what dismissal makes it, so the
+		 card leaves for good (VISUAL_EDITOR §"Card operations"). -->
+		{#if model.tips.length}
+			<TipsCard tips={model.tips} onDismiss={dismissTips} />
+		{/if}
+	</div>
 
 	{@render addAffordance(0)}
 	<!-- A card and the gap under it are one SLOT, which is what a reorder moves: the
@@ -736,6 +741,19 @@
 		gap: var(--_qm-space-2);
 		color: var(--_qm-ink);
 	}
+	/* The stack's one gapless seam, which `TipsCard` draws and this holds the two
+	 blocks to. `main` has to paint OVER the tip: a later sibling paints over an earlier
+	 one otherwise, and the tip's background would cover the corners it is there to
+	 fill. `isolation` keeps that z-index local, so one wrapper owns the ordering and no
+	 card below inherits an argument about it. The wrapper is a single flex item, so the
+	 pair takes the editor's gap once, together, exactly as one card does. */
+	.qm-primary {
+		isolation: isolate;
+	}
+	.qm-primary > :global(.qm-card) {
+		position: relative;
+		z-index: 1;
+	}
 	/* A slot restates the stack's own column and rhythm, so grouping a card with the
 	 strip under it changes no geometry: the strip takes the same gap back on both
 	 sides whether the gap above it is the slot's or the stack's, and a slot's own
@@ -754,9 +772,8 @@
 	 band is held back as miss-tolerance: gutter that reads as the trigger and
 	 inserts nothing unsays what the fill claims, so a press anywhere between two
 	 cards inserts. Absorbed rather than removed, because `gap` is also what separates
-	 the two seams no strip sits in: `main` from the tips card, and every card from
-	 the next under a quill declaring no kinds, where the affordance does not render
-	 at all. */
+	 the one seam no strip sits in: every card from the next under a quill declaring no
+	 kinds, where the affordance does not render at all. */
 	.qm-add-card {
 		display: flex;
 		margin-top: calc(var(--_qm-space-2) * -1);
