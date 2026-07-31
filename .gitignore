@@ -98,8 +98,11 @@ dist
 # Sveltekit cache directory
 .svelte-kit/
 
-# SvelteKit adapter-static playground output (npm run build:app)
-/build/
+# SvelteKit adapter-static playground output
+packages/*/build/
+
+# The fixture quiver, packed into the playground's static tree before dev/build.
+packages/playground/static/quiver/
 
 # vitepress build output
 **/.vitepress/dist

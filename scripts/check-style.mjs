@@ -49,27 +49,26 @@
 // Zero deps; run via `npm run check:style`.
 
 import { readdirSync, readFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join, relative } from 'node:path';
+import { ROOT, canonDocs, canonRoots, report } from './workspace.mjs';
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const THEMING = join(ROOT, 'THEMING.md');
+const THEMING = join(ROOT, 'packages', 'ui', 'THEMING.md');
 
 /** The two closed scales, each with the tree that reads it and the one file that
  *  mints it. `census` marks the scope the dial contract is measured over — the
  *  package's, since THEMING.md documents what the PACKAGE consumes. */
 const SCOPES = [
 	{
-		dir: 'src/lib',
+		dir: 'packages/ui/src/lib',
 		prefix: '--_qm-',
-		derivation: 'src/lib/core/theme.css',
+		derivation: 'packages/ui/src/lib/core/theme.css',
 		doc: 'SURFACES §"Preventing drift"',
 		census: true
 	},
 	{
-		dir: 'src/routes',
+		dir: 'packages/playground/src/routes',
 		prefix: '--pg-',
-		derivation: 'src/routes/playground.css',
+		derivation: 'packages/playground/src/routes/playground.css',
 		doc: 'PLAYGROUND §"Preventing drift"',
 		census: false
 	}
@@ -371,18 +370,12 @@ for (const t of [...consumed].filter((t) => !documented.has(t)).sort())
 for (const t of [...documented].filter((t) => !consumed.has(t)).sort())
 	errors.push(`THEMING.md: \`${t}\` documented but unconsumed`);
 
-const CANON = join(ROOT, 'prose', 'canon');
-for (const doc of readdirSync(CANON)
-	.filter((f) => f.endsWith('.md'))
-	.sort())
-	for (const t of [...dialsIn(join(CANON, doc))].filter((t) => !consumed.has(t)).sort())
-		errors.push(`prose/canon/${doc}: \`${t}\` named but not a dial`);
+for (const [abs, rel] of canonRoots().flatMap(canonDocs))
+	for (const t of [...dialsIn(abs)].filter((t) => !consumed.has(t)).sort())
+		errors.push(`${rel}: \`${t}\` named but not a dial`);
 
-if (errors.length) {
-	console.error(`Style check failed (${errors.length}):`);
-	for (const e of errors) console.error(`  ✗ ${e}`);
-	process.exit(1);
-}
-console.log(
+report(
+	'Style check',
+	errors,
 	`Style OK — ${scanned} files over ${SCOPES.length} scopes, ${consumed.size} public dials.`
 );

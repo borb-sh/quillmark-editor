@@ -1,0 +1,26 @@
+{
+	"compilerOptions": {
+		"allowJs": true,
+		"checkJs": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"sourceMap": true,
+		"strict": true,
+		"isolatedModules": true,
+		"verbatimModuleSyntax": true,
+		"lib": ["esnext", "DOM", "DOM.Iterable"],
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"target": "esnext",
+		"noEmit": true,
+		// `src/lib` is relative throughout, so the alias exists for the suite alone:
+		// `vitest.config.ts` mirrors it, and a test imports the surface a consumer does.
+		"paths": {
+			"$lib": ["./src/lib"],
+			"$lib/*": ["./src/lib/*"]
+		}
+	},
+	"include": ["src/**/*.ts", "src/**/*.svelte", "tests/**/*.ts", "vitest.config.ts"]
+}

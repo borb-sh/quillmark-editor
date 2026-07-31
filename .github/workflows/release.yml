@@ -1,0 +1,56 @@
+# Release, on changesets. A push to main with pending `.changeset/*.md` opens (or
+# refreshes) a "Version Packages" PR carrying the version bumps and changelogs;
+# merging that PR leaves no changesets, and this run publishes whatever the
+# registry does not have. Versions are independent per package, and `playground`
+# is ignored (private).
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      # npm Trusted Publishing (OIDC token exchange); no stored token.
+      id-token: write
+      # The version PR's branch and its commits.
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      # Trusted Publishing requires npm >= 11.5.1.
+      - run: npm install -g npm@latest
+
+      - run: npm ci
+
+      # The same verbs ci.yml names as separate steps; there they buy failure
+      # attribution, here they only need to pass.
+      - name: Gate
+        run: npm run gate
+
+      - uses: changesets/action@v1
+        with:
+          version: npm run version
+          publish: npm run release
+          commit: 'chore(release): version packages'
+          title: 'chore(release): version packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # `changeset publish` shells out to `npm publish`, which reads this.
+          NPM_CONFIG_PROVENANCE: true

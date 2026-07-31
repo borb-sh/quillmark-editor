@@ -2,10 +2,15 @@ package-lock.json
 
 # Hand-formatted canon and design prose and the reference-quill fixture tree:
 # prettier would collapse aligned code-sketch comments and churn a test input.
-prose/
+**/prose/
 fixtures/
 
 # Claude Code tooling — agent config and skills copied from the sibling quillmark
-# checkout (hand-formatted prose). Never shipped (`files: ["dist"]`), not package
-# source, so it stays out of the prettier gate like `prose/`.
+# checkout (hand-formatted prose). Never shipped, not package source, so it stays
+# out of the prettier gate like `prose/`.
 .claude/
+
+# Build output, in every package.
+**/dist/
+**/build/
+**/.svelte-kit/

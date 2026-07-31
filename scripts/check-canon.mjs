@@ -1,7 +1,8 @@
-// Canon spine lint — enforces the ratified shape of every `prose/canon/*.md`. The
-// spine is stated here and nowhere else, so the rule and its enforcement cannot
-// drift apart. A doc that leaves it fails CI here instead of being caught by eye.
-// Zero deps; run via `npm run check:canon`.
+// Canon spine lint — enforces the ratified shape of every `prose/canon/*.md`, in
+// every tier that has one (the root's, and each package's). The spine is stated here
+// and nowhere else, so the rule and its enforcement cannot drift apart. A doc that
+// leaves it fails CI here instead of being caught by eye. Zero deps; run via
+// `npm run check:canon`.
 //
 // The spine, per doc (INDEX.md excepted):
 //   1. `# Title`
@@ -13,11 +14,10 @@
 // neither of which exists). And no canon doc links into `phases/` (a plan tier;
 // canon references only settled ground).
 
-import { readdirSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
+import { basename } from 'node:path';
+import { canonDocs, canonRoots, report } from './workspace.mjs';
 
-const CANON = join(dirname(fileURLToPath(import.meta.url)), '..', 'prose', 'canon');
 const SOURCE_EXT = /\.(ts|tsx|js|jsx|mjs|cjs|svelte|rs|md|json|css|html|py)(?=$|[)`,\s])/;
 
 /** Backticked tokens in a line: `foo/bar`, `@scope/pkg`, … */
@@ -26,13 +26,12 @@ function backticked(line) {
 }
 
 const errors = [];
-const files = readdirSync(CANON)
-	.filter((f) => f.endsWith('.md'))
-	.sort();
+const roots = canonRoots();
+const docs = roots.flatMap(canonDocs);
 
-for (const file of files) {
-	const rel = `prose/canon/${file}`;
-	const lines = readFileSync(join(CANON, file), 'utf8').split('\n');
+for (const [abs, rel] of docs) {
+	const file = basename(abs);
+	const lines = readFileSync(abs, 'utf8').split('\n');
 	const fail = (msg) => errors.push(`${rel}: ${msg}`);
 
 	// The no-plan-link rule holds for every canon doc, INDEX included.
@@ -64,9 +63,8 @@ for (const file of files) {
 	if (!lines.some((l) => /^## TL;DR\s*$/.test(l))) fail('no `## TL;DR` section');
 }
 
-if (errors.length) {
-	console.error(`Canon spine check failed (${errors.length}):`);
-	for (const e of errors) console.error(`  ✗ ${e}`);
-	process.exit(1);
-}
-console.log(`Canon spine OK — ${files.length} docs.`);
+report(
+	'Canon spine check',
+	errors,
+	`Canon spine OK — ${docs.length} docs over ${roots.length} tier${roots.length === 1 ? '' : 's'}.`
+);
