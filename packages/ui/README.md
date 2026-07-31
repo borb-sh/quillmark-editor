@@ -8,7 +8,7 @@ Editor + live-preview components for [Quillmark](https://github.com/borb-sh/quil
 npm install @quillmark/editor
 ```
 
-`svelte@^5` is a peer dependency; `@quillmark/wasm` comes as a dependency. ProseMirror and the canvas paint loop live in the vanilla-TS cores, so the Svelte wrappers stay thin and a non-Svelte consumer wraps a core in a few lines.
+`svelte@^5` and `@quillmark/wasm` are peer dependencies: the session's handles cross the package boundary, so the consumer supplies the one copy both sides mint them from. ProseMirror and the canvas paint loop live in the vanilla-TS cores, so the Svelte wrappers stay thin and a non-Svelte consumer wraps a core in a few lines.
 
 ## Subpaths
 
