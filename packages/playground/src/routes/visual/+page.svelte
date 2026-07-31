@@ -18,11 +18,11 @@
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
 	import { page } from '$app/state';
-	import type { Quill, Document, Addr, CardAddr, Content, Diagnostic } from '$lib/core';
+	import type { Quill, Document, Addr, CardAddr, Content, Diagnostic } from '@quillmark/ui/core';
 	import { loadUsafMemoTree, withMainDateDefault, withSecondCardKind } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
-	type VisualEditorComponent = typeof import('$lib/visual').VisualEditor;
+	type VisualEditorComponent = typeof import('@quillmark/ui/visual').VisualEditor;
 
 	// What each flag changes about the document under the editor. Named for the
 	// branch it reaches; the reference quill on disk reaches none of them.
@@ -36,7 +36,7 @@
 	let VisualEditor = $state<VisualEditorComponent | undefined>();
 	let quillHandle: Quill | undefined = $state();
 	let docHandle: Document | undefined = $state();
-	// `$lib/core` is imported dynamically (WASM top-level await, see onMount), so the
+	// `@quillmark/ui/core` is imported dynamically (WASM top-level await, see onMount), so the
 	// main-card selector is captured there for the reads outside that scope.
 	let mainAddr: CardAddr | undefined = $state();
 	let lastAddr = $state('none');
@@ -148,8 +148,8 @@
 				// Safari/dev doesn't TDZ on Kit's `component` export.
 				// VisualEditor pulls the codec → `mapPos`, so it rides the same import.
 				const [{ Quill, Document, init, MAIN_CARD_ADDR }, visual] = await Promise.all([
-					import('$lib/core'),
-					import('$lib/visual')
+					import('@quillmark/ui/core'),
+					import('@quillmark/ui/visual')
 				]);
 				init();
 				const tree = await loadUsafMemoTree();

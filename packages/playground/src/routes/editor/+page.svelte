@@ -41,13 +41,13 @@
 		ChangeSet,
 		Addr,
 		Diagnostic
-	} from '$lib/core';
-	import { Preview } from '$lib/preview';
-	import { SourceView } from '$lib/source';
+	} from '@quillmark/ui/core';
+	import { Preview } from '@quillmark/ui/preview';
+	import { SourceView } from '@quillmark/ui/source';
 	import { loadUsafMemoTree } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
-	type VisualEditorComponent = typeof import('$lib/visual').VisualEditor;
+	type VisualEditorComponent = typeof import('@quillmark/ui/visual').VisualEditor;
 
 	let status = $state<Status>({ phase: 'loading' });
 	let VisualEditor = $state<VisualEditorComponent | undefined>();
@@ -56,7 +56,7 @@
 	let quillHandle: Quill | undefined = $state();
 	let docHandle: Document | undefined = $state();
 
-	// The editor→preview address mapping: captured from the dynamic `$lib/visual`
+	// The editor→preview address mapping: captured from the dynamic `@quillmark/ui/visual`
 	// import (below) rather than statically imported, so the route module never
 	// pulls VisualEditor's WASM top-level await (Safari/dev doesn't TDZ on Kit's
 	// `component` export, the reason for the dynamic-import dance). This is the
@@ -215,8 +215,8 @@
 				// them.
 				const treeP = loadUsafMemoTree();
 				const [{ Engine, Quill, init }, visual] = await Promise.all([
-					import('$lib/core'),
-					import('$lib/visual')
+					import('@quillmark/ui/core'),
+					import('@quillmark/ui/visual')
 				]);
 				init();
 				const quill = Quill.fromTree(await treeP);

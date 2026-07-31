@@ -55,14 +55,12 @@
 		"**/*.css"
 	],
 	"scripts": {
-		"dev": "vite dev",
-		"build": "svelte-kit sync && svelte-package",
-		"build:app": "svelte-kit sync && vite build",
-		"preview": "npm run build:app && vite preview",
-		"prepack": "svelte-kit sync && svelte-package && publint",
-		"test": "svelte-kit sync && vitest run",
-		"test:watch": "svelte-kit sync && vitest",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+		"build": "svelte-package",
+		"prepare": "svelte-package",
+		"prepack": "svelte-package && publint",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"check": "svelte-check --tsconfig ./tsconfig.json"
 	},
 	"peerDependencies": {
 		"@quillmark/wasm": ">=0.98.0-0",
@@ -83,8 +81,6 @@
 		"prosemirror-view": "1.42.1"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-static": "^3.0.10",
-		"@sveltejs/kit": "^2.22.0",
 		"@sveltejs/package": "^2.5.0",
 		"@sveltejs/vite-plugin-svelte": "^6.0.0",
 		"@types/node": "^26.1.1",

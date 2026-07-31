@@ -12,9 +12,9 @@
 		"packages/*"
 	],
 	"scripts": {
-		"dev": "npm run dev -w packages/ui",
-		"build": "npm run build -w packages/quiver && npm run build -w packages/ui",
-		"check": "npm run check --workspaces --if-present",
+		"dev": "npm run dev -w packages/playground",
+		"build": "npm run build -w packages/quiver && npm run build -w packages/ui && npm run build -w packages/playground",
+		"check": "npm run check -w packages/quiver && npm run check -w packages/ui && npm run check -w packages/playground",
 		"test": "npm run test --workspaces --if-present",
 		"lint": "prettier --check .",
 		"format": "prettier --write .",

@@ -1,24 +1,11 @@
-import adapter from '@sveltejs/adapter-static';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
-/** @type {import('@sveltejs/kit').Config} */
+// A library, not an app: `svelte-package` reads this for the preprocessor and the
+// `src/lib` root, and there is no kit config because there are no routes. The
+// playground is the app, one package over.
+/** @type {import('@sveltejs/package').Config} */
 const config = {
-	preprocess: vitePreprocess(),
-	kit: {
-		// Two artifacts from one repo: `svelte-package` emits the published library
-		// from src/lib; `vite build` emits the deployed playground (src/routes) as a
-		// static SPA. `+layout.ts` already sets ssr=false/prerender=false, so the
-		// fallback below is the whole app — no per-route prerender, no server.
-		adapter: adapter({ fallback: 'index.html' }),
-		// Root-relative by default (empty base). A project-subpath host — the
-		// GitHub Pages project site at `borb-sh.github.io/quillmark-js` — sets
-		// BASE_PATH=/quillmark-js at build time (the Pages workflow feeds it
-		// from `configure-pages`) so assets and links resolve under the subpath.
-		// Dev, `preview`, and `svelte-package` leave it unset and stay at root.
-		paths: {
-			base: process.env.BASE_PATH ?? ''
-		}
-	}
+	preprocess: vitePreprocess()
 };
 
 export default config;

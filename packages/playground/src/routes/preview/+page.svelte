@@ -18,8 +18,8 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Document, LiveSession, ContentHit, ChangeSet } from '$lib/core';
-	import { Preview } from '$lib/preview';
+	import type { Document, LiveSession, ContentHit, ChangeSet } from '@quillmark/ui/core';
+	import { Preview } from '@quillmark/ui/preview';
 	import { loadUsafMemoTree } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
@@ -61,7 +61,7 @@
 			try {
 				// Dynamic: keep WASM's top-level await out of the route module so
 				// Safari/dev doesn't TDZ on Kit's `component` export.
-				const { Engine, Quill, init } = await import('$lib/core');
+				const { Engine, Quill, init } = await import('@quillmark/ui/core');
 				init();
 				const tree = await loadUsafMemoTree();
 				const quill = Quill.fromTree(tree);

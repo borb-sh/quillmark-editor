@@ -103,7 +103,7 @@ onCaretMove: (addr, pos) => {
 };
 ```
 
-`src/routes/editor/+page.svelte` is the full reference split-pane shell: one session, both bridge directions, the preview following edits, diagnostics routed inline, and the source view.
+The playground's `/editor` route is the full reference split-pane shell: one session, both bridge directions, the preview following edits, diagnostics routed inline, and the source view.
 
 ## Source view (debug)
 
@@ -125,12 +125,13 @@ The surfaces carry the behavior against a neutral, overridable visual baseline: 
 
 ## Development
 
+This package is one workspace of [`quillmark-js`](../..); the gates are the root's.
+
 ```sh
-npm run dev     # the playground (preview / visual / editor routes)
-npm run build   # svelte-package → dist/
-npm test        # Vitest (codec, diagnostics, geometry, chain)
-npm run check   # svelte-check
-npm run lint    # prettier
+npm run build -w packages/ui   # svelte-package → dist/
+npm run test  -w packages/ui   # Vitest (codec, diagnostics, geometry, chain)
+npm run check -w packages/ui   # svelte-check
+npm run dev                    # the playground, from the root
 ```
 
-The playground under `src/routes/` consumes **only** the public subpath API; a needed internal is an API gap to fix, not a reach-in. All development runs against the one reference quill, `fixtures/quills/usaf_memo` (a dev fixture, never published). The settled architecture lives in [`prose/`](prose/).
+The playground consumes **only** the public subpath API; a needed internal is an API gap to fix, not a reach-in. All development runs against the one reference quill, `fixtures/quills/usaf_memo` at the workspace root (a dev fixture, never published). The settled architecture lives in [`prose/`](prose/).

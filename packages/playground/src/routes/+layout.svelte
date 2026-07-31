@@ -29,7 +29,7 @@
 
 <header class="head">
 	<div class="pg-width head-row">
-		<a class="mark" href="{base}/">quillmark<span class="slash">/</span>editor</a>
+		<a class="mark" href="{base}/">quillmark<span class="slash">/</span>playground</a>
 		<nav class="nav" aria-label="Playground">
 			{#each ROUTES as route (route.path)}
 				<a

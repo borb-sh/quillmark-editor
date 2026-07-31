@@ -66,9 +66,9 @@ const SCOPES = [
 		census: true
 	},
 	{
-		dir: 'packages/ui/src/routes',
+		dir: 'packages/playground/src/routes',
 		prefix: '--pg-',
-		derivation: 'packages/ui/src/routes/playground.css',
+		derivation: 'packages/playground/src/routes/playground.css',
 		doc: 'PLAYGROUND §"Preventing drift"',
 		census: false
 	}
