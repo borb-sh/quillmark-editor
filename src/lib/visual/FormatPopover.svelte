@@ -250,70 +250,88 @@
 
 <Popover.Root bind:open>
 	<Popover.Portal to={portalTarget}>
-		{#if open && anchor}
-			<Popover.Content
-				customAnchor={anchor}
-				side="top"
-				align="center"
-				sideOffset={8}
-				trapFocus={false}
-				onOpenAutoFocus={(e: Event) => e.preventDefault()}
-				onCloseAutoFocus={(e: Event) => e.preventDefault()}
-			>
-				<div bind:this={contentEl} class="qm-format-popover qm-popover-surface" data-qm-root>
-					{#if linkPromptOpen}
-						<form
-							class="qm-link-prompt"
-							onsubmit={(e) => {
-								e.preventDefault();
-								submitLink();
-							}}
-						>
-							<input
-								class="qm-link-input"
-								type="text"
-								placeholder="https://…"
-								bind:value={linkValue}
-							/>
-							<button type="submit" class="qm-icon-btn qm-mark-btn">Apply</button>
-							<button
-								type="button"
-								class="qm-icon-btn qm-mark-btn"
-								onmousedown={keepFocus}
-								onclick={cancelLink}>Cancel</button
+		<Popover.Content
+			customAnchor={anchor}
+			side="top"
+			align="center"
+			trapFocus={false}
+			sideOffset={8}
+			onOpenAutoFocus={(e: Event) => e.preventDefault()}
+			onCloseAutoFocus={(e: Event) => e.preventDefault()}
+		>
+			<!-- The `child` snippet, so the surface IS the primitive's content node
+			 rather than a pill inside it: the dismissal is a CSS animation and the
+			 primitive unmounts on the content node's own animations finishing
+			 (SURFACES §Motion). It also keeps the recipe reachable from this
+			 component's scoped styles, which a class handed to a primitive as a
+			 string never picks up the scoping hash for. `wrapperProps` is
+			 floating-ui's positioning box: spread, never styled. `inert` is the half
+			 of the dismissal the recipe cannot carry: the surface is still on screen
+			 for the length of the fade, and a surface on its way out is not a thing
+			 to click, tab into, or read. -->
+			{#snippet child({ props, wrapperProps, open: raised })}
+				<div {...wrapperProps}>
+					<div
+						bind:this={contentEl}
+						{...props}
+						class="qm-format-popover qm-popover-surface"
+						data-qm-root
+						inert={!raised}
+					>
+						{#if linkPromptOpen}
+							<form
+								class="qm-link-prompt"
+								onsubmit={(e) => {
+									e.preventDefault();
+									submitLink();
+								}}
 							>
-						</form>
-					{:else}
-						<!-- `role="group"`, not `toolbar`: these buttons carry no roving-tabindex /
-						     arrow-key navigation, so the ARIA toolbar contract would be a lie;
-						     a labelled group is the honest description. -->
-						<div class="qm-format-buttons" role="group" aria-label="Formatting">
-							{#each MARKS as m (m.name)}
-								{@const Icon = m.icon}
+								<input
+									class="qm-link-input"
+									type="text"
+									placeholder="https://…"
+									bind:value={linkValue}
+								/>
+								<button type="submit" class="qm-icon-btn qm-mark-btn">Apply</button>
 								<button
 									type="button"
 									class="qm-icon-btn qm-mark-btn"
-									class:active={activeMarks[m.name]}
-									title={m.title}
-									aria-label={m.title}
 									onmousedown={keepFocus}
-									onclick={() => toggle(m.name)}><Icon size={GLYPH} /></button
+									onclick={cancelLink}>Cancel</button
 								>
-							{/each}
-							<button
-								type="button"
-								class="qm-icon-btn qm-mark-btn"
-								class:active={activeMarks.anchor}
-								title="Anchor — an identity handle over the selection"
-								aria-label="Anchor"
-								onmousedown={keepFocus}
-								onclick={toggleAnchor}><Hash size={GLYPH} /></button
-							>
-						</div>
-					{/if}
+							</form>
+						{:else}
+							<!-- `role="group"`, not `toolbar`: these buttons carry no roving-tabindex /
+							     arrow-key navigation, so the ARIA toolbar contract would be a lie;
+							     a labelled group is the honest description. -->
+							<div class="qm-format-buttons" role="group" aria-label="Formatting">
+								{#each MARKS as m (m.name)}
+									{@const Icon = m.icon}
+									<button
+										type="button"
+										class="qm-icon-btn qm-mark-btn"
+										class:active={activeMarks[m.name]}
+										title={m.title}
+										aria-label={m.title}
+										onmousedown={keepFocus}
+										onclick={() => toggle(m.name)}><Icon size={GLYPH} /></button
+									>
+								{/each}
+								<button
+									type="button"
+									class="qm-icon-btn qm-mark-btn"
+									class:active={activeMarks.anchor}
+									title="Anchor — an identity handle over the selection"
+									aria-label="Anchor"
+									onmousedown={keepFocus}
+									onclick={toggleAnchor}><Hash size={GLYPH} /></button
+								>
+							</div>
+						{/if}
+					</div>
 				</div>
-			</Popover.Content>
-		{/if}
+			{/snippet}
+		</Popover.Content>
 	</Popover.Portal>
 </Popover.Root>
 

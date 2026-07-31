@@ -34,6 +34,8 @@ Under **more than one declared kind** the trigger raises a menu of them. A menu,
 
 Insert and reorder **move the viewport**: a new card scrolls to centre, a moved card to `nearest`, so a structure edit past the fold is never silent. Both honour `prefers-reduced-motion`.
 
+A **reorder is the one card operation that slides** (SURFACES §Motion): a card and the gap under it are one slot, and the two slots that swap take the trip between the positions they held, so the eye keeps the card it pressed. Insert and delete land instantly, because what the eye follows there is the card that appeared or the space that closed, not the stack moving under it.
+
 Drag reorder is not carried in V1: the interaction cost (threshold, drop targets, keyboard and touch parity) buys only what the buttons already do.
 
 ## Tips card
@@ -52,7 +54,7 @@ Formatting splits by what an action anchors to: a **selection** (marks) or a **p
 
 **Marks: selection popover.** A non-empty selection in a prose leaf raises a popover over the active leaf: `strong`, `emph`, `underline`, `strike`, `code`, `link`, plus `anchor` identity. The six formatting marks emit PM `toggleMark` transactions the codec lowers to `markOps`; `anchor` is a decoration (not a PM mark), toggled through the `FieldController.insertAnchor` / `removeAnchor` seam and lowered to an `anchor` op (CODEC §Marks). A keymap mirrors the core marks (`Mod-b`/`i`/`u`) for keyboard; `strike`/`code`/`link` stay toolbar-only in V1. On touch, the same marks are meant to ride an accessory bar above the keyboard (a popover fights the OS selection handles); the touch bar does not ship (§Open).
 
-The popover is a translucent, backdrop-blurred pill (SURFACES §Elevation: the one floating surface earns the lift), top-center over the selection and flipping below when it nears the viewport top, scaling in on each raise. Each mark is a Lucide glyph, the icon naming its action (AESTHETIC §Icons): bold, italic, underline, strikethrough, code, link, with `anchor` a 7th, toggling an identity handle over the selection (its codec seam ships: `FieldController.insertAnchor`).
+The popover is a translucent, backdrop-blurred pill (SURFACES §Elevation: the one floating surface earns the lift), top-center over the selection and flipping below when it nears the viewport top, scaling in on each raise and back out on each dismissal (SURFACES §Motion; the field-description surface takes the same pair). Each mark is a Lucide glyph, the icon naming its action (AESTHETIC §Icons): bold, italic, underline, strikethrough, code, link, with `anchor` a 7th, toggling an identity handle over the selection (its codec seam ships: `FieldController.insertAnchor`).
 
 **Input rules: typist shorthand, no chrome.** `**`, `*`, `~~`, `` ` ``, `# `, `- `, `1. `, `> `, and a ` ``` ` code fence. These cover the marks and the block shorthands (headings, lists, quote, code); underline is keymap-only (`Mod-u`), and no table-entry rule ships (island authoring does not ship, §Open). Markdown is an input shorthand, never the stored form.
 
