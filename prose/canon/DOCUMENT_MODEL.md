@@ -30,6 +30,12 @@ Every verb below is on the WASM `Document` / `Quill` / `LiveSession` today (`imp
 
 Consumed by: [CODEC.md](CODEC.md) (op-grained edit, positions, markdown edges), [PREVIEW.md](PREVIEW.md) (live session & paint), [VISUAL_EDITOR.md](VISUAL_EDITOR.md) (seeding, writer, structure mutators, validation).
 
+## Two ways in, and one of them stores richtext as a string
+
+A document reaches a consumer SEEDED (`quill.seedDocument()`) or LOADED (`Document.fromMarkdown` / `fromJson`, the door a saved document comes back through). `getStored` is the verbatim read, so it hands back whatever is there — and what is there differs: a seeded document written through the typed writer holds `Content` at a richtext field, while a loaded one holds the markdown string it parsed, until that field is next written. Both are the field's stored value; neither is wrong.
+
+The prose leaf therefore reads through the boundary's own markdown door (`importMarkdown`) when it finds a string, which is the same projection the codec exports back out. Left to assume one shape, it crashed on every richtext field of a loaded document — the form the editor never meets while a document is only ever seeded, and the first form a real consumer meets.
+
 **A ghost is not always a `default:`.** `resolve`'s `FieldSource` rung is the boundary's, and a `default`-sourced row is a promise about the render: this is what prints if you write nothing. The editor ghosts that row verbatim for every control, and for a body that has one. A body that has NONE (the common case, and the case for every kind the reference quill declares) ghosts an invitation instead, either the consumer's `bodyPlaceholder` wording or the built-in `Write…` ([VISUAL_EDITOR_UIUX.md](VISUAL_EDITOR_UIUX.md) §Fields). Both render at the same ghost rung, and neither is ever written back, so on screen they are one thing; they are not one thing here. Only the `default:` came from the boundary, and a fallback must never be read back as one: nothing derives a schema value from what a leaf displays.
 
 Two neighbouring surfaces the editor re-exports but never drives: it selects no `OutputFormat` (Preview paints a page; it emits no artifact) and it routes diagnostics by `path`, never by a backend's error `code`.

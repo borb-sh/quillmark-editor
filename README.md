@@ -38,6 +38,8 @@ const session = await new Engine().open(quill, doc);
 // free() quill / doc / session on teardown.
 ```
 
+`seedDocument()` opens a **new** document from the quill's seed. An existing one comes back through the `Document` handle's own doors — `Document.fromMarkdown(text)` (what `doc.toMarkdown()` wrote; the round-trip is exact) or `Document.fromJson(json)` — and opens the same way. Swapping the document under a mounted surface is a **remount**, not a prop change (below).
+
 ## Preview
 
 `createPreview` supplies exactly the layer `LiveSession` omits: viewport, DOM, DPR, click mapping. It is a pure view: it never calls `session.apply`; you drive the edit and hand it the resulting `ChangeSet`.

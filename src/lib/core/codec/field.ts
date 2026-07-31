@@ -17,6 +17,7 @@ import { keymap } from 'prosemirror-keymap';
 import type { Node as PMNode, Schema } from 'prosemirror-model';
 import { EditorState, Plugin, PluginKey, Selection, type Command } from 'prosemirror-state';
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
+import { importMarkdown } from '../index.js';
 import type { Document, Content, Addr } from '../index.js';
 import { reportError, type EditorErrorHandler } from '../errors.js';
 import { decode } from './decode.js';
@@ -145,9 +146,20 @@ function anchorPlugin(seed: AnchorPos[]): Plugin<AnchorPos[]> {
  * stored value until first edited), reads `undefined`; decode an empty content
  * rather than crash, and the first edit installs it. Only an out-of-range
  * `addr.card` throws, unreachable here: a removed card unmounts its keyed leaf
- * before a stale index is read. */
+ * before a stale index is read.
+ *
+ * A richtext leaf is stored EITHER as content or as the markdown string a
+ * document carries verbatim when it was parsed rather than seeded
+ * (`Document.fromMarkdown` / `fromJson`, the door a consumer opens a saved
+ * document through). `getStored` is the verbatim read, so it hands back whichever
+ * is there; a string goes through the boundary's own markdown door, which is the
+ * same projection the codec exports back out. Without this the leaf crashes on
+ * every field of a loaded document — a form the editor never sees while a document
+ * is only ever seeded. */
 function readLeaf(doc: Document, addr: Addr): Content {
-	return (doc.getStored(addr) as Content | undefined) ?? emptyContent();
+	const stored = doc.getStored(addr);
+	if (stored == null) return emptyContent();
+	return typeof stored === 'string' ? importMarkdown(stored) : (stored as Content);
 }
 
 /** The canonical empty `Content`: one empty `para` line. The zero value a prose
