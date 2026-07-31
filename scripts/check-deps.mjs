@@ -184,24 +184,23 @@ const editorSide = Object.keys(uiExports)
 // not they carry weight of their own.
 const FORBIDDEN = new RegExp(`^(prosemirror-|${SELF}/(${editorSide.join('|')}))`);
 
-/** Resolve a specifier to a file inside src/lib, or null if it leaves the tree. */
+/** Resolve a relative specifier to a file inside src/lib, or null. `src/lib` is
+ *  relative throughout, which `svelte-package` requires (it rewrites no aliases), so
+ *  a relative specifier is the only kind that continues the walk; everything else is
+ *  bare and answers to FORBIDDEN. */
 function resolveInLib(spec, fromFile) {
-	let base = null;
-	if (spec.startsWith('$lib/')) base = join(LIB, spec.slice('$lib/'.length));
-	else if (spec === '$lib' || spec === SELF) base = LIB;
-	else if (spec.startsWith(`${SELF}/`)) base = join(LIB, spec.slice(SELF.length + 1));
-	else if (spec.startsWith('.')) base = resolve(dirname(fromFile), spec);
-	else return null; // bare specifier; matched against FORBIDDEN, not walked
+	if (!spec.startsWith('.')) return null;
 	// TS-ESM specifiers carry the EMITTED extension (`./paint.js` → `paint.ts`), so
 	// strip it before building candidates; else a `.js` specifier resolves to nothing
 	// and the transitive walk never leaves `preview/`, silently passing a relative
-	// reach into the codec.
-	const stem = base.replace(/\.(js|ts|svelte)$/, '');
+	// reach into the codec. `.css` is in the set because a stylesheet's `@import`
+	// matches the specifier patterns too, so a sheet reaching a forbidden one is seen.
+	const stem = resolve(dirname(fromFile), spec).replace(/\.(js|ts|svelte|css)$/, '');
 	for (const cand of [
-		base,
 		`${stem}.ts`,
 		`${stem}.js`,
 		`${stem}.svelte`,
+		`${stem}.css`,
 		join(stem, 'index.ts'),
 		join(stem, 'index.js')
 	])
