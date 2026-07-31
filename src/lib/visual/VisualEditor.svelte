@@ -67,6 +67,7 @@
 		type RoutedDiagnostic
 	} from './diagnostics.js';
 	import { fieldDomIds, groupPanelId } from './domid.js';
+	import { reorder } from './motion.js';
 	import { tipsChannel } from './tips.js';
 	import { patchEditorExt } from './ext.js';
 	import Card from './Card.svelte';
@@ -315,11 +316,24 @@
 			console.error('[quillmark/editor] addCard failed', e);
 		}
 	}
+	// The reorder gesture's arming window (SURFACES §Motion): the reconcile that moves a
+	// slot is the trip, and every other reconcile that happens to move one is not. Read
+	// through a getter rather than passed as a value, so the flag stays out of the
+	// template and needs no reactivity for it: `animate:` asks at apply time, which is a
+	// microtask after the mutation and well inside the frame that disarms it.
+	let reordering = false;
+	function armReorder(): void {
+		reordering = true;
+		requestAnimationFrame(() => (reordering = false));
+	}
+	const isReordering = (): boolean => reordering;
+
 	function moveCardById(id: string, dir: -1 | 1): void {
 		const from = cardIndexOf(id);
 		if (from < 0) return;
 		const to = from + dir;
 		if (to < 0 || to >= doc.cardCount) return;
+		armReorder();
 		doc.moveCard(from, to);
 		const w = cardIds.slice();
 		const [x] = w.splice(from, 1);
@@ -639,22 +653,28 @@
 	</div>
 
 	{@render addAffordance(0)}
+	<!-- A card and the gap under it are one SLOT, which is what a reorder moves: the
+	 strip below a card is the same strip wherever the card lands, so it rides along
+	 rather than being slid across. It is also the shape `animate:` asks for, being the
+	 keyed block's only child. -->
 	{#each model.cards as c, i (c.id)}
-		<Card
-			bind:this={cardRefs[i]}
-			card={c}
-			{doc}
-			index={i}
-			isFirst={i === 0}
-			isLast={i === model.cards.length - 1}
-			{kinds}
-			ops={opsFor(c.id, false)}
-			onFocus={handleFocus}
-			onCaretMove={handleCaret}
-			{register}
-			{unregister}
-		/>
-		{@render addAffordance(i + 1)}
+		<div class="qm-card-slot" animate:reorder={isReordering}>
+			<Card
+				bind:this={cardRefs[i]}
+				card={c}
+				{doc}
+				index={i}
+				isFirst={i === 0}
+				isLast={i === model.cards.length - 1}
+				{kinds}
+				ops={opsFor(c.id, false)}
+				onFocus={handleFocus}
+				onCaretMove={handleCaret}
+				{register}
+				{unregister}
+			/>
+			{@render addAffordance(i + 1)}
+		</div>
 	{/each}
 </div>
 
@@ -733,6 +753,15 @@
 	.qm-primary > :global(.qm-card) {
 		position: relative;
 		z-index: 1;
+	}
+	/* A slot restates the stack's own column and rhythm, so grouping a card with the
+	 strip under it changes no geometry: the strip takes the same gap back on both
+	 sides whether the gap above it is the slot's or the stack's, and a slot's own
+	 height is short by exactly the gap the strip absorbed at its foot. */
+	.qm-card-slot {
+		display: flex;
+		flex-direction: column;
+		gap: var(--_qm-space-2);
 	}
 	/* The strip between two blocks, and the whole of it is the target: a gap is found
 	 by POSITION, so reveal and hit region are the full-bleed row rather than a word
