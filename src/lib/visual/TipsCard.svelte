@@ -1,8 +1,8 @@
 <!--
  The ephemeral tips card (VISUAL_EDITOR_UIUX §"Tips card"). Renders the
- `$ext.editor.tips` channel one tip at a time with an advance and a dismiss; both
- exits call `onDismiss`, which CLEARS the channel in the Document, so the card is
- gone and does not reappear.
+ `$ext.editor.tips` channel one tip at a time: dots reach any tip in the set, and the
+ foot's one button advances until the last, where it becomes the dismiss. Dismissal
+ CLEARS the channel in the Document, so the card is gone and does not reappear.
 
  The cursor is LOCAL state, not the channel. Advancing writes nothing: a per-tip
  write would round-trip the boundary, re-derive the card tree, and dirty the
@@ -59,35 +59,54 @@
 	     announces rather than the change passing silently. -->
 	<div class="qm-tips-body" aria-live="polite" bind:this={bodyEl}></div>
 	<div class="qm-tips-foot">
+		<!-- One tip is its own whole set, so a lone dot reports nothing the card does
+		     not already show (AESTHETIC §"Strip redundancy"). -->
 		{#if tips.length > 1}
-			<span class="qm-tips-count">{index + 1} of {tips.length}</span>
+			<div class="qm-tips-dots">
+				{#each tips as _, i (i)}
+					<button
+						type="button"
+						class="qm-tips-dot"
+						aria-label={`Tip ${i + 1} of ${tips.length}`}
+						aria-current={i === index}
+						onclick={() => (cursor = i)}
+					></button>
+				{/each}
+			</div>
 		{/if}
-		<button type="button" class="qm-icon-btn qm-tips-next" onclick={advance}>
-			{isLast ? 'Got it' : 'Next'}
-			{#if !isLast}<ChevronRight size={GLYPH} />{/if}
+		<!-- ONE button, and its action is where the cursor stands: the set is walked,
+		     and its end is the exit. -->
+		<button type="button" class="qm-icon-btn qm-tips-action" onclick={advance}>
+			{#if isLast}
+				Dismiss <X size={GLYPH} />
+			{:else}
+				Next <ChevronRight size={GLYPH} />
+			{/if}
 		</button>
-		<button
-			type="button"
-			class="qm-icon-btn qm-tips-dismiss"
-			title="Dismiss tips"
-			onclick={onDismiss}><X size={GLYPH} /></button
-		>
 	</div>
 </aside>
 
 <style>
-	/* In-flow, like every other block in the column (SURFACES §Elevation): one
-	 hairline, no fill beyond the card recipe. It reads as guidance
-	 rather than as a field by TONE and TYPE: the label rung in the muted label
-	 colour; not by a badge or an accent (AESTHETIC §"Secondary text recedes").
-	 It mints no token of its own; every value here is an existing dial.
+	/* ATTACHED to `main`, not a block beside it: a square top pulled up by the radius,
+	 so its background fills the notches `main`'s rounded bottom corners cut and `main`
+	 paints over the rest. The seam is `main`'s own bottom hairline, and the two read as
+	 one block, which is what document-level guidance is: the main card's, not a card of
+	 its own. Still in-flow, one hairline, no lift, no fill beyond the card recipe
+	 (SURFACES §Elevation). It reads as guidance rather than as a field by TONE and
+	 TYPE: the label rung in the muted label colour; not by a badge or an accent
+	 (AESTHETIC §"Secondary text recedes"). It mints no token of its own; every value
+	 here is an existing dial.
+
+	 The top inset takes the tuck back, so the space above the tip is the space below
+	 the foot.
 
 	 Leading is the reading rung, not the tight one the label SIZE would suggest: a
 	 tip is a passage that wraps, and the two axes are independent (SURFACES §Rhythm). */
 	.qm-tips {
+		margin-top: calc(var(--_qm-radius) * -1);
 		border: var(--_qm-border-width) solid var(--_qm-border);
-		border-radius: var(--_qm-radius);
-		padding: var(--_qm-space-3) var(--_qm-space-4);
+		border-radius: 0 0 var(--_qm-radius) var(--_qm-radius);
+		padding: calc(var(--_qm-space-3) + var(--_qm-radius)) var(--_qm-space-4) var(--_qm-space-3);
 		background: var(--_qm-surface-raised);
 		display: flex;
 		flex-direction: column;
@@ -117,15 +136,48 @@
 		justify-content: flex-end;
 		gap: var(--_qm-space-2);
 	}
-	.qm-tips-count {
+	.qm-tips-dots {
+		display: flex;
+		align-items: center;
 		margin-right: auto;
-		font-size: var(--_qm-text-meta);
-		color: var(--_qm-ink-ghost);
+	}
+	/* Random access to the set, and the PITCH is the tap floor: 2.5.8's spacing
+	 exception measures centre distance, which is the number the floor already fixes,
+	 so a tighter row of dots buys nothing it does not immediately owe back. Target and
+	 mark are therefore not one rectangle (the floor is the button, the dot is drawn
+	 inside it), which is also why the hover reads on the mark rather than filling the
+	 box a `.qm-icon-btn` would. */
+	.qm-tips-dot {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-sizing: border-box;
+		min-width: var(--_qm-tap-min);
+		min-height: var(--_qm-tap-min);
+		border: none;
+		background: transparent;
+		cursor: pointer;
+	}
+	/* Three steps of ONE ink on the recede ladder (rest, hover, current), never a
+	 second hue and never a size: a dot that grew would move the row it sits in. */
+	.qm-tips-dot::before {
+		content: '';
+		width: 5px;
+		height: 5px;
+		border-radius: var(--_qm-radius-pill);
+		background: currentColor;
+		opacity: var(--_qm-opacity-idle);
+		transition: opacity var(--_qm-duration-fast) var(--_qm-ease-reverse);
+	}
+	.qm-tips-dot:hover::before {
+		opacity: var(--_qm-opacity-muted);
+	}
+	.qm-tips-dot[aria-current='true']::before {
+		opacity: 1;
 	}
 	/* Box and disabled state come from `.qm-icon-btn` (controls.css); the foot's
-	   buttons carry a label and so widen their inset and take the meta type rung. */
-	.qm-tips-next,
-	.qm-tips-dismiss {
+	   button carries a label and so widens its inset and takes the meta type rung. */
+	.qm-tips-action {
 		padding: var(--_qm-space-half) var(--_qm-space-2);
 		font-size: var(--_qm-text-meta);
 		color: var(--_qm-ink-label);
