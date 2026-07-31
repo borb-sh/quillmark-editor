@@ -1,6 +1,6 @@
-# The whole gate. `lint` + `check` + `check:canon` + `check:style` are the checks,
-# `test` is the Vitest tier, and `build` proves `svelte-package` still emits
-# `dist/`. Nothing here needs a browser, and nothing runs elsewhere.
+# The whole gate, over the whole workspace. One job: every package runs each verb
+# its own way, and a verb name means one thing. Nothing here needs a browser, and
+# nothing runs elsewhere.
 name: CI
 
 on:
@@ -27,12 +27,14 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      # `prepare` builds quiver's and ui's dist here, which is what the playground
+      # then type-checks against.
       - run: npm ci
 
       - name: Lint (prettier)
         run: npm run lint
 
-      - name: Check (svelte-check)
+      - name: Check (types)
         run: npm run check
 
       - name: Canon spine
@@ -41,8 +43,11 @@ jobs:
       - name: Style scales
         run: npm run check:style
 
+      - name: Dependency law
+        run: npm run check:deps
+
       - name: Test (vitest)
         run: npm test
 
-      - name: Build (svelte-package)
+      - name: Build
         run: npm run build

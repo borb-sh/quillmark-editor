@@ -20,12 +20,16 @@
 		"format": "prettier --write .",
 		"check:canon": "node scripts/check-canon.mjs",
 		"check:style": "node scripts/check-style.mjs",
-		"check:deps": "node scripts/check-deps.mjs"
+		"check:deps": "node scripts/check-deps.mjs",
+		"changeset": "changeset",
+		"version": "changeset version && npm install --package-lock-only",
+		"release": "npm run build && changeset publish"
 	},
 	"overrides": {
 		"@quillmark/wasm": "0.98.0"
 	},
 	"devDependencies": {
+		"@changesets/cli": "^2.31.1",
 		"@quillmark/wasm": "0.98.0",
 		"prettier": "^3.4.0",
 		"prettier-plugin-svelte": "^3.3.0"
