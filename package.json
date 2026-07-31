@@ -13,7 +13,7 @@
 	],
 	"scripts": {
 		"dev": "npm run dev -w packages/ui",
-		"build": "npm run build -w packages/ui",
+		"build": "npm run build -w packages/quiver && npm run build -w packages/ui",
 		"check": "npm run check --workspaces --if-present",
 		"test": "npm run test --workspaces --if-present",
 		"lint": "prettier --check .",

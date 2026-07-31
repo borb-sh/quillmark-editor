@@ -6,12 +6,13 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/borb-sh/quiver.git"
+    "url": "git+https://github.com/borb-sh/quillmark-js.git",
+    "directory": "packages/quiver"
   },
   "bugs": {
-    "url": "https://github.com/borb-sh/quiver/issues"
+    "url": "https://github.com/borb-sh/quillmark-js/issues"
   },
-  "homepage": "https://github.com/borb-sh/quiver#readme",
+  "homepage": "https://github.com/borb-sh/quillmark-js/tree/main/packages/quiver#readme",
   "keywords": [
     "quillmark",
     "quiver",
@@ -70,6 +71,6 @@
     "prepare": "tsc",
     "prepack": "rm -rf dist && tsc",
     "test": "vitest run",
-    "lint": "tsc --noEmit"
+    "check": "tsc --noEmit"
   }
 }
