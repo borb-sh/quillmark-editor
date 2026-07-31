@@ -8,7 +8,8 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { createPreview, type PreviewController } from './controller.js';
+	import { createPreview, type PreviewController, type CaretTarget } from './controller.js';
+	import { rebindGuard } from '../core/rebind.js';
 	import type { LiveSession, ContentHit, ChangeSet } from '../core/index.js';
 
 	/**
@@ -35,6 +36,12 @@
 	let containerEl: HTMLDivElement | undefined = $state();
 	let controller: PreviewController | undefined;
 
+	// The remount contract, made loud in dev (`core/rebind.ts`): swapping `session`
+	// in place leaves this painting the old one, silently.
+	// svelte-ignore state_referenced_locally
+	const guardSession = rebindGuard('Preview', 'session', session);
+	$effect(() => guardSession(session));
+
 	onMount(() => {
 		if (!containerEl) return;
 		controller = createPreview(session, { container: containerEl, margin, overlays, onCaretPick });
@@ -50,8 +57,8 @@
 	export function scrollToField(field: string): void {
 		controller?.scrollToField(field);
 	}
-	export function focusPosition(field: string, pos: number): void {
-		controller?.focusPosition(field, pos);
+	export function focusPosition(at: CaretTarget): void {
+		controller?.focusPosition(at);
 	}
 	export function setZoom(scale: number): void {
 		controller?.setZoom(scale);

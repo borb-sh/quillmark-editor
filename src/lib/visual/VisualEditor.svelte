@@ -68,8 +68,11 @@
 	} from './diagnostics.js';
 	import { fieldDomIds, groupPanelId } from './domid.js';
 	import { reorder } from './motion.js';
+	import { fieldPathForAddr } from './caret.js';
+	import type { CaretMove, ActiveField, EditorChange } from './signals.js';
 	import { tipsChannel } from './tips.js';
 	import { patchEditorExt } from './ext.js';
+	import { rebindGuard } from '../core/rebind.js';
 	import Card from './Card.svelte';
 	import TipsCard from './TipsCard.svelte';
 	import FormatPopover from './FormatPopover.svelte';
@@ -87,12 +90,22 @@
 	interface Props {
 		doc: Document;
 		quill: Quill;
-		/** The active leaf's address (normalized to a plain `{card?, field?}`). */
-		onActiveAddrChange?: (addr: Addr) => void;
-		/** A caret move in the active leaf → the preview bridge. */
-		onCaretMove?: (addr: Addr, pos: number) => void;
-		/** Fired after every scalar/structure mutation: a change signal for a host. */
-		onChange?: () => void;
+		/** The active leaf, in both addressings. */
+		onActiveAddrChange?: (at: ActiveField) => void;
+		/**
+		 * A caret move in the active leaf, carrying the preview's own address
+		 * grammar: `onCaretMove={preview.focusPosition}` is the whole bridge. A
+		 * SELECTION signal, not a change signal: an arrow key fires it and commits
+		 * nothing (`onChange` is the change signal).
+		 */
+		onCaretMove?: (at: CaretMove) => void;
+		/**
+		 * EVERY edit that lands on the document: a prose commit, a scalar/array
+		 * write, a card operation. `source` is what moved, for a host that wants a
+		 * structure op to recompile at once and a keystroke to wait for the burst to
+		 * settle; a host that recompiles the same way for all three ignores it.
+		 */
+		onChange?: (change: EditorChange) => void;
 		/**
 		 * External diagnostics, routed by `.path` and merged with `quill.validate`
 		 * and local commit errors (VISUAL_EDITOR §Diagnostics).
@@ -164,14 +177,37 @@
 		commitErrors = next;
 	}
 
+	// The remount contract above, made loud in dev (`core/rebind.ts`): the failure
+	// it catches is silent by construction, since a swapped handle is a valid
+	// handle and every read against it succeeds against the wrong document.
+	// svelte-ignore state_referenced_locally
+	const guardDoc = rebindGuard('VisualEditor', 'doc', doc);
+	// svelte-ignore state_referenced_locally
+	const guardQuill = rebindGuard('VisualEditor', 'quill', quill);
+	$effect(() => {
+		guardDoc(doc);
+		guardQuill(quill);
+	});
+
 	const kinds = $derived(Object.keys(quill.schema.card_kinds ?? {}));
 
 	/** Control-glyph size: the shared rule (AESTHETIC §Icons), as CardControls. */
 	const GLYPH = 14;
 
-	function bump(): void {
+	/**
+	 * A mutation the DERIVED TREE has to see: bump the revision, then report it.
+	 * Prose is the other half and goes through `proseChanged` below: a prose leaf
+	 * commits its own edit and must NOT re-derive (the re-derive would remount the
+	 * leaf and drop the caret), so the two paths differ in exactly that, and in
+	 * nothing a host observes.
+	 */
+	function mutate(source: 'field' | 'structure', addr?: Addr): void {
 		revision++;
-		onChange?.();
+		onChange?.({ source, addr: addr && normalize(addr) });
+	}
+	/** A prose commit: the change signal WITHOUT the re-derive. */
+	function proseChanged(addr: Addr): void {
+		onChange?.({ source: 'prose', addr: normalize(addr) });
 	}
 	/** Resolve a stable card id to its current content index, or -1 if gone: read
 	 * at the mutation boundary, never cached (VISUAL_EDITOR §"The address is the spine"). */
@@ -216,10 +252,24 @@
 		const plain = normalize(addr);
 		activeAddr = plain;
 		activeCardId = plain.card != null ? cardIds[plain.card] : 'main';
-		onActiveAddrChange?.(plain);
+		const field = pathFor(plain);
+		if (field != null) onActiveAddrChange?.({ addr: plain, field });
 	}
 	function handleCaret(addr: Addr, pos: number): void {
-		onCaretMove?.(normalize(addr), pos);
+		const plain = normalize(addr);
+		const field = pathFor(plain);
+		if (field != null) onCaretMove?.({ addr: plain, field, pos });
+	}
+	/**
+	 * This leaf's canonical `DocPath`. Free on the keystroke path: the kinds come
+	 * off the DERIVED tree, which is re-read once per mutation, where
+	 * `doc.cards.map(c => c.kind)` at the call site allocates per event. An address
+	 * that cannot be formed (a card index outside the live tree, which a mounted
+	 * leaf cannot hold) emits NOTHING rather than half an event: every hook here
+	 * carries both addressings or does not fire.
+	 */
+	function pathFor(addr: Addr): string | undefined {
+		return fieldPathForAddr(addr, kindsByIndex);
 	}
 
 	// ── Commit routing ──────────────────────────────────────────────────────────
@@ -270,7 +320,7 @@
 				}
 			}
 			if (commitErrors.has(keyStr)) editCommitErrors((m) => m.delete(keyStr));
-			bump();
+			mutate('field', makeAddr(id, isMain, name));
 		} catch (e) {
 			const diagnostic: Diagnostic = (isQuillmarkError(e) ? e.diagnostics[0] : undefined) ?? {
 				severity: 'error',
@@ -308,7 +358,7 @@
 			doc.insertCard(card, atIndex);
 			const id = seq.next();
 			cardIds = [...cardIds.slice(0, atIndex), id, ...cardIds.slice(atIndex)];
-			bump();
+			mutate('structure', cardAddr(id));
 			// `center` for an insert: the new card is the subject, and centring it shows
 			// the neighbours it landed between.
 			void scrollCardIntoView(id, 'center');
@@ -339,7 +389,7 @@
 		const [x] = w.splice(from, 1);
 		w.splice(to, 0, x);
 		cardIds = w;
-		bump();
+		mutate('structure', cardAddr(id));
 		// `nearest` for a reorder: the card was already in view and only needs to stay
 		// there, so a card that never left the viewport does not move it at all.
 		void scrollCardIntoView(id, 'nearest');
@@ -361,14 +411,14 @@
 			editCommitErrors((m) => {
 				for (const k of [...m.keys()]) if (k.startsWith(`${id}:`)) m.delete(k);
 			});
-		bump();
+		mutate('structure');
 	}
 	function retypeCardById(id: string, kind: string): void {
 		const i = cardIndexOf(id);
 		if (i < 0) return;
 		try {
 			doc.setCardKind(i, kind);
-			bump();
+			mutate('structure', cardAddr(id));
 		} catch (e) {
 			console.error('[quillmark/editor] retype failed', e);
 		}
@@ -377,7 +427,7 @@
 		const i = cardIndexOf(id);
 		if (i < 0) return;
 		patchEditorExt(doc, { card: i }, { title });
-		bump();
+		mutate('structure', cardAddr(id));
 	}
 	/**
 	 * Clear the tips channel: the dismissal write, and the ONLY write
@@ -386,7 +436,7 @@
 	 */
 	function dismissTips(): void {
 		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
-		bump();
+		mutate('structure');
 	}
 
 	// ── Addressing + per-card op bundle ─────────────────────────────────────────
@@ -570,6 +620,14 @@
 		};
 	});
 
+	/**
+	 * Every card's kind by content index, off the DERIVED tree rather than a fresh
+	 * `doc.cards` read: the bridge's address mapping (`pathFor`) needs it on every
+	 * caret move, and the tree already holds it. Re-derived once per mutation,
+	 * which is the only thing that can move a kind.
+	 */
+	const kindsByIndex = $derived(model.cards.map((c) => c.kind));
+
 	// ── Public entry points ─────────────────────────────────────────────────────
 	/**
 	 * Resolve a preview `ContentHit` to a mounted leaf and place its caret.
@@ -639,6 +697,7 @@
 			ops={opsFor('main', true)}
 			onFocus={handleFocus}
 			onCaretMove={handleCaret}
+			onProseChange={proseChanged}
 			{register}
 			{unregister}
 		/>
@@ -670,6 +729,7 @@
 				ops={opsFor(c.id, false)}
 				onFocus={handleFocus}
 				onCaretMove={handleCaret}
+				onProseChange={proseChanged}
 				{register}
 				{unregister}
 			/>

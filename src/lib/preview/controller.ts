@@ -9,6 +9,20 @@ import { createPaintLoop, type PaintLoop } from './paint.js';
 import { createOverlay, type OverlayController } from './overlay.js';
 import { createBridge, type BridgeController } from './bridge.js';
 
+/**
+ * A place in the content: the canonical `DocPath` field address and a USV
+ * position. Declared STRUCTURALLY rather than imported, which is what keeps the
+ * two surfaces mutually unaware (`/preview` reaches `/core` and nothing else):
+ * the preview's own `ContentHit` and the editor's `onCaretMove` payload both fit
+ * it, so the caret bridge is a pass-through in both directions.
+ */
+export interface CaretTarget {
+	/** `main.subject` / `main.body` / `cards.<kind>[i].<field>`. */
+	field: string;
+	/** The caret in USV. */
+	pos: number;
+}
+
 export interface PreviewOptions {
 	/** The element the preview mounts into; becomes the scroll viewport. */
 	container: HTMLElement;
@@ -25,8 +39,10 @@ export interface PreviewController {
 	refresh(change: ChangeSet): void;
 	/** Scroll `field`'s first box into view and bloom it. */
 	scrollToField(field: string): void;
-	/** Scroll the caret at `field`/`pos` into view and bloom its field on arrival. */
-	focusPosition(field: string, pos: number): void;
+	/** Scroll the caret at `at.field`/`at.pos` into view and bloom its field on
+	 *  arrival. `onCaretMove={preview.focusPosition}` is the editor→preview half of
+	 *  the bridge; a `ContentHit` fits too. */
+	focusPosition(at: CaretTarget): void;
 	/** Fold a density multiplier into every future paint (crispness, not layout). */
 	setZoom(scale: number): void;
 	destroy(): void;
@@ -142,9 +158,9 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 			bridge?.scrollToField(field);
 			overlay?.flashField(field);
 		},
-		focusPosition(field, pos) {
-			bridge?.focusPosition(field, pos);
-			overlay?.flashField(field);
+		focusPosition(at) {
+			bridge?.focusPosition(at.field, at.pos);
+			overlay?.flashField(at.field);
 		},
 		setZoom(scale) {
 			paintLoop.setDensityZoom(scale);

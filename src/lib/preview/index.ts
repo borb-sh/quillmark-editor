@@ -6,5 +6,5 @@
 // re-export, not a refactor: it may reach `/core` (the shared WASM boundary) and
 // nothing else. Enforced by tests/preview-boundary.test.ts.
 export { createPreview } from './controller.js';
-export type { PreviewOptions, PreviewController } from './controller.js';
+export type { PreviewOptions, PreviewController, CaretTarget } from './controller.js';
 export { default as Preview } from './Preview.svelte';

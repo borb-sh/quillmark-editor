@@ -28,6 +28,9 @@ export type { BodyPlaceholder, BodyPlaceholderContext } from './structure.js';
 export { patchEditorExt } from './ext.js';
 export { tipsChannel } from './tips.js';
 
-// The editor→preview caret-bridge address mapping: a consumer wiring
-// `onCaretMove` to `preview.focusPosition` maps the editor `Addr` through this.
+// What the editor emits. `CaretMove` is already the preview's `focusPosition`
+// argument, so the bridge is `onCaretMove={preview.focusPosition}`; the mapping
+// behind it is exported as the escape hatch, for a consumer addressing a leaf the
+// editor has not just reported (a saved cursor, a deep link).
+export type { CaretMove, ActiveField, EditorChange } from './signals.js';
 export { fieldPathForAddr } from './caret.js';

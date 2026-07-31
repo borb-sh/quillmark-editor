@@ -45,6 +45,8 @@
 		ops: CardOps;
 		onFocus?: (addr: Addr) => void;
 		onCaretMove?: (addr: Addr, pos: number) => void;
+		/** A prose commit in one of this card's leaves. */
+		onProseChange?: (addr: Addr) => void;
 		register?: (key: string, controller: FieldController) => void;
 		unregister?: (key: string) => void;
 	}
@@ -58,6 +60,7 @@
 		ops,
 		onFocus,
 		onCaretMove,
+		onProseChange,
 		register,
 		unregister
 	}: Props = $props();
@@ -341,6 +344,7 @@
 						leafKey={ops.leafKey(undefined)}
 						{onFocus}
 						{onCaretMove}
+						onChange={onProseChange}
 						{register}
 						{unregister}
 					/>
@@ -371,6 +375,7 @@
 				optionAllowed={(v) => ops.enumAllowed(f.name, v)}
 				{onFocus}
 				{onCaretMove}
+				{onProseChange}
 				{register}
 				{unregister}
 				diagnostics={ops.diagFor(f.name)}

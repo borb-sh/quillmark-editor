@@ -12,18 +12,17 @@
                                             └► sourceView.refresh()
                                             └► diagnostics = session.warnings
     preview click ─► onCaretPick(hit) ─► editor.setCaret(hit)          (preview→editor)
-    editor caret  ─► onCaretMove(addr,pos) ─► preview.focusPosition(   (editor→preview)
-                       fieldPathForAddr(addr, kinds), pos)
+    editor caret  ─► onCaretMove(at)  ─► preview.focusPosition(at)     (editor→preview)
 
   The bridge is consumer-layer and one-way-independent: the editor is unaware of
   the preview (it only emits addresses + carets), the preview is unaware of the
-  editor (it only surfaces hits). This route is the seam that joins them.
+  editor (it only surfaces hits). This route is the seam that joins them, and each
+  hop is a pass-through: each surface emits the other's argument shape.
 
-  Recompile is debounced and fed by BOTH `onChange` (scalar/structure mutations)
-  and `onCaretMove` (prose edits surface here; a prose leaf commits directly and
-  does not bump the editor's revision). A caret move with no content change
-  recompiles to empty `dirtyPages` (apply on an unchanged doc is a cheap no-op),
-  so the preview repaints nothing; only the geometry re-reads.
+  Recompile is fed by `onChange` ALONE, which covers all three lanes. `source` is
+  read for its cost: a structure op is one gesture and applies at once; prose and
+  scalar edits arrive in bursts and settle for 120ms first. A caret move drives
+  nothing but the preview's scroll.
 
   The strip above the panes reads the bridge's outcomes back out (last-hit,
   active-addr, last-focus, last-change), so a round-trip that lands nowhere is
@@ -33,15 +32,8 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type {
-		Quill,
-		Document,
-		LiveSession,
-		ContentHit,
-		ChangeSet,
-		Addr,
-		Diagnostic
-	} from '$lib/core';
+	import type { Quill, Document, LiveSession, ContentHit, ChangeSet, Diagnostic } from '$lib/core';
+	import type { ActiveField, CaretMove, EditorChange } from '$lib/visual';
 	import { Preview } from '$lib/preview';
 	import { SourceView } from '$lib/source';
 	import { loadUsafMemoTree } from '../fixture';
@@ -55,13 +47,6 @@
 	let session: LiveSession | undefined = $state();
 	let quillHandle: Quill | undefined = $state();
 	let docHandle: Document | undefined = $state();
-
-	// The editor→preview address mapping: captured from the dynamic `$lib/visual`
-	// import (below) rather than statically imported, so the route module never
-	// pulls VisualEditor's WASM top-level await (Safari/dev doesn't TDZ on Kit's
-	// `component` export, the reason for the dynamic-import dance). This is the
-	// public `/visual` surface, loaded after mount.
-	let fieldPathForAddr: ((addr: Addr, kinds: readonly string[]) => string | undefined) | undefined;
 
 	// Surface handles for the imperative bridge hops.
 	let editorRef: { setCaret(hit: ContentHit): Promise<void> } | undefined = $state();
@@ -81,6 +66,7 @@
 	let activeAddr = $state('none');
 	let lastFocus = $state('none');
 	let lastChange = $state<ChangeSet | undefined>();
+	let lastChangeSource = $state('none');
 	let showSource = $state(false);
 
 	// ── Split resizer (playground reference) ─────────────────────────────────────
@@ -155,6 +141,7 @@
 		recompileTimer = setTimeout(recompileNow, 120);
 	}
 	function recompileNow(): void {
+		if (recompileTimer != null) clearTimeout(recompileTimer);
 		recompileTimer = undefined;
 		if (!session || !docHandle) return;
 		try {
@@ -177,20 +164,21 @@
 	}
 
 	// ── Bridge: editor → preview ────────────────────────────────────────────────
-	function handleActiveAddr(addr: Addr): void {
-		activeAddr = JSON.stringify(addr);
+	function handleActiveAddr(at: ActiveField): void {
+		activeAddr = JSON.stringify(at.addr);
 	}
-	function handleCaretMove(addr: Addr, pos: number): void {
-		// Only a card address needs the kinds array; read it lazily so a main-field
-		// caret move (the common case) costs no `doc.cards` allocation.
-		const kinds = addr.card != null && docHandle ? docHandle.cards.map((c) => c.kind) : [];
-		const field = fieldPathForAddr?.(addr, kinds);
-		if (field != null) {
-			previewRef?.focusPosition(field, pos);
-			lastFocus = JSON.stringify({ field, pos });
-		}
-		// A prose edit surfaces only as a caret move; recompile to follow it.
-		scheduleRecompile();
+	function handleCaretMove(at: CaretMove): void {
+		// The whole bridge: the editor emits the preview's own address grammar, so
+		// this hop translates nothing and reads no `doc.cards`.
+		previewRef?.focusPosition(at);
+		lastFocus = JSON.stringify({ field: at.field, pos: at.pos });
+	}
+	// Every edit, whatever lane it came down. A structure op is one gesture and
+	// recompiles at once; prose and scalars arrive in bursts and settle first.
+	function handleChange(change: EditorChange): void {
+		lastChangeSource = change.source;
+		if (change.source === 'structure') recompileNow();
+		else scheduleRecompile();
 	}
 
 	function injectDiagnostics(): void {
@@ -230,7 +218,6 @@
 					return;
 				}
 				VisualEditor = visual.VisualEditor;
-				fieldPathForAddr = visual.fieldPathForAddr;
 				session = openedSession;
 				quillHandle = quill;
 				docHandle = doc;
@@ -321,7 +308,7 @@
 						quill={quillHandle}
 						onActiveAddrChange={handleActiveAddr}
 						onCaretMove={handleCaretMove}
-						onChange={scheduleRecompile}
+						onChange={handleChange}
 						diagnostics={externalDiagnostics}
 					/>
 				{/if}

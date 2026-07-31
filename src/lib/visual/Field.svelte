@@ -51,6 +51,8 @@
 		optionAllowed?: (value: string) => boolean;
 		onFocus?: (addr: Addr) => void;
 		onCaretMove?: (addr: Addr, pos: number) => void;
+		/** A prose commit in this field's leaf. */
+		onProseChange?: (addr: Addr) => void;
 		register?: (key: string, controller: FieldController) => void;
 		unregister?: (key: string) => void;
 		diagnostics?: Diagnostic[];
@@ -68,6 +70,7 @@
 		optionAllowed,
 		onFocus,
 		onCaretMove,
+		onProseChange,
 		register,
 		unregister,
 		diagnostics
@@ -134,6 +137,7 @@
 				{leafKey}
 				{onFocus}
 				{onCaretMove}
+				onChange={onProseChange}
 				{register}
 				{unregister}
 			/>

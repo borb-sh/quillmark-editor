@@ -57,7 +57,15 @@ Reconciliation is field-scoped. The editor holds its optimistic PM state and re-
 **One active leaf holds the caret.** The VisualEditor owns `activeAddr`; because leaves are keyed by stable identity, this is plain state, not a value hoisted to a parent to survive remounts. Both directions ([PREVIEW.md](PREVIEW.md) §Click bridge):
 
 - **preview → editor**: `visualEditor.setCaret(hit)` resolves `hit.field` to a leaf, which runs `codec.usvToPM(hit.pos)` and sets its PM caret; a `'segment'` hit just focuses the leaf (`hit.pos` is a segment start, not a cluster-exact caret). It reveals first and awaits the render before landing, so it is the one async entry point (VISUAL_EDITOR_UIUX §"Editor↔preview").
-- **editor → preview**: a caret move in the active leaf emits `onCaretMove(addr, pos)`; the consumer maps `addr` to the canonical `DocPath` field address with `fieldPathForAddr` (`caret.ts`, built on `formatDocPath`) and calls `preview.focusPosition(field, pos)`. The USV `pos` is the shared coordinate: no codec hop.
+- **editor → preview**: a caret move in the active leaf emits `onCaretMove({ addr, field, pos })`, where `field` is the canonical `DocPath` and `pos` the USV caret: the preview's own `focusPosition` argument, so the hop is `onCaretMove={preview.focusPosition}` and the consumer translates nothing. The editor mints the path off its derived card tree (`fieldPathForAddr` over the kinds it already holds), so the per-keystroke path costs no `doc.cards` read; `fieldPathForAddr` stays exported for a consumer addressing a leaf the editor has not just reported. A caret whose path cannot be formed emits nothing: every hook carries both addressings or does not fire.
+
+**The two directions are symmetric, and neither surface imports the other.** What they share is `/core`'s address grammar: the preview emits a `ContentHit` the editor consumes whole (`setCaret`), the editor emits a `CaretMove` the preview consumes whole. `CaretTarget` (preview) and `CaretMove` (editor) are declared separately and meet STRUCTURALLY, which is what keeps `/preview` free of an editor-side import.
+
+## The change signal
+
+**One hook reports every edit, and it is not the caret.** `onChange({ source, addr })` fires for a prose commit, a scalar/array/object write, and a card operation alike; `source` distinguishes them because they differ in COST, not in kind: prose arrives per keystroke and wants a debounce, a structure op is one gesture and recompiles at once.
+
+The two paths differ in one thing only, and it is internal: a scalar or structure mutation bumps `revision` and re-derives the card tree, while a prose leaf commits its own edit and must not re-derive (that would remount the leaf and drop the caret). A host observes no difference. `onCaretMove` is a SELECTION signal: an arrow key fires it and commits nothing, so a recompile driven off it recompiles on navigation.
 
 ## Chrome
 
@@ -87,7 +95,8 @@ function createField(opts: {
   plaintext?: boolean; // inline + marks/islands stripped
   label?: string; // aria-label on the contenteditable
   onFocus?(addr: Addr): void;
-  onCaretMove?(addr: Addr, pos: number): void;
+  onCaretMove?(addr: Addr, pos: number): void; // an edit OR a bare selection move
+  onChange?(addr: Addr): void; // a content edit that COMMITTED
 }): FieldController;
 
 interface FieldController {
@@ -105,11 +114,9 @@ interface FieldController {
 <VisualEditor
   bind:this={visualEditor}
   {doc} {quill}
-  onActiveAddrChange={(addr) => …}
-  onCaretMove={(addr, pos) => {
-    const field = fieldPathForAddr(addr, doc.cards.map((c) => c.kind));
-    if (field) preview.focusPosition(field, pos);
-  }}
+  onActiveAddrChange={(at) => …}
+  onCaretMove={preview.focusPosition}
+  onChange={(change) => …}  {/* every edit: prose | field | structure */}
 />
 <!-- bridge in: visualEditor.setCaret(hit) from preview.onCaretPick -->
 ```

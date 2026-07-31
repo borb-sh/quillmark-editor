@@ -45,6 +45,8 @@
 		leafKey: string;
 		onFocus?: (addr: Addr) => void;
 		onCaretMove?: (addr: Addr, pos: number) => void;
+		/** A content edit committed: the prose leaf's own change signal. */
+		onChange?: (addr: Addr) => void;
 		register?: (key: string, controller: FieldController) => void;
 		unregister?: (key: string) => void;
 	}
@@ -62,6 +64,7 @@
 		leafKey,
 		onFocus,
 		onCaretMove,
+		onChange,
 		register,
 		unregister
 	}: Props = $props();
@@ -100,7 +103,8 @@
 			describedBy,
 			placeholder,
 			onFocus,
-			onCaretMove
+			onCaretMove,
+			onChange
 		});
 		register?.(leafKey, controller);
 		return () => {

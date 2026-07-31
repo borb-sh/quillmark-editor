@@ -6,7 +6,8 @@
 //   (b) lower the tr to a `ChangeBundle` (or `install` for island creation, the
 //       one structural edit the op vocabulary cannot represent),
 //   (c) commit via `doc.applyChange(addr, bundle)`,
-//   (d) fire `onCaretMove` with the new USV caret.
+//   (d) fire `onChange` when the transaction carried an edit, and `onCaretMove`
+//       with the new USV caret, which a bare selection move fires too.
 // On an `applyChange` throw the optimistic PM state stays and the error is logged:
 // never a crash. Caret continuity across own-edits is the PM `StepMap`; an
 // EXTERNAL content change re-hydrates through `applyExternal`, gated by `reconcile`.
@@ -55,6 +56,15 @@ export interface CreateFieldOpts {
 	onFocus?(addr: Addr): void;
 	/** Fired with the new USV caret after an edit or a selection move. */
 	onCaretMove?(addr: Addr, pos: number): void;
+	/**
+	 * A content edit COMMITTED to the document. The prose half of a host's change
+	 * signal, and the reason it is not `onCaretMove`: that one fires on a bare
+	 * arrow key too, so a host driving a recompile off it recompiles on navigation.
+	 * Fired after the commit lands, including the install fallback; an edit the
+	 * boundary refused outright still fires it, since the optimistic PM state is
+	 * what the reader now sees.
+	 */
+	onChange?(addr: Addr): void;
 }
 
 /** The prose-leaf handle (VISUAL_EDITOR §Surface). */
@@ -193,6 +203,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			// routes it through the same commit path (the diff emits the anchor op).
 			if (tr.docChanged || tr.getMeta(anchorKey)) {
 				commitEdit(oldRt, next.doc);
+				opts.onChange?.(addr);
 			}
 			// (d) caret: for both structural and selection-only changes.
 			opts.onCaretMove?.(addr, pmToUsv(index, next.selection.head));

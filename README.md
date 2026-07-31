@@ -18,7 +18,7 @@ Each subpath is its own module root; a bundler pulls only what the entry you imp
 | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `@quillmark/editor/core`    | The `@quillmark/wasm` boundary: `Engine`/`Quill`/`Document` handles, the content codec, and every boundary type. Framework-free.              |
 | `@quillmark/editor/preview` | The live preview: `createPreview` + `<Preview>`. Reaches `/core` and nothing editor-side, so `@quillmark/preview` can promote to a re-export. |
-| `@quillmark/editor/visual`  | The federated WYSIWYG: `<VisualEditor>`, the codec's `createField` prose leaf, `fieldPathForAddr`.                                            |
+| `@quillmark/editor/visual`  | The federated WYSIWYG: `<VisualEditor>`, the codec's `createField` prose leaf, the emitted payload types.                                     |
 | `@quillmark/editor/source`  | The read-only debug source view: `createSourceView` + `<SourceView>`.                                                                         |
 | `@quillmark/editor`         | Re-exports `/core` (the shared substrate).                                                                                                    |
 
@@ -69,39 +69,39 @@ In Svelte, `<Preview {session} onCaretPick={…} />` exposes the same verbs (`re
 <VisualEditor
 	{doc}
 	{quill}
-	onChange={() => {
-		/* a scalar/structure mutation landed */
+	onChange={(change) => {
+		/* an edit landed: change.source is 'prose' | 'field' | 'structure' */
 	}}
-	onActiveAddrChange={(addr) => {
-		/* the active leaf's address */
+	onActiveAddrChange={(at) => {
+		/* the active leaf, as `{ addr, field }` */
 	}}
-	onCaretMove={(addr, pos) => {
-		/* the active leaf's caret moved (USV) */
+	onCaretMove={(at) => {
+		/* the caret moved: `{ addr, field, pos }`. A selection signal, not a
+		   change signal — an arrow key fires it and commits nothing. */
 	}}
 	diagnostics={external}
 />
 ```
 
-Swap `doc`/`quill` by **remounting** (`{#key doc}`); edits flow the other way, mutating the passed-in handle.
+`onChange` fires for **every** edit — prose keystroke, form control, card operation — and `change.source` says which, so a host can recompile a structure op at once and let a burst of typing settle. `onCaretMove` is a selection signal and never a change signal.
+
+Swap `doc`/`quill` by **remounting** (`{#key doc}`); edits flow the other way, mutating the passed-in handle. Swapping in place is not observed; in a dev build the surface says so on the console.
 
 ## The caret bridge
 
 The bridge lives at the **consumer** layer and is opt-in; the editor is unaware of the preview, the preview unaware of the editor. Wire the two directions:
+
+Each surface emits the argument the other one takes, so both directions are pass-throughs:
 
 ```ts
 // preview → editor: a click resolved to a content position places the caret.
 onCaretPick: (hit) => visualEditor.setCaret(hit);
 
 // editor → preview: a caret move scrolls the preview to follow it.
-import { fieldPathForAddr } from '@quillmark/editor/visual';
-onCaretMove: (addr, pos) => {
-	const field = fieldPathForAddr(
-		addr,
-		doc.cards.map((c) => c.kind)
-	);
-	if (field) preview.focusPosition(field, pos);
-};
+onCaretMove: (at) => preview.focusPosition(at);
 ```
+
+The editor mints the canonical field path off the card tree it already derives, so this costs no per-keystroke work. `fieldPathForAddr(addr, kinds)` is exported for the other case: addressing a leaf the editor has not just reported (a saved cursor, a deep link).
 
 `src/routes/editor/+page.svelte` is the full reference split-pane shell: one session, both bridge directions, the preview following edits, diagnostics routed inline, and the source view.
 

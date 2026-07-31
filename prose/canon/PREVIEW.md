@@ -75,7 +75,7 @@ interface PreviewOptions {
 interface PreviewController {
   refresh(change: ChangeSet): void;                  // repaint dirty ∩ visible, re-read geometry
   scrollToField(field: string): void;                // fieldBoxes → scroll into view
-  focusPosition(field: string, pos: number): void;   // editor → preview: locate → caret rect → scroll
+  focusPosition(at: CaretTarget): void;              // editor → preview: locate → caret rect → scroll
   setZoom(scale: number): void;                       // folds into densityScale, repaints visible
   destroy(): void;
 }

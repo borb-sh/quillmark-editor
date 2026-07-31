@@ -8,6 +8,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createSourceView, type SourceViewController } from './view.js';
+	import { rebindGuard } from '../core/rebind.js';
 	import type { Document } from '../core/index.js';
 
 	/**
@@ -26,6 +27,11 @@
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let controller: SourceViewController | undefined;
+
+	// The remount contract, made loud in dev (`core/rebind.ts`).
+	// svelte-ignore state_referenced_locally
+	const guardDoc = rebindGuard('SourceView', 'doc', doc);
+	$effect(() => guardDoc(doc));
 
 	onMount(() => {
 		if (!containerEl) return;
