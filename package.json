@@ -19,7 +19,8 @@
 		"lint": "prettier --check .",
 		"format": "prettier --write .",
 		"check:canon": "node scripts/check-canon.mjs",
-		"check:style": "node scripts/check-style.mjs"
+		"check:style": "node scripts/check-style.mjs",
+		"check:deps": "node scripts/check-deps.mjs"
 	},
 	"overrides": {
 		"@quillmark/wasm": "0.98.0"
