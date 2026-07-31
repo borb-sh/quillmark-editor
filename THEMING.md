@@ -30,7 +30,7 @@ Nothing to import: the package pulls its own stylesheet, which applies the deriv
 | `--qm-radius`    | `8px`                                  | Card & popover corner. Interior controls derive a tighter tier (half).                                  |
 | `--qm-space`     | `0.25rem`                              | Spacing base. Gaps and insets are `half`/`1×`/`2×`/`3×`/`4×` multiples of it.                           |
 
-Give a length dial a length. `--qm-space: 4` is a valid custom property and an invalid length, so it poisons every `calc()` that reads it and collapses the surface's padding to zero. CSS property registration would catch that, but a registered property's initial value must be computationally independent and these default in `rem`, so nothing catches it but you.
+Give a length dial a length. `--qm-space: 4` is a valid custom property and an invalid length. The three length dials are **contained**: each lands in one private rung, and that rung is registered (`@property`, `<length>`), so an invalid value is invalid at computed-value time there and falls back to the rung's own floor instead of reaching every `calc()` downstream. You get the documented default rather than a surface with no padding. The registration is on the private rung, not the dial — a registered property's initial value must be computationally independent, which the `rem` defaults above are not — so the defaults in the table are exactly what they say.
 
 ## What is behind the column is yours
 
@@ -69,6 +69,34 @@ Setting the poles yourself wins over the default in both schemes, so a fixed pal
 A palette **pinned against** your own scheme is the one case needing a second line: the surfaces follow your dials, but native chrome follows `color-scheme`, so pin it with them: `.my-editor { color-scheme: dark }`. Skip that line and a typed value's own text still matches its card (`color` reads the same dial the card does, not `color-scheme`), but what the browser paints from `color-scheme` does not: the selection highlight, the scrollbar and the spinner stay on whichever scheme the host happens to inherit.
 
 No JS runs and no media query: the derivation is emitted as `var()` references over `light-dark()`, so an ancestor's dials and the inherited scheme both resolve through the cascade at paint time. There is no `dark` prop and no mode toggle in the package; the consumer's palette decides.
+
+## Cascade layers
+
+The package's own rules sit in `qm.scale` (the derivation) and `qm.chrome` (the surfaces), sub-layers of **`qm`**. Unlayered CSS of yours beats both, whatever order the bundler emits — that is the cascade's rule, not ours, and it is the case that needs nothing.
+
+**If your CSS is layered, name `qm` in your own layer statement, first:**
+
+```css
+@layer qm, reset, base, app; /* your layers after ours: your rules win */
+```
+
+Without that line the outcome is whichever `@layer` statement the bundler emitted first, and it goes against you in the common case: declaring `@layer reset, app;` in your entry registers your layers _before_ `qm` exists, which puts `qm.chrome` last and lets it beat your `app` rules at any specificity. Naming `qm` up front fixes the order, and it is enough on its own — layer names are global, so nothing needs importing to establish one.
+
+## The class names you may target
+
+Restyling past the dials means targeting the DOM, so this is the part that is a contract. These names are stable; everything else in the tree is internal and renamed without notice.
+
+| Name                                                               | What it is                                                                 |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| `data-qm-root`                                                     | The attribute on every mounted surface root; the derivation applies to it. |
+| `qm-editor` · `qm-preview` · `qm-source`                           | The three surface roots.                                                   |
+| `qm-card` · `qm-field`                                             | One card in the editor's stack; one field's row.                           |
+| `qm-page`                                                          | One painted page in the preview.                                           |
+| `qm-preview-message`                                               | The preview's message element, in any of its states.                       |
+| `qm-preview-empty` · `qm-preview-unsupported` · `qm-preview-error` | Which state it is in; each carries `qm-preview-message` too.               |
+| `qm-source-text`                                                   | The `<pre>` the canonical markdown lands in.                               |
+
+`npm run check:style` holds the list against the source, so a rename here is a rename you meant.
 
 ## What is deliberately not public
 

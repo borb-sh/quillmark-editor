@@ -77,7 +77,9 @@ export function createOverlay(session: LiveSession, slots: readonly PageSlot[]):
 				el.className = 'qm-field-box';
 				el.setAttribute(FIELD_ATTR, field);
 				applyPercentRect(el, pct);
-				el.style.borderRadius = '2px';
+				// The interior tier, like every control inside a card: a field box is
+				// drawn inside the page, and a consumer turning `--qm-radius` turns it.
+				el.style.borderRadius = 'var(--_qm-radius-inner)';
 				primeWash(el);
 				layer.appendChild(el);
 				els.push(el);

@@ -27,8 +27,11 @@ export interface PaintLoop {
 	destroy(): void;
 }
 
-// Vertical breathing room between stacked pages; cosmetic only.
-const PAGE_GAP_PX = 16;
+// Vertical breathing room between stacked pages; cosmetic only, and a RUNG rather
+// than a number, so a consumer scaling `--qm-space` moves the gap with everything
+// else. It is a style declaration like any other, and lands as one: an inline
+// `var()` resolves against the nearest `data-qm-root`, which the container is.
+const PAGE_GAP = 'var(--_qm-space-4)';
 
 export function createPaintLoop(
 	session: LiveSession,
@@ -85,7 +88,7 @@ export function createPaintLoop(
 			background: 'var(--_qm-surface)',
 			border: 'var(--_qm-border-width) solid var(--_qm-border)'
 		});
-		if (page > 0) el.style.marginTop = `${PAGE_GAP_PX}px`;
+		if (page > 0) el.style.marginTop = PAGE_GAP;
 		container.appendChild(el);
 		pageByEl.set(el, page);
 		observer.observe(el);

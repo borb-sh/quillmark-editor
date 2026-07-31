@@ -18,10 +18,37 @@
    declared ON the root, so they are reachable only by a rule targeting it:
    THEMING.md §"What is deliberately not public" states the terms.
 
-   `@property` is absent because it cannot work here: an `initial-value` must be
-   computationally independent, which `rem` is not, so registering `--qm-space` or
-   `--qm-font-size` is invalid CSS and drops silently. A unitless dial poisons the
-   `calc()` chain unguarded. */
+   THE UNITLESS-DIAL GUARD. Registering a PUBLIC dial is what cannot work: an
+   `initial-value` must be computationally independent, which the `rem` defaults
+   are not. Registering the PRIVATE rung the dial lands in carries no such
+   constraint, and it is where the guard belongs anyway: `--qm-space: 4` is a valid
+   custom property and an invalid length, so unregistered it reaches every
+   `calc()` downstream and collapses the surface's padding to zero. Registered, the
+   bad value is invalid at computed-value time at the ONE rung that reads the dial,
+   which falls back to the registered `initial-value` and stops there. Verified in
+   Chromium: an unregistered `--qm-space: 4` renders 0px padding; registered, 8px,
+   which is the documented default. The px floors are reached ONLY on a bad dial,
+   so the rem-anchored defaults below are untouched (and `50%`, or any other
+   non-length, is contained the same way).
+
+   Three rungs, and only three: the ones a LENGTH dial lands in. Colour and family
+   have no equivalent failure — an invalid colour falls back on its own, and a
+   family is whatever it is. */
+@property --_qm-space {
+	syntax: '<length>';
+	inherits: true;
+	initial-value: 4px;
+}
+@property --_qm-radius {
+	syntax: '<length>';
+	inherits: true;
+	initial-value: 8px;
+}
+@property --_qm-text-body {
+	syntax: '<length>';
+	inherits: true;
+	initial-value: 14px;
+}
 
 @layer qm.scale, qm.chrome;
 

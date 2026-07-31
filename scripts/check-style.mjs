@@ -26,6 +26,12 @@
 //   · The consumed `--qm-*` set EQUALS the set documented in THEMING.md, both
 //     directions: an undocumented dial is drift, a documented-but-dead one is a
 //     promise nothing honors.
+//   · Every CLASS NAME THEMING.md promises is real. One direction only, and that is
+//     the difference from the dial census: the promised set is a deliberate SUBSET
+//     of the ~90 names in the tree, so an undocumented class is internal (which is
+//     what the doc says it is), while a documented one that no longer exists is a
+//     contract broken silently — a consumer's rule stops matching and nothing says
+//     so.
 //   · Every `--qm-*` named in `prose/canon/**` is a real dial. Canon names a subset,
 //     so this way only — but it is checked, because canon rots where nothing looks.
 //
@@ -41,8 +47,11 @@
 // recipes), and `.ts` — because `preview/paint.ts` and `preview/overlay.ts` carry
 // style declarations inside JS strings and would otherwise escape. The first two are
 // CSS, so the property name decides which axis owns a line; in `.ts` a declaration is
-// one string among code, so a marker on the line stands in for the property name —
-// which is why the property-named axes run on CSS only.
+// one string among code, so a MARKER on the line stands in for the property name.
+// Colour, rhythm and stroke each carry their own marker, because the spellings that
+// betray a minted length are not the ones that betray a minted colour — and a rhythm
+// axis that ran on the colour marker would test `2px` only on lines that also said
+// `background`. The type axes stay CSS-only: nothing sets type from JS.
 //
 // A `var()` fallback is legitimate only in a derivation, which is exempt from the
 // literal rules entirely — so outside it, a literal is a literal wherever it sits.
@@ -83,6 +92,17 @@ const LENGTH_LITERAL = /\b\d*\.?\d+(px|rem|em)\b/;
 /** Colour properties as `Object.assign(el.style, …)` spells them — no trailing `\b`,
  *  so the camelCase compounds (`backgroundColor`, `borderTop`) match too. */
 const STYLE_MARKER = /\b(style|background|border|color|outline|boxShadow|textShadow)/;
+/** The RHYTHM marker: the same shape one axis down. A `.ts` declaration is one
+ *  string among code, so the property cannot name the axis — but the spellings a
+ *  JS style assignment uses can, and `margin`/`padding`/`gap`/`radius` are as
+ *  distinctive there as they are in CSS. No word boundary: the camelCase compound
+ *  (`borderRadius`) and the SCREAMING constant (`PAGE_GAP_PX`) are exactly the
+ *  spellings the lane exists to see. Without this lane the rhythm and stroke
+ *  axes are CSS-only, and a `2px` radius or a `16px` gap minted in `preview/`
+ *  walks past a gate the colour beside it answers to. */
+const RHYTHM_MARKER = /(margin|padding|gap|radius|inset)/i;
+/** The STROKE marker: a width set from JS, which the colour lane sees and passes. */
+const STROKE_MARKER = /\bborder(Top|Right|Bottom|Left)?([Ww]idth)?\b/;
 /** A `--x:` DEFINITION — a consumption is `var(--x)`, which has no colon. */
 const privateDef = (prefix) => new RegExp(`(${prefix}[\\w-]+)\\s*:`);
 const readsRung = (prefix) => new RegExp(`var\\(${prefix}`);
@@ -104,10 +124,14 @@ const AXES = [
 		// names only the physical forms is a gate a rewrite walks through — the codebase
 		// already reaches for `margin-block` where a rung goes on both sides at once.
 		props: /^(border(-[\w-]+)?-radius|gap|row-gap|column-gap|(padding|margin)(-[\w-]+)?)$/,
-		literal: /\b\d*\.?\d+(px|rem)\b/,
+		// The second alternative is the `.ts` stitching idiom: a number parked in a
+		// constant and glued to its unit (`` `${PAGE_GAP_PX}px` ``), which reaches the
+		// DOM as a minted length while neither line carries one.
+		literal: /\b\d*\.?\d+(px|rem)\b|\}(px|rem)\b/,
 		rung: '`var(--_qm-space-…)` / `var(--_qm-radius…)`',
 		doc: 'SURFACES §Rhythm',
-		cssOnly: true
+		cssOnly: false,
+		marker: RHYTHM_MARKER
 	},
 	{
 		// Stroke width, which the colour axis below does NOT see: it tests `border-*`
@@ -121,7 +145,8 @@ const AXES = [
 		literal: LENGTH_LITERAL,
 		rung: '`var(--_qm-border-width)`',
 		doc: 'SURFACES §Rhythm',
-		cssOnly: true
+		cssOnly: false,
+		marker: STROKE_MARKER
 	},
 	{
 		props: /^font-size$/,
@@ -326,8 +351,9 @@ for (const scope of SCOPES) {
 			for (const axis of AXES) {
 				if (axis.cssOnly && !css) continue;
 				// In CSS the property name decides which axis owns the line; in `.ts` a
-				// style declaration is one string among code, so the marker does.
-				const owns = css ? axis.props.test(prop ?? '') : STYLE_MARKER.test(line);
+				// style declaration is one string among code, so the marker does — each
+				// axis its own, defaulting to the colour one.
+				const owns = css ? axis.props.test(prop ?? '') : (axis.marker ?? STYLE_MARKER).test(line);
 				if (!owns) continue;
 				const bad = axis.literal
 					? axis.literal.test(css ? value : line)
@@ -370,6 +396,28 @@ for (const t of [...consumed].filter((t) => !documented.has(t)).sort())
 	errors.push(`THEMING.md: \`${t}\` consumed but undocumented`);
 for (const t of [...documented].filter((t) => !consumed.has(t)).sort())
 	errors.push(`THEMING.md: \`${t}\` documented but unconsumed`);
+
+// The class contract: names THEMING.md promises, held against the DOM the package
+// actually writes. Backticked `qm-…` WITHOUT the custom-property dashes, which is
+// what separates a class from a dial in the same document.
+const promisedClasses = new Set(
+	[...readFileSync(THEMING, 'utf8').matchAll(/`(qm-[\w-]+)`/g)].map((m) => m[1])
+);
+const domNames = new Set();
+for (const full of sources('src/lib')) {
+	const text = readFileSync(full, 'utf8');
+	// Every shape the package names a class in: a `class=` attribute (static or
+	// interpolated), a `class:` directive, and the `.ts` constants the vanilla cores
+	// stamp on their own elements.
+	for (const m of text.matchAll(/class(?:Name)?\s*[=:]\s*[`'"{]([^`'"]*)/g))
+		for (const n of m[1].matchAll(/qm-[\w-]+/g)) domNames.add(n[0]);
+	for (const m of text.matchAll(/class:(qm-[\w-]+)/g)) domNames.add(m[1]);
+	for (const m of text.matchAll(/['"`](qm-[\w-]+)['"`]/g)) domNames.add(m[1]);
+}
+for (const c of [...promisedClasses].filter((c) => !domNames.has(c)).sort())
+	errors.push(`THEMING.md: promises the class \`${c}\`, which the package no longer writes`);
+if (!promisedClasses.has('qm-editor') || !promisedClasses.has('qm-preview'))
+	errors.push('THEMING.md: the class contract lost a surface root');
 
 const CANON = join(ROOT, 'prose', 'canon');
 for (const doc of readdirSync(CANON)
