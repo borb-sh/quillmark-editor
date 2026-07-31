@@ -21,7 +21,7 @@ The heavy machinery (ProseMirror, canvas paint) is already framework-agnostic, s
 
 Subpaths, not separate packages, because the thing a split would buy (a preview-only consumer not pulling ProseMirror) is a dependency-graph concern that subpath entries already solve: each subpath is its own module root, so a bundler pulls only what the imported entry reaches. The one thing separate packages add, independent versioning, is a cost here: the surfaces share a substrate (Document model, engine boundary, `ContentHit`/`ChangeSet` types) and co-evolve, so a per-package version matrix is tax with no payer.
 
-The container's name is what makes that hold for the one surface with a distinct audience. Preview's audience (read-only viewer, share page, CI screenshot) is not editing, and a neutral container is a dependency it can take. So `/preview` keeps no editor-side import for the reason that survives: **bundle weight**, the thing that makes the subpath claim true rather than merely stated. `check:deps` walks the graph, transitively, and the rule is the [workspace's](../../../../prose/canon/DEPENDENCIES.md).
+The container's name is what makes that hold for the one surface with a distinct audience. Preview's audience (read-only viewer, share page, CI screenshot) is not editing, and a neutral container is a dependency it can take. So `/preview` keeps no editor-side import, and the reason is **bundle weight**: it is what makes the subpath claim true rather than merely stated. `check:deps` walks the graph transitively, and the rule is the [workspace's](../../../../prose/canon/DEPENDENCIES.md).
 
 Each subpath export declares `types` + `svelte` + `default`, all pointing at the `dist/<subpath>/index.js` module root; `publint` gates the map.
 

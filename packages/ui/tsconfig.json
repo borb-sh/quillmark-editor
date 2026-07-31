@@ -15,7 +15,7 @@
 		"moduleResolution": "bundler",
 		"target": "esnext",
 		"noEmit": true,
-		// `src/lib` is relative throughout, so the alias exists for the suite alone —
+		// `src/lib` is relative throughout, so the alias exists for the suite alone:
 		// `vitest.config.ts` mirrors it, and a test imports the surface a consumer does.
 		"paths": {
 			"$lib": ["./src/lib"],

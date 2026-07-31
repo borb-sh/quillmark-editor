@@ -1,7 +1,7 @@
 // Node-side fixture loading for Vitest: walk a quill directory into the
-// `Map<string, Uint8Array>` `Quill.fromTree` accepts. The browser playground has
-// its own `?url`-glob loader (a fetch path); this is the filesystem twin, so a
-// test builds the reference quill without a running Vite server.
+// `Map<string, Uint8Array>` `Quill.fromTree` accepts. The playground reads the same
+// tree through a built quiver over HTTP; this is the filesystem twin, so a test
+// builds the reference quill with no server and no pack step.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, relative, sep } from 'node:path';

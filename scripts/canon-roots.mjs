@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Every `prose/canon/` in the workspace — the root's, then each package's, sorted. */
+/** Every `prose/canon/` in the workspace: the root's, then each package's, sorted. */
 export function canonRoots() {
 	const dirs = [
 		ROOT,

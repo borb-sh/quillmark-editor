@@ -1,8 +1,7 @@
 // Where the playground's quills come from: a built quiver served under `/quiver/`,
-// packed from the workspace fixture tree by `scripts/build-quiver.mjs`. This is the
-// browser consumer path in full (pointer → manifest → content-addressed bundle),
-// which is the point: the harness reaches the reference quill the way an app would,
-// not through a bundler affordance no consumer has.
+// packed from the workspace fixture tree by `scripts/build-quiver.mjs`. Pointer →
+// manifest → content-addressed bundle, the browser consumer path in full
+// (PLAYGROUND §"Where the quills come from").
 //
 // One `Quiver` for the page. Its quill cache is per canonical ref and lives as long
 // as the quiver does, so routes share one materialization across client-side
@@ -79,10 +78,8 @@ export function withSecondCardKind(tree: Map<string, Uint8Array>): void {
  *
  * A tree rather than the `Quill` `getQuill` hands back, because the two variants
  * above rewrite schema bytes and a materialized quill has no seam for that. The
- * caller mints and owns its quill; the quiver's cached one stays the quiver's,
- * unfreed for the page's lifetime, which is the documented contract rather than a
- * leak. The cost is one materialization the caller discards, and it is the shape
- * quiver already names for a consumer that needs raw bytes.
+ * caller mints and owns its quill; the quiver's cached one is the quiver's, held
+ * unfreed for the page. The cost is one materialization the caller discards.
  */
 export async function loadUsafMemoTree(): Promise<Map<string, Uint8Array>> {
 	return (await (await quiver()).getQuill('usaf_memo')).toTree();

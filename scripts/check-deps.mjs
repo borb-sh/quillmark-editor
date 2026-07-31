@@ -1,32 +1,29 @@
-// The dependency law, enforced. Two repos made a quiver↔ui edge impossible for
-// free; one repo makes it one relative path away, so the friction is replaced by a
-// gate rather than left to erode by convenience. Zero deps; run via
-// `npm run check:deps`.
+// The dependency law, enforced. In a workspace a quiver↔ui edge is one relative
+// path away, so the separation is held by a gate rather than by distance. Zero deps;
+// run via `npm run check:deps`.
 //
 // Three rules, each stated once here and nowhere else:
 //
 //   1. THE GRAPH. `@quillmark/wasm` is external and above everything; `ui` and
 //      `quiver` are siblings at one tier with NO edge between them, in either
 //      direction; `playground` is the only node with two inbound edges. Declared
-//      dependencies and source specifiers both, since either alone is half a check —
-//      an undeclared import resolves fine in a workspace, and a declared dep nothing
-//      imports is still a promise.
+//      dependencies and source specifiers both, since either alone is half a check:
+//      an undeclared import resolves fine in a workspace, and a declared dependency
+//      nothing imports is still a promise.
 //
 //   2. THE WASM SINGLETON. A handle minted by one copy of the linear memory and
 //      handed to another is foreign. So every published package PEERS the artifact
 //      and none depends on it, the range is a single `>=` comparator (loose, until
-//      1.0 makes a narrow one honest), and root `overrides` pins the developed-against
-//      version to exactly one. Loose ranges do not prevent two installs — they permit
-//      them — which is why the pin is the half that does the work.
+//      1.0 makes a narrow one honest), and root `overrides` pins the
+//      developed-against version to exactly one. Loose ranges permit two installs
+//      rather than preventing them, which is why the pin is the half that works.
 //
-//   3. THE `/preview` BUNDLE WEIGHT. A preview consumer does not pull ProseMirror.
-//      That is what makes the subpath claim ("a bundler pulls only what the imported
-//      entry reaches") true for the one surface whose audience is not editing, so the
-//      rule outlives the package promotion it used to protect. A direct-import scan
-//      is not enough — one relative hop into the codec, which preview does not take
-//      today and which no direct scan would see, pulls all of ProseMirror — so this
-//      walks preview's import graph within `src/lib` and fails on any reached
-//      module's forbidden external.
+//   3. THE `/preview` BUNDLE WEIGHT. A preview consumer does not pull ProseMirror,
+//      which is what makes the subpath claim ("a bundler pulls only what the imported
+//      entry reaches") true for the one surface whose audience is not editing. A
+//      direct-import scan is not enough: one relative hop into the codec pulls all of
+//      ProseMirror and no direct scan sees it, so this walks preview's import graph
+//      within `src/lib` and fails on any reached module's forbidden external.
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';

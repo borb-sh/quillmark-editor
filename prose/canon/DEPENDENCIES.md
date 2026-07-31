@@ -21,7 +21,7 @@ The seam that keeps it true is `resolveQuill(ref)`: `ui` takes a function, and q
 
 The playground is where the two meet, and it is the demonstration rather than the exception: it loads its quill from a built quiver and hands the result to `ui`'s surfaces, with no specifier crossing between the siblings in either direction ([PLAYGROUND.md](../../packages/playground/prose/canon/PLAYGROUND.md)).
 
-Two repos made this edge impossible for free. One repo makes it one relative path away, so the friction is replaced by a gate rather than left to erode by convenience: `check:deps` reads declared dependencies **and** source specifiers, since either alone is half a check. An undeclared import resolves fine in a workspace, and a declared dependency nothing imports is still a promise.
+In a workspace the edge is one relative path away, so a gate holds the separation that distance cannot: `check:deps` reads declared dependencies **and** source specifiers, since either alone is half a check. An undeclared import resolves fine in a workspace, and a declared dependency nothing imports is still a promise.
 
 Membership in this repo is "downstream of the wasm artifact". The Rust workspace stays where it is, and `crates/bindings/wasm/runtime/` is hand-written JS that stays with it: it ships *inside* the artifact rather than downstream of it.
 
