@@ -58,9 +58,13 @@
 	let docHandle: Document | undefined = $state();
 
 	// The bundled wiring (`@quillmark/editor/bridge`): it owns the debounced
-	// recompile, the repaint, the re-serialize and both caret hops, and it holds the
-	// three surface handles the shell binds to. Built once the session is open.
+	// recompile, the repaint, the re-serialize and both caret hops. Built once the
+	// session is open; the handles stay the shell's own, and it hands the bridge
+	// getters over them.
 	let bridge: Connection | undefined = $state();
+	let editorRef: { setCaret(hit: ContentHit): Promise<void> } | undefined = $state();
+	let previewRef: ReturnType<typeof Preview> | undefined = $state();
+	let sourceRef: ReturnType<typeof SourceView> | undefined = $state();
 
 	// External diagnostics fed to the editor = live `session.warnings` + any
 	// injected render-error stand-ins (recomputed on every recompile).
@@ -208,6 +212,9 @@
 				bridge = connect({
 					session: openedSession,
 					doc,
+					editor: () => editorRef,
+					preview: () => previewRef,
+					source: () => sourceRef,
 					onApply: (change) => {
 						lastChange = change;
 						syncDiagnostics(); // live warnings, re-read per compile
@@ -267,10 +274,18 @@
 				<span class="pg-readout" data-testid="last-focus">{lastFocus}</span></span
 			>
 			<span class="stat"
+				><span class="pg-label">change</span>
+				<span class="pg-readout" data-testid="last-change-source">{lastChangeSource}</span></span
+			>
+			<span class="stat"
 				><span class="pg-label">dirty pages</span>
 				<span class="pg-readout" data-testid="last-change"
 					>{lastChange ? JSON.stringify(lastChange.dirtyPages) : 'none'}</span
 				></span
+			>
+			<span class="stat"
+				><span class="pg-label">error</span>
+				<span class="pg-readout" data-testid="last-error">{lastError}</span></span
 			>
 			<span class="strip-actions">
 				<button
@@ -300,7 +315,7 @@
 			<section class="pg-frame editor-pane" aria-label="Visual editor">
 				{#if VisualEditor && docHandle && quillHandle && bridge}
 					<VisualEditor
-						bind:this={bridge.editor}
+						bind:this={editorRef}
 						doc={docHandle}
 						quill={quillHandle}
 						onActiveAddrChange={handleActiveAddr}
@@ -333,7 +348,7 @@
 			<section class="pg-frame preview-pane" aria-label="Live preview">
 				{#if session && bridge}
 					<Preview
-						bind:this={bridge.preview}
+						bind:this={previewRef}
 						{session}
 						onCaretPick={handleCaretPick}
 						onError={handleError}
@@ -346,7 +361,7 @@
 			<section class="pg-frame drawer" aria-label="Debug source view" data-testid="source-drawer">
 				<p class="pg-label drawer-label">Canonical markdown — read only</p>
 				<div class="source-host">
-					<SourceView bind:this={bridge.source} doc={docHandle} onError={handleError} />
+					<SourceView bind:this={sourceRef} doc={docHandle} onError={handleError} />
 				</div>
 			</section>
 		{/if}

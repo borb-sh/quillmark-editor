@@ -19,6 +19,7 @@
 	import type { Snippet } from 'svelte';
 	import type { HTMLAttributes } from 'svelte/elements';
 	import { rebindGuard } from '../core/rebind.js';
+	import { checkDials } from '../core/dials.js';
 	import type { LiveSession, ContentHit, ChangeSet } from '../core/index.js';
 	import type { EditorErrorHandler } from '../core/errors.js';
 
@@ -85,6 +86,8 @@
 	$effect(() => guardSession(session));
 
 	onMount(() => {
+		// Dev-only: a length dial with no unit renders as the default and says nothing.
+		checkDials(containerEl, 'Preview', () => onError);
 		if (!containerEl) return;
 		controller = createPreview({
 			session,

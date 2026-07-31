@@ -21,14 +21,26 @@ function harness(applyImpl?: () => ChangeSet) {
 	const serialized: number[] = [];
 	const carets: unknown[] = [];
 	const hits: unknown[] = [];
-	const bridge = connect({ session, doc: {} as Document, debounce: 20 });
-	bridge.preview = {
-		refresh: (c) => refreshed.push(c),
-		focusPosition: (at) => carets.push(at)
+	// The handles stay the HOST's, and reach the bridge as getters read at call
+	// time: `surfaces.preview = undefined` below is a surface that has not mounted.
+	const surfaces: {
+		editor?: { setCaret(hit: unknown): void };
+		preview?: { refresh(c: ChangeSet): void; focusPosition(at: unknown): void };
+		source?: { refresh(): void };
+	} = {
+		preview: { refresh: (c) => refreshed.push(c), focusPosition: (at) => carets.push(at) },
+		source: { refresh: () => serialized.push(1) },
+		editor: { setCaret: (hit) => hits.push(hit) }
 	};
-	bridge.source = { refresh: () => serialized.push(1) };
-	bridge.editor = { setCaret: (hit) => hits.push(hit) };
-	return { bridge, applied, refreshed, serialized, carets, hits };
+	const bridge = connect({
+		session,
+		doc: {} as Document,
+		debounce: 20,
+		editor: () => surfaces.editor,
+		preview: () => surfaces.preview,
+		source: () => surfaces.source
+	});
+	return { bridge, surfaces, applied, refreshed, serialized, carets, hits };
 }
 
 describe('connect', () => {
@@ -64,9 +76,9 @@ describe('connect', () => {
 
 	it('wires a surface that mounts later, since handles are read at call time', () => {
 		const h = harness();
-		h.bridge.preview = undefined;
+		h.surfaces.preview = undefined;
 		h.bridge.editorProps.onChange({ source: 'structure' }); // no preview yet: no throw
-		h.bridge.preview = { refresh: (c) => h.refreshed.push(c), focusPosition: () => {} };
+		h.surfaces.preview = { refresh: (c) => h.refreshed.push(c), focusPosition: () => {} };
 		h.bridge.editorProps.onChange({ source: 'structure' });
 		expect(h.refreshed).toHaveLength(1);
 	});

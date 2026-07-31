@@ -98,15 +98,26 @@ Swap `doc`/`quill` by **remounting** (`{#key doc}`); edits flow the other way, m
 ```svelte
 <script lang="ts">
 	import { connect } from '@quillmark/editor/bridge';
-	const bridge = connect({ session, doc });
+
+	let editorRef = $state<VisualEditor>();
+	let previewRef = $state<Preview>();
+	let sourceRef = $state<SourceView>();
+
+	const bridge = connect({
+		session,
+		doc,
+		editor: () => editorRef,
+		preview: () => previewRef,
+		source: () => sourceRef
+	});
 </script>
 
-<VisualEditor bind:this={bridge.editor} {doc} {quill} {...bridge.editorProps} />
-<Preview bind:this={bridge.preview} {session} {...bridge.previewProps} />
-<SourceView bind:this={bridge.source} {doc} />
+<VisualEditor bind:this={editorRef} {doc} {quill} {...bridge.editorProps} />
+<Preview bind:this={previewRef} {session} {...bridge.previewProps} />
+<SourceView bind:this={sourceRef} {doc} />
 ```
 
-It takes **structural handles**, so it imports neither surface and couples neither to the other; a consumer with only a preview passes only a preview. Call `bridge.flush()` after mutating the document yourself, and `bridge.destroy()` on teardown.
+The handles stay yours and reach the bridge as getters, read at call time — so a surface that mounts late is wired the moment it does. They are **structural**: `connect` imports neither surface and couples neither to the other, and a consumer with only a preview passes only a preview. Call `bridge.flush()` after mutating the document yourself, and `bridge.destroy()` on teardown.
 
 ## The caret bridge, by hand
 

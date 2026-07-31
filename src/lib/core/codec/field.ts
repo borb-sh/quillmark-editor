@@ -63,7 +63,8 @@ export interface CreateFieldOpts {
 	 * arrow key too, so a host driving a recompile off it recompiles on navigation.
 	 * Fired after the commit lands, including the install fallback; an edit the
 	 * boundary refused outright still fires it, since the optimistic PM state is
-	 * what the reader now sees.
+	 * what the reader now sees. ORDER, for one keystroke: this first, then
+	 * `onCaretMove` — the edit has landed by the time the caret is reported.
 	 */
 	onChange?(addr: Addr): void;
 	/** Failures the leaf recovered from (`core/errors.ts`); absent → the console. */

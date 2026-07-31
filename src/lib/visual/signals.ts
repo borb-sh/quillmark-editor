@@ -60,8 +60,14 @@ export interface EditorChange {
  * An extension point over a structure the surface owns has to hand over the
  * surface's own verbs, or it hands over a footgun.
  *
- * `main` has no position: its `remove`/`move` are no-ops, and `insertAfter` puts
- * the card at the front of the stack.
+ * All three go down the same path as the editor's own controls, so each fires
+ * `onChange` with `source: 'structure'` and a host driving a recompile off that
+ * needs no flush of its own.
+ *
+ * `main` has no position: `addr.card` is undefined for it, its `remove`/`move` are
+ * no-ops, and `insertAfter` puts the card at the front of the stack. There is no
+ * "duplicate main": a document has exactly one main card, so an action that copies
+ * a card gates on `!isMain` (the README's does).
  */
 export interface CardContext {
 	addr: Addr;

@@ -9,6 +9,7 @@
 	import { onMount } from 'svelte';
 	import { createSourceView, type SourceViewController, type SourceViewStrings } from './view.js';
 	import { rebindGuard } from '../core/rebind.js';
+	import { checkDials } from '../core/dials.js';
 	import type { Document } from '../core/index.js';
 	import type { EditorErrorHandler } from '../core/errors.js';
 	import type { HTMLAttributes } from 'svelte/elements';
@@ -40,6 +41,8 @@
 	$effect(() => guardDoc(doc));
 
 	onMount(() => {
+		// Dev-only: a length dial with no unit renders as the default and says nothing.
+		checkDials(containerEl, 'SourceView', () => onError);
 		if (!containerEl) return;
 		controller = createSourceView({ container: containerEl, doc, onError, strings });
 		return () => {

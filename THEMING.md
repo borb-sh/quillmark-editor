@@ -32,6 +32,8 @@ Nothing to import: the package pulls its own stylesheet, which applies the deriv
 
 Give a length dial a length. `--qm-space: 4` is a valid custom property and an invalid length. The three length dials are **contained**: each lands in one private rung, and that rung is registered (`@property`, `<length>`), so an invalid value is invalid at computed-value time there and falls back to the rung's own floor instead of reaching every `calc()` downstream. You get the documented default rather than a surface with no padding. The registration is on the private rung, not the dial — a registered property's initial value must be computationally independent, which the `rem` defaults above are not — so the defaults in the table are exactly what they say.
 
+Containment is silent, which is its own problem: a dial you turned and a surface that did not move looks like a selector that missed. So in a **dev build** each surface reads its own length dials once at mount and reports one through `onError` (falling to the console) naming the dial and the value it read.
+
 ## What is behind the column is yours
 
 The package draws cards, not the column they sit in. Four properties are the mounting site's: the gutter between your pane edge and the cards, the scroll container, the **page tone behind the column**, and the scroll tail that lets the last card reach the middle of your viewport. Nothing needs setting for the surface to look right; putting plain `--qm-bg` directly behind the column is a supported case, and the one the playground demonstrates.

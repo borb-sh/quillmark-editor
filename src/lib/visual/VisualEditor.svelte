@@ -75,6 +75,7 @@
 	import { tipsChannel } from './tips.js';
 	import { patchEditorExt } from './ext.js';
 	import { rebindGuard } from '../core/rebind.js';
+	import { checkDials } from '../core/dials.js';
 	import { resolveStrings, type EditorStrings } from './strings.js';
 	import { provideStrings } from './context.js';
 	import { reportError, type EditorErrorHandler } from '../core/errors.js';
@@ -101,7 +102,9 @@
 		 * A caret move in the active leaf, carrying the preview's own address
 		 * grammar: `onCaretMove={preview.focusPosition}` is the whole bridge. A
 		 * SELECTION signal, not a change signal: an arrow key fires it and commits
-		 * nothing (`onChange` is the change signal).
+		 * nothing (`onChange` is the change signal). One keystroke fires `onChange`
+		 * first and this second: the edit has landed by the time the caret is
+		 * reported.
 		 */
 		onCaretMove?: (at: CaretMove) => void;
 		/**
@@ -207,6 +210,11 @@
 	$effect(() => {
 		guardDoc(doc);
 		guardQuill(quill);
+	});
+	// Dev-only, once the root exists: a length dial with no unit renders as the
+	// default and says nothing on its own (`core/dials.ts`).
+	$effect(() => {
+		checkDials(rootEl, 'VisualEditor', () => onError);
 	});
 
 	// The resolved words, provided to the subtree as a GETTER so a consumer swapping

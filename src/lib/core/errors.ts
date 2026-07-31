@@ -38,9 +38,12 @@ export type EditorErrorCode =
 	 *  is the only part of the package that calls it; a consumer driving `apply`
 	 *  itself catches its own throw. */
 	| 'apply'
-	/** A handle swapped in place, against the remount contract. DEV ONLY, and the
-	 *  one code that is a contract violation rather than a failure. */
-	| 'rebind';
+	/** A handle swapped in place, against the remount contract. DEV ONLY. */
+	| 'rebind'
+	/** A length dial set to something that is not a length. DEV ONLY; the value is
+	 *  contained at one rung (`core/theme.css`), which is exactly why it needs
+	 *  saying — the surface renders at that axis's default and nothing else shows. */
+	| 'dial';
 
 /** One failure a surface recovered from, as an embedding app sees it. */
 export interface EditorError {
@@ -50,7 +53,7 @@ export interface EditorError {
 	message: string;
 	/** What was thrown, verbatim: a `QuillmarkError` carrying `diagnostics` at a
 	 *  boundary refusal (`isQuillmarkError` narrows it), otherwise whatever the
-	 *  failing call raised. Absent for `rebind`, which nothing threw. */
+	 *  failing call raised. Absent for `rebind` and `dial`, which nothing threw. */
 	cause?: unknown;
 	/** The leaf it happened at, when it has one. */
 	addr?: Addr;

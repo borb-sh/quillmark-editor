@@ -43,6 +43,18 @@ export interface ConnectOptions {
 	session: LiveSession;
 	doc: Document;
 	/**
+	 * The surfaces, as GETTERS over the consumer's own handles. Getters rather than
+	 * values because the handles do not exist yet when this is called — the surfaces
+	 * mount after — and rather than properties on the returned object because a
+	 * consumer holding that object in framework state hands its own code a PROXY,
+	 * and a `bind:this` through one writes where this closure cannot read. Bind to
+	 * your own variable and point a getter at it: one arrow, and no reactivity
+	 * system in the middle of the wiring.
+	 */
+	editor?: () => EditorHandle | undefined;
+	preview?: () => PreviewHandle | undefined;
+	source?: () => SourceHandle | undefined;
+	/**
 	 * How long a burst settles before the recompile, in ms. Default 120. A
 	 * `structure` change never waits: it is one gesture, not a burst, and the card
 	 * that moved should be on the page by the time the pointer leaves it.
@@ -57,24 +69,21 @@ export interface ConnectOptions {
 }
 
 /**
- * The wiring, and the handles it drives. Bind each surface to the property of the
- * same name and spread the props onto it:
+ * The wiring: the props to spread, and the two verbs a host drives it with.
  *
  * ```svelte
- * const bridge = connect({ session, doc });
- * <VisualEditor bind:this={bridge.editor} {doc} {quill} {...bridge.editorProps} />
- * <Preview bind:this={bridge.preview} {session} {...bridge.previewProps} />
- * <SourceView bind:this={bridge.source} {doc} />
+ * let editorRef = $state<VisualEditor>();
+ * let previewRef = $state<Preview>();
+ * const bridge = connect({ session, doc, editor: () => editorRef, preview: () => previewRef });
+ *
+ * <VisualEditor bind:this={editorRef} {doc} {quill} {...bridge.editorProps} />
+ * <Preview bind:this={previewRef} {session} {...bridge.previewProps} />
  * ```
  *
- * The handles are plain properties because that is what `bind:this` assigns to,
- * and they are read at call time, so a surface that mounts later is wired the
- * moment it does.
+ * The getters are read at call time, so a surface that mounts late is wired the
+ * moment it does, and one that never mounts is skipped.
  */
 export interface Connection {
-	editor?: EditorHandle;
-	preview?: PreviewHandle;
-	source?: SourceHandle;
 	/** Spread onto the VisualEditor. */
 	readonly editorProps: {
 		onChange(change: Change): void;
@@ -106,8 +115,8 @@ export function connect(opts: ConnectOptions): Connection {
 			// The preview repaints `dirtyPages ∩ visible`; an apply over an unchanged
 			// document is a cheap no-op with an empty dirty set, so a caret-only pass
 			// costs a geometry re-read and no paint.
-			bridge.preview?.refresh(change);
-			bridge.source?.refresh();
+			opts.preview?.()?.refresh(change);
+			opts.source?.()?.refresh();
 			opts.onApply?.(change);
 		} catch (e) {
 			reportError(opts.onError, {
@@ -124,9 +133,6 @@ export function connect(opts: ConnectOptions): Connection {
 	}
 
 	const bridge: Connection = {
-		editor: undefined,
-		preview: undefined,
-		source: undefined,
 		editorProps: {
 			onChange(change) {
 				if (change.source === 'structure') apply();
@@ -135,12 +141,12 @@ export function connect(opts: ConnectOptions): Connection {
 			// The editor emits the preview's own argument, so this is the hop and not
 			// a translation of it.
 			onCaretMove(at) {
-				bridge.preview?.focusPosition(at);
+				opts.preview?.()?.focusPosition(at);
 			}
 		},
 		previewProps: {
 			onCaretPick(hit) {
-				bridge.editor?.setCaret(hit);
+				opts.editor?.()?.setCaret(hit);
 			}
 		},
 		flush: apply,
