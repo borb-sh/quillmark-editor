@@ -15,6 +15,7 @@
 -->
 <script lang="ts">
 	import type { Document, Addr, Diagnostic, ResolvedField } from '../core/index.js';
+	import type { EditorErrorHandler } from '../core/errors.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import type { FieldModel, FieldSpan } from './structure.js';
 	import { enumValues, ghostDefault, stringifyGhost } from './structure.js';
@@ -53,6 +54,8 @@
 		onCaretMove?: (addr: Addr, pos: number) => void;
 		/** A prose commit in this field's leaf. */
 		onProseChange?: (addr: Addr) => void;
+		/** Failures the prose leaf recovers from; the editor's own handler. */
+		onError?: EditorErrorHandler;
 		register?: (key: string, controller: FieldController) => void;
 		unregister?: (key: string) => void;
 		diagnostics?: Diagnostic[];
@@ -71,6 +74,7 @@
 		onFocus,
 		onCaretMove,
 		onProseChange,
+		onError,
 		register,
 		unregister,
 		diagnostics
@@ -138,6 +142,7 @@
 				{onFocus}
 				{onCaretMove}
 				onChange={onProseChange}
+				{onError}
 				{register}
 				{unregister}
 			/>

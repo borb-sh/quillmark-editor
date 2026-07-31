@@ -16,6 +16,11 @@ import './theme.css';
 
 export { init } from './lifecycle.js';
 
+// The error channel every surface reports through (`onError`), and the shape it
+// reports. A REPORT, not a gate: absent, each site writes the console line it
+// always wrote.
+export type { EditorError, EditorErrorCode, EditorErrorHandler } from './errors.js';
+
 // ── Handles + engine (values) ───────────────────────────────────────────────
 // Re-exported verbatim from the canonical runtime; the editor holds the raw
 // handles and frees them on teardown (LiveSession/Document/Quill each carry

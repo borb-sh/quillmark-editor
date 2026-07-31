@@ -5,6 +5,7 @@
 // mutates the session; the consumer drives edits and hands the resulting
 // `ChangeSet` to `refresh`.
 import type { LiveSession, ChangeSet, ContentHit } from '../core/index.js';
+import { reportError, type EditorErrorHandler } from '../core/errors.js';
 import { createPaintLoop, type PaintLoop } from './paint.js';
 import { createOverlay, type OverlayController } from './overlay.js';
 import { createBridge, type BridgeController } from './bridge.js';
@@ -32,6 +33,9 @@ export interface PreviewOptions {
 	overlays?: boolean;
 	/** A click resolved to a content position; the hook does not fire off-ink. */
 	onCaretPick?(hit: ContentHit): void;
+	/** Paint failures, which the preview recovers from by showing its message
+	 *  state; absent → the console (`core/errors.ts`). */
+	onError?: EditorErrorHandler;
 }
 
 export interface PreviewController {
@@ -88,7 +92,12 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	// mid-sweep (runtime.d.ts: even a `supportsCanvas` compile can hit a paint
 	// the boundary refuses; brittle to leave uncaught).
 	const paintLoop: PaintLoop = createPaintLoop(session, container, margin, (page, err) => {
-		console.error(`[quillmark] preview paint failed for page ${page}`, err);
+		reportError(opts.onError, {
+			code: 'paint',
+			message: `preview paint failed for page ${page}`,
+			cause: err,
+			page
+		});
 		showMessage('Preview failed to render.', ERROR_CLASS);
 	});
 	// overlay/bridge query geometry at build (`session.regions()`), so they are

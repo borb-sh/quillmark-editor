@@ -83,6 +83,8 @@ In Svelte, `<Preview {session} onCaretPick={…} />` exposes the same verbs (`re
 />
 ```
 
+Every surface takes an `onError`. The surfaces recover from what goes wrong inside them — a refused commit keeps the edit and pins a diagnostic, a paint that throws shows a message, a serialize that throws prints itself into the mirror — so this is a report, not a gate; without it each failure is a `console.error` an app cannot route.
+
 `onChange` fires for **every** edit — prose keystroke, form control, card operation — and `change.source` says which, so a host can recompile a structure op at once and let a burst of typing settle. `onCaretMove` is a selection signal and never a change signal.
 
 Swap `doc`/`quill` by **remounting** (`{#key doc}`); edits flow the other way, mutating the passed-in handle. Swapping in place is not observed; in a dev build the surface says so on the console.

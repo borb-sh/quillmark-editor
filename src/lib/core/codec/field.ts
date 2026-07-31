@@ -18,6 +18,7 @@ import type { Node as PMNode, Schema } from 'prosemirror-model';
 import { EditorState, Plugin, PluginKey, Selection, type Command } from 'prosemirror-state';
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
 import type { Document, Content, Addr } from '../index.js';
+import { reportError, type EditorErrorHandler } from '../errors.js';
 import { decode } from './decode.js';
 import { usvToPM, pmToUsv, buildLineIndex, type LineIndex } from './positions.js';
 import { lower, pmToContent, insertReintroducesIslandSlot } from './encode.js';
@@ -65,6 +66,8 @@ export interface CreateFieldOpts {
 	 * what the reader now sees.
 	 */
 	onChange?(addr: Addr): void;
+	/** Failures the leaf recovered from (`core/errors.ts`); absent → the console. */
+	onError?: EditorErrorHandler;
 }
 
 /** The prose-leaf handle (VISUAL_EDITOR §Surface). */
@@ -265,13 +268,23 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			// from that stale content, every later edit re-throws and the field
 			// silently stops persisting. Install the full projection instead
 			// (correct store, pays this field's anchors).
-			console.error('[quillmark/editor] applyChange failed; falling back to install', e);
+			reportError(opts.onError, {
+				code: 'prose-commit',
+				message: 'applyChange failed; falling back to install',
+				cause: e,
+				addr
+			});
 			try {
 				doc.install(addr, newRt);
 				reconciler.commit(readLeaf(doc, addr));
 			} catch (e2) {
 				// Optimistic PM stays; surface the boundary error without crashing.
-				console.error('[quillmark/editor] install fallback failed; keeping optimistic state', e2);
+				reportError(opts.onError, {
+					code: 'prose-commit',
+					message: 'install fallback failed; keeping the optimistic state',
+					cause: e2,
+					addr
+				});
 			}
 		}
 	}

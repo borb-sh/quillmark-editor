@@ -31,6 +31,12 @@ The repo ships a self-hosted playground app alongside the library: the SvelteKit
 
 Its routes, and the host-side visual language they share, are [PLAYGROUND.md](PLAYGROUND.md). One of them is architectural: `/editor` is the reference **split-pane shell**, where the caret bridge is consumer-layer glue: the editor emits addresses and carets, the preview surfaces hits, and the shell joins them — both directions as pass-throughs, since each surface emits the other's argument shape without importing it. That the column around the cards is the consumer's, not the package's, is what makes that route the place THEMING.md's four mounting-site properties are demonstrated.
 
+## The error channel
+
+Every surface recovers from its own failures — a commit the boundary refused, a page the backend cannot raster, a serialize that throws, a `validate`/`resolve` the chrome only needs for ghosts — and each recovery is invisible by construction. So each takes an **`onError`**, and each recovery site reports one `EditorError` (`core/errors.ts`): a closed `code` a consumer switches on, the thrown `cause` verbatim, and the address when the failure has one. Absent, every site writes the `console.error` it always wrote; present, nothing reaches the console, because a consumer that took the channel owns what happens to it. Nothing waits on the handler and nothing changes behavior on its absence: a report, never a gate.
+
+The one code that is not a failure is `rebind`, the dev-only remount-contract check (`core/rebind.ts`): every surface binds its handles once at mount, and a handle swapped in place is a valid handle that silently addresses the wrong document.
+
 ## Theming
 
 The surfaces carry the behavior against a neutral, overridable baseline: the `--qm-*` dials a consumer overrides on any ancestor (VISUAL_EDITOR_UIUX §"Complex UX, minimal UI"), deriving the private `--_qm-*` scale every component reads. The contract is the package's [`THEMING.md`](../../THEMING.md); the derivation is a stylesheet in `core/`, side-effect imported by the one module both `preview/` and `visual/` already pull (so a consumer has nothing to import), and applied to every element marked `data-qm-root`. A stylesheet rather than an inline attribute is what lets the scale carry a cascade layer consumer CSS beats without `!important` and the baseline font every root inherits.

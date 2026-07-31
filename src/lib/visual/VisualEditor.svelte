@@ -73,6 +73,7 @@
 	import { tipsChannel } from './tips.js';
 	import { patchEditorExt } from './ext.js';
 	import { rebindGuard } from '../core/rebind.js';
+	import { reportError, type EditorErrorHandler } from '../core/errors.js';
 	import Card from './Card.svelte';
 	import TipsCard from './TipsCard.svelte';
 	import FormatPopover from './FormatPopover.svelte';
@@ -106,6 +107,14 @@
 		 * settle; a host that recompiles the same way for all three ignores it.
 		 */
 		onChange?: (change: EditorChange) => void;
+		/**
+		 * Failures the editor RECOVERED from: a commit the boundary refused (also
+		 * pinned as a diagnostic on its field), a card operation that threw, a
+		 * `validate`/`resolve` that threw, a prose commit that fell back. None of them
+		 * stop editing; without this hook each is a `console.error` an app cannot
+		 * route. Reaches the leaves too, so one handler covers the surface.
+		 */
+		onError?: EditorErrorHandler;
 		/**
 		 * External diagnostics, routed by `.path` and merged with `quill.validate`
 		 * and local commit errors (VISUAL_EDITOR §Diagnostics).
@@ -144,6 +153,7 @@
 		onActiveAddrChange,
 		onCaretMove,
 		onChange,
+		onError,
 		diagnostics,
 		enumOptionAllowed,
 		bodyPlaceholder,
@@ -181,9 +191,9 @@
 	// it catches is silent by construction, since a swapped handle is a valid
 	// handle and every read against it succeeds against the wrong document.
 	// svelte-ignore state_referenced_locally
-	const guardDoc = rebindGuard('VisualEditor', 'doc', doc);
+	const guardDoc = rebindGuard('VisualEditor', 'doc', doc, () => onError);
 	// svelte-ignore state_referenced_locally
-	const guardQuill = rebindGuard('VisualEditor', 'quill', quill);
+	const guardQuill = rebindGuard('VisualEditor', 'quill', quill, () => onError);
 	$effect(() => {
 		guardDoc(doc);
 		guardQuill(quill);
@@ -327,7 +337,13 @@
 				message: e instanceof Error ? e.message : String(e)
 			};
 			editCommitErrors((m) => m.set(keyStr, { key, diagnostic }));
-			console.error('[quillmark/editor] scalar commit failed', e);
+			reportError(onError, {
+				code: 'commit',
+				message: `commit refused for \`${name}\`: ${diagnostic.message}`,
+				cause: e,
+				addr: normalize(makeAddr(id, isMain, name)),
+				field: pathFor(normalize(makeAddr(id, isMain, name)))
+			});
 		}
 	}
 
@@ -363,7 +379,7 @@
 			// the neighbours it landed between.
 			void scrollCardIntoView(id, 'center');
 		} catch (e) {
-			console.error('[quillmark/editor] addCard failed', e);
+			reportError(onError, { code: 'structure', message: `addCard(${kind}) failed`, cause: e });
 		}
 	}
 	// The reorder gesture's arming window (SURFACES §Motion): the reconcile that moves a
@@ -420,7 +436,12 @@
 			doc.setCardKind(i, kind);
 			mutate('structure', cardAddr(id));
 		} catch (e) {
-			console.error('[quillmark/editor] retype failed', e);
+			reportError(onError, {
+				code: 'structure',
+				message: `retype to \`${kind}\` failed`,
+				cause: e,
+				addr: { card: i }
+			});
 		}
 	}
 	function renameCardById(id: string, title: string): void {
@@ -469,7 +490,11 @@
 		try {
 			return quill.validate(doc);
 		} catch (e) {
-			console.error('[quillmark/editor] validate failed', e);
+			reportError(onError, {
+				code: 'validate',
+				message: 'quill.validate failed; no validation this pass',
+				cause: e
+			});
 			return [] as Diagnostic[];
 		}
 	});
@@ -594,7 +619,11 @@
 		try {
 			resolved = quill.resolve(doc);
 		} catch (e) {
-			console.error('[quillmark/editor] quill.resolve failed; ghosts fall back to none', e);
+			reportError(onError, {
+				code: 'resolve',
+				message: 'quill.resolve failed; ghosts fall back to none',
+				cause: e
+			});
 		}
 		const byCard = resolvedByCardIndex(resolved);
 		return {
@@ -698,6 +727,7 @@
 			onFocus={handleFocus}
 			onCaretMove={handleCaret}
 			onProseChange={proseChanged}
+			{onError}
 			{register}
 			{unregister}
 		/>
@@ -707,7 +737,7 @@
 		 Absent when the channel is empty; which is what dismissal makes it, so the
 		 card leaves for good (VISUAL_EDITOR §"Card operations"). -->
 		{#if model.tips.length}
-			<TipsCard tips={model.tips} onDismiss={dismissTips} />
+			<TipsCard tips={model.tips} onDismiss={dismissTips} {onError} />
 		{/if}
 	</div>
 
@@ -730,6 +760,7 @@
 				onFocus={handleFocus}
 				onCaretMove={handleCaret}
 				onProseChange={proseChanged}
+				{onError}
 				{register}
 				{unregister}
 			/>

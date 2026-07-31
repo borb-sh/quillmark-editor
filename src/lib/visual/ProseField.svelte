@@ -12,6 +12,7 @@
 	import { createField, type FieldController } from '../core/codec/index.js';
 	import './controls.css';
 	import type { Document, Addr } from '../core/index.js';
+	import type { EditorErrorHandler } from '../core/errors.js';
 
 	interface Props {
 		doc: Document;
@@ -47,6 +48,8 @@
 		onCaretMove?: (addr: Addr, pos: number) => void;
 		/** A content edit committed: the prose leaf's own change signal. */
 		onChange?: (addr: Addr) => void;
+		/** Failures the leaf recovers from; the editor's own handler. */
+		onError?: EditorErrorHandler;
 		register?: (key: string, controller: FieldController) => void;
 		unregister?: (key: string) => void;
 	}
@@ -65,6 +68,7 @@
 		onFocus,
 		onCaretMove,
 		onChange,
+		onError,
 		register,
 		unregister
 	}: Props = $props();
@@ -104,7 +108,8 @@
 			placeholder,
 			onFocus,
 			onCaretMove,
-			onChange
+			onChange,
+			onError
 		});
 		register?.(leafKey, controller);
 		return () => {

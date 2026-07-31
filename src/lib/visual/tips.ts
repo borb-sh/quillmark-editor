@@ -7,6 +7,7 @@
 // is `patchEditorExt` (ext.ts), the one door into the namespace.
 import { importMarkdown } from '../core/index.js';
 import { renderContent, inlineSchema } from '../core/codec/index.js';
+import { reportError, type EditorErrorHandler } from '../core/errors.js';
 
 /**
  * Narrow a raw `$ext.editor.tips` value to the renderable channel. The channel is
@@ -34,11 +35,15 @@ export function tipsChannel(raw: unknown): string[] {
  * `{@html}` of the same string would be. A throw degrades to the literal text:
  * chrome never breaks the editor.
  */
-export function renderTip(markdown: string): Node {
+export function renderTip(markdown: string, onError?: EditorErrorHandler): Node {
 	try {
 		return renderContent(importMarkdown(markdown), inlineSchema);
 	} catch (e) {
-		console.error('[quillmark/editor] tip render failed; showing literal text', e);
+		reportError(onError, {
+			code: 'render',
+			message: 'tip render failed; showing the literal text',
+			cause: e
+		});
 		return document.createTextNode(markdown);
 	}
 }

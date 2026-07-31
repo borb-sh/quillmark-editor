@@ -10,6 +10,7 @@
 	import { untrack } from 'svelte';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import type { Document, Addr, Diagnostic } from '../core/index.js';
+	import type { EditorErrorHandler } from '../core/errors.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import type { CardModel, FieldModel } from './structure.js';
 	import { placeFields, humanize, initialExpandedGroup } from './structure.js';
@@ -47,6 +48,8 @@
 		onCaretMove?: (addr: Addr, pos: number) => void;
 		/** A prose commit in one of this card's leaves. */
 		onProseChange?: (addr: Addr) => void;
+		/** Failures the leaves recover from; the editor's own handler. */
+		onError?: EditorErrorHandler;
 		register?: (key: string, controller: FieldController) => void;
 		unregister?: (key: string) => void;
 	}
@@ -61,6 +64,7 @@
 		onFocus,
 		onCaretMove,
 		onProseChange,
+		onError,
 		register,
 		unregister
 	}: Props = $props();
@@ -345,6 +349,7 @@
 						{onFocus}
 						{onCaretMove}
 						onChange={onProseChange}
+						{onError}
 						{register}
 						{unregister}
 					/>
@@ -376,6 +381,7 @@
 				{onFocus}
 				{onCaretMove}
 				{onProseChange}
+				{onError}
 				{register}
 				{unregister}
 				diagnostics={ops.diagFor(f.name)}

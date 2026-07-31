@@ -11,10 +11,7 @@
 // (`esm-env`'s `DEV` is statically false there, and the factory returns a no-op).
 // Framework-free: the wrappers own the `$effect`, this owns what to say.
 import { DEV } from 'esm-env';
-
-/** How a swapped-in-place handle is reported. `onError` when the surface has one,
- *  else the console. */
-export type RebindReport = (message: string) => void;
+import { reportError, type EditorErrorHandler } from './errors.js';
 
 /**
  * Watch one bound-at-mount prop. Returns the checker the wrapper calls with the
@@ -26,17 +23,19 @@ export function rebindGuard(
 	surface: string,
 	prop: string,
 	mounted: unknown,
-	report?: RebindReport
+	onError?: () => EditorErrorHandler | undefined
 ): (current: unknown) => void {
 	if (!DEV) return () => {};
 	let reported = false;
 	return (current: unknown) => {
 		if (reported || current === mounted) return;
 		reported = true;
-		const say = report ?? ((m: string) => console.error(`[quillmark/editor] ${m}`));
-		say(
-			`<${surface}> received a new \`${prop}\` after mount; it is still bound to the one it mounted with. ` +
-				`Swap by REMOUNTING (\`{#key ${prop}}\`), or drive the change through the surface's own verbs.`
-		);
+		reportError(onError?.(), {
+			code: 'rebind',
+			message:
+				`<${surface}> received a new \`${prop}\` after mount; it is still bound to the one it ` +
+				`mounted with. Swap by REMOUNTING (\`{#key ${prop}}\`), or drive the change through the ` +
+				`surface's own verbs.`
+		});
 	};
 }

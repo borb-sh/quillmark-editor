@@ -11,6 +11,7 @@
 	import { createPreview, type PreviewController, type CaretTarget } from './controller.js';
 	import { rebindGuard } from '../core/rebind.js';
 	import type { LiveSession, ContentHit, ChangeSet } from '../core/index.js';
+	import type { EditorErrorHandler } from '../core/errors.js';
 
 	/**
 	 * REMOUNT CONTRACT. `createPreview` binds once in `onMount`; a later change to
@@ -29,9 +30,19 @@
 		margin?: number;
 		overlays?: boolean;
 		onCaretPick?: (hit: ContentHit) => void;
+		/** Paint failures and the remount contract; absent → the console. */
+		onError?: EditorErrorHandler;
 	}
 
-	let { session, margin, overlays, onCaretPick, class: className, style }: Props = $props();
+	let {
+		session,
+		margin,
+		overlays,
+		onCaretPick,
+		onError,
+		class: className,
+		style
+	}: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let controller: PreviewController | undefined;
@@ -39,12 +50,18 @@
 	// The remount contract, made loud in dev (`core/rebind.ts`): swapping `session`
 	// in place leaves this painting the old one, silently.
 	// svelte-ignore state_referenced_locally
-	const guardSession = rebindGuard('Preview', 'session', session);
+	const guardSession = rebindGuard('Preview', 'session', session, () => onError);
 	$effect(() => guardSession(session));
 
 	onMount(() => {
 		if (!containerEl) return;
-		controller = createPreview(session, { container: containerEl, margin, overlays, onCaretPick });
+		controller = createPreview(session, {
+			container: containerEl,
+			margin,
+			overlays,
+			onCaretPick,
+			onError
+		});
 		return () => {
 			controller?.destroy();
 			controller = undefined;

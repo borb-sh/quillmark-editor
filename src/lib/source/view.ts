@@ -18,6 +18,7 @@
 // front-matter and line breaks rather than its token colours. Text lands through
 // `textContent`, so the document is never parsed as markup.
 import type { Document } from '../core/index.js';
+import { reportError, type EditorErrorHandler } from '../core/errors.js';
 
 /** Options for {@link createSourceView}. */
 export interface SourceViewOptions {
@@ -25,6 +26,9 @@ export interface SourceViewOptions {
 	container: HTMLElement;
 	/** The live document; serialized on build and on every {@link SourceViewController.refresh}. */
 	doc: Document;
+	/** A serialize that threw, which the mirror recovers from by showing the error
+	 *  text; absent → the console (`core/errors.ts`). */
+	onError?: EditorErrorHandler;
 }
 
 /** The debug source-view handle. */
@@ -39,22 +43,22 @@ const CONTAINER_CLASS = 'qm-source';
 const TEXT_CLASS = 'qm-source-text';
 
 /** Serialize the document, or surface the error text rather than throwing into a paint. */
-function serialize(doc: Document): string {
+function serialize(doc: Document, onError?: EditorErrorHandler): string {
 	try {
 		return doc.toMarkdown();
 	} catch (e) {
 		// `toMarkdown` is round-trip safe for any valid document, but a boundary
 		// error must not crash the debug view; show it in place instead.
-		console.error('[quillmark/editor] toMarkdown failed', e);
+		reportError(onError, { code: 'serialize', message: 'toMarkdown failed', cause: e });
 		return `# source view unavailable\n\n${e instanceof Error ? e.message : String(e)}`;
 	}
 }
 
 export function createSourceView(opts: SourceViewOptions): SourceViewController {
-	const { container, doc } = opts;
+	const { container, doc, onError } = opts;
 	container.classList.add(CONTAINER_CLASS);
 
-	let current = serialize(doc);
+	let current = serialize(doc, onError);
 	const text = container.ownerDocument.createElement('pre');
 	text.className = TEXT_CLASS;
 	text.textContent = current;
@@ -62,7 +66,7 @@ export function createSourceView(opts: SourceViewOptions): SourceViewController 
 
 	return {
 		refresh(): void {
-			const next = serialize(doc);
+			const next = serialize(doc, onError);
 			if (next === current) return; // no re-render when the serialize is unchanged
 			current = next;
 			// The container is the scroller, so a shorter document clamps its offset;

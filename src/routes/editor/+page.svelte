@@ -32,7 +32,15 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Quill, Document, LiveSession, ContentHit, ChangeSet, Diagnostic } from '$lib/core';
+	import type {
+		Quill,
+		Document,
+		LiveSession,
+		ContentHit,
+		ChangeSet,
+		Diagnostic,
+		EditorError
+	} from '$lib/core';
 	import type { ActiveField, CaretMove, EditorChange } from '$lib/visual';
 	import { Preview } from '$lib/preview';
 	import { SourceView } from '$lib/source';
@@ -67,6 +75,13 @@
 	let lastFocus = $state('none');
 	let lastChange = $state<ChangeSet | undefined>();
 	let lastChangeSource = $state('none');
+	// The error channel, read back out like every other bridge outcome: a
+	// consumer's telemetry sink stands here, and the strip is this one's.
+	let lastError = $state('none');
+	function handleError(err: EditorError): void {
+		lastError = `${err.code}: ${err.message}`;
+		console.error('[playground] surface error', err);
+	}
 	let showSource = $state(false);
 
 	// ── Split resizer (playground reference) ─────────────────────────────────────
@@ -309,6 +324,7 @@
 						onActiveAddrChange={handleActiveAddr}
 						onCaretMove={handleCaretMove}
 						onChange={handleChange}
+						onError={handleError}
 						diagnostics={externalDiagnostics}
 					/>
 				{/if}
@@ -334,7 +350,12 @@
 			</div>
 			<section class="pg-frame preview-pane" aria-label="Live preview">
 				{#if session}
-					<Preview bind:this={previewRef} {session} onCaretPick={handleCaretPick} />
+					<Preview
+						bind:this={previewRef}
+						{session}
+						onCaretPick={handleCaretPick}
+						onError={handleError}
+					/>
 				{/if}
 			</section>
 		</div>
@@ -343,7 +364,7 @@
 			<section class="pg-frame drawer" aria-label="Debug source view" data-testid="source-drawer">
 				<p class="pg-label drawer-label">Canonical markdown — read only</p>
 				<div class="source-host">
-					<SourceView bind:this={sourceRef} doc={docHandle} />
+					<SourceView bind:this={sourceRef} doc={docHandle} onError={handleError} />
 				</div>
 			</section>
 		{/if}

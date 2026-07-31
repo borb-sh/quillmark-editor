@@ -10,6 +10,7 @@
 	import { createSourceView, type SourceViewController } from './view.js';
 	import { rebindGuard } from '../core/rebind.js';
 	import type { Document } from '../core/index.js';
+	import type { EditorErrorHandler } from '../core/errors.js';
 
 	/**
 	 * REMOUNT CONTRACT. `createSourceView` binds once in `onMount`; a later change
@@ -18,24 +19,26 @@
 	 */
 	interface Props {
 		doc: Document;
+		/** A serialize that threw, and the remount contract; absent → the console. */
+		onError?: EditorErrorHandler;
 		/** Appended to the root's own class (see `Preview`). */
 		class?: string;
 		/** Merged onto the root; free because theming lands on `data-qm-root`. */
 		style?: string;
 	}
-	let { doc, class: className, style }: Props = $props();
+	let { doc, onError, class: className, style }: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let controller: SourceViewController | undefined;
 
 	// The remount contract, made loud in dev (`core/rebind.ts`).
 	// svelte-ignore state_referenced_locally
-	const guardDoc = rebindGuard('SourceView', 'doc', doc);
+	const guardDoc = rebindGuard('SourceView', 'doc', doc, () => onError);
 	$effect(() => guardDoc(doc));
 
 	onMount(() => {
 		if (!containerEl) return;
-		controller = createSourceView({ container: containerEl, doc });
+		controller = createSourceView({ container: containerEl, doc, onError });
 		return () => {
 			controller?.destroy();
 			controller = undefined;
