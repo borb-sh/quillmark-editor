@@ -5,13 +5,13 @@
  * Node-only contexts (fromDir, fromPackage, etc.).
  */
 
-import { readdir, readFile, stat } from "node:fs/promises";
-import { join, relative, sep } from "node:path";
-import { QuiverError } from "./errors.js";
-import { parseQuiverYaml } from "./quiver-yaml.js";
-import { isCanonicalSemver, compareSemver } from "./semver.js";
-import type { QuiverMeta } from "./quiver-yaml.js";
-import type { QuiverLoader } from "./quiver.js";
+import { readdir, readFile, stat } from 'node:fs/promises';
+import { join, relative, sep } from 'node:path';
+import { QuiverError } from './errors.js';
+import { parseQuiverYaml } from './quiver-yaml.js';
+import { isCanonicalSemver, compareSemver } from './semver.js';
+import type { QuiverMeta } from './quiver-yaml.js';
+import type { QuiverLoader } from './quiver.js';
 
 /**
  * Scans a Source Quiver root directory.
@@ -27,144 +27,144 @@ import type { QuiverLoader } from "./quiver.js";
  * Missing `quills/` directory is NOT an error — the quiver is valid but empty.
  */
 export async function scanSourceQuiver(rootDir: string): Promise<{
-  meta: QuiverMeta;
-  catalog: Map<string, string[]>;
+	meta: QuiverMeta;
+	catalog: Map<string, string[]>;
 }> {
-  // --- Read Quiver.yaml ---
-  const quiverYamlPath = join(rootDir, "Quiver.yaml");
-  let raw: Uint8Array;
-  try {
-    raw = await readFile(quiverYamlPath);
-  } catch (err) {
-    // ENOENT → transport_error: a missing Quiver.yaml means the path itself
-    // does not point to a quiver — this is a missing-path condition, not a
-    // structural violation of a quiver that exists.
-    // (Contrast: missing Quill.yaml inside a version dir is quiver_invalid —
-    // the version dir exists but lacks its required sentinel file.)
-    const code = (err as NodeJS.ErrnoException).code;
-    if (code === "ENOENT") {
-      throw new QuiverError(
-        "transport_error",
-        `Source Quiver at "${rootDir}" is missing required "Quiver.yaml"`,
-        { cause: err },
-      );
-    }
-    throw new QuiverError(
-      "transport_error",
-      `Failed to read "Quiver.yaml" at "${quiverYamlPath}": ${(err as Error).message}`,
-      { cause: err },
-    );
-  }
+	// --- Read Quiver.yaml ---
+	const quiverYamlPath = join(rootDir, 'Quiver.yaml');
+	let raw: Uint8Array;
+	try {
+		raw = await readFile(quiverYamlPath);
+	} catch (err) {
+		// ENOENT → transport_error: a missing Quiver.yaml means the path itself
+		// does not point to a quiver — this is a missing-path condition, not a
+		// structural violation of a quiver that exists.
+		// (Contrast: missing Quill.yaml inside a version dir is quiver_invalid —
+		// the version dir exists but lacks its required sentinel file.)
+		const code = (err as NodeJS.ErrnoException).code;
+		if (code === 'ENOENT') {
+			throw new QuiverError(
+				'transport_error',
+				`Source Quiver at "${rootDir}" is missing required "Quiver.yaml"`,
+				{ cause: err }
+			);
+		}
+		throw new QuiverError(
+			'transport_error',
+			`Failed to read "Quiver.yaml" at "${quiverYamlPath}": ${(err as Error).message}`,
+			{ cause: err }
+		);
+	}
 
-  const meta = parseQuiverYaml(raw);
+	const meta = parseQuiverYaml(raw);
 
-  // --- Walk quills/ directory ---
-  const quillsDir = join(rootDir, "quills");
+	// --- Walk quills/ directory ---
+	const quillsDir = join(rootDir, 'quills');
 
-  let quillNames: string[];
-  try {
-    quillNames = await readdir(quillsDir);
-  } catch (err) {
-    const code = (err as NodeJS.ErrnoException).code;
-    if (code === "ENOENT") {
-      // Missing quills/ is fine — empty catalog
-      return { meta, catalog: new Map() };
-    }
-    throw new QuiverError(
-      "transport_error",
-      `Failed to read "quills/" directory at "${quillsDir}": ${(err as Error).message}`,
-      { cause: err },
-    );
-  }
+	let quillNames: string[];
+	try {
+		quillNames = await readdir(quillsDir);
+	} catch (err) {
+		const code = (err as NodeJS.ErrnoException).code;
+		if (code === 'ENOENT') {
+			// Missing quills/ is fine — empty catalog
+			return { meta, catalog: new Map() };
+		}
+		throw new QuiverError(
+			'transport_error',
+			`Failed to read "quills/" directory at "${quillsDir}": ${(err as Error).message}`,
+			{ cause: err }
+		);
+	}
 
-  const catalog = new Map<string, string[]>();
+	const catalog = new Map<string, string[]>();
 
-  for (const quillName of quillNames) {
-    const quillNameDir = join(quillsDir, quillName);
+	for (const quillName of quillNames) {
+		const quillNameDir = join(quillsDir, quillName);
 
-    // Ensure it's a directory
-    let st;
-    try {
-      st = await stat(quillNameDir);
-    } catch (err) {
-      throw new QuiverError(
-        "transport_error",
-        `Failed to stat "${quillNameDir}": ${(err as Error).message}`,
-        { cause: err },
-      );
-    }
-    if (!st.isDirectory()) continue;
+		// Ensure it's a directory
+		let st;
+		try {
+			st = await stat(quillNameDir);
+		} catch (err) {
+			throw new QuiverError(
+				'transport_error',
+				`Failed to stat "${quillNameDir}": ${(err as Error).message}`,
+				{ cause: err }
+			);
+		}
+		if (!st.isDirectory()) continue;
 
-    // Read version directories
-    let versionDirs: string[];
-    try {
-      versionDirs = await readdir(quillNameDir);
-    } catch (err) {
-      throw new QuiverError(
-        "transport_error",
-        `Failed to read versions for quill "${quillName}": ${(err as Error).message}`,
-        { cause: err },
-      );
-    }
+		// Read version directories
+		let versionDirs: string[];
+		try {
+			versionDirs = await readdir(quillNameDir);
+		} catch (err) {
+			throw new QuiverError(
+				'transport_error',
+				`Failed to read versions for quill "${quillName}": ${(err as Error).message}`,
+				{ cause: err }
+			);
+		}
 
-    const versions: string[] = [];
+		const versions: string[] = [];
 
-    for (const versionDir of versionDirs) {
-      const versionPath = join(quillNameDir, versionDir);
+		for (const versionDir of versionDirs) {
+			const versionPath = join(quillNameDir, versionDir);
 
-      // Ensure it's a directory
-      let vst;
-      try {
-        vst = await stat(versionPath);
-      } catch (err) {
-        throw new QuiverError(
-          "transport_error",
-          `Failed to stat "${versionPath}": ${(err as Error).message}`,
-          { cause: err },
-        );
-      }
-      if (!vst.isDirectory()) continue;
+			// Ensure it's a directory
+			let vst;
+			try {
+				vst = await stat(versionPath);
+			} catch (err) {
+				throw new QuiverError(
+					'transport_error',
+					`Failed to stat "${versionPath}": ${(err as Error).message}`,
+					{ cause: err }
+				);
+			}
+			if (!vst.isDirectory()) continue;
 
-      // Non-canonical version → quiver_invalid
-      if (!isCanonicalSemver(versionDir)) {
-        throw new QuiverError(
-          "quiver_invalid",
-          `Quill "${quillName}" has non-canonical version directory "${versionDir}" — only x.y.z format is allowed`,
-          { quiverName: meta.name, version: versionDir },
-        );
-      }
+			// Non-canonical version → quiver_invalid
+			if (!isCanonicalSemver(versionDir)) {
+				throw new QuiverError(
+					'quiver_invalid',
+					`Quill "${quillName}" has non-canonical version directory "${versionDir}" — only x.y.z format is allowed`,
+					{ quiverName: meta.name, version: versionDir }
+				);
+			}
 
-      // Require Quill.yaml sentinel inside the version dir
-      const quillYamlPath = join(versionPath, "Quill.yaml");
-      try {
-        await stat(quillYamlPath);
-      } catch (err) {
-        const code = (err as NodeJS.ErrnoException).code;
-        if (code === "ENOENT") {
-          throw new QuiverError(
-            "quiver_invalid",
-            `Quill "${quillName}@${versionDir}" is missing required "Quill.yaml"`,
-            { quiverName: meta.name, version: versionDir },
-          );
-        }
-        throw new QuiverError(
-          "transport_error",
-          `Failed to stat "Quill.yaml" at "${quillYamlPath}": ${(err as Error).message}`,
-          { cause: err },
-        );
-      }
+			// Require Quill.yaml sentinel inside the version dir
+			const quillYamlPath = join(versionPath, 'Quill.yaml');
+			try {
+				await stat(quillYamlPath);
+			} catch (err) {
+				const code = (err as NodeJS.ErrnoException).code;
+				if (code === 'ENOENT') {
+					throw new QuiverError(
+						'quiver_invalid',
+						`Quill "${quillName}@${versionDir}" is missing required "Quill.yaml"`,
+						{ quiverName: meta.name, version: versionDir }
+					);
+				}
+				throw new QuiverError(
+					'transport_error',
+					`Failed to stat "Quill.yaml" at "${quillYamlPath}": ${(err as Error).message}`,
+					{ cause: err }
+				);
+			}
 
-      versions.push(versionDir);
-    }
+			versions.push(versionDir);
+		}
 
-    if (versions.length > 0) {
-      // Sort descending
-      versions.sort((a, b) => compareSemver(b, a));
-      catalog.set(quillName, versions);
-    }
-  }
+		if (versions.length > 0) {
+			// Sort descending
+			versions.sort((a, b) => compareSemver(b, a));
+			catalog.set(quillName, versions);
+		}
+	}
 
-  return { meta, catalog };
+	return { meta, catalog };
 }
 
 /**
@@ -174,60 +174,60 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
  * Throws `transport_error` on I/O failure.
  */
 export async function readQuillTree(quillDir: string): Promise<Map<string, Uint8Array>> {
-  const tree: Map<string, Uint8Array> = new Map();
-  await walkDir(quillDir, quillDir, tree);
-  return tree;
+	const tree: Map<string, Uint8Array> = new Map();
+	await walkDir(quillDir, quillDir, tree);
+	return tree;
 }
 
 async function walkDir(
-  baseDir: string,
-  currentDir: string,
-  tree: Map<string, Uint8Array>,
+	baseDir: string,
+	currentDir: string,
+	tree: Map<string, Uint8Array>
 ): Promise<void> {
-  let entries: string[];
-  try {
-    entries = await readdir(currentDir);
-  } catch (err) {
-    throw new QuiverError(
-      "transport_error",
-      `Failed to read directory "${currentDir}": ${(err as Error).message}`,
-      { cause: err },
-    );
-  }
+	let entries: string[];
+	try {
+		entries = await readdir(currentDir);
+	} catch (err) {
+		throw new QuiverError(
+			'transport_error',
+			`Failed to read directory "${currentDir}": ${(err as Error).message}`,
+			{ cause: err }
+		);
+	}
 
-  for (const entry of entries) {
-    const fullPath = join(currentDir, entry);
-    let st;
-    try {
-      st = await stat(fullPath);
-    } catch (err) {
-      throw new QuiverError(
-        "transport_error",
-        `Failed to stat "${fullPath}": ${(err as Error).message}`,
-        { cause: err },
-      );
-    }
+	for (const entry of entries) {
+		const fullPath = join(currentDir, entry);
+		let st;
+		try {
+			st = await stat(fullPath);
+		} catch (err) {
+			throw new QuiverError(
+				'transport_error',
+				`Failed to stat "${fullPath}": ${(err as Error).message}`,
+				{ cause: err }
+			);
+		}
 
-    if (st.isDirectory()) {
-      await walkDir(baseDir, fullPath, tree);
-    } else {
-      // Compute relative POSIX path
-      const rel = relative(baseDir, fullPath);
-      const posixRel = sep === "/" ? rel : rel.split(sep).join("/");
+		if (st.isDirectory()) {
+			await walkDir(baseDir, fullPath, tree);
+		} else {
+			// Compute relative POSIX path
+			const rel = relative(baseDir, fullPath);
+			const posixRel = sep === '/' ? rel : rel.split(sep).join('/');
 
-      let bytes: Uint8Array;
-      try {
-        bytes = await readFile(fullPath);
-      } catch (err) {
-        throw new QuiverError(
-          "transport_error",
-          `Failed to read file "${fullPath}": ${(err as Error).message}`,
-          { cause: err },
-        );
-      }
-      tree.set(posixRel, bytes);
-    }
-  }
+			let bytes: Uint8Array;
+			try {
+				bytes = await readFile(fullPath);
+			} catch (err) {
+				throw new QuiverError(
+					'transport_error',
+					`Failed to read file "${fullPath}": ${(err as Error).message}`,
+					{ cause: err }
+				);
+			}
+			tree.set(posixRel, bytes);
+		}
+	}
 }
 
 /**
@@ -236,10 +236,10 @@ async function walkDir(
  * so this loader trusts the gate and goes straight to reading files.
  */
 export class SourceLoader implements QuiverLoader {
-  constructor(private readonly rootDir: string) {}
+	constructor(private readonly rootDir: string) {}
 
-  async loadTree(name: string, version: string): Promise<Map<string, Uint8Array>> {
-    const quillDir = join(this.rootDir, "quills", name, version);
-    return readQuillTree(quillDir);
-  }
+	async loadTree(name: string, version: string): Promise<Map<string, Uint8Array>> {
+		const quillDir = join(this.rootDir, 'quills', name, version);
+		return readQuillTree(quillDir);
+	}
 }

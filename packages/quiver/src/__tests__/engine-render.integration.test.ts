@@ -19,66 +19,64 @@
  * locally.
  */
 
-import { describe, it, expect } from "vitest";
-import { fileURLToPath } from "node:url";
-import { Engine } from "@quillmark/wasm";
-import { Quiver } from "../node.js";
+import { describe, it, expect } from 'vitest';
+import { fileURLToPath } from 'node:url';
+import { Engine } from '@quillmark/wasm';
+import { Quiver } from '../node.js';
 
 // The same fixture `preview.test.ts` uses: quills `memo@1.0.0` and
 // `plain@1.0.0`, both `backend: typst` (see their `Quill.yaml`), both
 // render-complete — a comment-only `template.typ` compiles to a valid PDF.
-const PREVIEW_FIXTURE = fileURLToPath(
-  new URL("./fixtures/preview-quiver", import.meta.url),
-);
+const PREVIEW_FIXTURE = fileURLToPath(new URL('./fixtures/preview-quiver', import.meta.url));
 
-describe("Engine.render against a quiver quill", () => {
-  it("renders a fixture quill end-to-end with a real Engine", async () => {
-    const quiver = await Quiver.fromDir(PREVIEW_FIXTURE);
-    const engine = new Engine();
+describe('Engine.render against a quiver quill', () => {
+	it('renders a fixture quill end-to-end with a real Engine', async () => {
+		const quiver = await Quiver.fromDir(PREVIEW_FIXTURE);
+		const engine = new Engine();
 
-    const quill = await quiver.getQuill("memo@1.0.0");
-    // The fixture declares `backend: typst`; the Engine routes on this.
-    expect(quill.backendId).toBe("typst");
+		const quill = await quiver.getQuill('memo@1.0.0');
+		// The fixture declares `backend: typst`; the Engine routes on this.
+		expect(quill.backendId).toBe('typst');
 
-    const doc = quill.seedDocument();
-    try {
-      const result = await engine.render(quill, doc);
+		const doc = quill.seedDocument();
+		try {
+			const result = await engine.render(quill, doc);
 
-      expect(result.artifacts.length).toBeGreaterThan(0);
-      const [artifact] = result.artifacts;
-      expect(artifact.bytes).toBeInstanceOf(Uint8Array);
-      expect(artifact.bytes.length).toBeGreaterThan(0);
-    } finally {
-      doc.free();
-    }
-  }, 60000);
+			expect(result.artifacts.length).toBeGreaterThan(0);
+			const [artifact] = result.artifacts;
+			expect(artifact.bytes).toBeInstanceOf(Uint8Array);
+			expect(artifact.bytes.length).toBeGreaterThan(0);
+		} finally {
+			doc.free();
+		}
+	}, 60000);
 
-  it("clones the quill on render — the same handle renders twice", async () => {
-    const quiver = await Quiver.fromDir(PREVIEW_FIXTURE);
-    const engine = new Engine();
+	it('clones the quill on render — the same handle renders twice', async () => {
+		const quiver = await Quiver.fromDir(PREVIEW_FIXTURE);
+		const engine = new Engine();
 
-    const quill = await quiver.getQuill("memo@1.0.0");
-    expect(quill.backendId).toBe("typst");
+		const quill = await quiver.getQuill('memo@1.0.0');
+		expect(quill.backendId).toBe('typst');
 
-    // First render.
-    const first = quill.seedDocument();
-    try {
-      const result = await engine.render(quill, first);
-      expect(result.artifacts.length).toBeGreaterThan(0);
-    } finally {
-      first.free();
-    }
+		// First render.
+		const first = quill.seedDocument();
+		try {
+			const result = await engine.render(quill, first);
+			expect(result.artifacts.length).toBeGreaterThan(0);
+		} finally {
+			first.free();
+		}
 
-    // The Engine clones into backend memory and frees the clone — the source
-    // `Quill` is untouched, so a second render with the SAME handle succeeds.
-    expect(quill.backendId).toBe("typst");
-    const second = quill.seedDocument();
-    try {
-      const result = await engine.render(quill, second);
-      expect(result.artifacts.length).toBeGreaterThan(0);
-      expect(result.artifacts[0].bytes.length).toBeGreaterThan(0);
-    } finally {
-      second.free();
-    }
-  }, 60000);
+		// The Engine clones into backend memory and frees the clone — the source
+		// `Quill` is untouched, so a second render with the SAME handle succeeds.
+		expect(quill.backendId).toBe('typst');
+		const second = quill.seedDocument();
+		try {
+			const result = await engine.render(quill, second);
+			expect(result.artifacts.length).toBeGreaterThan(0);
+			expect(result.artifacts[0].bytes.length).toBeGreaterThan(0);
+		} finally {
+			second.free();
+		}
+	}, 60000);
 });

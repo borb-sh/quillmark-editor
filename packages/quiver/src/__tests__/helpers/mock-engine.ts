@@ -1,5 +1,5 @@
-import { vi, type MockInstance } from "vitest";
-import { Quill } from "@quillmark/wasm";
+import { vi, type MockInstance } from 'vitest';
+import { Quill } from '@quillmark/wasm';
 
 /**
  * Stubs `Quill.fromTree` so tests can exercise `Quiver.getQuill` without the
@@ -13,16 +13,16 @@ import { Quill } from "@quillmark/wasm";
  * `restore()` after.
  */
 export function mockQuillFromTree(): {
-  calls: Array<Map<string, Uint8Array>>;
-  spy: MockInstance;
-  restore: () => void;
+	calls: Array<Map<string, Uint8Array>>;
+	spy: MockInstance;
+	restore: () => void;
 } {
-  const calls: Array<Map<string, Uint8Array>> = [];
-  const spy = vi
-    .spyOn(Quill, "fromTree")
-    .mockImplementation((tree: Map<string, Uint8Array>): Quill => {
-      calls.push(tree);
-      return { seedDocument: () => ({}) } as unknown as Quill;
-    });
-  return { calls, spy, restore: () => spy.mockRestore() };
+	const calls: Array<Map<string, Uint8Array>> = [];
+	const spy = vi
+		.spyOn(Quill, 'fromTree')
+		.mockImplementation((tree: Map<string, Uint8Array>): Quill => {
+			calls.push(tree);
+			return { seedDocument: () => ({}) } as unknown as Quill;
+		});
+	return { calls, spy, restore: () => spy.mockRestore() };
 }

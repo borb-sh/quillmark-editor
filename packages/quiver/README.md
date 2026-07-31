@@ -70,8 +70,8 @@ test-runner dependency required. If you prefer vitest/jest/mocha, write a
 
 ```ts
 // quiver.test.ts — run with: node --test
-import { Engine } from "@quillmark/wasm";
-import { runQuiverTests } from "@quillmark/quiver/testing";
+import { Engine } from '@quillmark/wasm';
+import { runQuiverTests } from '@quillmark/quiver/testing';
 
 runQuiverTests(import.meta.url, new Engine());
 ```
@@ -84,11 +84,11 @@ human can look at. To eyeball real renders, run the
 
 ```ts
 // scripts/preview.ts — run with: node --experimental-strip-types scripts/preview.ts
-import { Engine } from "@quillmark/wasm";
-import { renderQuiverSamples } from "@quillmark/quiver/preview";
+import { Engine } from '@quillmark/wasm';
+import { renderQuiverSamples } from '@quillmark/quiver/preview';
 
 await renderQuiverSamples(import.meta.url, {
-  engine: new Engine(),
+	engine: new Engine()
 });
 // → writes ./preview/<name>@<version>.<fmt> + index.html
 ```
@@ -108,8 +108,8 @@ quill name or canonical ref):
 
 ```ts
 await renderQuiverSamples(import.meta.url, {
-  engine: new Engine(),
-  exclude: ["broken-quill"], // or: include: ["memo@1.0.0"]
+	engine: new Engine(),
+	exclude: ['broken-quill'] // or: include: ["memo@1.0.0"]
 });
 ```
 
@@ -121,15 +121,15 @@ await renderQuiverSamples(import.meta.url, {
 ## Consuming a quiver (Node)
 
 ```ts
-import { Engine, Document } from "@quillmark/wasm";
-import { Quiver } from "@quillmark/quiver/node";
+import { Engine, Document } from '@quillmark/wasm';
+import { Quiver } from '@quillmark/quiver/node';
 
-const quiver = await Quiver.fromPackage("@org/my-quiver");
+const quiver = await Quiver.fromPackage('@org/my-quiver');
 const engine = new Engine();
 
 const doc = Document.fromMarkdown(markdownString);
 const quill = await quiver.getQuill(doc.quillRef);
-const result = await engine.render(quill, doc, { format: "pdf" });
+const result = await engine.render(quill, doc, { format: 'pdf' });
 ```
 
 `getQuill` accepts both selector refs (`"memo"`, `"memo@1"`) and canonical
@@ -151,13 +151,13 @@ coreQuill.schema; // ✓ schema, validate, blueprint, seed — all fine
 const doc = coreQuill.seedDocument(); // a fully-filled example document
 
 // Render path — the same core handles render directly.
-const result = await engine.render(coreQuill, doc, { format: "pdf" });
+const result = await engine.render(coreQuill, doc, { format: 'pdf' });
 ```
 
 If you only need the canonical ref (without materializing), use `resolve`:
 
 ```ts
-const canonicalRef = await quiver.resolve("memo"); // "memo@1.1.0"
+const canonicalRef = await quiver.resolve('memo'); // "memo@1.1.0"
 ```
 
 If you need the raw file tree (e.g. to drive a backend binary directly), call
@@ -171,25 +171,22 @@ serve the output as static files:
 
 ```ts
 // build script (Node) — typically wired into your existing build pipeline
-import { Quiver } from "@quillmark/quiver/node";
+import { Quiver } from '@quillmark/quiver/node';
 
-await Quiver.build(
-  "./node_modules/@org/my-quiver",
-  "./public/quivers/my-quiver",
-);
+await Quiver.build('./node_modules/@org/my-quiver', './public/quivers/my-quiver');
 ```
 
 ```ts
 // browser runtime
-import { Engine, Document } from "@quillmark/wasm";
-import { Quiver } from "@quillmark/quiver";
+import { Engine, Document } from '@quillmark/wasm';
+import { Quiver } from '@quillmark/quiver';
 
-const quiver = await Quiver.fromBuiltUrl("/quivers/my-quiver/");
+const quiver = await Quiver.fromBuiltUrl('/quivers/my-quiver/');
 const engine = new Engine();
 
 const doc = Document.fromMarkdown(markdownString);
 const quill = await quiver.getQuill(doc.quillRef);
-const result = await engine.render(quill, doc, { format: "pdf" });
+const result = await engine.render(quill, doc, { format: 'pdf' });
 ```
 
 ## SSR seeding (skip the `latest.json` pointer)
@@ -210,28 +207,24 @@ content-addressed, relative to `baseUrl`, exactly as with `fromBuiltUrl`:
 ```ts
 // Server build step — read the manifest the build wrote.
 // build-output/latest.json → { "manifest": "manifest.<hash>.json" }
-import { readFile } from "node:fs/promises";
+import { readFile } from 'node:fs/promises';
 
-const { manifest } = JSON.parse(
-  await readFile("./public/quivers/my-quiver/latest.json", "utf8"),
-);
-const manifestBytes = new Uint8Array(
-  await readFile(`./public/quivers/my-quiver/${manifest}`),
-);
+const { manifest } = JSON.parse(await readFile('./public/quivers/my-quiver/latest.json', 'utf8'));
+const manifestBytes = new Uint8Array(await readFile(`./public/quivers/my-quiver/${manifest}`));
 // Inline manifestBytes into the page payload (e.g. base64) for the client.
 ```
 
 ```ts
 // Browser / SSR runtime — seed from the bytes you shipped, no pointer fetch.
-import { Engine, Document } from "@quillmark/wasm";
-import { Quiver } from "@quillmark/quiver";
+import { Engine, Document } from '@quillmark/wasm';
+import { Quiver } from '@quillmark/quiver';
 
-const quiver = await Quiver.fromManifest("/quivers/my-quiver/", manifestBytes);
+const quiver = await Quiver.fromManifest('/quivers/my-quiver/', manifestBytes);
 const engine = new Engine();
 
 const doc = Document.fromMarkdown(markdownString);
 const quill = await quiver.getQuill(doc.quillRef);
-const result = await engine.render(quill, doc, { format: "pdf" });
+const result = await engine.render(quill, doc, { format: 'pdf' });
 ```
 
 `fromManifest` is browser-safe (no `node:*` imports) and shares
@@ -248,10 +241,10 @@ self-hosted deployment, and lets the source quiver stay in
 `devDependencies`:
 
 ```ts
-import { Quiver } from "@quillmark/quiver/node";
+import { Quiver } from '@quillmark/quiver/node';
 
 // Packed at build time, e.g. into ./static/quills/my-quiver
-const quiver = await Quiver.fromBuiltDir("./static/quills/my-quiver");
+const quiver = await Quiver.fromBuiltDir('./static/quills/my-quiver');
 ```
 
 ## Advanced: pre-built distribution to a CDN
@@ -261,11 +254,11 @@ a Node build step), publish `Quiver.build` output to a CDN and have
 consumers point `fromBuiltUrl` at the CDN URL:
 
 ```ts
-import { Quiver } from "@quillmark/quiver/node";
+import { Quiver } from '@quillmark/quiver/node';
 
-await Quiver.build("./my-quiver", "./dist/my-quiver");
+await Quiver.build('./my-quiver', './dist/my-quiver');
 // upload ./dist/my-quiver to https://cdn.example.com/quivers/my-quiver/
-const quiver = await Quiver.fromBuiltUrl("https://cdn.example.com/quivers/my-quiver/");
+const quiver = await Quiver.fromBuiltUrl('https://cdn.example.com/quivers/my-quiver/');
 ```
 
 ## Warm (prefetch all quill trees)
@@ -286,16 +279,16 @@ the cached tree, skipping the load.
 All errors are instances of `QuiverError` with a `code` field.
 
 ```ts
-import { QuiverError } from "@quillmark/quiver";
+import { QuiverError } from '@quillmark/quiver';
 
 try {
-  await quiver.resolve("unknown_quill");
+	await quiver.resolve('unknown_quill');
 } catch (err) {
-  if (err instanceof QuiverError) {
-    console.error(err.code);    // e.g. "quill_not_found"
-    console.error(err.message); // human-readable description
-    console.error(err.ref);     // offending ref, when available
-  }
+	if (err instanceof QuiverError) {
+		console.error(err.code); // e.g. "quill_not_found"
+		console.error(err.message); // human-readable description
+		console.error(err.ref); // offending ref, when available
+	}
 }
 ```
 
@@ -309,11 +302,11 @@ construction, and per-ref caching in one call. Do **not** reach for
 `Quill.fromTree` directly inside a Quiver consumer:
 
 ```ts
-import { Quill } from "@quillmark/wasm";
+import { Quill } from '@quillmark/wasm';
 
 // wrong — bypasses Quiver's cache; duplicates work getQuill already does
 const tree = new Map<string, Uint8Array>();
-tree.set("Quill.yaml", new TextEncoder().encode("name: memo\n..."));
+tree.set('Quill.yaml', new TextEncoder().encode('name: memo\n...'));
 // ...assemble the rest of the file tree by hand...
 const quill = Quill.fromTree(tree);
 
