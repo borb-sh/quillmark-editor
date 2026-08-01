@@ -97,7 +97,9 @@ In Svelte, `<Preview {session} onCaretPick={…} />` exposes the same verbs (`re
 />
 ```
 
-Swap `doc`/`quill` by **remounting** (`{#key doc}`); edits flow the other way, mutating the passed-in handle.
+Hand it a different `doc` and the editor **re-keys itself**: every leaf remounts against the new handle, and the id state, the commit-error map and the active address seed fresh. Nothing to key at the call site. Edits flow the other way, mutating the passed-in handle, so a swap is the only direction that needs saying.
+
+`quill` is not part of that key — the schema is re-read on every derive, so a quill swap re-projects on its own. Swapping it _without_ the doc leaves the mounted leaves paired to the quill their document mounted with, and reports `rebind-ignored` through `onError` at `dev` severity rather than passing silently.
 
 ### Recompiling
 

@@ -9,6 +9,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createPreview, type PreviewController } from './controller.js';
+	import { reportError } from '../core/index.js';
 	import type {
 		LiveSession,
 		ContentHit,
@@ -51,6 +52,25 @@
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let controller: PreviewController | undefined;
+
+	// The contract above, said out loud. The editor re-keys on its own `doc`; this
+	// surface cannot, because the paint loop owns scroll position, mounted page
+	// slots and an observer set that a remount would discard on every apply — so the
+	// swap stays the consumer's `{#key session}` and what the surface owes is to
+	// stop being silent about the one it was handed instead.
+	// svelte-ignore state_referenced_locally
+	const mounted = session;
+	let reported = false;
+	$effect(() => {
+		if (reported || session === mounted) return;
+		reported = true;
+		reportError(onError, {
+			code: 'rebind-ignored',
+			severity: 'dev',
+			message:
+				'session swapped in place; the paint loop still holds the session it mounted with. Remount the preview ({#key session}) to swap.'
+		});
+	});
 
 	onMount(() => {
 		if (!containerEl) return;

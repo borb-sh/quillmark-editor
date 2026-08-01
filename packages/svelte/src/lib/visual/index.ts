@@ -5,6 +5,7 @@
 // form controls; structure/cards are the editor's own. Depends on `/core` and the
 // codec. RELATIVE imports (not `$lib`): svelte-package ships this as-is.
 export { default as VisualEditor } from './VisualEditor.svelte';
+export type { VisualEditorProps } from './props.js';
 
 // The prose leaf is the codec's; re-exported so a `/visual` consumer reaches it
 // without a second import from `/core`.

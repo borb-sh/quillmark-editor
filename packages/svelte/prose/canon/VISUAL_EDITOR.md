@@ -73,6 +73,12 @@ Deferred work is why it is an order at all. Three sites cross an `await tick()` 
 
 A document swap arrives as a destroy (leaves and card ids seed once, so a swap remounts), which is what makes one span cover both. Coalescing a surface already does sits inside it and answers a different question: `scrollCardIntoView`'s single pending id says whether this continuation is still the current one, the span says whether there is still a surface to act on.
 
+## The document swap
+
+`VisualEditor` is a door over `VisualEditorInner`, and the door's whole content is `{#key doc}`: a consumer hands it a different document and the editor remounts under it. The split exists because the state a swap invalidates is not one field. Composable cards key on session id and would re-mount unprompted, the main card is keyed on nothing, and each prose leaf mounts once per stable leaf key with `createField` closing over the `doc` it was handed — so an unkeyed swap leaves the main card rendering and committing to the previous document with every id and index still agreeing. Reseeding by hand means threading a generation token through every leaf key and resetting the id state, the commit-error map, the active address, the leaf registry, the card refs and any pending scroll, which is a remount written out one field at a time. The `{#key}` writes it once.
+
+`quill` is deliberately outside the key: the schema is re-read on every derive, so a quill swap re-projects correctly and keying on it would discard a card tree that needed no rebuilding. What a re-derive cannot do is re-mount the leaves, so a quill swapped without its document reports `rebind-ignored` at `dev` severity. `Preview` reports the same code for `session`, which it cannot re-key on at all: the paint loop owns scroll position, mounted slots and an observer set that a remount would discard on every apply, so that swap stays the consumer's `{#key session}` and the guard is what stops it being silent.
+
 ## Chrome
 
 Editing chrome is thin and **per-leaf**; structural chrome is Svelte in the shell.
