@@ -18,8 +18,8 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Document, LiveSession, ContentHit, ChangeSet } from '@quillmark/ui/core';
-	import { Preview } from '@quillmark/ui/preview';
+	import type { Document, LiveSession, ContentHit, ChangeSet } from '@quillmark/svelte/core';
+	import { Preview } from '@quillmark/svelte/preview';
 	import { loadUsafMemoTree } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
@@ -63,7 +63,7 @@
 				// Safari/dev doesn't TDZ on Kit's `component` export. The fixture fetch is
 				// independent of it, so it runs alongside rather than behind it.
 				const treeP = loadUsafMemoTree();
-				const { Engine, Quill, init } = await import('@quillmark/ui/core');
+				const { Engine, Quill, init } = await import('@quillmark/svelte/core');
 				init();
 				const quill = Quill.fromTree(await treeP);
 				const doc = quill.seedDocument();

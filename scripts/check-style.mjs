@@ -52,16 +52,16 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { ROOT, canonDocs, canonRoots, report } from './workspace.mjs';
 
-const THEMING = join(ROOT, 'packages', 'ui', 'THEMING.md');
+const THEMING = join(ROOT, 'packages', 'svelte', 'THEMING.md');
 
 /** The two closed scales, each with the tree that reads it and the one file that
  *  mints it. `census` marks the scope the dial contract is measured over — the
  *  package's, since THEMING.md documents what the PACKAGE consumes. */
 const SCOPES = [
 	{
-		dir: 'packages/ui/src/lib',
+		dir: 'packages/svelte/src/lib',
 		prefix: '--_qm-',
-		derivation: 'packages/ui/src/lib/core/theme.css',
+		derivation: 'packages/svelte/src/lib/core/theme.css',
 		doc: 'SURFACES §"Preventing drift"',
 		census: true
 	},

@@ -95,7 +95,7 @@ A landing REVEALS itself first, and WAITS for the reveal. A collapsed accordion 
 
 ## Source view
 
-Debug-only, per [ARCHITECTURE.md](ARCHITECTURE.md): not an editable dual mode. The `@quillmark/ui/source` surface is a read-only text mirror of `Document.toMarkdown()`, the whole-document serialize the layer federation deletes. Monospace text in a `<pre>`, no syntax highlighting: a surface with no caret earns no editor library, so `/source` ships dependency-free.
+Debug-only, per [ARCHITECTURE.md](ARCHITECTURE.md): not an editable dual mode. The `@quillmark/svelte/source` surface is a read-only text mirror of `Document.toMarkdown()`, the whole-document serialize the layer federation deletes. Monospace text in a `<pre>`, no syntax highlighting: a surface with no caret earns no editor library, so `/source` ships dependency-free.
 
 ## Open
 

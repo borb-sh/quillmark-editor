@@ -31,8 +31,8 @@ import { ROOT, packages, report } from './workspace.mjs';
 
 /** The graph. An edge absent from this table is a violation; an edge in it is optional. */
 const ALLOWED = {
-	playground: ['@quillmark/ui', '@quillmark/quiver'],
-	'@quillmark/ui': [],
+	playground: ['@quillmark/svelte', '@quillmark/quiver'],
+	'@quillmark/svelte': [],
 	'@quillmark/quiver': []
 };
 
@@ -169,8 +169,8 @@ for (const { at, json } of PACKAGES) {
 
 // ── 3. The /preview bundle weight ───────────────────────────────────────────────
 
-const LIB = join(ROOT, 'packages', 'ui', 'src', 'lib');
-const SELF = '@quillmark/ui';
+const LIB = join(ROOT, 'packages', 'svelte', 'src', 'lib');
+const SELF = '@quillmark/svelte';
 // The subpaths a viewer may reach. Every OTHER subpath ui exports is editor-side and
 // forbidden, derived rather than listed so the rule fails closed the way the graph
 // rule does: a new editing surface is forbidden the moment it is exported, instead of

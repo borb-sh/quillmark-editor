@@ -2,7 +2,7 @@
 	"name": "playground",
 	"private": true,
 	"version": "0.0.0",
-	"description": "The manual harness for @quillmark/ui and @quillmark/quiver. Never published.",
+	"description": "The manual harness for @quillmark/svelte and @quillmark/quiver. Never published.",
 	"license": "MIT",
 	"type": "module",
 	"engines": {
@@ -19,7 +19,7 @@
 	},
 	"dependencies": {
 		"@quillmark/quiver": "*",
-		"@quillmark/ui": "*"
+		"@quillmark/svelte": "*"
 	},
 	"devDependencies": {
 		"@quillmark/wasm": ">=0.99.0-0",

@@ -1,6 +1,6 @@
-# Quillmark UI Canon Index
+# Quillmark Svelte Canon Index
 
-Canonical documentation for the `@quillmark/ui` package: the settled systems, describing what *is* and pointing into the code.
+Canonical documentation for the `@quillmark/svelte` package, the Svelte binding: the settled systems, describing what *is* and pointing into the code.
 
 A thin overview, the two headline surfaces with their interaction and visual doctrine, and the supporting docs for the shared substrate:
 

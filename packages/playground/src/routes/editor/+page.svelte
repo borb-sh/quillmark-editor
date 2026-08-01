@@ -44,14 +44,14 @@
 		Place,
 		Diagnostic,
 		EditorError
-	} from '@quillmark/ui/core';
-	import type { EditorChange } from '@quillmark/ui/visual';
-	import { Preview } from '@quillmark/ui/preview';
-	import { SourceView } from '@quillmark/ui/source';
+	} from '@quillmark/svelte/core';
+	import type { EditorChange } from '@quillmark/svelte/visual';
+	import { Preview } from '@quillmark/svelte/preview';
+	import { SourceView } from '@quillmark/svelte/source';
 	import { loadUsafMemoTree } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
-	type VisualEditorComponent = typeof import('@quillmark/ui/visual').VisualEditor;
+	type VisualEditorComponent = typeof import('@quillmark/svelte/visual').VisualEditor;
 
 	let status = $state<Status>({ phase: 'loading' });
 	let VisualEditor = $state<VisualEditorComponent | undefined>();
@@ -219,8 +219,8 @@
 				// them.
 				const treeP = loadUsafMemoTree();
 				const [{ Engine, Quill, init }, visual] = await Promise.all([
-					import('@quillmark/ui/core'),
-					import('@quillmark/ui/visual')
+					import('@quillmark/svelte/core'),
+					import('@quillmark/svelte/visual')
 				]);
 				init();
 				const quill = Quill.fromTree(await treeP);

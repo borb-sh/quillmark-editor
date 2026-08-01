@@ -7,7 +7,7 @@ Canonical documentation for `quillmark-js` itself: the rules that span packages 
 
 Each package carries its own canon for what it is:
 
-- [`packages/ui`](../../packages/ui/prose/canon/INDEX.md): the editing, preview and source surfaces over a session.
+- [`packages/svelte`](../../packages/svelte/prose/canon/INDEX.md): the editing, preview and source surfaces over a session.
 - [`packages/quiver`](../../packages/quiver/prose/canon/INDEX.md): collections of quills, resolved and loaded.
 - [`packages/playground`](../../packages/playground/prose/canon/INDEX.md): the app that composes them.
 

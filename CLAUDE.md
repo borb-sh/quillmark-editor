@@ -1,6 +1,6 @@
 # quillmark-js
 
-The JS tier downstream of the `@quillmark/wasm` artifact: `packages/ui` (surfaces over a session), `packages/quiver` (collections → quills), `packages/playground` (the private app that composes them). One npm workspace, one install, one gate.
+The JS tier downstream of the `@quillmark/wasm` artifact: `packages/svelte` (the Svelte binding: surfaces over a session), `packages/quiver` (collections → quills), `packages/playground` (the private app that composes them). One npm workspace, one install, one gate.
 
 Start at [`prose/canon/INDEX.md`](prose/canon/INDEX.md) for the rules spanning packages, then the package's own `prose/canon/`; work that is not settled lives in GitHub issues. Canon is **malleable** (no consumers, no compatibility promise): a doc that contradicts the design in hand gets rewritten in the same commit as the code.
 
@@ -14,14 +14,14 @@ Every command is the root's; a package script is reached with `-w packages/<name
 
 ## Boundaries
 
-- `ui ↛ quiver` and `quiver ↛ ui`, both directions; only the playground has edges to both. `check:deps` holds it.
+- `svelte ↛ quiver` and `quiver ↛ svelte`, both directions; only the playground has edges to both. `check:deps` holds it.
 - Every published package peers `@quillmark/wasm` and none depends on it; root `overrides` pins the developed-against version. The sibling `quillmark` checkout is reference only: read it, never build against it.
 - The playground uses only the public subpath API; a needed internal is an API gap to fix, not a reach-in.
 - `/preview` imports no editor-side code, transitively: a preview consumer does not pull ProseMirror.
 
 ## The WASM boundary
 
-- Boundary ledger (consumed surface, canon homes, stability): [`packages/ui/prose/canon/DOCUMENT_MODEL.md`](packages/ui/prose/canon/DOCUMENT_MODEL.md).
+- Boundary ledger (consumed surface, canon homes, stability): [`packages/svelte/prose/canon/DOCUMENT_MODEL.md`](packages/svelte/prose/canon/DOCUMENT_MODEL.md).
 - `DocumentWriter` and the ergonomic verbs live in the artifact's hand-written runtime layer; `node_modules/@quillmark/wasm/runtime/runtime.d.ts` is the canonical typing. Read it before assuming a verb's shape.
 
 ## Verification
