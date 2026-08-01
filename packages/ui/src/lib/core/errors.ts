@@ -1,10 +1,9 @@
 // The error channel: what a surface reports when it RECOVERED from a failure.
 //
-// Every site here already declined to crash (a refused commit falls back, a
-// failed paint shows a message, a failed resolve drops the ghosts) and said so to
-// `console.error`, which an app cannot route, filter or count. This gives each one
-// a code and a hook, and leaves the recovery exactly as it was: nothing gates on
-// the handler, and an absent handler still logs.
+// Every site behind these codes declines to crash: a refused commit falls back, a
+// failed paint shows a message, a failed resolve drops the ghosts. The hook exists
+// because a `console.error` is not something an app can route, filter or count.
+// Nothing gates on the handler, and an absent handler logs.
 //
 // It is NOT the diagnostics channel. A `Diagnostic` is about the DOCUMENT and is
 // drawn on the field it belongs to; an `EditorError` is about the SURFACE and is
@@ -14,8 +13,7 @@ import type { DocPath } from './address.js';
 
 /**
  * What failed. Stable strings rather than an enum: a consumer switches on them,
- * and the set is open in the sense that a new surface adds a code without moving
- * the ones an app already handles.
+ * and a new surface adds a code without moving the ones an app already handles.
  */
 export type EditorErrorCode =
 	/** A scalar/array/object write the boundary refused. Also pinned as a
@@ -26,7 +24,7 @@ export type EditorErrorCode =
 	 *  identity anchors were paid. */
 	| 'commit-fallback'
 	/** The install fallback ALSO failed: the optimistic PM state stands and the
-	 *  store is now stale for this field. The one code here that leaves damage. */
+	 *  store is stale for this field. The one code here that leaves damage. */
 	| 'commit-lost'
 	/** A card operation (add, move, remove, retype) that threw. The document is
 	 *  unchanged; the boundary's mutators are transactional. */
@@ -53,7 +51,7 @@ export interface EditorError {
 	severity: 'error' | 'dev';
 	/** English, for a log. Not for display: nothing here has a place on screen. */
 	message: string;
-	/** Whatever was thrown, unwrapped by nothing: a `QuillmarkError` arrives intact. */
+	/** Whatever was thrown, unwrapped: a `QuillmarkError` arrives intact. */
 	cause?: unknown;
 	/** The field the failure belongs to, where it has one. */
 	path?: DocPath;
@@ -65,9 +63,8 @@ export interface EditorError {
 export type EditorErrorHandler = (err: EditorError) => void;
 
 /**
- * Report `err`, or log it when nothing is listening. The fallback is what keeps a
- * consumer who wires no handler exactly where they were: a failure the package
- * recovered from is still worth seeing in a console.
+ * Report `err`, or log it when nothing is listening: a failure the package
+ * recovered from is worth seeing in a console.
  *
  * A throwing handler is the consumer's bug and must not become the package's: it
  * is caught, because every call site sits on a recovery path where a second throw

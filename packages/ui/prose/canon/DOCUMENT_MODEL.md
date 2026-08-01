@@ -36,12 +36,12 @@ Two neighbouring surfaces the editor re-exports but never drives: it selects no 
 
 ## Stability seams
 
-At the 0.99.0 target the whole table is stable API, and no typing gap is open: `ContentLineKind` reached the entry point at that pin, so the codec's `setKind` op is typed rather than cast (`encode.ts`, `kindOp`).
+At the 0.99.0 target the whole table is stable API and no typing gap is open: `ContentLineKind` is on the public entry point, so the codec builds its `setKind` op typed (`encode.ts`, `kindOp`).
 
-Two obligations the freeze adds, neither yet load-bearing here:
+Two obligations the freeze carries, neither yet load-bearing here:
 
 - **`#[non_exhaustive]` on 75 public types** is a Rust-side promise about the crate API. It reaches this boundary only as the open sets already documented above: nothing the editor consumes through `runtime.d.ts` is an exhaustive `match`.
-- **A payload beside a built-in discriminator is refused on write.** 0.98 resolved `attrs` next to a known `kind` / `container` / mark or island `type` to the built-in and dropped the payload silently; 0.99 refuses it on the authored lane. Reading never got stricter. The codec mints such a payload only for a name outside its own known set (`decode.ts` `makeLeaf`, `marks.ts` `pmMarkFromContent`), and at this pin those sets are exactly the boundary's, so no write it emits can be refused. They agree by inspection, not by construction: the day upstream promotes a name to a built-in, the guards `isUnknownLine` / `isUnknownContainer` / `isUnknownMark` / `isUnknownIsland` are what makes the residual arm the boundary's answer instead of this build's leftover.
+- **A payload beside a built-in discriminator is refused on write.** `attrs` beside a known `kind` / `container` / mark or island `type` is refused on the authored lane; reads stay tolerant, so a blob carrying one still opens. The codec mints such a payload only for a name outside its own known set (`decode.ts` `makeLeaf`, `marks.ts` `pmMarkFromContent`), and at this pin those sets are exactly the boundary's, so no write it emits can be refused. They agree by inspection, not by construction: the day upstream promotes a name to a built-in, the guards `isUnknownLine` / `isUnknownContainer` / `isUnknownMark` / `isUnknownIsland` are what makes the residual arm the boundary's answer instead of this build's leftover.
 
 Two shapes the editor reads straight off the boundary, with no local duplicate:
 
@@ -56,7 +56,7 @@ The session/paint surface (`Engine.open`, `LiveSession`, `PaintOptions` / `Paint
 
 The substrate is quillmark's; two thin slices at the seam are the editor's, and they live in their surface docs, not here:
 
-- **Handle lifecycle**: WASM `init` (sync; shipped 0.99.0 has no async `initSync` split), who holds the `Quill` and `Document` handles across a session, and when they are freed, under the one-copy-per-process rule the runtime now enforces ([DEPENDENCIES.md](../../../../prose/canon/DEPENDENCIES.md) §The wasm singleton). The vanilla-TS core owns this ([ARCHITECTURE.md](ARCHITECTURE.md) §Core vs chrome).
+- **Handle lifecycle**: WASM `init` (sync; shipped 0.99.0 has no async `initSync` split), who holds the `Quill` and `Document` handles across a session, and when they are freed, under the one-copy-per-process rule the runtime enforces ([DEPENDENCIES.md](../../../../prose/canon/DEPENDENCIES.md) §The wasm singleton). The vanilla-TS core owns this ([ARCHITECTURE.md](ARCHITECTURE.md) §Core vs chrome).
 - **Diagnostics routing**: three producers (`quill.validate`, `LiveSession.warnings`, render errors via `FieldRegion.field`) merged, keyed to field addresses (canonical `DocPath` → the editor's stable-id keying, via `parseDocPath`), and de-duplicated with a settled precedence. Policy lives in [VISUAL_EDITOR.md](VISUAL_EDITOR.md) §Diagnostics; this ledger only names the producers it draws from.
 
 ## Not owned here

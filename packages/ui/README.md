@@ -130,7 +130,7 @@ The playground's `/editor` route is the full reference split-pane shell: one ses
 
 ## Errors
 
-Every surface takes `onError`. It reports failures the surface **recovered from**: a commit the boundary refused, a card operation that threw, a page paint that failed, a serialize that threw. None of them stop editing, and each is a `console.error` an app cannot route without the hook.
+Every surface takes `onError`. It reports failures the surface **recovered from**: a commit the boundary refused, a card operation that threw, a page paint that failed, a serialize that threw. None of them stop editing. Wire nothing and each lands in the console, which an app cannot route, filter or count.
 
 ```ts
 onError: (err) => {

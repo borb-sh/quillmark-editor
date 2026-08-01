@@ -4,8 +4,8 @@
 // structurally is drift with nothing to catch it: `/core` is the module both
 // already import.
 //
-// Slogan: paths for places, indexes for structure ops. `Addr` (`{card?, field?}`,
-// the mutator currency) stays exported beside this; `fieldPathForAddr` converts.
+// Slogan: paths for places, indexes for structure ops. `Addr` (`{card?, field?}`)
+// is the mutator currency, exported beside this; `fieldPathForAddr` converts.
 
 /**
  * A canonical field address: `main.<field>` / `main.body` /
