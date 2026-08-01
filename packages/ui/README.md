@@ -14,28 +14,37 @@ npm install @quillmark/ui
 
 Each subpath is its own module root; a bundler pulls only what the entry you import reaches.
 
-| Import                  | Surface                                                                                                                                       |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@quillmark/ui/core`    | The `@quillmark/wasm` boundary: `Engine`/`Quill`/`Document` handles, the content codec, and every boundary type. Framework-free.              |
-| `@quillmark/ui/preview` | The live preview: `createPreview` + `<Preview>`. Reaches `/core` and nothing editor-side, so `@quillmark/preview` can promote to a re-export. |
-| `@quillmark/ui/visual`  | The federated WYSIWYG: `<VisualEditor>`, the codec's `createField` prose leaf, `fieldPathForAddr`.                                            |
-| `@quillmark/ui/source`  | The read-only debug source view: `createSourceView` + `<SourceView>`.                                                                         |
-| `@quillmark/ui`         | Re-exports `/core` (the shared substrate).                                                                                                    |
+| Import                  | Surface                                                                                                                                                                                   |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@quillmark/ui/core`    | The `@quillmark/wasm` boundary: `Engine`/`Quill`/`Document` handles, the content codec, every boundary type, and the `Place`/`EditorError` vocabulary the surfaces share. Framework-free. |
+| `@quillmark/ui/preview` | The live preview: `createPreview` + `<Preview>`. Reaches `/core` and nothing editor-side, so `@quillmark/preview` can promote to a re-export.                                             |
+| `@quillmark/ui/visual`  | The federated WYSIWYG: `<VisualEditor>`, the codec's `createField` prose leaf, `fieldPathForAddr`.                                                                                        |
+| `@quillmark/ui/source`  | The read-only debug source view: `createSourceView` + `<SourceView>`.                                                                                                                     |
+| `@quillmark/ui`         | Re-exports `/core` (the shared substrate).                                                                                                                                                |
 
 ## Open a session
 
 The **consumer** owns the session and the handles, and drives every edit; the surfaces are views over it.
 
 ```ts
-import { Engine, Quill, init } from '@quillmark/ui/core';
+import { Document, Engine, Quill, init } from '@quillmark/ui/core';
 
 init(); // one-time WASM init
 
 const quill = Quill.fromTree(tree); // tree: Map<string, Uint8Array> of the quill dir
+
+// A NEW document: seeded from the quill's blueprint.
 const doc = quill.seedDocument();
+
+// An EXISTING document: parsed back from what you stored.
+const doc = Document.fromMarkdown(markdown); // canonical Quillmark markdown
+const doc = Document.fromJson(json); // the versioned storage DTO (`doc.toJson()`)
+
 const session = await new Engine().open(quill, doc);
 // free() quill / doc / session on teardown.
 ```
+
+`toJson`/`fromJson` is the persistence pair: the wire format is frozen per schema version and byte-deterministic, so equal documents store equal bytes. `toMarkdown`/`fromMarkdown` is the human-readable pair, round-trip safe to an equal document. `Document.tryFromJson` returns `undefined` rather than throwing, to discriminate the two without exceptions as control flow.
 
 ## Preview
 
@@ -48,6 +57,9 @@ const preview = createPreview(session, {
 	container: document.querySelector('#preview')!,
 	onCaretPick: (hit) => {
 		/* a click resolved to a content position; see the bridge below */
+	},
+	onError: (err) => {
+		/* a page paint the backend refused; the preview shows its error state either way */
 	}
 });
 
@@ -69,14 +81,17 @@ In Svelte, `<Preview {session} onCaretPick={…} />` exposes the same verbs (`re
 <VisualEditor
 	{doc}
 	{quill}
-	onChange={() => {
-		/* a scalar/structure mutation landed */
+	onChange={(change) => {
+		/* an edit LANDED; `change.source` is 'prose' | 'field' | 'structure' */
 	}}
 	onActiveAddrChange={(addr) => {
 		/* the active leaf's address */
 	}}
-	onCaretMove={(addr, pos) => {
-		/* the active leaf's caret moved (USV) */
+	onCaretMove={(at) => {
+		/* the caret moved to `at.field` (a DocPath) at `at.pos` (USV) */
+	}}
+	onError={(err) => {
+		/* a failure the editor recovered from; editing continues */
 	}}
 	diagnostics={external}
 />
@@ -84,26 +99,49 @@ In Svelte, `<Preview {session} onCaretPick={…} />` exposes the same verbs (`re
 
 Swap `doc`/`quill` by **remounting** (`{#key doc}`); edits flow the other way, mutating the passed-in handle.
 
+### Recompiling
+
+`onChange` is the signal to recompile, and it covers **all three lanes**: a prose keystroke, a scalar write, a card operation. `onCaretMove` is a _selection_ signal, not a change signal: it fires on a bare arrow key, so a recompile hung off it recompiles on every one.
+
+```ts
+onChange: (change) => {
+	// a structure op happens once per gesture, so it applies at once;
+	// prose and field edits arrive per keystroke, so they debounce.
+	if (change.source === 'structure') recompileNow();
+	else scheduleRecompile();
+};
+```
+
 ## The caret bridge
 
-The bridge lives at the **consumer** layer and is opt-in; the editor is unaware of the preview, the preview unaware of the editor. Wire the two directions:
+The bridge lives at the **consumer** layer and is opt-in; the editor is unaware of the preview, the preview unaware of the editor. Both hops are pass-throughs: the editor and the preview already speak one address grammar, the canonical `DocPath`.
 
 ```ts
 // preview → editor: a click resolved to a content position places the caret.
 onCaretPick: (hit) => visualEditor.setCaret(hit);
 
 // editor → preview: a caret move scrolls the preview to follow it.
-import { fieldPathForAddr } from '@quillmark/ui/visual';
-onCaretMove: (addr, pos) => {
-	const field = fieldPathForAddr(
-		addr,
-		doc.cards.map((c) => c.kind)
-	);
-	if (field) preview.focusPosition(field, pos);
+onCaretMove: preview.focusPosition;
+```
+
+The editor mints the path off its own derived card tree, so following the caret costs no `doc.cards` read per keystroke. `fieldPathForAddr` (from `@quillmark/ui/visual`) is the same mapping for a consumer holding an `Addr` of its own.
+
+The playground's `/editor` route is the full reference split-pane shell: one session, both bridge directions, the preview following edits, diagnostics routed inline, and the source view.
+
+## Errors
+
+Every surface takes `onError`. It reports failures the surface **recovered from**: a commit the boundary refused, a card operation that threw, a page paint that failed, a serialize that threw. None of them stop editing, and each is a `console.error` an app cannot route without the hook.
+
+```ts
+onError: (err) => {
+	// err.code: 'commit-refused' | 'paint-failed' | … (see EditorErrorCode)
+	// err.severity: 'error' (runtime) | 'dev' (a contract violation)
+	// err.cause: whatever was thrown, unwrapped
+	if (err.severity === 'error') telemetry.capture(err);
 };
 ```
 
-The playground's `/editor` route is the full reference split-pane shell: one session, both bridge directions, the preview following edits, diagnostics routed inline, and the source view.
+This is not the diagnostics channel. A `Diagnostic` is about the **document** and draws on the field it belongs to; an `EditorError` is about the **surface** and draws nowhere. A refused scalar commit produces both.
 
 ## Source view (debug)
 

@@ -126,6 +126,15 @@ import type { Delta } from '@quillmark/wasm';
 /** One text-delta op: `retain` / `insert` / `delete`. */
 export type DeltaOp = Delta['ops'][number];
 
+// ── What the surfaces say in public ─────────────────────────────────────────
+// The address vocabulary every hook naming a place speaks, and the error channel
+// every surface reports a recovered failure through. Both live here because both
+// `/preview` and `/visual` need them: declared in either one, the other either
+// imports across a boundary the package keeps closed or declares its own copy.
+export type { DocPath, Place } from './address.js';
+export { reportError, errorMessage } from './errors.js';
+export type { EditorError, EditorErrorCode, EditorErrorHandler } from './errors.js';
+
 // Cards, schema, diagnostics (VisualEditor consumes these). All on the runtime
 // root, `CardInput` among the content block above.
 export type {

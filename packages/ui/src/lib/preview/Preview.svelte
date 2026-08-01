@@ -9,11 +9,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createPreview, type PreviewController } from './controller.js';
-	import type { LiveSession, ContentHit, ChangeSet } from '../core/index.js';
+	import type {
+		LiveSession,
+		ContentHit,
+		ChangeSet,
+		DocPath,
+		Place,
+		EditorErrorHandler
+	} from '../core/index.js';
 
 	/**
 	 * REMOUNT CONTRACT. `createPreview` binds once in `onMount`; a later change to
-	 * `session` (or `margin`/`overlays`/`onCaretPick`) is NOT observed. Swap the
+	 * `session` (or `margin`/`overlays`/`onCaretPick`/`onError`) is NOT observed. Swap the
 	 * session by REMOUNTING (`{#key session}`, as the playground does); drive
 	 * in-place edits through the `refresh(change)` method, not a prop change.
 	 */
@@ -28,16 +35,32 @@
 		margin?: number;
 		overlays?: boolean;
 		onCaretPick?: (hit: ContentHit) => void;
+		/** A page paint the backend refused; the error message state shows either way. */
+		onError?: EditorErrorHandler;
 	}
 
-	let { session, margin, overlays, onCaretPick, class: className, style }: Props = $props();
+	let {
+		session,
+		margin,
+		overlays,
+		onCaretPick,
+		onError,
+		class: className,
+		style
+	}: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let controller: PreviewController | undefined;
 
 	onMount(() => {
 		if (!containerEl) return;
-		controller = createPreview(session, { container: containerEl, margin, overlays, onCaretPick });
+		controller = createPreview(session, {
+			container: containerEl,
+			margin,
+			overlays,
+			onCaretPick,
+			onError
+		});
 		return () => {
 			controller?.destroy();
 			controller = undefined;
@@ -47,11 +70,12 @@
 	export function refresh(change: ChangeSet): void {
 		controller?.refresh(change);
 	}
-	export function scrollToField(field: string): void {
+	export function scrollToField(field: DocPath): void {
 		controller?.scrollToField(field);
 	}
-	export function focusPosition(field: string, pos: number): void {
-		controller?.focusPosition(field, pos);
+	/** Takes the editor's `onCaretMove` payload: `onCaretMove={preview.focusPosition}`. */
+	export function focusPosition(at: Place): void {
+		controller?.focusPosition(at);
 	}
 	export function setZoom(scale: number): void {
 		controller?.setZoom(scale);

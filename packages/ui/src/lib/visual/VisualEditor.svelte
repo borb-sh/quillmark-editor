@@ -25,7 +25,7 @@
 	import { tick } from 'svelte';
 	import { DropdownMenu } from 'bits-ui';
 	import Plus from '@lucide/svelte/icons/plus';
-	import { isQuillmarkError, MAIN_CARD_ADDR } from '../core/index.js';
+	import { isQuillmarkError, MAIN_CARD_ADDR, reportError, errorMessage } from '../core/index.js';
 	import { bloomInside } from '../core/bloom.js';
 	import type {
 		Document,
@@ -35,8 +35,13 @@
 		Diagnostic,
 		ContentHit,
 		Resolved,
-		ResolvedField
+		ResolvedField,
+		DocPath,
+		Place,
+		EditorErrorHandler
 	} from '../core/index.js';
+	import type { ChangeSource, EditorChange } from './signals.js';
+	import { fieldPathForAddr } from './caret.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import {
 		IdSeq,
@@ -89,10 +94,33 @@
 		quill: Quill;
 		/** The active leaf's address (normalized to a plain `{card?, field?}`). */
 		onActiveAddrChange?: (addr: Addr) => void;
-		/** A caret move in the active leaf → the preview bridge. */
-		onCaretMove?: (addr: Addr, pos: number) => void;
-		/** Fired after every scalar/structure mutation: a change signal for a host. */
-		onChange?: () => void;
+		/**
+		 * A caret move in the active leaf, carrying the canonical `DocPath` the
+		 * preview also speaks: `onCaretMove={preview.focusPosition}` is the whole
+		 * editor→preview bridge, no translation and no `doc.cards` read on the
+		 * keystroke path (the editor mints the path off its derived card tree, which
+		 * already holds every kind).
+		 *
+		 * A SELECTION signal, not a change signal: an arrow key fires it and commits
+		 * nothing. One keystroke fires `onChange` first and this second, so the edit
+		 * has landed by the time the caret names where it is.
+		 */
+		onCaretMove?: (at: Place) => void;
+		/**
+		 * EVERY edit that lands on the document: a prose commit, a scalar/array/object
+		 * write, a card operation. The signal a host recompiles off; `source` is what
+		 * moved, for a host that wants a structure op to recompile at once and a
+		 * keystroke to wait for the burst to settle.
+		 */
+		onChange?: (change: EditorChange) => void;
+		/**
+		 * Failures the editor RECOVERED from: a commit the boundary refused (also
+		 * pinned as a diagnostic on its field), a card operation that threw, a
+		 * `validate`/`resolve` that threw, a prose commit that fell back. None of them
+		 * stop editing; without this hook each is a `console.error` an app cannot
+		 * route. Reaches the prose leaves too, so one handler covers the surface.
+		 */
+		onError?: EditorErrorHandler;
 		/**
 		 * External diagnostics, routed by `.path` and merged with `quill.validate`
 		 * and local commit errors (VISUAL_EDITOR §Diagnostics).
@@ -131,6 +159,7 @@
 		onActiveAddrChange,
 		onCaretMove,
 		onChange,
+		onError,
 		diagnostics,
 		enumOptionAllowed,
 		bodyPlaceholder,
@@ -169,9 +198,15 @@
 	/** Control-glyph size: the shared rule (AESTHETIC §Icons), as CardControls. */
 	const GLYPH = 14;
 
-	function bump(): void {
+	/**
+	 * Re-derive the card tree and report the edit. Called for the two lanes that go
+	 * through this component; a prose leaf commits itself and reports through
+	 * `proseChanged`, which does NOT bump the revision (bumping it would re-derive
+	 * and remount every leaf, costing the caret on every keystroke).
+	 */
+	function bump(source: ChangeSource, addr?: Addr): void {
 		revision++;
-		onChange?.();
+		onChange?.({ source, addr });
 	}
 	/** Resolve a stable card id to its current content index, or -1 if gone: read
 	 * at the mutation boundary, never cached (VISUAL_EDITOR §"The address is the spine"). */
@@ -218,8 +253,31 @@
 		activeCardId = plain.card != null ? cardIds[plain.card] : 'main';
 		onActiveAddrChange?.(plain);
 	}
+	/** No card kinds are read for a main address; the shared empty stands in so the
+	 *  common case allocates nothing. */
+	const NO_KINDS: readonly string[] = [];
+	/**
+	 * A leaf's canonical `DocPath`, minted off the DERIVED card tree rather than
+	 * `doc.cards`: the kinds are already in hand, and `doc.cards` serializes every
+	 * card on each read, which is not a thing to do per keystroke. `undefined` for
+	 * an address outside the live card array (a stale addr: drop rather than
+	 * mis-target).
+	 */
+	function pathFor(addr: Addr): DocPath | undefined {
+		if (addr.card == null) return fieldPathForAddr(addr, NO_KINDS);
+		return fieldPathForAddr(
+			addr,
+			model.cards.map((c) => c.kind)
+		);
+	}
 	function handleCaret(addr: Addr, pos: number): void {
-		onCaretMove?.(normalize(addr), pos);
+		const field = pathFor(normalize(addr));
+		if (field != null) onCaretMove?.({ field, pos });
+	}
+	/** A prose leaf's own commit: the third change lane, and the one that must not
+	 *  bump `revision` (see {@link bump}). */
+	function proseChanged(addr: Addr): void {
+		onChange?.({ source: 'prose', addr: normalize(addr) });
 	}
 
 	// ── Commit routing ──────────────────────────────────────────────────────────
@@ -270,14 +328,22 @@
 				}
 			}
 			if (commitErrors.has(keyStr)) editCommitErrors((m) => m.delete(keyStr));
-			bump();
+			bump('field', makeAddr(id, isMain, name));
 		} catch (e) {
 			const diagnostic: Diagnostic = (isQuillmarkError(e) ? e.diagnostics[0] : undefined) ?? {
 				severity: 'error',
-				message: e instanceof Error ? e.message : String(e)
+				message: errorMessage(e)
 			};
 			editCommitErrors((m) => m.set(keyStr, { key, diagnostic }));
-			console.error('[quillmark/editor] scalar commit failed', e);
+			// Both channels, deliberately: the diagnostic pins to the field on
+			// screen, the error reaches the app's sink (core/errors.ts).
+			reportError(onError, {
+				code: 'commit-refused',
+				severity: 'error',
+				message: `write to ${name} refused: ${errorMessage(e)}`,
+				cause: e,
+				path: pathFor(makeAddr(id, isMain, name))
+			});
 		}
 	}
 
@@ -308,12 +374,17 @@
 			doc.insertCard(card, atIndex);
 			const id = seq.next();
 			cardIds = [...cardIds.slice(0, atIndex), id, ...cardIds.slice(atIndex)];
-			bump();
+			bump('structure', { card: atIndex });
 			// `center` for an insert: the new card is the subject, and centring it shows
 			// the neighbours it landed between.
 			void scrollCardIntoView(id, 'center');
 		} catch (e) {
-			console.error('[quillmark/editor] addCard failed', e);
+			reportError(onError, {
+				code: 'card-op-failed',
+				severity: 'error',
+				message: `adding a ${kind} card failed: ${errorMessage(e)}`,
+				cause: e
+			});
 		}
 	}
 	// The reorder gesture's arming window (SURFACES §Motion): the reconcile that moves a
@@ -339,7 +410,7 @@
 		const [x] = w.splice(from, 1);
 		w.splice(to, 0, x);
 		cardIds = w;
-		bump();
+		bump('structure', { card: to });
 		// `nearest` for a reorder: the card was already in view and only needs to stay
 		// there, so a card that never left the viewport does not move it at all.
 		void scrollCardIntoView(id, 'nearest');
@@ -361,23 +432,30 @@
 			editCommitErrors((m) => {
 				for (const k of [...m.keys()]) if (k.startsWith(`${id}:`)) m.delete(k);
 			});
-		bump();
+		// No addr: the removed card has no address left, and the surviving cards'
+		// addresses all shifted. The stack changed, not a leaf.
+		bump('structure');
 	}
 	function retypeCardById(id: string, kind: string): void {
 		const i = cardIndexOf(id);
 		if (i < 0) return;
 		try {
 			doc.setCardKind(i, kind);
-			bump();
+			bump('structure', { card: i });
 		} catch (e) {
-			console.error('[quillmark/editor] retype failed', e);
+			reportError(onError, {
+				code: 'card-op-failed',
+				severity: 'error',
+				message: `retyping the card to ${kind} failed: ${errorMessage(e)}`,
+				cause: e
+			});
 		}
 	}
 	function renameCardById(id: string, title: string): void {
 		const i = cardIndexOf(id);
 		if (i < 0) return;
 		patchEditorExt(doc, { card: i }, { title });
-		bump();
+		bump('structure', { card: i });
 	}
 	/**
 	 * Clear the tips channel: the dismissal write, and the ONLY write
@@ -386,7 +464,8 @@
 	 */
 	function dismissTips(): void {
 		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
-		bump();
+		// Document-level chrome, not a leaf's: no addr, as for a card removal.
+		bump('structure');
 	}
 
 	// ── Addressing + per-card op bundle ─────────────────────────────────────────
@@ -419,7 +498,12 @@
 		try {
 			return quill.validate(doc);
 		} catch (e) {
-			console.error('[quillmark/editor] validate failed', e);
+			reportError(onError, {
+				code: 'validate-failed',
+				severity: 'error',
+				message: `quill.validate threw; this derive contributes no validation diagnostics: ${errorMessage(e)}`,
+				cause: e
+			});
 			return [] as Diagnostic[];
 		}
 	});
@@ -544,7 +628,12 @@
 		try {
 			resolved = quill.resolve(doc);
 		} catch (e) {
-			console.error('[quillmark/editor] quill.resolve failed; ghosts fall back to none', e);
+			reportError(onError, {
+				code: 'resolve-failed',
+				severity: 'error',
+				message: `quill.resolve threw; ghosted defaults fall back to none: ${errorMessage(e)}`,
+				cause: e
+			});
 		}
 		const byCard = resolvedByCardIndex(resolved);
 		return {
@@ -639,6 +728,8 @@
 			ops={opsFor('main', true)}
 			onFocus={handleFocus}
 			onCaretMove={handleCaret}
+			onChange={proseChanged}
+			{onError}
 			{register}
 			{unregister}
 		/>
@@ -648,7 +739,7 @@
 		 Absent when the channel is empty; which is what dismissal makes it, so the
 		 card leaves for good (VISUAL_EDITOR §"Card operations"). -->
 		{#if model.tips.length}
-			<TipsCard tips={model.tips} onDismiss={dismissTips} />
+			<TipsCard tips={model.tips} onDismiss={dismissTips} {onError} />
 		{/if}
 	</div>
 
@@ -670,6 +761,8 @@
 				ops={opsFor(c.id, false)}
 				onFocus={handleFocus}
 				onCaretMove={handleCaret}
+				onChange={proseChanged}
+				{onError}
 				{register}
 				{unregister}
 			/>

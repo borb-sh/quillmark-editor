@@ -8,28 +8,30 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createSourceView, type SourceViewController } from './view.js';
-	import type { Document } from '../core/index.js';
+	import type { Document, EditorErrorHandler } from '../core/index.js';
 
 	/**
 	 * REMOUNT CONTRACT. `createSourceView` binds once in `onMount`; a later change
-	 * to `doc` is NOT observed. Swap the document by REMOUNTING (`{#key doc}`);
+	 * to `doc` (or `onError`) is NOT observed. Swap the document by REMOUNTING (`{#key doc}`);
 	 * reflect in-place edits through the `refresh()` method.
 	 */
 	interface Props {
 		doc: Document;
+		/** A serialize that threw; the mirror shows the error text in place either way. */
+		onError?: EditorErrorHandler;
 		/** Appended to the root's own class (see `Preview`). */
 		class?: string;
 		/** Merged onto the root; free because theming lands on `data-qm-root`. */
 		style?: string;
 	}
-	let { doc, class: className, style }: Props = $props();
+	let { doc, onError, class: className, style }: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let controller: SourceViewController | undefined;
 
 	onMount(() => {
 		if (!containerEl) return;
-		controller = createSourceView({ container: containerEl, doc });
+		controller = createSourceView({ container: containerEl, doc, onError });
 		return () => {
 			controller?.destroy();
 			controller = undefined;

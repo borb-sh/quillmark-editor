@@ -14,7 +14,13 @@
  `DiagnosticList`, severity-styled, NON-GATING.
 -->
 <script lang="ts">
-	import type { Document, Addr, Diagnostic, ResolvedField } from '../core/index.js';
+	import type {
+		Document,
+		Addr,
+		Diagnostic,
+		ResolvedField,
+		EditorErrorHandler
+	} from '../core/index.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import type { FieldModel, FieldSpan } from './structure.js';
 	import { enumValues, ghostDefault, stringifyGhost } from './structure.js';
@@ -51,6 +57,8 @@
 		optionAllowed?: (value: string) => boolean;
 		onFocus?: (addr: Addr) => void;
 		onCaretMove?: (addr: Addr, pos: number) => void;
+		onChange?: (addr: Addr) => void;
+		onError?: EditorErrorHandler;
 		register?: (key: string, controller: FieldController) => void;
 		unregister?: (key: string) => void;
 		diagnostics?: Diagnostic[];
@@ -68,6 +76,8 @@
 		optionAllowed,
 		onFocus,
 		onCaretMove,
+		onChange,
+		onError,
 		register,
 		unregister,
 		diagnostics
@@ -134,6 +144,8 @@
 				{leafKey}
 				{onFocus}
 				{onCaretMove}
+				{onChange}
+				{onError}
 				{register}
 				{unregister}
 			/>

@@ -42,6 +42,12 @@ The VisualEditor holds the live `Document` (via `DocumentWriter = quill.writer(d
 
 Reconciliation is field-scoped. The editor holds its optimistic PM state and re-hydrates a leaf only on an **external** content change (a paste, a `revise`, another edit source), gated by canonical-content equality scoped to that leaf ([CODEC.md](CODEC.md) §Reconciliation). Caret continuity across the editor's *own* edits is the leaf's PM `StepMap`, not a re-hydrate.
 
+**All three lanes report through `onChange`**, carrying an `EditorChange` whose `source` names which one. That the three exist at all is an implementation fact (a prose leaf commits itself and must NOT bump `revision`, since a re-derive would remount every leaf and cost the caret on every keystroke); that a host has to know it is not. A host recompiling off `onChange` covers prose, scalars and structure with one hook, and reads `source` only to schedule them differently: a structure op happens once per gesture and applies at once, prose and field edits arrive per keystroke and debounce.
+
+`onCaretMove` is the *selection* signal, not a second change signal: it fires on a bare arrow key. The two are separate hooks precisely so following the caret and recompiling are not the same subscription.
+
+**A richtext field has two stored shapes, and the leaf's read is where they meet.** `doc.getStored` is verbatim: a document the editor seeded holds `Content` (what `install`/`applyChange` write), and a document a consumer LOADED (`Document.fromMarkdown`) holds the markdown STRING it parsed, since nothing has lowered it yet. A body is `Content` either way. The leaf lifts a string through `importMarkdown` on read (`field.ts`, `readLeaf`); the first commit writes `Content` back, so the string shape is transient and appears on no other path.
+
 ## Card operations
 
 - **Add**: pick the kind (a transient menu, skipped when the quill declares one kind), then `quill.seedCard(kind, doc.main.seed?.[kind])` → `insertCard(index, card)` in one mutation. No placeholder card exists before it is real; the seed cascade is `$seed` overlay › `example:` › absent (canon: `CARDS.md`).
@@ -57,7 +63,7 @@ Reconciliation is field-scoped. The editor holds its optimistic PM state and re-
 **One active leaf holds the caret.** The VisualEditor owns `activeAddr`; because leaves are keyed by stable identity, this is plain state, not a value hoisted to a parent to survive remounts. Both directions ([PREVIEW.md](PREVIEW.md) §Click bridge):
 
 - **preview → editor**: `visualEditor.setCaret(hit)` resolves `hit.field` to a leaf, which runs `codec.usvToPM(hit.pos)` and sets its PM caret; a `'segment'` hit just focuses the leaf (`hit.pos` is a segment start, not a cluster-exact caret). It reveals first and awaits the render before landing, so it is the one async entry point (VISUAL_EDITOR_UIUX §"Editor↔preview").
-- **editor → preview**: a caret move in the active leaf emits `onCaretMove(addr, pos)`; the consumer maps `addr` to the canonical `DocPath` field address with `fieldPathForAddr` (`caret.ts`, built on `formatDocPath`) and calls `preview.focusPosition(field, pos)`. The USV `pos` is the shared coordinate: no codec hop.
+- **editor → preview**: a caret move in the active leaf emits `onCaretMove(at)` with a `Place` (`/core`): the canonical `DocPath` field address and the USV caret, which is `preview.focusPosition`'s own argument, so the hop is `onCaretMove={preview.focusPosition}` and translates nothing. The editor mints the path off its DERIVED card tree, which already holds every kind, so following the caret costs no `doc.cards` read per keystroke (`doc.cards` serializes every card on each read). `fieldPathForAddr` (`caret.ts`, built on `formatDocPath`) is the same mapping, exported for a consumer holding an `Addr` of its own. The USV `pos` is the shared coordinate: no codec hop.
 
 ## Chrome
 
@@ -73,6 +79,8 @@ Editing chrome is thin and **per-leaf**; structural chrome is Svelte in the shel
 
 Three sources, each routed to a field address and shown inline: `quill.validate(doc)` (`Diagnostic[]` keyed on a canonical `DocPath` `.path`: type errors fatal, `must_fill` a soft warning), `LiveSession.warnings`, and render errors mapped through `FieldRegion.field`. Routing runs on the boundary's `parseDocPath` (`diagnostics.ts`), resolving the absolute card index to the editor's stable-id keying; a local commit error is keyed at its known call-site address and carries the thrown diagnostic's `code` (0.96 mutator failures carry one). `must_fill` and present-null never gate; a value that fails coercion is the only hard field error (canon: `SCHEMAS.md`).
 
+**Diagnostics are not the error channel** (`core/errors.ts`). A `Diagnostic` is about the DOCUMENT and draws on the field it belongs to; an `EditorError` is about the SURFACE and draws nowhere: a commit the boundary refused, a card operation that threw, a `validate`/`resolve` that threw, a prose commit that fell back. Every one of them is a path the surface already RECOVERED from, so nothing gates on the handler and an absent handler still logs; the hook exists because a `console.error` is not something an app can route, filter or count. A refused scalar commit produces both, deliberately: the diagnostic pins to the field, the error reaches the sink.
+
 ## Surface
 
 Two layers, per [ARCHITECTURE.md](ARCHITECTURE.md): the prose leaf is the vanilla-TS core seam, the composition is Svelte chrome.
@@ -87,7 +95,9 @@ function createField(opts: {
   plaintext?: boolean; // inline + marks/islands stripped
   label?: string; // aria-label on the contenteditable
   onFocus?(addr: Addr): void;
-  onCaretMove?(addr: Addr, pos: number): void;
+  onCaretMove?(addr: Addr, pos: number): void; // an edit OR a bare selection move
+  onChange?(addr: Addr): void; // a commit that LANDED: the change signal
+  onError?: EditorErrorHandler; // a commit the boundary refused (recovered)
 }): FieldController;
 
 interface FieldController {
@@ -106,10 +116,9 @@ interface FieldController {
   bind:this={visualEditor}
   {doc} {quill}
   onActiveAddrChange={(addr) => …}
-  onCaretMove={(addr, pos) => {
-    const field = fieldPathForAddr(addr, doc.cards.map((c) => c.kind));
-    if (field) preview.focusPosition(field, pos);
-  }}
+  onCaretMove={preview.focusPosition}
+  onChange={(change) => change.source === 'structure' ? recompileNow() : schedule()}
+  onError={(err) => …}
 />
 <!-- bridge in: visualEditor.setCaret(hit) from preview.onCaretPick -->
 ```

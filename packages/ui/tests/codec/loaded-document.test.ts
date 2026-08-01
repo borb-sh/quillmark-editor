@@ -1,0 +1,99 @@
+// @vitest-environment jsdom
+// A document a consumer LOADED rather than seeded (`Document.fromMarkdown`, the
+// door every saved document comes back through) stores its richtext FIELDS as the
+// markdown it parsed, not as `Content`: `getStored` is the verbatim read, and
+// verbatim is what is there. A body is `Content` either way. The prose leaf takes
+// both shapes, and an edit lands back in the same document.
+import { describe, it, expect } from 'vitest';
+import { Document, type Quill } from '$lib/core';
+import { createField } from '$lib/core/codec';
+import type { FieldController } from '$lib/core/codec';
+import type { EditorView } from 'prosemirror-view';
+import { quill } from '../helpers/fixtures.js';
+
+function mount(): HTMLElement {
+	const el = document.createElement('div');
+	document.body.appendChild(el);
+	return el;
+}
+const viewOf = (f: FieldController): EditorView =>
+	(f as FieldController & { view: EditorView }).view;
+
+/** A saved document: seeded, written, serialized, and parsed back. */
+function loaded(): { q: Quill; doc: Document } {
+	const q = quill();
+	const seed = q.seedDocument();
+	q.writer(seed).set('subject', 'Reloaded subject');
+	const doc = Document.fromMarkdown(seed.toMarkdown());
+	seed.free();
+	return { q, doc };
+}
+
+describe('a document loaded from markdown', () => {
+	it('stores a richtext field as a STRING, and its body as Content', () => {
+		// The asymmetry this whole file exists for. Asserted rather than assumed:
+		// it is a boundary fact, and the leaf's tolerance is only correct while it holds.
+		const { doc } = loaded();
+		expect(typeof doc.getStored({ field: 'subject' })).toBe('string');
+		expect(typeof doc.getStored({})).toBe('object');
+		doc.free();
+	});
+
+	it('round-trips through toMarkdown → fromMarkdown', () => {
+		const { doc } = loaded();
+		const again = Document.fromMarkdown(doc.toMarkdown());
+		expect(again.toMarkdown()).toBe(doc.toMarkdown());
+		expect(again.cardCount).toBe(doc.cardCount);
+		again.free();
+		doc.free();
+	});
+
+	it('mounts a prose leaf over a field stored as a string, and commits back', () => {
+		const { doc } = loaded();
+		const field = createField({
+			doc,
+			addr: { field: 'subject' },
+			container: mount(),
+			inline: true
+		});
+		expect(field.getContent().text).toContain('Reloaded subject');
+
+		// The half a tolerant read alone would not buy: the commit has to land too,
+		// and it rewrites the field as `Content`, so the string shape is transient.
+		const view = viewOf(field);
+		view.dispatch(view.state.tr.insertText('!', 1));
+		expect(doc.toMarkdown()).toContain('!Reloaded subject');
+		expect(typeof doc.getStored({ field: 'subject' })).toBe('object');
+
+		field.destroy();
+		doc.free();
+	});
+
+	it('mounts the body leaf, which was Content all along', () => {
+		const { doc } = loaded();
+		const field = createField({ doc, addr: {}, container: mount() });
+		expect(field.getContent().text.length).toBeGreaterThan(0);
+		field.destroy();
+		doc.free();
+	});
+
+	it('mounts a leaf on a card of a loaded document', () => {
+		// Cards take the same lowering as main, so the string shape reaches them too.
+		const { q, doc } = loaded();
+		const seeded = q.seedDocument();
+		const kind = Object.keys(q.schema.card_kinds ?? {})[0];
+		const card = q.seedCard(kind, seeded.seedOverlay(kind));
+		expect(card).toBeTruthy();
+		seeded.insertCard(card!, 0);
+		const withCard = Document.fromMarkdown(seeded.toMarkdown());
+		expect(withCard.cardCount).toBeGreaterThan(0);
+
+		const field = createField({ doc: withCard, addr: { card: 0 }, container: mount() });
+		expect(typeof field.getContent().text).toBe('string');
+
+		field.destroy();
+		withCard.free();
+		seeded.free();
+		doc.free();
+	});
+});

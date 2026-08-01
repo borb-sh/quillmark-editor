@@ -14,6 +14,7 @@
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import X from '@lucide/svelte/icons/x';
 	import { renderTip } from './tips.js';
+	import type { EditorErrorHandler } from '../core/index.js';
 	import './controls.css';
 
 	interface Props {
@@ -21,8 +22,10 @@
 		tips: string[];
 		/** Clear `$ext.editor.tips`: the patch-write that preserves the `title` sibling. */
 		onDismiss: () => void;
+		/** A tip whose markdown did not render; it shows literally either way. */
+		onError?: EditorErrorHandler;
 	}
-	let { tips, onDismiss }: Props = $props();
+	let { tips, onDismiss, onError }: Props = $props();
 
 	/** Control-glyph size: the shared rule (AESTHETIC §Icons), as CardControls. */
 	const GLYPH = 14;
@@ -45,7 +48,7 @@
 	let bodyEl: HTMLDivElement | undefined = $state();
 	$effect(() => {
 		const el = bodyEl;
-		if (el) el.replaceChildren(renderTip(tip));
+		if (el) el.replaceChildren(renderTip(tip, onError));
 	});
 
 	function advance(): void {

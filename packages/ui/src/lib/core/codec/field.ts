@@ -6,17 +6,21 @@
 //   (b) lower the tr to a `ChangeBundle` (or `install` for island creation, the
 //       one structural edit the op vocabulary cannot represent),
 //   (c) commit via `doc.applyChange(addr, bundle)`,
-//   (d) fire `onCaretMove` with the new USV caret.
-// On an `applyChange` throw the optimistic PM state stays and the error is logged:
-// never a crash. Caret continuity across own-edits is the PM `StepMap`; an
-// EXTERNAL content change re-hydrates through `applyExternal`, gated by `reconcile`.
+//   (d) fire `onChange` when the transaction COMMITTED, then `onCaretMove` with
+//       the new USV caret, which a bare selection move fires on its own.
+// On an `applyChange` throw the optimistic PM state stays and the failure reports
+// through `onError`: never a crash. Caret continuity across own-edits is the PM
+// `StepMap`; an EXTERNAL content change re-hydrates through `applyExternal`, gated
+// by `reconcile`.
 import { baseKeymap, toggleMark } from 'prosemirror-commands';
 import { history, redo, undo } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
 import type { Node as PMNode, Schema } from 'prosemirror-model';
 import { EditorState, Plugin, PluginKey, Selection, type Command } from 'prosemirror-state';
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
-import type { Document, Content, Addr } from '../index.js';
+import type { Document, Content, Addr, EditorErrorHandler } from '../index.js';
+import { importMarkdown } from '../index.js';
+import { reportError, errorMessage } from '../errors.js';
 import { decode } from './decode.js';
 import { usvToPM, pmToUsv, buildLineIndex, type LineIndex } from './positions.js';
 import { lower, pmToContent, insertReintroducesIslandSlot } from './encode.js';
@@ -55,6 +59,19 @@ export interface CreateFieldOpts {
 	onFocus?(addr: Addr): void;
 	/** Fired with the new USV caret after an edit or a selection move. */
 	onCaretMove?(addr: Addr, pos: number): void;
+	/**
+	 * Fired after an edit COMMITTED to the document: the leaf's change signal, and
+	 * the reason it is not `onCaretMove`. That one also fires on a bare selection
+	 * move, so a host driving a recompile off it recompiles on every arrow key.
+	 *
+	 * Fires for every commit regardless of which branch it took (`applyChange`, the
+	 * first-edit `install`, the fallback `install`) and for an anchor mutation,
+	 * which changes no text. A commit that failed outright (`commit-lost`) does not
+	 * fire it: nothing landed.
+	 */
+	onChange?(addr: Addr): void;
+	/** Recovered failures on the commit path ({@link EditorErrorHandler}). */
+	onError?: EditorErrorHandler;
 }
 
 /** The prose-leaf handle (VISUAL_EDITOR §Surface). */
@@ -131,9 +148,21 @@ function anchorPlugin(seed: AnchorPos[]): Plugin<AnchorPos[]> {
  * stored value until first edited), reads `undefined`; decode an empty content
  * rather than crash, and the first edit installs it. Only an out-of-range
  * `addr.card` throws, unreachable here: a removed card unmounts its keyed leaf
- * before a stale index is read. */
+ * before a stale index is read.
+ *
+ * `getStored` is the VERBATIM read, so a richtext field has two stored shapes and
+ * this is where they meet. A document the editor seeded holds `Content`, because
+ * that is what `install` / `applyChange` write. A document a consumer LOADED
+ * (`Document.fromMarkdown`, the door every saved document comes back through)
+ * holds the markdown STRING it parsed, because nothing has lowered it yet. A body
+ * is `Content` either way. Lifting the string through `importMarkdown` is what
+ * lets a leaf mount over a loaded document at all; the first commit writes
+ * `Content` back and the field never reads as a string again. */
 function readLeaf(doc: Document, addr: Addr): Content {
-	return (doc.getStored(addr) as Content | undefined) ?? emptyContent();
+	const stored = doc.getStored(addr);
+	if (stored === undefined) return emptyContent();
+	if (typeof stored === 'string') return importMarkdown(stored);
+	return stored as Content;
 }
 
 /** The canonical empty `Content`: one empty `para` line. The zero value a prose
@@ -192,9 +221,13 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			// zero-width, so `docChanged` is false: the `anchorKey` meta is what
 			// routes it through the same commit path (the diff emits the anchor op).
 			if (tr.docChanged || tr.getMeta(anchorKey)) {
-				commitEdit(oldRt, next.doc);
+				// (d) the change signal, only for what actually landed.
+				if (commitEdit(oldRt, next.doc)) opts.onChange?.(addr);
 			}
-			// (d) caret: for both structural and selection-only changes.
+			// The caret, for both structural and selection-only changes: a host
+			// following the caret wants an arrow key, and a host recompiling wants
+			// `onChange`. Reported after the commit, so the edit has landed by the
+			// time the caret names where it is.
 			opts.onCaretMove?.(addr, pmToUsv(index, next.selection.head));
 		},
 		handleDOMEvents: {
@@ -230,7 +263,9 @@ export function createField(opts: CreateFieldOpts): FieldController {
 
 	// (b)+(c): lower the edit to ops and commit, or `install` for a structural
 	// edit the op vocabulary cannot express. Keep the optimistic PM on throw.
-	function commitEdit(oldRt: Content, newDoc: PMNode): void {
+	// Returns whether anything landed: the caller's change signal, which must not
+	// be a property of which branch the commit took.
+	function commitEdit(oldRt: Content, newDoc: PMNode): boolean {
 		const newRt = pmToContent(newDoc);
 		try {
 			// `applyChange` throws on an absent declared field (verified), so the FIRST
@@ -248,19 +283,32 @@ export function createField(opts: CreateFieldOpts): FieldController {
 				doc.applyChange(addr, lower(oldRt, newRt, { oldAnchors, newAnchors }));
 			}
 			reconciler.commit(readLeaf(doc, addr));
+			return true;
 		} catch (e) {
 			// Bound the damage: an op path the gates missed leaves the store STALE
 			// while PM keeps the edit; and because the reconciler then re-diffs
 			// from that stale content, every later edit re-throws and the field
 			// silently stops persisting. Install the full projection instead
 			// (correct store, pays this field's anchors).
-			console.error('[quillmark/editor] applyChange failed; falling back to install', e);
+			reportError(opts.onError, {
+				code: 'commit-fallback',
+				severity: 'error',
+				message: `applyChange refused; re-installed the whole field: ${errorMessage(e)}`,
+				cause: e
+			});
 			try {
 				doc.install(addr, newRt);
 				reconciler.commit(readLeaf(doc, addr));
+				return true;
 			} catch (e2) {
-				// Optimistic PM stays; surface the boundary error without crashing.
-				console.error('[quillmark/editor] install fallback failed; keeping optimistic state', e2);
+				// Optimistic PM stays; the store is stale for this field from here.
+				reportError(opts.onError, {
+					code: 'commit-lost',
+					severity: 'error',
+					message: `install fallback failed; the stored value is stale while the editor keeps the edit: ${errorMessage(e2)}`,
+					cause: e2
+				});
+				return false;
 			}
 		}
 	}

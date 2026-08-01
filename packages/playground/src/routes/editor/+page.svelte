@@ -11,23 +11,24 @@
     edit ─► (debounced) session.apply(doc) ─► preview.refresh(change)
                                             └► sourceView.refresh()
                                             └► diagnostics = session.warnings
-    preview click ─► onCaretPick(hit) ─► editor.setCaret(hit)          (preview→editor)
-    editor caret  ─► onCaretMove(addr,pos) ─► preview.focusPosition(   (editor→preview)
-                       fieldPathForAddr(addr, kinds), pos)
+    preview click ─► onCaretPick(hit) ─► editor.setCaret(hit)     (preview→editor)
+    editor caret  ─► onCaretMove(at)  ─► preview.focusPosition(at) (editor→preview)
 
   The bridge is consumer-layer and one-way-independent: the editor is unaware of
   the preview (it only emits addresses + carets), the preview is unaware of the
   editor (it only surfaces hits). This route is the seam that joins them.
 
-  Recompile is debounced and fed by BOTH `onChange` (scalar/structure mutations)
-  and `onCaretMove` (prose edits surface here; a prose leaf commits directly and
-  does not bump the editor's revision). A caret move with no content change
-  recompiles to empty `dirtyPages` (apply on an unchanged doc is a cheap no-op),
-  so the preview repaints nothing; only the geometry re-reads.
+  Recompile is fed by `onChange` ALONE, which covers all three lanes: a prose
+  commit, a scalar/array write, a card operation. A structure op applies at once
+  (one per gesture, and the stack moved); prose and field edits debounce, since
+  they arrive per keystroke. `onCaretMove` drives the preview's caret and nothing
+  else: it fires on a bare arrow key, so a recompile hung off it would recompile
+  on every one.
 
   The strip above the panes reads the bridge's outcomes back out (last-hit,
-  active-addr, last-focus, last-change), so a round-trip that lands nowhere is
-  visible rather than silent. `inject-diagnostics` stands in for a live
+  active-addr, last-focus, last-change, the change LANE, and the last recovered
+  error), so a round-trip that lands nowhere is visible rather than silent, and a
+  failure the surfaces recovered from is visible rather than console-only. `inject-diagnostics` stands in for a live
   render-error feed: a real consumer derives external diagnostics from
   `session.warnings` (wired here, `[]` for usaf_memo) plus render errors.
 -->
@@ -40,8 +41,11 @@
 		ContentHit,
 		ChangeSet,
 		Addr,
-		Diagnostic
+		Place,
+		Diagnostic,
+		EditorError
 	} from '@quillmark/ui/core';
+	import type { EditorChange } from '@quillmark/ui/visual';
 	import { Preview } from '@quillmark/ui/preview';
 	import { SourceView } from '@quillmark/ui/source';
 	import { loadUsafMemoTree } from '../fixture';
@@ -55,13 +59,6 @@
 	let session: LiveSession | undefined = $state();
 	let quillHandle: Quill | undefined = $state();
 	let docHandle: Document | undefined = $state();
-
-	// The editor→preview address mapping: captured from the dynamic `@quillmark/ui/visual`
-	// import (below) rather than statically imported, so the route module never
-	// pulls VisualEditor's WASM top-level await (Safari/dev doesn't TDZ on Kit's
-	// `component` export, the reason for the dynamic-import dance). This is the
-	// public `/visual` surface, loaded after mount.
-	let fieldPathForAddr: ((addr: Addr, kinds: readonly string[]) => string | undefined) | undefined;
 
 	// Surface handles for the imperative bridge hops.
 	let editorRef: { setCaret(hit: ContentHit): Promise<void> } | undefined = $state();
@@ -81,6 +78,8 @@
 	let activeAddr = $state('none');
 	let lastFocus = $state('none');
 	let lastChange = $state<ChangeSet | undefined>();
+	let lastChangeSource = $state('none');
+	let lastError = $state('none');
 	let showSource = $state(false);
 
 	// ── Split resizer (playground reference) ─────────────────────────────────────
@@ -180,17 +179,22 @@
 	function handleActiveAddr(addr: Addr): void {
 		activeAddr = JSON.stringify(addr);
 	}
-	function handleCaretMove(addr: Addr, pos: number): void {
-		// Only a card address needs the kinds array; read it lazily so a main-field
-		// caret move (the common case) costs no `doc.cards` allocation.
-		const kinds = addr.card != null && docHandle ? docHandle.cards.map((c) => c.kind) : [];
-		const field = fieldPathForAddr?.(addr, kinds);
-		if (field != null) {
-			previewRef?.focusPosition(field, pos);
-			lastFocus = JSON.stringify({ field, pos });
-		}
-		// A prose edit surfaces only as a caret move; recompile to follow it.
-		scheduleRecompile();
+	// The editor already speaks the preview's address grammar, so this hop is a
+	// pass-through; the strip readout is the only reason it is a function at all.
+	function handleCaretMove(at: Place): void {
+		previewRef?.focusPosition(at);
+		lastFocus = JSON.stringify(at);
+	}
+	// Every edit, whichever lane it came down. A structure op recompiles at once:
+	// it happens once per gesture, and a card that appears half a beat after the
+	// click reads as lag rather than as debouncing.
+	function handleChange(change: EditorChange): void {
+		lastChangeSource = change.source;
+		if (change.source === 'structure') recompileNow();
+		else scheduleRecompile();
+	}
+	function handleError(err: EditorError): void {
+		lastError = `${err.code}: ${err.message}`;
 	}
 
 	function injectDiagnostics(): void {
@@ -230,7 +234,6 @@
 					return;
 				}
 				VisualEditor = visual.VisualEditor;
-				fieldPathForAddr = visual.fieldPathForAddr;
 				session = openedSession;
 				quillHandle = quill;
 				docHandle = doc;
@@ -288,6 +291,14 @@
 					>{lastChange ? JSON.stringify(lastChange.dirtyPages) : 'none'}</span
 				></span
 			>
+			<span class="stat"
+				><span class="pg-label">lane</span>
+				<span class="pg-readout" data-testid="last-change-source">{lastChangeSource}</span></span
+			>
+			<span class="stat"
+				><span class="pg-label">error</span>
+				<span class="pg-readout" data-testid="last-error">{lastError}</span></span
+			>
 			<span class="strip-actions">
 				<button
 					class="pg-btn"
@@ -321,7 +332,8 @@
 						quill={quillHandle}
 						onActiveAddrChange={handleActiveAddr}
 						onCaretMove={handleCaretMove}
-						onChange={scheduleRecompile}
+						onChange={handleChange}
+						onError={handleError}
 						diagnostics={externalDiagnostics}
 					/>
 				{/if}

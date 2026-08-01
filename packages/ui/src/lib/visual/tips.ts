@@ -5,7 +5,8 @@
 //
 // The channel narrowing the derive reads and the render the card paints. The write
 // is `patchEditorExt` (ext.ts), the one door into the namespace.
-import { importMarkdown } from '../core/index.js';
+import { importMarkdown, reportError, errorMessage } from '../core/index.js';
+import type { EditorErrorHandler } from '../core/index.js';
 import { renderContent, inlineSchema } from '../core/codec/index.js';
 
 /**
@@ -34,11 +35,16 @@ export function tipsChannel(raw: unknown): string[] {
  * `{@html}` of the same string would be. A throw degrades to the literal text:
  * chrome never breaks the editor.
  */
-export function renderTip(markdown: string): Node {
+export function renderTip(markdown: string, onError?: EditorErrorHandler): Node {
 	try {
 		return renderContent(importMarkdown(markdown), inlineSchema);
 	} catch (e) {
-		console.error('[quillmark/editor] tip render failed; showing literal text', e);
+		reportError(onError, {
+			code: 'tip-render-failed',
+			severity: 'error',
+			message: `a tip's markdown did not render; showing it literally: ${errorMessage(e)}`,
+			cause: e
+		});
 		return document.createTextNode(markdown);
 	}
 }

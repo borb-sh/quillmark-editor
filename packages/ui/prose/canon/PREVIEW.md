@@ -70,12 +70,13 @@ interface PreviewOptions {
   margin?: number;        // pages kept painted beyond the viewport; default 1
   overlays?: boolean;     // draw field-box overlays; default true
   onCaretPick?(hit: ContentHit): void;   // preview → editor
+  onError?: EditorErrorHandler;          // a page paint the backend refused
 }
 
 interface PreviewController {
   refresh(change: ChangeSet): void;                  // repaint dirty ∩ visible, re-read geometry
-  scrollToField(field: string): void;                // fieldBoxes → scroll into view
-  focusPosition(field: string, pos: number): void;   // editor → preview: locate → caret rect → scroll
+  scrollToField(field: DocPath): void;               // fieldBoxes → scroll into view
+  focusPosition(at: Place): void;                    // editor → preview: locate → caret rect → scroll
   setZoom(scale: number): void;                       // folds into densityScale, repaints visible
   destroy(): void;
 }

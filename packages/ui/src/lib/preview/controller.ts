@@ -4,7 +4,15 @@
 // to those same slots. A pure view: never calls `session.apply`, never
 // mutates the session; the consumer drives edits and hands the resulting
 // `ChangeSet` to `refresh`.
-import type { LiveSession, ChangeSet, ContentHit } from '../core/index.js';
+import type {
+	LiveSession,
+	ChangeSet,
+	ContentHit,
+	DocPath,
+	Place,
+	EditorErrorHandler
+} from '../core/index.js';
+import { reportError, errorMessage } from '../core/index.js';
 import { createPaintLoop, type PaintLoop } from './paint.js';
 import { createOverlay, type OverlayController } from './overlay.js';
 import { createBridge, type BridgeController } from './bridge.js';
@@ -18,15 +26,24 @@ export interface PreviewOptions {
 	overlays?: boolean;
 	/** A click resolved to a content position; the hook does not fire off-ink. */
 	onCaretPick?(hit: ContentHit): void;
+	/** A page paint the backend refused ({@link EditorErrorHandler}). The preview
+	 *  shows its error message state either way; this routes it to an app's sink. */
+	onError?: EditorErrorHandler;
 }
 
 export interface PreviewController {
 	/** Repaint `dirtyPages ∩ visible` and re-read geometry; the only apply-driven hop. */
 	refresh(change: ChangeSet): void;
 	/** Scroll `field`'s first box into view and bloom it. */
-	scrollToField(field: string): void;
-	/** Scroll the caret at `field`/`pos` into view and bloom its field on arrival. */
-	focusPosition(field: string, pos: number): void;
+	scrollToField(field: DocPath): void;
+	/**
+	 * Scroll the caret at `at` into view and bloom its field on arrival.
+	 *
+	 * Takes the editor's own `onCaretMove` payload, so the editor→preview half of
+	 * the bridge is `onCaretMove={preview.focusPosition}` and translates nothing. A
+	 * `ContentHit` carries both members and fits here too.
+	 */
+	focusPosition(at: Place): void;
 	/** Fold a density multiplier into every future paint (crispness, not layout). */
 	setZoom(scale: number): void;
 	destroy(): void;
@@ -72,7 +89,13 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	// mid-sweep (runtime.d.ts: even a `supportsCanvas` compile can hit a paint
 	// the boundary refuses; brittle to leave uncaught).
 	const paintLoop: PaintLoop = createPaintLoop(session, container, margin, (page, err) => {
-		console.error(`[quillmark] preview paint failed for page ${page}`, err);
+		reportError(opts.onError, {
+			code: 'paint-failed',
+			severity: 'error',
+			message: `painting page ${page} failed: ${errorMessage(err)}`,
+			cause: err,
+			page
+		});
 		showMessage('Preview failed to render.', ERROR_CLASS);
 	});
 	// overlay/bridge query geometry at build (`session.regions()`), so they are
@@ -142,9 +165,9 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 			bridge?.scrollToField(field);
 			overlay?.flashField(field);
 		},
-		focusPosition(field, pos) {
-			bridge?.focusPosition(field, pos);
-			overlay?.flashField(field);
+		focusPosition(at) {
+			bridge?.focusPosition(at.field, at.pos);
+			overlay?.flashField(at.field);
 		},
 		setZoom(scale) {
 			paintLoop.setDensityZoom(scale);

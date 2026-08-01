@@ -11,7 +11,7 @@
 	import { onMount } from 'svelte';
 	import { createField, type FieldController } from '../core/codec/index.js';
 	import './controls.css';
-	import type { Document, Addr } from '../core/index.js';
+	import type { Document, Addr, EditorErrorHandler } from '../core/index.js';
 
 	interface Props {
 		doc: Document;
@@ -45,6 +45,9 @@
 		leafKey: string;
 		onFocus?: (addr: Addr) => void;
 		onCaretMove?: (addr: Addr, pos: number) => void;
+		/** A commit landed on this leaf: the prose change lane. */
+		onChange?: (addr: Addr) => void;
+		onError?: EditorErrorHandler;
 		register?: (key: string, controller: FieldController) => void;
 		unregister?: (key: string) => void;
 	}
@@ -62,6 +65,8 @@
 		leafKey,
 		onFocus,
 		onCaretMove,
+		onChange,
+		onError,
 		register,
 		unregister
 	}: Props = $props();
@@ -100,7 +105,9 @@
 			describedBy,
 			placeholder,
 			onFocus,
-			onCaretMove
+			onCaretMove,
+			onChange,
+			onError
 		});
 		register?.(leafKey, controller);
 		return () => {
