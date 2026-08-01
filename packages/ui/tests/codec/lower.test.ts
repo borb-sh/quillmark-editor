@@ -131,7 +131,7 @@ describe('unknown mark round-trip (verbatim)', () => {
 });
 
 describe('unknown line kind and container round-trip (verbatim)', () => {
-	// The 0.98 open block vocabulary, from the codec's side: a `kind` and a
+	// The open block vocabulary, from the codec's side: a `kind` and a
 	// `container` this build does not know. Both render as their nearest safe
 	// neighbor (a paragraph; nothing) and both must come back out unchanged; an
 	// edit anywhere in the field restates EVERY line's metadata, so a carrier that

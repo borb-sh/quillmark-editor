@@ -25,6 +25,7 @@ import type {
 	ContentContainer,
 	ContentIsland,
 	ContentLine,
+	ContentLineKind,
 	ContentMark
 } from '@quillmark/wasm';
 import { codePoints, usvLength } from './decode.js';
@@ -124,7 +125,7 @@ function scanBlock(acc: Acc, node: PMNode, nodePos: number, containers: ContentC
 		}
 		case 'code_block': {
 			const lang = (node.attrs.lang as string | null) ?? undefined;
-			const kind: KindPart = lang != null ? { kind: 'code', lang } : { kind: 'code' };
+			const kind: ContentLineKind = lang != null ? { kind: 'code', lang } : { kind: 'code' };
 			beginLine(acc, contentStart, containers, kind);
 			const codeText = node.textContent;
 			if (codeText.length) emitText(acc, codeText, contentStart, []);
@@ -183,7 +184,7 @@ function scanBlock(acc: Acc, node: PMNode, nodePos: number, containers: ContentC
 
 /** A textblock's line kind: a heading's `level`, or (for a paragraph) `para`, or
  * the unknown kind it carries (schema.ts) re-emitted verbatim. */
-function textblockKind(node: PMNode): KindPart {
+function textblockKind(node: PMNode): ContentLineKind {
 	if (node.type.name === 'heading') return { kind: 'heading', level: node.attrs.level as number };
 	const u = node.attrs.unknown as { kind: string; attrs: unknown } | null;
 	return u ? { kind: u.kind, attrs: u.attrs } : { kind: 'para' };
@@ -194,7 +195,7 @@ function beginLine(
 	acc: Acc,
 	thisContentStart: number,
 	containers: ContentContainer[],
-	kind: KindPart
+	kind: ContentLineKind
 ): void {
 	if (acc.lines.length > 0) {
 		acc.runs.push({
@@ -214,7 +215,7 @@ function scanInline(
 	block: PMNode,
 	contentStart: number,
 	containers: ContentContainer[],
-	kind: KindPart
+	kind: ContentLineKind
 ): void {
 	let pm = contentStart;
 	block.forEach((child) => {
@@ -250,17 +251,6 @@ function emitText(acc: Acc, s: string, pmStart: number, marks: readonly Mark[]):
 		} as ContentMark);
 	}
 }
-
-/** The line-kind half a scanned block contributes: `ContentLineKind` as this
- * encoder emits it, the unknown arm included (a paragraph carrying one re-emits it
- * verbatim rather than flattening to `para`). */
-type KindPart =
-	| { kind: 'para' }
-	| { kind: 'heading'; level: number }
-	| { kind: 'code'; lang?: string }
-	| { kind: 'island' }
-	| { kind: 'rule' }
-	| { kind: string; attrs: unknown };
 
 /**
  * Merge adjacent/overlapping same-descriptor marks into maximal ranges: the
@@ -344,18 +334,17 @@ function diffLines(oldRt: Content, newRt: Content): LineOp[] {
 }
 
 /** A line minus its `containers` / `continues` envelope: exactly `setKind`'s
- * payload. Lifting it whole is what keeps this arm-agnostic: `kind` is an OPEN
- * set, so an arm-by-arm switch would have to guess at the unknown arm's payload
- * and would drift on every arm upstream adds. The core build names this shape
- * `ContentLineKind` but the package's entry point does not re-export it, so the
- * op is assembled untyped and cast (DOCUMENT_MODEL §Stability seams). */
-function kindPart(l: ContentLine): Record<string, unknown> {
+ * payload, which the boundary names `ContentLineKind`. Lifting it whole is what
+ * keeps this arm-agnostic: `kind` is an OPEN set, so an arm-by-arm switch would
+ * have to guess at the unknown arm's payload and would drift on every arm
+ * upstream adds. */
+function kindPart(l: ContentLine): ContentLineKind {
 	const { containers: _containers, continues: _continues, ...kind } = l;
 	return kind;
 }
 
 function kindOp(line: number, l: ContentLine): LineOp {
-	return { op: 'setKind', line, ...kindPart(l) } as LineOp;
+	return { op: 'setKind', line, ...kindPart(l) };
 }
 
 function lineMetaEqual(a: ContentLine[], b: ContentLine[]): boolean {

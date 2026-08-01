@@ -6,7 +6,7 @@
 
 **Not** a document-model design: the `Document`, its mutators, the WASM boundary, and diagnostics are quillmark's, each with a canonical home in quillmark canon. This ledger pins the *exact* quillmark surface `@quillmark/ui` V1 consumes, cites where each is documented, and marks its stability. It is the one place the version coupling to `@quillmark/wasm` is recorded; when a surface below moves, the editor's dependency moves with it. `src/lib/core/` re-exports the whole surface verbatim: the one door the rest of the package crosses to reach the WASM package.
 
-**V1 builds on `@quillmark/wasm` 0.98.0.** Every verb in the table below is stable at that pin. The settled ground it stands on: `store*` verbs for verbatim writes, one unified `Addr` (`{card?, field?}`), the schema-bound `writer`/`reader` doors (`quill.writer(doc)` / `quill.reader(doc)`), a card-first `insertCard(card, at?)`, the quill-free transport read `getStored` (distinct from `reader.get`), the `quill.resolve(doc)` value view, `code`-bearing mutator diagnostics, and the canonized anchor-id policy (caller-supplied, unique, invariant) that lets the editor mint anchors at a selection ([CODEC.md](CODEC.md) §Marks).
+**V1 builds on `@quillmark/wasm` 0.99.0**, the 1.0 API freeze. Every verb in the table below is stable at that pin. The settled ground it stands on: `store*` verbs for verbatim writes, one unified `Addr` (`{card?, field?}`), the schema-bound `writer`/`reader` doors (`quill.writer(doc)` / `quill.reader(doc)`), a card-first `insertCard(card, at?)`, the quill-free transport read `getStored` (distinct from `reader.get`), the `quill.resolve(doc)` value view, `code`-bearing mutator diagnostics, and the canonized anchor-id policy (caller-supplied, unique, invariant) that lets the editor mint anchors at a selection ([CODEC.md](CODEC.md) §Marks).
 
 **The block vocabulary is open.** `ContentLine.kind` and `ContentContainer.container` stand with the mark and island `type` as OPEN sets: a construct this build does not know round-trips opaque rather than failing the load. A bare discriminant check does not narrow past the residual arm, so the checked path is the boundary's guards (`isHeadingLine` / `isCodeLine` / `isListItemContainer` beside `isAnchorMark` / `isLinkMark` / `isTableIsland` / `isImageIsland`), which the codec reads here instead of re-deriving, and each set has a PM carrier so an unknown survives an edit ([CODEC.md](CODEC.md) §Open sets).
 
@@ -36,9 +36,12 @@ Two neighbouring surfaces the editor re-exports but never drives: it selects no 
 
 ## Stability seams
 
-At the 0.98.0 target the whole table is stable API. One typing gap is open:
+At the 0.99.0 target the whole table is stable API, and no typing gap is open: `ContentLineKind` reached the entry point at that pin, so the codec's `setKind` op is typed rather than cast (`encode.ts`, `kindOp`).
 
-- **`ContentLineKind` is not on the public entry point.** The core build factors a line's kind half out as its own type (the exact payload of `LineOp`'s `setKind`), but `runtime.d.ts` re-exports `ContentLine` without it, and the package's `exports` map admits no deeper path. So the codec builds a `setKind` op by lifting the kind half off a line and casts the result, where naming the type would carry it (`encode.ts`, `kindOp`). One cast, no runtime effect; re-exporting the type retires it.
+Two obligations the freeze adds, neither yet load-bearing here:
+
+- **`#[non_exhaustive]` on 75 public types** is a Rust-side promise about the crate API. It reaches this boundary only as the open sets already documented above: nothing the editor consumes through `runtime.d.ts` is an exhaustive `match`.
+- **A payload beside a built-in discriminator is refused on write.** 0.98 resolved `attrs` next to a known `kind` / `container` / mark or island `type` to the built-in and dropped the payload silently; 0.99 refuses it on the authored lane. Reading never got stricter. The codec mints such a payload only for a name outside its own known set (`decode.ts` `makeLeaf`, `marks.ts` `pmMarkFromContent`), and at this pin those sets are exactly the boundary's, so no write it emits can be refused. They agree by inspection, not by construction: the day upstream promotes a name to a built-in, the guards `isUnknownLine` / `isUnknownContainer` / `isUnknownMark` / `isUnknownIsland` are what makes the residual arm the boundary's answer instead of this build's leftover.
 
 Two shapes the editor reads straight off the boundary, with no local duplicate:
 
@@ -47,13 +50,13 @@ Two shapes the editor reads straight off the boundary, with no local duplicate:
 
 Field addresses are one canonical `DocPath` across the boundary: `Diagnostic.path`, `ContentHit.field`, and `FieldRegion.field` all speak `main.<field>` / `main.body` / `cards.<kind>[<i>].<field>`, cards keyed by **absolute document index** (no per-kind ordinal). The editor routes on `parseDocPath` and builds with `formatDocPath` rather than a hand-rolled string grammar; diagnostics routing is confirmed against the real grammar, not best-effort.
 
-The session/paint surface (`Engine.open`, `LiveSession`, `PaintOptions` / `PaintResult` / `PageSize`, `ChangeSet`, `supportsCanvas`) is stable at the pinned 0.98.0 and the editor's Preview is its first production consumer: the editor pins the version and rides it.
+The session/paint surface (`Engine.open`, `LiveSession`, `PaintOptions` / `PaintResult` / `PageSize`, `ChangeSet`, `supportsCanvas`) is stable at the pinned 0.99.0 and the editor's Preview is its first production consumer: the editor pins the version and rides it.
 
 ## What the editor owns at this boundary
 
 The substrate is quillmark's; two thin slices at the seam are the editor's, and they live in their surface docs, not here:
 
-- **Handle lifecycle**: WASM `init` (sync; shipped 0.98.0 has no async `initSync` split), who holds the `Quill` and `Document` handles across a session, and when they are freed. The vanilla-TS core owns this ([ARCHITECTURE.md](ARCHITECTURE.md) §Core vs chrome).
+- **Handle lifecycle**: WASM `init` (sync; shipped 0.99.0 has no async `initSync` split), who holds the `Quill` and `Document` handles across a session, and when they are freed, under the one-copy-per-process rule the runtime now enforces ([DEPENDENCIES.md](../../../../prose/canon/DEPENDENCIES.md) §The wasm singleton). The vanilla-TS core owns this ([ARCHITECTURE.md](ARCHITECTURE.md) §Core vs chrome).
 - **Diagnostics routing**: three producers (`quill.validate`, `LiveSession.warnings`, render errors via `FieldRegion.field`) merged, keyed to field addresses (canonical `DocPath` → the editor's stable-id keying, via `parseDocPath`), and de-duplicated with a settled precedence. Policy lives in [VISUAL_EDITOR.md](VISUAL_EDITOR.md) §Diagnostics; this ledger only names the producers it draws from.
 
 ## Not owned here

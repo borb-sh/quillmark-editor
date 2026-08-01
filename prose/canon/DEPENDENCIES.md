@@ -27,9 +27,9 @@ Membership in this repo is "downstream of the wasm artifact". The Rust workspace
 
 ## The wasm singleton
 
-Every published package **peers** `@quillmark/wasm` and none depends on it. The handles cross the package boundary (a `Quill` minted by `ui` is handed to quiver's loader, a `Document` seeded by quiver is opened by `ui`'s session), and a handle is an index into one wasm instance's linear memory. Two installed copies are two linear memories, so a handle from one is foreign to the other: the runtime tolerates that by design, which makes the failure narrow and late rather than loud. The consumer supplies the one copy.
+Every published package **peers** `@quillmark/wasm` and none depends on it. The handles cross the package boundary (a `Quill` minted by `ui` is handed to quiver's loader, a `Document` seeded by quiver is opened by `ui`'s session), and a handle is an index into one wasm instance's linear memory. Two installed copies are two linear memories, so a handle from one is foreign to the other. The runtime refuses it at every door that takes one, as a `QuillmarkError` coded `runtime::foreign_handle` naming the cause and the `npm ls @quillmark/wasm` that diagnoses it: the failure is loud at the first crossing rather than a wrong render later. The consumer still supplies the one copy; the check reports the breach, it does not repair it.
 
-The range is loose (`>=0.98.0-0`, one `>=` comparator) until wasm 1.0 makes compatibility predictable enough to claim a narrow one honestly.
+The range is loose (`>=0.99.0-0`, one `>=` comparator) until wasm 1.0 makes compatibility predictable enough to claim a narrow one honestly.
 
 The non-obvious half: **loose ranges do not prevent two installs, they permit them.** Two wide ranges overlapping is exactly when npm is free to resolve twice. So the published claim stays wide and the developed-against version is exactly one, pinned by root `overrides` with the root devDependency installing it. Under loose ranges the range half of `check:deps` is weak (the override satisfies everything) and starts earning its keep on the same clock as the range.
 
