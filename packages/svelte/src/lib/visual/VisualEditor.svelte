@@ -22,11 +22,12 @@
  once per derive.
 -->
 <script lang="ts">
-	import { tick } from 'svelte';
+	import { onDestroy, tick } from 'svelte';
 	import { DropdownMenu } from 'bits-ui';
 	import Plus from '@lucide/svelte/icons/plus';
 	import { isQuillmarkError, MAIN_CARD_ADDR, reportError, errorMessage } from '../core/index.js';
 	import { bloomInside } from '../core/bloom.js';
+	import { createLifespan } from '../core/teardown.js';
 	import type {
 		Document,
 		Quill,
@@ -214,8 +215,21 @@
 		return cardIds.indexOf(id);
 	}
 
+	// ── Teardown (core/teardown.ts: unregister, cancel, then free) ──────────────
+	// A document swap is a REMOUNT (see the remount contract above), so a destroy is
+	// the only way this surface ends and one span covers both. Cancellers register
+	// below in the order they run: the registry that resolves new work first, then
+	// the work already scheduled. The document handle is the consumer's to free, so
+	// the span holds nothing to release.
+	const span = createLifespan();
+	onDestroy(() => span.end());
+
 	// ── Leaf registry (setCaret target lookup + the active-leaf seam) ───────────
 	const leaves = new Map<string, FieldController>();
+	// Each leaf unregisters itself on its own teardown; this covers the surface
+	// going away as a whole, where a leaf's cleanup order relative to the parent's
+	// is Svelte's business and not something to depend on.
+	span.onEnd(() => leaves.clear());
 	// Card handles, for `setCaret`'s reveal hop: the one thing a leaf's own controller
 	// cannot do, since which group is open is the card's state (Card §revealLeaf).
 	type CardHandle = {
@@ -356,11 +370,13 @@
 	 * Coalesced on a single pending id: two quick adds resolve their `tick()` in
 	 * order, the earlier one sees a newer pending id and drops out, so one smooth
 	 * scroll runs to the last card rather than two fighting over the same scroller.
+	 * The two guards below answer different questions: the span, whether this surface
+	 * is still there; the pending id, whether this continuation is still the current one.
 	 */
 	let pendingScrollId: string | null = null;
 	async function scrollCardIntoView(id: string, block: ScrollLogicalPosition): Promise<void> {
 		pendingScrollId = id;
-		await tick();
+		if (!(await span.resumes(tick()))) return;
 		if (pendingScrollId !== id) return;
 		pendingScrollId = null;
 		const i = cardIndexOf(id);
@@ -393,10 +409,12 @@
 	// template and needs no reactivity for it: `animate:` asks at apply time, which is a
 	// microtask after the mutation and well inside the frame that disarms it.
 	let reordering = false;
+	let reorderFrame = 0;
 	function armReorder(): void {
 		reordering = true;
-		requestAnimationFrame(() => (reordering = false));
+		reorderFrame = requestAnimationFrame(() => (reordering = false));
 	}
+	span.onEnd(() => cancelAnimationFrame(reorderFrame));
 	const isReordering = (): boolean => reordering;
 
 	function moveCardById(id: string, dir: -1 | 1): void {
@@ -668,8 +686,14 @@
 	 * tick as the reveal would go nowhere and report nothing. The consumer's
 	 * `onCaretPick` ignores the promise: awaiting it is for a caller that wants to
 	 * observe where the caret went.
+	 *
+	 * A destroy lands INSIDE this one: `leaf` is looked up before the flush and
+	 * dispatched into after it, and a PM view destroyed in that window throws on the
+	 * dispatch. A consumer's `onCaretPick` outlives the surface it points at too, so
+	 * the span is asked on the way in as well as after the await.
 	 */
 	export async function setCaret(hit: ContentHit): Promise<void> {
+		if (!span.alive) return;
 		const key = leafKeyForHit(hit.field);
 		if (!key) return;
 		const leaf = leaves.get(key);
@@ -679,7 +703,7 @@
 		// nothing. Exactly one card holds the key.
 		mainCard?.revealLeaf(key);
 		for (const card of cardRefs) card?.revealLeaf(key);
-		await tick();
+		if (!(await span.resumes(tick()))) return;
 		// A `'segment'` hit landed on origin-less ink (list markers, a code fence's
 		// interior): `pos` is the segment START, not a cluster-exact caret
 		// (HitGranularity), so just focus the leaf rather than snap the caret to a

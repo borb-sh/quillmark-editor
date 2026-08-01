@@ -65,6 +65,14 @@ Reconciliation is field-scoped. The editor holds its optimistic PM state and re-
 - **preview → editor**: `visualEditor.setCaret(hit)` resolves `hit.field` to a leaf, which runs `codec.usvToPM(hit.pos)` and sets its PM caret; a `'segment'` hit just focuses the leaf (`hit.pos` is a segment start, not a cluster-exact caret). It reveals first and awaits the render before landing, so it is the one async entry point (VISUAL_EDITOR_UIUX §"Editor↔preview").
 - **editor → preview**: a caret move in the active leaf emits `onCaretMove(at)` with a `Place` (`/core`): the canonical `DocPath` field address and the USV caret, which is `preview.focusPosition`'s own argument, so the hop is `onCaretMove={preview.focusPosition}` and translates nothing. The editor mints the path off its DERIVED card tree, which already holds every kind, so following the caret costs no `doc.cards` read per keystroke (`doc.cards` serializes every card on each read). `fieldPathForAddr` (`caret.ts`, built on `formatDocPath`) is the same mapping, exported for a consumer holding an `Addr` of its own. The USV `pos` is the shared coordinate: no codec hop.
 
+## Teardown
+
+One order, held by every surface: **unregister, cancel, then free**. Nothing new resolves through a surface on its way out, the work already scheduled is dropped before what it would have touched, and what both were holding is released last. `core/teardown.ts` carries it as a `Lifespan`: a surface builds one, registers its cancellers in the order they must run, and ends the span once, rather than writing the sequence out at each exit.
+
+Deferred work is why it is an order at all. Three sites cross an `await tick()` — `setCaret` (reveal, flush, then land the caret in a leaf it looked up before it), `scrollCardIntoView` (flush, then resolve an id and scroll a card), and an array field's post-commit focus — and a destroy landing in that window leaves a continuation acting on a surface that is gone. Not a use-after-free: past the flush each touches a captured controller and the DOM, and a selection-only transaction never routes to a commit, so no handle is reached. What it is, is a dispatch into a destroyed ProseMirror view, or an export called on a destroyed component: a throw in a continuation nobody catches. Each site asks `span.resumes(tick())` and drops out, rather than checking a flag it captured before the await.
+
+A document swap arrives as a destroy (leaves and card ids seed once, so a swap remounts), which is what makes one span cover both. Coalescing a surface already does sits inside it and answers a different question: `scrollCardIntoView`'s single pending id says whether this continuation is still the current one, the span says whether there is still a surface to act on.
+
 ## Chrome
 
 Editing chrome is thin and **per-leaf**; structural chrome is Svelte in the shell.
