@@ -22,6 +22,6 @@ npm Trusted Publishing (OIDC) mints the credential, so no token is stored.
 
 ## The gate
 
-One workflow over the workspace: `lint`, `check`, `check:canon`, `check:style`, `check:deps`, `test`, `build`. Every package runs each verb its own way (`check` is `svelte-check` in `ui` and `tsc --noEmit` in quiver), but a verb name means one thing, so the workflow names verbs and the packages own the implementations.
+One workflow over the workspace: `lint`, `check`, `check:canon`, `check:style`, `check:deps`, `test`, `build`. Every package runs each verb its own way (`check` is `svelte-check` in `svelte` and `tsc --noEmit` in quiver), but a verb name means one thing, so the workflow names verbs and the packages own the implementations.
 
 Nothing in the gate needs a browser, and nothing runs elsewhere.
