@@ -1,0 +1,38 @@
+// `@quillmark/svelte/visual`: the WYSIWYG surface.
+//
+// The federated VisualEditor: a thin Svelte composition over many small editors.
+// Each content leaf is the codec's `createField` prose leaf; scalar fields are
+// form controls; structure/cards are the editor's own. Depends on `/core` and the
+// codec. RELATIVE imports (not `$lib`): svelte-package ships this as-is.
+export { default as VisualEditor } from './VisualEditor.svelte';
+export type { VisualEditorProps } from './props.js';
+
+// The prose leaf is the codec's; re-exported so a `/visual` consumer reaches it
+// without a second import from `/core`.
+export { createField } from '../core/codec/index.js';
+export type { CreateFieldOpts, FieldController } from '../core/codec/index.js';
+
+// The projection types: useful to a consumer building its own chrome.
+export type { ControlKind, FieldModel, GroupSection, CardModel } from './structure.js';
+
+// What the surface SAYS, and how it words a diagnostic. `strings` is keyed and
+// partial (unset keys take the package's English) and `DEFAULT_VISUAL_STRINGS` is
+// that English, exported so a consumer can compose against it rather than restate
+// it. The empty body's per-kind hook is the `bodyPlaceholder` key inside it.
+export { DEFAULT_VISUAL_STRINGS, mergeStrings } from './strings.js';
+export type { VisualStrings, VisualStringsInput, FormatDiagnostic } from './strings.js';
+export type { BodyPlaceholder, BodyPlaceholderContext } from './structure.js';
+
+// The `$ext.editor` write unit. A consumer seeding editor-side chrome
+// state (a card title, the tips channel) goes through this rather than
+// `storeExtNamespace`, which replaces the namespace and takes the sibling keys with
+// it. The narrowing the editor applies to a seeded channel, so a consumer can check
+// what will render.
+export { patchEditorExt } from './ext.js';
+export { tipsChannel } from './tips.js';
+
+// What the editor emits. `onCaretMove` already carries the preview's own `Place`,
+// so the bridge is `onCaretMove={preview.focusPosition}`; this is the mapping for
+// a consumer holding an `Addr` of its own (VISUAL_EDITOR §Editor→preview).
+export { fieldPathForAddr } from './caret.js';
+export type { ChangeSource, EditorChange } from './signals.js';

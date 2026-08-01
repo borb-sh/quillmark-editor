@@ -4,7 +4,7 @@
 
 ## TL;DR
 
-The dev app around the library: the reference wiring for the glue the primitives push outward, the manual harness for what a unit test cannot reach, and the page a stranger evaluating the package opens first. This doc is its shape and its visual language: minimal modern paper at page scale, one closed `--pg-*` scale, one layout device. The package's own look is [AESTHETIC.md](../../../ui/prose/canon/AESTHETIC.md) and [SURFACES.md](../../../ui/prose/canon/SURFACES.md); what a host owes a mounted surface is [`THEMING.md`](../../../ui/THEMING.md). Nothing here reads a `--_qm-*` rung.
+The dev app around the library: the reference wiring for the glue the primitives push outward, the manual harness for what a unit test cannot reach, and the page a stranger evaluating the package opens first. This doc is its shape and its visual language: minimal modern paper at page scale, one closed `--pg-*` scale, one layout device. The package's own look is [AESTHETIC.md](../../../svelte/prose/canon/AESTHETIC.md) and [SURFACES.md](../../../svelte/prose/canon/SURFACES.md); what a host owes a mounted surface is [`THEMING.md`](../../../svelte/THEMING.md). Nothing here reads a `--_qm-*` rung.
 
 ## Two jobs on one page
 
@@ -75,4 +75,4 @@ Literals live in the derivation and nowhere else under `src/routes`: `check:styl
 
 ## Links
 
-[ARCHITECTURE.md](../../../ui/prose/canon/ARCHITECTURE.md) · [AESTHETIC.md](../../../ui/prose/canon/AESTHETIC.md) · [SURFACES.md](../../../ui/prose/canon/SURFACES.md) · [`THEMING.md`](../../../ui/THEMING.md)
+[ARCHITECTURE.md](../../../svelte/prose/canon/ARCHITECTURE.md) · [AESTHETIC.md](../../../svelte/prose/canon/AESTHETIC.md) · [SURFACES.md](../../../svelte/prose/canon/SURFACES.md) · [`THEMING.md`](../../../svelte/THEMING.md)

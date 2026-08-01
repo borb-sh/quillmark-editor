@@ -1,0 +1,80 @@
+<!--
+ The editor's door, and the whole of what it adds is the re-key: swapping the
+ `doc` prop remounts the editor under it, so a consumer holding one mount across
+ two documents gets a surface that names the live handle.
+
+ IT IS A `{#key}`, NOT A RESEED. The state a swap invalidates is not one field:
+ composable cards key on session id, the main card is keyed on nothing, and each
+ prose leaf mounts once per stable leaf key with `createField` closing over the
+ `doc` it mounted against — so after an in-place swap the main card's leaves
+ commit to the PREVIOUS handle. Reseeding by hand means threading a generation
+ token through every leaf key and resetting the id state, the commit-error map,
+ the active address, the leaf registry, the card refs and any pending scroll,
+ which is a remount spelled out one field at a time. This spells it as one.
+
+ Teardown order is the one `core/teardown.ts` states: the outgoing mount
+ unregisters, cancels its pending ticks, and only then releases, so a continuation
+ awaiting a flush across the swap runs against nothing.
+
+ `quill` is NOT part of the key: the schema is re-read on every derive, so a quill
+ swap re-projects correctly on its own, and keying on it would throw away a card
+ tree that did not need rebuilding. What it cannot do is re-mount the leaves, so a
+ quill swapped WITHOUT a doc swap reports `rebind-ignored` rather than passing
+ silently.
+-->
+<script lang="ts">
+	import { untrack } from 'svelte';
+	import { reportError } from '../core/index.js';
+	import type { ContentHit } from '../core/index.js';
+	import type { FieldController } from '../core/codec/index.js';
+	import type { VisualEditorProps } from './props.js';
+	import VisualEditorInner from './VisualEditorInner.svelte';
+
+	let props: VisualEditorProps = $props();
+
+	let inner = $state<VisualEditorInner | undefined>();
+
+	// The pair the CURRENT mount bound to. Re-read on each re-key rather than held
+	// from the first mount: after a doc swap the incoming mount binds whatever quill
+	// came with it, and comparing against the original would report a pairing that
+	// is correct.
+	let boundDoc: unknown = undefined;
+	let boundQuill: unknown = undefined;
+	let reported = false;
+	$effect(() => {
+		const { doc, quill } = props;
+		untrack(() => {
+			// A doc swap re-keys, and the new mount binds this quill: nothing is stale.
+			if (doc !== boundDoc) {
+				boundDoc = doc;
+				boundQuill = quill;
+				reported = false;
+				return;
+			}
+			if (quill === boundQuill || reported) return;
+			reported = true;
+			reportError(props.onError, {
+				code: 'rebind-ignored',
+				severity: 'dev',
+				message:
+					'quill swapped in place; the mounted leaves still commit against the quill this doc mounted with. Swap the doc with it, or remount the editor, to rebind.'
+			});
+		});
+	});
+
+	/**
+	 * Place the caret at a preview hit. Delegates to the live mount, so a call
+	 * landing between a swap and the incoming mount is a no-op rather than a throw.
+	 */
+	export async function setCaret(hit: ContentHit): Promise<void> {
+		await inner?.setCaret(hit);
+	}
+	/** The active leaf's controller: the formatting popover's observation seam. */
+	export function getActiveLeaf(): FieldController | undefined {
+		return inner?.getActiveLeaf();
+	}
+</script>
+
+{#key props.doc}
+	<VisualEditorInner bind:this={inner} {...props} />
+{/key}

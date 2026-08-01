@@ -18,11 +18,18 @@
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
 	import { page } from '$app/state';
-	import type { Quill, Document, Addr, CardAddr, Content, Diagnostic } from '@quillmark/ui/core';
+	import type {
+		Quill,
+		Document,
+		Addr,
+		CardAddr,
+		Content,
+		Diagnostic
+	} from '@quillmark/svelte/core';
 	import { loadUsafMemoTree, withMainDateDefault, withSecondCardKind } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
-	type VisualEditorComponent = typeof import('@quillmark/ui/visual').VisualEditor;
+	type VisualEditorComponent = typeof import('@quillmark/svelte/visual').VisualEditor;
 
 	// What each flag changes about the document under the editor. Named for the
 	// branch it reaches; the reference quill on disk reaches none of them.
@@ -36,7 +43,7 @@
 	let VisualEditor = $state<VisualEditorComponent | undefined>();
 	let quillHandle: Quill | undefined = $state();
 	let docHandle: Document | undefined = $state();
-	// `@quillmark/ui/core` is imported dynamically (WASM top-level await, see onMount), so the
+	// `@quillmark/svelte/core` is imported dynamically (WASM top-level await, see onMount), so the
 	// main-card selector is captured there for the reads outside that scope.
 	let mainAddr: CardAddr | undefined = $state();
 	let lastAddr = $state('none');
@@ -64,8 +71,13 @@
 		'The blank page is bluffing…',
 		'Draft badly, revise later…'
 	];
-	const bodyPlaceholder = $derived(
-		wittyGhosts ? () => WITTY[Math.floor(Math.random() * WITTY.length)] : undefined
+	// The wording channel, of which the witty-ghost variant turns one key. Passing the
+	// whole object is the seam: a product ships its locale here and the unset keys stay
+	// the package's English, which is what this route demonstrates by setting exactly one.
+	const strings = $derived(
+		wittyGhosts
+			? { bodyPlaceholder: () => WITTY[Math.floor(Math.random() * WITTY.length)] }
+			: undefined
 	);
 
 	// A variant link flips its own flag and leaves the rest of the query alone, so
@@ -150,8 +162,8 @@
 				// The fixture fetch is independent of both, so it runs alongside them.
 				const treeP = loadUsafMemoTree();
 				const [{ Quill, Document, init, MAIN_CARD_ADDR }, visual] = await Promise.all([
-					import('@quillmark/ui/core'),
-					import('@quillmark/ui/visual')
+					import('@quillmark/svelte/core'),
+					import('@quillmark/svelte/visual')
 				]);
 				init();
 				const tree = await treeP;
@@ -239,7 +251,7 @@
 						onChange={refresh}
 						diagnostics={externalDiagnostics}
 						{enumOptionAllowed}
-						{bodyPlaceholder}
+						{strings}
 					/>
 				{/if}
 			</div>
