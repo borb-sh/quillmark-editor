@@ -23,6 +23,11 @@
  insert or a remove ABOVE it rather than remounting.
 -->
 <script lang="ts">
+	import { wording } from './strings.js';
+
+	// The surface's words, ambient from the editor root; the package's English
+	// off-tree, so this component renders standalone too.
+	const t = wording();
 	import { onDestroy, tick } from 'svelte';
 	import type { Content, QuillFieldSchema } from '../core/index.js';
 	import { emptyContent } from '../core/codec/index.js';
@@ -219,7 +224,7 @@
 			<span></span>
 		{/if}
 		<button type="button" class="qm-add-el qm-add-affordance" bind:this={addEl} onclick={add}
-			>+ Add</button
+			>{t.strings.arrayAdd}</button
 		>
 	</div>
 	{#each ids as id, k (id)}
@@ -256,8 +261,11 @@
 					onKey={(e) => onElementKey(e, k)}
 				/>
 			{/if}
-			<button type="button" class="qm-icon-btn qm-remove" title="Remove" onclick={() => remove(k)}
-				><X size={14} /></button
+			<button
+				type="button"
+				class="qm-icon-btn qm-remove"
+				title={t.strings.arrayRemove}
+				onclick={() => remove(k)}><X size={14} /></button
 			>
 		</div>
 	{/each}

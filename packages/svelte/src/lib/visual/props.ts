@@ -12,7 +12,7 @@ import type {
 	EditorErrorHandler
 } from '../core/index.js';
 import type { EditorChange } from './signals.js';
-import type { BodyPlaceholder } from './structure.js';
+import type { FormatDiagnostic, VisualStringsInput } from './strings.js';
 
 export interface VisualEditorProps {
 	doc: Document;
@@ -60,17 +60,18 @@ export interface VisualEditorProps {
 	 */
 	enumOptionAllowed?: (addr: Addr, value: string) => boolean;
 	/**
-	 * Consumer wording hook for an EMPTY BODY's ghost: given a card's kind,
-	 * return the invitation its empty body shows, or `undefined` to take the
-	 * built-in. A body with a resolved `default:` ghosts that and never consults
-	 * this: the default is the ghost that describes the render.
-	 *
-	 * Consulted ONCE PER KIND per session and cached, so a hook that samples a set
-	 * at random still reads as deliberate: two empty cards of a kind ghost the
-	 * same string, and a remount does not re-roll it. Absent → the built-in for
-	 * every kind.
+	 * Every word the surface says, keyed and partial: unset keys take the package's
+	 * English. Several are ACCESSIBLE NAMES rather than decoration, so this is what
+	 * a product shipping in another language replaces. The empty body's per-kind
+	 * wording is the `bodyPlaceholder` key here rather than a prop of its own.
 	 */
-	bodyPlaceholder?: BodyPlaceholder;
+	strings?: VisualStringsInput;
+	/**
+	 * A boundary `Diagnostic` → the text shown under its field. Returning
+	 * `undefined` takes the diagnostic's own message, which is the arm the parse and
+	 * render lanes need: their parameters exist only inside that English string.
+	 */
+	formatDiagnostic?: FormatDiagnostic;
 	/** Appended to the root's own class: the surface is a mounted element the
 	 * consumer positions, so it needs a handle for layout it owns. */
 	class?: string;

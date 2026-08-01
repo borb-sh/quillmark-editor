@@ -8,3 +8,8 @@
 export { createPreview } from './controller.js';
 export type { PreviewOptions, PreviewController } from './controller.js';
 export { default as Preview } from './Preview.svelte';
+
+// What the preview SAYS when there is nothing to paint. Keyed and partial; the
+// English is exported so a consumer composes against it rather than restating it.
+export { DEFAULT_PREVIEW_STRINGS, mergePreviewStrings } from './strings.js';
+export type { PreviewStrings, PreviewStringsInput } from './strings.js';

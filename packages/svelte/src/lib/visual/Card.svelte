@@ -7,6 +7,11 @@
  without a remount.
 -->
 <script lang="ts">
+	import { wording } from './strings.js';
+
+	// The surface's words, ambient from the editor root; the package's English
+	// off-tree, so this component renders standalone too.
+	const t = wording();
 	import { untrack } from 'svelte';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import type { Document, Addr, Diagnostic, EditorErrorHandler } from '../core/index.js';
@@ -224,7 +229,7 @@
 							class="qm-card-title"
 							value={localTitle}
 							placeholder={card.titlePlaceholder}
-							aria-label="Card title"
+							aria-label={t.strings.cardTitle}
 							size="1"
 							onmousedown={onTitleMousedown}
 							onfocus={onTitleFocus}
@@ -408,24 +413,24 @@
 	</header>
 	<div class="qm-card-recovery">
 		<p class="qm-recovery-note">
-			Unrecognized card type <code>{card.kind}</code>. Its content is preserved.
+			{t.strings.unknownKind(card.kind)}
 		</p>
 		{#if kinds.length}
 			<label class="qm-recovery-retype">
-				Change to
+				{t.strings.retypeLabel}
 				<select
 					onchange={(e) => {
 						const el = e.currentTarget as HTMLSelectElement;
 						if (el.value) ops.retype(el.value);
 					}}
 				>
-					<option value="" disabled selected>Choose a type…</option>
+					<option value="" disabled selected>{t.strings.retypePlaceholder}</option>
 					{@render kindOptions()}
 				</select>
 			</label>
 		{:else}
 			<p class="qm-recovery-note qm-recovery-muted">
-				This document declares no card types — delete this card to remove it.
+				{t.strings.noCardKinds}
 			</p>
 		{/if}
 	</div>
@@ -796,9 +801,6 @@
 		margin: 0;
 		font-size: var(--_qm-text-label);
 		color: var(--_qm-ink-label);
-	}
-	.qm-recovery-note code {
-		font-family: var(--_qm-font-mono);
 	}
 	.qm-recovery-muted {
 		color: var(--_qm-ink-ghost);

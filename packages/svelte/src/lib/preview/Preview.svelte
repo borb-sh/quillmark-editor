@@ -10,6 +10,7 @@
 	import { onMount } from 'svelte';
 	import { createPreview, type PreviewController } from './controller.js';
 	import { reportError } from '../core/index.js';
+	import type { PreviewStringsInput } from './strings.js';
 	import type {
 		LiveSession,
 		ContentHit,
@@ -38,6 +39,8 @@
 		onCaretPick?: (hit: ContentHit) => void;
 		/** A page paint the backend refused; the error message state shows either way. */
 		onError?: EditorErrorHandler;
+		/** The message-state wording, keyed and partial (`PreviewStrings`). */
+		strings?: PreviewStringsInput;
 	}
 
 	let {
@@ -46,6 +49,7 @@
 		overlays,
 		onCaretPick,
 		onError,
+		strings,
 		class: className,
 		style
 	}: Props = $props();
@@ -79,7 +83,8 @@
 			margin,
 			overlays,
 			onCaretPick,
-			onError
+			onError,
+			strings
 		});
 		return () => {
 			controller?.destroy();

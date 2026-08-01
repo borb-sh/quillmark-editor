@@ -6,23 +6,24 @@
 // deliberate is the editor's, asserted in the playground; here the pure
 // resolution is pinned.
 import { describe, it, expect } from 'vitest';
-import {
-	DEFAULT_BODY_PLACEHOLDER,
-	resolveBodyGhost,
-	ghostDefault,
-	stringifyGhost
-} from '$lib/visual/structure';
+import { resolveBodyGhost, ghostDefault, stringifyGhost } from '$lib/visual/structure';
+import { DEFAULT_VISUAL_STRINGS } from '$lib/visual/strings';
+
+// The flat built-in is a `strings` key now, so the three-way precedence takes it
+// as an argument rather than reaching for a constant: what the editor passes is
+// whatever the consumer's wording resolved it to.
+const BUILT_IN = DEFAULT_VISUAL_STRINGS.bodyGhost;
 import { quill } from '../helpers/fixtures.js';
 
 describe('resolveBodyGhost', () => {
 	it('prefers a resolved `default:` over both the consumer and the built-in', () => {
 		// The default is the only ghost that describes the render, so wording never
 		// displaces it; a consumer cannot hide what prints when nothing is written.
-		expect(resolveBodyGhost('THE DEFAULT', 'witty')).toBe('THE DEFAULT');
+		expect(resolveBodyGhost('THE DEFAULT', 'witty', BUILT_IN)).toBe('THE DEFAULT');
 	});
 
 	it('takes consumer wording when there is no default', () => {
-		expect(resolveBodyGhost(undefined, 'Say something unforgettable…')).toBe(
+		expect(resolveBodyGhost(undefined, 'Say something unforgettable…', BUILT_IN)).toBe(
 			'Say something unforgettable…'
 		);
 	});
@@ -32,14 +33,14 @@ describe('resolveBodyGhost', () => {
 		// hook; an empty string is the same intent expressed badly, and an empty
 		// resolved default falls through rather than winning. No combination blanks
 		// the leaf.
-		expect(resolveBodyGhost('', 'witty')).toBe('witty');
+		expect(resolveBodyGhost('', 'witty', BUILT_IN)).toBe('witty');
 		for (const [d, c] of [
 			['', ''],
 			[undefined, ''],
 			['', undefined],
 			[undefined, undefined]
 		] as const)
-			expect(resolveBodyGhost(d, c)).toBe(DEFAULT_BODY_PLACEHOLDER);
+			expect(resolveBodyGhost(d, c, BUILT_IN)).toBe(BUILT_IN);
 	});
 });
 
@@ -57,7 +58,7 @@ describe('the reference quill body channel', () => {
 		for (const body of [resolved.main.body, resolved.cards.at(-1)?.body]) {
 			const ghost = stringifyGhost(ghostDefault(body ?? undefined));
 			expect(ghost).toBeUndefined();
-			expect(resolveBodyGhost(ghost, undefined)).toBe(DEFAULT_BODY_PLACEHOLDER);
+			expect(resolveBodyGhost(ghost, undefined, BUILT_IN)).toBe(BUILT_IN);
 		}
 	});
 });

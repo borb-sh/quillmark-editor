@@ -15,10 +15,12 @@ export type { CreateFieldOpts, FieldController } from '../core/codec/index.js';
 // The projection types: useful to a consumer building its own chrome.
 export type { ControlKind, FieldModel, GroupSection, CardModel } from './structure.js';
 
-// Empty-body wording: the `bodyPlaceholder` hook's shape and the built-in string
-// it replaces. Exported so a consumer can word one kind and defer to the package
-// on the rest by returning `undefined`, or compose against the built-in.
-export { DEFAULT_BODY_PLACEHOLDER } from './structure.js';
+// What the surface SAYS, and how it words a diagnostic. `strings` is keyed and
+// partial (unset keys take the package's English) and `DEFAULT_VISUAL_STRINGS` is
+// that English, exported so a consumer can compose against it rather than restate
+// it. The empty body's per-kind hook is the `bodyPlaceholder` key inside it.
+export { DEFAULT_VISUAL_STRINGS, mergeStrings } from './strings.js';
+export type { VisualStrings, VisualStringsInput, FormatDiagnostic } from './strings.js';
 export type { BodyPlaceholder, BodyPlaceholderContext } from './structure.js';
 
 // The `$ext.editor` write unit. A consumer seeding editor-side chrome

@@ -47,6 +47,7 @@
 		DocPath
 	} from '../core/index.js';
 	import type { VisualEditorProps } from './props.js';
+	import { mergeStrings, setWording } from './strings.js';
 	import type { ChangeSource } from './signals.js';
 	import { fieldPathForAddr } from './caret.js';
 	import type { FieldController } from '../core/codec/index.js';
@@ -98,10 +99,24 @@
 		onError,
 		diagnostics,
 		enumOptionAllowed,
-		bodyPlaceholder,
+		strings,
+		formatDiagnostic,
 		class: className,
 		style
 	}: VisualEditorProps = $props();
+
+	// The wording, merged once and published to the tree. A getter pair rather than a
+	// snapshot: a consumer swapping locale mid-session re-renders every label,
+	// including the ones eight components down that never see a prop.
+	const merged = $derived(mergeStrings(strings));
+	setWording({
+		get strings() {
+			return merged;
+		},
+		get formatDiagnostic() {
+			return formatDiagnostic;
+		}
+	});
 
 	// ── Reactivity + session identity ───────────────────────────────────────────
 	let revision = $state(0);
@@ -507,6 +522,7 @@
 	let ghostHook: BodyPlaceholder | undefined;
 	const ghostByKind = new Map<string, string | undefined>();
 	function customBodyGhost(kind: string, isMain: boolean): string | undefined {
+		const bodyPlaceholder = merged.bodyPlaceholder;
 		// A swapped hook invalidates every answer the old one gave.
 		if (bodyPlaceholder !== ghostHook) {
 			ghostByKind.clear();
@@ -563,7 +579,8 @@
 			bodyGhost: hasBody
 				? resolveBodyGhost(
 						stringifyGhost(ghostDefault(rows.body ?? undefined)),
-						customBodyGhost(kind, isMain)
+						customBodyGhost(kind, isMain),
+						merged.bodyGhost
 					)
 				: undefined
 		};
@@ -749,7 +766,7 @@
 				<button
 					type="button"
 					class="qm-add-btn qm-add-affordance"
-					aria-label="Add {humanize(kinds[0])}"
+					aria-label={merged.addCardOfKind(humanize(kinds[0]))}
 					onclick={() => addCard(atIndex, kinds[0])}><Plus size={GLYPH} /></button
 				>
 			{:else}
@@ -759,7 +776,7 @@
 			 `<details>` does. The trigger is bits-ui's `<button>`, which is why the
 			 recede ladder below reaches it through `:global`. -->
 				<DropdownMenu.Root>
-					<DropdownMenu.Trigger class="qm-add-btn qm-add-affordance" aria-label="Add card"
+					<DropdownMenu.Trigger class="qm-add-btn qm-add-affordance" aria-label={merged.addCard}
 						><Plus size={GLYPH} /></DropdownMenu.Trigger
 					>
 					<DropdownMenu.Portal to={rootEl}>

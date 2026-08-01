@@ -7,6 +7,11 @@
   guarantee here, that a focused chevron is a visible one.
 -->
 <script lang="ts">
+	import { wording } from './strings.js';
+
+	// The surface's words, ambient from the editor root; the package's English
+	// off-tree, so this component renders standalone too.
+	const t = wording();
 	import ChevronUp from '@lucide/svelte/icons/chevron-up';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import X from '@lucide/svelte/icons/x';
@@ -27,19 +32,26 @@
 
 <div class="qm-card-controls">
 	<div class="qm-card-reorder">
-		<button type="button" class="qm-icon-btn" title="Move up" disabled={isFirst} onclick={onMoveUp}
-			><ChevronUp size={GLYPH} /></button
+		<button
+			type="button"
+			class="qm-icon-btn"
+			title={t.strings.cardMoveUp}
+			disabled={isFirst}
+			onclick={onMoveUp}><ChevronUp size={GLYPH} /></button
 		>
 		<button
 			type="button"
 			class="qm-icon-btn"
-			title="Move down"
+			title={t.strings.cardMoveDown}
 			disabled={isLast}
 			onclick={onMoveDown}><ChevronDown size={GLYPH} /></button
 		>
 	</div>
-	<button type="button" class="qm-icon-btn qm-card-delete" title="Delete card" onclick={onDelete}
-		><X size={GLYPH} /></button
+	<button
+		type="button"
+		class="qm-icon-btn qm-card-delete"
+		title={t.strings.cardDelete}
+		onclick={onDelete}><X size={GLYPH} /></button
 	>
 </div>
 
