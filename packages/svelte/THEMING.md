@@ -30,7 +30,27 @@ Nothing to import: the package pulls its own stylesheet, which applies the deriv
 | `--qm-radius`    | `8px`                                  | Card & popover corner. Interior controls derive a tighter tier (half).                                  |
 | `--qm-space`     | `0.25rem`                              | Spacing base. Gaps and insets are `half`/`1×`/`2×`/`3×`/`4×` multiples of it.                           |
 
-Give a length dial a length. `--qm-space: 4` is a valid custom property and an invalid length, so it poisons every `calc()` that reads it and collapses the surface's padding to zero. CSS property registration would catch that, but a registered property's initial value must be computationally independent and these default in `rem`, so nothing catches it but you.
+Give a length dial a length. `--qm-space: 4` is a valid custom property and an invalid length, so it substitutes through every `calc()` that reads it. Where `@property` is supported the surface absorbs that: the three rungs reading a length dial are registered, so an invalid dial lands them on the package default instead of collapsing the padding to zero. The dials themselves cannot be registered — a registered property's initial value must be computationally independent, and these default in `rem` — so the guard sits one step downstream and the fallback is the package's figure, not yours.
+
+## Your CSS beats ours
+
+The surfaces' own rules live in the `qm` cascade layer, so **unlayered CSS of yours beats them outright**, at any specificity and without `!important`. Nothing to declare; this is the case most apps are in.
+
+If your app uses cascade layers of its own, layer order decides it, and layer order is first-declaration order across the document — which makes it the bundler's, not yours. Name our layer first in one statement of your own and it stops mattering:
+
+```css
+@layer qm, app;
+```
+
+Anywhere in your CSS. Declared before our sheet it fixes the order outright; declared after, `qm` is already first and `app` appends behind it. Either way your layer lands after ours and wins:
+
+| Your CSS          | Our sheet first | Your sheet first |
+| ----------------- | --------------- | ---------------- |
+| Unlayered         | you win         | you win          |
+| Layered           | you win         | **we win**       |
+| `@layer qm, app;` | you win         | you win          |
+
+`qm` is the contract; the sub-layers under it (`qm.scale`, `qm.chrome`) are ours to re-cut.
 
 ## What is behind the column is yours
 
@@ -70,6 +90,12 @@ A palette **pinned against** your own scheme is the one case needing a second li
 
 No JS runs and no media query: the derivation is emitted as `var()` references over `light-dark()`, so an ancestor's dials and the inherited scheme both resolve through the cascade at paint time. There is no `dark` prop and no mode toggle in the package; the consumer's palette decides.
 
+## The three class handles
+
+Each mounted surface carries a stable root class, so you can place and size it from your own stylesheet without a wrapper: `.qm-editor`, `.qm-preview`, `.qm-source`. Each also takes a `class` prop that merges onto the same element, which is the better handle when you have one to give.
+
+Those three are the whole class contract. Every other `qm-*` class in the DOM is internal and renames without notice: a class contract over the interior would freeze the DOM shape the surfaces are free to re-cut, and the dials already reach the values a restyle wants. `check:style` holds the promise from the other side — a root class named here and carried by nothing fails the gate.
+
 ## What is deliberately not public
 
 The derived scale (surface / border / ink rungs, the blur radius, the popover's translucency ratio, the recede-opacity ladder, the two leading rungs, the overlay ring widths) is **internal** (`--_qm-*`, minted in `core/`). It is not a contract: a rung can be re-tuned or renamed without notice.
@@ -84,4 +110,6 @@ A knob becomes a dial when a real consumer needs it. The surface stays the minim
 
 `@layer`, `color-mix()` and `light-dark()`: Baseline since 2022, 2023 and 2024 respectively.
 
-`npm run check:style` gates all of it: no component may mint a colour or opacity literal, and no surface may cast a shadow at all; nothing outside the derivation may define a `--_qm-*`; and the consumed dial set must match this document exactly, in both directions.
+`@property` is the one feature the surface does not require: where it is missing the registrations are skipped and an invalid length dial collapses the surface rather than falling back, which is the behaviour without the guard rather than a new one.
+
+`npm run check:style` gates all of it: no component may mint a colour, opacity, rhythm or stroke literal, in a stylesheet or in the `.ts` that writes styles as strings, and no surface may cast a shadow at all; nothing outside the derivation may define a `--_qm-*`; the consumed dial set must match this document exactly, in both directions; and every root class promised above must be carried by something in `src/`.

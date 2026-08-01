@@ -15,7 +15,7 @@
 //            …-timing-function, and the shorthands     a curve off the derived three
 //            transition / transition-property         `all`
 //
-// Four rules sit outside the table, because they are about the scale itself rather
+// Five rules sit outside the table, because they are about the scale itself rather
 // than one axis:
 //
 //   · NOTHING casts a shadow, in either scope and in the derivations too: elevation
@@ -28,6 +28,10 @@
 //     promise nothing honors.
 //   · Every `--qm-*` named in `prose/canon/**` is a real dial. Canon names a subset,
 //     so this way only — but it is checked, because canon rots where nothing looks.
+//   · Every `.qm-*` CLASS a doc promises is carried by something in `src/`. One
+//     direction only, and for a different reason than the dials': the promised set is
+//     the mounted surface roots, and the classes under them are deliberately not
+//     contract, so the unpromised ones are free rather than undocumented.
 //
 // TWO SCOPES, one table. The package derives `--_qm-*` from the dials for the
 // surfaces it ships; the playground derives `--pg-*` from the same dials for the
@@ -41,8 +45,8 @@
 // recipes), and `.ts` — because `preview/paint.ts` and `preview/overlay.ts` carry
 // style declarations inside JS strings and would otherwise escape. The first two are
 // CSS, so the property name decides which axis owns a line; in `.ts` a declaration is
-// one string among code, so a marker on the line stands in for the property name —
-// which is why the property-named axes run on CSS only.
+// one string among code, so the axis's own marker stands in for the property name. An
+// axis carrying no marker has no `.ts` lane and runs on CSS alone.
 //
 // A `var()` fallback is legitimate only in a derivation, which is exempt from the
 // literal rules entirely — so outside it, a literal is a literal wherever it sits.
@@ -79,9 +83,21 @@ const COLOR_LITERAL = /#[0-9a-fA-F]{3,8}\b|\b(rgba?|hsla?|hwb|lab|lch|oklab|oklc
 /** A length literal, for the axes whose values are sizes. The rhythm axis keeps its
  *  own narrower shape (`px|rem`); the type and stroke axes count `em` too. */
 const LENGTH_LITERAL = /\b\d*\.?\d+(px|rem|em)\b/;
+// THE `.ts` MARKER LANES. A `.ts` declaration is one string among code, so a marker
+// on the line stands in for the property name. One marker per axis that has a lane,
+// because the axes want different breadth: colour takes bare `style`, since any
+// property assigned through it can carry a hue, while a geometry axis must not — a
+// canvas `style.width` in px is a measured size, not a rhythm decision, and a marker
+// wide enough to see it reports every paint. So the geometry lanes are
+// property-named and the colour lane is not.
 /** Colour properties as `Object.assign(el.style, …)` spells them — no trailing `\b`,
  *  so the camelCase compounds (`backgroundColor`, `borderTop`) match too. */
 const STYLE_MARKER = /\b(style|background|border|color|outline|boxShadow|textShadow)/;
+/** Rhythm properties in either spelling: `margin-top` and `marginTop`, `row-gap` and
+ *  `rowGap`, `border-radius` and `borderRadius`. */
+const RHYTHM_MARKER = /(padding|margin|gap|radius)/i;
+/** Stroke properties, minus the corner the rhythm lane owns. */
+const STROKE_MARKER = /border(?!-?radius)/i;
 /** A `--x:` DEFINITION — a consumption is `var(--x)`, which has no colon. */
 const privateDef = (prefix) => new RegExp(`(${prefix}[\\w-]+)\\s*:`);
 const readsRung = (prefix) => new RegExp(`var\\(${prefix}`);
@@ -106,7 +122,7 @@ const AXES = [
 		literal: /\b\d*\.?\d+(px|rem)\b/,
 		rung: '`var(--_qm-space-…)` / `var(--_qm-radius…)`',
 		doc: 'SURFACES §Rhythm',
-		cssOnly: true
+		marker: RHYTHM_MARKER
 	},
 	{
 		// Stroke width, which the colour axis below does NOT see: it tests `border-*`
@@ -120,14 +136,13 @@ const AXES = [
 		literal: LENGTH_LITERAL,
 		rung: '`var(--_qm-border-width)`',
 		doc: 'SURFACES §Rhythm',
-		cssOnly: true
+		marker: STROKE_MARKER
 	},
 	{
 		props: /^font-size$/,
 		literal: LENGTH_LITERAL,
 		rung: '`var(--_qm-text-…)`',
-		doc: 'THEMING §Typography',
-		cssOnly: true
+		doc: 'THEMING §Typography'
 	},
 	{
 		// The CSS-wide keywords (inherit/initial/unset) carry no hierarchy decision,
@@ -135,8 +150,7 @@ const AXES = [
 		props: /^font-weight$/,
 		literal: /\b(\d{3}|bold|bolder|lighter|normal)\b/,
 		rung: '`var(--_qm-weight-…)`',
-		doc: 'THEMING §Typography',
-		cssOnly: true
+		doc: 'THEMING §Typography'
 	},
 	{
 		// Leading has no literal shape to forbid — a bare number is exactly what a rung
@@ -148,8 +162,7 @@ const AXES = [
 		props: /^line-height$/,
 		allowBare: /^1$/,
 		rung: '`var(--_qm-leading-…)`',
-		doc: 'SURFACES §Rhythm',
-		cssOnly: true
+		doc: 'SURFACES §Rhythm'
 	},
 	{
 		// A family is a scale decision whatever it names, so the rung is required
@@ -158,8 +171,7 @@ const AXES = [
 		props: /^font-family$/,
 		allowBare: /^(inherit|initial|unset|revert)$/,
 		rung: '`var(--_qm-font)` / `var(--_qm-font-mono)`',
-		doc: 'THEMING §"The dials"',
-		cssOnly: true
+		doc: 'THEMING §"The dials"'
 	},
 	{
 		// The `font` SHORTHAND sets family, size and leading in one declaration, past
@@ -172,16 +184,14 @@ const AXES = [
 		props: /^font$/,
 		only: /^(inherit|initial|unset|revert)$/,
 		fix: 'defer with `font: inherit` and read the rungs as longhands after it',
-		doc: 'THEMING §"The dials"',
-		cssOnly: true
+		doc: 'THEMING §"The dials"'
 	},
 	{
 		// `0` / `1` are structural on/off, not a step on the recede ladder.
 		props: /^opacity$/,
 		allowBare: /^[01]$/,
 		rung: '`var(--_qm-opacity-…)`',
-		doc: 'THEMING.md',
-		cssOnly: true
+		doc: 'THEMING.md'
 	},
 	{
 		props:
@@ -189,7 +199,7 @@ const AXES = [
 		literal: COLOR_LITERAL,
 		rung: '`var(--_qm-…)`',
 		doc: 'THEMING.md',
-		cssOnly: false
+		marker: STYLE_MARKER
 	},
 	{
 		// The axis with no natural units of its own: every value looks plausible, so a
@@ -198,8 +208,7 @@ const AXES = [
 		props: /^(transition|animation)(-(duration|delay))?$/,
 		literal: /\b\d*\.?\d+m?s\b/,
 		rung: '`var(--_qm-duration-…)`',
-		doc: 'SURFACES §Motion',
-		cssOnly: true
+		doc: 'SURFACES §Motion'
 	},
 	{
 		// A curve is a rung like any other value, `ease` included: SURFACES §Motion has
@@ -212,8 +221,7 @@ const AXES = [
 		props: /^(transition|animation)(-timing-function)?$/,
 		literal: /(?<![-\w])(ease|linear|cubic-bezier|steps|step-(start|end))\b/,
 		rung: '`var(--_qm-ease-…)`',
-		doc: 'SURFACES §Motion',
-		cssOnly: true
+		doc: 'SURFACES §Motion'
 	},
 	{
 		// `all` is not a property list, it is the absence of one: it animates whatever
@@ -223,8 +231,7 @@ const AXES = [
 		literal: /\ball\b/,
 		lead: 'animates an open set',
 		fix: 'name the properties that differ between the two rest states',
-		doc: 'SURFACES §Motion',
-		cssOnly: true
+		doc: 'SURFACES §Motion'
 	}
 ];
 
@@ -323,10 +330,11 @@ for (const scope of SCOPES) {
 			carry = /[{}]/.test(line) || line.includes(';') ? null : (prop ?? null);
 
 			for (const axis of AXES) {
-				if (axis.cssOnly && !css) continue;
 				// In CSS the property name decides which axis owns the line; in `.ts` a
-				// style declaration is one string among code, so the marker does.
-				const owns = css ? axis.props.test(prop ?? '') : STYLE_MARKER.test(line);
+				// style declaration is one string among code, so the axis's own marker
+				// does. An axis with no marker has no `.ts` lane and runs on CSS alone.
+				if (!css && !axis.marker) continue;
+				const owns = css ? axis.props.test(prop ?? '') : axis.marker.test(line);
 				if (!owns) continue;
 				const bad = axis.literal
 					? axis.literal.test(css ? value : line)
@@ -374,8 +382,34 @@ for (const [abs, rel] of canonRoots().flatMap(canonDocs))
 	for (const t of [...dialsIn(abs)].filter((t) => !consumed.has(t)).sort())
 		errors.push(`${rel}: \`${t}\` named but not a dial`);
 
+// The class census, and it runs ONE direction where the dial census runs two. The
+// dials are a closed contract, so a consumed-but-undocumented one is drift. The
+// classes are not: the package promises the mounted surface roots and withholds
+// everything under them, because a full class contract freezes internal DOM shape
+// (AESTHETIC §"What a restyle keeps"). So an internal class appears, moves and
+// vanishes freely, and what is checked is the half a consumer can be hurt by — a
+// promised class the DOM stopped carrying. The lookbehind is what separates a class
+// from a dial: `--qm-space` and `--_qm-space` both carry `qm-space` after a dash.
+const CLASS_IN_SRC = /(?<![-\w])qm-[\w-]+/g;
+const classes = new Set();
+for (const scope of SCOPES.filter((s) => s.census))
+	for (const full of sources(scope.dir))
+		for (const m of readFileSync(full, 'utf8').matchAll(CLASS_IN_SRC)) classes.add(m[0]);
+
+const promised = new Set(
+	[...readFileSync(THEMING, 'utf8').matchAll(/`\.(qm-[\w-]+)`/g)].map((m) => m[1])
+);
+for (const c of [...promised].filter((c) => !classes.has(c)).sort())
+	errors.push(`THEMING.md: \`.${c}\` promised but carried by nothing in src/`);
+
+for (const [abs, rel] of canonRoots().flatMap(canonDocs))
+	for (const m of readFileSync(abs, 'utf8').matchAll(/`\.(qm-[\w-]+)`/g))
+		if (!classes.has(m[1]))
+			errors.push(`${rel}: \`.${m[1]}\` named but carried by nothing in src/`);
+
 report(
 	'Style check',
 	errors,
-	`Style OK — ${scanned} files over ${SCOPES.length} scopes, ${consumed.size} public dials.`
+	`Style OK — ${scanned} files over ${SCOPES.length} scopes, ${consumed.size} public dials, ` +
+		`${promised.size} contract classes.`
 );
