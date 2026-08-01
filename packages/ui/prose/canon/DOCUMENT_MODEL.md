@@ -20,7 +20,7 @@ Every verb below is on the WASM `Document` / `Quill` / `LiveSession` today (`imp
 
 | Concern | Verbs / types | Canon | Stability |
 | --- | --- | --- | --- |
-| **Truth & seeding** | `quill.seedDocument` / `seedMain` / `seedCard(kind, overlay)`, `Quill.fromTree` / `toTree`, `quill.schema` / `blueprint` / `metadata`; `doc.seedOverlay(kind)` / `card(i)` / `cardIndexById(id)` | `SCHEMAS.md`, `CARDS.md`, `DOCUMENT_STORAGE.md`, `QUILL.md` | stable |
+| **Truth & seeding** | `quill.seedDocument` / `seedMain` / `seedCard(kind, overlay)`, `Quill.fromTree` / `toTree`, `quill.schema` / `blueprint` / `metadata`; `doc.seedOverlay(kind)` / `card(i)` | `SCHEMAS.md`, `CARDS.md`, `DOCUMENT_STORAGE.md`, `QUILL.md` | stable |
 | **Typed writer / read view** (scalar/array/object + append) | `quill.writer(doc)` → `DocumentWriter` (`set` / `setAll` / `setBody` / `reviseField` / `addCard` / `removeCard` / `card(i)`); `quill.reader(doc)` → `DocumentReader` (`get` / `getBody` / `card(i)`) for schema-typed reads; `quill.resolve(doc)` → `Resolved` (value + `FieldSource` rung per field) | `PROGRAMMATIC.md`, `SCHEMAS.md` | stable |
 | **Structure mutators** | `insertCard(card, at?)`, `moveCard(from, to)`, `setCardKind(i, kind)`, `removeCard(i)`, `storeExtNamespace({card}, ns, val)` (the `$ext.editor` write unit) | `CARDS.md`, `DOCUMENT_STORAGE.md` | stable |
 | **Op-grained content edit** | `doc.applyChange(addr, bundle)`, `doc.install(addr, rt)`, `doc.revise(addr, md)` → `Delta`; unified `Addr` (`{card?, field?}`, bare string = `{field}`), `CardAddr`, `ChangeBundle`; `doc.storeField` / `storeFields` / `storeFill` / `getStored` / `removeField` (quill-free store lane) | `DOCUMENT_STORAGE.md`, `CONVERT.md` | stable |
