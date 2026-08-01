@@ -30,7 +30,7 @@ The layout is a direct projection of `quill.schema` (`QuillSchema { main, card_k
 
 Every editable unit is keyed by an address: a content leaf by `Addr {card?, field?}`, a scalar by its `{card?, field}` path, a card by position. One identifier is what `applyChange` targets, what the preview bridge speaks (`ContentHit.field`, `FieldRegion.field`), what a diagnostic routes to, and what Svelte keys the tree on.
 
-But cards are **positional** in the content (`cards[i]`): index-keyed loops, stale-index write guards, reused-component reconciliation, phantom placeholders. So the VisualEditor keys each card *instance* by a **stable identity** (its `$id` when present, else a session key) and resolves that key to an index only at the mutation boundary (`moveCard`, `applyChange(addr)`). A reorder is a `moveCard` plus a key reorder; no leaf remounts, no PM instance is re-fed a swapped document, no caret is lost to a swap.
+But cards are **positional** in the content (`cards[i]`): index-keyed loops, stale-index write guards, reused-component reconciliation, phantom placeholders. So the VisualEditor keys each card *instance* by a **session key** and resolves that key to an index only at the mutation boundary (`moveCard`, `applyChange(addr)`). A reorder is a `moveCard` plus a key reorder; no leaf remounts, no PM instance is re-fed a swapped document, no caret is lost to a swap.
 
 ## Edits are ops to the live Document
 
@@ -158,7 +158,7 @@ interface FieldController {
 
 ## Settled and open
 
-- **Card-instance identity is a session key**: an in-memory id per card, reordered in lockstep with the content and resolved to an index only at the mutation boundary (`structure.ts` `IdSeq`). A stable `$id` stamped at seed time, so identity survives a storage round-trip, is a document-side change that does not ship in V1.
+- **Card-instance identity is a session key**: an in-memory id per card, reordered in lockstep with the content and resolved to an index only at the mutation boundary (`structure.ts` `IdSeq`). Identity is the editor's, not the document's: nothing document-side backs it, and it does not survive a reload.
 - **Layout is `ui`-driven**: `ui.group` sections, `ui.compact` packs a shared row (`structure.ts`); the editor adds no responsive policy of its own.
 - **Undo is per-leaf**: each prose leaf carries its own PM history. A document-level undo spanning a structural op plus a prose edit (a coordinating stack above the leaves) does not ship in V1.
 - **Array/table convergence**: how far the `array`-of-`object` table control converges with the richtext table island (a scalar array field vs a body island, similar affordance) is not carried in V1.
