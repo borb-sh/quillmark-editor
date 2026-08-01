@@ -146,13 +146,6 @@ export function stringifyGhost(ghost: unknown): string | undefined {
 	return ghost != null && typeof ghost !== 'object' ? String(ghost) : undefined;
 }
 
-/**
- * The built-in empty-body invitation. The package's own words, not the schema's
- * the first such string here, so it is kept to the one thing true of every
- * body and claims nothing about the card it sits in.
- */
-export const DEFAULT_BODY_PLACEHOLDER = 'Write…';
-
 /** What a {@link BodyPlaceholder} is told about the body it words. The card's
  *  IDENTITY, not its chrome: `kind` keys the consumer's own `quill.schema` for
  *  anything richer, and a renamed card must not shift its ghost. */
@@ -164,26 +157,28 @@ export interface BodyPlaceholderContext {
 }
 
 /**
- * Consumer wording for an empty body, in place of {@link DEFAULT_BODY_PLACEHOLDER}
- * returning `undefined` takes the built-in. Consulted ONCE PER KIND per session
- * and cached by the editor, so a hook that samples a set at random still reads as
- * one deliberate string: two empty cards of a kind ghost the same, and a remount
- * does not re-roll. Impurity is expected, and the cache is what contains it.
+ * Consumer wording for an empty body, per KIND, in place of the flat `bodyGhost`
+ * string; returning `undefined` takes it. Consulted ONCE PER KIND per session and
+ * cached by the editor, so a hook that samples a set at random still reads as one
+ * deliberate string: two empty cards of a kind ghost the same, and a remount does
+ * not re-roll. Impurity is expected, and the cache is what contains it.
  */
 export type BodyPlaceholder = (ctx: BodyPlaceholderContext) => string | undefined;
 
 /**
- * The empty body's ghost: the resolved body `default:`, else consumer wording,
- * else the built-in. The `default:` WINS because it is the only one of the three
- * that describes the render: it promises what prints if nothing is written, and
- * wording placed over it would make that promise unreadable. The other two are
- * invitations, and an invitation belongs only where there is no promise.
+ * The empty body's ghost: the resolved body `default:`, else per-kind consumer
+ * wording, else the flat built-in. The `default:` WINS because it is the only one
+ * of the three that describes the render: it promises what prints if nothing is
+ * written, and wording placed over it would make that promise unreadable. The
+ * other two are invitations, and an invitation belongs only where there is no
+ * promise.
  */
 export function resolveBodyGhost(
 	resolvedDefault: string | undefined,
-	custom: string | undefined
+	custom: string | undefined,
+	builtIn: string
 ): string {
-	return resolvedDefault || custom || DEFAULT_BODY_PLACEHOLDER;
+	return resolvedDefault || custom || builtIn;
 }
 
 /** Map a field schema to its control (precedence: prose › enum › text › …).

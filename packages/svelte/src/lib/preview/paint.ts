@@ -27,8 +27,9 @@ export interface PaintLoop {
 	destroy(): void;
 }
 
-// Vertical breathing room between stacked pages; cosmetic only.
-const PAGE_GAP_PX = 16;
+// Vertical breathing room between stacked pages; cosmetic only, and a rung like
+// any other gap: the stack breathes on the same rhythm the cards do.
+const PAGE_GAP = 'var(--_qm-space-4)';
 
 export function createPaintLoop(
 	session: LiveSession,
@@ -85,7 +86,7 @@ export function createPaintLoop(
 			background: 'var(--_qm-surface)',
 			border: 'var(--_qm-border-width) solid var(--_qm-border)'
 		});
-		if (page > 0) el.style.marginTop = `${PAGE_GAP_PX}px`;
+		if (page > 0) el.style.marginTop = PAGE_GAP;
 		container.appendChild(el);
 		pageByEl.set(el, page);
 		observer.observe(el);

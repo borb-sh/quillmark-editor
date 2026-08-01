@@ -97,7 +97,30 @@ In Svelte, `<Preview {session} onCaretPick={…} />` exposes the same verbs (`re
 />
 ```
 
-Swap `doc`/`quill` by **remounting** (`{#key doc}`); edits flow the other way, mutating the passed-in handle.
+Hand it a different `doc` and the editor **re-keys itself**: every leaf remounts against the new handle, and the id state, the commit-error map and the active address seed fresh. Nothing to key at the call site. Edits flow the other way, mutating the passed-in handle, so a swap is the only direction that needs saying.
+
+`quill` is not part of that key — the schema is re-read on every derive, so a quill swap re-projects on its own. Swapping it _without_ the doc leaves the mounted leaves paired to the quill their document mounted with, and reports `rebind-ignored` through `onError` at `dev` severity rather than passing silently.
+
+### Wording
+
+The package ships English and a seam to replace it. `strings` is keyed and **partial**: set what you have translations for, and the rest stay the package's.
+
+```svelte
+<VisualEditor
+	{doc}
+	{quill}
+	strings={{
+		cardDelete: 'Supprimer la carte',
+		addCardOfKind: (kind) => `Ajouter : ${kind}`
+	}}
+	formatDiagnostic={(d) =>
+		d.code === 'validation::must_fill' ? `${d.path} est obligatoire` : undefined}
+/>
+```
+
+Several keys are **accessible names** rather than decoration — the card controls, the add trigger, the required marker — so an untranslated surface reads the wrong language to a screen reader, not merely an inconsistent one. `DEFAULT_VISUAL_STRINGS` is the English, exported so you can compose against it. `<Preview>` takes its own three-key `strings` for the states it shows when there is nothing to paint.
+
+`formatDiagnostic` returns `undefined` to take the diagnostic's own message, and that arm is load-bearing rather than defensive. A formatter gets `code`, a canonical `path` and the message. That re-words the **validation** lane (the constraint is in your quill's schema, the value in the document at `path`) and the **edit** lane (the refused value is your own control state, since you attempted the write). It cannot re-word the **parse** lane, whose line, column and offending key exist only inside the English message, nor **render** warnings, which are backend text. So you localize what you can route, and the built-in text stands where you cannot.
 
 ### Recompiling
 

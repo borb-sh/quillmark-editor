@@ -32,6 +32,11 @@
  control's label decorates the same way.
 -->
 <script lang="ts">
+	import { wording } from './strings.js';
+
+	// The surface's words, ambient from the editor root; the package's English
+	// off-tree, so this component renders standalone too.
+	const t = wording();
 	import FieldHint from './FieldHint.svelte';
 
 	interface Props {
@@ -68,7 +73,7 @@
 	>
 		<span>{label}</span>
 		{#if required}
-			<span class="qm-field-required" aria-label="required">*</span>
+			<span class="qm-field-required" aria-label={t.strings.fieldRequired}>*</span>
 		{/if}
 	</label>
 	{#if description}

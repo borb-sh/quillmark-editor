@@ -73,6 +73,12 @@ Deferred work is why it is an order at all. Three sites cross an `await tick()` 
 
 A document swap arrives as a destroy (leaves and card ids seed once, so a swap remounts), which is what makes one span cover both. Coalescing a surface already does sits inside it and answers a different question: `scrollCardIntoView`'s single pending id says whether this continuation is still the current one, the span says whether there is still a surface to act on.
 
+## The document swap
+
+`VisualEditor` is a door over `VisualEditorInner`, and the door's whole content is `{#key doc}`: a consumer hands it a different document and the editor remounts under it. The split exists because the state a swap invalidates is not one field. Composable cards key on session id and would re-mount unprompted, the main card is keyed on nothing, and each prose leaf mounts once per stable leaf key with `createField` closing over the `doc` it was handed — so an unkeyed swap leaves the main card rendering and committing to the previous document with every id and index still agreeing. Reseeding by hand means threading a generation token through every leaf key and resetting the id state, the commit-error map, the active address, the leaf registry, the card refs and any pending scroll, which is a remount written out one field at a time. The `{#key}` writes it once.
+
+`quill` is deliberately outside the key: the schema is re-read on every derive, so a quill swap re-projects correctly and keying on it would discard a card tree that needed no rebuilding. What a re-derive cannot do is re-mount the leaves, so a quill swapped without its document reports `rebind-ignored` at `dev` severity. `Preview` reports the same code for `session`, which it cannot re-key on at all: the paint loop owns scroll position, mounted slots and an observer set that a remount would discard on every apply, so that swap stays the consumer's `{#key session}` and the guard is what stops it being silent.
+
 ## Chrome
 
 Editing chrome is thin and **per-leaf**; structural chrome is Svelte in the shell.
@@ -87,7 +93,19 @@ Editing chrome is thin and **per-leaf**; structural chrome is Svelte in the shel
 
 Three sources, each routed to a field address and shown inline: `quill.validate(doc)` (`Diagnostic[]` keyed on a canonical `DocPath` `.path`: type errors fatal, `must_fill` a soft warning), `LiveSession.warnings`, and render errors mapped through `FieldRegion.field`. Routing runs on the boundary's `parseDocPath` (`diagnostics.ts`), resolving the absolute card index to the editor's stable-id keying; a local commit error is keyed at its known call-site address and carries the thrown diagnostic's `code` (0.96 mutator failures carry one). `must_fill` and present-null never gate; a value that fails coercion is the only hard field error (canon: `SCHEMAS.md`).
 
+**What a diagnostic SAYS is the consumer's, up to a stated residue.** `formatDiagnostic(d)` turns a boundary `Diagnostic` into the text under its field; returning `undefined` renders `d.message` unchanged. What a formatter gets is `code`, a canonical `path` and that message, because structured `args` were declined upstream — enough for two lanes and not the other two. **Validation** (`enum_violation`, `type_mismatch`, `format_violation`, `must_fill`) is recoverable: the constraint is in the quill's schema, the offending value in the document at `path`. **Edit** (`field_conform`) is recoverable by a third route: the refused value is in neither document (unchanged on throw) nor schema, but in the app's own control state, which the app has because it attempted the write. **Parse** (`yaml_error_with_location`, `invalid_structure`) is not: no `path`, no `location`, and the line, column, offending key and snippet all inside the English message. **Render** (`LiveSession.warnings`) is not: backend text the editor already treats as an external feed.
+
+So the contract is that a product localizes what it can route and the built-in text stands where it cannot. The fallback arm is load-bearing rather than defensive, and `Diagnostic.code` being optional at this pin makes it reachable by type: a formatter switching on `code` hits its default arm on a real payload, not only in principle.
+
 **Diagnostics are not the error channel** (`core/errors.ts`). A `Diagnostic` is about the DOCUMENT and draws on the field it belongs to; an `EditorError` is about the SURFACE and draws nowhere: a commit the boundary refused, a card operation that threw, a `validate`/`resolve` that threw, a prose commit that fell back. Every one of them is a path the surface already RECOVERED from, so nothing gates on the handler and an absent handler still logs; the hook exists because a `console.error` is not something an app can route, filter or count. A refused scalar commit produces both, deliberately: the diagnostic pins to the field, the error reaches the sink.
+
+## What the surface says
+
+Every built-in string is a key on `strings`, partial: unset keys take the package's English, so wording is an override rather than a fork. It covers the card controls, the add trigger, the array control, the required marker, the formatting popover and its link prompt, the tips card, the unknown-kind recovery shell and the empty body's ghost. Several are ACCESSIBLE NAMES rather than decoration — an untranslated card control does not read as inconsistent to a screen reader, it reads as the wrong language, which is why this is a seam and not a list of literals to grep for. `bodyPlaceholder` is a key inside the set rather than a prop beside it: the per-kind hook and the flat string it falls back to are one decision.
+
+The strings reach the tree through **context**, not props. They are ambient, read-only and wanted eight components deep, so threading them by hand would put a `strings` prop on every component between the root and each leaf that means nothing to any of them. The channel exposes getters, so a consumer swapping locale mid-session re-renders rather than freezing the wording at mount; a component rendered off-tree falls to the package's English and still has every key.
+
+`Preview` carries its own three-key set for the message states it shows when there is nothing to paint. Separate from the editor's rather than pooled: `/preview` reaches `/core` and nothing editor-side, and a shared strings module would be an edge back across the line that lets it promote to its own package.
 
 ## Surface
 

@@ -42,6 +42,11 @@
  selection the command is supposed to act on.
 -->
 <script lang="ts">
+	import { wording } from './strings.js';
+
+	// The surface's words, ambient from the editor root; the package's English
+	// off-tree, so this component renders standalone too.
+	const t = wording();
 	import { toggleMark } from 'prosemirror-commands';
 	import type { EditorView } from 'prosemirror-view';
 	import type { MarkType } from 'prosemirror-model';
@@ -68,14 +73,14 @@
 	/** Mark size: the shared control-glyph rule for the popover icons (AESTHETIC §Icons). */
 	const GLYPH = 15;
 	/** The six content formatting marks (VISUAL_EDITOR_UIUX §Formatting); `anchor` is a 7th, rendered separately (a decoration toggle, not a PM `toggleMark` (see the button below). Each carries its Lucide glyph) the icon *is* the label (AESTHETIC §Icons: a glyph names its action). */
-	const MARKS: { name: string; icon: Component; title: string }[] = [
-		{ name: 'strong', icon: Bold, title: 'Bold (Mod-B)' },
-		{ name: 'em', icon: Italic, title: 'Emphasis (Mod-I)' },
-		{ name: 'underline', icon: Underline, title: 'Underline (Mod-U)' },
-		{ name: 'strike', icon: Strikethrough, title: 'Strikethrough' },
-		{ name: 'code', icon: Code, title: 'Code' },
-		{ name: 'link', icon: Link, title: 'Link' }
-	];
+	const MARKS: { name: string; icon: Component; title: string }[] = $derived([
+		{ name: 'strong', icon: Bold, title: t.strings.formatBold },
+		{ name: 'em', icon: Italic, title: t.strings.formatEmphasis },
+		{ name: 'underline', icon: Underline, title: t.strings.formatUnderline },
+		{ name: 'strike', icon: Strikethrough, title: t.strings.formatStrikethrough },
+		{ name: 'code', icon: Code, title: t.strings.formatCode },
+		{ name: 'link', icon: Link, title: t.strings.formatLink }
+	]);
 
 	let open = $state(false);
 	let rect = $state<{ left: number; top: number; right: number; bottom: number } | undefined>(
@@ -289,22 +294,22 @@
 								<input
 									class="qm-link-input"
 									type="text"
-									placeholder="https://…"
+									placeholder={t.strings.linkPlaceholder}
 									bind:value={linkValue}
 								/>
-								<button type="submit" class="qm-icon-btn qm-mark-btn">Apply</button>
+								<button type="submit" class="qm-icon-btn qm-mark-btn">{t.strings.linkApply}</button>
 								<button
 									type="button"
 									class="qm-icon-btn qm-mark-btn"
 									onmousedown={keepFocus}
-									onclick={cancelLink}>Cancel</button
+									onclick={cancelLink}>{t.strings.linkCancel}</button
 								>
 							</form>
 						{:else}
 							<!-- `role="group"`, not `toolbar`: these buttons carry no roving-tabindex /
 							     arrow-key navigation, so the ARIA toolbar contract would be a lie;
 							     a labelled group is the honest description. -->
-							<div class="qm-format-buttons" role="group" aria-label="Formatting">
+							<div class="qm-format-buttons" role="group" aria-label={t.strings.formatGroup}>
 								{#each MARKS as m (m.name)}
 									{@const Icon = m.icon}
 									<button
@@ -321,8 +326,8 @@
 									type="button"
 									class="qm-icon-btn qm-mark-btn"
 									class:active={activeMarks.anchor}
-									title="Anchor — an identity handle over the selection"
-									aria-label="Anchor"
+									title={t.strings.formatAnchorTitle}
+									aria-label={t.strings.formatAnchor}
 									onmousedown={keepFocus}
 									onclick={toggleAnchor}><Hash size={GLYPH} /></button
 								>

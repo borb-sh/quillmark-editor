@@ -7,6 +7,14 @@
 -->
 <script lang="ts">
 	import type { Diagnostic } from '../core/index.js';
+	import { diagnosticText, wording } from './strings.js';
+
+	// The consumer's formatter, ambient from the editor root. The fallback to
+	// `d.message` is load-bearing rather than defensive: the parse and render lanes
+	// carry their parameters only inside that English string, so a formatter that
+	// routes on `code` has nothing to build from and says so by returning
+	// `undefined` (FormatDiagnostic).
+	const t = wording();
 
 	interface Props {
 		diagnostics: Diagnostic[] | undefined;
@@ -18,7 +26,9 @@
 	<!-- role=status: commit errors appear mid-typing; announce without stealing focus. -->
 	<div class="qm-diag-list" role="status">
 		{#each diagnostics as d, i (i)}
-			<span class="qm-diag-line" data-severity={d.severity}>{d.message}</span>
+			<span class="qm-diag-line" data-severity={d.severity}
+				>{diagnosticText(d, t.formatDiagnostic)}</span
+			>
 		{/each}
 	</div>
 {/if}

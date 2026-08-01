@@ -71,8 +71,13 @@
 		'The blank page is bluffing…',
 		'Draft badly, revise later…'
 	];
-	const bodyPlaceholder = $derived(
-		wittyGhosts ? () => WITTY[Math.floor(Math.random() * WITTY.length)] : undefined
+	// The wording channel, of which the witty-ghost variant turns one key. Passing the
+	// whole object is the seam: a product ships its locale here and the unset keys stay
+	// the package's English, which is what this route demonstrates by setting exactly one.
+	const strings = $derived(
+		wittyGhosts
+			? { bodyPlaceholder: () => WITTY[Math.floor(Math.random() * WITTY.length)] }
+			: undefined
 	);
 
 	// A variant link flips its own flag and leaves the rest of the query alone, so
@@ -246,7 +251,7 @@
 						onChange={refresh}
 						diagnostics={externalDiagnostics}
 						{enumOptionAllowed}
-						{bodyPlaceholder}
+						{strings}
 					/>
 				{/if}
 			</div>

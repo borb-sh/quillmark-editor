@@ -38,7 +38,14 @@ export type EditorErrorCode =
 	/** `doc.toMarkdown` threw: the source view shows the error text in place. */
 	| 'serialize-failed'
 	/** A tip's markdown did not render: the tip shows as literal text. */
-	| 'tip-render-failed';
+	| 'tip-render-failed'
+	/**
+	 * A prop a surface binds ONCE was swapped in place, and the surface neither
+	 * re-keyed on it nor observed it. The mounted surface still names the previous
+	 * handle. `dev` throughout: the fix is a remount at the call site, so this is
+	 * aimed at whoever wired it and never at a running app's telemetry.
+	 */
+	| 'rebind-ignored';
 
 /** A failure a surface recovered from. */
 export interface EditorError {

@@ -18,10 +18,43 @@
    declared ON the root, so they are reachable only by a rule targeting it:
    THEMING.md §"What is deliberately not public" states the terms.
 
-   `@property` is absent because it cannot work here: an `initial-value` must be
-   computationally independent, which `rem` is not, so registering `--qm-space` or
-   `--qm-font-size` is invalid CSS and drops silently. A unitless dial poisons the
-   `calc()` chain unguarded. */
+   LAYERS: `qm` is the top-level layer name, and it is contract — a consumer
+   pins the order against it with `@layer qm, app;` in their own CSS, which wins
+   in both bundler orders (THEMING §"Your CSS beats ours"). Unlayered consumer
+   CSS beats every layer here for free.
+
+   `@property` registers the three ENTRY rungs, the ones reading a dial, and
+   nothing below them. An `initial-value` must be computationally independent,
+   which `rem` is not, so the DIALS cannot be registered: their defaults are
+   `rem`. A rung can, because registration reads the initial value and never the
+   declared one, so a `px` initial sits under a `calc()` chain over a `rem` dial
+   without contradiction. What it buys is the poison case: `--qm-space: 4` is a
+   valid custom property and an invalid length, and unguarded it substitutes
+   through every `calc()` below and collapses the surface to zero. Registered,
+   the entry rung is invalid at computed-value time and lands on its initial
+   instead, so the chain under it computes from a length and the surface holds at
+   its default. The derived rungs need no registration of their own: they read a
+   computed length either way. The initials are the `rem` defaults against a 16px
+   root, so a host on another root size falls back to the package's figure rather
+   than its own — reachable only once a dial is already invalid. Where
+   `@property` is unsupported the at-rule is skipped and the collapse returns,
+   which is the unguarded behaviour rather than a new one. */
+
+@property --_qm-space {
+	syntax: '<length>';
+	inherits: true;
+	initial-value: 4px;
+}
+@property --_qm-radius {
+	syntax: '<length>';
+	inherits: true;
+	initial-value: 8px;
+}
+@property --_qm-text-body {
+	syntax: '<length>';
+	inherits: true;
+	initial-value: 14px;
+}
 
 @layer qm.scale, qm.chrome;
 

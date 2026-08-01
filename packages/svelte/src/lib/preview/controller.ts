@@ -16,6 +16,7 @@ import { reportError, errorMessage } from '../core/index.js';
 import { createPaintLoop, type PaintLoop } from './paint.js';
 import { createOverlay, type OverlayController } from './overlay.js';
 import { createBridge, type BridgeController } from './bridge.js';
+import { mergePreviewStrings, type PreviewStringsInput } from './strings.js';
 
 export interface PreviewOptions {
 	/** The element the preview mounts into; becomes the scroll viewport. */
@@ -29,6 +30,9 @@ export interface PreviewOptions {
 	/** A page paint the backend refused ({@link EditorErrorHandler}). The preview
 	 *  shows its error message state either way; this routes it to an app's sink. */
 	onError?: EditorErrorHandler;
+	/** The three message-state strings, keyed and partial: unset keys take the
+	 *  package's English. */
+	strings?: PreviewStringsInput;
 }
 
 export interface PreviewController {
@@ -62,6 +66,7 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	const container = opts.container;
 	const margin = opts.margin ?? 1;
 	const overlaysEnabled = opts.overlays ?? true;
+	const t = mergePreviewStrings(opts.strings);
 	container.classList.add(CONTAINER_CLASS);
 
 	// The full-container message slot, shared by every non-paint state: the empty
@@ -96,7 +101,7 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 			cause: err,
 			page
 		});
-		showMessage('Preview failed to render.', ERROR_CLASS);
+		showMessage(t.renderFailed, ERROR_CLASS);
 	});
 	// overlay/bridge query geometry at build (`session.regions()`), so they are
 	// held until slots exist; (re)built by `render` when a compile is paintable.
@@ -131,7 +136,7 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 			paintLoop.refresh([], 0);
 			detach();
 			showMessage(
-				pageCount === 0 ? 'No pages to preview.' : 'Preview is not available for this document.',
+				pageCount === 0 ? t.noPages : t.unsupported,
 				pageCount === 0 ? EMPTY_CLASS : UNSUPPORTED_CLASS
 			);
 			return;

@@ -11,6 +11,11 @@
  needs no reset.
 -->
 <script lang="ts">
+	import { wording } from './strings.js';
+
+	// The surface's words, ambient from the editor root; the package's English
+	// off-tree, so this component renders standalone too.
+	const t = wording();
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import X from '@lucide/svelte/icons/x';
 	import { renderTip } from './tips.js';
@@ -57,7 +62,7 @@
 	}
 </script>
 
-<aside class="qm-tips" aria-label="Editor tips">
+<aside class="qm-tips" aria-label={t.strings.tipsLabel}>
 	<!-- Advancing swaps the text under a button that keeps focus, so the region
 	     announces rather than the change passing silently. -->
 	<div class="qm-tips-body" aria-live="polite" bind:this={bodyEl}></div>
@@ -70,7 +75,7 @@
 					<button
 						type="button"
 						class="qm-tips-dot"
-						aria-label={`Tip ${i + 1} of ${tips.length}`}
+						aria-label={t.strings.tipsDot(i + 1, tips.length)}
 						aria-current={i === index}
 						onclick={() => (cursor = i)}
 					></button>
@@ -81,9 +86,9 @@
 		     and its end is the exit. -->
 		<button type="button" class="qm-icon-btn qm-tips-action" onclick={advance}>
 			{#if isLast}
-				Dismiss <X size={GLYPH} />
+				{t.strings.tipsDismiss} <X size={GLYPH} />
 			{:else}
-				Next <ChevronRight size={GLYPH} />
+				{t.strings.tipsNext} <ChevronRight size={GLYPH} />
 			{/if}
 		</button>
 	</div>
