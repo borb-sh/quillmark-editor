@@ -23,9 +23,10 @@
  insert or a remove ABOVE it rather than remounting.
 -->
 <script lang="ts">
-	import { tick } from 'svelte';
+	import { onDestroy, tick } from 'svelte';
 	import type { Content, QuillFieldSchema } from '../core/index.js';
 	import { emptyContent } from '../core/codec/index.js';
+	import { createLifespan } from '../core/teardown.js';
 	import { IdSeq, controlKind } from './structure.js';
 	import X from '@lucide/svelte/icons/x';
 	import TextField from './TextField.svelte';
@@ -100,6 +101,11 @@
 	let addEl: HTMLButtonElement | undefined = $state();
 	let rootEl: HTMLElement | undefined = $state();
 
+	// The awaited flush below is the only work that outlives a gesture here, so the
+	// span carries no cancellers: it is the liveness `focusAfterFlush` asks for.
+	const span = createLifespan();
+	onDestroy(() => span.end());
+
 	function emptyElement(): unknown {
 		if (control === 'prose') return emptyContent();
 		if (control === 'object') return {};
@@ -153,9 +159,12 @@
 	}
 	/** Focus element `id` after the flush, never in the same tick: a mutation commits
 	 * the array BY VALUE, so the parent re-derives and the row does not exist until
-	 * then. `undefined` is the empty list: the add affordance. */
+	 * then. `undefined` is the empty list: the add affordance.
+	 *
+	 * The commit that schedules this can also remove the CARD holding the field, which
+	 * unmounts this component inside the window (core/teardown.ts). */
 	async function focusAfterFlush(id: string | undefined): Promise<void> {
-		await tick();
+		if (!(await span.resumes(tick()))) return;
 		if (id === undefined) addEl?.focus();
 		else els[id]?.focus();
 	}
