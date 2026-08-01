@@ -4,7 +4,8 @@
 // to those same slots. A pure view: never calls `session.apply`, never
 // mutates the session; the consumer drives edits and hands the resulting
 // `ChangeSet` to `refresh`.
-import type { LiveSession, ChangeSet, ContentHit } from '../core/index.js';
+import type { LiveSession, ChangeSet, ContentHit, ErrorSink } from '../core/index.js';
+import { createReport } from '../core/index.js';
 import { createPaintLoop, type PaintLoop } from './paint.js';
 import { createOverlay, type OverlayController } from './overlay.js';
 import { createBridge, type BridgeController } from './bridge.js';
@@ -18,6 +19,8 @@ export interface PreviewOptions {
 	overlays?: boolean;
 	/** A click resolved to a content position; the hook does not fire off-ink. */
 	onCaretPick?(hit: ContentHit): void;
+	/** Every failure this surface recovers from; unset falls to `console.error`. */
+	onError?: ErrorSink;
 }
 
 export interface PreviewController {
@@ -45,6 +48,7 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	const container = opts.container;
 	const margin = opts.margin ?? 1;
 	const overlaysEnabled = opts.overlays ?? true;
+	const report = createReport(() => opts.onError);
 	container.classList.add(CONTAINER_CLASS);
 
 	// The full-container message slot, shared by every non-paint state: the empty
@@ -72,7 +76,7 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	// mid-sweep (runtime.d.ts: even a `supportsCanvas` compile can hit a paint
 	// the boundary refuses; brittle to leave uncaught).
 	const paintLoop: PaintLoop = createPaintLoop(session, container, margin, (page, err) => {
-		console.error(`[quillmark] preview paint failed for page ${page}`, err);
+		report('preview.paint', `page ${page} failed to paint`, { cause: err });
 		showMessage('Preview failed to render.', ERROR_CLASS);
 	});
 	// overlay/bridge query geometry at build (`session.regions()`), so they are

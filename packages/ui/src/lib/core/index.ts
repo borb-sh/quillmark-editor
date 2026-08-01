@@ -16,6 +16,13 @@ import './theme.css';
 
 export { init } from './lifecycle.js';
 
+// ── The error channel ───────────────────────────────────────────────────────
+// One shape for every failure the surfaces recover from, so a consumer routes a
+// paint failure, a rejected commit and a wiring mistake into one sink (SURFACES
+// §"The error channel").
+export { createReport } from './errors.js';
+export type { EditorError, EditorErrorCode, ErrorSeverity, ErrorSink, Report } from './errors.js';
+
 // ── Handles + engine (values) ───────────────────────────────────────────────
 // Re-exported verbatim from the canonical runtime; the editor holds the raw
 // handles and frees them on teardown (LiveSession/Document/Quill each carry

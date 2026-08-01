@@ -82,7 +82,7 @@ In Svelte, `<Preview {session} onCaretPick={…} />` exposes the same verbs (`re
 />
 ```
 
-Swap `doc`/`quill` by **remounting** (`{#key doc}`); edits flow the other way, mutating the passed-in handle.
+Swap `doc`/`quill` by **remounting** (`{#key doc}`); edits flow the other way, mutating the passed-in handle. A swap in place is not observed, and every surface says so through `onError` at `dev` severity rather than desyncing in silence.
 
 ## The caret bridge
 
@@ -118,6 +118,21 @@ source.refresh();
 ```
 
 Or `<SourceView {doc} />` with a `refresh()` method.
+
+## Errors
+
+Every surface recovers rather than throws — a page that will not paint, a `toMarkdown` that fails, a commit the boundary refuses — and reports through an optional `onError` per surface, falling to `console.error` when unset.
+
+```ts
+import type { EditorError } from '@quillmark/ui/core';
+
+const onError = (e: EditorError) => {
+	if (e.severity === 'dev') throw new Error(`${e.code}: ${e.message}`); // wiring, not data
+	telemetry.capture(e.code, { message: e.message, cause: e.cause });
+};
+```
+
+Route on `code` (a closed union naming the failure site: `preview.paint`, `field.commit`, `content.install`, …), never on `message`. `severity` is `'error'` for a failure the document, quill or backend produced, and `'dev'` for the package's own contract broken by the wiring around it — the one such code today is `surface.rebind`, reported once per mount when a `doc`/`quill`/`session` prop is swapped in place on a surface that binds once.
 
 ## Theming
 

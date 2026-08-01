@@ -31,6 +31,18 @@ The workspace ships a self-hosted playground app beside the library, one package
 
 Its routes, and the host-side visual language they share, are [PLAYGROUND.md](../../../playground/prose/canon/PLAYGROUND.md). One of them is architectural: `/editor` is the reference **split-pane shell**, where the caret bridge is consumer-layer glue: the editor emits addresses and carets, the preview surfaces hits, and the shell joins them (`fieldPathForAddr` maps an editor `Addr` to the preview's field-path grammar), so neither surface imports the other. That the column around the cards is the consumer's, not the package's, is what makes that route the place THEMING.md's four mounting-site properties are demonstrated.
 
+## The error channel
+
+Every surface recovers rather than throws: a page that will not paint, a `toMarkdown` that fails, a commit the boundary refuses, a leaf whose `applyChange` falls back to `install`. Each recovery is a fact the embedding app cannot otherwise reach — the preview's error state is a class on a div, and the rest was a console line — so every one of them reports through `onError`, one optional sink per surface carrying `{ code, message, severity, cause }` and falling to `console.error` when unset (`core/errors.ts`).
+
+**Per surface, not per shell.** A preview-only consumer, the audience `/preview` keeps its weight for, has no shell joining surfaces and still needs the channel. The replication is the implementation's, where it is one bound reporter per mount; the consumer wires one hook per surface they mounted.
+
+**A sink routes on `code`, never on `message`.** The codes are a closed union naming the failure SITE (`preview.paint`, `field.commit`, `content.install`), so a product's own wording and its telemetry both key off something that will not be reworded under them. `cause` is the caught value verbatim, which is where a `QuillmarkError`'s `diagnostics` are reached.
+
+**`severity` separates the document's failures from the wiring's.** `error` is a failure a document, a quill or the backend produced and the surface absorbed. `dev` is the package's own contract broken by the code around it — a handle prop swapped in place on a surface that binds once, reported once per mount — and is reachable by no document and no user, so a telemetry sink drops the whole class on this field rather than by listing the codes that happen to be dev-only today.
+
+**Nothing on this channel gates.** A reported failure is one the surface has already answered: the preview shows its message, the rejected commit writes nothing and pins a diagnostic, the leaf keeps its optimistic state and the store takes the full projection. The channel is observation; a sink that throws is the consumer's bug and not a seam the package offers.
+
 ## Theming
 
 The surfaces carry the behavior against a neutral, overridable baseline: the `--qm-*` dials a consumer overrides on any ancestor (VISUAL_EDITOR_UIUX §"Complex UX, minimal UI"), deriving the private `--_qm-*` scale every component reads. The contract is the package's [`THEMING.md`](../../THEMING.md); the derivation is a stylesheet in `core/`, side-effect imported by the one module both `preview/` and `visual/` already pull (so a consumer has nothing to import), and applied to every element marked `data-qm-root`. A stylesheet rather than an inline attribute is what lets the scale carry a cascade layer consumer CSS beats without `!important` and the baseline font every root inherits.

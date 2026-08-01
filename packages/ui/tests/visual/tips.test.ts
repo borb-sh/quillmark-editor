@@ -22,10 +22,15 @@ beforeAll(async () => {
 function editorExt(doc: Document, addr = MAIN_CARD_ADDR): Record<string, unknown> {
 	return (doc.getExtNamespace(addr, 'editor') ?? {}) as Record<string, unknown>;
 }
-/** Render one tip and read back its HTML. */
+/** Render one tip and read back its HTML. A render that fails degrades to literal
+ * text and reports; nothing here should reach the sink. */
 function html(markdown: string): string {
 	const host = document.createElement('div');
-	host.appendChild(renderTip(markdown));
+	host.appendChild(
+		renderTip(markdown, (code, message) => {
+			throw new Error(`unexpected report ${code}: ${message}`);
+		})
+	);
 	return host.innerHTML;
 }
 

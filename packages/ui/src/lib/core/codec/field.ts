@@ -17,6 +17,9 @@ import type { Node as PMNode, Schema } from 'prosemirror-model';
 import { EditorState, Plugin, PluginKey, Selection, type Command } from 'prosemirror-state';
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
 import type { Document, Content, Addr } from '../index.js';
+// Straight from the module, not through `../index.js`: the codec is reachable
+// without the theme derivation that entry point mints.
+import { createReport, type ErrorSink } from '../errors.js';
 import { decode } from './decode.js';
 import { usvToPM, pmToUsv, buildLineIndex, type LineIndex } from './positions.js';
 import { lower, pmToContent, insertReintroducesIslandSlot } from './encode.js';
@@ -55,6 +58,8 @@ export interface CreateFieldOpts {
 	onFocus?(addr: Addr): void;
 	/** Fired with the new USV caret after an edit or a selection move. */
 	onCaretMove?(addr: Addr, pos: number): void;
+	/** Every failure this leaf recovers from; unset falls to `console.error`. */
+	onError?: ErrorSink;
 }
 
 /** The prose-leaf handle (VISUAL_EDITOR §Surface). */
@@ -162,6 +167,7 @@ function proseAttributes(opts: CreateFieldOpts): Record<string, string> | undefi
 
 export function createField(opts: CreateFieldOpts): FieldController {
 	const { doc, addr, container } = opts;
+	const report = createReport(() => opts.onError);
 	const inline = !!opts.inline || !!opts.plaintext;
 	const plaintext = !!opts.plaintext;
 	const schema: Schema = inline ? inlineSchema : blockSchema;
@@ -254,13 +260,15 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			// from that stale content, every later edit re-throws and the field
 			// silently stops persisting. Install the full projection instead
 			// (correct store, pays this field's anchors).
-			console.error('[quillmark/editor] applyChange failed; falling back to install', e);
+			report('content.commit', 'applyChange failed; falling back to install', { cause: e });
 			try {
 				doc.install(addr, newRt);
 				reconciler.commit(readLeaf(doc, addr));
 			} catch (e2) {
 				// Optimistic PM stays; surface the boundary error without crashing.
-				console.error('[quillmark/editor] install fallback failed; keeping optimistic state', e2);
+				report('content.install', 'install fallback failed; keeping optimistic state', {
+					cause: e2
+				});
 			}
 		}
 	}

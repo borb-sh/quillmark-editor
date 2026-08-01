@@ -9,7 +9,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import type { Document, Addr, Diagnostic } from '../core/index.js';
+	import type { Document, Addr, Diagnostic, ErrorSink } from '../core/index.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import type { CardModel, FieldModel } from './structure.js';
 	import { placeFields, humanize, initialExpandedGroup } from './structure.js';
@@ -45,6 +45,8 @@
 		ops: CardOps;
 		onFocus?: (addr: Addr) => void;
 		onCaretMove?: (addr: Addr, pos: number) => void;
+		/** The editor's error sink; reaches every prose leaf in this card. */
+		onError?: ErrorSink;
 		register?: (key: string, controller: FieldController) => void;
 		unregister?: (key: string) => void;
 	}
@@ -58,6 +60,7 @@
 		ops,
 		onFocus,
 		onCaretMove,
+		onError,
 		register,
 		unregister
 	}: Props = $props();
@@ -341,6 +344,7 @@
 						leafKey={ops.leafKey(undefined)}
 						{onFocus}
 						{onCaretMove}
+						{onError}
 						{register}
 						{unregister}
 					/>
@@ -371,6 +375,7 @@
 				optionAllowed={(v) => ops.enumAllowed(f.name, v)}
 				{onFocus}
 				{onCaretMove}
+				{onError}
 				{register}
 				{unregister}
 				diagnostics={ops.diagFor(f.name)}

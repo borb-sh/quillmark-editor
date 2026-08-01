@@ -25,7 +25,7 @@
 	import { tick } from 'svelte';
 	import { DropdownMenu } from 'bits-ui';
 	import Plus from '@lucide/svelte/icons/plus';
-	import { isQuillmarkError, MAIN_CARD_ADDR } from '../core/index.js';
+	import { isQuillmarkError, MAIN_CARD_ADDR, createReport } from '../core/index.js';
 	import { bloomInside } from '../core/bloom.js';
 	import type {
 		Document,
@@ -34,6 +34,7 @@
 		CardAddr,
 		Diagnostic,
 		ContentHit,
+		ErrorSink,
 		Resolved,
 		ResolvedField
 	} from '../core/index.js';
@@ -94,6 +95,12 @@
 		/** Fired after every scalar/structure mutation: a change signal for a host. */
 		onChange?: () => void;
 		/**
+		 * Every failure this surface recovers from — a rejected commit, a validate or
+		 * resolve that threw, a card operation the boundary refused, and the `dev`
+		 * severity a mis-wired surface reports. Unset falls to `console.error`.
+		 */
+		onError?: ErrorSink;
+		/**
 		 * External diagnostics, routed by `.path` and merged with `quill.validate`
 		 * and local commit errors (VISUAL_EDITOR §Diagnostics).
 		 */
@@ -131,12 +138,36 @@
 		onActiveAddrChange,
 		onCaretMove,
 		onChange,
+		onError,
 		diagnostics,
 		enumOptionAllowed,
 		bodyPlaceholder,
 		class: className,
 		style
 	}: Props = $props();
+
+	// The bound reporter: every failure below reports through it, and the prose
+	// leaves take the raw sink (their commit path is the codec's, not this one's).
+	const report = createReport(() => onError);
+
+	// THE REMOUNT GUARD. The contract above is documented where nobody reads it, and
+	// a swapped handle desyncs the card tree in silence: the id array, the leaf
+	// registry and every leaf's closed-over handle all still name the old document.
+	// So the surface says so, at `dev` severity, once per mount — a shell that swaps
+	// on one render swaps on all of them, and the second report tells a consumer
+	// nothing the first did not.
+	// svelte-ignore state_referenced_locally
+	const mounted = { doc, quill };
+	let rebindReported = false;
+	$effect(() => {
+		if (rebindReported || (doc === mounted.doc && quill === mounted.quill)) return;
+		rebindReported = true;
+		report(
+			'surface.rebind',
+			'doc/quill swapped in place; the card tree now names the previous handle. Remount the editor ({#key doc}) to swap.',
+			{ severity: 'dev' }
+		);
+	});
 
 	// ── Reactivity + session identity ───────────────────────────────────────────
 	let revision = $state(0);
@@ -277,7 +308,7 @@
 				message: e instanceof Error ? e.message : String(e)
 			};
 			editCommitErrors((m) => m.set(keyStr, { key, diagnostic }));
-			console.error('[quillmark/editor] scalar commit failed', e);
+			report('field.commit', `commit to ${keyStr} failed`, { cause: e });
 		}
 	}
 
@@ -313,7 +344,7 @@
 			// the neighbours it landed between.
 			void scrollCardIntoView(id, 'center');
 		} catch (e) {
-			console.error('[quillmark/editor] addCard failed', e);
+			report('card.insert', `seeding a ${kind} card failed`, { cause: e });
 		}
 	}
 	// The reorder gesture's arming window (SURFACES §Motion): the reconcile that moves a
@@ -370,7 +401,7 @@
 			doc.setCardKind(i, kind);
 			bump();
 		} catch (e) {
-			console.error('[quillmark/editor] retype failed', e);
+			report('card.retype', `retyping to ${kind} failed`, { cause: e });
 		}
 	}
 	function renameCardById(id: string, title: string): void {
@@ -419,7 +450,9 @@
 		try {
 			return quill.validate(doc);
 		} catch (e) {
-			console.error('[quillmark/editor] validate failed', e);
+			report('quill.validate', 'validate failed; this revision reports no diagnostics', {
+				cause: e
+			});
 			return [] as Diagnostic[];
 		}
 	});
@@ -544,7 +577,7 @@
 		try {
 			resolved = quill.resolve(doc);
 		} catch (e) {
-			console.error('[quillmark/editor] quill.resolve failed; ghosts fall back to none', e);
+			report('quill.resolve', 'resolve failed; ghosts fall back to none', { cause: e });
 		}
 		const byCard = resolvedByCardIndex(resolved);
 		return {
@@ -639,6 +672,7 @@
 			ops={opsFor('main', true)}
 			onFocus={handleFocus}
 			onCaretMove={handleCaret}
+			{onError}
 			{register}
 			{unregister}
 		/>
@@ -648,7 +682,7 @@
 		 Absent when the channel is empty; which is what dismissal makes it, so the
 		 card leaves for good (VISUAL_EDITOR §"Card operations"). -->
 		{#if model.tips.length}
-			<TipsCard tips={model.tips} onDismiss={dismissTips} />
+			<TipsCard tips={model.tips} onDismiss={dismissTips} {report} />
 		{/if}
 	</div>
 
@@ -670,6 +704,7 @@
 				ops={opsFor(c.id, false)}
 				onFocus={handleFocus}
 				onCaretMove={handleCaret}
+				{onError}
 				{register}
 				{unregister}
 			/>

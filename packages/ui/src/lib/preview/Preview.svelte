@@ -9,7 +9,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createPreview, type PreviewController } from './controller.js';
-	import type { LiveSession, ContentHit, ChangeSet } from '../core/index.js';
+	import { createReport } from '../core/index.js';
+	import type { LiveSession, ContentHit, ChangeSet, ErrorSink } from '../core/index.js';
 
 	/**
 	 * REMOUNT CONTRACT. `createPreview` binds once in `onMount`; a later change to
@@ -28,20 +29,58 @@
 		margin?: number;
 		overlays?: boolean;
 		onCaretPick?: (hit: ContentHit) => void;
+		/** Every failure this surface recovers from; unset falls to `console.error`. */
+		onError?: ErrorSink;
 	}
 
-	let { session, margin, overlays, onCaretPick, class: className, style }: Props = $props();
+	let {
+		session,
+		margin,
+		overlays,
+		onCaretPick,
+		onError,
+		class: className,
+		style
+	}: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let controller: PreviewController | undefined;
 
 	onMount(() => {
 		if (!containerEl) return;
-		controller = createPreview(session, { container: containerEl, margin, overlays, onCaretPick });
+		controller = createPreview(session, {
+			container: containerEl,
+			margin,
+			overlays,
+			onCaretPick,
+			// A getter: the controller holds its options for its lifetime, so a sink
+			// closing over live consumer state reports against the current one rather
+			// than the one it closed over at mount.
+			get onError() {
+				return onError;
+			}
+		});
 		return () => {
 			controller?.destroy();
 			controller = undefined;
 		};
+	});
+
+	// THE REMOUNT GUARD (the contract above), at `dev` severity, once per mount: a
+	// session swapped in place leaves the paint loop, the overlay and the click
+	// bridge all reading the previous session's geometry.
+	const report = createReport(() => onError);
+	// svelte-ignore state_referenced_locally
+	const mountedSession = session;
+	let rebindReported = false;
+	$effect(() => {
+		if (rebindReported || session === mountedSession) return;
+		rebindReported = true;
+		report(
+			'surface.rebind',
+			'session swapped in place; the preview still paints the previous session. Remount ({#key session}) to swap.',
+			{ severity: 'dev' }
+		);
 	});
 
 	export function refresh(change: ChangeSet): void {

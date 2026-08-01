@@ -4,7 +4,7 @@
 // slots both track the LIVE count; 0→N escapes the empty state, N→0 returns.
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
 import { createPreview } from '$lib/preview/controller';
-import type { LiveSession, ChangeSet } from '$lib/core';
+import type { LiveSession, ChangeSet, EditorError } from '$lib/core';
 
 // jsdom has no IntersectionObserver; the paint loop only needs it to observe
 // visibility, which these count-transition assertions do not exercise (no page
@@ -192,7 +192,13 @@ describe('preview controller paint resilience', () => {
 	}
 
 	it('a paint that throws surfaces an error state without aborting the observer sweep', () => {
-		const preview = createPreview(throwingSession(2), { container });
+		// The error state is DOM a consumer would have to sniff for; `onError` is the
+		// channel that makes it routable, so the same failure is asserted on both.
+		const seen: EditorError[] = [];
+		const preview = createPreview(throwingSession(2), {
+			container,
+			onError: (e) => seen.push(e)
+		});
 		expect(container.querySelectorAll('.qm-page').length).toBe(2);
 
 		const io = ioInstances[ioInstances.length - 1];
@@ -201,6 +207,10 @@ describe('preview controller paint resilience', () => {
 		expect(container.querySelector('.qm-preview-error')).toBeTruthy();
 		// …and a failed paint leaves no blank registered canvas behind.
 		expect(container.querySelectorAll('canvas.qm-page-canvas').length).toBe(0);
+
+		expect(seen.map((e) => e.code)).toContain('preview.paint');
+		expect(seen.every((e) => e.severity === 'error')).toBe(true);
+		expect((seen[0].cause as Error).message).toBe('backend refused to paint');
 
 		preview.destroy();
 	});

@@ -40,7 +40,8 @@
 		ContentHit,
 		ChangeSet,
 		Addr,
-		Diagnostic
+		Diagnostic,
+		EditorError
 	} from '@quillmark/ui/core';
 	import { Preview } from '@quillmark/ui/preview';
 	import { SourceView } from '@quillmark/ui/source';
@@ -76,7 +77,19 @@
 		externalDiagnostics = session ? [...session.warnings, ...injected] : injected;
 	}
 
+	// ── The error channel ───────────────────────────────────────────────────────
+	// ONE sink for all three surfaces: the seam a product routes into its telemetry,
+	// read back out on the strip so a failure a surface recovered from is visible
+	// rather than a console line nobody has open. `severity` is carried through
+	// rather than filtered: `dev` is the package's own contract failing, and this
+	// route is where that has to be loud.
+	function handleError(e: EditorError): void {
+		lastError = `${e.severity}/${e.code}`;
+		console.error(`[playground] ${e.code}: ${e.message}`, e.cause);
+	}
+
 	// Bridge observability: what the strip reads.
+	let lastError = $state('none');
 	let lastHit = $state<ContentHit | undefined>();
 	let activeAddr = $state('none');
 	let lastFocus = $state('none');
@@ -283,6 +296,10 @@
 				<span class="pg-readout" data-testid="last-focus">{lastFocus}</span></span
 			>
 			<span class="stat"
+				><span class="pg-label">last error</span>
+				<span class="pg-readout" data-testid="last-error">{lastError}</span></span
+			>
+			<span class="stat"
 				><span class="pg-label">dirty pages</span>
 				<span class="pg-readout" data-testid="last-change"
 					>{lastChange ? JSON.stringify(lastChange.dirtyPages) : 'none'}</span
@@ -322,6 +339,7 @@
 						onActiveAddrChange={handleActiveAddr}
 						onCaretMove={handleCaretMove}
 						onChange={scheduleRecompile}
+						onError={handleError}
 						diagnostics={externalDiagnostics}
 					/>
 				{/if}
@@ -347,7 +365,12 @@
 			</div>
 			<section class="pg-frame preview-pane" aria-label="Live preview">
 				{#if session}
-					<Preview bind:this={previewRef} {session} onCaretPick={handleCaretPick} />
+					<Preview
+						bind:this={previewRef}
+						{session}
+						onCaretPick={handleCaretPick}
+						onError={handleError}
+					/>
 				{/if}
 			</section>
 		</div>
@@ -356,7 +379,7 @@
 			<section class="pg-frame drawer" aria-label="Debug source view" data-testid="source-drawer">
 				<p class="pg-label drawer-label">Canonical markdown — read only</p>
 				<div class="source-host">
-					<SourceView bind:this={sourceRef} doc={docHandle} />
+					<SourceView bind:this={sourceRef} doc={docHandle} onError={handleError} />
 				</div>
 			</section>
 		{/if}

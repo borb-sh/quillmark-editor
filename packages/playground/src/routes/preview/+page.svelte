@@ -18,7 +18,13 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Document, LiveSession, ContentHit, ChangeSet } from '@quillmark/ui/core';
+	import type {
+		Document,
+		LiveSession,
+		ContentHit,
+		ChangeSet,
+		EditorError
+	} from '@quillmark/ui/core';
 	import { Preview } from '@quillmark/ui/preview';
 	import { loadUsafMemoTree } from '../fixture';
 
@@ -35,6 +41,12 @@
 
 	function handleCaretPick(hit: ContentHit): void {
 		lastHit = hit;
+	}
+
+	// A surface with no shell around it still needs the channel: this route is the
+	// standalone-preview consumer, and `onError` is per surface for exactly that.
+	function handleError(e: EditorError): void {
+		console.error(`[playground] ${e.code}: ${e.message}`, e.cause);
 	}
 
 	function applySubjectEdit(): void {
@@ -108,7 +120,13 @@
 		<div class="pg-layout">
 			<div class="pg-frame preview-frame">
 				{#if session}
-					<Preview bind:this={previewRef} {session} margin={0} onCaretPick={handleCaretPick} />
+					<Preview
+						bind:this={previewRef}
+						{session}
+						margin={0}
+						onCaretPick={handleCaretPick}
+						onError={handleError}
+					/>
 				{/if}
 			</div>
 

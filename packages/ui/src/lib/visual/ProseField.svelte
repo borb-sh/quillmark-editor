@@ -11,7 +11,7 @@
 	import { onMount } from 'svelte';
 	import { createField, type FieldController } from '../core/codec/index.js';
 	import './controls.css';
-	import type { Document, Addr } from '../core/index.js';
+	import type { Document, Addr, ErrorSink } from '../core/index.js';
 
 	interface Props {
 		doc: Document;
@@ -45,6 +45,8 @@
 		leafKey: string;
 		onFocus?: (addr: Addr) => void;
 		onCaretMove?: (addr: Addr, pos: number) => void;
+		/** The editor's error sink, handed to the leaf's own commit path. */
+		onError?: ErrorSink;
 		register?: (key: string, controller: FieldController) => void;
 		unregister?: (key: string) => void;
 	}
@@ -62,6 +64,7 @@
 		leafKey,
 		onFocus,
 		onCaretMove,
+		onError,
 		register,
 		unregister
 	}: Props = $props();
@@ -100,7 +103,15 @@
 			describedBy,
 			placeholder,
 			onFocus,
-			onCaretMove
+			onCaretMove,
+			// A getter, not a value: the leaf mounts once per stable leaf key and holds
+			// `opts` for its lifetime, so a sink closing over live consumer state would
+			// otherwise be pinned to the state it closed over at mount. A wrapper arrow
+			// cannot serve here: it is always truthy, which would defeat the
+			// `console.error` fallback a consumer who passed no sink relies on.
+			get onError() {
+				return onError;
+			}
 		});
 		register?.(leafKey, controller);
 		return () => {

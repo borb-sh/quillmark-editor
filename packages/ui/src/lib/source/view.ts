@@ -17,7 +17,8 @@
 // dependency-free `/source`: the markdown is short, structural, and read for its
 // front-matter and line breaks rather than its token colours. Text lands through
 // `textContent`, so the document is never parsed as markup.
-import type { Document } from '../core/index.js';
+import type { Document, ErrorSink, Report } from '../core/index.js';
+import { createReport } from '../core/index.js';
 
 /** Options for {@link createSourceView}. */
 export interface SourceViewOptions {
@@ -25,6 +26,8 @@ export interface SourceViewOptions {
 	container: HTMLElement;
 	/** The live document; serialized on build and on every {@link SourceViewController.refresh}. */
 	doc: Document;
+	/** Every failure this surface recovers from; unset falls to `console.error`. */
+	onError?: ErrorSink;
 }
 
 /** The debug source-view handle. */
@@ -39,22 +42,23 @@ const CONTAINER_CLASS = 'qm-source';
 const TEXT_CLASS = 'qm-source-text';
 
 /** Serialize the document, or surface the error text rather than throwing into a paint. */
-function serialize(doc: Document): string {
+function serialize(doc: Document, report: Report): string {
 	try {
 		return doc.toMarkdown();
 	} catch (e) {
 		// `toMarkdown` is round-trip safe for any valid document, but a boundary
 		// error must not crash the debug view; show it in place instead.
-		console.error('[quillmark/editor] toMarkdown failed', e);
+		report('source.serialize', 'toMarkdown failed', { cause: e });
 		return `# source view unavailable\n\n${e instanceof Error ? e.message : String(e)}`;
 	}
 }
 
 export function createSourceView(opts: SourceViewOptions): SourceViewController {
 	const { container, doc } = opts;
+	const report = createReport(() => opts.onError);
 	container.classList.add(CONTAINER_CLASS);
 
-	let current = serialize(doc);
+	let current = serialize(doc, report);
 	const text = container.ownerDocument.createElement('pre');
 	text.className = TEXT_CLASS;
 	text.textContent = current;
@@ -62,7 +66,7 @@ export function createSourceView(opts: SourceViewOptions): SourceViewController 
 
 	return {
 		refresh(): void {
-			const next = serialize(doc);
+			const next = serialize(doc, report);
 			if (next === current) return; // no re-render when the serialize is unchanged
 			current = next;
 			// The container is the scroller, so a shorter document clamps its offset;

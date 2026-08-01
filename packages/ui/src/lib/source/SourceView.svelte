@@ -8,7 +8,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createSourceView, type SourceViewController } from './view.js';
-	import type { Document } from '../core/index.js';
+	import { createReport } from '../core/index.js';
+	import type { Document, ErrorSink } from '../core/index.js';
 
 	/**
 	 * REMOUNT CONTRACT. `createSourceView` binds once in `onMount`; a later change
@@ -21,19 +22,44 @@
 		class?: string;
 		/** Merged onto the root; free because theming lands on `data-qm-root`. */
 		style?: string;
+		/** Every failure this surface recovers from; unset falls to `console.error`. */
+		onError?: ErrorSink;
 	}
-	let { doc, class: className, style }: Props = $props();
+	let { doc, onError, class: className, style }: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let controller: SourceViewController | undefined;
 
 	onMount(() => {
 		if (!containerEl) return;
-		controller = createSourceView({ container: containerEl, doc });
+		controller = createSourceView({
+			container: containerEl,
+			doc,
+			// A getter, as `Preview` does: the view holds its options for its lifetime.
+			get onError() {
+				return onError;
+			}
+		});
 		return () => {
 			controller?.destroy();
 			controller = undefined;
 		};
+	});
+
+	// THE REMOUNT GUARD (the contract above), at `dev` severity, once per mount: a
+	// document swapped in place leaves the mirror serializing the previous one.
+	const report = createReport(() => onError);
+	// svelte-ignore state_referenced_locally
+	const mountedDoc = doc;
+	let rebindReported = false;
+	$effect(() => {
+		if (rebindReported || doc === mountedDoc) return;
+		rebindReported = true;
+		report(
+			'surface.rebind',
+			'doc swapped in place; the mirror still serializes the previous document. Remount ({#key doc}) to swap.',
+			{ severity: 'dev' }
+		);
 	});
 
 	export function refresh(): void {
