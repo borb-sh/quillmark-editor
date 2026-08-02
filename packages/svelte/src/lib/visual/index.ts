@@ -35,4 +35,4 @@ export { tipsChannel } from './tips.js';
 // so the bridge is `onCaretMove={preview.focusPosition}`; this is the mapping for
 // a consumer holding an `Addr` of its own (VISUAL_EDITOR §Editor→preview).
 export { fieldPathForAddr } from './caret.js';
-export type { ChangeSource, EditorChange } from './signals.js';
+export type { ActiveLeaf, CardId, ChangeSource, EditorChange } from './signals.js';

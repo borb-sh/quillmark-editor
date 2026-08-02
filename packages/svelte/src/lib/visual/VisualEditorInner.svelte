@@ -48,7 +48,7 @@
 	} from '../core/index.js';
 	import type { VisualEditorProps } from './props.js';
 	import { mergeStrings, setWording } from './strings.js';
-	import type { ChangeSource } from './signals.js';
+	import type { CardId, ChangeSource } from './signals.js';
 	import { fieldPathForAddr } from './caret.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import {
@@ -154,15 +154,25 @@
 	 * through this component; a prose leaf commits itself and reports through
 	 * `proseChanged`, which does NOT bump the revision (bumping it would re-derive
 	 * and remount every leaf, costing the caret on every keystroke).
+	 *
+	 * `cardId` is passed rather than derived from `addr`: the sites below hold the id
+	 * already, and the removal has no address to derive one from.
 	 */
-	function bump(source: ChangeSource, addr?: Addr): void {
+	function bump(source: ChangeSource, cardId?: CardId, addr?: Addr): void {
 		revision++;
-		onChange?.({ source, addr });
+		onChange?.({ source, cardId, addr });
 	}
 	/** Resolve a stable card id to its current content index, or -1 if gone: read
 	 * at the mutation boundary, never cached (VISUAL_EDITOR §"The address is the spine"). */
 	function cardIndexOf(id: string): number {
 		return cardIds.indexOf(id);
+	}
+	/** The inverse, for the two signals that arrive as an address and nothing else
+	 * (a focus, a prose commit): `'main'` for a main address, else the live id at
+	 * that index. Resolved at the emit site off the same array the mutation boundary
+	 * reads, never cached. */
+	function cardIdOf(addr: Addr): CardId {
+		return addr.card == null ? 'main' : cardIds[addr.card];
 	}
 
 	// ── Teardown (core/teardown.ts: unregister, cancel, then free) ──────────────
@@ -204,7 +214,7 @@
 	// delete. Nothing draws it: a card's active treatment is its controls' reveal,
 	// which the card reads off `:focus-within` (SURFACES §"Focus and active state").
 	let activeAddr = $state<Addr | undefined>(undefined);
-	let activeCardId = $state<string | undefined>(undefined);
+	let activeCardId = $state<CardId | undefined>(undefined);
 
 	/** Snapshot a (possibly getter-backed) addr to a plain, index-resolved value. */
 	function normalize(addr: Addr): Addr {
@@ -214,8 +224,8 @@
 	function handleFocus(addr: Addr): void {
 		const plain = normalize(addr);
 		activeAddr = plain;
-		activeCardId = plain.card != null ? cardIds[plain.card] : 'main';
-		onActiveAddrChange?.(plain);
+		activeCardId = cardIdOf(plain);
+		onActiveAddrChange?.({ addr: plain, cardId: activeCardId });
 	}
 	/** No card kinds are read for a main address; the shared empty stands in so the
 	 *  common case allocates nothing. */
@@ -241,7 +251,8 @@
 	/** A prose leaf's own commit: the third change lane, and the one that must not
 	 *  bump `revision` (see {@link bump}). */
 	function proseChanged(addr: Addr): void {
-		onChange?.({ source: 'prose', addr: normalize(addr) });
+		const plain = normalize(addr);
+		onChange?.({ source: 'prose', cardId: cardIdOf(plain), addr: plain });
 	}
 
 	// ── Commit routing ──────────────────────────────────────────────────────────
@@ -292,7 +303,7 @@
 				}
 			}
 			if (commitErrors.has(keyStr)) editCommitErrors((m) => m.delete(keyStr));
-			bump('field', makeAddr(id, isMain, name));
+			bump('field', id, makeAddr(id, isMain, name));
 		} catch (e) {
 			const diagnostic: Diagnostic = (isQuillmarkError(e) ? e.diagnostics[0] : undefined) ?? {
 				severity: 'error',
@@ -340,7 +351,7 @@
 			doc.insertCard(card, atIndex);
 			const id = seq.next();
 			cardIds = [...cardIds.slice(0, atIndex), id, ...cardIds.slice(atIndex)];
-			bump('structure', { card: atIndex });
+			bump('structure', id, { card: atIndex });
 			// `center` for an insert: the new card is the subject, and centring it shows
 			// the neighbours it landed between.
 			void scrollCardIntoView(id, 'center');
@@ -378,7 +389,7 @@
 		const [x] = w.splice(from, 1);
 		w.splice(to, 0, x);
 		cardIds = w;
-		bump('structure', { card: to });
+		bump('structure', id, { card: to });
 		// `nearest` for a reorder: the card was already in view and only needs to stay
 		// there, so a card that never left the viewport does not move it at all.
 		void scrollCardIntoView(id, 'nearest');
@@ -401,15 +412,17 @@
 				for (const k of [...m.keys()]) if (k.startsWith(`${id}:`)) m.delete(k);
 			});
 		// No addr: the removed card has no address left, and the surviving cards'
-		// addresses all shifted. The stack changed, not a leaf.
-		bump('structure');
+		// addresses all shifted. The stack changed, not a leaf. The id still names
+		// WHICH card went, which is the one thing a host keying on it needs, and the
+		// only handle the removal leaves it.
+		bump('structure', id);
 	}
 	function retypeCardById(id: string, kind: string): void {
 		const i = cardIndexOf(id);
 		if (i < 0) return;
 		try {
 			doc.setCardKind(i, kind);
-			bump('structure', { card: i });
+			bump('structure', id, { card: i });
 		} catch (e) {
 			reportError(onError, {
 				code: 'card-op-failed',
@@ -423,7 +436,7 @@
 		const i = cardIndexOf(id);
 		if (i < 0) return;
 		patchEditorExt(doc, { card: i }, { title });
-		bump('structure', { card: i });
+		bump('structure', id, { card: i });
 	}
 	/**
 	 * Clear the tips channel: the dismissal write, and the ONLY write
@@ -432,7 +445,9 @@
 	 */
 	function dismissTips(): void {
 		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
-		// Document-level chrome, not a leaf's: no addr, as for a card removal.
+		// Document-level chrome, not a leaf's: no addr, as for a card removal, and no
+		// card either. Tips ride `main`'s `$ext` because that is where a document-scoped
+		// `$ext` lives, which is not a claim that the main card changed.
 		bump('structure');
 	}
 

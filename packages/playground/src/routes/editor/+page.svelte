@@ -40,12 +40,11 @@
 		LiveSession,
 		ContentHit,
 		ChangeSet,
-		Addr,
 		Place,
 		Diagnostic,
 		EditorError
 	} from '@quillmark/svelte/core';
-	import type { EditorChange } from '@quillmark/svelte/visual';
+	import type { ActiveLeaf, EditorChange } from '@quillmark/svelte/visual';
 	import { Preview } from '@quillmark/svelte/preview';
 	import { SourceView } from '@quillmark/svelte/source';
 	import { loadUsafMemoTree } from '../fixture';
@@ -176,8 +175,8 @@
 	}
 
 	// ── Bridge: editor → preview ────────────────────────────────────────────────
-	function handleActiveAddr(addr: Addr): void {
-		activeAddr = JSON.stringify(addr);
+	function handleActiveAddr(active: ActiveLeaf): void {
+		activeAddr = JSON.stringify(active);
 	}
 	// The editor already speaks the preview's address grammar, so this hop is a
 	// pass-through; the strip readout is the only reason it is a function at all.

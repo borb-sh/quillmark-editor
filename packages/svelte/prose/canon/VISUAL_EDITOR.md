@@ -32,6 +32,10 @@ Every editable unit is keyed by an address: a content leaf by `Addr {card?, fiel
 
 But cards are **positional** in the content (`cards[i]`): index-keyed loops, stale-index write guards, reused-component reconciliation, phantom placeholders. So the VisualEditor keys each card *instance* by a **session key** and resolves that key to an index only at the mutation boundary (`moveCard`, `applyChange(addr)`). A reorder is a `moveCard` plus a key reorder; no leaf remounts, no PM instance is re-fed a swapped document, no caret is lost to a swap.
 
+**The key leaves the editor.** No address survives a reorder — `Addr` and `DocPath` are both positional, so a host holding `cards.indorsement[2].from` names a different card after one `moveCard` and is told nothing — so every payload naming a card carries its `cardId` beside the address it already carries: `EditorChange`, and the active leaf. `'main'` is the main card's key, the same token the leaf-key space already spends. A removal carries the key with no address: the index is meaningless once the card is gone, and the key is the only handle left to drop. The tips dismissal carries neither; it is document-level chrome that rides `main`'s `$ext` and names no card.
+
+The parallel array is not a workaround. With no card handle in the document, `cardIds` is not a cache of a document-side truth — it **is** the identity, and there is nothing to reconcile it against. So the editor **owns structural mutation for the session**: the keys track the inserts, moves and removals it performs, and a host that mutates the card array behind it re-seeds the surface rather than expecting the keys to follow. A `cardId` is session-scoped by construction: it does not survive a reload, and a host persisting one is persisting a session key.
+
 ## Edits are ops to the live Document
 
 The VisualEditor holds the live `Document` (via `DocumentWriter = quill.writer(doc)`) and writes ops at an address: never a markdown string, never a whole-document re-serialize:
@@ -141,7 +145,7 @@ interface FieldController {
 <VisualEditor
   bind:this={visualEditor}
   {doc} {quill}
-  onActiveAddrChange={(addr) => …}
+  onActiveAddrChange={({ addr, cardId }) => …}
   onCaretMove={preview.focusPosition}
   onChange={(change) => change.source === 'structure' ? recompileNow() : schedule()}
   onError={(err) => …}
@@ -158,7 +162,7 @@ interface FieldController {
 
 ## Settled and open
 
-- **Card-instance identity is a session key**: an in-memory id per card, reordered in lockstep with the content and resolved to an index only at the mutation boundary (`structure.ts` `IdSeq`). Identity is the editor's, not the document's: nothing document-side backs it, and it does not survive a reload.
+- **Card-instance identity is a session key**: an in-memory id per card, reordered in lockstep with the content and resolved to an index only at the mutation boundary (`structure.ts` `IdSeq`). Identity is the editor's, not the document's: nothing document-side backs it, and it does not survive a reload. It rides every card-naming payload (§"The address is the spine"), so the reorder trap is a host's to fall into only by ignoring it.
 - **Layout is `ui`-driven**: `ui.group` sections, `ui.compact` packs a shared row (`structure.ts`); the editor adds no responsive policy of its own.
 - **Undo is per-leaf**: each prose leaf carries its own PM history. A document-level undo spanning a structural op plus a prose edit (a coordinating stack above the leaves) does not ship in V1.
 - **Array/table convergence**: how far the `array`-of-`object` table control converges with the richtext table island (a scalar array field vs a body island, similar affordance) is not carried in V1.

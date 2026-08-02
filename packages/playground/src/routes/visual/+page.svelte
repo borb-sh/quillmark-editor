@@ -26,6 +26,7 @@
 		Content,
 		Diagnostic
 	} from '@quillmark/svelte/core';
+	import type { ActiveLeaf } from '@quillmark/svelte/visual';
 	import { loadUsafMemoTree, withMainDateDefault, withSecondCardKind } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
@@ -147,8 +148,8 @@
 		return JSON.stringify(obj);
 	});
 
-	function handleActiveAddr(addr: Addr): void {
-		lastAddr = JSON.stringify(addr);
+	function handleActiveAddr(active: ActiveLeaf): void {
+		lastAddr = JSON.stringify(active);
 		refresh();
 	}
 
