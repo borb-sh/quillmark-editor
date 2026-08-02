@@ -8,7 +8,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createSourceView, type SourceViewController } from './view.js';
-	import type { Document, EditorErrorHandler } from '../core/index.js';
+	import type { Document } from '@quillmark/wasm';
+	import type { EditorErrorHandler } from '../core/errors.js';
 
 	/**
 	 * REMOUNT CONTRACT. `createSourceView` binds once in `onMount`; a later change

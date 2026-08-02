@@ -5,7 +5,7 @@
 // verbatim is what is there. A body is `Content` either way. The prose leaf takes
 // both shapes, and an edit lands back in the same document.
 import { describe, it, expect } from 'vitest';
-import { Document, type Quill } from '$lib/core';
+import { Document, type Quill } from '@quillmark/wasm';
 import { createField } from '$lib/core/codec';
 import type { FieldController } from '$lib/core/codec';
 import type { EditorView } from 'prosemirror-view';

@@ -29,7 +29,7 @@
 	// off-tree, so this component renders standalone too.
 	const t = wording();
 	import { onDestroy, tick } from 'svelte';
-	import type { Content, QuillFieldSchema } from '../core/index.js';
+	import type { Content, QuillFieldSchema } from '@quillmark/wasm';
 	import { emptyContent } from '../core/codec/index.js';
 	import { createLifespan } from '../core/teardown.js';
 	import { IdSeq, controlKind } from './structure.js';

@@ -8,7 +8,7 @@
 // inconsistent to a screen reader, it reads as the wrong language.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
-import type { Diagnostic } from '$lib/core';
+import type { Diagnostic } from '@quillmark/wasm';
 import { DEFAULT_VISUAL_STRINGS, mergeStrings, diagnosticText } from '$lib/visual/strings';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
 import type { VisualEditorProps } from '$lib/visual/props';

@@ -30,7 +30,8 @@
 // spine"); `resolveCardKey` bridges the absolute index → stable id, and
 // `fieldKeyToString` is the one shared string form both sides collapse to for the
 // `Map`.
-import { addrForFieldPath, type Diagnostic } from '../core/index.js';
+import type { Diagnostic } from '@quillmark/wasm';
+import { addrForFieldPath } from '../core/address.js';
 
 /** A field's routing address. `card` is `undefined` for the main card; a
  * composable card slot is a stable session id (the editor's own bookkeeping)

@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Attrs } from 'prosemirror-model';
 import { decode, pmToContent, blockSchema } from '$lib/core/codec';
-import type { Content } from '$lib/core';
+import type { Content } from '@quillmark/wasm';
 import { md, normalize, contentEqual } from './_util.js';
 
 function reContent(rt: Content): Content {

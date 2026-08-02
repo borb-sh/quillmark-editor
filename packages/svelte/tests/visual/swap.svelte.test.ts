@@ -11,7 +11,7 @@
 // `createField` ran against the new handle commits there by construction.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
-import { Document, type Quill } from '$lib/core';
+import { Document, type Quill } from '@quillmark/wasm';
 import type { EditorError } from '$lib/core';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
 import { quill } from '../helpers/fixtures.js';

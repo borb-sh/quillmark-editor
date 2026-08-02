@@ -18,7 +18,7 @@
 // would put a `strings` prop on every component between the root and each leaf,
 // which is a prop that means nothing to any of them.
 import { getContext, setContext } from 'svelte';
-import type { Diagnostic } from '../core/index.js';
+import type { Diagnostic } from '@quillmark/wasm';
 import type { BodyPlaceholder } from './structure.js';
 
 export interface VisualStrings {

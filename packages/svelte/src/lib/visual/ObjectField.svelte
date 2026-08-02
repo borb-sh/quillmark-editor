@@ -12,7 +12,7 @@
  per-property provenance.
 -->
 <script lang="ts">
-	import type { QuillFieldSchema } from '../core/index.js';
+	import type { QuillFieldSchema } from '@quillmark/wasm';
 	import { controlKind, enumValues, humanize } from './structure.js';
 	import TextField from './TextField.svelte';
 	import EnumField from './EnumField.svelte';

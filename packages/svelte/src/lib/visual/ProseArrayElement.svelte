@@ -15,7 +15,7 @@
 	import { EditorView } from 'prosemirror-view';
 	import { decode, pmToContent, inlineSchema, proseLeafPlugins } from '../core/codec/index.js';
 	import './controls.css';
-	import type { Content } from '../core/index.js';
+	import type { Content } from '@quillmark/wasm';
 
 	interface Props {
 		value: Content;

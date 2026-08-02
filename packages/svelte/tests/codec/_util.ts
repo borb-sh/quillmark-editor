@@ -6,8 +6,7 @@ import { expect } from 'vitest';
 import type { Node as PMNode } from 'prosemirror-model';
 import { EditorState, TextSelection, type Command } from 'prosemirror-state';
 import { baseKeymap } from 'prosemirror-commands';
-import { Document, importMarkdown } from '$lib/core';
-import type { Content } from '$lib/core';
+import { Document, importMarkdown, type Content } from '@quillmark/wasm';
 import { contentEqual } from '$lib/core/codec/reconcile.js';
 import {
 	blockSchema,

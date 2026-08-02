@@ -14,7 +14,8 @@
 	const t = wording();
 	import { untrack } from 'svelte';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import type { Document, Addr, Diagnostic, EditorErrorHandler } from '../core/index.js';
+	import type { Document, Addr, Diagnostic } from '@quillmark/wasm';
+	import type { EditorErrorHandler } from '../core/errors.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import type { CardModel, FieldModel } from './structure.js';
 	import { placeFields, humanize, initialExpandedGroup } from './structure.js';

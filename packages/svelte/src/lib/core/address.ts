@@ -4,10 +4,11 @@
 // structurally is drift with nothing to catch it: `/core` is the module both
 // already import.
 //
-// Slogan: paths for places, indexes for structure ops. `Addr` (`{card?, field?}`)
-// is the mutator currency, exported beside this; the conversions at the foot of this
-// module are the hop between the two, public because a host given a path by a hook
-// and holding a verb that takes an `Addr` needs them.
+// Slogan: paths for places, indexes for structure ops. `Addr` (`{card?, field?}`,
+// from `@quillmark/wasm`) is the mutator currency; the conversions at the foot of
+// this module are the hop between the two. `fieldPathForAddr` and `addrForFieldPath`
+// are public, because a host given a path by a hook and holding a verb that takes an
+// `Addr` needs them; `cardPath` is the editor's own.
 import { formatDocPath, parseDocPath, type Addr, type DocPathSeg } from '@quillmark/wasm';
 
 /**

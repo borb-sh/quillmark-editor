@@ -40,7 +40,7 @@ The parallel array is not a workaround. With no card handle in the document, `ca
 
 **Paths for places, indexes for structure ops.** Every hook naming a place speaks the canonical `DocPath`: `onCaretMove`'s `Place`, `EditorChange.path`, the active leaf's `field`. It is the grammar `Diagnostic.path`, `ContentHit.field`, `FieldRegion.field` and `session.regions()` already key on, so a host wires the editor to the preview as a pass-through and routes a diagnostic back with the string it was given. `Addr` stays the MUTATOR currency — the document verbs take it, the card verbs take indexes — and `enumOptionAllowed` keeps its `Addr` because it runs per option per derive, where minting a path is a string mint on an address that has one for free.
 
-`/core`'s `fieldPathForAddr` / `cardPath` / `addrForFieldPath` are the hop between the two, public and beside the grammar they speak. `addrForFieldPath` is also the ONE parse: the diagnostics router reads it rather than keeping a second copy of the walk.
+`/core`'s `fieldPathForAddr` / `addrForFieldPath` are the hop between the two, public and beside the grammar they speak (`cardPath`, the card's own path, is the editor's). `addrForFieldPath` is also the ONE parse: the diagnostics router reads it rather than keeping a second copy of the walk.
 
 A structure op's path names the CARD (`cards.<kind>[i]`), not the body leaf inside it: the change is the card. It is minted after the mutation, since an insert's card does not exist in the previous tree and a retype's kind is the previous kind.
 
@@ -169,7 +169,6 @@ The instance surface, reached by that `bind:this`:
 
 ```ts
 setCaret(hit: ContentHit): Promise<void>;      // preview → editor
-getActiveLeaf(): FieldController | undefined;  // the popover's observation seam
 focusField(field: DocPath): Promise<void>;     // reveal + focus, no caret placed
 insertCard(kind: string, at?: number): CardId | undefined;  // the new card's key
 removeCard(cardId: CardId): void;

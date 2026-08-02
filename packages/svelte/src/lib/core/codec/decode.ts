@@ -12,7 +12,7 @@ import type { Content, ContentContainer, ContentLine, ContentMark } from '@quill
 import { ISLAND_SLOT } from './islands.js';
 import { descriptorOf, markKey, pmMarkFromContent } from './marks.js';
 import { isInlineSchema } from './schema.js';
-import { isAnchorMark, isCodeLine, isHeadingLine, isListItemContainer } from '../index.js';
+import { isAnchorMark, isCodeLine, isHeadingLine, isListItemContainer } from '@quillmark/wasm';
 
 /** Code points of `s` (USV units): the iteration granularity the content speaks. */
 export function codePoints(s: string): string[] {

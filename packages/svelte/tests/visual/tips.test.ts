@@ -7,7 +7,8 @@
 // restatement of it: the invariant fails silently, so a test asserting a hand-copy
 // would keep passing while the shipped write regressed.
 import { describe, it, expect, beforeAll } from 'vitest';
-import { init, Quill, Document, MAIN_CARD_ADDR } from '$lib/core';
+import { Quill, Document, MAIN_CARD_ADDR } from '@quillmark/wasm';
+import { init } from '$lib/core';
 import { tipsChannel, renderTip } from '$lib/visual/tips.js';
 import { patchEditorExt } from '$lib/visual/ext.js';
 import { loadFixtureTree } from '../helpers/fixtures.js';

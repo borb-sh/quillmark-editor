@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { EditorView } from 'prosemirror-view';
 import { createField, blockSchema, pmToContent } from '$lib/core/codec';
 import type { FieldController } from '$lib/core/codec';
-import type { Document } from '$lib/core';
+import type { Document } from '@quillmark/wasm';
 import { quill, normalize, contentEqual } from './_util.js';
 
 /** The view is attached to the controller as an undocumented handle. */

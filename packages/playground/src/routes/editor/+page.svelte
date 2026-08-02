@@ -40,10 +40,9 @@
 		LiveSession,
 		ContentHit,
 		ChangeSet,
-		Place,
-		Diagnostic,
-		EditorError
-	} from '@quillmark/svelte/core';
+		Diagnostic
+	} from '@quillmark/wasm';
+	import type { Place, EditorError } from '@quillmark/svelte/core';
 	import type { ActiveLeaf, EditorChange } from '@quillmark/svelte/visual';
 	import { Preview } from '@quillmark/svelte/preview';
 	import { SourceView } from '@quillmark/svelte/source';
@@ -217,7 +216,8 @@
 				// same import. The fixture fetch is independent of both, so it runs alongside
 				// them.
 				const treeP = loadUsafMemoTree();
-				const [{ Engine, Quill, init }, visual] = await Promise.all([
+				const [{ Engine, Quill }, { init }, visual] = await Promise.all([
+					import('@quillmark/wasm'),
 					import('@quillmark/svelte/core'),
 					import('@quillmark/svelte/visual')
 				]);

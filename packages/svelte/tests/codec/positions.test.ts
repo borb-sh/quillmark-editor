@@ -3,7 +3,7 @@
 // inverse, and offsets land on the right code point.
 import { describe, it, expect } from 'vitest';
 import { decode, blockSchema, buildLineIndex, usvToPM, pmToUsv } from '$lib/core/codec';
-import type { Content } from '$lib/core';
+import type { Content } from '@quillmark/wasm';
 import { md, assertPositionInverse } from './_util.js';
 
 /** A synthetic single-para content over `text` (valid: one line, no marks). */

@@ -6,7 +6,7 @@
  render the same way a field's do.
 -->
 <script lang="ts">
-	import type { Diagnostic } from '../core/index.js';
+	import type { Diagnostic } from '@quillmark/wasm';
 	import { diagnosticText, wording } from './strings.js';
 
 	// The consumer's formatter, ambient from the editor root. The fallback to

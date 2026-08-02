@@ -6,7 +6,8 @@
 // drives them with what the hooks handed it.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync, tick } from 'svelte';
-import { Quill, type Document, type EditorError } from '$lib/core';
+import { Quill, type Document } from '@quillmark/wasm';
+import type { EditorError } from '$lib/core';
 import type { CardId, EditorChange } from '$lib/visual';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
 import { quill } from '../helpers/fixtures.js';

@@ -11,7 +11,7 @@
 // tiers).
 import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { createOverlay } from '$lib/preview/overlay';
-import type { LiveSession } from '$lib/core';
+import type { LiveSession } from '@quillmark/wasm';
 import type { PageSlot } from '$lib/preview/paint';
 
 interface AnimateCall {

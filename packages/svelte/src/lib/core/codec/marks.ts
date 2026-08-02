@@ -7,7 +7,7 @@
 // encode.ts. `emph` is the content name; `em` the PM name: the one asymmetry.
 import type { Mark, Schema } from 'prosemirror-model';
 import type { ContentMark } from '@quillmark/wasm';
-import { isAnchorMark, isLinkMark } from '../index.js';
+import { isAnchorMark, isLinkMark } from '@quillmark/wasm';
 
 /** Content formatting types that map 1:1 to a same-named PM mark. */
 const PLAIN_FORMATTING = new Set(['strong', 'underline', 'strike', 'code']);

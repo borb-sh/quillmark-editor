@@ -3,7 +3,7 @@
 // schema so the ordering contract and group layout are asserted on the fixture
 // the suite runs against.
 import { describe, it, expect } from 'vitest';
-import type { QuillFieldSchema } from '$lib/core';
+import type { QuillFieldSchema } from '@quillmark/wasm';
 import {
 	controlKind,
 	enumValues,

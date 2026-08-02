@@ -5,7 +5,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, relative, sep } from 'node:path';
-import { Quill } from '$lib/core';
+import { Quill } from '@quillmark/wasm';
 
 // `fixtures/` is the workspace's, not this package's: the playground reads the same
 // tree, so it sits above both.

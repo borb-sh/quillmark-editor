@@ -4,7 +4,7 @@
 // `PageSize` alone here, so they can never drift apart; the correctness seam
 // PREVIEW.md calls out. Pure: no DOM, no session; safe to unit-test against known
 // geometry (tests/preview/geometry.test.ts).
-import type { PageSize } from '../core/index.js';
+import type { PageSize } from '@quillmark/wasm';
 
 /** A page rect in PDF points, `[x0, y0, x1, y1]`, bottom-left origin (`FieldRegion.rect`'s shape). */
 export type PdfRect = readonly [number, number, number, number];

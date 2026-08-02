@@ -12,7 +12,7 @@ import {
 	blockSchema,
 	insertReintroducesIslandSlot
 } from '$lib/core/codec';
-import type { Content } from '$lib/core';
+import type { Content } from '@quillmark/wasm';
 import { freshDoc, normalize, contentEqual, md } from './_util.js';
 
 interface AnchorOpts {

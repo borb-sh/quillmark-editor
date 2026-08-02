@@ -5,8 +5,7 @@
 // unit-test artifact. That end-to-end route is what these add; the position map's
 // own inverse is positions.test.ts, over a strictly wider corpus.
 import { describe, it, expect } from 'vitest';
-import { Document } from '$lib/core';
-import type { Content, ContentMark } from '$lib/core';
+import { Document, type Content, type ContentMark } from '@quillmark/wasm';
 import { lower } from '$lib/core/codec';
 
 function rt(text: string, marks: ContentMark[] = [], lines?: Content['lines']): Content {
