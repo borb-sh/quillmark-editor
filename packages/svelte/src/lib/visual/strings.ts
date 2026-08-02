@@ -90,25 +90,26 @@ export interface VisualStrings {
 /**
  * The hook that turns a boundary `Diagnostic` into displayed text.
  *
- * What a formatter GETS is `code`, a canonical `path` and the English `message`,
- * because structured `args` were declined upstream. That is enough to re-word two
- * of the four lanes and not the other two:
+ * A formatter reads the whole `Diagnostic`, so what it can re-word tracks what that
+ * type carries per lane (VISUAL_EDITOR §Diagnostics for why each lands where it
+ * does):
  *
- * - **validation** (`validation::enum_violation`, `type_mismatch`,
- *   `format_violation`, `must_fill`): recoverable. The constraint is in the quill's
- *   schema, the offending value in the document at `path`.
- * - **edit** (`edit::field_conform`): recoverable by a third route. The refused
- *   value is in neither document (unchanged on throw) nor schema — it is the app's
- *   own control state, which the app has because it attempted the write.
- * - **parse** (`parse::yaml_error_with_location`, `invalid_structure`): NOT
- *   recoverable. No `path`, no `location`; the line, column, offending key and
- *   snippet live inside the English message.
- * - **render** (`LiveSession.warnings`): NOT recoverable. Backend text, which the
- *   editor already treats as an external feed.
+ * - **`validation::enum_violation`, `type_mismatch`, `format_violation`,
+ *   `must_fill`**: the CONSTRAINT re-words, from the quill's schema at `path`; the
+ *   offending VALUE does not, validation running post-coercion.
+ * - **`edit::field_conform`**: re-words from the app's own control state, the
+ *   refused value being in neither document (unchanged on throw) nor schema.
+ * - **`parse::yaml_error_with_location`, `invalid_structure`**: does not re-word.
+ *   No `path`, no `location`; every parameter inside the English message.
+ * - **`LiveSession.warnings`**: does not re-word. Backend text, an external feed.
  *
- * So a formatter needs an honest fallback arm and returning `undefined` is it: the
- * package renders `d.message` unchanged. `code` is optional at this pin, so the
- * fallback is reachable by TYPE and not only in principle.
+ * The last two are the boundary's shape, not a gap in it, so the fallback arm is
+ * permanent: returning `undefined` renders `d.message` unchanged. `code` is optional
+ * at this pin, so that arm is reachable by TYPE and not only in principle.
+ *
+ * Displayed text is that message or this replacement and nothing beside it: `hint` is
+ * the tail of the message it accompanies, so rendering it too ships a two-language
+ * diagnostic.
  */
 export type FormatDiagnostic = (d: Diagnostic) => string | undefined;
 
@@ -185,8 +186,7 @@ export function wording(): Wording {
 }
 
 /** A diagnostic's displayed text: the consumer's formatter, or its message. The
- *  fallback arm is not a courtesy — the parse and render lanes carry their
- *  parameters only inside that message (see {@link FormatDiagnostic}). */
+ *  fallback arm is permanent, not a courtesy ({@link FormatDiagnostic}). */
 export function diagnosticText(d: Diagnostic, format: FormatDiagnostic | undefined): string {
 	return (format ? format(d) : undefined) ?? d.message;
 }
