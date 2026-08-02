@@ -15,7 +15,7 @@ export interface VisualEditorProps {
 	/**
 	 * The active leaf: its canonical `DocPath` and the session key of the card holding
 	 * it, which is what a host tracking the active card keeps across a reorder
-	 * (`CardId`). The same pair `getActiveLeaf` reaches the controller by.
+	 * (`CardId`).
 	 */
 	onActiveLeafChange?: (active: ActiveLeaf) => void;
 	/**

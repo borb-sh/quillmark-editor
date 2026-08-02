@@ -18,7 +18,7 @@ Each subpath is its own module root; a bundler pulls only what the entry you imp
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `@quillmark/svelte/core`    | What the surfaces share: the `DocPath`/`Place` address vocabulary, the `EditorError` channel, `init`. The `@quillmark/wasm` API itself is imported from the peer directly. Framework-free. |
 | `@quillmark/svelte/preview` | The live preview: `createPreview` + `<Preview>`. Reaches `/core` and nothing editor-side, so `@quillmark/preview` can promote to a re-export.                                              |
-| `@quillmark/svelte/visual`  | The federated WYSIWYG: `<VisualEditor>`, the codec's `createField` prose leaf, `fieldPathForAddr`.                                                                                         |
+| `@quillmark/svelte/visual`  | The federated WYSIWYG: `<VisualEditor>`, the codec's `createField` prose leaf.                                                                                                             |
 | `@quillmark/svelte/source`  | The read-only debug source view: `createSourceView` + `<SourceView>`.                                                                                                                      |
 | `@quillmark/svelte`         | Re-exports `/core` (the shared substrate).                                                                                                                                                 |
 
@@ -206,7 +206,7 @@ onCaretPick: (hit) => visualEditor.setCaret(hit);
 onCaretMove: preview.focusPosition;
 ```
 
-The editor mints the path off its own derived card tree, so following the caret costs no `doc.cards` read per keystroke. `fieldPathForAddr` (from `@quillmark/svelte/visual`) is the same mapping for a consumer holding an `Addr` of its own.
+The editor mints the path off its own derived card tree, so following the caret costs no `doc.cards` read per keystroke. `fieldPathForAddr` (from `@quillmark/svelte/core`) is the same mapping for a consumer holding an `Addr` of its own.
 
 The playground's `/editor` route is the full reference split-pane shell: one session, both bridge directions, the preview following edits, diagnostics routed inline, and the source view.
 
