@@ -13,9 +13,8 @@
 	// `d.message` is load-bearing rather than defensive: the parse and render lanes
 	// carry their parameters only inside that English string, so a formatter that
 	// routes on `code` has nothing to build from and says so by returning
-	// `undefined` (FormatDiagnostic). That text is the whole rendering: `hint` is the
-	// tail of the message it accompanies, so showing it beside a formatter's
-	// replacement would ship a two-language diagnostic.
+	// `undefined` (FormatDiagnostic). That text is the whole rendering: no `hint`
+	// beside it, which would ship a two-language diagnostic.
 	const t = wording();
 
 	interface Props {
