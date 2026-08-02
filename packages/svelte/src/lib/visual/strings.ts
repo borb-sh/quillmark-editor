@@ -90,25 +90,32 @@ export interface VisualStrings {
 /**
  * The hook that turns a boundary `Diagnostic` into displayed text.
  *
- * What a formatter GETS is `code`, a canonical `path` and the English `message`,
- * because structured `args` were declined upstream. That is enough to re-word two
- * of the four lanes and not the other two:
+ * A formatter reads the whole `Diagnostic`, so what it can re-word tracks what that
+ * type carries per lane:
  *
  * - **validation** (`validation::enum_violation`, `type_mismatch`,
- *   `format_violation`, `must_fill`): recoverable. The constraint is in the quill's
- *   schema, the offending value in the document at `path`.
- * - **edit** (`edit::field_conform`): recoverable by a third route. The refused
- *   value is in neither document (unchanged on throw) nor schema — it is the app's
- *   own control state, which the app has because it attempted the write.
- * - **parse** (`parse::yaml_error_with_location`, `invalid_structure`): NOT
- *   recoverable. No `path`, no `location`; the line, column, offending key and
- *   snippet live inside the English message.
- * - **render** (`LiveSession.warnings`): NOT recoverable. Backend text, which the
- *   editor already treats as an external feed.
+ *   `format_violation`, `must_fill`): the CONSTRAINT re-words, from the quill's
+ *   schema at `path`; the offending VALUE does not. Validation runs post-coercion,
+ *   so the validator saw the coerced value while the document at `path` holds the
+ *   authored one.
+ * - **edit** (`edit::field_conform`): re-words by a third route. The refused value
+ *   is in neither document (unchanged on throw) nor schema, but in the app's own
+ *   control state, which the app has because it attempted the write.
+ * - **parse** (`parse::yaml_error_with_location`, `invalid_structure`): does not
+ *   re-word. No `path`, no `location`; the line, column, offending key and snippet
+ *   live inside the English message.
+ * - **render** (`LiveSession.warnings`): does not re-word. Backend text, an open set
+ *   minted from the backend's own message text, which the editor already treats as
+ *   an external feed.
  *
- * So a formatter needs an honest fallback arm and returning `undefined` is it: the
- * package renders `d.message` unchanged. `code` is optional at this pin, so the
- * fallback is reachable by TYPE and not only in principle.
+ * The last two are a property of the boundary rather than a gap in it, so the
+ * fallback arm is permanent: returning `undefined` renders `d.message` unchanged.
+ * `code` is optional at this pin, so the fallback is reachable by TYPE and not only
+ * in principle.
+ *
+ * A diagnostic's displayed text is that message or this replacement and nothing
+ * beside it: `hint` is the tail of the message it accompanies, so rendering it too
+ * would ship a two-language diagnostic.
  */
 export type FormatDiagnostic = (d: Diagnostic) => string | undefined;
 

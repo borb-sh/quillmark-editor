@@ -103,6 +103,28 @@ describe('formatDiagnostic', () => {
 		expect(diagnosticText(parse, format)).toBe(parse.message);
 	});
 
+	it('renders the formatted text and never the hint beside it', () => {
+		// `hint` is the tail of the message it accompanies (the boundary asserts it),
+		// so a surface rendering both shows one re-worded sentence with the engine's
+		// English under it.
+		const hint = 'Either provide a value of type `richtext` or change the schema.';
+		const { target } = mountEditor({
+			diagnostics: [
+				{
+					severity: 'error',
+					code: 'validation::type_mismatch',
+					path: 'main.subject',
+					message: `field \`main.subject\` is \`richtext\` but the value is an array. ${hint}`,
+					hint
+				}
+			],
+			formatDiagnostic: () => 'Type incorrect'
+		});
+		const lines = [...target.querySelectorAll('.qm-diag-line')].map((n) => n.textContent);
+		expect(lines).toContain('Type incorrect');
+		expect(lines.some((t) => t?.includes('Either provide'))).toBe(false);
+	});
+
 	it('falls back with no formatter at all, and when code is absent', () => {
 		expect(diagnosticText(validation, undefined)).toBe(validation.message);
 		// `Diagnostic.code` is optional at this pin, so routing on it is not total by
