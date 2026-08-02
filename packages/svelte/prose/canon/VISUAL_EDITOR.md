@@ -163,6 +163,22 @@ interface FieldController {
 <!-- bridge in: visualEditor.setCaret(hit) from preview.onCaretPick -->
 ```
 
+The instance surface, reached by that `bind:this`:
+
+```ts
+setCaret(hit: ContentHit): Promise<void>;      // preview → editor
+getActiveLeaf(): FieldController | undefined;  // the popover's observation seam
+focusField(field: DocPath): Promise<void>;     // reveal + focus, no caret placed
+insertCard(kind: string, at?: number): CardId | undefined;  // the new card's key
+removeCard(cardId: CardId): void;
+moveCard(cardId: CardId, dir: -1 | 1): void;   // one slot; a no-op at either edge
+setKind(cardId: CardId, kind: string): void;
+```
+
+**The verbs are the card header's own, and the door is the point.** A host toolbar, command palette or shortcut wants what the chrome has, and every call reports through `onChange` exactly as the click does, so a host that recompiles off the hook needs no second path for its own gestures. They speak the public vocabulary — a `CardId` for a card, a `DocPath` for a place — so a host drives them with what the hooks handed it, and a `bind:this` held across a document swap keeps working: the door delegates to the live mount, so a call landing between a swap and the incoming mount is a no-op.
+
+A target the surface does not hold — a `cardId` from a previous session or an already-removed card, a path naming no mounted leaf — is a no-op reporting `target-unknown` at `dev`. The chrome cannot mint a bad one, so it only ever fires on a host.
+
 ## Not owned
 
 - content↔PM, the position map, mark/island translation: the codec's ([CODEC.md](CODEC.md)).

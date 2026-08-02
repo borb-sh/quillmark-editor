@@ -25,8 +25,9 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { reportError } from '../core/index.js';
-	import type { ContentHit } from '../core/index.js';
+	import type { ContentHit, DocPath } from '../core/index.js';
 	import type { FieldController } from '../core/codec/index.js';
+	import type { CardId } from './signals.js';
 	import type { VisualEditorProps } from './props.js';
 	import VisualEditorInner from './VisualEditorInner.svelte';
 
@@ -62,16 +63,35 @@
 		});
 	});
 
-	/**
-	 * Place the caret at a preview hit. Delegates to the live mount, so a call
-	 * landing between a swap and the incoming mount is a no-op rather than a throw.
-	 */
+	// The instance surface, every member a pass-through to the live mount: a call
+	// landing between a swap and the incoming mount is a no-op rather than a throw,
+	// which is what lets a host hold ONE `bind:this` across two documents.
+
+	/** Place the caret at a preview hit. */
 	export async function setCaret(hit: ContentHit): Promise<void> {
 		await inner?.setCaret(hit);
 	}
 	/** The active leaf's controller: the formatting popover's observation seam. */
 	export function getActiveLeaf(): FieldController | undefined {
 		return inner?.getActiveLeaf();
+	}
+	/** Reveal and focus the leaf at `field`, without placing a caret inside it. */
+	export async function focusField(field: DocPath): Promise<void> {
+		await inner?.focusField(field);
+	}
+	/** Seed a card of `kind` at `at` (default: the end); the new card's session key. */
+	export function insertCard(kind: string, at?: number): CardId | undefined {
+		return inner?.insertCard(kind, at);
+	}
+	export function removeCard(cardId: CardId): void {
+		inner?.removeCard(cardId);
+	}
+	/** Move a card one slot; at either edge it is a no-op. */
+	export function moveCard(cardId: CardId, dir: -1 | 1): void {
+		inner?.moveCard(cardId, dir);
+	}
+	export function setKind(cardId: CardId, kind: string): void {
+		inner?.setKind(cardId, kind);
 	}
 </script>
 

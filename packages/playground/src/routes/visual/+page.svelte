@@ -13,6 +13,11 @@
 
   The fixture variants are SCHEMA or SEED changes read once at mount, so their
   links reload the page rather than navigating within it.
+
+  `card-verbs` drives the editor's instance exports from OUTSIDE its chrome, which
+  is the case a card header can never exercise: the same insert/move/remove a
+  control calls, reached through `bind:this` and keyed by the `cardId` the active-leaf
+  hook handed back.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -48,6 +53,16 @@
 	// main-card selector is captured there for the reads outside that scope.
 	let mainAddr: CardAddr | undefined = $state();
 	let lastAddr = $state('none');
+	// The host's handle on the editor, and the card the active-leaf hook last named:
+	// what the toolbar below drives its verbs with.
+	let editorRef:
+		| {
+				insertCard(kind: string, at?: number): string | undefined;
+				removeCard(cardId: string): void;
+				moveCard(cardId: string, dir: -1 | 1): void;
+		  }
+		| undefined = $state();
+	let activeCardId = $state<string | undefined>();
 	let dumpTick = $state(0);
 	let externalDiagnostics = $state<Diagnostic[]>([]);
 	// A consumer enum-policy stand-in: once armed, forbid `CUI` on the main
@@ -150,6 +165,7 @@
 
 	function handleActiveLeaf(active: ActiveLeaf): void {
 		lastAddr = JSON.stringify(active);
+		activeCardId = active.cardId;
 		refresh();
 	}
 
@@ -245,6 +261,7 @@
 			<div class="editor-shell">
 				{#if VisualEditor && docHandle && quillHandle}
 					<VisualEditor
+						bind:this={editorRef}
 						doc={docHandle}
 						quill={quillHandle}
 						onActiveLeafChange={handleActiveLeaf}
@@ -279,6 +296,32 @@
 						data-testid="toggle-body-placeholder"
 						aria-pressed={wittyGhosts}
 						onclick={() => (wittyGhosts = !wittyGhosts)}>Custom body placeholder</button
+					>
+				</div>
+
+				<p class="pg-label">Card verbs (from outside the card)</p>
+				<div class="buttons">
+					<button
+						class="pg-btn"
+						type="button"
+						data-testid="verb-insert"
+						onclick={() => editorRef?.insertCard('indorsement')}>Insert indorsement</button
+					>
+					<button
+						class="pg-btn"
+						type="button"
+						data-testid="verb-move-up"
+						disabled={!activeCardId || activeCardId === 'main'}
+						onclick={() => activeCardId && editorRef?.moveCard(activeCardId, -1)}
+						>Move active card up</button
+					>
+					<button
+						class="pg-btn"
+						type="button"
+						data-testid="verb-remove"
+						disabled={!activeCardId || activeCardId === 'main'}
+						onclick={() => activeCardId && editorRef?.removeCard(activeCardId)}
+						>Remove active card</button
 					>
 				</div>
 

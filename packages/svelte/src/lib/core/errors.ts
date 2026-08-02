@@ -45,7 +45,15 @@ export type EditorErrorCode =
 	 * handle. `dev` throughout: the fix is a remount at the call site, so this is
 	 * aimed at whoever wired it and never at a running app's telemetry.
 	 */
-	| 'rebind-ignored';
+	| 'rebind-ignored'
+	/**
+	 * An instance verb named a card or a field the surface does not hold: a `cardId`
+	 * from a previous session or an already-removed card, a `DocPath` naming no
+	 * mounted leaf. The call is a no-op and the document is untouched. `dev`: the
+	 * editor's own chrome cannot mint a bad target, so this only ever reports a host
+	 * driving the verbs from outside.
+	 */
+	| 'target-unknown';
 
 /** A failure a surface recovered from. */
 export interface EditorError {

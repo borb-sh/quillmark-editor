@@ -101,6 +101,30 @@ Hand it a different `doc` and the editor **re-keys itself**: every leaf remounts
 
 `quill` is not part of that key — the schema is re-read on every derive, so a quill swap re-projects on its own. Swapping it _without_ the doc leaves the mounted leaves paired to the quill their document mounted with, and reports `rebind-ignored` through `onError` at `dev` severity rather than passing silently.
 
+### Driving it from outside
+
+`bind:this` reaches the same verbs the card header calls, so a toolbar, command palette or shortcut needs no second path into the document. Every one reports through `onChange` exactly as the click does.
+
+```svelte
+<script lang="ts">
+	let editor: ReturnType<typeof VisualEditor> | undefined = $state();
+	let activeCard = $state<string | undefined>();
+</script>
+
+<VisualEditor
+	bind:this={editor}
+	{doc}
+	{quill}
+	onActiveLeafChange={(a) => (activeCard = a.cardId)}
+/>
+
+<button onclick={() => editor?.insertCard('indorsement')}>Add indorsement</button>
+<button onclick={() => activeCard && editor?.moveCard(activeCard, -1)}>Move up</button>
+<button onclick={() => editor?.focusField('main.subject')}>Jump to subject</button>
+```
+
+`insertCard` hands back the new card's `cardId`; `removeCard`, `moveCard` and `setKind` take one. A card key or a path the surface does not hold is a no-op that reports `target-unknown` through `onError` at `dev` severity.
+
 ### Wording
 
 The package ships English and a seam to replace it. `strings` is keyed and **partial**: set what you have translations for, and the rest stay the package's.

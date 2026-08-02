@@ -358,11 +358,13 @@
 		const i = cardIndexOf(id);
 		if (i >= 0) cardRefs[i]?.scrollIntoViewCard(block);
 	}
-	function addCard(atIndex: number, kind: string): void {
+	/** Returns the new card's session key, or `undefined` when the kind seeds nothing
+	 *  or the insert threw: what `insertCard` hands a host that wants to track it. */
+	function addCard(atIndex: number, kind: string): CardId | undefined {
 		try {
 			const overlay = doc.seedOverlay(kind);
 			const card = quill.seedCard(kind, overlay);
-			if (!card) return;
+			if (!card) return undefined;
 			doc.insertCard(card, atIndex);
 			const id = seq.next();
 			cardIds = [...cardIds.slice(0, atIndex), id, ...cardIds.slice(atIndex)];
@@ -370,6 +372,7 @@
 			// `center` for an insert: the new card is the subject, and centring it shows
 			// the neighbours it landed between.
 			void scrollCardIntoView(id, 'center');
+			return id;
 		} catch (e) {
 			reportError(onError, {
 				code: 'card-op-failed',
@@ -377,6 +380,7 @@
 				message: `adding a ${kind} card failed: ${errorMessage(e)}`,
 				cause: e
 			});
+			return undefined;
 		}
 	}
 	// The reorder gesture's arming window (SURFACES §Motion): the reconcile that moves a
@@ -675,17 +679,8 @@
 	 * the span is asked on the way in as well as after the await.
 	 */
 	export async function setCaret(hit: ContentHit): Promise<void> {
-		if (!span.alive) return;
-		const key = leafKeyForHit(hit.field);
-		if (!key) return;
-		const leaf = leaves.get(key);
+		const leaf = await revealLeaf(hit.field);
 		if (!leaf) return;
-		// Reveal first: a leaf in a collapsed group is clipped to zero height and sits
-		// inside an `inert` panel, so both the caret and the cue below would land on
-		// nothing. Exactly one card holds the key.
-		mainCard?.revealLeaf(key);
-		for (const card of cardRefs) card?.revealLeaf(key);
-		if (!(await span.resumes(tick()))) return;
 		// A `'segment'` hit landed on origin-less ink (list markers, a code fence's
 		// interior): `pos` is the segment START, not a cluster-exact caret
 		// (HitGranularity), so just focus the leaf rather than snap the caret to a
@@ -707,8 +702,78 @@
 		return leaves.get(fieldKeyToString({ card, field: activeAddr.field }));
 	}
 
+	/**
+	 * Reveal the leaf at `field` and hand back its controller, once the reveal has
+	 * RENDERED. The shared half of the two landing verbs: a collapsed group is clipped
+	 * to zero height and sits inside an `inert` panel, which swallows a focus silently,
+	 * so a caret placed in the same tick as the reveal goes nowhere and reports
+	 * nothing. Exactly one card holds the key; the rest do nothing.
+	 *
+	 * A destroy lands INSIDE this: the leaf is looked up before the flush and
+	 * dispatched into after it, and a PM view destroyed in that window throws on the
+	 * dispatch. A consumer's call outlives the surface it points at too, so the span is
+	 * asked on the way in as well as after the await.
+	 */
+	async function revealLeaf(field: DocPath): Promise<FieldController | undefined> {
+		if (!span.alive) return undefined;
+		const key = leafKeyForHit(field);
+		const leaf = key == null ? undefined : leaves.get(key);
+		if (!leaf) return undefined;
+		mainCard?.revealLeaf(key!);
+		for (const card of cardRefs) card?.revealLeaf(key!);
+		if (!(await span.resumes(tick()))) return undefined;
+		return leaf;
+	}
+
+	// ── The verbs, as instance exports ──────────────────────────────────────────
+	// The same functions the card's own chrome calls, reached through `bind:this`: a
+	// host toolbar, command palette or shortcut wants the door the card header gets,
+	// and every one of them reports through `onChange` exactly as the click does.
+	// They speak the public vocabulary — a `DocPath` for a place, a `CardId` for a
+	// card — so a host drives them with what the hooks handed it.
+	//
+	// A target the surface does not hold is a NO-OP that reports `target-unknown` at
+	// `dev`: the chrome cannot mint a bad one, so it only ever fires on a host holding
+	// a key from a previous session or a card already removed.
+
+	/** Reveal and focus the leaf at `field`, without placing a caret inside it. */
+	export async function focusField(field: DocPath): Promise<void> {
+		const leaf = await revealLeaf(field);
+		if (!leaf) return missed(`no mounted leaf at ${field}`, field);
+		leaf.focus();
+		bloomInside(leaf.el);
+	}
+	/** Seed a card of `kind` and insert it at `at` (default: the end). Returns the new
+	 *  card's session key, or `undefined` when the quill seeds no card of that kind. */
+	export function insertCard(kind: string, at: number = cardIds.length): CardId | undefined {
+		return addCard(Math.min(Math.max(at, 0), cardIds.length), kind);
+	}
+	export function removeCard(cardId: CardId): void {
+		if (!holds(cardId)) return;
+		removeCardById(cardId);
+	}
+	/** Move a card one slot. The step the reorder control takes, and the one the
+	 *  surface animates; at either edge it is a no-op. */
+	export function moveCard(cardId: CardId, dir: -1 | 1): void {
+		if (!holds(cardId)) return;
+		moveCardById(cardId, dir);
+	}
+	export function setKind(cardId: CardId, kind: string): void {
+		if (!holds(cardId)) return;
+		retypeCardById(cardId, kind);
+	}
+
+	function holds(cardId: CardId): boolean {
+		if (cardIndexOf(cardId) >= 0) return true;
+		missed(`no card ${cardId} in this session`);
+		return false;
+	}
+	function missed(message: string, path?: DocPath): void {
+		reportError(onError, { code: 'target-unknown', severity: 'dev', message, path });
+	}
+
 	/** Map a `ContentHit.field` (a canonical `DocPath`) to a mounted leaf key: the
-	 * same `parseDocPath` route the diagnostics take, the absolute card index
+	 * same `addrForFieldPath` route the diagnostics take, the absolute card index
 	 * resolved to its live stable id, then the shared `fieldKeyToString` form. */
 	function leafKeyForHit(field: string): string | undefined {
 		const key = parsePath(field);
