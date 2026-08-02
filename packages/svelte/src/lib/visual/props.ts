@@ -11,14 +11,18 @@ import type {
 	Place,
 	EditorErrorHandler
 } from '../core/index.js';
-import type { EditorChange } from './signals.js';
+import type { ActiveLeaf, EditorChange } from './signals.js';
 import type { FormatDiagnostic, VisualStringsInput } from './strings.js';
 
 export interface VisualEditorProps {
 	doc: Document;
 	quill: Quill;
-	/** The active leaf's address (normalized to a plain `{card?, field?}`). */
-	onActiveAddrChange?: (addr: Addr) => void;
+	/**
+	 * The active leaf: its canonical `DocPath` and the session key of the card holding
+	 * it, which is what a host tracking the active card keeps across a reorder
+	 * (`CardId`). The same pair `getActiveLeaf` reaches the controller by.
+	 */
+	onActiveLeafChange?: (active: ActiveLeaf) => void;
 	/**
 	 * A caret move in the active leaf, carrying the canonical `DocPath` the
 	 * preview also speaks: `onCaretMove={preview.focusPosition}` is the whole

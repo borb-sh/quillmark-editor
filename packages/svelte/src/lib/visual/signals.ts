@@ -2,7 +2,7 @@
 // (VISUAL_EDITOR §Editor→preview), so nothing here imports it; what the two share
 // is `/core`'s address vocabulary, which is what lets a consumer wire the bridge
 // as a pass-through rather than a translation.
-import type { Addr } from '../core/index.js';
+import type { DocPath } from '../core/index.js';
 
 /**
  * Which lane an edit came down. The three differ in COST, not in meaning: prose
@@ -18,12 +18,50 @@ export type ChangeSource =
 	/** A card operation: add, move, remove, retype, rename, tips dismissal. */
 	| 'structure';
 
+/**
+ * A card's SESSION key: the editor's own identity for a card instance, `'main'` for
+ * the main card and an opaque `IdSeq` id (`structure.ts`) for a composable one. It
+ * rides beside every address the surface emits, because no address survives a
+ * reorder: `Addr` and `DocPath` are both positional, so a host holding
+ * `cards.indorsement[2].from` names a different card after one `moveCard`, and
+ * silently. The key does not move.
+ *
+ * SESSION-SCOPED BY CONSTRUCTION. Nothing document-side backs it (the document model
+ * carries no card handle): it is minted at mount and dies with the surface, so it
+ * does not survive a reload and a host persisting one is persisting a session key.
+ *
+ * THE EDITOR OWNS STRUCTURAL MUTATION for the session. The keys track the inserts,
+ * moves and removals the editor performs; a host that mutates the card array behind
+ * it (its own `doc.insertCard`) desyncs them, and the answer is to re-seed the
+ * surface rather than expect the keys to follow. There is nothing document-side to
+ * reconcile against, so this is a contract rather than a mechanism.
+ */
+export type CardId = string;
+
 /** An edit that LANDED on the document, and which lane it came down. */
 export interface EditorChange {
 	source: ChangeSource;
 	/**
-	 * Where it landed, when the change has one place. Absent for a card removal and
-	 * a tips dismissal, which are the stack's change rather than a leaf's.
+	 * Where it landed, in the canonical `DocPath` the preview and every diagnostic
+	 * already speak: a FIELD for the prose and field lanes, the CARD itself
+	 * (`cards.<kind>[i]`) for a structure op, where the change is the card rather than
+	 * anything inside it. Absent for a card removal and a tips dismissal, which are
+	 * the stack's change rather than a leaf's.
 	 */
-	addr?: Addr;
+	path?: DocPath;
+	/**
+	 * Which card it landed in ({@link CardId}). Present for a removal, whose `path`
+	 * is not: the index is meaningless once the card is gone, and the key is the only
+	 * handle a host tracking cards has left to drop. Absent only for the tips
+	 * dismissal, which is document-level chrome and names no card.
+	 */
+	cardId?: CardId;
+}
+
+/** The leaf that has focus: where it sits, and which card holds it. */
+export interface ActiveLeaf {
+	/** The leaf's own address, the same `DocPath` a `Place`, a `ContentHit` and a
+	 *  `Diagnostic` name a field with. */
+	field: DocPath;
+	cardId: CardId;
 }

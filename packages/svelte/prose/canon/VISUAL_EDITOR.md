@@ -32,6 +32,20 @@ Every editable unit is keyed by an address: a content leaf by `Addr {card?, fiel
 
 But cards are **positional** in the content (`cards[i]`): index-keyed loops, stale-index write guards, reused-component reconciliation, phantom placeholders. So the VisualEditor keys each card *instance* by a **session key** and resolves that key to an index only at the mutation boundary (`moveCard`, `applyChange(addr)`). A reorder is a `moveCard` plus a key reorder; no leaf remounts, no PM instance is re-fed a swapped document, no caret is lost to a swap.
 
+**The key leaves the editor.** No address survives a reorder — `Addr` and `DocPath` are both positional, so a host holding `cards.indorsement[2].from` names a different card after one `moveCard` and is told nothing — so every payload naming a card carries its `cardId` beside the address it already carries: `EditorChange`, and the active leaf. `'main'` is the main card's key, the same token the leaf-key space already spends. A removal carries the key with no address: the index is meaningless once the card is gone, and the key is the only handle left to drop. The tips dismissal carries neither; it is document-level chrome that rides `main`'s `$ext` and names no card.
+
+The parallel array is not a workaround. With no card handle in the document, `cardIds` is not a cache of a document-side truth — it **is** the identity, and there is nothing to reconcile it against. So the editor **owns structural mutation for the session**: the keys track the inserts, moves and removals it performs, and a host that mutates the card array behind it re-seeds the surface rather than expecting the keys to follow. A `cardId` is session-scoped by construction: it does not survive a reload, and a host persisting one is persisting a session key.
+
+### One vocabulary in the hooks
+
+**Paths for places, indexes for structure ops.** Every hook naming a place speaks the canonical `DocPath`: `onCaretMove`'s `Place`, `EditorChange.path`, the active leaf's `field`. It is the grammar `Diagnostic.path`, `ContentHit.field`, `FieldRegion.field` and `session.regions()` already key on, so a host wires the editor to the preview as a pass-through and routes a diagnostic back with the string it was given. `Addr` stays the MUTATOR currency — the document verbs take it, the card verbs take indexes — and `enumOptionAllowed` keeps its `Addr` because it runs per option per derive, where minting a path is a string mint on an address that has one for free.
+
+`/core`'s `fieldPathForAddr` / `cardPath` / `addrForFieldPath` are the hop between the two, public and beside the grammar they speak. `addrForFieldPath` is also the ONE parse: the diagnostics router reads it rather than keeping a second copy of the walk.
+
+A structure op's path names the CARD (`cards.<kind>[i]`), not the body leaf inside it: the change is the card. It is minted after the mutation, since an insert's card does not exist in the previous tree and a retype's kind is the previous kind.
+
+**Path-only was probed against struct and lost.** A hook could carry a bare `DocPath` and nothing else; the cost measured was the sites that parse an index back out. Written both ways over the four things a host does with these signals — recompile, pin an annotation, highlight the active card, scroll a positional list — path-only saves nothing at the site it was supposed to: the struct carries the path too, so `parseDocPath` is one call under either shape. It loses at the other: an outline highlighting the active card reads `cardId` directly under the struct, and under path-only parses a path for an index that is wrong after the next reorder, which is the trap `cardId` exists to close. A shape that is never cheaper and sometimes wrong is not a trade-off.
+
 ## Edits are ops to the live Document
 
 The VisualEditor holds the live `Document` (via `DocumentWriter = quill.writer(doc)`) and writes ops at an address: never a markdown string, never a whole-document re-serialize:
@@ -60,10 +74,10 @@ Reconciliation is field-scoped. The editor holds its optimistic PM state and re-
 
 ## Focus and the preview bridge
 
-**One active leaf holds the caret.** The VisualEditor owns `activeAddr`; because leaves are keyed by stable identity, this is plain state, not a value hoisted to a parent to survive remounts. Both directions ([PREVIEW.md](PREVIEW.md) §Click bridge):
+**One active leaf holds the caret.** The VisualEditor owns the active address; because leaves are keyed by stable identity, this is plain state, not a value hoisted to a parent to survive remounts. It reports it as an `ActiveLeaf` — the leaf's `DocPath` and its card's session key — which is the pair `getActiveLeaf` reaches the controller by. Both directions ([PREVIEW.md](PREVIEW.md) §Click bridge):
 
 - **preview → editor**: `visualEditor.setCaret(hit)` resolves `hit.field` to a leaf, which runs `codec.usvToPM(hit.pos)` and sets its PM caret; a `'segment'` hit just focuses the leaf (`hit.pos` is a segment start, not a cluster-exact caret). It reveals first and awaits the render before landing, so it is the one async entry point (VISUAL_EDITOR_UIUX §"Editor↔preview").
-- **editor → preview**: a caret move in the active leaf emits `onCaretMove(at)` with a `Place` (`/core`): the canonical `DocPath` field address and the USV caret, which is `preview.focusPosition`'s own argument, so the hop is `onCaretMove={preview.focusPosition}` and translates nothing. The editor mints the path off its DERIVED card tree, which already holds every kind, so following the caret costs no `doc.cards` read per keystroke (`doc.cards` serializes every card on each read). `fieldPathForAddr` (`caret.ts`, built on `formatDocPath`) is the same mapping, exported for a consumer holding an `Addr` of its own. The USV `pos` is the shared coordinate: no codec hop.
+- **editor → preview**: a caret move in the active leaf emits `onCaretMove(at)` with a `Place` (`/core`): the canonical `DocPath` field address and the USV caret, which is `preview.focusPosition`'s own argument, so the hop is `onCaretMove={preview.focusPosition}` and translates nothing. The editor mints the path off its DERIVED card tree, which already holds every kind, so following the caret costs no `doc.cards` read per keystroke (`doc.cards` serializes every card on each read). The USV `pos` is the shared coordinate: no codec hop.
 
 ## Teardown
 
@@ -141,13 +155,29 @@ interface FieldController {
 <VisualEditor
   bind:this={visualEditor}
   {doc} {quill}
-  onActiveAddrChange={(addr) => …}
+  onActiveLeafChange={({ field, cardId }) => …}
   onCaretMove={preview.focusPosition}
   onChange={(change) => change.source === 'structure' ? recompileNow() : schedule()}
   onError={(err) => …}
 />
 <!-- bridge in: visualEditor.setCaret(hit) from preview.onCaretPick -->
 ```
+
+The instance surface, reached by that `bind:this`:
+
+```ts
+setCaret(hit: ContentHit): Promise<void>;      // preview → editor
+getActiveLeaf(): FieldController | undefined;  // the popover's observation seam
+focusField(field: DocPath): Promise<void>;     // reveal + focus, no caret placed
+insertCard(kind: string, at?: number): CardId | undefined;  // the new card's key
+removeCard(cardId: CardId): void;
+moveCard(cardId: CardId, dir: -1 | 1): void;   // one slot; a no-op at either edge
+setKind(cardId: CardId, kind: string): void;
+```
+
+**The verbs are the card header's own, and the door is the point.** A host toolbar, command palette or shortcut wants what the chrome has, and every call reports through `onChange` exactly as the click does, so a host that recompiles off the hook needs no second path for its own gestures. They speak the public vocabulary — a `CardId` for a card, a `DocPath` for a place — so a host drives them with what the hooks handed it, and a `bind:this` held across a document swap keeps working: the door delegates to the live mount, so a call landing between a swap and the incoming mount is a no-op.
+
+A target the surface does not hold — a `cardId` from a previous session or an already-removed card, a path naming no mounted leaf — is a no-op reporting `target-unknown` at `dev`. The chrome cannot mint a bad one, so it only ever fires on a host.
 
 ## Not owned
 
@@ -158,7 +188,7 @@ interface FieldController {
 
 ## Settled and open
 
-- **Card-instance identity is a session key**: an in-memory id per card, reordered in lockstep with the content and resolved to an index only at the mutation boundary (`structure.ts` `IdSeq`). Identity is the editor's, not the document's: nothing document-side backs it, and it does not survive a reload.
+- **Card-instance identity is a session key**: an in-memory id per card, reordered in lockstep with the content and resolved to an index only at the mutation boundary (`structure.ts` `IdSeq`). Identity is the editor's, not the document's: nothing document-side backs it, and it does not survive a reload. It rides every card-naming payload (§"The address is the spine"), so the reorder trap is a host's to fall into only by ignoring it.
 - **Layout is `ui`-driven**: `ui.group` sections, `ui.compact` packs a shared row (`structure.ts`); the editor adds no responsive policy of its own.
 - **Undo is per-leaf**: each prose leaf carries its own PM history. A document-level undo spanning a structural op plus a prose edit (a coordinating stack above the leaves) does not ship in V1.
 - **Array/table convergence**: how far the `array`-of-`object` table control converges with the richtext table island (a scalar array field vs a body island, similar affordance) is not carried in V1.

@@ -84,8 +84,8 @@ In Svelte, `<Preview {session} onCaretPick={…} />` exposes the same verbs (`re
 	onChange={(change) => {
 		/* an edit LANDED; `change.source` is 'prose' | 'field' | 'structure' */
 	}}
-	onActiveAddrChange={(addr) => {
-		/* the active leaf's address */
+	onActiveLeafChange={(active) => {
+		/* the active leaf: `active.field` (a DocPath), and `active.cardId` for its card */
 	}}
 	onCaretMove={(at) => {
 		/* the caret moved to `at.field` (a DocPath) at `at.pos` (USV) */
@@ -100,6 +100,30 @@ In Svelte, `<Preview {session} onCaretPick={…} />` exposes the same verbs (`re
 Hand it a different `doc` and the editor **re-keys itself**: every leaf remounts against the new handle, and the id state, the commit-error map and the active address seed fresh. Nothing to key at the call site. Edits flow the other way, mutating the passed-in handle, so a swap is the only direction that needs saying.
 
 `quill` is not part of that key — the schema is re-read on every derive, so a quill swap re-projects on its own. Swapping it _without_ the doc leaves the mounted leaves paired to the quill their document mounted with, and reports `rebind-ignored` through `onError` at `dev` severity rather than passing silently.
+
+### Driving it from outside
+
+`bind:this` reaches the same verbs the card header calls, so a toolbar, command palette or shortcut needs no second path into the document. Every one reports through `onChange` exactly as the click does.
+
+```svelte
+<script lang="ts">
+	let editor: ReturnType<typeof VisualEditor> | undefined = $state();
+	let activeCard = $state<string | undefined>();
+</script>
+
+<VisualEditor
+	bind:this={editor}
+	{doc}
+	{quill}
+	onActiveLeafChange={(a) => (activeCard = a.cardId)}
+/>
+
+<button onclick={() => editor?.insertCard('indorsement')}>Add indorsement</button>
+<button onclick={() => activeCard && editor?.moveCard(activeCard, -1)}>Move up</button>
+<button onclick={() => editor?.focusField('main.subject')}>Jump to subject</button>
+```
+
+`insertCard` hands back the new card's `cardId`; `removeCard`, `moveCard` and `setKind` take one. A card key or a path the surface does not hold is a no-op that reports `target-unknown` through `onError` at `dev` severity.
 
 ### Wording
 
