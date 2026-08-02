@@ -8,20 +8,23 @@
  * private Typst backend binary, clones the core handles across the WASM-memory
  * seam, and produces real artifact bytes.
  *
- * It pins quiver's side of two canonical contracts:
+ * It pins quiver's side of three canonical contracts:
  *   1. a core `Quill` from `getQuill` passes straight to `engine.render` — no
  *      boundary-crossing helper is needed (the Engine hides the seam);
  *   2. the Engine CLONES the quill, it never consumes it — the same `Quill`
- *      renders a second time.
+ *      renders a second time;
+ *   3. a stored document names its quill: `doc.quillRef` is a ref `getQuill`
+ *      accepts, and the per-canonical-ref cache answers it with the one
+ *      instance — one materialization per document, however many consumers
+ *      resolve.
  *
  * The Typst backend load makes this the slowest test in the suite (seconds).
- * It is kept in its own file with two `it()`s so it stays cheap to skip
- * locally.
+ * It is kept in its own file so it stays cheap to skip locally.
  */
 
 import { describe, it, expect } from 'vitest';
 import { fileURLToPath } from 'node:url';
-import { Engine } from '@quillmark/wasm';
+import { Document, Engine } from '@quillmark/wasm';
 import { Quiver } from '../node.js';
 
 // The same fixture `preview.test.ts` uses: quills `memo@1.0.0` and
@@ -77,6 +80,35 @@ describe('Engine.render against a quiver quill', () => {
 			expect(result.artifacts[0].bytes.length).toBeGreaterThan(0);
 		} finally {
 			second.free();
+		}
+	}, 60000);
+
+	it('resolves the quill from a stored document and renders', async () => {
+		const quiver = await Quiver.fromDir(PREVIEW_FIXTURE);
+		const engine = new Engine();
+
+		// Authoring side: seed against a selector-resolved quill, store the markdown.
+		const authored = await quiver.getQuill('memo');
+		const seeded = authored.seedDocument();
+		const stored = seeded.toMarkdown();
+		seeded.free();
+
+		// Loading side: the stored bytes are the only input. The document names its
+		// quill, the quiver answers it — the consumer dispatches to no loader of its
+		// own.
+		const doc = Document.fromMarkdown(stored);
+		try {
+			expect(doc.quillRef).toBe(`${authored.metadata.name}@${authored.metadata.version}`);
+			const quill = await quiver.getQuill(doc.quillRef);
+			// The per-canonical-ref cache answers with the authoring-side instance:
+			// one materialization per document, however many consumers resolve.
+			expect(quill).toBe(authored);
+
+			const result = await engine.render(quill, doc);
+			expect(result.artifacts.length).toBeGreaterThan(0);
+			expect(result.artifacts[0].bytes.length).toBeGreaterThan(0);
+		} finally {
+			doc.free();
 		}
 	}, 60000);
 });

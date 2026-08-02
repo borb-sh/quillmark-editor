@@ -17,7 +17,7 @@ Who may depend on whom, and why exactly one copy of `@quillmark/wasm` is install
 
 `svelte ↛ quiver` and `quiver ↛ svelte`, both directions: siblings at one tier with no edge between them. Not `svelte` peer-depending on `quiver`, which is the opposite arrangement and the one the word invites.
 
-The seam that keeps it true is `resolveQuill(ref)`: `svelte` takes a function, and quiver is one implementation the app supplies. An app bundling its one template writes no resolver and pulls no registry client; an app browsing a collection hands in quiver's. Neither package knows the other exists.
+The seam that keeps it true is the resolved `Quill` handle: a stored document names its quill (`doc.quillRef`), the host maps the ref to a `Quill` before mount, and `svelte` takes the handle as a prop. Resolution is host code — `svelte` calls no resolver, so one resolution per document holds by construction, with no second surface to double-load from. Quiver's `getQuill` is one implementation, caching per canonical ref for its lifetime; an app bundling its one template resolves nothing and pulls no registry client. Neither package knows the other exists.
 
 The playground is where the two meet, and it is the demonstration rather than the exception: it loads its quill from a built quiver and hands the result to `svelte`'s surfaces, with no specifier crossing between the siblings in either direction ([PLAYGROUND.md](../../packages/playground/prose/canon/PLAYGROUND.md)).
 

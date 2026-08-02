@@ -46,6 +46,20 @@ const session = await new Engine().open(quill, doc);
 
 `toJson`/`fromJson` is the persistence pair: the wire format is frozen per schema version and byte-deterministic, so equal documents store equal bytes. `toMarkdown`/`fromMarkdown` is the human-readable pair, round-trip safe to an equal document. `Document.tryFromJson` returns `undefined` rather than throwing, to discriminate the two without exceptions as control flow.
 
+## The quill resolves from the document
+
+A stored document carries none of its quill's bytes, only a reference: `doc.quillRef` is `name@version`, persisted in the markdown itself. Resolution is **host code**: read the ref, map it to a `Quill`, open. No surface resolves, so one resolution per document holds by construction.
+
+```ts
+const doc = Document.fromMarkdown(stored);
+const quill = await registry.getQuill(doc.quillRef); // your ref → Quill mapping
+const session = await new Engine().open(quill, doc);
+```
+
+`@quillmark/quiver` is one such registry: its `getQuill` takes selector and canonical refs and caches one instance per canonical ref for the quiver's lifetime, so a second consumer resolving the same document costs no second materialization. An app bundling its one template resolves nothing and pulls no registry client.
+
+Opening a document that names a **different** quill is the same sequence, in order: resolve the new ref, `engine.open(quill, next)`, swap the props, then free the replaced handles. `<VisualEditor>` re-keys itself on the new `doc` (see below); `<Preview>` swaps by remount (`{#key session}`).
+
 ## Preview
 
 `createPreview` supplies exactly the layer `LiveSession` omits: viewport, DOM, DPR, click mapping. It is a pure view: it never calls `session.apply`; you drive the edit and hand it the resulting `ChangeSet`.
@@ -158,6 +172,24 @@ onChange: (change) => {
 	else scheduleRecompile();
 };
 ```
+
+The recompile itself is one apply and a fan-out to whatever you mounted:
+
+```ts
+let timer: ReturnType<typeof setTimeout> | undefined;
+function scheduleRecompile() {
+	clearTimeout(timer);
+	timer = setTimeout(recompileNow, 120);
+}
+function recompileNow() {
+	timer = undefined;
+	const change = session.apply(doc);
+	preview.refresh(change);
+	source.refresh();
+}
+```
+
+This is the whole shell layer, and it is deliberately yours: the debounce value, what applies at once, and which surfaces refresh are host policy, so the package ships no scheduler over them. Two obligations ride with ownership: an edit of your own (an import, an undo, a direct `doc` write) recompiles by the same calls, since nothing polls the document; and teardown clears the timer **before** freeing the handles, so a pending recompile never touches a freed session.
 
 ## The caret bridge
 
