@@ -148,7 +148,7 @@
 		return JSON.stringify(obj);
 	});
 
-	function handleActiveAddr(active: ActiveLeaf): void {
+	function handleActiveLeaf(active: ActiveLeaf): void {
 		lastAddr = JSON.stringify(active);
 		refresh();
 	}
@@ -247,7 +247,7 @@
 					<VisualEditor
 						doc={docHandle}
 						quill={quillHandle}
-						onActiveAddrChange={handleActiveAddr}
+						onActiveLeafChange={handleActiveLeaf}
 						onCaretMove={() => refresh()}
 						onChange={refresh}
 						diagnostics={externalDiagnostics}

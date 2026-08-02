@@ -15,7 +15,7 @@
  content, resolved to an index ONLY at the mutation boundary;
  • commit routing: prose leaves lower to `applyChange` (in the codec); scalars/
  arrays/objects go through the typed `writer`; structure through the mutators;
- • focus + the bridge outputs (`onActiveAddrChange`, `onCaretMove`) and the
+ • focus + the bridge outputs (`onActiveLeafChange`, `onCaretMove`) and the
  `setCaret(hit)` entry wired to the preview;
  • the ONE formatting popover (`FormatPopover`, mounted once, observing the
  active leaf via `getActiveLeaf`) and diagnostics routing (`diagnostics.ts`:
@@ -34,7 +34,14 @@
 	import { onDestroy, tick } from 'svelte';
 	import { DropdownMenu } from 'bits-ui';
 	import Plus from '@lucide/svelte/icons/plus';
-	import { isQuillmarkError, MAIN_CARD_ADDR, reportError, errorMessage } from '../core/index.js';
+	import {
+		cardPath,
+		errorMessage,
+		fieldPathForAddr,
+		isQuillmarkError,
+		MAIN_CARD_ADDR,
+		reportError
+	} from '../core/index.js';
 	import { bloomInside } from '../core/bloom.js';
 	import { createLifespan } from '../core/teardown.js';
 	import type {
@@ -49,7 +56,6 @@
 	import type { VisualEditorProps } from './props.js';
 	import { mergeStrings, setWording } from './strings.js';
 	import type { CardId, ChangeSource } from './signals.js';
-	import { fieldPathForAddr } from './caret.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import {
 		IdSeq,
@@ -93,7 +99,7 @@
 	let {
 		doc,
 		quill,
-		onActiveAddrChange,
+		onActiveLeafChange,
 		onCaretMove,
 		onChange,
 		onError,
@@ -155,12 +161,19 @@
 	 * `proseChanged`, which does NOT bump the revision (bumping it would re-derive
 	 * and remount every leaf, costing the caret on every keystroke).
 	 *
-	 * `cardId` is passed rather than derived from `addr`: the sites below hold the id
-	 * already, and the removal has no address to derive one from.
+	 * `cardId` is passed rather than derived from `at`: the sites below hold the id
+	 * already, and the removal has no address to derive one from. `at` is an `Addr` for
+	 * a leaf and a CARD INDEX for a structure op, whose subject is the card rather than
+	 * anything inside it; either way the path is minted HERE, after the bump, because
+	 * an op's own index is only addressable against the tree the bump re-derived (an
+	 * insert's card does not exist in the previous one, and a retype's kind is the
+	 * previous kind).
 	 */
-	function bump(source: ChangeSource, cardId?: CardId, addr?: Addr): void {
+	function bump(source: ChangeSource, cardId?: CardId, at?: Addr | number): void {
 		revision++;
-		onChange?.({ source, cardId, addr });
+		const path =
+			at == null ? undefined : typeof at === 'number' ? cardPath(at, liveKinds()) : pathFor(at);
+		onChange?.({ source, cardId, path });
 	}
 	/** Resolve a stable card id to its current content index, or -1 if gone: read
 	 * at the mutation boundary, never cached (VISUAL_EDITOR §"The address is the spine"). */
@@ -225,24 +238,26 @@
 		const plain = normalize(addr);
 		activeAddr = plain;
 		activeCardId = cardIdOf(plain);
-		onActiveAddrChange?.({ addr: plain, cardId: activeCardId });
+		const field = pathFor(plain);
+		if (field != null) onActiveLeafChange?.({ field, cardId: activeCardId });
 	}
 	/** No card kinds are read for a main address; the shared empty stands in so the
 	 *  common case allocates nothing. */
 	const NO_KINDS: readonly string[] = [];
 	/**
-	 * A leaf's canonical `DocPath`, minted off the DERIVED card tree rather than
-	 * `doc.cards`: the kinds are already in hand, and `doc.cards` serializes every
-	 * card on each read, which is not a thing to do per keystroke. `undefined` for
-	 * an address outside the live card array (a stale addr: drop rather than
-	 * mis-target).
+	 * The live kinds by content index, off the DERIVED card tree rather than
+	 * `doc.cards`: they are already in hand, and `doc.cards` serializes every card on
+	 * each read, which is not a thing to do per keystroke.
+	 */
+	function liveKinds(): string[] {
+		return model.cards.map((c) => c.kind);
+	}
+	/**
+	 * A leaf's canonical `DocPath`. `undefined` for an address outside the live card
+	 * array (a stale addr: drop rather than mis-target).
 	 */
 	function pathFor(addr: Addr): DocPath | undefined {
-		if (addr.card == null) return fieldPathForAddr(addr, NO_KINDS);
-		return fieldPathForAddr(
-			addr,
-			model.cards.map((c) => c.kind)
-		);
+		return fieldPathForAddr(addr, addr.card == null ? NO_KINDS : liveKinds());
 	}
 	function handleCaret(addr: Addr, pos: number): void {
 		const field = pathFor(normalize(addr));
@@ -252,7 +267,7 @@
 	 *  bump `revision` (see {@link bump}). */
 	function proseChanged(addr: Addr): void {
 		const plain = normalize(addr);
-		onChange?.({ source: 'prose', cardId: cardIdOf(plain), addr: plain });
+		onChange?.({ source: 'prose', cardId: cardIdOf(plain), path: pathFor(plain) });
 	}
 
 	// ── Commit routing ──────────────────────────────────────────────────────────
@@ -351,7 +366,7 @@
 			doc.insertCard(card, atIndex);
 			const id = seq.next();
 			cardIds = [...cardIds.slice(0, atIndex), id, ...cardIds.slice(atIndex)];
-			bump('structure', id, { card: atIndex });
+			bump('structure', id, atIndex);
 			// `center` for an insert: the new card is the subject, and centring it shows
 			// the neighbours it landed between.
 			void scrollCardIntoView(id, 'center');
@@ -389,7 +404,7 @@
 		const [x] = w.splice(from, 1);
 		w.splice(to, 0, x);
 		cardIds = w;
-		bump('structure', id, { card: to });
+		bump('structure', id, to);
 		// `nearest` for a reorder: the card was already in view and only needs to stay
 		// there, so a card that never left the viewport does not move it at all.
 		void scrollCardIntoView(id, 'nearest');
@@ -422,7 +437,7 @@
 		if (i < 0) return;
 		try {
 			doc.setCardKind(i, kind);
-			bump('structure', id, { card: i });
+			bump('structure', id, i);
 		} catch (e) {
 			reportError(onError, {
 				code: 'card-op-failed',
@@ -436,7 +451,7 @@
 		const i = cardIndexOf(id);
 		if (i < 0) return;
 		patchEditorExt(doc, { card: i }, { title });
-		bump('structure', id, { card: i });
+		bump('structure', id, i);
 	}
 	/**
 	 * Clear the tips channel: the dismissal write, and the ONLY write

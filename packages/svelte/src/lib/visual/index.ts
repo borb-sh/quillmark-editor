@@ -31,8 +31,8 @@ export type { BodyPlaceholder, BodyPlaceholderContext } from './structure.js';
 export { patchEditorExt } from './ext.js';
 export { tipsChannel } from './tips.js';
 
-// What the editor emits. `onCaretMove` already carries the preview's own `Place`,
-// so the bridge is `onCaretMove={preview.focusPosition}`; this is the mapping for
-// a consumer holding an `Addr` of its own (VISUAL_EDITOR §Editor→preview).
-export { fieldPathForAddr } from './caret.js';
+// What the editor emits. Every hook naming a place speaks the canonical `DocPath`
+// the preview and the diagnostics already do, so the bridge is
+// `onCaretMove={preview.focusPosition}` and nothing here translates; the conversions
+// for a consumer holding an `Addr` of its own live in `/core`, beside the grammar.
 export type { ActiveLeaf, CardId, ChangeSource, EditorChange } from './signals.js';

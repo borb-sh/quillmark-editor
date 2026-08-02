@@ -2,7 +2,7 @@
 // (VISUAL_EDITOR §Editor→preview), so nothing here imports it; what the two share
 // is `/core`'s address vocabulary, which is what lets a consumer wire the bridge
 // as a pass-through rather than a translation.
-import type { Addr } from '../core/index.js';
+import type { DocPath } from '../core/index.js';
 
 /**
  * Which lane an edit came down. The three differ in COST, not in meaning: prose
@@ -42,12 +42,15 @@ export type CardId = string;
 export interface EditorChange {
 	source: ChangeSource;
 	/**
-	 * Where it landed, when the change has one place. Absent for a card removal and
-	 * a tips dismissal, which are the stack's change rather than a leaf's.
+	 * Where it landed, in the canonical `DocPath` the preview and every diagnostic
+	 * already speak: a FIELD for the prose and field lanes, the CARD itself
+	 * (`cards.<kind>[i]`) for a structure op, where the change is the card rather than
+	 * anything inside it. Absent for a card removal and a tips dismissal, which are
+	 * the stack's change rather than a leaf's.
 	 */
-	addr?: Addr;
+	path?: DocPath;
 	/**
-	 * Which card it landed in ({@link CardId}). Present for a removal, whose `addr`
+	 * Which card it landed in ({@link CardId}). Present for a removal, whose `path`
 	 * is not: the index is meaningless once the card is gone, and the key is the only
 	 * handle a host tracking cards has left to drop. Absent only for the tips
 	 * dismissal, which is document-level chrome and names no card.
@@ -57,6 +60,8 @@ export interface EditorChange {
 
 /** The leaf that has focus: where it sits, and which card holds it. */
 export interface ActiveLeaf {
-	addr: Addr;
+	/** The leaf's own address, the same `DocPath` a `Place`, a `ContentHit` and a
+	 *  `Diagnostic` name a field with. */
+	field: DocPath;
 	cardId: CardId;
 }

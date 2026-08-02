@@ -132,6 +132,10 @@ export type DeltaOp = Delta['ops'][number];
 // `/preview` and `/visual` need them: declared in either one, the other either
 // imports across a boundary the package keeps closed or declares its own copy.
 export type { DocPath, Place } from './address.js';
+// And the hop between that vocabulary and the `Addr` the document verbs take, both
+// directions: a host handed a path by a hook and holding a mutator needs it, and so
+// does the editor.
+export { fieldPathForAddr, cardPath, addrForFieldPath } from './address.js';
 export { reportError, errorMessage } from './errors.js';
 export type { EditorError, EditorErrorCode, EditorErrorHandler } from './errors.js';
 

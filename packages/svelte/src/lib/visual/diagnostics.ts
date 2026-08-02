@@ -30,7 +30,7 @@
 // spine"); `resolveCardKey` bridges the absolute index → stable id, and
 // `fieldKeyToString` is the one shared string form both sides collapse to for the
 // `Map`.
-import { parseDocPath, type DocPathSeg, type Diagnostic } from '../core/index.js';
+import { addrForFieldPath, type Diagnostic } from '../core/index.js';
 
 /** A field's routing address. `card` is `undefined` for the main card; a
  * composable card slot is a stable session id (the editor's own bookkeeping)
@@ -50,36 +50,14 @@ export function fieldKeyToString(k: FieldKey): string {
 /**
  * Route a canonical `DocPath` (a `Diagnostic.path`, or a `ContentHit` /
  * `FieldRegion` field address; one grammar) to a `FieldKey`, `card` the ABSOLUTE
- * document-array index. Runs on the boundary's `parseDocPath`, not a hand-rolled
- * grammar. Returns `undefined` for a path that is not a single
- * field or body commit address: a nested / array-element path
- * (`main.references.0` → `[main, field, field]`) has no single-field target, a
- * field-rooted path (`recipients[0].name`) is not a card/main address, and a
- * malformed path (which `parseDocPath` throws on) is dropped.
+ * document-array index. `/core`'s `addrForFieldPath` IS this walk — an `Addr` is a
+ * positional `FieldKey` — so routing reads the one public inverse rather than a
+ * second copy of the grammar that drifts from it. `undefined` for a path naming no
+ * single commit address (a nested / array-element path, a field-rooted one, a
+ * malformed one).
  */
 export function parsePath(path: string): FieldKey | undefined {
-	let segs: DocPathSeg[];
-	try {
-		segs = parseDocPath(path);
-	} catch {
-		return undefined;
-	}
-	if (segs.length === 0) return undefined;
-	const [head, ...rest] = segs;
-	let key: FieldKey;
-	if (head.seg === 'main') key = {};
-	else if (head.seg === 'card') key = { card: head.index };
-	else return undefined; // a field/index/body head; not a card-or-main address
-	// Head only (`main`, `cards.<kind>[i]`) or a `body` terminal is the body leaf;
-	// one `field` seg is that field; a trailing index or deeper nesting is an
-	// array element with no single-field commit address.
-	if (rest.length === 0) return key;
-	if (rest.length === 1) {
-		const tail = rest[0];
-		if (tail.seg === 'body') return key;
-		if (tail.seg === 'field') return { ...key, field: tail.name };
-	}
-	return undefined;
+	return addrForFieldPath(path);
 }
 
 /**

@@ -18,11 +18,11 @@ export interface VisualEditorProps {
 	doc: Document;
 	quill: Quill;
 	/**
-	 * The active leaf: its address (normalized to a plain `{card?, field?}`) and the
-	 * session key of the card holding it, which is what a host tracking the active
-	 * card keeps across a reorder (`CardId`).
+	 * The active leaf: its canonical `DocPath` and the session key of the card holding
+	 * it, which is what a host tracking the active card keeps across a reorder
+	 * (`CardId`). The same pair `getActiveLeaf` reaches the controller by.
 	 */
-	onActiveAddrChange?: (active: ActiveLeaf) => void;
+	onActiveLeafChange?: (active: ActiveLeaf) => void;
 	/**
 	 * A caret move in the active leaf, carrying the canonical `DocPath` the
 	 * preview also speaks: `onCaretMove={preview.focusPosition}` is the whole

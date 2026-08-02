@@ -12,7 +12,7 @@
 // card rather than staying at the index.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
-import { Quill, type Document } from '$lib/core';
+import { addrForFieldPath, Quill, type Document } from '$lib/core';
 import type { ActiveLeaf, EditorChange } from '$lib/visual';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
 import { loadFixtureTree } from '../helpers/fixtures.js';
@@ -68,7 +68,7 @@ function mountEditor(q: Quill, doc: Document) {
 			doc,
 			quill: q,
 			onChange: (c: EditorChange) => changes.push(c),
-			onActiveAddrChange: (a: ActiveLeaf) => actives.push(a)
+			onActiveLeafChange: (a: ActiveLeaf) => actives.push(a)
 		}
 	});
 	flushSync();
@@ -123,20 +123,26 @@ describe('a reorder through the card control', () => {
 		const { target, changes, actives } = mountEditor(q, doc);
 		expect(slots(target)).toHaveLength(2);
 
-		// A host captures the active leaf: an address AND a key, both naming the first card.
+		// A host captures the active leaf: a path AND a key, both naming the first card.
 		focusBody(slots(target)[0]);
 		const captured = actives.at(-1)!;
-		expect(captured).toEqual({ addr: { card: 0 }, cardId: 'c0' });
+		expect(captured).toEqual({ field: 'cards.indorsement[0].body', cardId: 'c0' });
 
 		moveDown(slots(target)[0]);
 
-		// The move reports both: where the card LANDED, and which card it was.
-		expect(changes.at(-1)).toEqual({ source: 'structure', cardId: 'c0', addr: { card: 1 } });
+		// The move reports both: where the card LANDED, and which card it was. The path
+		// names the CARD, not the body leaf inside it: a card op is about the card.
+		expect(changes.at(-1)).toEqual({
+			source: 'structure',
+			cardId: 'c0',
+			path: 'cards.indorsement[1]'
+		});
 
-		// The trap, pinned. The captured ADDRESS now names the other card; the captured
-		// KEY still names the one that moved, and the card is where the change said.
+		// The trap, pinned. The captured PATH now names the other card; the captured KEY
+		// still names the one that moved, and the card is where the change said.
 		const after = slots(target);
-		expect(leafKeys(after[captured.addr.card!])).toContain('c1:$body');
+		const staleIndex = addrForFieldPath(captured.field)!.card!;
+		expect(leafKeys(after[staleIndex])).toContain('c1:$body');
 		expect(leafKeys(after[1])).toContain(`${captured.cardId}:$body`);
 	});
 
@@ -173,7 +179,7 @@ describe('a removal', () => {
 
 		// No address: the removed card has none left and every survivor's shifted. The
 		// key is the whole payload, and the only handle a host keying on it has left.
-		expect(changes.at(-1)).toEqual({ source: 'structure', cardId: 'c0', addr: undefined });
+		expect(changes.at(-1)).toEqual({ source: 'structure', cardId: 'c0', path: undefined });
 		expect(slots(target)).toHaveLength(1);
 		expect(leafKeys(slots(target)[0])).toContain('c1:$body');
 	});

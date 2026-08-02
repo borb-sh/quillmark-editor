@@ -175,7 +175,7 @@
 	}
 
 	// ── Bridge: editor → preview ────────────────────────────────────────────────
-	function handleActiveAddr(active: ActiveLeaf): void {
+	function handleActiveLeaf(active: ActiveLeaf): void {
 		activeAddr = JSON.stringify(active);
 	}
 	// The editor already speaks the preview's address grammar, so this hop is a
@@ -329,7 +329,7 @@
 						bind:this={editorRef}
 						doc={docHandle}
 						quill={quillHandle}
-						onActiveAddrChange={handleActiveAddr}
+						onActiveLeafChange={handleActiveLeaf}
 						onCaretMove={handleCaretMove}
 						onChange={handleChange}
 						onError={handleError}

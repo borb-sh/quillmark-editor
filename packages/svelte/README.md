@@ -84,8 +84,8 @@ In Svelte, `<Preview {session} onCaretPick={…} />` exposes the same verbs (`re
 	onChange={(change) => {
 		/* an edit LANDED; `change.source` is 'prose' | 'field' | 'structure' */
 	}}
-	onActiveAddrChange={(active) => {
-		/* the active leaf: `active.addr`, and `active.cardId` for the card holding it */
+	onActiveLeafChange={(active) => {
+		/* the active leaf: `active.field` (a DocPath), and `active.cardId` for its card */
 	}}
 	onCaretMove={(at) => {
 		/* the caret moved to `at.field` (a DocPath) at `at.pos` (USV) */
