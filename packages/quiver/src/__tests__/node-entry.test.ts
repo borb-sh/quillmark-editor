@@ -45,3 +45,28 @@ describe('node entry — the factories', () => {
 		expect(await fromDir(fixture)).toBeInstanceOf(MainQuiver);
 	});
 });
+
+/**
+ * The `file://` guards send the reader to the disk factory by name. The name has
+ * to be one that resolves: a consumer who follows `Quiver.fromBuiltDir` gets
+ * `is not a function`, and the guard's whole job is to be followable.
+ */
+describe('the file:// refusals name a real export', () => {
+	const refusals = [
+		() => MainQuiver.fromBuiltUrl('file:///tmp/quiver/'),
+		() => MainQuiver.fromManifest('file:///tmp/quiver/', new TextEncoder().encode('{}'))
+	];
+
+	it('points at the free function, not a static that does not exist', async () => {
+		for (const refuse of refusals) {
+			await expect(refuse()).rejects.toThrow(/\bfromBuiltDir\b/);
+			await expect(refuse()).rejects.not.toThrow(/Quiver\.fromBuiltDir/);
+		}
+	});
+
+	it('names the module the free function is reachable from', async () => {
+		for (const refuse of refusals) {
+			await expect(refuse()).rejects.toThrow(/@quillmark\/quiver\/node/);
+		}
+	});
+});

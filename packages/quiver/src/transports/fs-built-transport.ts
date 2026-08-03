@@ -4,7 +4,7 @@
  * Internal; not exported from index.ts.
  *
  * Static `node:*` imports — this module must never be reached from browser
- * bundles. It is loaded lazily by `Quiver.fromBuiltDir` in `./node.js`.
+ * bundles. It is loaded lazily by `fromBuiltDir` in `./node.js`.
  */
 
 import { readFile } from 'node:fs/promises';

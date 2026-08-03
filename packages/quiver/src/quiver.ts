@@ -67,8 +67,7 @@ export class Quiver {
 	 *
 	 * Origin-relative URLs (e.g. `/quivers/foo/`) are accepted in browser
 	 * environments. `file://` URLs are rejected — to load build output from
-	 * disk in Node, use `Quiver.fromBuiltDir(path)` from
-	 * `@quillmark/quiver/node`.
+	 * disk in Node, use `fromBuiltDir(path)` from `@quillmark/quiver/node`.
 	 *
 	 * Throws `transport_error` on network/HTTP failure, `quiver_invalid`
 	 * on format errors.
@@ -77,7 +76,7 @@ export class Quiver {
 		if (url.startsWith('file://')) {
 			throw new QuiverError(
 				'transport_error',
-				`Quiver.fromBuiltUrl requires an http(s):// or origin-relative URL; got "${url}". For local build output, use Quiver.fromBuiltDir from @quillmark/quiver/node.`
+				`Quiver.fromBuiltUrl requires an http(s):// or origin-relative URL; got "${url}". For local build output, use import { fromBuiltDir } from '@quillmark/quiver/node'.`
 			);
 		}
 		const { HttpTransport } = await import('./transports/http-transport.js');
@@ -99,7 +98,7 @@ export class Quiver {
 		if (baseUrl.startsWith('file://')) {
 			throw new QuiverError(
 				'transport_error',
-				`Quiver.fromManifest requires an http(s):// or origin-relative baseUrl; got "${baseUrl}". For local build output, use Quiver.fromBuiltDir from @quillmark/quiver/node.`
+				`Quiver.fromManifest requires an http(s):// or origin-relative baseUrl; got "${baseUrl}". For local build output, use import { fromBuiltDir } from '@quillmark/quiver/node'.`
 			);
 		}
 		const { HttpTransport } = await import('./transports/http-transport.js');
