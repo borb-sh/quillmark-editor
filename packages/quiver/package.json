@@ -44,8 +44,6 @@
 	"sideEffects": false,
 	"files": [
 		"dist",
-		"README.md",
-		"LICENSE",
 		"NOTICE"
 	],
 	"peerDependencies": {

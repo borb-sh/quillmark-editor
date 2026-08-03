@@ -8,7 +8,7 @@ Two packages publish, on independent versions, through changesets. The app never
 
 ## Independent, not lockstep
 
-Both packages publish, on their own clocks, and both are pre-1.0: the consumers are first-party, so a break rides a minor rather than earning a major. Lockstep would drag one package's version through churn the other's consumers do not care about, so each carries its own version and a change to one leaves the other's alone. The packages have no edge between them ([DEPENDENCIES.md](DEPENDENCIES.md)), so there is no shared substrate co-evolving across them to argue the other way; that argument holds *within* `svelte`, which is why its surfaces are subpaths of one package rather than packages of their own.
+Both packages publish, and both are pre-1.0: the consumers are first-party, so a break rides a minor rather than earning a major. Lockstep would drag one package's version through churn the other's consumers do not care about, so each carries its own version and a change to one leaves the other's alone. The packages have no edge between them ([DEPENDENCIES.md](DEPENDENCIES.md)), so there is no shared substrate co-evolving across them to argue the other way; that argument holds *within* `svelte`, which is why its surfaces are subpaths of one package rather than packages of their own.
 
 `playground` is `private: true`. It is the harness and the Pages site, never a tarball.
 
@@ -22,9 +22,9 @@ npm Trusted Publishing (OIDC) mints the credential, so no token is stored.
 
 ## The tarball
 
-`files` is the whole answer to what ships: `dist`, plus the docs a consumer reads from `node_modules` (`README.md`, `LICENSE`, `NOTICE`, and in `svelte` the `THEMING.md` its README links). Every published package carries a verbatim copy of the workspace's Apache-2.0 `LICENSE` and the `NOTICE` naming the copyright holder, because a tarball is redistributed on its own and §4 asks the recipient for both. `NOTICE` earns its line in `files`; npm includes `README` and `LICENSE` on its own but not that. `prepack` rebuilds `dist` from clean, so a publish cannot carry a stale artifact.
+`files` names what npm does not pack on its own: `dist`, `NOTICE`, and in `svelte` the `THEMING.md` its README links. `package.json`, `README` and `LICENSE` ship whether listed or not. Every published package carries a verbatim copy of the workspace's Apache-2.0 `LICENSE` and of the `NOTICE` naming the copyright holder: a tarball is redistributed on its own, and §4 asks its recipient for both. `prepack` rebuilds `dist` from clean, so a publish cannot carry a stale artifact.
 
-`publint` runs from the root `release` script, after the build and before `changeset publish` — never from `prepack`, which it would recurse through: publint packs the package to lint it, and packing runs `prepack`.
+`publint` runs from the root `release` script, after the build and before `changeset publish`, never from `prepack`: publint packs the package to lint it, and packing runs `prepack`.
 
 ## The gate
 

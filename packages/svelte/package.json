@@ -56,9 +56,7 @@
 	},
 	"files": [
 		"dist",
-		"README.md",
 		"THEMING.md",
-		"LICENSE",
 		"NOTICE"
 	],
 	"sideEffects": [
