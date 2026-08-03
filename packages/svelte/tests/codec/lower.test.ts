@@ -8,6 +8,7 @@ import type { Transaction } from 'prosemirror-state';
 import {
 	decode,
 	pmToContent,
+	contentEdit,
 	lower,
 	blockSchema,
 	insertReintroducesIslandSlot
@@ -28,7 +29,7 @@ function lowerApply(rt: Content, mkTr: (state: EditorState) => Transaction, opts
 	const state = EditorState.create({ doc: decode(oldRt, blockSchema) });
 	const tr = mkTr(state);
 	const newDoc = tr.doc;
-	const bundle = lower(oldRt, pmToContent(newDoc), opts);
+	const bundle = lower(contentEdit(oldRt, pmToContent(newDoc)), opts);
 	doc.applyChange({}, bundle);
 	const stored = doc.main.body;
 	expect(contentEqual(stored, normalize(pmToContent(newDoc))), 'stored matches optimistic PM').toBe(
@@ -184,7 +185,7 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		const oldRt = doc.main.body;
 		const state = EditorState.create({ doc: decode(oldRt, blockSchema) });
 		const tr = state.tr.insertText('XX', 1); // insert before the anchor at USV 6
-		const bundle = lower(oldRt, pmToContent(tr.doc), {
+		const bundle = lower(contentEdit(oldRt, pmToContent(tr.doc)), {
 			oldAnchors: [{ id: 'a1', pos: 6 }],
 			newAnchors: [{ id: 'a1', pos: 8 }] // rebased +2
 		});
@@ -200,7 +201,7 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		doc.install({}, md('plain text'));
 		const oldRt = doc.main.body;
 		const newDoc = decode(oldRt, blockSchema);
-		const bundle = lower(oldRt, pmToContent(newDoc), {
+		const bundle = lower(contentEdit(oldRt, pmToContent(newDoc)), {
 			oldAnchors: [],
 			newAnchors: [{ id: 'new1', pos: 3 }]
 		});
@@ -215,7 +216,7 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		doc.install({}, anchorRt);
 		const oldRt = doc.main.body;
 		const newDoc = decode(oldRt, blockSchema);
-		const bundle = lower(oldRt, pmToContent(newDoc), {
+		const bundle = lower(contentEdit(oldRt, pmToContent(newDoc)), {
 			oldAnchors: [{ id: 'a1', pos: 6 }],
 			newAnchors: []
 		});
@@ -238,9 +239,9 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		const oldRt = doc.main.body;
 		const state = EditorState.create({ doc: decode(oldRt, blockSchema) });
 		const tr = state.tr.insertText('\n', 2); // a code-interior line before the anchor
-		const newRt = pmToContent(tr.doc);
-		expect(insertReintroducesIslandSlot(oldRt, newRt)).toBe(false); // the op path, not install
-		const bundle = lower(oldRt, pmToContent(tr.doc), {
+		const edit = contentEdit(oldRt, pmToContent(tr.doc));
+		expect(insertReintroducesIslandSlot(edit)).toBe(false); // the op path, not install
+		const bundle = lower(edit, {
 			oldAnchors: [{ id: 'c1', pos: 3 }],
 			newAnchors: [{ id: 'c1', pos: 4 }] // the \n inserts before it → +1
 		});
@@ -267,17 +268,17 @@ describe('insertReintroducesIslandSlot — the one op-unreachable edit', () => {
 		// slot, so its insert contains U+FFFC; `applyChange` would throw.
 		const oldRt = mkIsland(`before ${island} after`);
 		const newRt = mkIsland(`bXefore ${island} afteYr`);
-		expect(insertReintroducesIslandSlot(oldRt, newRt)).toBe(true);
+		expect(insertReintroducesIslandSlot(contentEdit(oldRt, newRt))).toBe(true);
 	});
 	it('flags island creation (a paste inserting a fresh slot)', () => {
 		const plain = md('before  after');
 		const withIsland = mkIsland(`before ${island} after`);
-		expect(insertReintroducesIslandSlot(plain, withIsland)).toBe(true);
+		expect(insertReintroducesIslandSlot(contentEdit(plain, withIsland))).toBe(true);
 	});
 	it('does NOT flag an edit around an existing island (the slot is retained, not re-inserted)', () => {
 		const oldRt = mkIsland(`before ${island} after`);
 		const newRt = mkIsland(`before ${island} afterX`);
-		expect(insertReintroducesIslandSlot(oldRt, newRt)).toBe(false);
+		expect(insertReintroducesIslandSlot(contentEdit(oldRt, newRt))).toBe(false);
 	});
 	it('does NOT flag a new hard break or code-interior line (they lower via setContinues)', () => {
 		const oneLine = md('one two');
@@ -290,7 +291,7 @@ describe('insertReintroducesIslandSlot — the one op-unreachable edit', () => {
 			marks: [],
 			islands: []
 		};
-		expect(insertReintroducesIslandSlot(oneLine, withBreak)).toBe(false);
+		expect(insertReintroducesIslandSlot(contentEdit(oneLine, withBreak))).toBe(false);
 
 		const code1 = md('```\nab\n```');
 		const code2: Content = {
@@ -299,6 +300,6 @@ describe('insertReintroducesIslandSlot — the one op-unreachable edit', () => {
 			marks: [],
 			islands: []
 		};
-		expect(insertReintroducesIslandSlot(code1, code2)).toBe(false);
+		expect(insertReintroducesIslandSlot(contentEdit(code1, code2))).toBe(false);
 	});
 });

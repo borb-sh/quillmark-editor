@@ -786,6 +786,7 @@
 			bind:this={mainCard}
 			card={model.main}
 			{doc}
+			{quill}
 			index={-1}
 			isFirst={true}
 			isLast={true}
@@ -819,6 +820,7 @@
 				bind:this={cardRefs[i]}
 				card={c}
 				{doc}
+				{quill}
 				index={i}
 				isFirst={i === 0}
 				isLast={i === model.cards.length - 1}

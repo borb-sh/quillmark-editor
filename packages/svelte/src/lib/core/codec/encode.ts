@@ -277,15 +277,32 @@ interface LowerOpts {
 }
 
 /**
- * Lower an edit to a `ChangeBundle`: the diff old→new content into ops.
+ * One old→new content edit with the text splice it implies. BOTH sides are content,
+ * never a PM doc: the projection of the new doc (`pmToContent`) is the caller's to
+ * hold, because a doc-taking overload re-walks the whole tree, once per keystroke,
+ * for a value the caller has in hand.
  *
- * BOTH sides are content, never a PM doc. The caller has already projected the new
- * doc (`pmToContent`) to gate the island-slot fallback, so the projection is
- * theirs to hold: a doc-taking overload re-walks the whole tree, once per
- * keystroke, for a value the caller has in hand.
+ * The splice rides along because the commit path reads it twice (the island-slot gate
+ * picks `install` vs ops, then `lower` builds the bundle around it) and `diffText`
+ * allocates a code-point array per side. `contentEdit` being its only constructor is
+ * what keeps a `delta` from disagreeing with the contents it was diffed from.
  */
-export function lower(oldRt: Content, newRt: Content, opts: LowerOpts = {}): ChangeBundle {
+export interface ContentEdit {
+	readonly oldRt: Content;
+	readonly newRt: Content;
+	/** The minimal single splice, or absent when the text is unchanged. */
+	readonly delta?: Delta;
+}
+
+/** The edit `oldRt` → `newRt`: diffs the text once. */
+export function contentEdit(oldRt: Content, newRt: Content): ContentEdit {
 	const delta = diffText(oldRt.text, newRt.text);
+	return delta ? { oldRt, newRt, delta } : { oldRt, newRt };
+}
+
+/** Lower an edit to a `ChangeBundle`: the old→new content diff, as ops. */
+export function lower(edit: ContentEdit, opts: LowerOpts = {}): ChangeBundle {
+	const { oldRt, newRt, delta } = edit;
 	const lineOps = diffLines(oldRt, newRt);
 	const markOps = diffMarks(oldRt, newRt, delta, opts);
 	const bundle: ChangeBundle = {};
@@ -370,9 +387,8 @@ function kindKey(l: ContentLine): string {
  * `install` (paying that field's anchors). Every other structural edit, including
  * a new hard break or a code-interior line, lowers op-wise via `setContinues`.
  */
-export function insertReintroducesIslandSlot(oldRt: Content, newRt: Content): boolean {
-	const inserted = diffText(oldRt.text, newRt.text)?.ops.find((op) => 'insert' in op) as
-		{ insert: string } | undefined;
+export function insertReintroducesIslandSlot(edit: ContentEdit): boolean {
+	const inserted = edit.delta?.ops.find((op) => 'insert' in op) as { insert: string } | undefined;
 	return !!inserted?.insert.includes(ISLAND_SLOT);
 }
 

@@ -90,17 +90,22 @@ export interface VisualStrings {
 /**
  * The hook that turns a boundary `Diagnostic` into displayed text.
  *
- * A formatter reads the whole `Diagnostic`, so what it can re-word tracks what that
- * type carries per lane (VISUAL_EDITOR §Diagnostics for why each lands where it
- * does):
+ * A formatter reads the whole `Diagnostic`, including `args`: the facts `message`
+ * interpolates, keyed by name. What it can re-word tracks what that type carries per
+ * lane (VISUAL_EDITOR §Diagnostics for why each lands where it does):
  *
  * - **`validation::enum_violation`, `type_mismatch`, `format_violation`,
- *   `must_fill`**: the CONSTRAINT re-words, from the quill's schema at `path`; the
- *   offending VALUE does not, validation running post-coercion.
+ *   `must_fill`**: the CONSTRAINT re-words from the quill's schema at `path`, the
+ *   offending VALUE from `args` (`value` / `sourceToken` / `actual`, the engine
+ *   testifying to what it saw) and never from the document at `path`: validation
+ *   runs post-coercion, so the validator read a value the document does not hold and
+ *   a sentence built from `path` names a spelling the user never typed.
  * - **`edit::field_conform`**: re-words from the app's own control state, the
  *   refused value being in neither document (unchanged on throw) nor schema.
- * - **`parse::yaml_error_with_location`, `invalid_structure`**: does not re-word.
- *   No `path`, no `location`; every parameter inside the English message.
+ * - **`parse::yaml_error_with_location`, `invalid_structure`**: does not re-word. No
+ *   `path`, and `args` carries the LOCATION (`blockIndex`, `line`) and nothing else,
+ *   engine prose riding under no key: the parser's own text, its column and its caret
+ *   snippet exist only inside `message`.
  * - **`LiveSession.warnings`**: does not re-word. Backend text, an external feed.
  *
  * The last two are the boundary's shape, not a gap in it, so the fallback arm is
