@@ -382,7 +382,7 @@ function kindKey(l: ContentLine): string {
 
 // ── Island channel ──────────────────────────────────────────────────────────
 
-/** The delta and the island ops it had to hand a slot to, plus where they land. */
+/** The delta and the island ops it had to hand a slot to. */
 interface IslandSplit {
 	/** The edit's splice with every island slot stripped from its insert; absent
 	 *  when what remains is pure retains (the insert carried nothing else). */

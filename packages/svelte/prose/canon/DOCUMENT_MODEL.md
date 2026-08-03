@@ -38,7 +38,7 @@ Two neighbouring surfaces the editor consumes but never drives: it selects no `O
 
 ## Stability seams
 
-At the 0.101.0 target the whole table is stable API and one typing gap is open. `ContentLineKind` is on the public entry point, so the codec builds its `setKind` op typed (`encode.ts`, `kindOp`); `ContentLossClass` is not, though `ContentIsland.loss` is typed by it. The codec needs the name because an island's loss class rides a PM node attribute, and it reads it off the entry (`ContentIsland['loss']`, `islands.ts`) rather than restating the union, which would be a local copy of an OPEN set — the one duplicate that goes stale silently.
+At the 0.101.0 target the whole table is stable API and one typing gap is open. `ContentLineKind` is on the public entry point, so the codec builds its `setKind` op typed (`encode.ts`, `kindOp`); `ContentLossClass` is not, though `ContentIsland.loss` is typed by it. The codec needs the name because an island's loss class rides a PM node attribute, and it reads it off the entry (`ContentIsland['loss']`, `islands.ts`) rather than restating the union, which would be a local copy of an OPEN set, the one duplicate that goes stale silently.
 
 Two obligations the freeze carries, neither yet load-bearing here:
 
