@@ -11,7 +11,16 @@
 		"url": "https://github.com/borb-sh/quillmark-js/issues"
 	},
 	"homepage": "https://github.com/borb-sh/quillmark-js/tree/main/packages/svelte#readme",
-	"license": "MIT",
+	"license": "Apache-2.0",
+	"keywords": [
+		"quillmark",
+		"svelte",
+		"editor",
+		"wysiwyg",
+		"typst",
+		"markdown"
+	],
+	"author": "Quillmark Contributors",
 	"type": "module",
 	"engines": {
 		"node": ">=22"
@@ -46,7 +55,9 @@
 		}
 	},
 	"files": [
-		"dist"
+		"dist",
+		"THEMING.md",
+		"NOTICE"
 	],
 	"sideEffects": [
 		"**/*.css"
@@ -54,7 +65,8 @@
 	"scripts": {
 		"build": "svelte-package",
 		"prepare": "npm run build",
-		"prepack": "npm run build && publint",
+		"prepack": "rm -rf dist && npm run build",
+		"check:pack": "publint",
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"check": "svelte-check --tsconfig ./tsconfig.json"

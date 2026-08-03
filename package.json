@@ -2,7 +2,7 @@
 	"name": "quillmark-js",
 	"private": true,
 	"description": "The JS tier downstream of the @quillmark/wasm artifact.",
-	"license": "MIT",
+	"license": "Apache-2.0",
 	"type": "module",
 	"packageManager": "npm@10.9.7",
 	"engines": {
@@ -24,7 +24,7 @@
 		"gate": "npm run lint && npm run check && npm run check:canon && npm run check:style && npm run check:deps && npm test",
 		"changeset": "changeset",
 		"version": "changeset version && npm install --package-lock-only",
-		"release": "npm run build && changeset publish"
+		"release": "npm run build && npm run check:pack -w packages/svelte && changeset publish"
 	},
 	"overrides": {
 		"@quillmark/wasm": "0.100.0"

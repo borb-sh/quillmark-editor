@@ -3,7 +3,7 @@
 	"version": "0.16.0",
 	"description": "Quiver registry and build tooling for Quillmark",
 	"type": "module",
-	"license": "MIT",
+	"license": "Apache-2.0",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/borb-sh/quillmark-js.git",
@@ -44,7 +44,7 @@
 	"sideEffects": false,
 	"files": [
 		"dist",
-		"README.md"
+		"NOTICE"
 	],
 	"peerDependencies": {
 		"@quillmark/wasm": ">=0.100.0-0"
