@@ -14,7 +14,7 @@
  `DiagnosticList`, severity-styled, NON-GATING.
 -->
 <script lang="ts">
-	import type { Document, Addr, Diagnostic, ResolvedField } from '@quillmark/wasm';
+	import type { Document, Quill, Addr, Diagnostic, ResolvedField } from '@quillmark/wasm';
 	import type { EditorErrorHandler } from '../core/errors.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import type { FieldModel, FieldSpan } from './structure.js';
@@ -40,6 +40,8 @@
 		 * source. Feeds the placeholder / fallback only, never `value`. */
 		provenance?: ResolvedField;
 		doc: Document;
+		/** The schema a prose leaf reads its corpus through (`ProseField`). */
+		quill: Quill;
 		/** LIVE prose address (getter-`card`); used only when control === 'prose'. */
 		proseAddr: Addr;
 		leafKey: string;
@@ -64,6 +66,7 @@
 		value,
 		provenance,
 		doc,
+		quill,
 		proseAddr,
 		leafKey,
 		domIds,
@@ -129,6 +132,7 @@
 	<div class="qm-field-control">
 		{#if field.control === 'prose'}
 			<ProseField
+				{quill}
 				bind:this={proseEl}
 				{doc}
 				addr={proseAddr}

@@ -11,11 +11,14 @@
 	import { onMount } from 'svelte';
 	import { createField, type FieldController } from '../core/codec/index.js';
 	import './controls.css';
-	import type { Document, Addr } from '@quillmark/wasm';
+	import type { Document, Quill, Addr } from '@quillmark/wasm';
 	import type { EditorErrorHandler } from '../core/errors.js';
 
 	interface Props {
 		doc: Document;
+		/** The schema this leaf reads its corpus through: `createField` binds a reader
+		 *  off it, so a stored string decodes by declared type rather than by guess. */
+		quill: Quill;
 		addr: Addr;
 		inline?: boolean;
 		plaintext?: boolean;
@@ -55,6 +58,7 @@
 
 	let {
 		doc,
+		quill,
 		addr,
 		inline,
 		plaintext,
@@ -97,6 +101,7 @@
 		if (!containerEl) return;
 		controller = createField({
 			doc,
+			quill,
 			addr,
 			container: containerEl,
 			inline,

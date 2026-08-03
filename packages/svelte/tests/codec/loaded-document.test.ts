@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 // A document a consumer LOADED rather than seeded (`Document.fromMarkdown`, the
-// door every saved document comes back through) stores its richtext FIELDS as the
-// markdown it parsed, not as `Content`: `getStored` is the verbatim read, and
-// verbatim is what is there. A body is `Content` either way. The prose leaf takes
-// both shapes, and an edit lands back in the same document.
+// transport door every saved document comes back through) rests as AUTHORED: a
+// content field holds the string it parsed, not the corpus. The leaf reads through
+// `reader.getContent`, which decodes by declared type, so it takes both rest forms
+// and an edit lands back in the same document.
 import { describe, it, expect } from 'vitest';
 import { Document, type Quill } from '@quillmark/wasm';
 import { createField } from '$lib/core/codec';
@@ -30,7 +30,7 @@ function loaded(): { q: Quill; doc: Document } {
 }
 
 describe('a document loaded from markdown', () => {
-	it('stores a richtext field as a STRING, and its body as Content', () => {
+	it('rests a richtext field as a STRING, and its body as Content', () => {
 		// The asymmetry this whole file exists for. Asserted rather than assumed:
 		// it is a boundary fact, and the leaf's tolerance is only correct while it holds.
 		const { doc } = loaded();
@@ -48,10 +48,11 @@ describe('a document loaded from markdown', () => {
 		doc.free();
 	});
 
-	it('mounts a prose leaf over a field stored as a string, and commits back', () => {
-		const { doc } = loaded();
+	it('mounts a prose leaf over a field resting as a string, and commits back', () => {
+		const { q, doc } = loaded();
 		const field = createField({
 			doc,
+			quill: q,
 			addr: { field: 'subject' },
 			container: mount(),
 			inline: true
@@ -59,7 +60,7 @@ describe('a document loaded from markdown', () => {
 		expect(field.getContent().text).toContain('Reloaded subject');
 
 		// The half a tolerant read alone would not buy: the commit has to land too,
-		// and it rewrites the field as `Content`, so the string shape is transient.
+		// and it brings the field to content rest, so the authored shape is transient.
 		const view = viewOf(field);
 		view.dispatch(view.state.tr.insertText('!', 1));
 		expect(doc.toMarkdown()).toContain('!Reloaded subject');
@@ -70,15 +71,15 @@ describe('a document loaded from markdown', () => {
 	});
 
 	it('mounts the body leaf, which was Content all along', () => {
-		const { doc } = loaded();
-		const field = createField({ doc, addr: {}, container: mount() });
+		const { q, doc } = loaded();
+		const field = createField({ doc, quill: q, addr: {}, container: mount() });
 		expect(field.getContent().text.length).toBeGreaterThan(0);
 		field.destroy();
 		doc.free();
 	});
 
 	it('mounts a leaf on a card of a loaded document', () => {
-		// Cards take the same lowering as main, so the string shape reaches them too.
+		// Cards take the same lowering as main, so the authored shape reaches them too.
 		const { q, doc } = loaded();
 		const seeded = q.seedDocument();
 		const kind = Object.keys(q.schema.card_kinds ?? {})[0];
@@ -88,12 +89,33 @@ describe('a document loaded from markdown', () => {
 		const withCard = Document.fromMarkdown(seeded.toMarkdown());
 		expect(withCard.cardCount).toBeGreaterThan(0);
 
-		const field = createField({ doc: withCard, addr: { card: 0 }, container: mount() });
+		const field = createField({ doc: withCard, quill: q, addr: { card: 0 }, container: mount() });
 		expect(typeof field.getContent().text).toBe('string');
 
 		field.destroy();
 		withCard.free();
 		seeded.free();
 		doc.free();
+	});
+
+	it('reads a richtext field through the bound door too (`quill.parse`)', () => {
+		// The other lane of the same read: `quill.parse` conforms on the way in, so the
+		// field rests as the corpus. `getContent` answers identically either way, which
+		// is the property that lets the leaf stop asking which door built its document.
+		const q = quill();
+		const seed = q.seedDocument();
+		q.writer(seed).set('subject', 'Reloaded subject');
+		const md = seed.toMarkdown();
+		const parsed = q.parse(md);
+		const transported = Document.fromMarkdown(md);
+
+		expect(typeof parsed.getStored({ field: 'subject' })).toBe('object');
+		expect(q.reader(parsed).getContent('subject')).toEqual(
+			q.reader(transported).getContent('subject')
+		);
+
+		transported.free();
+		parsed.free();
+		seed.free();
 	});
 });

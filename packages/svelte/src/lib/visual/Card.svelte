@@ -14,7 +14,7 @@
 	const t = wording();
 	import { untrack } from 'svelte';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import type { Document, Addr, Diagnostic } from '@quillmark/wasm';
+	import type { Document, Quill, Addr, Diagnostic } from '@quillmark/wasm';
 	import type { EditorErrorHandler } from '../core/errors.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import type { CardModel, FieldModel } from './structure.js';
@@ -44,6 +44,8 @@
 	interface Props {
 		card: CardModel;
 		doc: Document;
+		/** The schema a prose leaf reads its corpus through (`ProseField`). */
+		quill: Quill;
 		index: number;
 		isFirst: boolean;
 		isLast: boolean;
@@ -59,6 +61,7 @@
 	let {
 		card,
 		doc,
+		quill,
 		index,
 		isFirst,
 		isLast,
@@ -344,6 +347,7 @@
 				<div class="qm-body-leaf">
 					<ProseField
 						{doc}
+						{quill}
 						addr={ops.makeAddr(undefined)}
 						unframed
 						label="Body"
@@ -376,6 +380,7 @@
 				value={card.values[f.name]}
 				provenance={card.provenance[f.name]}
 				{doc}
+				{quill}
 				proseAddr={ops.makeAddr(f.name)}
 				leafKey={ops.leafKey(f.name)}
 				domIds={ops.domIds(f.name)}

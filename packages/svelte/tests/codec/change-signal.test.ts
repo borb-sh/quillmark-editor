@@ -33,6 +33,7 @@ describe('the prose leaf change signal', () => {
 		const carets: number[] = [];
 		const field = createField({
 			doc,
+			quill: quill(),
 			addr: { field: 'subject' },
 			container: mount(),
 			inline: true,
@@ -61,6 +62,7 @@ describe('the prose leaf change signal', () => {
 		const changes: Addr[] = [];
 		const field = createField({
 			doc,
+			quill: quill(),
 			addr: { field: 'tag_line' },
 			container: mount(),
 			inline: true,
@@ -82,6 +84,7 @@ describe('the prose leaf change signal', () => {
 		const changes: Addr[] = [];
 		const field = createField({
 			doc,
+			quill: quill(),
 			addr: {},
 			container: mount(),
 			onChange: (addr) => changes.push(addr)
@@ -100,6 +103,7 @@ describe('the prose leaf change signal', () => {
 		const changes: Addr[] = [];
 		const field = createField({
 			doc,
+			quill: quill(),
 			addr: { field: 'subject' },
 			container: mount(),
 			inline: true,

@@ -89,12 +89,12 @@ main:
       description: Department of War (DoW) or Department of Defense (DoD) seal shown in the letterhead.
 
     letterhead_seal_subtitle:
-      type: string
+      type: plaintext
       default: ""
       ui:
         group: letterhead
         compact: true
-      description: Bold-caps line below the seal; blank to omit.
+      description: Bold-caps line below the seal; blank to omit. Printed literally, markdown and all.
 
     tag_line:
       type: richtext
