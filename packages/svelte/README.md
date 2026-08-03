@@ -88,6 +88,8 @@ preview.refresh(session.apply(doc)); // repaint dirtyPages ∩ visible
 
 In Svelte, `<Preview {session} onCaretPick={…} />` exposes the same verbs (`refresh`, `scrollToField`, `focusPosition`, `setZoom`) via `bind:this`.
 
+`<Preview>` binds **once**, at mount: `session`, `margin`, `overlays`, `onCaretPick`, `onError` and `strings` are read when the paint loop is built and never again, so swapping one in place changes nothing on screen. Each reports `rebind-ignored` through `onError` at `dev` severity, naming the prop. Swap by remounting (`{#key session}`) and drive in-place edits through `refresh(change)`. `<SourceView>` is the same for `doc` and `onError` (`{#key doc}`), and `class` / `style` are the exceptions on both: they land on the root element and stay live.
+
 ## Visual editor
 
 `<VisualEditor>` is a federated composition of many small editors over one document: each content leaf a ProseMirror prose surface, each scalar a form control, cards the editor's own. It commits directly to the `doc` handle.

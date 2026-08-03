@@ -9,7 +9,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createPreview, type PreviewController } from './controller.js';
-	import { reportError } from '../core/errors.js';
+	import { guardRebind } from '../core/rebind.svelte.js';
 	import type { PreviewStringsInput } from './strings.js';
 	import type { LiveSession, ContentHit, ChangeSet } from '@quillmark/wasm';
 	import type { DocPath, Place } from '../core/address.js';
@@ -17,9 +17,16 @@
 
 	/**
 	 * REMOUNT CONTRACT. `createPreview` binds once in `onMount`; a later change to
-	 * `session` (or `margin`/`overlays`/`onCaretPick`/`onError`) is NOT observed. Swap the
-	 * session by REMOUNTING (`{#key session}`, as the playground does); drive
-	 * in-place edits through the `refresh(change)` method, not a prop change.
+	 * ANY prop it closed over — `session`, `margin`, `overlays`, `onCaretPick`,
+	 * `onError`, `strings` — is NOT observed. Swap the session by REMOUNTING
+	 * (`{#key session}`, as the playground does); drive in-place edits through the
+	 * `refresh(change)` method, not a prop change. Every one of them reports
+	 * `rebind-ignored` when swapped, so the contract is enforced rather than
+	 * merely written here.
+	 *
+	 * `onError` is itself once-bound, so a swapped handler means the report of its
+	 * own swap reaches the handler it replaced. `class` and `style` are the
+	 * exceptions: they land on the root element Svelte owns, so they stay live.
 	 */
 	interface Props {
 		session: LiveSession;
@@ -52,24 +59,15 @@
 	let containerEl: HTMLDivElement | undefined = $state();
 	let controller: PreviewController | undefined;
 
-	// The contract above, said out loud. The editor re-keys on its own `doc`; this
-	// surface cannot, because the paint loop owns scroll position, mounted page
-	// slots and an observer set that a remount would discard on every apply — so the
-	// swap stays the consumer's `{#key session}` and what the surface owes is to
-	// stop being silent about the one it was handed instead.
-	// svelte-ignore state_referenced_locally
-	const mounted = session;
-	let reported = false;
-	$effect(() => {
-		if (reported || session === mounted) return;
-		reported = true;
-		reportError(onError, {
-			code: 'rebind-ignored',
-			severity: 'dev',
-			message:
-				'session swapped in place; the paint loop still holds the session it mounted with. Remount the preview ({#key session}) to swap.'
-		});
-	});
+	// The contract above, said out loud, over every prop `createPreview` closed over.
+	// The editor re-keys on its own `doc`; this surface cannot, because the paint
+	// loop owns scroll position, mounted page slots and an observer set that a
+	// remount would discard on every apply — so the swap stays the consumer's
+	// `{#key session}`.
+	guardRebind(
+		() => ({ session, margin, overlays, onCaretPick, onError, strings }),
+		'Remount the preview ({#key session}) to rebind.'
+	);
 
 	onMount(() => {
 		if (!containerEl) return;
