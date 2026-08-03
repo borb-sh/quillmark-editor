@@ -30,9 +30,17 @@ Browsers cannot read the source layout, so `build(src, out)` packs it at deploy 
 
 ## The pointer, and skipping it
 
-`fromBuiltUrl` fetches `<url>/latest.json` first: a stable-named, non-content-addressed pointer to the current manifest. Everything behind it is content-addressed and safe to cache forever; that one filename is not. A CDN edge or a browser cache can serve a stale pointer after a release and silently pin the client to the old catalog, with no error, and per-host cache headers fix one serving layer at a time.
+`fromBuiltUrl` fetches `<url>/latest.json` first: a stable-named, non-content-addressed pointer to the current manifest. Everything behind it is content-addressed and safe to cache forever; that one filename is not. A CDN edge or a browser cache can serve a stale pointer after a release and silently pin the client to the old catalog, with no error, and per-host cache headers fix one serving layer at a time. The pointer is therefore the one request fetched `no-cache` — revalidate with the origin, a 304 still serving from disk — which closes the browser-cache layer and nothing above it.
 
 A consumer already holding the manifest bytes at build time (the SSR case: it reads the built artifact during its own build) seeds the catalog with `fromManifest` and never requests the pointer. Bundles and fonts are still fetched lazily, content-addressed, relative to `baseUrl`.
+
+## Content addressing is checked, not asserted
+
+Every name but the pointer carries the SHA-256 of what it names, and the loader hashes what arrives before using it: a manifest against the digest in the pointer's filename, a bundle against the digest in the manifest's, a font against its full-width store key. That check is what turns "safe to cache forever" into a property — it catches a corrupted CDN object, a partial sync, and a name reused across releases, and it reports `transport_error`, so the caches that evict on error let a retry succeed. Where no digest primitive exists — `crypto.subtle` is secure-context-only, so a page served over plain `http` to something other than localhost has none — the fetch passes through unchecked rather than failing.
+
+Bundle and manifest names carry 12 hex chars, 48 bits: enough that a new manifest name colliding with a prior release's, which under immutable CDN caching would serve the old catalog forever, is not a birthday problem within any release count a quiver will see. Store keys are the full 64, because the store is keyed by hash and two distinct fonts sharing a prefix would merge into one entry.
+
+One thing the addressing does not yet buy: `build` clears its output, so a client pinned to a stale pointer gets 404s rather than a stale-but-working catalog. An append-only store with garbage collection is the answer, and it only matters once artifacts and clients deploy independently.
 
 ## getQuill is the seam
 

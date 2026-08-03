@@ -12,6 +12,7 @@
 import { QuiverError } from './errors.js';
 import { unpackFiles } from './bundle.js';
 import { isCanonicalSemver, compareSemver } from './semver.js';
+import { NAME_DIGEST_LENGTH, sha256Hex } from './digest.js';
 import type { Quiver, QuiverLoader } from './quiver.js';
 import { createQuiver } from './quiver.js';
 
@@ -34,28 +35,69 @@ interface BuiltManifest {
 
 /**
  * Transport abstraction: fetch raw bytes by relative path within the packed
- * artifact. Sole implementation is HttpTransport (browser + Node).
+ * artifact. Implemented by HttpTransport (browser + Node) and FsBuiltTransport
+ * (Node).
  */
 export interface BuiltTransport {
-	fetchBytes(relativePath: string): Promise<Uint8Array>;
+	fetchBytes(relativePath: string, opts?: FetchOptions): Promise<Uint8Array>;
+}
+
+/**
+ * `revalidate` marks the one request that must not be answered from a cache:
+ * `latest.json`, the only name in the artifact that is not content-addressed.
+ * Everything else is safe to cache forever by construction.
+ */
+export interface FetchOptions {
+	revalidate?: boolean;
+}
+
+/**
+ * Fetch, then check the bytes against the digest their name carries. That
+ * check is what makes "content-addressed, safe to cache forever" a property
+ * rather than a hope: it catches a corrupted CDN object, a partial sync, and a
+ * name reused across releases. A mismatch is a transport failure — the bytes
+ * that arrived are not the bytes asked for — so the caches that evict on error
+ * let a retry succeed.
+ *
+ * Where no digest primitive exists (a page served over plain http, which is
+ * not a secure context) the fetch passes through unchecked.
+ */
+async function fetchVerified(
+	transport: BuiltTransport,
+	path: string,
+	expected: string
+): Promise<Uint8Array> {
+	const bytes = await transport.fetchBytes(path);
+	const actual = await sha256Hex(bytes);
+	if (actual !== undefined && !actual.startsWith(expected)) {
+		throw new QuiverError(
+			'transport_error',
+			`Digest mismatch for "${path}": the bytes hash to ${actual.slice(0, expected.length)}, not ${expected}`
+		);
+	}
+	return bytes;
 }
 
 // ─── Path validation ──────────────────────────────────────────────────────────
 
-const MANIFEST_FILENAME_RE = /^manifest\.[0-9a-f]+\.json$/;
-const BUNDLE_FILENAME_RE = /^[A-Za-z0-9_.-]+@[0-9]+\.[0-9]+\.[0-9]+\.[0-9a-f]+\.zip$/;
-const FONT_HASH_RE = /^[0-9a-f]{32}$/;
+// Each name carries the digest of what it names; the capture group is the
+// digest the fetch is checked against, so path validation and verification
+// read the same character span. `build` writes exactly NAME_DIGEST_LENGTH
+// chars for bundles and manifests and the full 64 for store entries.
+const DIGEST = `[0-9a-f]{${NAME_DIGEST_LENGTH},}`;
+const MANIFEST_FILENAME_RE = new RegExp(`^manifest\\.(${DIGEST})\\.json$`);
+const BUNDLE_FILENAME_RE = new RegExp(
+	`^[A-Za-z0-9_.-]+@[0-9]+\\.[0-9]+\\.[0-9]+\\.(${DIGEST})\\.zip$`
+);
+const FONT_HASH_RE = /^[0-9a-f]{64}$/;
 
-function validateManifestFileName(name: string): void {
-	if (!MANIFEST_FILENAME_RE.test(name)) {
-		throw new QuiverError('quiver_invalid', `Pointer manifest filename is invalid: "${name}"`);
+/** The digest a content-addressed filename carries. Throws `quiver_invalid`. */
+function digestOfName(re: RegExp, name: string, what: string): string {
+	const match = re.exec(name);
+	if (match === null) {
+		throw new QuiverError('quiver_invalid', `${what} is invalid: "${name}"`);
 	}
-}
-
-function validateBundleFileName(bundle: string, context: string): void {
-	if (!BUNDLE_FILENAME_RE.test(bundle)) {
-		throw new QuiverError('quiver_invalid', `${context}: bundle filename is invalid: "${bundle}"`);
-	}
+	return match[1]!;
 }
 
 function validateFontHash(hash: string, context: string): void {
@@ -82,7 +124,11 @@ class BuiltLoader implements QuiverLoader {
 		const entry = this.index.get(`${name}@${version}`)!;
 
 		// 1. Fetch + unpack bundle zip.
-		const zipBytes = await this.transport.fetchBytes(entry.bundle);
+		const zipBytes = await fetchVerified(
+			this.transport,
+			entry.bundle,
+			digestOfName(BUNDLE_FILENAME_RE, entry.bundle, 'bundle filename')
+		);
 		const files = unpackFiles(zipBytes);
 
 		// 2. Rehydrate fonts from store (coalesced).
@@ -105,7 +151,7 @@ class BuiltLoader implements QuiverLoader {
 	private fetchFont(hash: string): Promise<Uint8Array> {
 		let promise = this.fontCache.get(hash);
 		if (!promise) {
-			promise = this.transport.fetchBytes(`store/${hash}`).catch((err: unknown) => {
+			promise = fetchVerified(this.transport, `store/${hash}`, hash).catch((err: unknown) => {
 				this.fontCache.delete(hash);
 				throw err;
 			});
@@ -217,7 +263,11 @@ function parseManifest(raw: string): BuiltManifest {
 			);
 		}
 
-		validateBundleFileName(e['bundle'] as string, `manifest.quills[${i}].bundle`);
+		digestOfName(
+			BUNDLE_FILENAME_RE,
+			e['bundle'] as string,
+			`manifest.quills[${i}].bundle filename`
+		);
 
 		if (typeof e['fonts'] !== 'object' || e['fonts'] === null || Array.isArray(e['fonts'])) {
 			throw new QuiverError('quiver_invalid', `manifest.quills[${i}].fonts must be an object`);
@@ -303,10 +353,11 @@ function buildQuiverFromManifestBytes(
  * 4. Returns a Quiver instance backed by a BuiltLoader.
  */
 export async function loadBuiltQuiver(transport: BuiltTransport): Promise<Quiver> {
-	// 1. Fetch and parse pointer.
+	// 1. Fetch and parse pointer. It is the one name that is not
+	//    content-addressed, so it is also the one fetch that must revalidate.
 	let pointerBytes: Uint8Array;
 	try {
-		pointerBytes = await transport.fetchBytes('latest.json');
+		pointerBytes = await transport.fetchBytes('latest.json', { revalidate: true });
 	} catch (err) {
 		if (err instanceof QuiverError) throw err;
 		throw new QuiverError(
@@ -317,13 +368,16 @@ export async function loadBuiltQuiver(transport: BuiltTransport): Promise<Quiver
 	}
 
 	const manifestFileName = parsePointer(new TextDecoder().decode(pointerBytes));
-
-	validateManifestFileName(manifestFileName);
+	const manifestDigest = digestOfName(
+		MANIFEST_FILENAME_RE,
+		manifestFileName,
+		'Pointer manifest filename'
+	);
 
 	// 2. Fetch and parse manifest.
 	let manifestBytes: Uint8Array;
 	try {
-		manifestBytes = await transport.fetchBytes(manifestFileName);
+		manifestBytes = await fetchVerified(transport, manifestFileName, manifestDigest);
 	} catch (err) {
 		if (err instanceof QuiverError) throw err;
 		throw new QuiverError(

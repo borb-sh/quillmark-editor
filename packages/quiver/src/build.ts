@@ -8,6 +8,7 @@
 
 import { QuiverError } from './errors.js';
 import { packFiles } from './bundle.js';
+import { NAME_DIGEST_LENGTH } from './digest.js';
 
 /** Font file extensions recognised by the builder (case-insensitive). */
 const FONT_EXT = /\.(ttf|otf|woff|woff2)$/i;
@@ -54,13 +55,14 @@ function assertSafeOutDir(
 /**
  * Reads a Source Quiver, validates it, and writes the build output to outDir.
  *
- * Output layout:
+ * Output layout — every name but the pointer carries the SHA-256 of what it
+ * names, which is what the loader checks on fetch:
  *   outDir/
- *     latest.json                   # stable pointer to the current manifest
- *     manifest.<md5prefix6>.json    # hashed manifest
- *     <name>@<version>.<md5>.zip    # one bundle per quill
+ *     latest.json                     # stable pointer to the current manifest
+ *     manifest.<sha256:12>.json       # hashed manifest
+ *     <name>@<version>.<sha256:12>.zip  # one bundle per quill
  *     store/
- *       <md5>                       # dehydrated font bytes (full hash, no ext)
+ *       <sha256>                      # dehydrated font bytes (full hash, no ext)
  *
  * Throws:
  *   - `quiver_invalid` on source validation failures (propagated from scanner)
@@ -125,7 +127,9 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 			// c. Dehydrate fonts into store/.
 			const fonts: Record<string, string> = {};
 			for (const [path, bytes] of fontEntries) {
-				const hash = createHash('md5').update(bytes).digest('hex');
+				// Full width: the store is keyed by hash, so two distinct fonts
+				// sharing a prefix would merge into one entry.
+				const hash = createHash('sha256').update(bytes).digest('hex');
 				const storePath = join(outDir, 'store', hash);
 
 				try {
@@ -149,7 +153,10 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 			const zipBytes = packFiles(contentRecord);
 
 			// e–f. Compute bundle hash and name.
-			const bundleHash = createHash('md5').update(zipBytes).digest('hex').slice(0, 6);
+			const bundleHash = createHash('sha256')
+				.update(zipBytes)
+				.digest('hex')
+				.slice(0, NAME_DIGEST_LENGTH);
 			const bundleName = `${quillName}@${version}.${bundleHash}.zip`;
 
 			// g. Write bundle zip.
@@ -177,7 +184,10 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 	};
 
 	const manifestJson = JSON.stringify(manifest, null, 2);
-	const manifestHash = createHash('md5').update(manifestJson).digest('hex').slice(0, 6);
+	const manifestHash = createHash('sha256')
+		.update(manifestJson)
+		.digest('hex')
+		.slice(0, NAME_DIGEST_LENGTH);
 	const manifestFileName = `manifest.${manifestHash}.json`;
 	const manifestPath = join(outDir, manifestFileName);
 

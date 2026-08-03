@@ -222,8 +222,15 @@ const result = await engine.render(quill, doc, { format: 'pdf' });
 non-content-addressed pointer to the current manifest — before fetching the
 manifest itself. Because that one filename is stable, a CDN edge or browser
 cache can serve a **stale pointer** after a release and silently pin the
-client to the old catalog, with no error. Per-host cache headers only fix this
-one serving layer at a time.
+client to the old catalog, with no error. It is fetched `no-cache` so a browser
+cache must revalidate it, but per-host cache headers fix the layers above that
+one at a time.
+
+Everything behind the pointer is content-addressed, and the digest in each name
+is **checked** against the bytes that arrive — a mismatched manifest, bundle, or
+font raises `transport_error` rather than loading. (Digests need
+`crypto.subtle`, which browsers expose only in a secure context; a page served
+over plain `http` to something other than localhost fetches unchecked.)
 
 If you already hold the manifest bytes at build time — a common case for SSR
 consumers, which read the built artifact during their own build — seed the

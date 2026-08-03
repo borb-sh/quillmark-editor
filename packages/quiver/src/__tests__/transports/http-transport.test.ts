@@ -126,3 +126,39 @@ describe('HttpTransport.fetchBytes', () => {
 		});
 	});
 });
+
+describe('HttpTransport — revalidation', () => {
+	// `latest.json` is the one name in the artifact that is not
+	// content-addressed, so it is the one request a browser cache may not answer
+	// on its own. Everything else is immutable by construction.
+	let originalFetch: typeof globalThis.fetch | undefined;
+
+	beforeEach(() => {
+		originalFetch = globalThis.fetch;
+	});
+
+	afterEach(() => {
+		if (originalFetch !== undefined) globalThis.fetch = originalFetch;
+	});
+
+	async function initFor(opts?: { revalidate?: boolean }): Promise<RequestInit | undefined> {
+		let captured: RequestInit | undefined;
+		globalThis.fetch = (async (_url: string, init?: RequestInit) => {
+			captured = init;
+			return new Response(new Uint8Array([1]).buffer as ArrayBuffer, { status: 200 });
+		}) as typeof globalThis.fetch;
+
+		const transport = new HttpTransport('https://cdn.example.com/q/');
+		await transport.fetchBytes('latest.json', opts);
+		return captured;
+	}
+
+	it('asks the cache to revalidate when told to', async () => {
+		expect(await initFor({ revalidate: true })).toEqual({ cache: 'no-cache' });
+	});
+
+	it('leaves caching to the browser otherwise', async () => {
+		expect(await initFor()).toBeUndefined();
+		expect(await initFor({ revalidate: false })).toBeUndefined();
+	});
+});
