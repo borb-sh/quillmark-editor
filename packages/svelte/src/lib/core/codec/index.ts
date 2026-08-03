@@ -25,7 +25,7 @@ export { blockSchema, inlineSchema } from './schema.js';
 // that still has to stay honest; a symbol earns its line when a caller outside
 // this folder wants it.
 export { decode, renderContent, usvLength } from './decode.js';
-export { pmToContent, contentEdit, lower, insertReintroducesIslandSlot } from './encode.js';
+export { pmToContent, contentEdit, lower } from './encode.js';
 export type { ContentEdit } from './encode.js';
 export { usvToPM, pmToUsv, buildLineIndex } from './positions.js';
 export type { LineIndex } from './positions.js';

@@ -9,7 +9,7 @@
 // code point so an astral char is one unit, never a surrogate half.
 import { DOMSerializer, type Mark, type Node as PMNode, type Schema } from 'prosemirror-model';
 import type { Content, ContentContainer, ContentLine, ContentMark } from '@quillmark/wasm';
-import { ISLAND_SLOT } from './islands.js';
+import { ISLAND_SLOT, type IslandNodeAttrs } from './islands.js';
 import { descriptorOf, markKey, pmMarkFromContent } from './marks.js';
 import { isInlineSchema } from './schema.js';
 import { isAnchorMark, isCodeLine, isHeadingLine, isListItemContainer } from '@quillmark/wasm';
@@ -241,11 +241,14 @@ function makeLeaf(schema: Schema, leaf: Leaf, marks: ContentMark[], cursor: Isla
 	return schema.nodes.paragraph.create({ unknown }, inline);
 }
 
-/** Consume the next island entry as PM node attrs (text-order matched to slots). */
-function islandAttrs(cursor: IslandCursor): { id: string; islandType: string; props: unknown } {
+/** Consume the next island entry as PM node attrs (text-order matched to slots):
+ *  the WHOLE entry, `loss` included, which an island edit has to write back
+ *  (`islands.ts`). A slot with no entry behind it is a malformed content; the empty
+ *  attrs keep the decode total rather than throwing on a read. */
+function islandAttrs(cursor: IslandCursor): IslandNodeAttrs {
 	const isl = cursor.rt.islands[cursor.i++];
-	if (!isl) return { id: '', islandType: '', props: null };
-	return { id: isl.id, islandType: isl.type, props: isl.props };
+	if (!isl) return { id: '', islandType: '', props: null, loss: 'unrepresentable' };
+	return { id: isl.id, islandType: isl.type, props: isl.props, loss: isl.loss };
 }
 
 /**

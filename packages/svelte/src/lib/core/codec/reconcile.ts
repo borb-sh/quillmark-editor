@@ -44,6 +44,16 @@ export function contentEqual(a: Content, b: Content): boolean {
 	return deepEqual(a, b);
 }
 
+/**
+ * The same structural equality over any boundary value: what the island diff
+ * compares two `ContentIsland` entries with (`encode.ts`). Key order is the reason
+ * it is not `JSON.stringify`: an island's opaque `props` crosses from a WASM read
+ * on one side and a PM node attribute on the other.
+ */
+export function valueEqual(a: unknown, b: unknown): boolean {
+	return deepEqual(a, b);
+}
+
 function deepEqual(a: unknown, b: unknown): boolean {
 	if (a === b) return true;
 	if (typeof a !== typeof b) return false;

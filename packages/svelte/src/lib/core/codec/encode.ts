@@ -1,24 +1,24 @@
 // Encode: PM → a `ChangeBundle` for `applyChange` (CODEC §Encode). Direction:
 // content is truth, PM its projection, edits are OPS. We do NOT re-`install`; we
-// lower to `{ delta?, lineOps?, markOps? }` so identity anchors rebase through the
-// splice.
+// lower to `{ delta?, islandOps?, lineOps?, markOps? }` so identity anchors rebase
+// through the splice.
 //
 // Implementation (per the phase brief's permitted route): `pmToContent` is a pure
 // inverse of decode; `lower` diffs old→new into ops. Empirically grounded (see
 // scratchpad probes): a raw `\n` in the `delta` splits a line and a deleted `\n`
 // joins: so ALL text routes through `delta`, `lineOps` carry per-line `setKind` /
-// `setContainers` / `setContinues` metadata, and every op reads in ONE coordinate
-// space, the post-delta (final) USV content. `applyChange` auto-rebases existing
-// marks with start-assoc `after` / end-assoc `before` (== `mapPos`), so the mark
-// diff replicates that rebase exactly and is coverage-precise. The one op-
-// unreachable edit is island creation: a `delta` insert carrying an island slot
-// throws `IslandSlotInInsert`, so `insertReintroducesIslandSlot` flags it for the
-// field's `install` fallback.
+// `setContainers` / `setContinues` metadata, and an island's payload rides
+// `islandOps`, the one channel that reaches it. Every op reads in ONE coordinate
+// space, the FINAL USV content (delta then island ops applied). `applyChange`
+// auto-rebases existing marks with start-assoc `after` / end-assoc `before`
+// (== `mapPos`) through BOTH text-moving channels, so the mark diff replicates
+// that rebase exactly and is coverage-precise.
 import type { Mark, Node as PMNode } from 'prosemirror-model';
 import { mapPos, isAnchorMark } from '@quillmark/wasm';
 import type {
 	ChangeBundle,
 	Delta,
+	IslandOp,
 	LineOp,
 	MarkOp,
 	Content,
@@ -29,8 +29,9 @@ import type {
 	ContentMark
 } from '@quillmark/wasm';
 import { codePoints, usvLength } from './decode.js';
-import { ISLAND_SLOT, islandEntryFromNode } from './islands.js';
+import { ISLAND_SLOT, islandEntryFromNode, type IslandNodeAttrs } from './islands.js';
 import { contentDescriptorFromPM, descriptorOf, markKey } from './marks.js';
+import { valueEqual } from './reconcile.js';
 
 // ── Position-map runs (consumed by positions.ts) ────────────────────────────
 // A run is one segment of exact PM↔USV correspondence, in document order.
@@ -144,9 +145,7 @@ function scanBlock(acc: Acc, node: PMNode, nodePos: number, containers: ContentC
 			beginLine(acc, nodePos, containers, { kind: 'island' });
 			acc.runs.push({ kind: 'atom', pmStart: nodePos, usvStart: acc.usvEnd });
 			appendText(acc, ISLAND_SLOT);
-			acc.islands.push(
-				islandEntryFromNode(node.attrs as { id: string; islandType: string; props: unknown })
-			);
+			acc.islands.push(islandEntryFromNode(node.attrs as IslandNodeAttrs));
 			acc.lastContentEndPm = nodePos + 1;
 			break;
 		case 'blockquote':
@@ -229,9 +228,7 @@ function scanInline(
 		} else if (child.type.name === 'island_inline') {
 			acc.runs.push({ kind: 'atom', pmStart: pm, usvStart: acc.usvEnd });
 			appendText(acc, ISLAND_SLOT);
-			acc.islands.push(
-				islandEntryFromNode(child.attrs as { id: string; islandType: string; props: unknown })
-			);
+			acc.islands.push(islandEntryFromNode(child.attrs as IslandNodeAttrs));
 		}
 		pm += child.nodeSize;
 	});
@@ -282,10 +279,11 @@ interface LowerOpts {
  * hold, because a doc-taking overload re-walks the whole tree, once per keystroke,
  * for a value the caller has in hand.
  *
- * The splice rides along because the commit path reads it twice (the island-slot gate
- * picks `install` vs ops, then `lower` builds the bundle around it) and `diffText`
- * allocates a code-point array per side. `contentEdit` being its only constructor is
- * what keeps a `delta` from disagreeing with the contents it was diffed from.
+ * The splice rides along because `diffText` allocates a code-point array per side
+ * and the commit path holds the edit across the lowering. `contentEdit` being its
+ * only constructor is what keeps a `delta` from disagreeing with the contents it
+ * was diffed from; `lower` is where a slot inside that splice moves to the island
+ * channel, so this `delta` is the RAW splice, not always the one committed.
  */
 export interface ContentEdit {
 	readonly oldRt: Content;
@@ -302,11 +300,13 @@ export function contentEdit(oldRt: Content, newRt: Content): ContentEdit {
 
 /** Lower an edit to a `ChangeBundle`: the old→new content diff, as ops. */
 export function lower(edit: ContentEdit, opts: LowerOpts = {}): ChangeBundle {
-	const { oldRt, newRt, delta } = edit;
+	const { oldRt, newRt } = edit;
+	const { delta, islandOps, insertedAt } = splitIslands(edit);
 	const lineOps = diffLines(oldRt, newRt);
-	const markOps = diffMarks(oldRt, newRt, delta, opts);
+	const markOps = diffMarks(oldRt, newRt, delta, insertedAt, opts);
 	const bundle: ChangeBundle = {};
 	if (delta) bundle.delta = delta;
+	if (islandOps.length) bundle.islandOps = islandOps;
 	if (lineOps.length) bundle.lineOps = lineOps;
 	if (markOps.length) bundle.markOps = markOps;
 	return bundle;
@@ -380,16 +380,114 @@ function kindKey(l: ContentLine): string {
 	return JSON.stringify(Object.entries(kindPart(l)).sort(([x], [y]) => (x < y ? -1 : 1)));
 }
 
+// ── Island channel ──────────────────────────────────────────────────────────
+
+/** The delta and the island ops it had to hand a slot to. */
+interface IslandSplit {
+	/** The edit's splice with every island slot stripped from its insert; absent
+	 *  when what remains is pure retains (the insert carried nothing else). */
+	delta?: Delta;
+	islandOps: IslandOp[];
+	/** The `insert` ops' positions, ascending, in FINAL coords: what a mark rebase
+	 *  shifts through after the delta. */
+	insertedAt: number[];
+}
+
 /**
- * The one edit outside the op vocabulary: a `delta` insert that (re)introduces an
- * island slot. `applyChange` throws `IslandSlotInInsert`, so island *creation*
- * (and any single splice that spans a slot and re-inserts it) must fall back to
- * `install` (paying that field's anchors). Every other structural edit, including
- * a new hard break or a code-interior line, lowers op-wise via `setContinues`.
+ * Split the edit's islands off the text splice. `applyChange` throws
+ * `IslandSlotInInsert` on a `delta` that types a slot, so a slot NEVER rides the
+ * delta: every slot inside the splice's inserted region is stripped from it and
+ * placed by `{ op: 'insert', at }`, which carries the backing entry in the same
+ * op. Every other island kept its slot, so a changed payload is `{ op: 'set' }`,
+ * addressed by the id both sides carry. A DELETED island needs no op at all: the
+ * delta that removes its slot drops the entry.
+ *
+ * `at` is the slot's position in the FINAL text: inserts apply left to right, so
+ * by the time the k-th lands, the k slots before it are back in place.
+ *
+ * The pairing is positional for `insert` and by id for `set`, which is what each
+ * addresses by. An id the store does not carry emits nothing rather than a `set`
+ * that would throw `UnknownIslandId`: nothing mints or renames an island id, so
+ * it is unreachable.
  */
-export function insertReintroducesIslandSlot(edit: ContentEdit): boolean {
-	const inserted = edit.delta?.ops.find((op) => 'insert' in op) as { insert: string } | undefined;
-	return !!inserted?.insert.includes(ISLAND_SLOT);
+function splitIslands(edit: ContentEdit): IslandSplit {
+	const { oldRt, newRt, delta } = edit;
+	const slots = slotPositions(newRt.text);
+	const { start, end } = insertedRegion(delta);
+	const oldById = new Map(oldRt.islands.map((isl) => [isl.id, isl]));
+	const islandOps: IslandOp[] = [];
+	const insertedAt: number[] = [];
+	newRt.islands.forEach((isl, i) => {
+		const at = slots[i];
+		if (at !== undefined && at >= start && at < end) {
+			islandOps.push({ op: 'insert', at, ...isl });
+			insertedAt.push(at);
+		} else {
+			const before = oldById.get(isl.id);
+			if (before && !valueEqual(before, isl)) islandOps.push({ op: 'set', ...isl });
+		}
+	});
+	return {
+		delta: insertedAt.length && delta ? withoutSlots(delta) : delta,
+		islandOps,
+		insertedAt
+	};
+}
+
+/** The USV positions of `text`'s island slots, in document order: the i-th is the
+ *  i-th island's, since the scan appends an entry per slot it writes. */
+function slotPositions(text: string): number[] {
+	const out: number[] = [];
+	let usv = 0;
+	for (const cp of text) {
+		if (cp === ISLAND_SLOT) out.push(usv);
+		usv++;
+	}
+	return out;
+}
+
+/** The splice's inserted region `[start, end)` in FINAL coords. `diffText` emits
+ *  one `[retain?][delete?][insert?][retain?]`, so the leading retain is where the
+ *  insert lands and its length is how far it reaches. */
+function insertedRegion(delta: Delta | undefined): { start: number; end: number } {
+	if (!delta) return { start: 0, end: 0 };
+	const lead = delta.ops[0];
+	const start = lead && 'retain' in lead ? lead.retain : 0;
+	const insert = delta.ops.find((op) => 'insert' in op) as { insert: string } | undefined;
+	return { start, end: start + (insert ? usvLength(insert.insert) : 0) };
+}
+
+/** The delta with every island slot removed from its insert, or `undefined` when
+ *  that leaves nothing but retains. Retain/delete arithmetic reads the OLD text,
+ *  so dropping inserted characters leaves the rest of the splice intact. */
+function withoutSlots(delta: Delta): Delta | undefined {
+	const ops: Delta['ops'] = [];
+	let splices = false;
+	for (const op of delta.ops) {
+		if ('insert' in op) {
+			const kept = op.insert.split(ISLAND_SLOT).join('');
+			if (kept.length) {
+				ops.push({ insert: kept });
+				splices = true;
+			}
+		} else {
+			if ('delete' in op) splices = true;
+			ops.push(op);
+		}
+	}
+	return splices ? { ops } : undefined;
+}
+
+/**
+ * A post-delta position carried through the bundle's island inserts, which move
+ * text exactly as the delta does and rebase marks by the same rule (start-assoc
+ * `after`, end-assoc `before`; an anchor is a point and holds `before`). Ascending
+ * `at`s apply left to right, so each comparison reads the RUNNING position.
+ */
+function shiftPastIslands(pos: number, insertedAt: number[], assoc: 'before' | 'after'): number {
+	let p = pos;
+	for (const at of insertedAt) if (assoc === 'after' ? p >= at : p > at) p++;
+	return p;
 }
 
 // ── Mark diff ───────────────────────────────────────────────────────────────
@@ -404,13 +502,14 @@ function diffMarks(
 	oldRt: Content,
 	newRt: Content,
 	delta: Delta | undefined,
+	insertedAt: number[],
 	opts: LowerOpts
 ): MarkOp[] {
 	const ops: MarkOp[] = [];
-	// Rebase old marks through the delta to post-delta coords, exactly as
-	// `applyChange` does internally (start assoc `after`, end assoc `before`).
+	// Rebase old marks through BOTH text-moving channels to final coords, exactly
+	// as `applyChange` does internally (start assoc `after`, end assoc `before`).
 	const rebase = (pos: number, assoc: 'before' | 'after') =>
-		delta ? mapPos(delta, pos, assoc) : pos;
+		shiftPastIslands(delta ? mapPos(delta, pos, assoc) : pos, insertedAt, assoc);
 
 	// Group both sides by descriptor key (excluding anchors).
 	const oldGroups = groupFormatting(oldRt.marks, (m) => ({
@@ -435,7 +534,10 @@ function diffMarks(
 	// Anchors: diff the decoration sets by id (positions already in final coords).
 	if (opts.oldAnchors || opts.newAnchors) {
 		const oldA = new Map(
-			(opts.oldAnchors ?? []).map((a) => [a.id, delta ? mapPos(delta, a.pos, 'after') : a.pos])
+			(opts.oldAnchors ?? []).map((a) => [
+				a.id,
+				shiftPastIslands(delta ? mapPos(delta, a.pos, 'after') : a.pos, insertedAt, 'before')
+			])
 		);
 		const newA = new Map((opts.newAnchors ?? []).map((a) => [a.id, a.pos]));
 		for (const [id, pos] of newA) {

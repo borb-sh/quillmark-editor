@@ -5,15 +5,9 @@
 import { describe, it, expect } from 'vitest';
 import { EditorState } from 'prosemirror-state';
 import type { Transaction } from 'prosemirror-state';
-import {
-	decode,
-	pmToContent,
-	contentEdit,
-	lower,
-	blockSchema,
-	insertReintroducesIslandSlot
-} from '$lib/core/codec';
-import type { Content } from '@quillmark/wasm';
+import type { Node as PMNode } from 'prosemirror-model';
+import { decode, pmToContent, contentEdit, lower, blockSchema } from '$lib/core/codec';
+import type { Content, TableProps } from '@quillmark/wasm';
 import { freshDoc, normalize, contentEqual, md } from './_util.js';
 
 interface AnchorOpts {
@@ -240,7 +234,6 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		const state = EditorState.create({ doc: decode(oldRt, blockSchema) });
 		const tr = state.tr.insertText('\n', 2); // a code-interior line before the anchor
 		const edit = contentEdit(oldRt, pmToContent(tr.doc));
-		expect(insertReintroducesIslandSlot(edit)).toBe(false); // the op path, not install
 		const bundle = lower(edit, {
 			oldAnchors: [{ id: 'c1', pos: 3 }],
 			newAnchors: [{ id: 'c1', pos: 4 }] // the \n inserts before it → +1
@@ -254,52 +247,133 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 	});
 });
 
-describe('insertReintroducesIslandSlot — the one op-unreachable edit', () => {
-	const island = '￼';
-	const mkIsland = (text: string): Content => ({
-		text,
-		lines: [{ containers: [], kind: 'para' }],
-		marks: [],
-		islands: [{ id: 'i1', type: 'image', props: {} } as never]
+describe('the island channel — an island edit lowers op-wise', () => {
+	// A block island between two paragraphs: `￼` on its own `island` line.
+	const TABLE_MD = 'para\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\ntail';
+
+	/** The block island node and its position, the projection a table NodeView
+	 *  will hand the codec; built by hand until one exists. */
+	function islandOf(doc: PMNode): { pos: number; node: PMNode } {
+		let found: { pos: number; node: PMNode } | undefined;
+		doc.descendants((node, pos) => {
+			if (node.type.name === 'island_block') found = { node, pos };
+			return !found;
+		});
+		if (!found) throw new Error('no island node in the projection');
+		return found;
+	}
+
+	/** Retype the island's first header cell: an edit to `props` alone, which the
+	 *  text does not see (cell text lives in the entry, never in `Content.text`). */
+	function retypeCell(state: EditorState, text: string): Transaction {
+		const { pos, node } = islandOf(state.doc);
+		const props = JSON.parse(JSON.stringify(node.attrs.props)) as TableProps;
+		props.header[0].text = text;
+		return state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, props });
+	}
+
+	/** Install `rt`, project it, and lower the edit `mkTr` makes. */
+	function lowerEdit(
+		rt: Content,
+		mkTr: (state: EditorState) => Transaction,
+		opts: AnchorOpts = {}
+	) {
+		const doc = freshDoc();
+		doc.install({}, rt);
+		const oldRt = doc.main.body;
+		const state = EditorState.create({ doc: decode(oldRt, blockSchema) });
+		const newDoc = mkTr(state).doc;
+		return { doc, oldRt, newDoc, bundle: lower(contentEdit(oldRt, pmToContent(newDoc)), opts) };
+	}
+
+	/** The stored anchor `id`'s position, or `undefined` if it is gone. */
+	function anchorAt(stored: Content, id: string): number | undefined {
+		const m = stored.marks.find(
+			(mark) => mark.type === 'anchor' && (mark as { id: string }).id === id
+		);
+		return m?.start;
+	}
+
+	it('a cell edit lowers to `set` and reaches the store', () => {
+		const { doc, bundle } = lowerEdit(md(TABLE_MD), (s) => retypeCell(s, 'HEAD'));
+		// The text is untouched: an island edit is not a splice.
+		expect(bundle.delta).toBeUndefined();
+		expect(bundle.islandOps).toHaveLength(1);
+		expect(bundle.islandOps?.[0]).toMatchObject({ op: 'set', id: 'isl-0', type: 'table' });
+		doc.applyChange({}, bundle);
+		expect((doc.main.body.islands[0].props as TableProps).header[0].text).toBe('HEAD');
 	});
 
-	it('flags a splice whose insert re-carries an island slot (IslandSlotInInsert)', () => {
-		// Two edits (X after `b`, Y before `r`) collapse to one splice spanning the
-		// slot, so its insert contains U+FFFC; `applyChange` would throw.
-		const oldRt = mkIsland(`before ${island} after`);
-		const newRt = mkIsland(`bXefore ${island} afteYr`);
-		expect(insertReintroducesIslandSlot(contentEdit(oldRt, newRt))).toBe(true);
+	it('every anchor in the field survives a cell edit', () => {
+		const rt = md(TABLE_MD);
+		rt.marks.push({ start: 2, end: 2, type: 'anchor', id: 'a1' } as never);
+		const { doc, bundle } = lowerEdit(rt, (s) => retypeCell(s, 'HEAD'), {
+			oldAnchors: [{ id: 'a1', pos: 2 }],
+			newAnchors: [{ id: 'a1', pos: 2 }]
+		});
+		doc.applyChange({}, bundle);
+		expect(anchorAt(doc.main.body, 'a1')).toBe(2);
 	});
-	it('flags island creation (a paste inserting a fresh slot)', () => {
-		const plain = md('before  after');
-		const withIsland = mkIsland(`before ${island} after`);
-		expect(insertReintroducesIslandSlot(contentEdit(plain, withIsland))).toBe(true);
-	});
-	it('does NOT flag an edit around an existing island (the slot is retained, not re-inserted)', () => {
-		const oldRt = mkIsland(`before ${island} after`);
-		const newRt = mkIsland(`before ${island} afterX`);
-		expect(insertReintroducesIslandSlot(contentEdit(oldRt, newRt))).toBe(false);
-	});
-	it('does NOT flag a new hard break or code-interior line (they lower via setContinues)', () => {
-		const oneLine = md('one two');
-		const withBreak: Content = {
-			text: 'one\ntwo',
-			lines: [
-				{ containers: [], kind: 'para' },
-				{ containers: [], continues: true, kind: 'para' }
-			],
-			marks: [],
-			islands: []
-		};
-		expect(insertReintroducesIslandSlot(contentEdit(oneLine, withBreak))).toBe(false);
 
-		const code1 = md('```\nab\n```');
-		const code2: Content = {
-			text: code1.text.replace('ab', 'a\nb'),
-			lines: [...code1.lines, { containers: [], continues: true, kind: 'code' } as never],
-			marks: [],
-			islands: []
+	it('a degraded island keeps its class: `loss` is authored, never re-stamped', () => {
+		const rt = md(TABLE_MD);
+		rt.islands[0].loss = 'degraded';
+		const { doc, oldRt, bundle } = lowerEdit(rt, (s) => retypeCell(s, 'HEAD'));
+		expect(oldRt.islands[0].loss).toBe('degraded'); // the node carried it out
+		doc.applyChange({}, bundle);
+		expect(doc.main.body.islands[0].loss).toBe('degraded');
+	});
+
+	it('a block island lowers to delta → islandOps → lineOps, and anchors survive', () => {
+		const rt = md('one\n\ntwo');
+		rt.marks.push({ start: 1, end: 1, type: 'anchor', id: 'a1' } as never);
+		const entry = {
+			id: 'isl-0',
+			islandType: 'table',
+			loss: 'lossless',
+			props: { header: [{ text: 'h', marks: [] }], rows: [], aligns: ['none'] }
 		};
-		expect(insertReintroducesIslandSlot(contentEdit(code1, code2))).toBe(false);
+		const { doc, bundle } = lowerEdit(
+			rt,
+			(s) => s.tr.insert(s.doc.child(0).nodeSize, blockSchema.nodes.island_block.create(entry)),
+			{ oldAnchors: [{ id: 'a1', pos: 1 }], newAnchors: [{ id: 'a1', pos: 1 }] }
+		);
+		// The delta opens the line, the island op places the slot, the line op tags it.
+		expect(bundle.delta?.ops).toContainEqual({ insert: '\n' });
+		expect(bundle.islandOps).toEqual([
+			expect.objectContaining({ op: 'insert', at: 4, id: 'isl-0', type: 'table' })
+		]);
+		expect(bundle.lineOps).toContainEqual({ op: 'setKind', line: 1, kind: 'island' });
+		doc.applyChange({}, bundle);
+		expect(doc.main.body.text).toBe('one\n￼\ntwo');
+		expect(doc.main.body.islands.map((i) => i.id)).toEqual(['isl-0']);
+		expect(anchorAt(doc.main.body, 'a1')).toBe(1);
+	});
+
+	it('a splice spanning an existing slot re-places it through the channel', () => {
+		// Two edits either side of the island collapse into one splice whose insert
+		// would carry `￼` (`IslandSlotInInsert`); the slot moves to the channel and
+		// the delta commits the text alone.
+		const { doc, bundle } = lowerEdit(md(TABLE_MD), (s) =>
+			s.tr.insertText('X', 2).insertText('Y', 11)
+		);
+		const inserts = bundle.delta?.ops.filter((op) => 'insert' in op) as { insert: string }[];
+		expect(inserts.every((op) => !op.insert.includes('￼'))).toBe(true);
+		expect(bundle.islandOps).toEqual([expect.objectContaining({ op: 'insert', id: 'isl-0' })]);
+		doc.applyChange({}, bundle);
+		expect(doc.main.body.text).toBe('pXara\n￼\ntaYil');
+		expect(doc.main.body.islands.map((i) => i.id)).toEqual(['isl-0']);
+	});
+
+	it('a text edit beside an island emits no island op', () => {
+		const { bundle } = lowerApply(md(TABLE_MD), (s) => s.tr.insertText('X', 2));
+		expect(bundle.islandOps).toBeUndefined();
+	});
+
+	it('deleting an island needs no op: the delta that drops its slot drops the entry', () => {
+		const { doc, bundle } = lowerEdit(md(TABLE_MD), (s) => s.tr.delete(6, 7));
+		expect(bundle.islandOps).toBeUndefined();
+		doc.applyChange({}, bundle);
+		expect(doc.main.body.islands).toHaveLength(0);
 	});
 });

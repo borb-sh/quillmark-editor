@@ -18,12 +18,12 @@ Bridging the two is the codec's whole job: **flat-text-with-attributes ↔ neste
 
 ## Direction: the content is truth; PM is its projection; edits are ops
 
-Decode is a pure function content → PM. Encode does **not** rebuild a `Content` and `install` it: it projects the new PM doc back to content (`pmToContent`, decode's inverse) and diffs `old → new` into a `ChangeBundle { delta?, lineOps?, markOps? }`, applied by `doc.applyChange(addr, bundle)`. Op-based, because:
+Decode is a pure function content → PM. Encode does **not** rebuild a `Content` and `install` it: it projects the new PM doc back to content (`pmToContent`, decode's inverse) and diffs `old → new` into a `ChangeBundle { delta?, islandOps?, lineOps?, markOps? }`, applied by `doc.applyChange(addr, bundle)`. Op-based, because:
 
 - **anchors survive.** `install` is value semantics: it drops the identity anchors (comment threads, stable references) of the previous value. `applyChange` splices, so anchors rebase through the edit.
-- **it is the seam's grain.** The `delta` channel is CodeMirror-`ChangeSet` isomorphic; marks and line attributes are separate op channels by design. Lowering is a **whole-field diff, not a step replay**: rather than translate each `tr.step` out of PM's node coordinates and open-slice depths, it re-derives the content projection once and diffs `old → new` in one post-delta USV coordinate space. The diff replicates `applyChange`'s own mark rebase (start-assoc `after`, end-assoc `before` ≡ `mapPos`), so it stays coverage-precise.
+- **it is the seam's grain.** The `delta` channel is CodeMirror-`ChangeSet` isomorphic; marks and line attributes are separate op channels by design. Lowering is a **whole-field diff, not a step replay**: rather than translate each `tr.step` out of PM's node coordinates and open-slice depths, it re-derives the content projection once and diffs `old → new` in one final USV coordinate space. The diff replicates `applyChange`'s own mark rebase (start-assoc `after`, end-assoc `before` ≡ `mapPos`), so it stays coverage-precise.
 
-`install(addr, rt)` stays as the escape hatch when a change can't lower op-wise (island creation; §Encode) or `applyChange` throws; it costs that field's anchors, so it is the exception, not the path.
+Every edit lowers. `install(addr, rt)` is left with two cases, neither a shape the vocabulary can't reach: a field not yet at *content rest* (an unset field, an authored string), which has no content object to splice and no anchors to lose, and an `applyChange` that throws. It costs that field's anchors, so it is the exception, not the path.
 
 ## Decode: content → PM
 
@@ -35,14 +35,17 @@ Two mark kinds do **not** become PM marks: see §Marks.
 
 ## Encode: PM edit → `ChangeBundle`
 
-`contentEdit(oldRt, newRt)` pairs the stored content with the new PM doc's projection (`pmToContent`) and diffs their text once; `lower(edit)` fills out the three channels around that splice, in `applyChange`'s application order (`delta`, then `lineOps`, then `markOps`, all in *post-delta* coordinates):
+`contentEdit(oldRt, newRt)` pairs the stored content with the new PM doc's projection (`pmToContent`) and diffs their text once; `lower(edit)` fills out the four channels around that splice, in `applyChange`'s application order (`delta`, then `islandOps`, then `lineOps`, then `markOps`, all in *final* coordinates: every earlier channel applied):
 
 - **text**: a minimal single-splice diff of the flat USV text becomes `delta` ops (`retain` / `insert` / `delete`). A line split or join rides the delta: an inserted `\n` splits a line, a deleted `\n` joins; there is no separate split/join op.
+- **islands**: an island's payload lives in its entry, never in the text, so `islandOps` is the only channel that reaches it. A changed `props` is `{ op: "set" }`, addressed by the id both sides carry; a slot the splice would have to type is `{ op: "insert", at }`, which places slot and entry in one op. A deleted island needs no op at all: the `delta` that removes its slot drops the entry.
 - **line metadata**: when any line's `kind` / `containers` / `continues` changed, `lineOps` restate every line's metadata (`setKind`, `setContainers`, and `setContinues` for lines ≥ 1). Redundant restatements are safe no-ops, so the pass is correct whatever intermediate metadata the delta's split/join left.
-- **formatting**: the mark-coverage difference becomes `markOps` `add` / `remove` over post-delta USV ranges; old marks are first rebased through the delta exactly as `applyChange` rebases them (start-assoc `after`, end-assoc `before` ≡ `mapPos`).
+- **formatting**: the mark-coverage difference becomes `markOps` `add` / `remove` over final USV ranges; old marks are first rebased through both text-moving channels, the delta and the island inserts, exactly as `applyChange` rebases them (start-assoc `after`, end-assoc `before` ≡ `mapPos`).
 - **anchors**: the decoration-set difference by id becomes `add {type:"anchor", id}` / `removeAnchor {id}`, positions already in final coords.
 
-Everything reads against the *post-delta* content, so the bundle reads the same way `applyChange` applies it. The one edit the op vocabulary can't reach is **island creation**: a `delta` insert carrying an island slot throws `IslandSlotInInsert`, so the field falls back to `install`. The gate is a predicate on the splice (`insertReintroducesIslandSlot(edit)`), so the field decides `install` vs ops and then lowers, both off the one diff.
+Everything reads against the *final* content, so the bundle reads the same way `applyChange` applies it. **A slot never rides the `delta`**: `applyChange` throws `IslandSlotInInsert` on an insert that carries one, so `lower` strips every slot inside the splice's inserted region and hands it to the island channel instead (`splitIslands`). That is what keeps island creation, and a splice that happens to span an existing slot, on the op path.
+
+A **block** island is one bundle of three channels: the `delta` inserts the `\n` that opens the line, an island op places the slot, a `setKind` tags the line `island`. Stage order is what makes it expressible: `{ op: "split" }` could not open that line, since line ops run after island ops.
 
 ## Positions: USV ↔ PM
 
@@ -60,7 +63,11 @@ The content mark set is two algebra classes, and they route to two different PM 
 
 ## Islands
 
-A table or figure is one `U+FFFC` slot plus one `Island {id, type, props, loss}`. Decode maps it to a PM leaf node (block or inline by the slot's line); encode writes the slot char and the entry with its `id` preserved (stable identity, like an anchor). Known types carry a typed props shape pinned upstream (`@quillmark/wasm` 0.96.0): `ContentIsland.props` is `TableProps` (`{header, rows, aligns}`) for `table`, `ImageProps` (`{url, alt}`) for `image`; an island of any other type passes opaque (§Open sets).
+A table or figure is one `U+FFFC` slot plus one `Island {id, type, props, loss}`. Decode maps it to a PM leaf node (block or inline by the slot's line); encode writes the slot char and the entry with its `id` preserved (stable identity, like an anchor). The **whole entry rides the node**, `loss` included: `applyChange` stores the class an island op hands it and re-derives nothing, so an edit that did not carry the class back would promote a degraded table to lossless on its first cell edit.
+
+Known types carry a typed props shape pinned upstream (`@quillmark/wasm` 0.96.0): `ContentIsland.props` is `TableProps` (`{header, rows, aligns}`) for `table`, `ImageProps` (`{url, alt}`) for `image`; an island of any other type passes opaque (§Open sets).
+
+An island edit lowers through `islandOps` (§Encode), and the entry's **value semantics** draw two boundaries. An anchor inside a cell does not survive a cell edit: `set` replaces the entry whole, and a cell's marks are inside it, which upstream declares a boundary rather than an oversight. And a minted island id is this tier's to produce: the positional `isl-{n}` sequence continued, never a UUID or a clock reading, because the id is part of the document's canonical bytes (quillmark `DOCUMENT_STORAGE.md` §Island-id determinism). Nothing mints one today; every `insert` the codec emits carries an id the projection already held.
 
 ## Open sets: an unknown must survive an edit
 
@@ -104,6 +111,7 @@ The content normalizes on write (marks sorted and same-kind-unioned, zero-width 
 ## Seams
 
 - **anchors are decorations, not a document mark.** Plugin-held positions keyed by id, mapped through `tr.mapping` and lowered to `anchor` ops: the split that keeps identity off PM's mark mechanism. A selection mints one through the field seam `insertAnchor(id, pos)` / `removeAnchor(id)`: a zero-width edit carried on an `anchorKey` meta that folds into the plugin set and commits through the same mark diff a formatting toggle does. The id is caller-supplied (unique, invariant) per the `@quillmark/wasm` 0.97 anchor-id policy (a duplicate is a no-op). A move into the document proper, and the comment-thread UX that gives an anchor visible chrome, are post-V1.
-- **island props are typed at the boundary** (`@quillmark/wasm` 0.96.0), so the codec reads the shape off it; no local `IslandTable*` / `IslandImage*` duplicates or shape guards (DOCUMENT_MODEL §Stability seams). The union and the narrowing rule are §Islands above. Table/island *authoring* does not ship (below).
-- **install fallback** catches the edits the diff can't lower op-wise: island *creation* (a `delta` can't reintroduce a slot: `IslandSlotInInsert`) and any `applyChange` that throws. Both retry as `install(addr, rt)`, paying that field's anchors: the exception, not the path.
+- **island props are typed at the boundary** (`@quillmark/wasm` 0.96.0), so the codec reads the shape off it; no local `IslandTable*` / `IslandImage*` duplicates or shape guards (DOCUMENT_MODEL §Stability seams). The union and the narrowing rule are §Islands above. Table/island *authoring* does not ship (below), so the island channel's producer is a hand-built projection until a NodeView is one.
+- **island edits are ops, not an install.** The `islandOps` channel (`@quillmark/wasm` 0.101.0) reaches an island's payload and places a new slot, so a table edit keeps every identity anchor in the field. `lower` diffs the island sets and emits it; the install fallback has no island case.
+- **install fallback** is a field not yet at content rest (nothing to splice, nothing to lose) and any `applyChange` that throws. Both are `install(addr, rt)`, paying that field's anchors: the exception, not the path. The throw path drops the field's held anchors where the ops path would have kept them; whether it earns a repair pass of its own is open.
 - **input rules and the PM schema** ship: the markdown shorthands (`**`, `*`, `~~`, `` ` ``, `# `, `- `, `1. `, `> `, and a ` ``` ` code fence) are PM input rules producing ordinary transactions this codec lowers; markdown is an input shorthand, never the stored form. No table-entry rule ships: table/island authoring does not ship (VISUAL_EDITOR_UIUX §Open).
