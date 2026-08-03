@@ -1,9 +1,8 @@
 <!--
  An `object` field → a nested subform over `properties` (declaration order),
- committing the WHOLE object by value on any nested change. No object field
- exists in the reference quill, so this is implemented to the schema contract
- for SCALAR properties and is UNTESTED against a real leaf; nested
- prose/array/object properties render a placeholder rather than recurse.
+ committing the WHOLE object by value on any nested change. SCALAR properties
+ only: a nested prose/array/object property renders a placeholder rather than
+ recurse.
 
  A property's ghosted `default:` is the static schema `sub.default`, not the
  resolved provenance the top-level ghosts read (FIELD_PROVENANCE): `resolve`
