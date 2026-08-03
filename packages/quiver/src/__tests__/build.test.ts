@@ -484,8 +484,8 @@ describe('buildPackage', () => {
 
 describe('buildQuiver — every name carries the digest of its own bytes', () => {
 	// What the loader checks on fetch. If the build's hash and the loader's ever
-	// disagree, nothing downstream loads at all — so the round trip is pinned
-	// here rather than at each end separately.
+	// disagree, nothing downstream loads at all, so the round trip is pinned here
+	// rather than at each end separately.
 	const tmpDirs: string[] = [];
 
 	afterEach(async () => {

@@ -111,8 +111,8 @@ interface Artifact {
 }
 
 /**
- * A packed artifact whose every name is the digest of its own bytes — the
- * shape `build` writes. `pointer: false` omits `latest.json`, for the seeding
+ * A packed artifact whose every name is the digest of its own bytes: the shape
+ * `build` writes. `pointer: false` omits `latest.json`, for the seeding
  * path that never fetches it.
  */
 async function makeArtifact(
@@ -239,8 +239,8 @@ describe('loadBuiltQuiver — tree rehydration', () => {
 
 describe('loadBuiltQuiver — content addressing is checked', () => {
 	// The digest in a name is what makes "safe to cache forever" a property.
-	// Each case swaps bytes behind a name the manifest already committed to —
-	// a corrupted CDN object, a partial sync, a name reused across releases.
+	// Each case swaps bytes behind a name the manifest already committed to: a
+	// corrupted CDN object, a partial sync, a name reused across releases.
 
 	it('bundle bytes that do not match the name in the manifest → transport_error', async () => {
 		const { transport, bundles } = await makeArtifact('sample', [
@@ -496,7 +496,7 @@ describe('loadBuiltQuiver — path validation (security)', () => {
 							name: 'evil',
 							version: '1.0.0',
 							bundle: 'evil@1.0.0.aabbccddeeff.zip',
-							// A full-width MD5: what the store used to be keyed by.
+							// 32 hex chars: a full-width MD5, not a SHA-256.
 							fonts: { 'fonts/body.ttf': 'aabbccddeeff00112233445566778899' }
 						}
 					]

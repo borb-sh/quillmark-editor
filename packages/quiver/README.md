@@ -79,7 +79,7 @@ subpath, or the quiver is unreachable however correct its layout:
 }
 ```
 
-A package with no `exports` map needs nothing — every path is reachable by
+A package with no `exports` map needs nothing: every path is reachable by
 default.
 
 Recommended CI: use the bundled `@quillmark/quiver/testing` harness — it
@@ -200,7 +200,7 @@ await build('./node_modules/@org/my-quiver', './public/quivers/my-quiver');
 ```
 
 `build` clears its output directory before writing, so it owns that path
-outright. An `outDir` that is — or contains — the source quiver or the working
+outright. An `outDir` that is, or contains, the source quiver or the working
 directory is refused with a `transport_error` rather than deleted.
 
 ```ts
@@ -227,7 +227,7 @@ cache must revalidate it, but per-host cache headers fix the layers above that
 one at a time.
 
 Everything behind the pointer is content-addressed, and the digest in each name
-is **checked** against the bytes that arrive — a mismatched manifest, bundle, or
+is **checked** against the bytes that arrive: a mismatched manifest, bundle, or
 font raises `transport_error` rather than loading. (Digests need
 `crypto.subtle`, which browsers expose only in a secure context; a page served
 over plain `http` to something other than localhost fetches unchecked.)

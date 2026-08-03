@@ -48,7 +48,7 @@ export class Quiver {
 	readonly #treeCache: Map<string, Promise<Map<string, Uint8Array>>> = new Map();
 
 	/**
-	 * Private constructor — a Quiver comes from a factory (`Quiver.fromBuiltUrl`,
+	 * Private constructor. A Quiver comes from a factory (`Quiver.fromBuiltUrl`,
 	 * `Quiver.fromManifest`, or `fromDir` / `fromPackage` / `fromBuiltDir` from
 	 * `@quillmark/quiver/node`), which is what names the thing being read.
 	 */

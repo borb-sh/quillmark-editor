@@ -1,12 +1,9 @@
 /**
- * Built-quiver loader — browser-safe at module level.
- * Internal; not exported from index.ts.
+ * Built-quiver loader: reads a packed artifact through a transport, validates
+ * its pointer and manifest, and hands back a Quiver whose loader fetches
+ * bundles and fonts on demand, each checked against the digest in its name.
  *
- * Exposes:
- *   - BuiltTransport interface (implemented by HttpTransport)
- *   - loadBuiltQuiver(transport) → Quiver
- *
- * NO static node: imports — this module is safe to load in browser contexts.
+ * Package-internal, and browser-safe: no static `node:` imports at any level.
  */
 
 import { QuiverError } from './errors.js';
@@ -55,8 +52,8 @@ export interface FetchOptions {
  * Fetch, then check the bytes against the digest their name carries. That
  * check is what makes "content-addressed, safe to cache forever" a property
  * rather than a hope: it catches a corrupted CDN object, a partial sync, and a
- * name reused across releases. A mismatch is a transport failure — the bytes
- * that arrived are not the bytes asked for — so the caches that evict on error
+ * name reused across releases. A mismatch is a transport failure (the bytes
+ * that arrived are not the bytes asked for), so the caches that evict on error
  * let a retry succeed.
  *
  * Where no digest primitive exists (a page served over plain http, which is

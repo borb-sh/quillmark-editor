@@ -1,5 +1,5 @@
 /**
- * Content addressing — browser-safe.
+ * Content addressing. Browser-safe.
  *
  * `crypto.subtle` is the one digest primitive a browser and Node both expose,
  * and it exists only in a secure context: a page served over plain `http://`
@@ -11,9 +11,9 @@
 
 /**
  * Digest width in the names `build` writes, in hex chars: 48 bits of SHA-256.
- * Wide enough that a manifest name colliding with a prior release's — which
- * would serve the old catalog forever under immutable CDN caching — is not a
- * birthday problem within any release count a quiver will see.
+ * Wide enough that a manifest name colliding with a prior release's, which
+ * under immutable CDN caching serves the old catalog forever, is not a birthday
+ * problem within any release count a quiver will see.
  */
 export const NAME_DIGEST_LENGTH = 12;
 

@@ -15,10 +15,10 @@ const FONT_EXT = /\.(ttf|otf|woff|woff2)$/i;
 
 /**
  * The build's first act is `rm(outDir, { recursive: true })`, so an outDir that
- * is — or contains — the source quiver or the working directory deletes the
+ * is, or contains, the source quiver or the working directory deletes the
  * thing the caller was building from. `quiver build --out .` and a mistyped
  * `--out ..` are both one keystroke away, and the failure is unrecoverable, so
- * the four paths that own the caller are refused up front.
+ * an outDir that owns the caller is refused up front.
  *
  * An outDir *inside* sourceDir stays allowed: the scan reads the source before
  * any write, and `dist/` under the quiver root is the ordinary layout.
@@ -55,7 +55,7 @@ function assertSafeOutDir(
 /**
  * Reads a Source Quiver, validates it, and writes the build output to outDir.
  *
- * Output layout — every name but the pointer carries the SHA-256 of what it
+ * Output layout. Every name but the pointer carries the SHA-256 of what it
  * names, which is what the loader checks on fetch:
  *   outDir/
  *     latest.json                     # stable pointer to the current manifest

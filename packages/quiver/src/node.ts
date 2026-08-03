@@ -53,8 +53,8 @@ export async function fromPackage(specifier: string, from?: string): Promise<Qui
 /**
  * Loads a packed (build-output) quiver from a local directory containing
  * `latest.json` and the manifest/bundle/store files written by `build`.
- * Symmetric to `Quiver.fromBuiltUrl(url)` but reads from disk instead of HTTP
- * — no network required.
+ * Symmetric to `Quiver.fromBuiltUrl(url)` but reads from disk instead of HTTP:
+ * no network required.
  *
  * Use this for server-side runtime when a packed artifact ships in the
  * deployment image; consumers can keep source quivers as devDependencies and
@@ -94,7 +94,7 @@ export async function buildPackage(
 }
 
 /**
- * Resolves `<specifier>/Quiver.yaml` from `from` — an `import.meta.url` or a
+ * Resolves `<specifier>/Quiver.yaml` from `from`: an `import.meta.url` or a
  * path, defaulting to this module. The default only finds packages hoisted
  * beside `@quillmark/quiver` itself; under an isolated `node_modules` layout a
  * caller's own dependencies are reachable only from the caller, so passing

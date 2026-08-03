@@ -4,9 +4,9 @@
  * The filesystem factories are free functions in `@quillmark/quiver/node`; the
  * `Quiver` class is the browser-safe one from the main entry, unmodified.
  * Importing `/node` must therefore leave the shared constructor exactly as the
- * main entry left it — the import-order hazard the old runtime patch carried
- * (a `Quiver` binding whose statics depend on what else got imported first)
- * cannot come back.
+ * main entry left it, so the import-order hazard a runtime patch carries (a
+ * `Quiver` binding whose statics depend on what else got imported first) cannot
+ * arise.
  */
 
 import { describe, it, expect } from 'vitest';

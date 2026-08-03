@@ -21,8 +21,8 @@
  * The last block closes the loop the package exists for, against the
  * workspace's reference quill rather than a toy: source layout → `build` →
  * transport fetch → digest check → font rehydration → `Quill.fromTree` →
- * `engine.render`. Only the playground drove that end to end before, and only
- * when a human sat in front of it.
+ * `engine.render`. The playground walks the same loop, but only under a
+ * human.
  *
  * The Typst backend load makes this the slowest test in the suite (seconds).
  * It is kept in its own file so it stays cheap to skip locally.
