@@ -10,48 +10,48 @@ const SAMPLE_FIXTURE = new URL('./fixtures/sample-quiver', import.meta.url).path
 describe('Quiver.resolve', () => {
 	it('1. unqualified "memo" → "memo@1.1.0" (highest)', async () => {
 		const quiver = await fromDir(SAMPLE_FIXTURE);
-		expect(await quiver.resolve('memo')).toBe('memo@1.1.0');
+		expect(quiver.resolve('memo')).toBe('memo@1.1.0');
 	});
 
 	it('2. "memo@1" → "memo@1.1.0" (highest 1.*.*)', async () => {
 		const quiver = await fromDir(SAMPLE_FIXTURE);
-		expect(await quiver.resolve('memo@1')).toBe('memo@1.1.0');
+		expect(quiver.resolve('memo@1')).toBe('memo@1.1.0');
 	});
 
 	it('3. "memo@1.0" → "memo@1.0.0" (highest 1.0.*)', async () => {
 		const quiver = await fromDir(SAMPLE_FIXTURE);
-		expect(await quiver.resolve('memo@1.0')).toBe('memo@1.0.0');
+		expect(quiver.resolve('memo@1.0')).toBe('memo@1.0.0');
 	});
 
 	it('4. "memo@1.0.0" → "memo@1.0.0" (exact)', async () => {
 		const quiver = await fromDir(SAMPLE_FIXTURE);
-		expect(await quiver.resolve('memo@1.0.0')).toBe('memo@1.0.0');
+		expect(quiver.resolve('memo@1.0.0')).toBe('memo@1.0.0');
 	});
 
 	it('5. "memo@2.0.0" (not present) → quill_not_found', async () => {
 		const quiver = await fromDir(SAMPLE_FIXTURE);
-		await expect(quiver.resolve('memo@2.0.0')).rejects.toThrow(
+		expect(() => quiver.resolve('memo@2.0.0')).toThrow(
 			expect.objectContaining({ code: 'quill_not_found' })
 		);
 	});
 
 	it('6. "memo@^1" → invalid_ref (from parseQuillRef)', async () => {
 		const quiver = await fromDir(SAMPLE_FIXTURE);
-		await expect(quiver.resolve('memo@^1')).rejects.toThrow(
+		expect(() => quiver.resolve('memo@^1')).toThrow(
 			expect.objectContaining({ code: 'invalid_ref' })
 		);
 	});
 
 	it('7. "" (empty string) → invalid_ref', async () => {
 		const quiver = await fromDir(SAMPLE_FIXTURE);
-		await expect(quiver.resolve('')).rejects.toThrow(
+		expect(() => quiver.resolve('')).toThrow(
 			expect.objectContaining({ code: 'invalid_ref' })
 		);
 	});
 
 	it('8. unknown name → quill_not_found', async () => {
 		const quiver = await fromDir(SAMPLE_FIXTURE);
-		await expect(quiver.resolve('nonexistent')).rejects.toThrow(
+		expect(() => quiver.resolve('nonexistent')).toThrow(
 			expect.objectContaining({ code: 'quill_not_found' })
 		);
 	});

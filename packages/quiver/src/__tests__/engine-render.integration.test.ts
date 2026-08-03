@@ -145,7 +145,7 @@ describe('the reference quill, source → build → fetch → render', () => {
 	it('packs the reference quiver and renders it back out of the artifact', async () => {
 		const built = await fromBuiltDir(join(outDir, 'packed'));
 		expect(built.quillNames()).toEqual(['usaf_memo']);
-		expect(await built.resolve('usaf_memo')).toBe('usaf_memo@0.2.0');
+		expect(built.resolve('usaf_memo')).toBe('usaf_memo@0.2.0');
 
 		const quill = await built.getQuill('usaf_memo');
 		expect(quill.backendId).toBe('typst');

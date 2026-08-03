@@ -104,9 +104,9 @@ describe('Integration: build → fromBuiltUrl → resolve → getQuill', () => {
 
 		const built = await Quiver.fromBuiltUrl(baseUrl);
 
-		expect(await built.resolve('memo')).toBe('memo@1.1.0');
-		expect(await built.resolve('memo@1.0.0')).toBe('memo@1.0.0');
-		expect(await built.resolve('resume')).toBe('resume@2.0.0');
+		expect(built.resolve('memo')).toBe('memo@1.1.0');
+		expect(built.resolve('memo@1.0.0')).toBe('memo@1.0.0');
+		expect(built.resolve('resume')).toBe('resume@2.0.0');
 	});
 
 	it('quiver.getQuill builds a quill from the correct tree', async () => {

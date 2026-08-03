@@ -126,11 +126,15 @@ export class Quiver {
 	 * Selector forms: `name`, `name@x`, `name@x.y`, `name@x.y.z`. Picks the
 	 * highest matching version in this quiver.
 	 *
+	 * Sync, and in-memory by construction rather than by implementation: every
+	 * loader materializes the catalog as the quiver is built, and `QuiverLoader`
+	 * carries one verb, `loadTree`, which resolution never reaches.
+	 *
 	 * Throws:
 	 *   - `invalid_ref` if ref fails parseQuillRef
 	 *   - `quill_not_found` if no version matches
 	 */
-	async resolve(ref: string): Promise<string> {
+	resolve(ref: string): string {
 		const parsed = parseQuillRef(ref);
 		const versions = this.#catalog.get(parsed.name);
 
@@ -174,7 +178,7 @@ export class Quiver {
 	 *   - propagates validation errors from Quill.fromTree() unchanged
 	 */
 	async getQuill(ref: string): Promise<Quill> {
-		const canonicalRef = await this.resolve(ref);
+		const canonicalRef = this.resolve(ref);
 
 		let entry = this.#quillCache.get(canonicalRef);
 		if (entry === undefined) {
