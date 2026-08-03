@@ -24,7 +24,7 @@
 		"gate": "npm run lint && npm run check && npm run check:canon && npm run check:style && npm run check:deps && npm test",
 		"changeset": "changeset",
 		"version": "changeset version && npm install --package-lock-only",
-		"release": "npm run build && changeset publish"
+		"release": "npm run build && npm run check:pack -w packages/svelte && changeset publish"
 	},
 	"overrides": {
 		"@quillmark/wasm": "0.100.0"
