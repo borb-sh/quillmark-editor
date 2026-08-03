@@ -387,6 +387,63 @@ describe('buildQuiver — I/O error', () => {
 	});
 });
 
+describe('buildQuiver — outDir guard', () => {
+	// The build clears outDir first, so these are the paths where a typo would
+	// delete the caller. Each asserts the source survives: the guard has to fire
+	// before the rm, not after.
+	const tmpDirs: string[] = [];
+
+	afterEach(async () => {
+		for (const d of tmpDirs.splice(0)) {
+			await rm(d, { recursive: true, force: true });
+		}
+	});
+
+	it('refuses an outDir equal to the source quiver', async () => {
+		const src = tempDir();
+		tmpDirs.push(src);
+		await seedSourceQuiver(src, { quills: [{ name: 'memo', version: '1.0.0' }] });
+
+		await expect(buildQuiver(src, src)).rejects.toThrow(
+			expect.objectContaining({ code: 'transport_error' })
+		);
+		await access(join(src, 'Quiver.yaml'));
+	});
+
+	it('refuses an outDir that is an ancestor of the source quiver', async () => {
+		const parent = tempDir();
+		const src = join(parent, 'quiver');
+		tmpDirs.push(parent);
+		await seedSourceQuiver(src, { quills: [{ name: 'memo', version: '1.0.0' }] });
+
+		await expect(buildQuiver(src, parent)).rejects.toThrow(
+			expect.objectContaining({ code: 'transport_error' })
+		);
+		await access(join(src, 'Quiver.yaml'));
+	});
+
+	it('refuses an outDir that is the working directory', async () => {
+		// A source outside the cwd, so only the cwd rule can fire.
+		const src = tempDir();
+		tmpDirs.push(src);
+		await seedSourceQuiver(src, { quills: [{ name: 'memo', version: '1.0.0' }] });
+
+		await expect(buildQuiver(src, '.')).rejects.toThrow(
+			expect.objectContaining({ code: 'transport_error' })
+		);
+		await access(join(process.cwd(), 'package.json'));
+	});
+
+	it('allows an outDir nested inside the source quiver', async () => {
+		const src = tempDir();
+		tmpDirs.push(src);
+		await seedSourceQuiver(src, { quills: [{ name: 'memo', version: '1.0.0' }] });
+
+		await buildQuiver(src, join(src, 'dist'));
+		await access(join(src, 'dist', 'latest.json'));
+	});
+});
+
 describe('Quiver.build (static method delegation)', () => {
 	const tmpDirs: string[] = [];
 

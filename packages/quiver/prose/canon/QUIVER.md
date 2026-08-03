@@ -20,7 +20,9 @@ The loaders name exactly what they read; there is no auto-detection and no branc
 | `fromBuiltUrl(url)` | build output | anywhere |
 | `fromManifest(baseUrl, bytes)` | build output, pointer skipped | anywhere |
 
-Browsers cannot read the source layout, so `Quiver.build(src, out)` packs it at deploy time and the output is served as static assets. `fromBuiltDir` exists for the server that ships the packed artifact in its own image: it avoids the self-fetch round-trip `fromBuiltUrl` would force on a self-hosted deployment, and lets the source quiver stay a devDependency.
+Browsers cannot read the source layout, so `build(src, out)` packs it at deploy time and the output is served as static assets. `fromBuiltDir` exists for the server that ships the packed artifact in its own image: it avoids the self-fetch round-trip `fromBuiltUrl` would force on a self-hosted deployment, and lets the source quiver stay a devDependency.
+
+`build` owns `out` outright — it clears the directory before writing, so the previous generation never bleeds into the new one. An `out` that is, or contains, the source quiver or the working directory is refused rather than cleared: `--out .` and a slipped `--out ..` are one keystroke away and the deletion is unrecoverable. An `out` nested *inside* the source (`dist/` under the quiver root) is the ordinary layout and stays allowed — the scan reads the source before the first write.
 
 ## The pointer, and skipping it
 

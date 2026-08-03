@@ -13,6 +13,45 @@ import { packFiles } from './bundle.js';
 const FONT_EXT = /\.(ttf|otf|woff|woff2)$/i;
 
 /**
+ * The build's first act is `rm(outDir, { recursive: true })`, so an outDir that
+ * is — or contains — the source quiver or the working directory deletes the
+ * thing the caller was building from. `quiver build --out .` and a mistyped
+ * `--out ..` are both one keystroke away, and the failure is unrecoverable, so
+ * the four paths that own the caller are refused up front.
+ *
+ * An outDir *inside* sourceDir stays allowed: the scan reads the source before
+ * any write, and `dist/` under the quiver root is the ordinary layout.
+ *
+ * Throws `transport_error`.
+ */
+function assertSafeOutDir(
+	path: typeof import('node:path'),
+	sourceDir: string,
+	outDir: string
+): void {
+	const out = path.resolve(outDir);
+
+	/** True when `dir` is `target` or an ancestor of it. */
+	const owns = (target: string): boolean => {
+		const rel = path.relative(out, path.resolve(target));
+		return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+	};
+
+	const what = owns(sourceDir)
+		? 'the source quiver'
+		: owns(process.cwd())
+			? 'the working directory'
+			: undefined;
+
+	if (what !== undefined) {
+		throw new QuiverError(
+			'transport_error',
+			`Refusing to build into "${outDir}": the build clears its output directory, and this one holds ${what} ("${out}"). Point --out at a directory the build owns.`
+		);
+	}
+}
+
+/**
  * Reads a Source Quiver, validates it, and writes the build output to outDir.
  *
  * Output layout:
@@ -25,15 +64,21 @@ const FONT_EXT = /\.(ttf|otf|woff|woff2)$/i;
  *
  * Throws:
  *   - `quiver_invalid` on source validation failures (propagated from scanner)
- *   - `transport_error` on I/O failures
+ *   - `transport_error` on I/O failures, and on an outDir the build would have
+ *     to delete something it does not own to write (see `assertSafeOutDir`)
  */
 export async function buildQuiver(sourceDir: string, outDir: string): Promise<void> {
 	// Dynamic imports keep this module safe to type-import from browser contexts.
-	const { join } = await import('node:path');
+	const path = await import('node:path');
+	const { join } = path;
 	const { mkdir, rm, writeFile } = await import('node:fs/promises');
 	const { createHash } = await import('node:crypto');
 
 	const { scanSourceQuiver, readQuillTree } = await import('./source-loader.js');
+
+	// 0. The first write is a recursive delete of outDir; refuse the paths where
+	//    that deletes the caller instead of a previous build.
+	assertSafeOutDir(path, sourceDir, outDir);
 
 	// 1. Scan + validate source quiver (throws quiver_invalid on bad input).
 	const { meta, catalog } = await scanSourceQuiver(sourceDir);
