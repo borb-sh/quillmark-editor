@@ -208,8 +208,10 @@ export class Quiver {
 	}
 
 	/**
-	 * Internal: tree cache reader. On miss, fetches via `#loadTree` and stores
-	 * the in-flight Promise. On rejection, evicts so a retry can succeed.
+	 * Internal: tree cache reader. On miss, delegates to the loader and stores
+	 * the in-flight Promise. On rejection, evicts so a retry can succeed. Every
+	 * caller arrives through `resolve` or the catalog itself, so the ref is
+	 * catalog-backed by construction and the loader needs no gate.
 	 */
 	#getTreeCached(canonicalRef: string): Promise<Map<string, Uint8Array>> {
 		let entry = this.#treeCache.get(canonicalRef);
@@ -217,32 +219,13 @@ export class Quiver {
 			const at = canonicalRef.indexOf('@');
 			const name = canonicalRef.slice(0, at);
 			const version = canonicalRef.slice(at + 1);
-			entry = this.#loadTree(name, version).catch((err) => {
+			entry = this.#loader.loadTree(name, version).catch((err) => {
 				this.#treeCache.delete(canonicalRef);
 				throw err;
 			});
 			this.#treeCache.set(canonicalRef, entry);
 		}
 		return entry;
-	}
-
-	/**
-	 * Internal: validates name/version against the catalog, then delegates to
-	 * the loader. Returns `Map<string, Uint8Array>` suitable for
-	 * `Quill.fromTree(tree)`. Does NOT cache — caching lives in `#getTreeCached`.
-	 *
-	 * Throws `transport_error` if name/version not in catalog or I/O fails.
-	 */
-	async #loadTree(name: string, version: string): Promise<Map<string, Uint8Array>> {
-		const versions = this.#catalog.get(name);
-		if (!versions || !versions.includes(version)) {
-			throw new QuiverError(
-				'transport_error',
-				`Quill "${name}@${version}" not found in quiver "${this.name}"`,
-				{ quiverName: this.name, version, ref: `${name}@${version}` }
-			);
-		}
-		return this.#loader.loadTree(name, version);
 	}
 
 	/**

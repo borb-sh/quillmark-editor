@@ -1,16 +1,13 @@
 /**
  * Build logic — internal, Node-only.
  *
- * All Node.js built-in imports are done dynamically inside `buildQuiver`
- * so that a type-only import of `BuildOptions` from `src/index.ts` does
- * NOT pull `node:fs` or `node:crypto` into browser bundles.
+ * All Node.js built-in imports are done dynamically inside `buildQuiver`, so
+ * a module reaching this one for types alone does not pull `node:fs` or
+ * `node:crypto` into a browser bundle.
  */
 
 import { QuiverError } from './errors.js';
 import { packFiles } from './bundle.js';
-
-/** Reserved for future build options (e.g. compression level, filters). */
-export type BuildOptions = Record<string, never>;
 
 /** Font file extensions recognised by the builder (case-insensitive). */
 const FONT_EXT = /\.(ttf|otf|woff|woff2)$/i;
@@ -30,11 +27,7 @@ const FONT_EXT = /\.(ttf|otf|woff|woff2)$/i;
  *   - `quiver_invalid` on source validation failures (propagated from scanner)
  *   - `transport_error` on I/O failures
  */
-export async function buildQuiver(
-	sourceDir: string,
-	outDir: string,
-	_opts?: BuildOptions
-): Promise<void> {
+export async function buildQuiver(sourceDir: string, outDir: string): Promise<void> {
 	// Dynamic imports keep this module safe to type-import from browser contexts.
 	const { join } = await import('node:path');
 	const { mkdir, rm, writeFile } = await import('node:fs/promises');

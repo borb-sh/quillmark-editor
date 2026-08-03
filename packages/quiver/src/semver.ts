@@ -3,18 +3,15 @@ export function isCanonicalSemver(version: string): boolean {
 	return /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version);
 }
 
-/** Returns true if `version` (canonical) matches `selector` (partial). */
+/**
+ * Returns true if `version` (canonical) matches `selector` (partial: `x`,
+ * `x.y`, or `x.y.z`). `parseQuillRef` owns selector validation; this is a
+ * prefix comparison over an already-valid selector.
+ */
 export function matchesSemverSelector(version: string, selector: string): boolean {
 	if (selector === version) return true;
 	const selectorParts = selector.split('.');
 	const versionParts = version.split('.');
-	if (
-		selectorParts.length === 0 ||
-		selectorParts.length > 3 ||
-		selectorParts.some((p) => p.length === 0 || Number.isNaN(Number(p)))
-	) {
-		return false;
-	}
 	if (selectorParts.length > versionParts.length) return false;
 	for (let i = 0; i < selectorParts.length; i++) {
 		if (selectorParts[i] !== versionParts[i]) return false;

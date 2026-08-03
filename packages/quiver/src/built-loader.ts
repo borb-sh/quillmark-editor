@@ -77,20 +77,9 @@ class BuiltLoader implements QuiverLoader {
 	) {}
 
 	async loadTree(name: string, version: string): Promise<Map<string, Uint8Array>> {
-		const entry = this.index.get(`${name}@${version}`);
-
-		// If entry is missing, the outer Quiver.loadTree gate already validated
-		// that this name/version is in the catalog; trust that gate and fall
-		// through. The transport will surface a transport_error naturally.
-		// (Defensive: this should not be reachable in normal operation.)
-
-		if (!entry) {
-			throw new QuiverError(
-				'transport_error',
-				`Quill "${name}@${version}" not found in built-quiver manifest`,
-				{ version, ref: `${name}@${version}` }
-			);
-		}
+		// The catalog the outer Quiver resolves against derives from this index,
+		// so every ref reaching here has an entry.
+		const entry = this.index.get(`${name}@${version}`)!;
 
 		// 1. Fetch + unpack bundle zip.
 		const zipBytes = await this.transport.fetchBytes(entry.bundle);
@@ -263,6 +252,24 @@ function parseManifest(raw: string): BuiltManifest {
 // ─── Catalog assembly ─────────────────────────────────────────────────────────
 
 /**
+ * Name → versions (descending), derived from the index. One structure backs
+ * both the loader's lookups and the Quiver's catalog, so the two cannot
+ * disagree about what the manifest holds.
+ */
+function catalogOf(index: Map<string, BuiltQuillEntry>): Map<string, string[]> {
+	const catalog = new Map<string, string[]>();
+	for (const entry of index.values()) {
+		const versions = catalog.get(entry.name) ?? [];
+		versions.push(entry.version);
+		catalog.set(entry.name, versions);
+	}
+	for (const versions of catalog.values()) {
+		versions.sort((a, b) => compareSemver(b, a));
+	}
+	return catalog;
+}
+
+/**
  * Validate manifest bytes (`quiver_invalid` on format errors) and assemble a
  * Quiver backed by a BuiltLoader over `transport`. Shared by `loadBuiltQuiver`
  * (pointer-following) and `seedBuiltQuiver` (seed).
@@ -273,29 +280,16 @@ function buildQuiverFromManifestBytes(
 ): Quiver {
 	const manifest = parseManifest(new TextDecoder().decode(manifestBytes));
 
-	// catalog: name → versions (desc); index: "name@version" → entry (dedup).
-	const catalogRaw = new Map<string, string[]>();
 	const index = new Map<string, BuiltQuillEntry>();
-
 	for (const entry of manifest.quills) {
 		const key = `${entry.name}@${entry.version}`;
 		if (index.has(key)) {
 			throw new QuiverError('quiver_invalid', `Duplicate quill entry in manifest: "${key}"`);
 		}
 		index.set(key, entry);
-
-		const versions = catalogRaw.get(entry.name) ?? [];
-		versions.push(entry.version);
-		catalogRaw.set(entry.name, versions);
 	}
 
-	for (const [, versions] of catalogRaw) {
-		versions.sort((a, b) => compareSemver(b, a));
-	}
-
-	const loader = new BuiltLoader(transport, index);
-
-	return Quiver._fromLoader(manifest.name, catalogRaw, loader);
+	return Quiver._fromLoader(manifest.name, catalogOf(index), new BuiltLoader(transport, index));
 }
 
 // ─── Main entry points ────────────────────────────────────────────────────────

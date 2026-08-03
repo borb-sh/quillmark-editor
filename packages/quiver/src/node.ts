@@ -22,7 +22,7 @@
 import { Quiver as Base } from './quiver.js';
 import { QuiverError } from './errors.js';
 import { scanSourceQuiver, SourceLoader } from './source-loader.js';
-import { buildQuiver, type BuildOptions } from './build.js';
+import { buildQuiver } from './build.js';
 import { loadBuiltQuiver } from './built-loader.js';
 import { FsBuiltTransport } from './transports/fs-built-transport.js';
 import { createRequire } from 'node:module';
@@ -82,7 +82,7 @@ type NodeQuiverStatics = {
 	 * Throws `quiver_invalid` on source validation failures, `transport_error`
 	 * on I/O failures.
 	 */
-	build(sourceDir: string, outDir: string, opts?: BuildOptions): Promise<void>;
+	build(sourceDir: string, outDir: string): Promise<void>;
 
 	/**
 	 * Resolves an npm specifier against `node_modules` and builds the source
@@ -93,7 +93,7 @@ type NodeQuiverStatics = {
 	 * Throws `transport_error` on resolution/I/O failure, `quiver_invalid` on
 	 * source validation failures.
 	 */
-	buildPackage(specifier: string, outDir: string, opts?: BuildOptions): Promise<void>;
+	buildPackage(specifier: string, outDir: string): Promise<void>;
 };
 
 export type Quiver = Base;
@@ -130,18 +130,13 @@ Quiver.fromPackage = async function fromPackage(specifier: string): Promise<Base
 	return Quiver.fromDir(dirname(yamlPath));
 };
 
-Quiver.build = async function build(
-	sourceDir: string,
-	outDir: string,
-	opts?: BuildOptions
-): Promise<void> {
-	return buildQuiver(sourceDir, outDir, opts);
+Quiver.build = async function build(sourceDir: string, outDir: string): Promise<void> {
+	return buildQuiver(sourceDir, outDir);
 };
 
 Quiver.buildPackage = async function buildPackage(
 	specifier: string,
-	outDir: string,
-	opts?: BuildOptions
+	outDir: string
 ): Promise<void> {
 	const req = createRequire(import.meta.url);
 	let yamlPath: string;
@@ -154,7 +149,7 @@ Quiver.buildPackage = async function buildPackage(
 			{ cause: err }
 		);
 	}
-	return buildQuiver(dirname(yamlPath), outDir, opts);
+	return buildQuiver(dirname(yamlPath), outDir);
 };
 
 // ---------------------------------------------------------------------------
@@ -163,7 +158,6 @@ Quiver.buildPackage = async function buildPackage(
 
 export { QuiverError } from './errors.js';
 export type { QuiverErrorCode } from './errors.js';
-export type { BuildOptions } from './build.js';
 
 // Engine types (`Quillmark`, `Quill`, `Document`, `RenderResult`, …) are not
 // re-exported: import them straight from the `@quillmark/wasm` peer dependency,
