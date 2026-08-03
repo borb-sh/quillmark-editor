@@ -44,8 +44,10 @@ const doc = Document.fromMarkdown(markdown); // canonical Quillmark markdown
 const doc = Document.fromJson(json); // the versioned storage DTO (`doc.toJson()`)
 
 const session = await new Engine().open(quill, doc);
-// free() quill / doc / session on teardown.
+// free() on teardown the handles you MINTED: this quill, this doc, this session.
 ```
+
+A handle a registry lent you is not one of them. `@quillmark/quiver`'s `getQuill` caches its quill per ref and hands the same instance to every caller, so freeing it strands the next one; a host that wants a quill of its own mints it from `Quill.fromTree((await quiver.getQuill(ref)).toTree())` and frees that.
 
 `toJson`/`fromJson` is the persistence pair: the wire format is frozen per schema version and byte-deterministic, so equal documents store equal bytes. `toMarkdown`/`fromMarkdown` is the human-readable pair, round-trip safe to an equal document. `Document.tryFromJson` returns `undefined` rather than throwing, to discriminate the two without exceptions as control flow.
 
@@ -61,7 +63,7 @@ const session = await new Engine().open(quill, doc);
 
 `@quillmark/quiver` is one such registry: its `getQuill` takes selector and canonical refs and caches one instance per canonical ref for the quiver's lifetime, so a second consumer resolving the same document costs no second materialization. An app bundling its one template resolves nothing and pulls no registry client.
 
-Opening a document that names a **different** quill is the same sequence, in order: resolve the new ref, `engine.open(quill, next)`, swap the props, then free the replaced handles. `<VisualEditor>` re-keys itself on the new `doc` (see below); `<Preview>` swaps by remount (`{#key session}`).
+Opening a document that names a **different** quill is the same sequence, in order: resolve the new ref, `engine.open(quill, next)`, swap the props, then free the replaced handles that were yours to free — the outgoing session always, the outgoing quill only if you minted it. `<VisualEditor>` re-keys itself on the new `doc` (see below); `<Preview>` swaps by remount (`{#key session}`).
 
 ## Preview
 
