@@ -8,13 +8,20 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createSourceView, type SourceViewController } from './view.js';
+	import { guardRebind } from '../core/rebind.svelte.js';
 	import type { Document } from '@quillmark/wasm';
 	import type { EditorErrorHandler } from '../core/errors.js';
 
 	/**
 	 * REMOUNT CONTRACT. `createSourceView` binds once in `onMount`; a later change
-	 * to `doc` (or `onError`) is NOT observed. Swap the document by REMOUNTING (`{#key doc}`);
-	 * reflect in-place edits through the `refresh()` method.
+	 * to `doc` or `onError` is NOT observed. Swap the document by REMOUNTING
+	 * (`{#key doc}`); reflect in-place edits through the `refresh()` method. Either
+	 * swapped in place reports `rebind-ignored`, as `Preview` does for its own
+	 * once-bound props.
+	 *
+	 * `onError` is itself once-bound, so a swapped handler means the report of its own
+	 * swap reaches the handler it replaced. `class` and `style` land on the root
+	 * element Svelte owns, so they stay live.
 	 */
 	interface Props {
 		doc: Document;
@@ -29,6 +36,9 @@
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let controller: SourceViewController | undefined;
+
+	// A mirror still serializing the previous document reads as one merely behind.
+	guardRebind(() => ({ doc, onError }), 'Remount the source view ({#key doc}) to rebind.');
 
 	onMount(() => {
 		if (!containerEl) return;

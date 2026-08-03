@@ -67,8 +67,7 @@ export class Quiver {
 	 *
 	 * Origin-relative URLs (e.g. `/quivers/foo/`) are accepted in browser
 	 * environments. `file://` URLs are rejected — to load build output from
-	 * disk in Node, use `Quiver.fromBuiltDir(path)` from
-	 * `@quillmark/quiver/node`.
+	 * disk in Node, use `fromBuiltDir(path)` from `@quillmark/quiver/node`.
 	 *
 	 * Throws `transport_error` on network/HTTP failure, `quiver_invalid`
 	 * on format errors.
@@ -77,7 +76,7 @@ export class Quiver {
 		if (url.startsWith('file://')) {
 			throw new QuiverError(
 				'transport_error',
-				`Quiver.fromBuiltUrl requires an http(s):// or origin-relative URL; got "${url}". For local build output, use Quiver.fromBuiltDir from @quillmark/quiver/node.`
+				`Quiver.fromBuiltUrl requires an http(s):// or origin-relative URL; got "${url}". For local build output, use import { fromBuiltDir } from '@quillmark/quiver/node'.`
 			);
 		}
 		const { HttpTransport } = await import('./transports/http-transport.js');
@@ -99,7 +98,7 @@ export class Quiver {
 		if (baseUrl.startsWith('file://')) {
 			throw new QuiverError(
 				'transport_error',
-				`Quiver.fromManifest requires an http(s):// or origin-relative baseUrl; got "${baseUrl}". For local build output, use Quiver.fromBuiltDir from @quillmark/quiver/node.`
+				`Quiver.fromManifest requires an http(s):// or origin-relative baseUrl; got "${baseUrl}". For local build output, use import { fromBuiltDir } from '@quillmark/quiver/node'.`
 			);
 		}
 		const { HttpTransport } = await import('./transports/http-transport.js');
@@ -127,11 +126,15 @@ export class Quiver {
 	 * Selector forms: `name`, `name@x`, `name@x.y`, `name@x.y.z`. Picks the
 	 * highest matching version in this quiver.
 	 *
+	 * Sync, and in-memory by construction rather than by implementation: every
+	 * loader materializes the catalog as the quiver is built, and `QuiverLoader`
+	 * carries one verb, `loadTree`, which resolution never reaches.
+	 *
 	 * Throws:
 	 *   - `invalid_ref` if ref fails parseQuillRef
 	 *   - `quill_not_found` if no version matches
 	 */
-	async resolve(ref: string): Promise<string> {
+	resolve(ref: string): string {
 		const parsed = parseQuillRef(ref);
 		const versions = this.#catalog.get(parsed.name);
 
@@ -168,6 +171,11 @@ export class Quiver {
 	 * first. Materializes once and caches per canonical ref — concurrent calls
 	 * coalesce into a single load.
 	 *
+	 * BORROWED, not handed over: the quill is the quiver's, shared with every
+	 * other caller for the same ref, and lives as long as the quiver. Do not
+	 * `free()` it: the next `getQuill` for that ref would hand out a freed
+	 * handle. A caller wanting one of its own mints it from `.toTree()`.
+	 *
 	 * Throws:
 	 *   - `invalid_ref` if ref is malformed
 	 *   - `quill_not_found` if ref does not match any version in this quiver
@@ -175,7 +183,7 @@ export class Quiver {
 	 *   - propagates validation errors from Quill.fromTree() unchanged
 	 */
 	async getQuill(ref: string): Promise<Quill> {
-		const canonicalRef = await this.resolve(ref);
+		const canonicalRef = this.resolve(ref);
 
 		let entry = this.#quillCache.get(canonicalRef);
 		if (entry === undefined) {

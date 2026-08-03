@@ -40,6 +40,11 @@ consumer.
 - `quiver.getQuill(ref)` returns a core `Quill` — engine-free, portable data,
   good for schema inspection, validation, blueprint access, and seeding. It is
   the **only** way to obtain a quill from a quiver.
+- That quill is **borrowed, not owned**: it is cached per canonical ref, handed
+  to every caller asking for that ref, and lives as long as the quiver. Do not
+  `free()` it: the next caller would receive a freed handle. Code that owns
+  its quill mints one from `(await quiver.getQuill(ref)).toTree()` and frees
+  that.
 - `const engine = new Engine()` (from the `@quillmark/wasm` root) renders it:
   `await engine.render(quill, doc, opts?)`. The Engine routes on
   `quill.backendId`, lazily loads that backend, clones the quill and document
@@ -177,10 +182,12 @@ const doc = coreQuill.seedDocument(); // a fully-filled example document
 const result = await engine.render(coreQuill, doc, { format: 'pdf' });
 ```
 
-If you only need the canonical ref (without materializing), use `resolve`:
+If you only need the canonical ref (without materializing), use `resolve`. It is
+**sync**: the catalog is in memory from the moment the quiver is built, so
+resolution reads it and performs no I/O.
 
 ```ts
-const canonicalRef = await quiver.resolve('memo'); // "memo@1.1.0"
+const canonicalRef = quiver.resolve('memo'); // "memo@1.1.0"
 ```
 
 If you need the raw file tree (e.g. to drive a backend binary directly), call
@@ -316,7 +323,7 @@ All errors are instances of `QuiverError` with a `code` field.
 import { QuiverError } from '@quillmark/quiver';
 
 try {
-	await quiver.resolve('unknown_quill');
+	quiver.resolve('unknown_quill');
 } catch (err) {
 	if (err instanceof QuiverError) {
 		console.error(err.code); // e.g. "quill_not_found"

@@ -44,8 +44,10 @@ const doc = Document.fromMarkdown(markdown); // canonical Quillmark markdown
 const doc = Document.fromJson(json); // the versioned storage DTO (`doc.toJson()`)
 
 const session = await new Engine().open(quill, doc);
-// free() quill / doc / session on teardown.
+// free() on teardown the handles you MINTED: this quill, this doc, this session.
 ```
+
+A handle a registry lent you is not one of them. `@quillmark/quiver`'s `getQuill` caches its quill per ref and hands the same instance to every caller, so freeing it strands the next one; a host that wants a quill of its own mints it from `Quill.fromTree((await quiver.getQuill(ref)).toTree())` and frees that.
 
 `toJson`/`fromJson` is the persistence pair: the wire format is frozen per schema version and byte-deterministic, so equal documents store equal bytes. `toMarkdown`/`fromMarkdown` is the human-readable pair, round-trip safe to an equal document. `Document.tryFromJson` returns `undefined` rather than throwing, to discriminate the two without exceptions as control flow.
 
@@ -61,7 +63,7 @@ const session = await new Engine().open(quill, doc);
 
 `@quillmark/quiver` is one such registry: its `getQuill` takes selector and canonical refs and caches one instance per canonical ref for the quiver's lifetime, so a second consumer resolving the same document costs no second materialization. An app bundling its one template resolves nothing and pulls no registry client.
 
-Opening a document that names a **different** quill is the same sequence, in order: resolve the new ref, `engine.open(quill, next)`, swap the props, then free the replaced handles. `<VisualEditor>` re-keys itself on the new `doc` (see below); `<Preview>` swaps by remount (`{#key session}`).
+Opening a document that names a **different** quill is the same sequence, in order: resolve the new ref, `engine.open(quill, next)`, swap the props, then free the replaced handles that were yours to free: the outgoing session always, the outgoing quill only if you minted it. `<VisualEditor>` re-keys itself on the new `doc` (see below); `<Preview>` swaps by remount (`{#key session}`).
 
 ## Preview
 
@@ -85,6 +87,8 @@ preview.refresh(session.apply(doc)); // repaint dirtyPages ∩ visible
 ```
 
 In Svelte, `<Preview {session} onCaretPick={…} />` exposes the same verbs (`refresh`, `scrollToField`, `focusPosition`, `setZoom`) via `bind:this`.
+
+`<Preview>` binds **once**, at mount: `session`, `margin`, `overlays`, `onCaretPick`, `onError` and `strings` are read when the paint loop is built and never again, so swapping one in place changes nothing on screen and reports `rebind-ignored` through `onError` at `dev` severity, naming the prop. Swap by remounting (`{#key session}`); drive in-place edits through `refresh(change)`. `<SourceView>` is the same for `doc` and `onError` (`{#key doc}`). `class` and `style` are the exceptions on both, landing on the root element and staying live.
 
 ## Visual editor
 
@@ -189,10 +193,13 @@ function recompileNow() {
 	const change = session.apply(doc);
 	preview.refresh(change);
 	source.refresh();
+	diagnostics = [...session.warnings]; // → the editor's `diagnostics` prop
 }
 ```
 
-This is the whole shell layer, and it is deliberately yours: the debounce value, what applies at once, and which surfaces refresh are host policy, so the package ships no scheduler over them. Two obligations ride with ownership: an edit of your own (an import, an undo, a direct `doc` write) recompiles by the same calls, since nothing polls the document; and teardown clears the timer **before** freeing the handles, so a pending recompile never touches a freed session.
+`session.warnings` is a **getter on a handle Svelte does not track**: pull it per apply, or the editor shows the previous compile's diagnostics.
+
+This is the whole shell layer, and it is deliberately yours: the debounce value, what applies at once, and which surfaces refresh are host policy, so the package ships no scheduler over them. Three obligations ride with ownership: an edit of your own (an import, an undo, a direct `doc` write) recompiles by the same calls, since nothing polls the document; a compile owes the diagnostics re-read above, since nothing polls the session; and teardown clears the timer **before** freeing the handles, so a pending recompile never touches a freed session.
 
 ## The caret bridge
 
@@ -206,7 +213,16 @@ onCaretPick: (hit) => visualEditor.setCaret(hit);
 onCaretMove: preview.focusPosition;
 ```
 
-The editor mints the path off its own derived card tree, so following the caret costs no `doc.cards` read per keystroke. `fieldPathForAddr` (from `@quillmark/svelte/core`) is the same mapping for a consumer holding an `Addr` of its own.
+The editor mints the path off its own derived card tree, so following the caret costs no `doc.cards` read per keystroke. `fieldPathForAddr` (from `@quillmark/svelte/core`) is the same mapping for a consumer holding an `Addr` of its own. Its second argument is that card tree, the card kinds by document index, which is why the signature takes one rather than a `Document`:
+
+```ts
+const path = fieldPathForAddr(
+	addr,
+	doc.cards.map((c) => c.kind)
+);
+```
+
+A consumer calling this once reads `doc.cards` and moves on; the per-keystroke path is the one that cannot afford to, since each read serializes every card.
 
 The playground's `/editor` route is the full reference split-pane shell: one session, both bridge directions, the preview following edits, diagnostics routed inline, and the source view.
 
