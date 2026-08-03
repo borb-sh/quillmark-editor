@@ -3,8 +3,8 @@
 // leaf's `Content`, decodes to a PM state, mounts a view + plugin stack (history,
 // keymap, input rules, the anchor-position plugin), and `dispatchTransaction`:
 //   (a) apply optimistically to the view,
-//   (b) lower the tr to a `ChangeBundle` (or `install` for island creation, the
-//       one structural edit the op vocabulary cannot represent),
+//   (b) lower the tr to a `ChangeBundle` (or `install` for a field not yet at
+//       content rest, which has nothing to splice),
 //   (c) commit via `doc.applyChange(addr, bundle)`,
 //   (d) fire `onChange` when the transaction COMMITTED, then `onCaretMove` with
 //       the new USV caret, which a bare selection move fires on its own.
@@ -23,7 +23,7 @@ import type { EditorErrorHandler } from '../errors.js';
 import { reportError, errorMessage } from '../errors.js';
 import { decode } from './decode.js';
 import { usvToPM, pmToUsv, buildLineIndex, type LineIndex } from './positions.js';
-import { lower, pmToContent, contentEdit, insertReintroducesIslandSlot } from './encode.js';
+import { lower, pmToContent, contentEdit } from './encode.js';
 import { anchorsFromContent, type AnchorPos } from './marks.js';
 import { createReconciler, type Reconciler } from './reconcile.js';
 import { inputRulesPlugin } from './inputrules.js';
@@ -273,8 +273,8 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		});
 	}
 
-	// (b)+(c): lower the edit to ops and commit, or `install` for a structural
-	// edit the op vocabulary cannot express. Keep the optimistic PM on throw.
+	// (b)+(c): lower the edit to ops and commit, or `install` a field not yet at
+	// content rest. Keep the optimistic PM on throw.
 	// Returns whether anything landed: the caller's change signal, which must not
 	// be a property of which branch the commit took.
 	function commitEdit(oldRt: Content, newDoc: PMNode): boolean {
@@ -282,12 +282,13 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		// below, both install fallbacks, and `lower` all read this one `edit`.
 		const edit = contentEdit(oldRt, pmToContent(newDoc));
 		try {
-			// A field not yet at content rest installs instead: `applyChange` throws on
-			// an absent declared field (verified) and mis-reads an authored string
-			// (`opsCommittable`), and neither has anchors to lose. Island creation is
-			// the other install case (`insertReintroducesIslandSlot`).
-			if (!opsCommittable(doc, addr) || insertReintroducesIslandSlot(edit)) {
-				doc.install(addr, edit.newRt); // create-or-structural fallback; pays this field's anchors
+			// A field not yet at content rest is the only edit that installs by choice:
+			// `applyChange` throws on an absent declared field (verified) and mis-reads
+			// an authored string (`opsCommittable`), and neither has anchors to lose.
+			// Every structural edit lowers, island creation included: the island channel
+			// places a slot the `delta` may not carry.
+			if (!opsCommittable(doc, addr)) {
+				doc.install(addr, edit.newRt); // brings the field to content rest
 			} else {
 				// Pre-edit anchors are the stored content's anchors (USV); post-edit
 				// anchors are the plugin's positions (mapped through the tr) as USV.

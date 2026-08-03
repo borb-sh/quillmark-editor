@@ -15,15 +15,20 @@ import type { ContentIsland } from '@quillmark/wasm';
 /** The `U+FFFC` object-replacement char that occupies one island slot in `text`. */
 export const ISLAND_SLOT = '￼';
 
-// The three island node attributes carry the content entry verbatim: `id` is the
-// stable identity (rebases like an anchor), `islandType` the discriminator, and
-// `props` the opaque payload the codec preserves byte-for-byte across a
-// round-trip. `loss` is not carried on the node; it is a projection hint the
-// content recomputes on write, not editable state.
+// The four island node attributes carry the content entry verbatim: `id` is the
+// stable identity (rebases like an anchor), `islandType` the discriminator, `props`
+// the opaque payload the codec preserves byte-for-byte across a round-trip, and
+// `loss` how faithfully markdown can carry it. `loss` is AUTHORED, not derived:
+// `applyChange` stores the class an island op gives it and re-derives nothing, so
+// an entry that did not carry its own would promote a degraded table to lossless
+// on the first cell edit. The default is the class an unknown one reads as, so a
+// node no decode produced under-claims rather than over-claims; decode always
+// supplies the stored value.
 const islandAttrs = {
 	id: { default: '' },
 	islandType: { default: '' },
-	props: { default: null }
+	props: { default: null },
+	loss: { default: 'unrepresentable' }
 };
 
 /** Block island node (a table): one `island`-kind content line. Atom, unselectable content. */
@@ -53,18 +58,23 @@ export const islandInlineSpec: NodeSpec = {
 	]
 };
 
-/** Build a content island entry from a PM island node's attrs (block or inline). */
-export function islandEntryFromNode(attrs: {
+/** A PM island node's attributes: the content entry, spelled the way a node spec
+ *  spells it (`islandType`, because `type` on a PM node is the node type). `loss`
+ *  reads its class off the entry rather than restating the union, which the public
+ *  entry point does not name (DOCUMENT_MODEL §Stability seams). */
+export interface IslandNodeAttrs {
 	id: string;
 	islandType: string;
 	props: unknown;
-}): ContentIsland {
+	loss: ContentIsland['loss'];
+}
+
+/** Build a content island entry from a PM island node's attrs (block or inline). */
+export function islandEntryFromNode(attrs: IslandNodeAttrs): ContentIsland {
 	return {
 		id: attrs.id,
 		type: attrs.islandType,
 		props: attrs.props,
-		// `loss` is recomputed by the content on write; a faithful default keeps
-		// `install`-based test round-trips stable for known lossless types.
-		loss: 'lossless'
+		loss: attrs.loss
 	};
 }

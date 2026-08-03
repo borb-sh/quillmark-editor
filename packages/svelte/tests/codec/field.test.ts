@@ -7,8 +7,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { EditorView } from 'prosemirror-view';
 import { createField, blockSchema, pmToContent } from '$lib/core/codec';
 import type { FieldController } from '$lib/core/codec';
-import type { Document } from '@quillmark/wasm';
-import { quill, normalize, contentEqual } from './_util.js';
+import type { Document, TableProps } from '@quillmark/wasm';
+import { undo } from 'prosemirror-history';
+import { quill, normalize, contentEqual, md } from './_util.js';
 
 /** The view is attached to the controller as an undocumented handle. */
 function viewOf(f: FieldController): EditorView {
@@ -193,17 +194,17 @@ describe('createField over an ABSENT declared richtext field', () => {
 	});
 });
 
-describe('field install-fallback for an un-lowerable structural edit', () => {
-	it('a hard break falls back to install without corrupting the store', () => {
+describe('a within-block hard break', () => {
+	it('lands in the store as a `continues` line, matching the optimistic PM', () => {
 		const doc = quill().seedDocument();
 		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
 		const view = viewOf(field);
-		// Insert a hard_break into the first paragraph (a `continues` line ops
-		// cannot create → the field installs the whole content instead).
+		// Insert a hard_break into the first paragraph: the `continues` line that
+		// `setContinues` reaches, so it commits through `applyChange`.
 		field.setCaret(3);
 		view.dispatch(view.state.tr.replaceSelectionWith(blockSchema.nodes.hard_break.create(), false));
 		// The store now carries a within-block hard break (continues:true), and it
-		// matches the optimistic PM up to normalization (the install fallback path).
+		// matches the optimistic PM up to normalization.
 		const body = doc.main.body;
 		expect(body.lines.some((l) => l.continues)).toBe(true);
 		expect(contentEqual(body, normalize(pmToContent(view.state.doc)))).toBe(true);
@@ -372,6 +373,61 @@ describe('the empty-leaf ghost', () => {
 		// And emptying the leaf brings it back: the gate is the content, not the mount.
 		view.dispatch(view.state.tr.delete(1, view.state.doc.content.size - 1));
 		expect(ghostOf(field)).toBe('Another…');
+		field.destroy();
+	});
+});
+
+describe('an island edit on the op path', () => {
+	const TABLE_MD = 'para\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\ntail';
+
+	/** A body holding a block island between two paragraphs, mounted as a leaf. */
+	function tableBody(doc: Document): FieldController {
+		doc.install({}, md(TABLE_MD));
+		return createField({ doc, quill: quill(), addr: {}, container: mount() });
+	}
+
+	/** The block island node's PM position in `view`'s current doc. */
+	function islandPos(view: EditorView): number {
+		let pos = -1;
+		view.state.doc.descendants((node, at) => {
+			if (node.type.name === 'island_block') pos = at;
+			return pos < 0;
+		});
+		if (pos < 0) throw new Error('no island node in the leaf');
+		return pos;
+	}
+
+	it('a props edit reaches the store, and the leaf keeps committing after it', () => {
+		const doc = quill().seedDocument();
+		const field = tableBody(doc);
+		const view = viewOf(field);
+		const pos = islandPos(view);
+		const node = view.state.doc.nodeAt(pos)!;
+		const props = JSON.parse(JSON.stringify(node.attrs.props)) as TableProps;
+		props.rows[0][0].text = 'EDITED';
+		view.dispatch(view.state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, props }));
+		expect((doc.main.body.islands[0].props as TableProps).rows[0][0].text).toBe('EDITED');
+		// The reconciler advanced with it, so the NEXT keystroke still diffs from
+		// what the store holds rather than from a pre-edit content.
+		field.setCaret(1);
+		view.dispatch(view.state.tr.insertText('X', view.state.selection.head));
+		expect(doc.main.body.text).toBe('pXara\n￼\ntail');
+		field.destroy();
+	});
+
+	it('deleting a block island and undoing it re-places the slot, keeping the anchors', () => {
+		const doc = quill().seedDocument();
+		const field = tableBody(doc);
+		const view = viewOf(field);
+		field.insertAnchor('a1', 2);
+		view.dispatch(view.state.tr.delete(islandPos(view), islandPos(view) + 1));
+		expect(doc.main.body.islands).toHaveLength(0);
+		undo(view.state, view.dispatch);
+		// The undo lowers to `{ op: 'insert' }` rather than an install, so the
+		// island comes back with its id AND the field's anchor is still there.
+		expect(doc.main.body.text).toBe(md(TABLE_MD).text);
+		expect(doc.main.body.islands.map((i) => i.id)).toEqual(['isl-0']);
+		expect(doc.main.body.marks.some((m) => m.type === 'anchor')).toBe(true);
 		field.destroy();
 	});
 });
