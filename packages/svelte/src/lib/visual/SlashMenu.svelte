@@ -8,8 +8,8 @@
  highlighted index, and what each pick does). This component draws it and nothing
  else. The keys are the leaf's keymap for the same reason: the caret stays in the
  contenteditable while the menu is open, so a focus-taking listbox would move the
- selection the insert is measured against. So the surface takes no focus at all —
- it is `inert`, and its items are picked by pointer or by the Enter the leaf handles.
+ selection the insert is measured against. What is left here is the POINTER's half:
+ buttons that pick, and that swallow their own mousedown so the caret stays put.
 
  The highlight has ONE lane: `data-highlighted` marks whichever item the codec's
  index names, and a pointer entering an item MOVES that index rather than painting a

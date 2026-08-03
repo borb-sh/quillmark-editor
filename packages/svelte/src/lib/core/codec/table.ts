@@ -193,7 +193,7 @@ export function cycleAlign(props: TableProps, c: number): TableProps {
 /**
  * A cell as a one-line `Content`: what `decode` takes under the inline schema. The
  * cell's marks ARE that content's marks, because both are offsets into the same
- * text — the cell-local coordinate space is a `Content`'s coordinate space with
+ * text: the cell-local coordinate space is a `Content`'s coordinate space with
  * one line in it.
  */
 export function cellContent(cell: TableCell): Content {

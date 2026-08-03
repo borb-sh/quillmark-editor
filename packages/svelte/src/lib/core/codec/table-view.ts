@@ -4,7 +4,7 @@
 // substitute DOM, holding one nested `EditorView` per cell.
 //
 // A cell is a second corpus inside the first, so it gets the codec's INLINE mode
-// (one paragraph, no containers, no islands, marks and input rules intact) —
+// (one paragraph, no containers, no islands, marks and input rules intact);
 // `table.ts` owns that translation. A cell edit does not touch the field's text:
 // the projection goes back onto the node's `props` attribute with `setNodeMarkup`,
 // and the field's own `dispatchTransaction` lowers that to an `islandOps` `set`
@@ -403,7 +403,7 @@ class TableIslandView implements NodeView {
 	/**
 	 * Commit a new rectangle onto the node. `setNodeMarkup` is an ordinary PM
 	 * transaction, so the field lowers it through the island channel and the whole
-	 * op is one commit and one undo step — which is why every op writes a WHOLE
+	 * op is one commit and one undo step, which is why every op writes a WHOLE
 	 * table rather than mutating the props in place.
 	 */
 	private write(next: TableProps, focus?: { r: number; c: number }): void {
