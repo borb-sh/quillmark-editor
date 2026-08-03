@@ -3,7 +3,7 @@
 	"private": true,
 	"version": "0.0.0",
 	"description": "The manual harness for @quillmark/svelte and @quillmark/quiver. Never published.",
-	"license": "MIT",
+	"license": "Apache-2.0",
 	"type": "module",
 	"engines": {
 		"node": ">=22"

@@ -11,7 +11,7 @@
 		"url": "https://github.com/borb-sh/quillmark-js/issues"
 	},
 	"homepage": "https://github.com/borb-sh/quillmark-js/tree/main/packages/svelte#readme",
-	"license": "MIT",
+	"license": "Apache-2.0",
 	"keywords": [
 		"quillmark",
 		"svelte",

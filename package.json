@@ -2,7 +2,7 @@
 	"name": "quillmark-js",
 	"private": true,
 	"description": "The JS tier downstream of the @quillmark/wasm artifact.",
-	"license": "MIT",
+	"license": "Apache-2.0",
 	"type": "module",
 	"packageManager": "npm@10.9.7",
 	"engines": {
