@@ -9,7 +9,8 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { createField, type FieldController } from '../core/codec/index.js';
+	import { createField, type FieldController, type SlashState } from '../core/codec/index.js';
+	import SlashMenu from './SlashMenu.svelte';
 	import { wording } from './strings.js';
 	import './controls.css';
 	import type { Document, Quill, Addr } from '@quillmark/wasm';
@@ -84,6 +85,13 @@
 	// mounted table without remounting the leaf and losing the caret.
 	const t = wording();
 
+	/** The insert menu's live state, pushed by the leaf's trigger plugin. Held HERE
+	 * rather than in the shell: a trigger belongs to one caret in one leaf, so the
+	 * menu is the leaf's surface, unlike the one format popover that follows whichever
+	 * leaf is active. A constrained leaf never receives one (`createField` mounts the
+	 * trigger on the block schema alone). */
+	let slash: SlashState | undefined = $state();
+
 	// Block prose vs a control in a row of controls: the SAME predicate the codec
 	// picks its schema by (`createField`: `plaintext` implies `inline`), so the box a
 	// leaf draws and the schema it holds cannot disagree. Keyed on `inline` alone, a
@@ -117,6 +125,10 @@
 			describedBy,
 			placeholder,
 			tableStrings: () => t.strings,
+			slashStrings: () => t.strings,
+			onSlash: (next) => {
+				slash = next;
+			},
 			onFocus,
 			onCaretMove,
 			onChange,
@@ -146,6 +158,7 @@
 	class:qm-prose-block={block}
 	data-leaf-key={leafKey}
 ></div>
+<SlashMenu menu={slash} leaf={() => controller} label={t.strings.slashLabel} />
 
 <style>
 	/* The box is `.qm-control-box` (controls.css): the same rule the input beside it

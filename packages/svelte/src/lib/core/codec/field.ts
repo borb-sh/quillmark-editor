@@ -30,6 +30,16 @@ import { inputRulesPlugin } from './inputrules.js';
 import { bodyKeymap } from './keymap.js';
 import { blockSchema, inlineSchema } from './schema.js';
 import { DEFAULT_TABLE_STRINGS, tableNodeView, type TableChromeStrings } from './table-view.js';
+import {
+	DEFAULT_SLASH_STRINGS,
+	focusSlashItem,
+	runSlashItem,
+	slashItems,
+	slashPlugin,
+	type SlashItem,
+	type SlashState,
+	type SlashStrings
+} from './slash.js';
 
 /** Options for {@link createField}. */
 export interface CreateFieldOpts {
@@ -50,6 +60,19 @@ export interface CreateFieldOpts {
 	 *  locale mid-session re-renders rather than freezing it at mount. Absent leaves
 	 *  the package's English; an inline leaf never asks (it holds no island). */
 	tableStrings?: () => TableChromeStrings;
+	/** The slash menu's wording, read live for the same reason. */
+	slashStrings?: () => SlashStrings;
+	/**
+	 * The slash menu's live state, or `undefined` when it is closed: the channel the
+	 * chrome draws from (`visual/SlashMenu.svelte`).
+	 *
+	 * Its PRESENCE is what mounts the menu at all. The trigger and its keys are the
+	 * leaf's, but a surface only a keyboard can reach — claiming Enter, Escape and the
+	 * arrows with nothing on screen — is worse than no surface, so the door exists
+	 * exactly where something can draw it. A constrained inline leaf never has one:
+	 * it holds no island and no block to convert.
+	 */
+	onSlash?(state: SlashState | undefined): void;
 	/** Accessible name → `aria-label` on the `contenteditable`. For a leaf NOTHING
 	 * else names: an array element (the field label plus its 1-based index), the
 	 * card body (no visible label at all). A leaf with a field label takes
@@ -116,6 +139,15 @@ export interface FieldController {
 	removeAnchor(id: string): void;
 	/** Ids of the anchors within USV range `[from, to]`: a selection's anchor state. */
 	anchorsInRange(from: number, to: number): string[];
+	/**
+	 * Move the slash menu's cursor onto item `id`: what a POINTER entering an item
+	 * calls. The keyboard cursor and the pointer's highlight are one state, so the
+	 * chrome moves the one the keys already drive rather than painting a second.
+	 */
+	slashFocus(id: string): void;
+	/** Run slash item `id` (a click on one): the same path Enter takes. A no-op with
+	 *  no menu open, which is the state a stale click lands in. */
+	slashPick(id: string): void;
 	/** The current PM selection as a USV `{ from, to }` range (the boundary currency). */
 	selectionRange(): { from: number; to: number };
 	destroy(): void;
@@ -244,6 +276,11 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	// body, and only the leaf knows both.
 	const nested = new Set<EditorView>();
 
+	// The menu's offers, derived from the wording per read: the chrome names an item
+	// and the codec runs it, so a locale swap changes the labels and not the picks.
+	const menuItems = (): SlashItem[] => slashItems(opts.slashStrings?.() ?? DEFAULT_SLASH_STRINGS);
+	const slash = !inline && opts.onSlash ? { items: menuItems, onState: opts.onSlash } : undefined;
+
 	const state = buildState(reconciler.last);
 	index = buildLineIndex(state.doc);
 
@@ -307,6 +344,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			plugins: proseLeafPlugins(schema, {
 				inline,
 				plaintext,
+				slash,
 				noInputRules: opts.noInputRules,
 				// Always installed, so a leaf that mounts without a ghost can still be
 				// given one later; the plugin draws nothing while the text is empty.
@@ -437,6 +475,12 @@ export function createField(opts: CreateFieldOpts): FieldController {
 				})
 				.map((a) => a.id);
 		},
+		slashFocus(id: string): void {
+			if (slash) focusSlashItem(view, id, slash.items());
+		},
+		slashPick(id: string): void {
+			if (slash) runSlashItem(view, id);
+		},
 		selectionRange(): { from: number; to: number } {
 			const { from, to } = view.state.selection;
 			return {
@@ -479,6 +523,9 @@ export function proseLeafPlugins(
 	opts: {
 		inline: boolean;
 		plaintext: boolean;
+		/** The slash menu's model and its report channel; absent mounts no menu and
+		 *  leaves Enter/Escape/the arrows to the links below (`keymap.ts`). */
+		slash?: { items: () => SlashItem[]; onState: (state: SlashState | undefined) => void };
 		noInputRules?: boolean;
 		/** Read live, not captured: the ghost can move after mount
 		 *  ({@link FieldController.setPlaceholder}), and a re-hydration rebuilds this
@@ -488,8 +535,9 @@ export function proseLeafPlugins(
 	}
 ): Plugin[] {
 	const list: Plugin[] = [history(), ...(opts.afterHistory ?? [])];
+	if (opts.slash) list.push(slashPlugin(opts.slash));
 	if (!opts.noInputRules && !opts.plaintext) list.push(inputRulesPlugin(schema));
-	list.push(keymap(editorKeymap(schema, opts.inline, opts.plaintext)));
+	list.push(keymap(editorKeymap(schema, opts.inline, opts.plaintext, opts.slash?.items)));
 	list.push(keymap(baseKeymap));
 	if (opts.placeholder) list.push(placeholderPlugin(opts.placeholder));
 	return list;
@@ -540,7 +588,8 @@ function placeholderPlugin(read: () => string | undefined): Plugin {
 function editorKeymap(
 	schema: Schema,
 	inline: boolean,
-	plaintext: boolean
+	plaintext: boolean,
+	slashItems?: () => SlashItem[]
 ): Record<string, Command> {
 	const map: Record<string, Command> = {
 		'Mod-z': undo,
@@ -557,7 +606,7 @@ function editorKeymap(
 		map['Enter'] = () => true;
 	} else {
 		// Each binding falls through to `baseKeymap` when no link claims the key.
-		Object.assign(map, bodyKeymap(schema));
+		Object.assign(map, bodyKeymap(schema, slashItems));
 	}
 	return map;
 }

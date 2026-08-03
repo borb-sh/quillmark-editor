@@ -184,6 +184,11 @@ li.ProseMirror-selectednode::after {
 .qm-table-cell-host .ProseMirror {
 	outline: none;
 }
+/* A selected island takes the node outline every leaf block does
+   (`.ProseMirror-selectednode`, above), and that is the state Escape leaves a cell
+   FOR: the caret is out, the island is what is selected, and Backspace deletes it. A
+   caret inside a cell is not that state and does not paint it — the outer view's
+   selection stays where the insert left it. */
 
 /* The gutters carry the handles and nothing else: no border, no ink, no box. They
    are the table's margin, drawn as cells so a handle lines up with the row or the

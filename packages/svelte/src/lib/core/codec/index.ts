@@ -18,6 +18,11 @@ export type { CreateFieldOpts, FieldController, LeafViews } from './field.js';
 export { DEFAULT_TABLE_STRINGS } from './table-view.js';
 export type { TableChromeStrings } from './table-view.js';
 
+// The slash menu: the codec owns the model and the picks, the chrome the words and
+// the pixels (`visual/SlashMenu.svelte` is the only off-barrel caller).
+export { DEFAULT_SLASH_STRINGS, slashItems } from './slash.js';
+export type { SlashItem, SlashState, SlashStrings } from './slash.js';
+
 // Schemas (the decode/encode target; the VisualEditor mounts them).
 export { blockSchema, inlineSchema } from './schema.js';
 

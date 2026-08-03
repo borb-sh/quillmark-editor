@@ -4,7 +4,7 @@
 
 ## TL;DR
 
-The interaction and visual patterns of the VisualEditor: the card-stack metaphor, per-field affordances, the formatting chrome, and the editor→preview coupling. The architectural composition (ownership, the address spine, the edit ops) is [VISUAL_EDITOR.md](VISUAL_EDITOR.md); this doc is the surface a user touches. This records the V1 surface: the theming baseline ships (§"Complex UX, minimal UI"), the insert surface does not ship (§Open), and a few capabilities past V1 are named where they belong. The `--qm-*` theming baseline is catalogued in [`THEMING.md`](../../THEMING.md).
+The interaction and visual patterns of the VisualEditor: the card-stack metaphor, per-field affordances, the formatting chrome, and the editor→preview coupling. The architectural composition (ownership, the address spine, the edit ops) is [VISUAL_EDITOR.md](VISUAL_EDITOR.md); this doc is the surface a user touches. This records the V1 surface plus the insert surface past it: the theming baseline ships (§"Complex UX, minimal UI"), the slash menu and the table island ship (§"Slash menu", §"Table island"), the gutter affordance does not (§Open), and a few capabilities further out are named where they belong. The `--qm-*` theming baseline is catalogued in [`THEMING.md`](../../THEMING.md).
 
 ## Two settled principles
 
@@ -60,7 +60,23 @@ The popover is a translucent, backdrop-blurred pill (SURFACES §Elevation: the o
 
 **Input rules: typist shorthand, no chrome.** `**`, `*`, `~~`, `` ` ``, `# `, `- `, `1. `, `> `, and a ` ``` ` code fence. These cover the marks and the block shorthands (headings, lists, quote, code); underline is keymap-only (`Mod-u`), and no table-entry rule ships (island authoring does not ship, §Open). Markdown is an input shorthand, never the stored form.
 
-**Past V1: the position anchor.** A gutter insert affordance, its menu, and a slash command, together the doors onto insertion (§Open). Editing a table already present in an imported document is a separate concern and is not gated by them: the island's own chrome ships (§"Table island").
+**The position anchor: the slash menu.** The insert surface's keyboard door ships (§"Slash menu"); the gutter affordance beside it does not (§Open). Editing a table already present in an imported document is a separate concern and is not gated by either: the island's own chrome ships (§"Table island").
+
+## Slash menu
+
+`/` at a word boundary raises a filtered list of block constructs over the caret; a pick consumes exactly the trigger run and inserts.
+
+**The trigger is a word boundary**, not any `/`: the start of a textblock, or after whitespace, so `and/or` and a URL stay literal prose. It is gated on the leaf's SCHEMA rather than on the caret's position — a constrained inline or plaintext leaf is island-free and block-free by construction, so it has no menu at all — and it stays shut inside a code block, which the surface reinterprets nothing in.
+
+**The menu is keyboard-first, so the keys stay in the leaf.** ↑/↓/Enter/Escape are the leaf's keymap while the caret stays in the contenteditable, not a focus-taking listbox: a menu that took focus would move the selection the insert is measured against. The surface itself is therefore a group of buttons for the pointer and nothing for the keyboard to land on, which is why it is a labelled group and not a `listbox` (an `option` promises a focused option that never exists here). A pointer entering an item MOVES the keyboard's cursor rather than painting a second highlight — one lane, the same rule the shared menu recipe states.
+
+**Escape is contended, and it resolves innermost first.** A caret in a table cell gives it three claimants: this menu, the format popover, and the island selection. The menu is innermost of what can be open over a caret in text; inside a cell the cell's own Escape comes first, and takes the caret out to the island.
+
+**Dismissal is more than Escape, and it edits no text.** The trigger run is plugin state, so a caret move out of it, an undo, or an external re-hydrate close the menu with no listener of their own; a query nothing matches closes it too, because that is a word being typed rather than a menu being used. Every one of those leaves the `/` and the text exactly as typed. Only a PICK edits, and it takes exactly the run: one transaction, so one commit and one undo step for one gesture.
+
+**What a pick inserts is a default shape, not a size picker.** A table opens at three columns and two rows and grows for free (Tab at the last cell appends a row), which is cheaper than a picker for every table that is not exactly the size the picker was asked for. The caret lands in the first cell.
+
+**The offers are the block vocabulary, not the island alone.** A menu of one item is a menu nobody opens, so the headings, the lists, the quote, the code block and the divider are offered beside the table — the same constructs the input-rule shorthands reach, for the author who did not learn them. The island is first, being the one thing with no other door.
 
 ## Table island
 
@@ -114,5 +130,5 @@ Debug-only, per [ARCHITECTURE.md](ARCHITECTURE.md): not an editable dual mode. T
 ## Open
 
 - **Control slots**: a per-`ControlKind` extension point past the tokens does not ship until a consumer needs one. The constraint is recorded: the package owns reconciliation (`syncedLocal`), so a slot handing out a raw `value` reintroduces a caret reset in consumer code, invisibly to this repo's tests.
-- **Insert surface (post-V1)**: the position anchor: the gutter affordance, its menu, and the slash command. Table EDITING ships (§"Table island"), so a table reaches the editor by import and is authored in place; INSERTING one does not, and neither does image or figure authoring, which needs an asset story the editor does not have.
+- **Insert surface**: the slash menu and the table island ship (§"Slash menu", §"Table island"). The GUTTER affordance does not: a second door onto the same picks, whose case is the pointer-only author, and it lands beside the touch accessory bar it shares that argument with. Image and figure authoring does not either — it needs an asset story the editor does not have — so the menu offers no `image` and the island renders one as its placeholder.
 - **Formatting reach (post-V1)**: the touch accessory bar and keymap shortcuts for `strike` / `code` / `link` (only `Mod-b`/`i`/`u` bind today). The popover's `anchor` button ships (§Formatting): it mints a unique id and toggles an identity handle over the selection through `FieldController.insertAnchor`. The chrome that makes an anchor *useful* (comment-thread UX bound to the handle) is post-V1.

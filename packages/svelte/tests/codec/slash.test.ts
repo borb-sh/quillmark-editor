@@ -1,0 +1,297 @@
+// @vitest-environment jsdom
+// The slash menu: the trigger's word boundary, the dismissals that edit no text, and
+// a pick that consumes exactly the trigger run in ONE commit.
+import { describe, it, expect, beforeAll } from 'vitest';
+import type { EditorView } from 'prosemirror-view';
+import { createField, blockSchema } from '$lib/core/codec';
+import type { FieldController, LeafViews, SlashState } from '$lib/core/codec';
+import { filterItems, slashItems, DEFAULT_SLASH_STRINGS } from '$lib/core/codec/slash.js';
+import type { Document, TableProps } from '@quillmark/wasm';
+import { quill, md } from './_util.js';
+
+// jsdom has no layout, and ProseMirror measures: the caret it scrolls into view
+// after a structural key, and the trigger the menu anchors on. One stub for both,
+// since neither number is what these tests assert.
+beforeAll(() => {
+	const rects = [new DOMRect()] as unknown as DOMRectList;
+	Element.prototype.getClientRects = () => rects;
+	Element.prototype.getBoundingClientRect = () => new DOMRect();
+	Range.prototype.getClientRects = () => rects;
+	Range.prototype.getBoundingClientRect = () => new DOMRect();
+});
+
+function mount(): HTMLElement {
+	const el = document.createElement('div');
+	document.body.appendChild(el);
+	return el;
+}
+
+/** A body leaf over `markdown`, with the menu's reports captured. */
+function leaf(markdown = 'para') {
+	const doc: Document = quill().seedDocument();
+	doc.install({}, md(markdown));
+	const reports: (SlashState | undefined)[] = [];
+	const field = createField({
+		doc,
+		quill: quill(),
+		addr: {},
+		container: mount(),
+		onSlash: (state) => reports.push(state)
+	});
+	const view = (field as FieldController & LeafViews).view;
+	return { doc, field, view, reports, state: () => reports.at(-1) };
+}
+
+/** Type `text` at the caret, one character per transaction, the way a keyboard does:
+ *  the trigger reads the char before the caret, so a bulk insert is a different edit. */
+function type(view: EditorView, text: string): void {
+	for (const ch of text) {
+		view.dispatch(view.state.tr.insertText(ch, view.state.selection.head));
+	}
+}
+
+/** Drive one key through the leaf's bound keymaps, as the browser would. */
+function press(view: EditorView, key: string): void {
+	const event = new KeyboardEvent('keydown', { key, bubbles: true });
+	view.someProp('handleKeyDown', (f) => f(view, event));
+}
+
+/** Put the caret at a USV offset and type. */
+function typeAt(field: FieldController, view: EditorView, pos: number, text: string): void {
+	field.setCaret(pos);
+	type(view, text);
+}
+
+describe('the trigger is a word boundary', () => {
+	it('opens on `/` at the start of a textblock', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/');
+		expect(state()?.items.length).toBeGreaterThan(0);
+		field.destroy();
+	});
+
+	it('opens on `/` after whitespace', () => {
+		const { field, view, state } = leaf('para');
+		typeAt(field, view, 4, ' /');
+		expect(state()).toBeDefined();
+		field.destroy();
+	});
+
+	it('stays shut mid-word, so `and/or` and a URL are prose', () => {
+		const { field, view, state } = leaf('and');
+		typeAt(field, view, 3, '/or');
+		expect(state()).toBeUndefined();
+		expect(field.getContent().text).toBe('and/or');
+		field.destroy();
+	});
+
+	it('stays shut inside a code block, which reinterprets nothing', () => {
+		const { field, view, state } = leaf('```\ncode\n```');
+		typeAt(field, view, field.getContent().text.length, ' /');
+		expect(state()).toBeUndefined();
+		field.destroy();
+	});
+
+	it('is absent from a constrained inline leaf, which holds no island and no block', () => {
+		const doc = quill().seedDocument();
+		const reports: (SlashState | undefined)[] = [];
+		const field = createField({
+			doc,
+			quill: quill(),
+			addr: { field: 'subject' },
+			container: mount(),
+			inline: true,
+			onSlash: (state) => reports.push(state)
+		});
+		const view = (field as FieldController & LeafViews).view;
+		field.setCaret(0);
+		type(view, '/');
+		expect(reports.at(-1)).toBeUndefined();
+		field.destroy();
+	});
+});
+
+describe('the query filters, and a miss closes', () => {
+	it('narrows on the label', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/tab');
+		expect(state()?.items.map((i) => i.id)).toEqual(['table']);
+		field.destroy();
+	});
+
+	it('narrows on the id, which the label does not carry', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/h2');
+		expect(state()?.items.map((i) => i.id)).toEqual(['h2']);
+		field.destroy();
+	});
+
+	it('closes on a query nothing matches, leaving the text as typed', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/zzz');
+		expect(state()).toBeUndefined();
+		expect(field.getContent().text).toBe('/zzz');
+		field.destroy();
+	});
+
+	it('closes on a space: a menu that survives one eats a sentence', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/ta ');
+		expect(state()).toBeUndefined();
+		field.destroy();
+	});
+
+	it('filters case-insensitively, over the words the chrome displays', () => {
+		const items = slashItems(DEFAULT_SLASH_STRINGS);
+		expect(filterItems(items, 'QUOTE').map((i) => i.id)).toEqual(['quote']);
+		expect(filterItems(items, '').length).toBe(items.length);
+	});
+});
+
+describe('a dismissal edits no text; a pick consumes exactly the run', () => {
+	it('Escape closes and leaves the trigger run in the document', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/ta');
+		press(view, 'Escape');
+		expect(state()).toBeUndefined();
+		expect(field.getContent().text).toBe('/ta');
+		field.destroy();
+	});
+
+	it('a caret move out of the run closes it', () => {
+		const { field, view, state } = leaf('para');
+		typeAt(field, view, 4, ' /ta');
+		field.setCaret(0);
+		expect(state()).toBeUndefined();
+		field.destroy();
+	});
+
+	it('an undo closes it', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/ta');
+		view.someProp('handleKeyDown', (f) =>
+			f(view, new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }))
+		);
+		expect(state()).toBeUndefined();
+		field.destroy();
+	});
+
+	it('the arrows walk the offers and wrap', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/');
+		const count = state()!.items.length;
+		press(view, 'ArrowDown');
+		expect(state()?.index).toBe(1);
+		press(view, 'ArrowUp');
+		press(view, 'ArrowUp');
+		expect(state()?.index).toBe(count - 1);
+		field.destroy();
+	});
+
+	it('Enter picks: the run is gone and the block converted, in ONE commit', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/h2');
+		expect(state()?.items[0].id).toBe('h2');
+		const before = view.state.doc.toString();
+		press(view, 'Enter');
+		expect(before).not.toBe(view.state.doc.toString());
+		const stored = field.getContent();
+		expect(stored.text).toBe('');
+		expect(stored.lines[0]).toMatchObject({ kind: 'heading', level: 2 });
+		expect(stored.lines).toHaveLength(1); // one block, not a split and a convert
+		field.destroy();
+	});
+
+	it('a pick mid-paragraph keeps the text and takes only the run', () => {
+		const { field, view } = leaf('para');
+		typeAt(field, view, 4, ' /quote');
+		press(view, 'Enter');
+		const stored = field.getContent();
+		expect(stored.text).toBe('para ');
+		expect(stored.lines[0].containers).toEqual([{ container: 'quote' }]);
+		field.destroy();
+	});
+
+	it('a table pick mints the next island id and lands the caret in the first cell', () => {
+		const { doc, field, view } = leaf('para');
+		field.setCaret(4);
+		view.dispatch(view.state.tr.split(view.state.selection.head));
+		type(view, '/table');
+		press(view, 'Enter');
+		const body = doc.main.body;
+		expect(body.islands.map((i) => i.id)).toEqual(['isl-0']);
+		expect(body.islands[0].type).toBe('table');
+		expect(body.islands[0].loss).toBe('lossless');
+		const props = body.islands[0].props as TableProps;
+		expect(props.header).toHaveLength(3);
+		expect(props.rows).toHaveLength(2);
+		// The island opened a line of its own, and a paragraph after it: a block island
+		// at the end of a body would otherwise leave nowhere to type.
+		expect(body.text).toBe('para\n￼\n');
+		expect(body.lines.map((l) => l.kind)).toEqual(['para', 'island', 'para']);
+		// And the caret is in the fresh table rather than on it.
+		const focused = (field as FieldController & LeafViews).focusedView();
+		expect((field as FieldController & LeafViews).nestedViews()).toContain(focused);
+		field.destroy();
+	});
+
+	it('a pointer pick runs the same path as Enter', () => {
+		const { field, view } = leaf('');
+		typeAt(field, view, 0, '/div');
+		field.slashPick('rule');
+		expect(field.getContent().lines[0].kind).toBe('rule');
+		field.destroy();
+	});
+
+	it('a pointer entering an item moves the ONE highlight the keys drive', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/');
+		field.slashFocus('quote');
+		const items = state()!.items;
+		expect(items[state()!.index].id).toBe('quote');
+		field.destroy();
+	});
+});
+
+describe('the menu does not disturb the body it sits in', () => {
+	it('Enter with no menu open still splits a paragraph', () => {
+		const { field, view } = leaf('para');
+		field.setCaret(2);
+		press(view, 'Enter');
+		expect(field.getContent().lines).toHaveLength(2);
+		field.destroy();
+	});
+
+	it('Escape with no menu open is not swallowed', () => {
+		const { view } = leaf('para');
+		const handled = view.someProp('handleKeyDown', (f) =>
+			f(view, new KeyboardEvent('keydown', { key: 'Escape' }))
+		);
+		expect(handled).toBeFalsy();
+	});
+
+	it("a leaf given no `onSlash` mounts no trigger, so the keys stay the body's", () => {
+		const doc = quill().seedDocument();
+		doc.install({}, md(''));
+		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
+		const view = (field as FieldController & LeafViews).view;
+		field.setCaret(0);
+		type(view, '/');
+		// The `/` is prose, and nothing claimed Enter.
+		expect(field.getContent().text).toBe('/');
+		press(view, 'Enter');
+		expect(field.getContent().lines).toHaveLength(2);
+		field.destroy();
+	});
+});
+
+describe('the offers are the block vocabulary the schema holds', () => {
+	it('every offer names a node the schema declares', () => {
+		const ids = slashItems(DEFAULT_SLASH_STRINGS).map((i) => i.id);
+		expect(ids).toContain('table');
+		expect(blockSchema.nodes.island_block).toBeDefined();
+		expect(blockSchema.nodes.horizontal_rule).toBeDefined();
+		expect(blockSchema.nodes.blockquote).toBeDefined();
+		expect(blockSchema.nodes.code_block).toBeDefined();
+	});
+});

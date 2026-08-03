@@ -48,6 +48,7 @@
 	// off-tree, so this component renders standalone too.
 	const t = wording();
 	import { toggleMark } from 'prosemirror-commands';
+	import { TextSelection } from 'prosemirror-state';
 	import type { EditorView } from 'prosemirror-view';
 	import type { MarkType } from 'prosemirror-model';
 	import { Popover } from 'bits-ui';
@@ -125,7 +126,12 @@
 		if (insidePopover) return; // interacting with the popover itself (e.g. the link input): leave state as-is
 		const leaf = getActiveLeaf() as LeafWithView | undefined;
 		const view = leaf?.focusedView?.() ?? leaf?.view;
-		if (!view || !view.hasFocus() || view.state.selection.empty) {
+		// A non-empty TEXT selection. A NODE selection is non-empty too and has nothing
+		// to format: it covers a leaf block (an island, a rule), which is exactly where
+		// Escape out of a table cell lands.
+		const selection = view?.state.selection;
+		const formattable = selection instanceof TextSelection && !selection.empty;
+		if (!view || !view.hasFocus() || !formattable) {
 			open = false;
 			linkPromptOpen = false;
 			return;
