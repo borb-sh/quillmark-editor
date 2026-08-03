@@ -1,15 +1,56 @@
 // @vitest-environment jsdom
-// A `plaintext` leaf over a field resting as an authored STRING: the case where
-// the declared type is the whole difference. The same bytes are markdown under
-// `richtext` and literal text under `plaintext`, so a leaf that picked one codec
-// for both would eat every `*` a plaintext author typed — and then commit a delta
-// computed against text the document never held.
+// A `plaintext` leaf over a field resting as an authored STRING: the case where the
+// declared type is the whole difference. The same bytes are markdown under `richtext`
+// and literal text under `plaintext`, so a leaf that picked one codec for both would
+// eat every `*` a plaintext author typed, then commit a delta computed against text
+// the document never held.
+//
+// The one suite that does not run on the reference quill, because that quill cannot
+// declare the shape under test: its `plate.typ` hands every field to a vendored Typst
+// package, `plaintext` resolves to CONTENT for a backend exactly as `richtext` does,
+// and the string-typed slots there coerce with `str()`, which content is not. Retyping
+// a field would be a plate change rather than a fixture change. So the schema is built
+// here and stays minimal: two content fields differing only in declared type, which is
+// the entire variable.
 import { describe, it, expect } from 'vitest';
-import { Document } from '@quillmark/wasm';
+import { Document, Quill } from '@quillmark/wasm';
 import { createField } from '$lib/core/codec';
 import type { FieldController } from '$lib/core/codec';
 import type { EditorView } from 'prosemirror-view';
-import { quill } from '../helpers/fixtures.js';
+
+const QUILL_YAML = `
+quill:
+  name: codec_probe
+  version: 0.1.0
+  backend: typst
+  description: Two content fields differing only in declared type.
+typst:
+  plate_file: plate.typ
+main:
+  body:
+    example: |
+      Body.
+  fields:
+    note:
+      type: plaintext
+      example: literal
+    tag:
+      type: richtext
+      inline: true
+      example: markdown
+`;
+
+function probeQuill(): Quill {
+	// Re-wrapped in this realm's `Uint8Array`: under jsdom the encoder's output comes
+	// from another realm and the boundary refuses it by identity.
+	const bytes = (s: string): Uint8Array => new Uint8Array(new TextEncoder().encode(s));
+	return Quill.fromTree(
+		new Map([
+			['Quill.yaml', bytes(QUILL_YAML)],
+			['plate.typ', bytes('#set page(width: 200pt)\n')]
+		])
+	);
+}
 
 function mount(): HTMLElement {
 	const el = document.createElement('div');
@@ -21,34 +62,32 @@ const viewOf = (f: FieldController): EditorView =>
 
 const AUTHORED = 'Wing *Motto* Here';
 /** Both content fields authored with the SAME bytes, through the transport door so
- *  neither is conformed: `letterhead_seal_subtitle` is `plaintext`, `tag_line`
- *  `richtext`. Hand-written rather than round-tripped, because a serialize would
- *  escape the asterisks and the contrast is exactly what escaping erases. */
-function authored(): Document {
-	return Document.fromMarkdown(
+ *  neither is conformed. Hand-written rather than round-tripped, because a serialize
+ *  would escape the asterisks and the contrast is what escaping erases. */
+const authored = (): Document =>
+	Document.fromMarkdown(
 		[
 			'~~~',
-			'$quill: usaf_memo@0.2.0',
+			'$quill: codec_probe@0.1.0',
 			'$kind: main',
-			`letterhead_seal_subtitle: ${AUTHORED}`,
-			`tag_line: ${AUTHORED}`,
+			`note: ${AUTHORED}`,
+			`tag: ${AUTHORED}`,
 			'~~~',
 			'',
 			'Body.',
 			''
 		].join('\n')
 	);
-}
 
 describe('a plaintext leaf over an authored string', () => {
 	it('reads the bytes literally, while richtext reads the same bytes as markdown', () => {
-		const q = quill();
+		const q = probeQuill();
 		const doc = authored();
-		expect(typeof doc.getStored('letterhead_seal_subtitle')).toBe('string');
+		expect(typeof doc.getStored('note')).toBe('string');
 
 		const reader = q.reader(doc);
-		const plain = reader.getContent('letterhead_seal_subtitle')!;
-		const rich = reader.getContent('tag_line')!;
+		const plain = reader.getContent('note')!;
+		const rich = reader.getContent('tag')!;
 
 		expect(plain.text).toBe(AUTHORED);
 		expect(plain.marks).toHaveLength(0);
@@ -61,12 +100,12 @@ describe('a plaintext leaf over an authored string', () => {
 	});
 
 	it('mounts the literal text, asterisks intact', () => {
-		const q = quill();
+		const q = probeQuill();
 		const doc = authored();
 		const field = createField({
 			doc,
 			quill: q,
-			addr: { field: 'letterhead_seal_subtitle' },
+			addr: { field: 'note' },
 			container: mount(),
 			plaintext: true
 		});
@@ -82,13 +121,13 @@ describe('a plaintext leaf over an authored string', () => {
 		// is refused; the value survives (the whole-field install fallback catches it)
 		// but the host is handed a `commit-fallback` error for an ordinary keystroke.
 		// Choosing `install` up front is what makes the first edit unremarkable.
-		const q = quill();
+		const q = probeQuill();
 		const doc = authored();
 		const errors: string[] = [];
 		const field = createField({
 			doc,
 			quill: q,
-			addr: { field: 'letterhead_seal_subtitle' },
+			addr: { field: 'note' },
 			container: mount(),
 			plaintext: true,
 			onError: (e) => errors.push(e.code)
@@ -98,9 +137,9 @@ describe('a plaintext leaf over an authored string', () => {
 		view.dispatch(view.state.tr.insertText('!', 1));
 		expect(errors).toEqual([]);
 		expect(field.getContent().text).toBe(`!${AUTHORED}`);
-		expect(q.reader(doc).getContent('letterhead_seal_subtitle')!.text).toBe(`!${AUTHORED}`);
+		expect(q.reader(doc).getContent('note')!.text).toBe(`!${AUTHORED}`);
 		// The commit brought the field to content rest, so the next edit takes ops.
-		expect(typeof doc.getStored('letterhead_seal_subtitle')).toBe('object');
+		expect(typeof doc.getStored('note')).toBe('object');
 
 		// And an op-grained edit over that rest form is still literal.
 		view.dispatch(view.state.tr.insertText('?', 2));
