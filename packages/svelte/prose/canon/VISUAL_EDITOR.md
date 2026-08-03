@@ -60,7 +60,9 @@ Reconciliation is field-scoped. The editor holds its optimistic PM state and re-
 
 `onCaretMove` is the *selection* signal, not a second change signal: it fires on a bare arrow key. The two are separate hooks precisely so following the caret and recompiling are not the same subscription.
 
-**A richtext field has two stored shapes, and the leaf's read is where they meet.** `doc.getStored` is verbatim: a document the editor seeded holds `Content` (what `install`/`applyChange` write), and a document a consumer LOADED (`Document.fromMarkdown`) holds the markdown STRING it parsed, since nothing has lowered it yet. A body is `Content` either way. The leaf lifts a string through `importMarkdown` on read (`field.ts`, `readLeaf`); the first commit writes `Content` back, so the string shape is transient and appears on no other path.
+**A content field has two rest forms, and the leaf reads through the schema plane so it never has to ask which.** `doc.getStored` is verbatim: a field the editor committed rests as `Content` (what `install`/`applyChange` write) and so does one a bound load conformed (`quill.parse`), while a document that came through the transport door (`Document.fromMarkdown`) rests as the AUTHORED STRING, since nothing has lowered it yet. A body is `Content` either way. The leaf takes `reader.getContent` (`field.ts`, `readLeaf`), which decodes by declared type: `richtext` as markdown, `plaintext` as literal text. Nothing else can tell those apart, and reading one as the other eats every `*` a plaintext author typed.
+
+**The commit gate is the rest form, not mere presence.** `applyChange` reads an authored string as markdown whatever the declared type names, so a delta computed over the literal corpus meets a shorter pre-image and is refused. A field not at content rest takes `install` instead (`opsCommittable`): free, since content-only marks do not survive markdown and an authored string therefore carries no anchors to pay, and it keeps an ordinary first keystroke off the error-recovery path. The first commit lands `Content`, so the authored form is transient and appears on no other path.
 
 ## Card operations
 

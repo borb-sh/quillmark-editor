@@ -81,7 +81,9 @@ A carrier is dropped only by an **explicit** conversion (retyping the paragraph 
 
 ## Inline mode
 
-`richtext(inline)` and `plaintext` fields are single-paragraph, container-free, island-free. The codec runs a constrained PM schema (one textblock, no block splitting, Enter suppressed); `plaintext` additionally strips all marks. Same decode / lower / position machinery, narrower schema. No WASM plaintext string codec exists: the content-object round-trip via `install` / `applyChange` is the path; `importMarkdown` is the wrong tool on a plaintext field (it parses markdown syntax).
+`richtext(inline)` and `plaintext` fields are single-paragraph, container-free, island-free. The codec runs a constrained PM schema (one textblock, no block splitting, Enter suppressed); `plaintext` additionally strips all marks. Same decode / lower / position machinery, narrower schema.
+
+**A plaintext field's codec is the boundary's, reached through `reader.getContent`.** Its rest form is the literal string, and its corpus is that string verbatim: the leaf never parses it, and `importMarkdown` on it would consume the delimiters the author is entitled to. The write side stays the content-object round-trip via `install` / `applyChange`, which the mark-free inline schema keeps conforming; the reference quill's `letterhead_seal_subtitle` is the mode's fixture.
 
 The schema distinction is also what sizes the leaf. A constrained leaf holds one paragraph, so it is one line tall and draws the scalar control recipe (SURFACES §"The shared recipe"); the full schema grows. **The codec owns the stylesheet both depend on**: `codec/prose.css`, imported beside ProseMirror's own, which carries no block reset and so leaves every block on UA defaults. It lives here rather than per component because every prose leaf in the package (field, body, array element) mounts through the codec and inherits it without restating it. The source view is not one of them: it is a `<pre>` holding serialized text, outside `.ProseMirror` and outside every rule in that file. A leaf that matches an input does so by drawing the same declarations, not by a floor tuned to agree.
 
