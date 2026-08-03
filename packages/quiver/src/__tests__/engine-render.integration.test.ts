@@ -18,19 +18,33 @@
  *      instance — one materialization per document, however many consumers
  *      resolve.
  *
+ * The last block closes the loop the package exists for, against the
+ * workspace's reference quill rather than a toy: source layout → `build` →
+ * transport fetch → digest check → font rehydration → `Quill.fromTree` →
+ * `engine.render`. Only the playground drove that end to end before, and only
+ * when a human sat in front of it.
+ *
  * The Typst backend load makes this the slowest test in the suite (seconds).
  * It is kept in its own file so it stays cheap to skip locally.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Document, Engine } from '@quillmark/wasm';
-import { fromDir } from '../node.js';
+import { build, fromBuiltDir, fromDir } from '../node.js';
 
 // The same fixture `preview.test.ts` uses: quills `memo@1.0.0` and
 // `plain@1.0.0`, both `backend: typst` (see their `Quill.yaml`), both
 // render-complete — a comment-only `template.typ` compiles to a valid PDF.
 const PREVIEW_FIXTURE = fileURLToPath(new URL('./fixtures/preview-quiver', import.meta.url));
+
+// The workspace's reference quiver: `usaf_memo@0.2.0`, a published-shape quill
+// with a Typst package tree, image assets, and seven fonts the build dehydrates
+// into `store/`.
+const REFERENCE_QUIVER = fileURLToPath(new URL('../../../../fixtures', import.meta.url));
 
 describe('Engine.render against a quiver quill', () => {
 	it('renders a fixture quill end-to-end with a real Engine', async () => {
@@ -111,4 +125,59 @@ describe('Engine.render against a quiver quill', () => {
 			doc.free();
 		}
 	}, 60000);
+});
+
+describe('the reference quill, source → build → fetch → render', () => {
+	// One test, the whole pipeline. The HTTP and filesystem transports share the
+	// path validation, digest check, and unzip path, so `fromBuiltDir` covers
+	// both without a server.
+	let outDir: string;
+
+	beforeAll(async () => {
+		outDir = await mkdtemp(join(tmpdir(), 'quiver-reference-'));
+		await build(REFERENCE_QUIVER, join(outDir, 'packed'));
+	}, 60000);
+
+	afterAll(async () => {
+		await rm(outDir, { recursive: true, force: true });
+	});
+
+	it('packs the reference quiver and renders it back out of the artifact', async () => {
+		const built = await fromBuiltDir(join(outDir, 'packed'));
+		expect(built.quillNames()).toEqual(['usaf_memo']);
+		expect(await built.resolve('usaf_memo')).toBe('usaf_memo@0.2.0');
+
+		const quill = await built.getQuill('usaf_memo');
+		expect(quill.backendId).toBe('typst');
+
+		// The fonts left the bundle at build time and came back from `store/` on
+		// fetch. Typst substitutes for a missing face rather than failing, so the
+		// rehydration is asserted here rather than left to the render.
+		const tree = quill.toTree();
+		const fonts = [...tree.keys()].filter((p) => /\.(ttf|otf)$/i.test(p));
+		expect(fonts.length).toBeGreaterThan(0);
+		for (const path of fonts) expect(tree.get(path)!.length).toBeGreaterThan(0);
+
+		const doc = quill.seedDocument();
+		try {
+			const result = await new Engine().render(quill, doc, { format: 'pdf' });
+			expect(result.artifacts.length).toBeGreaterThan(0);
+			expect(result.artifacts[0]!.bytes.length).toBeGreaterThan(0);
+		} finally {
+			doc.free();
+		}
+	}, 120000);
+
+	it('round-trips the tree byte for byte', async () => {
+		// Zip, dehydrate, fetch, rehydrate: the quill that comes back out is the
+		// quill that went in. A build that drops, truncates, or reorders a file
+		// shows up here rather than as a typesetting error downstream.
+		const source = await (await fromDir(REFERENCE_QUIVER)).getQuill('usaf_memo@0.2.0');
+		const built = await (await fromBuiltDir(join(outDir, 'packed'))).getQuill('usaf_memo@0.2.0');
+
+		const before = source.toTree();
+		const after = built.toTree();
+		expect([...after.keys()].sort()).toEqual([...before.keys()].sort());
+		for (const [path, bytes] of before) expect(after.get(path)).toEqual(bytes);
+	}, 120000);
 });
