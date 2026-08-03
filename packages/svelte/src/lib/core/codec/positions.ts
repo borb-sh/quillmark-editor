@@ -9,7 +9,6 @@
 // through `usvToPM`; the preview overlay runs `pmToUsv` in reverse.
 import type { Node as PMNode } from 'prosemirror-model';
 import { scanDoc, type PosRun } from './encode.js';
-import { usvLength } from './decode.js';
 
 /** A prebuilt line→position index for a PM doc, rebuilt on structural change. */
 export interface LineIndex {
@@ -36,10 +35,6 @@ export function buildLineIndex(doc: PMNode): LineIndex {
 	return { runs, usvEnd: s.usvEnd, pmEndContent, firstContentStart };
 }
 
-/** USV width of a run (code points it owns). */
-function runUsvLen(run: PosRun): number {
-	return run.kind === 'text' ? usvLength(run.s) : 1;
-}
 /** PM position just past a run (its exclusive end). */
 function runEndPm(run: PosRun): number {
 	if (run.kind === 'text') return run.pmStart + run.s.length;
@@ -47,37 +42,53 @@ function runEndPm(run: PosRun): number {
 	return run.pmStart + 1;
 }
 
+const usvStartOf = (run: PosRun) => run.usvStart;
+const pmStartOf = (run: PosRun) => run.pmStart;
+
+/**
+ * Index of the last run whose `coord` is ≤ `pos`, or `-1` when `pos` precedes the
+ * first run. The walk emits runs in document order and every run owns at least one
+ * position in each space, so both coordinates increase strictly across the list and
+ * the lookup bisects. Bulk conversion is what wants it: `readAnchorsUsv` converts
+ * once per anchor on every commit, and a scan would make that O(anchors × runs).
+ */
+function lastRunAtOrBefore(runs: PosRun[], pos: number, coord: (run: PosRun) => number): number {
+	let lo = 0;
+	let hi = runs.length - 1;
+	let found = -1;
+	while (lo <= hi) {
+		const mid = (lo + hi) >> 1;
+		if (coord(runs[mid]) <= pos) {
+			found = mid;
+			lo = mid + 1;
+		} else {
+			hi = mid - 1;
+		}
+	}
+	return found;
+}
+
 /** USV content offset → PM position. */
 export function usvToPM(index: LineIndex, usvPos: number): number {
 	const usv = clamp(usvPos, 0, index.usvEnd);
 	if (usv >= index.usvEnd) return index.usvEnd === 0 ? index.firstContentStart : index.pmEndContent;
-	for (const run of index.runs) {
-		const len = runUsvLen(run);
-		if (usv >= run.usvStart && usv < run.usvStart + len) {
-			if (run.kind === 'text') return run.pmStart + utf16OfCodePoints(run.s, usv - run.usvStart);
-			return run.pmStart; // nl / atom: the run's single owned position
-		}
-	}
-	return index.firstContentStart;
+	// The runs TILE the USV space from 0 (every text the walk appends pushes its run
+	// first), so below `usvEnd` the run at or before `usv` is the run that owns it.
+	const run = index.runs[lastRunAtOrBefore(index.runs, usv, usvStartOf)];
+	if (run.kind === 'text') return run.pmStart + utf16OfCodePoints(run.s, usv - run.usvStart);
+	return run.pmStart; // nl / atom: the run's single owned position
 }
 
 /** PM position → USV content offset. */
 export function pmToUsv(index: LineIndex, pmPos: number): number {
-	if (index.runs.length === 0) return 0;
-	if (pmPos < index.runs[0].pmStart) return 0;
-	for (const run of index.runs) {
-		if (run.kind === 'text') {
-			if (pmPos >= run.pmStart && pmPos < run.pmStart + run.s.length) {
-				return run.usvStart + codePointsOfUtf16(run.s, pmPos - run.pmStart);
-			}
-		} else if (run.kind === 'nl') {
-			if (pmPos >= run.pmStart && pmPos < run.pmEnd) return run.usvStart;
-		} else {
-			if (pmPos >= run.pmStart && pmPos < run.pmStart + 1) return run.usvStart;
-		}
-	}
-	// Past the last covered PM position → the end of the content text.
-	return index.usvEnd;
+	const i = lastRunAtOrBefore(index.runs, pmPos, pmStartOf);
+	if (i < 0) return 0; // before the first run's PM position (or no runs at all)
+	const run = index.runs[i];
+	// PM coverage, unlike USV, has gaps no run owns (a rule's own token). A position
+	// in one is past every run that could answer it → the end of the content text.
+	if (pmPos >= runEndPm(run)) return index.usvEnd;
+	if (run.kind === 'text') return run.usvStart + codePointsOfUtf16(run.s, pmPos - run.pmStart);
+	return run.usvStart;
 }
 
 // ── UTF-16 ↔ USV conversions within one text run ────────────────────────────
