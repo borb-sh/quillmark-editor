@@ -17,7 +17,7 @@
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { Quiver } from '../node.js';
+import { build as buildQuiver, fromDir } from '../node.js';
 import { renderQuiverSamples } from '../preview.js';
 import type { Engine } from '@quillmark/wasm';
 
@@ -93,14 +93,14 @@ async function build(): Promise<void> {
 	const cwd = process.cwd();
 	const outDir = flag('--out') ?? 'dist';
 	console.log(`quiver build: ${cwd} → ${outDir}`);
-	await Quiver.build(cwd, outDir);
+	await buildQuiver(cwd, outDir);
 	console.log('done.');
 }
 
 async function test(): Promise<void> {
 	const cwd = process.cwd();
 	const engine = await loadEngine(cwd);
-	const quiver = await Quiver.fromDir(cwd);
+	const quiver = await fromDir(cwd);
 
 	const names = quiver.quillNames();
 	if (names.length === 0) {

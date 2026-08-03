@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { buildQuiver } from '../build.js';
 import { unpackFiles } from '../bundle.js';
-import { Quiver } from '../node.js';
+import { build, buildPackage } from '../node.js';
 import { QuiverError } from '../errors.js';
 
 // Absolute path to the committed fixture
@@ -444,7 +444,7 @@ describe('buildQuiver — outDir guard', () => {
 	});
 });
 
-describe('Quiver.build (static method delegation)', () => {
+describe('build (node entry)', () => {
 	const tmpDirs: string[] = [];
 
 	afterEach(async () => {
@@ -453,11 +453,11 @@ describe('Quiver.build (static method delegation)', () => {
 		}
 	});
 
-	it('Quiver.build delegates to buildQuiver and writes latest.json', async () => {
+	it('build delegates to buildQuiver and writes latest.json', async () => {
 		const out = tempDir();
 		tmpDirs.push(out);
 
-		await Quiver.build(SAMPLE_FIXTURE, out);
+		await build(SAMPLE_FIXTURE, out);
 
 		const raw = await readFile(join(out, 'latest.json'), 'utf-8');
 		const pointer = JSON.parse(raw) as { manifest: string };
@@ -465,13 +465,13 @@ describe('Quiver.build (static method delegation)', () => {
 	});
 });
 
-describe('Quiver.buildPackage', () => {
+describe('buildPackage', () => {
 	it('throws transport_error when the specifier cannot be resolved', async () => {
 		const out = tempDir();
-		await expect(Quiver.buildPackage('@nonexistent/quiver-pkg-xyz', out)).rejects.toThrow(
+		await expect(buildPackage('@nonexistent/quiver-pkg-xyz', out)).rejects.toThrow(
 			expect.objectContaining({ code: 'transport_error' })
 		);
-		await expect(Quiver.buildPackage('@nonexistent/quiver-pkg-xyz', out)).rejects.toBeInstanceOf(
+		await expect(buildPackage('@nonexistent/quiver-pkg-xyz', out)).rejects.toBeInstanceOf(
 			QuiverError
 		);
 	});

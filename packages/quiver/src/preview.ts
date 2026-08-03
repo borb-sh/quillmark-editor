@@ -29,7 +29,7 @@
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { Quiver } from './node.js';
+import { fromDir, type Quiver } from './node.js';
 import { isQuillmarkError } from '@quillmark/wasm';
 import type { Engine, RenderResult, OutputFormat } from '@quillmark/wasm';
 
@@ -114,7 +114,7 @@ export async function renderQuiverSamples(
 ): Promise<RenderedSample[]> {
 	const outDir = opts.outDir ?? DEFAULT_OUT_DIR;
 	const format = opts.format === undefined ? undefined : parseFormat(opts.format);
-	const quiver = await Quiver.fromDir(metaUrlOrDir);
+	const quiver = await fromDir(metaUrlOrDir);
 	await mkdir(outDir, { recursive: true });
 
 	const results: RenderedSample[] = [];

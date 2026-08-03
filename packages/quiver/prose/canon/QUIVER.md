@@ -14,11 +14,15 @@ The loaders name exactly what they read; there is no auto-detection and no branc
 
 | Loader | Reads | Where |
 | --- | --- | --- |
-| `fromPackage(specifier)` | the source layout | Node |
-| `fromDir(path)` | the source layout | Node |
-| `fromBuiltDir(path)` | build output | Node |
-| `fromBuiltUrl(url)` | build output | anywhere |
-| `fromManifest(baseUrl, bytes)` | build output, pointer skipped | anywhere |
+| `fromPackage(specifier, from?)` | the source layout | `/node` |
+| `fromDir(path)` | the source layout | `/node` |
+| `fromBuiltDir(path)` | build output | `/node` |
+| `Quiver.fromBuiltUrl(url)` | build output | anywhere |
+| `Quiver.fromManifest(baseUrl, bytes)` | build output, pointer skipped | anywhere |
+
+The `/node` factories are free functions, not statics: the class stays browser-pure, the entry that reads a filesystem imports nothing onto it, and a bundler drops the verbs a consumer does not call. Construction itself is sealed — `Quiver` has a private constructor and the loader seam is reachable from no entry in `exports`, so a dependent cannot grow on it while a public transport API (auth headers, custom fetch, `AbortSignal`) stays deferred for want of a consumer story.
+
+`fromPackage` and `buildPackage` resolve `<specifier>/Quiver.yaml` from `from` — pass `import.meta.url`. The default (this package's own location) finds only what is hoisted beside `@quillmark/quiver`; under an isolated `node_modules` layout the caller's dependencies are reachable from the caller alone. The resolution also goes through the target's `exports` map, so a quiver published as a package exposes `./Quiver.yaml` there or is unreachable however correct its layout.
 
 Browsers cannot read the source layout, so `build(src, out)` packs it at deploy time and the output is served as static assets. `fromBuiltDir` exists for the server that ships the packed artifact in its own image: it avoids the self-fetch round-trip `fromBuiltUrl` would force on a self-hosted deployment, and lets the source quiver stay a devDependency.
 

@@ -12,8 +12,8 @@
 import { QuiverError } from './errors.js';
 import { unpackFiles } from './bundle.js';
 import { isCanonicalSemver, compareSemver } from './semver.js';
-import type { QuiverLoader } from './quiver.js';
-import { Quiver } from './quiver.js';
+import type { Quiver, QuiverLoader } from './quiver.js';
+import { createQuiver } from './quiver.js';
 
 // ─── Internal types ───────────────────────────────────────────────────────────
 
@@ -289,7 +289,7 @@ function buildQuiverFromManifestBytes(
 		index.set(key, entry);
 	}
 
-	return Quiver._fromLoader(manifest.name, catalogOf(index), new BuiltLoader(transport, index));
+	return createQuiver(manifest.name, catalogOf(index), new BuiltLoader(transport, index));
 }
 
 // ─── Main entry points ────────────────────────────────────────────────────────

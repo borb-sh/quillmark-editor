@@ -12,7 +12,7 @@ import { mkdir, rm, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
-import { Quiver } from '../node.js';
+import { Quiver, build, fromBuiltDir } from '../node.js';
 import { QuiverError } from '../errors.js';
 import { mockQuillFromTree } from './helpers/mock-engine.js';
 
@@ -80,7 +80,7 @@ describe('Integration: build → fromBuiltUrl → resolve → getQuill', () => {
 		const outDir = tempDir();
 		tmpDirs.push(outDir);
 
-		await Quiver.build(SAMPLE_FIXTURE, outDir);
+		await build(SAMPLE_FIXTURE, outDir);
 
 		const baseUrl = 'https://mock.cdn.example.com/my-quiver/';
 		mockFetch = makeMockFetch(outDir, baseUrl);
@@ -97,7 +97,7 @@ describe('Integration: build → fromBuiltUrl → resolve → getQuill', () => {
 		const outDir = tempDir();
 		tmpDirs.push(outDir);
 
-		await Quiver.build(SAMPLE_FIXTURE, outDir);
+		await build(SAMPLE_FIXTURE, outDir);
 
 		const baseUrl = 'https://mock.cdn.example.com/my-quiver/';
 		mockFetch = makeMockFetch(outDir, baseUrl);
@@ -113,7 +113,7 @@ describe('Integration: build → fromBuiltUrl → resolve → getQuill', () => {
 		const outDir = tempDir();
 		tmpDirs.push(outDir);
 
-		await Quiver.build(SAMPLE_FIXTURE, outDir);
+		await build(SAMPLE_FIXTURE, outDir);
 
 		const baseUrl = 'https://mock.cdn.example.com/my-quiver/';
 		mockFetch = makeMockFetch(outDir, baseUrl);
@@ -135,7 +135,7 @@ describe('Integration: build → fromBuiltUrl → resolve → getQuill', () => {
 		const outDir = tempDir();
 		tmpDirs.push(outDir);
 
-		await Quiver.build(SAMPLE_FIXTURE, outDir);
+		await build(SAMPLE_FIXTURE, outDir);
 
 		const baseUrl = 'https://mock.cdn.example.com/my-quiver/';
 		mockFetch = makeMockFetch(outDir, baseUrl);
@@ -255,7 +255,7 @@ describe('Integration: build → fromManifest (seed) → resolve → getQuill', 
 	it('seeds the catalog, fetches no pointer/manifest, fetches bundles lazily', async () => {
 		const outDir = tempDir();
 		tmpDirs.push(outDir);
-		await Quiver.build(SAMPLE_FIXTURE, outDir);
+		await build(SAMPLE_FIXTURE, outDir);
 		const manifestBytes = await readManifestBytes(outDir);
 
 		const urls: string[] = [];
@@ -308,9 +308,9 @@ describe('Integration: build → fromBuiltDir → resolve → getQuill', () => {
 		const outDir = tempDir();
 		tmpDirs.push(outDir);
 
-		await Quiver.build(SAMPLE_FIXTURE, outDir);
+		await build(SAMPLE_FIXTURE, outDir);
 
-		const built = await Quiver.fromBuiltDir(outDir);
+		const built = await fromBuiltDir(outDir);
 
 		expect(built.name).toBe('sample');
 		expect(built.quillNames().sort()).toEqual(['memo', 'resume']);
@@ -322,7 +322,7 @@ describe('Integration: build → fromBuiltDir → resolve → getQuill', () => {
 		const outDir = tempDir();
 		tmpDirs.push(outDir);
 
-		await Quiver.build(SAMPLE_FIXTURE, outDir);
+		await build(SAMPLE_FIXTURE, outDir);
 
 		// Sabotage fetch — fromBuiltDir must not touch it.
 		const original = globalThis.fetch;
@@ -332,7 +332,7 @@ describe('Integration: build → fromBuiltDir → resolve → getQuill', () => {
 
 		const { calls, restore } = mockQuillFromTree();
 		try {
-			const built = await Quiver.fromBuiltDir(outDir);
+			const built = await fromBuiltDir(outDir);
 
 			const quill = await built.getQuill('memo@1.0.0');
 
@@ -346,9 +346,9 @@ describe('Integration: build → fromBuiltDir → resolve → getQuill', () => {
 	});
 
 	it('fromBuiltDir on missing directory throws transport_error', async () => {
-		await expect(
-			Quiver.fromBuiltDir(join(tmpdir(), `does-not-exist-${randomUUID()}`))
-		).rejects.toThrow(expect.objectContaining({ code: 'transport_error' }));
+		await expect(fromBuiltDir(join(tmpdir(), `does-not-exist-${randomUUID()}`))).rejects.toThrow(
+			expect.objectContaining({ code: 'transport_error' })
+		);
 	});
 
 	it('fromBuiltDir on empty directory throws transport_error', async () => {
@@ -356,7 +356,7 @@ describe('Integration: build → fromBuiltDir → resolve → getQuill', () => {
 		tmpDirs.push(outDir);
 		await mkdir(outDir, { recursive: true });
 
-		await expect(Quiver.fromBuiltDir(outDir)).rejects.toThrow(
+		await expect(fromBuiltDir(outDir)).rejects.toThrow(
 			expect.objectContaining({ code: 'transport_error' })
 		);
 	});

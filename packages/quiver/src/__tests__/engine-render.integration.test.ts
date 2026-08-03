@@ -25,7 +25,7 @@
 import { describe, it, expect } from 'vitest';
 import { fileURLToPath } from 'node:url';
 import { Document, Engine } from '@quillmark/wasm';
-import { Quiver } from '../node.js';
+import { fromDir } from '../node.js';
 
 // The same fixture `preview.test.ts` uses: quills `memo@1.0.0` and
 // `plain@1.0.0`, both `backend: typst` (see their `Quill.yaml`), both
@@ -34,7 +34,7 @@ const PREVIEW_FIXTURE = fileURLToPath(new URL('./fixtures/preview-quiver', impor
 
 describe('Engine.render against a quiver quill', () => {
 	it('renders a fixture quill end-to-end with a real Engine', async () => {
-		const quiver = await Quiver.fromDir(PREVIEW_FIXTURE);
+		const quiver = await fromDir(PREVIEW_FIXTURE);
 		const engine = new Engine();
 
 		const quill = await quiver.getQuill('memo@1.0.0');
@@ -55,7 +55,7 @@ describe('Engine.render against a quiver quill', () => {
 	}, 60000);
 
 	it('clones the quill on render — the same handle renders twice', async () => {
-		const quiver = await Quiver.fromDir(PREVIEW_FIXTURE);
+		const quiver = await fromDir(PREVIEW_FIXTURE);
 		const engine = new Engine();
 
 		const quill = await quiver.getQuill('memo@1.0.0');
@@ -84,7 +84,7 @@ describe('Engine.render against a quiver quill', () => {
 	}, 60000);
 
 	it('resolves the quill from a stored document and renders', async () => {
-		const quiver = await Quiver.fromDir(PREVIEW_FIXTURE);
+		const quiver = await fromDir(PREVIEW_FIXTURE);
 		const engine = new Engine();
 
 		// Authoring side: seed against a selector-resolved quill, store the markdown.
