@@ -191,10 +191,13 @@ function recompileNow() {
 	const change = session.apply(doc);
 	preview.refresh(change);
 	source.refresh();
+	diagnostics = [...session.warnings]; // → the editor's `diagnostics` prop
 }
 ```
 
-This is the whole shell layer, and it is deliberately yours: the debounce value, what applies at once, and which surfaces refresh are host policy, so the package ships no scheduler over them. Two obligations ride with ownership: an edit of your own (an import, an undo, a direct `doc` write) recompiles by the same calls, since nothing polls the document; and teardown clears the timer **before** freeing the handles, so a pending recompile never touches a freed session.
+`session.warnings` is a **getter on a handle Svelte does not track**, so an apply that produces render warnings changes nothing on screen until you re-read it. Pull it per apply or the editor shows the previous compile's diagnostics.
+
+This is the whole shell layer, and it is deliberately yours: the debounce value, what applies at once, and which surfaces refresh are host policy, so the package ships no scheduler over them. Three obligations ride with ownership: an edit of your own (an import, an undo, a direct `doc` write) recompiles by the same calls, since nothing polls the document; a compile owes the diagnostics re-read above, since nothing polls the session; and teardown clears the timer **before** freeing the handles, so a pending recompile never touches a freed session.
 
 ## The caret bridge
 
@@ -208,7 +211,16 @@ onCaretPick: (hit) => visualEditor.setCaret(hit);
 onCaretMove: preview.focusPosition;
 ```
 
-The editor mints the path off its own derived card tree, so following the caret costs no `doc.cards` read per keystroke. `fieldPathForAddr` (from `@quillmark/svelte/core`) is the same mapping for a consumer holding an `Addr` of its own.
+The editor mints the path off its own derived card tree, so following the caret costs no `doc.cards` read per keystroke. `fieldPathForAddr` (from `@quillmark/svelte/core`) is the same mapping for a consumer holding an `Addr` of its own. Its second argument is that card tree — the card kinds by document index — which is why the signature takes one rather than a `Document`:
+
+```ts
+const path = fieldPathForAddr(
+	addr,
+	doc.cards.map((c) => c.kind)
+);
+```
+
+A consumer calling this once reads `doc.cards` and moves on; the per-keystroke path is the one that cannot afford to, since each read serializes every card.
 
 The playground's `/editor` route is the full reference split-pane shell: one session, both bridge directions, the preview following edits, diagnostics routed inline, and the source view.
 
