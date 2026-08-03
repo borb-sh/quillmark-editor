@@ -31,6 +31,7 @@ describe('createField over a real usaf_memo leaf', () => {
 		const caret: number[] = [];
 		const field = createField({
 			doc,
+			quill: quill(),
 			addr: { field: 'subject' },
 			container: mount(),
 			inline: true,
@@ -52,7 +53,7 @@ describe('createField over a real usaf_memo leaf', () => {
 	});
 
 	it('edits the main body via applyChange and preserves marks path', () => {
-		const field = createField({ doc, addr: {}, container: mount() });
+		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
 		const before = doc.main.body.text;
 		const view = viewOf(field);
 		view.dispatch(view.state.tr.insertText('Z', 2)); // PM 2 = USV 1 (after first char)
@@ -66,6 +67,7 @@ describe('createField over a real usaf_memo leaf', () => {
 	it('caret survives an own-edit through the StepMap', () => {
 		const field = createField({
 			doc,
+			quill: quill(),
 			addr: { field: 'subject' },
 			container: mount()
 		});
@@ -86,6 +88,7 @@ describe('field-level reconciliation', () => {
 		const doc = quill().seedDocument();
 		const field = createField({
 			doc,
+			quill: quill(),
 			addr: { field: 'subject' },
 			container: mount()
 		});
@@ -132,6 +135,7 @@ describe('plaintext fields mount no markdown input rules', () => {
 		const doc = quill().seedDocument();
 		const field = createField({
 			doc,
+			quill: quill(),
 			addr: { field: 'tag_line' }, // default-only → decodes empty, first edit installs
 			container: mount(),
 			plaintext: true
@@ -150,6 +154,7 @@ describe('plaintext fields mount no markdown input rules', () => {
 		const doc = quill().seedDocument();
 		const field = createField({
 			doc,
+			quill: quill(),
 			addr: { field: 'tag_line' },
 			container: mount(),
 			inline: true
@@ -171,6 +176,7 @@ describe('createField over an ABSENT declared richtext field', () => {
 		expect(doc.getStored('tag_line')).toBeUndefined();
 		const field = createField({
 			doc,
+			quill: quill(),
 			addr: { field: 'tag_line' },
 			container: mount(),
 			inline: true
@@ -190,7 +196,7 @@ describe('createField over an ABSENT declared richtext field', () => {
 describe('field install-fallback for an un-lowerable structural edit', () => {
 	it('a hard break falls back to install without corrupting the store', () => {
 		const doc = quill().seedDocument();
-		const field = createField({ doc, addr: {}, container: mount() });
+		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
 		const view = viewOf(field);
 		// Insert a hard_break into the first paragraph (a `continues` line ops
 		// cannot create → the field installs the whole content instead).
@@ -217,7 +223,7 @@ describe('anchor insertion', () => {
 
 	it('inserts a caller-supplied identity anchor that persists in the content', () => {
 		const doc = quill().seedDocument();
-		const field = createField({ doc, addr: {}, container: mount() });
+		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
 		field.insertAnchor('a1', 3);
 		const anchors = bodyAnchors(doc);
 		expect(anchors).toHaveLength(1);
@@ -227,7 +233,7 @@ describe('anchor insertion', () => {
 
 	it('a duplicate id is a no-op; removeAnchor drops the anchor', () => {
 		const doc = quill().seedDocument();
-		const field = createField({ doc, addr: {}, container: mount() });
+		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
 		field.insertAnchor('a1', 3);
 		field.insertAnchor('a1', 5); // same id → ignored (unique + invariant, 0.97 policy)
 		expect(bodyAnchors(doc)).toHaveLength(1);
@@ -238,7 +244,7 @@ describe('anchor insertion', () => {
 
 	it('the anchor rebases through a later text edit — it survives like a mark', () => {
 		const doc = quill().seedDocument();
-		const field = createField({ doc, addr: {}, container: mount() });
+		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
 		field.insertAnchor('a1', 5);
 		const view = viewOf(field);
 		// Insert two chars at the very start (PM 1 = USV 0): the anchor shifts by 2.
@@ -249,7 +255,7 @@ describe('anchor insertion', () => {
 
 	it('anchorsInRange reports coverage for the popover active state', () => {
 		const doc = quill().seedDocument();
-		const field = createField({ doc, addr: {}, container: mount() });
+		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
 		field.insertAnchor('a1', 4);
 		expect(field.anchorsInRange(0, 10)).toEqual(['a1']);
 		expect(field.anchorsInRange(0, 3)).toEqual([]);
@@ -262,6 +268,7 @@ describe('createField accessible name (a11y follow-up)', () => {
 		const doc = quill().seedDocument();
 		const field = createField({
 			doc,
+			quill: quill(),
 			addr: { field: 'subject' },
 			container: mount(),
 			inline: true,
@@ -275,6 +282,7 @@ describe('createField accessible name (a11y follow-up)', () => {
 		const doc = quill().seedDocument();
 		const field = createField({
 			doc,
+			quill: quill(),
 			addr: { field: 'subject' },
 			container: mount(),
 			inline: true
@@ -304,7 +312,7 @@ describe('the empty-leaf ghost', () => {
 	const CARD_BODY = { card: 0 };
 
 	function emptyBody(doc: Document, placeholder?: string): FieldController {
-		return createField({ doc, addr: CARD_BODY, container: mount(), placeholder });
+		return createField({ doc, quill: quill(), addr: CARD_BODY, container: mount(), placeholder });
 	}
 
 	it('decorates an empty leaf with the ghost, and no leaf without one', () => {
@@ -320,6 +328,7 @@ describe('the empty-leaf ghost', () => {
 		const caret: number[] = [];
 		const field = createField({
 			doc,
+			quill: quill(),
 			addr: CARD_BODY,
 			container: mount(),
 			placeholder: 'Write…',

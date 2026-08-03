@@ -18,8 +18,7 @@ import { keymap } from 'prosemirror-keymap';
 import type { Node as PMNode, Schema } from 'prosemirror-model';
 import { EditorState, Plugin, PluginKey, Selection, type Command } from 'prosemirror-state';
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
-import type { Document, Content, Addr } from '@quillmark/wasm';
-import { importMarkdown } from '@quillmark/wasm';
+import type { Document, DocumentReader, Content, Addr, Quill } from '@quillmark/wasm';
 import type { EditorErrorHandler } from '../errors.js';
 import { reportError, errorMessage } from '../errors.js';
 import { decode } from './decode.js';
@@ -34,6 +33,10 @@ import { blockSchema, inlineSchema } from './schema.js';
 /** Options for {@link createField}. */
 export interface CreateFieldOpts {
 	doc: Document;
+	/** The schema the leaf reads through: `quill.reader(doc).getContent` decodes by
+	 *  declared type, which is the only thing that says whether a stored string is
+	 *  markdown or literal text. */
+	quill: Quill;
 	addr: Addr;
 	container: HTMLElement;
 	/** Constrained single-textblock schema (a `richtext(inline)` field). */
@@ -142,28 +145,23 @@ function anchorPlugin(seed: AnchorPos[]): Plugin<AnchorPos[]> {
 	});
 }
 
-/** Read the leaf's raw stored `Content` for `addr`: the unified `doc.getStored(addr)`
- * read (DOCUMENT_MODEL): a field value, or the body `Content` when `addr.field` is
- * absent, without materializing the whole card. Reads are total over the field
- * axis, so an absent field, a default-only richtext field (e.g. `tag_line`, no
- * stored value until first edited), reads `undefined`; decode an empty content
- * rather than crash, and the first edit installs it. Only an out-of-range
- * `addr.card` throws, unreachable here: a removed card unmounts its keyed leaf
- * before a stale index is read.
+/** Read the leaf's `Content` corpus for `addr`: `reader.getContent` (DOCUMENT_MODEL),
+ * the schema-plane read that decodes through the codec the field's declared type
+ * names. A field value, or the body corpus when `addr.field` is absent, without
+ * materializing the whole card. Reads are total over the field axis, so an absent
+ * field, a default-only richtext field (e.g. `tag_line`, no stored value until
+ * first edited), reads `undefined`; decode an empty content rather than crash, and
+ * the first edit installs it. Only an out-of-range `addr.card` throws, unreachable
+ * here: a removed card unmounts its keyed leaf before a stale index is read.
  *
- * `getStored` is the VERBATIM read, so a richtext field has two stored shapes and
- * this is where they meet. A document the editor seeded holds `Content`, because
- * that is what `install` / `applyChange` write. A document a consumer LOADED
- * (`Document.fromMarkdown`, the door every saved document comes back through)
- * holds the markdown STRING it parsed, because nothing has lowered it yet. A body
- * is `Content` either way. Lifting the string through `importMarkdown` is what
- * lets a leaf mount over a loaded document at all; the first commit writes
- * `Content` back and the field never reads as a string again. */
-function readLeaf(doc: Document, addr: Addr): Content {
-	const stored = doc.getStored(addr);
-	if (stored === undefined) return emptyContent();
-	if (typeof stored === 'string') return importMarkdown(stored);
-	return stored as Content;
+ * Bound rather than verbatim, because the storage form is not the leaf's business
+ * and the verbatim read cannot answer it alone. A field the editor committed rests
+ * as `Content`; a field a markdown parse left rests as the authored STRING, and
+ * what that string MEANS is the declared type's to say: `richtext` is markdown,
+ * `plaintext` is literal text, and reading one as the other silently eats every
+ * `*` the author typed. */
+function readLeaf(reader: DocumentReader, addr: Addr): Content {
+	return reader.getContent(addr) ?? emptyContent();
 }
 
 /** The canonical empty `Content`: one empty `para` line. The zero value a prose
@@ -172,10 +170,20 @@ export function emptyContent(): Content {
 	return { text: '', lines: [{ containers: [], kind: 'para' }], marks: [], islands: [] };
 }
 
-/** Whether the leaf's field currently holds a stored value: `doc.getStored` is total, so
- * an unset field reads `undefined`; a body always reads its `Content` (present). */
-function leafPresent(doc: Document, addr: Addr): boolean {
-	return doc.getStored(addr) !== undefined;
+/** Whether ops may commit here: the stored value is a `Content` object, so
+ * `applyChange` splices exactly the corpus the leaf read and PM is showing.
+ *
+ * The two other rest forms both take `install` instead. An UNSET field (`undefined`;
+ * a default-only richtext field before its first edit) has nothing to splice.
+ * An AUTHORED STRING is the trap: `applyChange` reads it as markdown whatever the
+ * declared type is, so on a `plaintext` field its pre-image is not the corpus the
+ * leaf read and a delta computed against that corpus lands at the wrong offsets.
+ * Installing over it costs nothing either way, since content-only marks do not
+ * survive markdown and a string therefore carries no anchors to pay. A body always
+ * rests as `Content`. */
+function opsCommittable(doc: Document, addr: Addr): boolean {
+	const stored = doc.getStored(addr);
+	return stored !== null && typeof stored === 'object';
 }
 
 /** The naming attributes for the `contenteditable`. `aria-labelledby` supersedes
@@ -195,10 +203,13 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	const inline = !!opts.inline || !!opts.plaintext;
 	const plaintext = !!opts.plaintext;
 	const schema: Schema = inline ? inlineSchema : blockSchema;
+	// Bound once and held: the reader is a `{quill, doc}` pair that reads live, so
+	// every read below sees the commit before it.
+	const reader: DocumentReader = opts.quill.reader(doc);
 
 	// `known` is the codec's view of the stored content: kept in sync after every
 	// own-edit so `reconcile` can tell an external change from the field's own.
-	const reconciler: Reconciler = createReconciler(readLeaf(doc, addr));
+	const reconciler: Reconciler = createReconciler(readLeaf(reader, addr));
 
 	let index: LineIndex; // rebuilt on every structural change
 	let view: EditorView;
@@ -271,10 +282,11 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		// below, both install fallbacks, and `lower` all read this one `edit`.
 		const edit = contentEdit(oldRt, pmToContent(newDoc));
 		try {
-			// `applyChange` throws on an absent declared field (verified), so the FIRST
-			// edit to one installs the value (creating it; no prior anchors to lose);
-			// island creation is the other install case (`insertReintroducesIslandSlot`).
-			if (!leafPresent(doc, addr) || insertReintroducesIslandSlot(edit)) {
+			// A field not yet at content rest installs instead: `applyChange` throws on
+			// an absent declared field (verified) and mis-reads an authored string
+			// (`opsCommittable`), and neither has anchors to lose. Island creation is
+			// the other install case (`insertReintroducesIslandSlot`).
+			if (!opsCommittable(doc, addr) || insertReintroducesIslandSlot(edit)) {
 				doc.install(addr, edit.newRt); // create-or-structural fallback; pays this field's anchors
 			} else {
 				// Pre-edit anchors are the stored content's anchors (USV); post-edit
@@ -283,7 +295,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 				const newAnchors = plaintext ? [] : readAnchorsUsv(newDoc);
 				doc.applyChange(addr, lower(edit, { oldAnchors, newAnchors }));
 			}
-			reconciler.commit(readLeaf(doc, addr));
+			reconciler.commit(readLeaf(reader, addr));
 			return true;
 		} catch (e) {
 			// Bound the damage: an op path the gates missed leaves the store STALE
@@ -299,7 +311,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			});
 			try {
 				doc.install(addr, edit.newRt);
-				reconciler.commit(readLeaf(doc, addr));
+				reconciler.commit(readLeaf(reader, addr));
 				return true;
 			} catch (e2) {
 				// Optimistic PM stays; the store is stale for this field from here.
@@ -334,7 +346,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			view.focus();
 		},
 		applyExternal(): void {
-			const current = readLeaf(doc, addr);
+			const current = readLeaf(reader, addr);
 			if (!reconciler.shouldRehydrate(current)) return; // own edit / no change
 			const caretUsv = pmToUsv(index, view.state.selection.head);
 			const fresh = buildState(current);
@@ -356,15 +368,15 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			view.focus();
 		},
 		getContent(): Content {
-			return readLeaf(doc, addr);
+			return readLeaf(reader, addr);
 		},
 		insertAnchor(id: string, pos: number): void {
 			if (plaintext) return; // a plaintext field carries no marks (§Inline mode)
 			if (heldAnchors().some((a) => a.id === id)) return; // ids are unique + invariant (0.97 policy)
-			// An anchor commits through `applyChange` (present field); a still-unset
-			// default-only field is materialized first, else the commit's create-branch
-			// `install` (value semantics) would drop the just-added anchor.
-			if (!leafPresent(doc, addr)) doc.install(addr, reconciler.last);
+			// An anchor commits through `applyChange`, so the field is brought to content
+			// rest first; else the commit's install branch (value semantics) would drop
+			// the just-added anchor.
+			if (!opsCommittable(doc, addr)) doc.install(addr, reconciler.last);
 			const pm = usvToPM(index, pos);
 			view.dispatch(view.state.tr.setMeta(anchorKey, { op: 'add', id, pos: pm } as AnchorEdit));
 		},
