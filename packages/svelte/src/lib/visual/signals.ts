@@ -2,7 +2,7 @@
 // (VISUAL_EDITOR §Editor→preview), so nothing here imports it; what the two share
 // is `/core`'s address vocabulary, which is what lets a consumer wire the bridge
 // as a pass-through rather than a translation.
-import type { DocPath } from '../core/index.js';
+import type { DocPath } from '../core/address.js';
 
 /**
  * Which lane an edit came down. The three differ in COST, not in meaning: prose

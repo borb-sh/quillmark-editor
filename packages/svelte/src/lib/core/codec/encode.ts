@@ -15,7 +15,7 @@
 // throws `IslandSlotInInsert`, so `insertReintroducesIslandSlot` flags it for the
 // field's `install` fallback.
 import type { Mark, Node as PMNode } from 'prosemirror-model';
-import { mapPos, isAnchorMark } from '../index.js';
+import { mapPos, isAnchorMark } from '@quillmark/wasm';
 import type {
 	ChangeBundle,
 	Delta,

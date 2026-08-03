@@ -11,7 +11,8 @@
 	import { onMount } from 'svelte';
 	import { createField, type FieldController } from '../core/codec/index.js';
 	import './controls.css';
-	import type { Document, Addr, EditorErrorHandler } from '../core/index.js';
+	import type { Document, Addr } from '@quillmark/wasm';
+	import type { EditorErrorHandler } from '../core/errors.js';
 
 	interface Props {
 		doc: Document;

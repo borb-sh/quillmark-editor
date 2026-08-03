@@ -23,14 +23,7 @@
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
 	import { page } from '$app/state';
-	import type {
-		Quill,
-		Document,
-		Addr,
-		CardAddr,
-		Content,
-		Diagnostic
-	} from '@quillmark/svelte/core';
+	import type { Quill, Document, Addr, CardAddr, Content, Diagnostic } from '@quillmark/wasm';
 	import type { ActiveLeaf } from '@quillmark/svelte/visual';
 	import { loadUsafMemoTree, withMainDateDefault, withSecondCardKind } from '../fixture';
 
@@ -178,7 +171,8 @@
 				// VisualEditor pulls the codec → `mapPos`, so it rides the same import.
 				// The fixture fetch is independent of both, so it runs alongside them.
 				const treeP = loadUsafMemoTree();
-				const [{ Quill, Document, init, MAIN_CARD_ADDR }, visual] = await Promise.all([
+				const [{ Quill, Document, MAIN_CARD_ADDR }, { init }, visual] = await Promise.all([
+					import('@quillmark/wasm'),
 					import('@quillmark/svelte/core'),
 					import('@quillmark/svelte/visual')
 				]);

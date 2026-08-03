@@ -1,7 +1,8 @@
 // address.ts: the one hop between the `DocPath` grammar and the `Addr` the document
 // verbs take, both directions. Pure address math, no document and no surface.
 import { describe, it, expect } from 'vitest';
-import { fieldPathForAddr, cardPath, addrForFieldPath } from '$lib/core';
+import { fieldPathForAddr, addrForFieldPath } from '$lib/core';
+import { cardPath } from '$lib/core/address.js';
 
 describe('fieldPathForAddr', () => {
 	it('maps the main body and main fields', () => {

@@ -3,14 +3,9 @@
 // `VisualEditorInner` (the editor, which mounts once per key). A component cannot
 // export a type without a module script, and a type imported ACROSS the two would
 // make the pair circular, so the shape lives beside them instead.
-import type {
-	Document,
-	Quill,
-	Addr,
-	Diagnostic,
-	Place,
-	EditorErrorHandler
-} from '../core/index.js';
+import type { Document, Quill, Addr, Diagnostic } from '@quillmark/wasm';
+import type { Place } from '../core/address.js';
+import type { EditorErrorHandler } from '../core/errors.js';
 import type { ActiveLeaf, EditorChange } from './signals.js';
 import type { FormatDiagnostic, VisualStringsInput } from './strings.js';
 
@@ -20,7 +15,7 @@ export interface VisualEditorProps {
 	/**
 	 * The active leaf: its canonical `DocPath` and the session key of the card holding
 	 * it, which is what a host tracking the active card keeps across a reorder
-	 * (`CardId`). The same pair `getActiveLeaf` reaches the controller by.
+	 * (`CardId`).
 	 */
 	onActiveLeafChange?: (active: ActiveLeaf) => void;
 	/**

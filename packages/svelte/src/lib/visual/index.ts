@@ -4,32 +4,31 @@
 // Each content leaf is the codec's `createField` prose leaf; scalar fields are
 // form controls; structure/cards are the editor's own. Depends on `/core` and the
 // codec. RELATIVE imports (not `$lib`): svelte-package ships this as-is.
+//
+// The barrel carries what a consumer story wants, and nothing else: a symbol
+// earns its line when a caller outside the package needs it, and grows one when
+// that caller arrives, not before.
 export { default as VisualEditor } from './VisualEditor.svelte';
 export type { VisualEditorProps } from './props.js';
 
-// The prose leaf is the codec's; re-exported so a `/visual` consumer reaches it
-// without a second import from `/core`.
+// The prose leaf: the vanilla mount API a non-Svelte consumer (or a custom
+// surface) builds on.
 export { createField } from '../core/codec/index.js';
 export type { CreateFieldOpts, FieldController } from '../core/codec/index.js';
-
-// The projection types: useful to a consumer building its own chrome.
-export type { ControlKind, FieldModel, GroupSection, CardModel } from './structure.js';
 
 // What the surface SAYS, and how it words a diagnostic. `strings` is keyed and
 // partial (unset keys take the package's English) and `DEFAULT_VISUAL_STRINGS` is
 // that English, exported so a consumer can compose against it rather than restate
 // it. The empty body's per-kind hook is the `bodyPlaceholder` key inside it.
-export { DEFAULT_VISUAL_STRINGS, mergeStrings } from './strings.js';
+export { DEFAULT_VISUAL_STRINGS } from './strings.js';
 export type { VisualStrings, VisualStringsInput, FormatDiagnostic } from './strings.js';
 export type { BodyPlaceholder, BodyPlaceholderContext } from './structure.js';
 
 // The `$ext.editor` write unit. A consumer seeding editor-side chrome
 // state (a card title, the tips channel) goes through this rather than
 // `storeExtNamespace`, which replaces the namespace and takes the sibling keys with
-// it. The narrowing the editor applies to a seeded channel, so a consumer can check
-// what will render.
+// it.
 export { patchEditorExt } from './ext.js';
-export { tipsChannel } from './tips.js';
 
 // What the editor emits. Every hook naming a place speaks the canonical `DocPath`
 // the preview and the diagnostics already do, so the bridge is

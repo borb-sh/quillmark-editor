@@ -12,7 +12,8 @@
 // card rather than staying at the index.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
-import { addrForFieldPath, Quill, type Document } from '$lib/core';
+import { Quill, type Document } from '@quillmark/wasm';
+import { addrForFieldPath } from '$lib/core';
 import type { ActiveLeaf, EditorChange } from '$lib/visual';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
 import { loadFixtureTree } from '../helpers/fixtures.js';

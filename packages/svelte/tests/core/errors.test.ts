@@ -2,7 +2,8 @@
 // becomes a second failure. Every call site sits on a recovery path, so a missing
 // handler and a throwing handler both have to leave the recovery intact.
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { reportError, errorMessage, type EditorError } from '$lib/core';
+import { reportError, errorMessage } from '$lib/core/errors.js';
+import type { EditorError } from '$lib/core';
 
 const err = (over: Partial<EditorError> = {}): EditorError => ({
 	code: 'paint-failed',

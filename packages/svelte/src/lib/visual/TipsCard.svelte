@@ -19,7 +19,7 @@
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import X from '@lucide/svelte/icons/x';
 	import { renderTip } from './tips.js';
-	import type { EditorErrorHandler } from '../core/index.js';
+	import type { EditorErrorHandler } from '../core/errors.js';
 	import './controls.css';
 
 	interface Props {

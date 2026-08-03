@@ -4,7 +4,8 @@
 // the real Typst backend (no browser, no canvas). Imports the surface through
 // `$lib/core` exactly as a consumer does.
 import { describe, it, expect } from 'vitest';
-import { Engine, Quill, init } from '$lib/core';
+import { Engine, Quill } from '@quillmark/wasm';
+import { init } from '$lib/core';
 import { loadFixtureTree } from './helpers/fixtures.js';
 
 describe('substrate chain', () => {

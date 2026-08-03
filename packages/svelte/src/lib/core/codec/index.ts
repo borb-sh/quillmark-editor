@@ -33,8 +33,8 @@ export type { LineIndex } from './positions.js';
 export { createReconciler, contentEqual } from './reconcile.js';
 export type { Reconciler } from './reconcile.js';
 
-// Input rules (VisualEditor mounts a subset; createField mounts all by default).
-export { markdownInputRules, inputRulesPlugin } from './inputrules.js';
+// Input rules (`createField` mounts them unless `noInputRules`/`plaintext`).
+export { inputRulesPlugin } from './inputrules.js';
 
 // The body leaf's structural keys: `createField` binds the composed chains
 // (`bodyKeymap`); the suite drives both it and the list link directly.

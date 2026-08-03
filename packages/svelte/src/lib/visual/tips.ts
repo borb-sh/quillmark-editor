@@ -5,8 +5,8 @@
 //
 // The channel narrowing the derive reads and the render the card paints. The write
 // is `patchEditorExt` (ext.ts), the one door into the namespace.
-import { importMarkdown, reportError, errorMessage } from '../core/index.js';
-import type { EditorErrorHandler } from '../core/index.js';
+import { importMarkdown } from '@quillmark/wasm';
+import { reportError, errorMessage, type EditorErrorHandler } from '../core/errors.js';
 import { renderContent, inlineSchema } from '../core/codec/index.js';
 
 /**

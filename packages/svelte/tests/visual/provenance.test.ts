@@ -4,7 +4,7 @@
 // usaf_memo schema, so the authored↔default flip the ghost turns on is pinned to
 // the fixture the suite runs against, not a mock.
 import { describe, it, expect } from 'vitest';
-import type { ResolvedField, Resolved } from '$lib/core';
+import type { ResolvedField, Resolved } from '@quillmark/wasm';
 import {
 	provenanceMap,
 	resolvedByCardIndex,

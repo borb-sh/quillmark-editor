@@ -8,7 +8,7 @@
 // plus a DPR media-query listener repaint mounted pages when the container's CSS
 // width or `devicePixelRatio` changes, so a frozen canvas never outlives the
 // page box it fills.
-import type { LiveSession, PageSize } from '../core/index.js';
+import type { LiveSession, PageSize } from '@quillmark/wasm';
 
 /** One page's DOM slot: the box overlay.ts/bridge.ts position against, plus its cached geometry. */
 export interface PageSlot {

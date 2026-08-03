@@ -4,7 +4,7 @@
 // slots both track the LIVE count; 0→N escapes the empty state, N→0 returns.
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
 import { createPreview } from '$lib/preview/controller';
-import type { LiveSession, ChangeSet } from '$lib/core';
+import type { LiveSession, ChangeSet } from '@quillmark/wasm';
 
 // jsdom has no IntersectionObserver; the paint loop only needs it to observe
 // visibility, which these count-transition assertions do not exercise (no page

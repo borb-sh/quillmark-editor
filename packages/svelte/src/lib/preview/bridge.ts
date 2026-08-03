@@ -5,7 +5,7 @@
 // place an ephemeral marker at the target's % position and let the DOM scroll
 // to it, unaffected by zoom/resize since it reads the SAME percent geometry the
 // overlay draws, not a hand-rolled pixel offset.
-import type { LiveSession, ContentHit } from '../core/index.js';
+import type { LiveSession, ContentHit } from '@quillmark/wasm';
 import type { PageSlot } from './paint.js';
 import { rectToPercent, clickToPdfPt, applyPercentRect, type PercentRect } from './geometry.js';
 

@@ -4,7 +4,7 @@
 // are unit-testable in isolation (tests/visual/structure.test.ts). The reactive
 // orchestration (revision counter, live doc reads) lives in VisualEditor.svelte;
 // this module is the projection math it feeds.
-import type { QuillCardSchema, QuillFieldSchema, ResolvedField, Resolved } from '../core/index.js';
+import type { QuillCardSchema, QuillFieldSchema, ResolvedField, Resolved } from '@quillmark/wasm';
 
 /** The control a field type maps to (VISUAL_EDITOR §"A control per field type"). */
 export type ControlKind =

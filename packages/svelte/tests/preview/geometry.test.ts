@@ -9,8 +9,7 @@
 // only re-exports the public `createPreview`/`Preview` surface per PREVIEW.md;
 // the transform is an internal correctness seam, not part of that surface).
 import { describe, it, expect } from 'vitest';
-import { Engine, Quill } from '$lib/core';
-import type { PageSize } from '$lib/core';
+import { Engine, Quill, type PageSize } from '@quillmark/wasm';
 import { rectToPercent, clickToPdfPt } from '$lib/preview/geometry.js';
 import { loadFixtureTree } from '../helpers/fixtures.js';
 

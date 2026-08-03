@@ -2,7 +2,7 @@
 // overlapping-mark inline splits, island round-trip, inline/plaintext constraints.
 import { describe, it, expect } from 'vitest';
 import { decode, pmToContent, blockSchema, inlineSchema } from '$lib/core/codec';
-import type { Content } from '$lib/core';
+import type { Content } from '@quillmark/wasm';
 import { md, normalize, contentEqual, subjectContent, bodyContent } from './_util.js';
 
 /** decode → pmToContent, both sides normalized through the real content. */

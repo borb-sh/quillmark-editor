@@ -9,16 +9,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createPreview, type PreviewController } from './controller.js';
-	import { reportError } from '../core/index.js';
+	import { reportError } from '../core/errors.js';
 	import type { PreviewStringsInput } from './strings.js';
-	import type {
-		LiveSession,
-		ContentHit,
-		ChangeSet,
-		DocPath,
-		Place,
-		EditorErrorHandler
-	} from '../core/index.js';
+	import type { LiveSession, ContentHit, ChangeSet } from '@quillmark/wasm';
+	import type { DocPath, Place } from '../core/address.js';
+	import type { EditorErrorHandler } from '../core/errors.js';
 
 	/**
 	 * REMOUNT CONTRACT. `createPreview` binds once in `onMount`; a later change to

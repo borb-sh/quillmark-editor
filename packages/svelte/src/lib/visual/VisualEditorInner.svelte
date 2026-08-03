@@ -34,14 +34,9 @@
 	import { onDestroy, tick } from 'svelte';
 	import { DropdownMenu } from 'bits-ui';
 	import Plus from '@lucide/svelte/icons/plus';
-	import {
-		cardPath,
-		errorMessage,
-		fieldPathForAddr,
-		isQuillmarkError,
-		MAIN_CARD_ADDR,
-		reportError
-	} from '../core/index.js';
+	import { isQuillmarkError, MAIN_CARD_ADDR } from '@quillmark/wasm';
+	import { cardPath, fieldPathForAddr, type DocPath } from '../core/address.js';
+	import { errorMessage, reportError } from '../core/errors.js';
 	import { bloomInside } from '../core/bloom.js';
 	import { createLifespan } from '../core/teardown.js';
 	import type {
@@ -50,9 +45,8 @@
 		ContentHit,
 		Diagnostic,
 		Resolved,
-		ResolvedField,
-		DocPath
-	} from '../core/index.js';
+		ResolvedField
+	} from '@quillmark/wasm';
 	import type { VisualEditorProps } from './props.js';
 	import { mergeStrings, setWording } from './strings.js';
 	import type { CardId, ChangeSource } from './signals.js';

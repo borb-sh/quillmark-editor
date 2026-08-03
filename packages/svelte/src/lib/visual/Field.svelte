@@ -14,13 +14,8 @@
  `DiagnosticList`, severity-styled, NON-GATING.
 -->
 <script lang="ts">
-	import type {
-		Document,
-		Addr,
-		Diagnostic,
-		ResolvedField,
-		EditorErrorHandler
-	} from '../core/index.js';
+	import type { Document, Addr, Diagnostic, ResolvedField } from '@quillmark/wasm';
+	import type { EditorErrorHandler } from '../core/errors.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import type { FieldModel, FieldSpan } from './structure.js';
 	import { enumValues, ghostDefault, stringifyGhost } from './structure.js';

@@ -4,15 +4,9 @@
 // to those same slots. A pure view: never calls `session.apply`, never
 // mutates the session; the consumer drives edits and hands the resulting
 // `ChangeSet` to `refresh`.
-import type {
-	LiveSession,
-	ChangeSet,
-	ContentHit,
-	DocPath,
-	Place,
-	EditorErrorHandler
-} from '../core/index.js';
-import { reportError, errorMessage } from '../core/index.js';
+import type { LiveSession, ChangeSet, ContentHit } from '@quillmark/wasm';
+import type { DocPath, Place } from '../core/address.js';
+import { reportError, errorMessage, type EditorErrorHandler } from '../core/errors.js';
 import { createPaintLoop, type PaintLoop } from './paint.js';
 import { createOverlay, type OverlayController } from './overlay.js';
 import { createBridge, type BridgeController } from './bridge.js';

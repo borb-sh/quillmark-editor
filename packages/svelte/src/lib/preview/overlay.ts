@@ -10,7 +10,7 @@
 // their rects) and to be bloomed: the preview is the rendered output, so
 // correlation is marked as an event that decays, not as a border the document did
 // not ask for. See `core/bloom.ts` for why the wash resumes rather than restarts.
-import type { LiveSession } from '../core/index.js';
+import type { LiveSession } from '@quillmark/wasm';
 import { bloom, bloomTiming, primeWash } from '../core/bloom.js';
 import type { PageSlot } from './paint.js';
 import { rectToPercent, applyPercentRect } from './geometry.js';

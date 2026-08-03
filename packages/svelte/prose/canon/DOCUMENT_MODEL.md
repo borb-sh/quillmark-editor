@@ -1,10 +1,10 @@
 # Document Model: Boundary Ledger
 
-> **Implementation**: `@quillmark/wasm` (the consumed surface) · `src/lib/core/` (the boundary door that re-exports it verbatim)
+> **Implementation**: `@quillmark/wasm` (the consumed surface, imported from the peer directly) · `src/lib/core/` (what the package adds at the seam)
 
 ## TL;DR
 
-**Not** a document-model design: the `Document`, its mutators, the WASM boundary, and diagnostics are quillmark's, each with a canonical home in quillmark canon. This ledger pins the *exact* quillmark surface `@quillmark/svelte` V1 consumes, cites where each is documented, and marks its stability. It is the one place the version coupling to `@quillmark/wasm` is recorded; when a surface below moves, the editor's dependency moves with it. `src/lib/core/` re-exports the whole surface verbatim: the one door the rest of the package crosses to reach the WASM package.
+**Not** a document-model design: the `Document`, its mutators, the WASM boundary, and diagnostics are quillmark's, each with a canonical home in quillmark canon. This ledger pins the *exact* quillmark surface `@quillmark/svelte` V1 consumes, cites where each is documented, and marks its stability. It is the one place the version coupling to `@quillmark/wasm` is recorded; when a surface below moves, the editor's dependency moves with it. Nothing re-exports this surface: package code and consumers alike import it from the peer dependency, the single source of truth, and `/core` carries only what the package itself declares over it (the address vocabulary, the error channel, `init`).
 
 **V1 builds on `@quillmark/wasm` 0.99.0**, the 1.0 API freeze. Every verb in the table below is stable at that pin. The settled ground it stands on: `store*` verbs for verbatim writes, one unified `Addr` (`{card?, field?}`), the schema-bound `writer`/`reader` doors (`quill.writer(doc)` / `quill.reader(doc)`), a card-first `insertCard(card, at?)`, the quill-free transport read `getStored` (distinct from `reader.get`), the `quill.resolve(doc)` value view, `code`-bearing mutator diagnostics, and the canonized anchor-id policy (caller-supplied, unique, invariant) that lets the editor mint anchors at a selection ([CODEC.md](CODEC.md) §Marks).
 
@@ -32,7 +32,7 @@ Consumed by: [CODEC.md](CODEC.md) (op-grained edit, positions, markdown edges), 
 
 **A ghost is not always a `default:`.** `resolve`'s `FieldSource` rung is the boundary's, and a `default`-sourced row is a promise about the render: this is what prints if you write nothing. The editor ghosts that row verbatim for every control, and for a body that has one. A body that has NONE (the common case, and the case for every kind the reference quill declares) ghosts an invitation instead, either the consumer's `bodyPlaceholder` wording or the built-in `Write…` ([VISUAL_EDITOR_UIUX.md](VISUAL_EDITOR_UIUX.md) §Fields). Both render at the same ghost rung, and neither is ever written back, so on screen they are one thing; they are not one thing here. Only the `default:` came from the boundary, and a fallback must never be read back as one: nothing derives a schema value from what a leaf displays.
 
-Two neighbouring surfaces the editor re-exports but never drives: it selects no `OutputFormat` (Preview paints a page; it emits no artifact) and it routes diagnostics by `path`, never by a backend's error `code`.
+Two neighbouring surfaces the editor consumes but never drives: it selects no `OutputFormat` (Preview paints a page; it emits no artifact) and it routes diagnostics by `path`, never by a backend's error `code`.
 
 ## Stability seams
 

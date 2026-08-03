@@ -24,9 +24,9 @@
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { reportError } from '../core/index.js';
-	import type { ContentHit, DocPath } from '../core/index.js';
-	import type { FieldController } from '../core/codec/index.js';
+	import { reportError } from '../core/errors.js';
+	import type { ContentHit } from '@quillmark/wasm';
+	import type { DocPath } from '../core/address.js';
 	import type { CardId } from './signals.js';
 	import type { VisualEditorProps } from './props.js';
 	import VisualEditorInner from './VisualEditorInner.svelte';
@@ -70,10 +70,6 @@
 	/** Place the caret at a preview hit. */
 	export async function setCaret(hit: ContentHit): Promise<void> {
 		await inner?.setCaret(hit);
-	}
-	/** The active leaf's controller: the formatting popover's observation seam. */
-	export function getActiveLeaf(): FieldController | undefined {
-		return inner?.getActiveLeaf();
 	}
 	/** Reveal and focus the leaf at `field`, without placing a caret inside it. */
 	export async function focusField(field: DocPath): Promise<void> {

@@ -10,7 +10,7 @@
 // field's suppression. Counting the mounted rules proves neither; a rule that
 // fires at the wrong position is still one rule.
 import { describe, it, expect } from 'vitest';
-import { rebase, exportMarkdown } from '$lib/core';
+import { rebase, exportMarkdown } from '@quillmark/wasm';
 import { md } from './_util.js';
 
 describe('markdown edges', () => {

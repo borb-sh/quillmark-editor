@@ -1,4 +1,4 @@
-// The debug source view: `createSourceView` (ARCHITECTURE §Public API,
+// The debug source view: `createSourceView` (ARCHITECTURE §Packaging,
 // VISUAL_EDITOR §Source view). A read-only text mirror of `Document.toMarkdown()`:
 // the whole-document serialize the layer federation deletes, kept for debugging
 // only. NOT an editable dual mode; the federated leaves are the edit surface;
@@ -17,8 +17,8 @@
 // dependency-free `/source`: the markdown is short, structural, and read for its
 // front-matter and line breaks rather than its token colours. Text lands through
 // `textContent`, so the document is never parsed as markup.
-import type { Document, EditorErrorHandler } from '../core/index.js';
-import { reportError, errorMessage } from '../core/index.js';
+import type { Document } from '@quillmark/wasm';
+import { reportError, errorMessage, type EditorErrorHandler } from '../core/errors.js';
 
 /** Options for {@link createSourceView}. */
 export interface SourceViewOptions {

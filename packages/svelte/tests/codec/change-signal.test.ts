@@ -9,7 +9,8 @@ import { EditorView } from 'prosemirror-view';
 import { TextSelection } from 'prosemirror-state';
 import { createField } from '$lib/core/codec';
 import type { FieldController } from '$lib/core/codec';
-import type { Addr, Document, EditorError } from '$lib/core';
+import type { Addr, Document } from '@quillmark/wasm';
+import type { EditorError } from '$lib/core';
 import { quill } from '../helpers/fixtures.js';
 
 function viewOf(f: FieldController): EditorView {
