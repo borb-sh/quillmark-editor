@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { Quiver } from '../node.js';
+import { fromDir } from '../node.js';
+import { createQuiver, type Quiver } from '../quiver.js';
 import { mockQuillFromTree } from './helpers/mock-engine.js';
 
 const SAMPLE_FIXTURE = new URL('./fixtures/sample-quiver', import.meta.url).pathname;
@@ -8,48 +9,48 @@ const SAMPLE_FIXTURE = new URL('./fixtures/sample-quiver', import.meta.url).path
 
 describe('Quiver.resolve', () => {
 	it('1. unqualified "memo" → "memo@1.1.0" (highest)', async () => {
-		const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+		const quiver = await fromDir(SAMPLE_FIXTURE);
 		expect(await quiver.resolve('memo')).toBe('memo@1.1.0');
 	});
 
 	it('2. "memo@1" → "memo@1.1.0" (highest 1.*.*)', async () => {
-		const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+		const quiver = await fromDir(SAMPLE_FIXTURE);
 		expect(await quiver.resolve('memo@1')).toBe('memo@1.1.0');
 	});
 
 	it('3. "memo@1.0" → "memo@1.0.0" (highest 1.0.*)', async () => {
-		const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+		const quiver = await fromDir(SAMPLE_FIXTURE);
 		expect(await quiver.resolve('memo@1.0')).toBe('memo@1.0.0');
 	});
 
 	it('4. "memo@1.0.0" → "memo@1.0.0" (exact)', async () => {
-		const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+		const quiver = await fromDir(SAMPLE_FIXTURE);
 		expect(await quiver.resolve('memo@1.0.0')).toBe('memo@1.0.0');
 	});
 
 	it('5. "memo@2.0.0" (not present) → quill_not_found', async () => {
-		const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+		const quiver = await fromDir(SAMPLE_FIXTURE);
 		await expect(quiver.resolve('memo@2.0.0')).rejects.toThrow(
 			expect.objectContaining({ code: 'quill_not_found' })
 		);
 	});
 
 	it('6. "memo@^1" → invalid_ref (from parseQuillRef)', async () => {
-		const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+		const quiver = await fromDir(SAMPLE_FIXTURE);
 		await expect(quiver.resolve('memo@^1')).rejects.toThrow(
 			expect.objectContaining({ code: 'invalid_ref' })
 		);
 	});
 
 	it('7. "" (empty string) → invalid_ref', async () => {
-		const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+		const quiver = await fromDir(SAMPLE_FIXTURE);
 		await expect(quiver.resolve('')).rejects.toThrow(
 			expect.objectContaining({ code: 'invalid_ref' })
 		);
 	});
 
 	it('8. unknown name → quill_not_found', async () => {
-		const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+		const quiver = await fromDir(SAMPLE_FIXTURE);
 		await expect(quiver.resolve('nonexistent')).rejects.toThrow(
 			expect.objectContaining({ code: 'quill_not_found' })
 		);
@@ -68,7 +69,7 @@ describe('Quiver.getQuill', () => {
 	});
 
 	it('9. canonical ref returns a Quill; Quill.fromTree called with tree containing Quill.yaml', async () => {
-		const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+		const quiver = await fromDir(SAMPLE_FIXTURE);
 		stub = mockQuillFromTree();
 
 		const quill = await quiver.getQuill('memo@1.0.0');
@@ -79,7 +80,7 @@ describe('Quiver.getQuill', () => {
 	});
 
 	it('10. selector ref resolves and returns a quill', async () => {
-		const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+		const quiver = await fromDir(SAMPLE_FIXTURE);
 		stub = mockQuillFromTree();
 
 		const a = await quiver.getQuill('memo');
@@ -90,7 +91,7 @@ describe('Quiver.getQuill', () => {
 	});
 
 	it('11. same canonical ref returns cached instance (identity equality)', async () => {
-		const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+		const quiver = await fromDir(SAMPLE_FIXTURE);
 		stub = mockQuillFromTree();
 
 		const quill1 = await quiver.getQuill('memo@1.0.0');
@@ -100,7 +101,7 @@ describe('Quiver.getQuill', () => {
 	});
 
 	it('12. Quill.fromTree called exactly once for repeated getQuill of same ref', async () => {
-		const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+		const quiver = await fromDir(SAMPLE_FIXTURE);
 		stub = mockQuillFromTree();
 
 		await quiver.getQuill('memo@1.0.0');
@@ -110,7 +111,7 @@ describe('Quiver.getQuill', () => {
 	});
 
 	it('13. concurrent calls for same ref coalesce into one Quill.fromTree call', async () => {
-		const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+		const quiver = await fromDir(SAMPLE_FIXTURE);
 		stub = mockQuillFromTree();
 
 		const [a, b] = await Promise.all([
@@ -123,7 +124,7 @@ describe('Quiver.getQuill', () => {
 	});
 
 	it('15. getQuill("memo@1.2.3") (version not present) → quill_not_found', async () => {
-		const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+		const quiver = await fromDir(SAMPLE_FIXTURE);
 		stub = mockQuillFromTree();
 
 		await expect(quiver.getQuill('memo@1.2.3')).rejects.toThrow(
@@ -132,7 +133,7 @@ describe('Quiver.getQuill', () => {
 	});
 
 	it('16. getQuill("memo@^1") (malformed) → invalid_ref', async () => {
-		const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+		const quiver = await fromDir(SAMPLE_FIXTURE);
 		stub = mockQuillFromTree();
 
 		await expect(quiver.getQuill('memo@^1')).rejects.toThrow(
@@ -141,7 +142,7 @@ describe('Quiver.getQuill', () => {
 	});
 
 	it('17. if Quill.fromTree throws, error propagates and in-flight entry is cleared (retry works)', async () => {
-		const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+		const quiver = await fromDir(SAMPLE_FIXTURE);
 		stub = mockQuillFromTree();
 		let callCount = 0;
 		stub.spy.mockImplementation(() => {
@@ -178,13 +179,13 @@ function makeCountingQuiver(opts: {
 			]);
 		}
 	};
-	const quiver = Quiver._fromLoader(opts.name, opts.catalog, loader);
+	const quiver = createQuiver(opts.name, opts.catalog, loader);
 	return { quiver, loaderCalls: () => calls };
 }
 
 describe('Quiver.warm', () => {
 	it('18. warm() does not materialize quills (no Quill.fromTree calls)', async () => {
-		const quiver = await Quiver.fromDir(SAMPLE_FIXTURE);
+		const quiver = await fromDir(SAMPLE_FIXTURE);
 		const { calls, restore } = mockQuillFromTree();
 		try {
 			await quiver.warm();
@@ -260,7 +261,7 @@ describe('Quiver.warm', () => {
 				]);
 			}
 		};
-		const quiver = Quiver._fromLoader('test', new Map([['memo', ['1.0.0']]]), loader);
+		const quiver = createQuiver('test', new Map([['memo', ['1.0.0']]]), loader);
 
 		await expect(quiver.warm()).rejects.toThrow('transient');
 		await expect(quiver.warm()).resolves.toBeUndefined();

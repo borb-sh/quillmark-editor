@@ -4,10 +4,9 @@
  * Polymorphism via composition: internally stores a pluggable loader
  * (either source-backed or build-output-backed).
  *
- * This module is browser-safe: only `fromBuiltUrl` and the instance API live
- * here. Node-only factories (`fromDir`, `fromPackage`, `fromBuiltDir`,
- * `build`) are installed on this class by `./node.js`, which is the
- * consumer's explicit opt-in to the Node API surface.
+ * This module is browser-safe: only `fromBuiltUrl`, `fromManifest`, and the
+ * instance API live here. The filesystem factories are free functions in
+ * `./node.js`; the class is the same either way.
  */
 
 import { QuiverError } from './errors.js';
@@ -15,10 +14,17 @@ import { Quill } from '@quillmark/wasm';
 import { parseQuillRef } from './ref.js';
 import { matchesSemverSelector, chooseHighestVersion } from './semver.js';
 
-/** @internal Internal loader strategy: source or build output. */
+/** Loader strategy: source or build output. Package-internal. */
 export interface QuiverLoader {
 	loadTree(name: string, version: string): Promise<Map<string, Uint8Array>>;
 }
+
+/**
+ * The private constructor's only door, closed over by the static block below.
+ * Exported as `createQuiver` for this package's loaders and reachable from no
+ * entry in `exports`, so a consumer holds the factories and nothing else.
+ */
+let create!: (name: string, catalog: Map<string, string[]>, loader: QuiverLoader) => Quiver;
 
 export class Quiver {
 	readonly name: string;
@@ -42,10 +48,9 @@ export class Quiver {
 	readonly #treeCache: Map<string, Promise<Map<string, Uint8Array>>> = new Map();
 
 	/**
-	 * Private constructor — use static factory methods (`Quiver.fromBuiltUrl`,
-	 * or the Node-only `Quiver.fromDir` / `Quiver.fromPackage` /
-	 * `Quiver.fromBuiltDir` installed by `@quillmark/quiver/node`). TS prevents
-	 * external `new Quiver(...)` at compile time.
+	 * Private constructor. A Quiver comes from a factory (`Quiver.fromBuiltUrl`,
+	 * `Quiver.fromManifest`, or `fromDir` / `fromPackage` / `fromBuiltDir` from
+	 * `@quillmark/quiver/node`), which is what names the thing being read.
 	 */
 	private constructor(name: string, catalog: Map<string, string[]>, loader: QuiverLoader) {
 		this.name = name;
@@ -53,13 +58,8 @@ export class Quiver {
 		this.#loader = loader;
 	}
 
-	/**
-	 * @internal Construction escape hatch around the private constructor. Used
-	 * by `loadBuiltQuiver` and by the Node entry (`./node.js`) when installing
-	 * `fromDir` / `fromPackage`. Not part of the public API.
-	 */
-	static _fromLoader(name: string, catalog: Map<string, string[]>, loader: QuiverLoader): Quiver {
-		return new Quiver(name, catalog, loader);
+	static {
+		create = (name, catalog, loader) => new Quiver(name, catalog, loader);
 	}
 
 	/**
@@ -208,8 +208,10 @@ export class Quiver {
 	}
 
 	/**
-	 * Internal: tree cache reader. On miss, fetches via `#loadTree` and stores
-	 * the in-flight Promise. On rejection, evicts so a retry can succeed.
+	 * Internal: tree cache reader. On miss, delegates to the loader and stores
+	 * the in-flight Promise. On rejection, evicts so a retry can succeed. Every
+	 * caller arrives through `resolve` or the catalog itself, so the ref is
+	 * catalog-backed by construction and the loader needs no gate.
 	 */
 	#getTreeCached(canonicalRef: string): Promise<Map<string, Uint8Array>> {
 		let entry = this.#treeCache.get(canonicalRef);
@@ -217,32 +219,13 @@ export class Quiver {
 			const at = canonicalRef.indexOf('@');
 			const name = canonicalRef.slice(0, at);
 			const version = canonicalRef.slice(at + 1);
-			entry = this.#loadTree(name, version).catch((err) => {
+			entry = this.#loader.loadTree(name, version).catch((err) => {
 				this.#treeCache.delete(canonicalRef);
 				throw err;
 			});
 			this.#treeCache.set(canonicalRef, entry);
 		}
 		return entry;
-	}
-
-	/**
-	 * Internal: validates name/version against the catalog, then delegates to
-	 * the loader. Returns `Map<string, Uint8Array>` suitable for
-	 * `Quill.fromTree(tree)`. Does NOT cache — caching lives in `#getTreeCached`.
-	 *
-	 * Throws `transport_error` if name/version not in catalog or I/O fails.
-	 */
-	async #loadTree(name: string, version: string): Promise<Map<string, Uint8Array>> {
-		const versions = this.#catalog.get(name);
-		if (!versions || !versions.includes(version)) {
-			throw new QuiverError(
-				'transport_error',
-				`Quill "${name}@${version}" not found in quiver "${this.name}"`,
-				{ quiverName: this.name, version, ref: `${name}@${version}` }
-			);
-		}
-		return this.#loader.loadTree(name, version);
 	}
 
 	/**
@@ -263,3 +246,5 @@ export class Quiver {
 		await Promise.all(promises);
 	}
 }
+
+export { create as createQuiver };

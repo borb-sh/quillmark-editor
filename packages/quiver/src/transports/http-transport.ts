@@ -6,7 +6,7 @@
  */
 
 import { QuiverError } from '../errors.js';
-import type { BuiltTransport } from '../built-loader.js';
+import type { BuiltTransport, FetchOptions } from '../built-loader.js';
 
 export class HttpTransport implements BuiltTransport {
 	private readonly baseUrl: string;
@@ -16,7 +16,7 @@ export class HttpTransport implements BuiltTransport {
 		this.baseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
 	}
 
-	async fetchBytes(relativePath: string): Promise<Uint8Array> {
+	async fetchBytes(relativePath: string, opts?: FetchOptions): Promise<Uint8Array> {
 		// Strip any leading slash from relativePath to avoid double slashes.
 		const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
 
@@ -24,7 +24,11 @@ export class HttpTransport implements BuiltTransport {
 
 		let response: Response;
 		try {
-			response = await globalThis.fetch(url);
+			// `no-cache` revalidates with the origin rather than skipping the cache:
+			// a 304 still serves from disk. Only the pointer asks for it, and only
+			// the browser-cache layer of the stale-pointer failure is a client's to
+			// fix; `fromManifest` is the cure for the layers it cannot reach.
+			response = await globalThis.fetch(url, opts?.revalidate ? { cache: 'no-cache' } : undefined);
 		} catch (err) {
 			throw new QuiverError(
 				'transport_error',

@@ -14,16 +14,20 @@ A Quiver has one authored shape: the **source layout** (`Quiver.yaml` at the
 package root, quills under `quills/<name>/<x.y.z>/`). Authors publish it as
 an npm package. Consumers decide how to consume it:
 
-- **Node consumers** load the source layout directly with `Quiver.fromPackage`,
-  or load a packed (build-output) artifact from disk with
-  `Quiver.fromBuiltDir`.
-- **Browser consumers** run `Quiver.build(...)` as a build step and serve the
-  output as static assets, loading it with `Quiver.fromBuiltUrl`.
+- **Node consumers** load the source layout directly with `fromPackage`, or
+  load a packed (build-output) artifact from disk with `fromBuiltDir`.
+- **Browser consumers** run `build(...)` as a build step and serve the output
+  as static assets, loading it with `Quiver.fromBuiltUrl`.
 
-Each loader names exactly what it loads. Source: `fromPackage(specifier)`,
-`fromDir(path)`. Build output: `fromBuiltUrl(url)` (HTTP/HTTPS, browser-safe),
-`fromBuiltDir(path)` (filesystem, Node-only). No auto-detection, no branching
-on artifact shape.
+Each loader names exactly what it loads. Source: `fromPackage(specifier, from?)`,
+`fromDir(path)`. Build output: `Quiver.fromBuiltUrl(url)` (HTTP/HTTPS,
+browser-safe), `fromBuiltDir(path)` (filesystem, Node-only). No auto-detection,
+no branching on artifact shape.
+
+The filesystem factories are free functions from `@quillmark/quiver/node`; the
+two that reach across HTTP are statics on `Quiver`, which the main entry
+exports. Importing `/node` adds nothing to the class, so a bundler drops the
+verbs you do not call.
 
 This keeps the author flow to a single command (`npm publish` or `git tag`)
 and puts the deployment-topology decision where it belongs: with the
@@ -61,8 +65,25 @@ my-quiver/
   package.json
 ```
 
+`fromPackage` and `buildPackage` resolve `<specifier>/Quiver.yaml`, which goes
+through your `exports` map. A package that declares one must expose that
+subpath, or the quiver is unreachable however correct its layout:
+
+```jsonc
+// package.json
+{
+	"files": ["Quiver.yaml", "quills"],
+	"exports": {
+		"./Quiver.yaml": "./Quiver.yaml"
+	}
+}
+```
+
+A package with no `exports` map needs nothing: every path is reachable by
+default.
+
 Recommended CI: use the bundled `@quillmark/quiver/testing` harness — it
-loads with `Quiver.fromDir`, compiles every quill, and renders each quill's
+loads with `fromDir`, compiles every quill, and renders each quill's
 example document so validation errors surface on publish, not on the
 consumer's build. The harness uses `node:test` (built into Node 18+); no extra
 test-runner dependency required. If you prefer vitest/jest/mocha, write a
@@ -122,9 +143,11 @@ await renderQuiverSamples(import.meta.url, {
 
 ```ts
 import { Engine, Document } from '@quillmark/wasm';
-import { Quiver } from '@quillmark/quiver/node';
+import { fromPackage } from '@quillmark/quiver/node';
 
-const quiver = await Quiver.fromPackage('@org/my-quiver');
+// `import.meta.url` is where resolution starts: your dependencies are
+// reachable from your module, not from this package's install location.
+const quiver = await fromPackage('@org/my-quiver', import.meta.url);
 const engine = new Engine();
 
 const doc = Document.fromMarkdown(markdownString);
@@ -171,10 +194,14 @@ serve the output as static files:
 
 ```ts
 // build script (Node) — typically wired into your existing build pipeline
-import { Quiver } from '@quillmark/quiver/node';
+import { build } from '@quillmark/quiver/node';
 
-await Quiver.build('./node_modules/@org/my-quiver', './public/quivers/my-quiver');
+await build('./node_modules/@org/my-quiver', './public/quivers/my-quiver');
 ```
+
+`build` clears its output directory before writing, so it owns that path
+outright. An `outDir` that is, or contains, the source quiver or the working
+directory is refused with a `transport_error` rather than deleted.
 
 ```ts
 // browser runtime
@@ -195,8 +222,15 @@ const result = await engine.render(quill, doc, { format: 'pdf' });
 non-content-addressed pointer to the current manifest — before fetching the
 manifest itself. Because that one filename is stable, a CDN edge or browser
 cache can serve a **stale pointer** after a release and silently pin the
-client to the old catalog, with no error. Per-host cache headers only fix this
-one serving layer at a time.
+client to the old catalog, with no error. It is fetched `no-cache` so a browser
+cache must revalidate it, but per-host cache headers fix the layers above that
+one at a time.
+
+Everything behind the pointer is content-addressed, and the digest in each name
+is **checked** against the bytes that arrive: a mismatched manifest, bundle, or
+font raises `transport_error` rather than loading. (Digests need
+`crypto.subtle`, which browsers expose only in a secure context; a page served
+over plain `http` to something other than localhost fetches unchecked.)
 
 If you already hold the manifest bytes at build time — a common case for SSR
 consumers, which read the built artifact during their own build — seed the
@@ -235,28 +269,28 @@ failure.
 ## Server-side runtime (Node, packed artifact on disk)
 
 For server-side rendering where the packed artifact ships in the deployment
-image, use `Quiver.fromBuiltDir` to read it from disk. This avoids the
+image, use `fromBuiltDir` to read it from disk. This avoids the
 self-fetch / load-balancer round-trip that `fromBuiltUrl` would force on a
 self-hosted deployment, and lets the source quiver stay in
 `devDependencies`:
 
 ```ts
-import { Quiver } from '@quillmark/quiver/node';
+import { fromBuiltDir } from '@quillmark/quiver/node';
 
 // Packed at build time, e.g. into ./static/quills/my-quiver
-const quiver = await Quiver.fromBuiltDir('./static/quills/my-quiver');
+const quiver = await fromBuiltDir('./static/quills/my-quiver');
 ```
 
 ## Advanced: pre-built distribution to a CDN
 
 If you need to ship the runtime artifact directly (e.g. consumers cannot run
-a Node build step), publish `Quiver.build` output to a CDN and have
+a Node build step), publish `build` output to a CDN and have
 consumers point `fromBuiltUrl` at the CDN URL:
 
 ```ts
-import { Quiver } from '@quillmark/quiver/node';
+import { build, Quiver } from '@quillmark/quiver/node';
 
-await Quiver.build('./my-quiver', './dist/my-quiver');
+await build('./my-quiver', './dist/my-quiver');
 // upload ./dist/my-quiver to https://cdn.example.com/quivers/my-quiver/
 const quiver = await Quiver.fromBuiltUrl('https://cdn.example.com/quivers/my-quiver/');
 ```
@@ -268,7 +302,7 @@ await quiver.warm();
 ```
 
 `warm()` is I/O-only: it loads every quill's tree (over the network for
-`fromBuiltUrl`, off the filesystem for `fromPackage` / `fromDir` /
+`Quiver.fromBuiltUrl`, off the filesystem for `fromPackage` / `fromDir` /
 `fromBuiltDir`) and caches them. It does not require an engine and does
 not materialize Quill instances — that happens lazily on the first
 `getQuill` call, which is microseconds. A subsequent `getQuill` reuses

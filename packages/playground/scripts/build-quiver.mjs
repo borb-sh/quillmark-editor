@@ -7,10 +7,10 @@
 // static build. Generated, and gitignored.
 
 import { fileURLToPath } from 'node:url';
-import { Quiver } from '@quillmark/quiver/node';
+import { build } from '@quillmark/quiver/node';
 
 const SOURCE = fileURLToPath(new URL('../../../fixtures', import.meta.url));
 const OUT = fileURLToPath(new URL('../static/quiver', import.meta.url));
 
-await Quiver.build(SOURCE, OUT);
+await build(SOURCE, OUT);
 console.log('quiver packed: fixtures/ → static/quiver');

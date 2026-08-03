@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { buildQuiver } from '../build.js';
 import { unpackFiles } from '../bundle.js';
-import { Quiver } from '../node.js';
+import { NAME_DIGEST_LENGTH, sha256Hex } from '../digest.js';
+import { build, buildPackage } from '../node.js';
 import { QuiverError } from '../errors.js';
 
 // Absolute path to the committed fixture
@@ -66,7 +67,9 @@ describe('buildQuiver — happy path (sample-quiver fixture)', () => {
 
 		const raw = await readFile(join(out, 'latest.json'), 'utf-8');
 		const pointer = JSON.parse(raw) as { manifest: string };
-		expect(pointer.manifest).toMatch(/^manifest\.[0-9a-f]{6}\.json$/);
+		expect(pointer.manifest).toMatch(
+			new RegExp(`^manifest\\.[0-9a-f]{${NAME_DIGEST_LENGTH}}\\.json$`)
+		);
 	});
 
 	it("manifest has version 1 and name 'sample'", async () => {
@@ -387,7 +390,10 @@ describe('buildQuiver — I/O error', () => {
 	});
 });
 
-describe('Quiver.build (static method delegation)', () => {
+describe('buildQuiver — outDir guard', () => {
+	// The build clears outDir first, so these are the paths where a typo would
+	// delete the caller. Each asserts the source survives: the guard has to fire
+	// before the rm, not after.
 	const tmpDirs: string[] = [];
 
 	afterEach(async () => {
@@ -396,26 +402,136 @@ describe('Quiver.build (static method delegation)', () => {
 		}
 	});
 
-	it('Quiver.build delegates to buildQuiver and writes latest.json', async () => {
-		const out = tempDir();
-		tmpDirs.push(out);
+	it('refuses an outDir equal to the source quiver', async () => {
+		const src = tempDir();
+		tmpDirs.push(src);
+		await seedSourceQuiver(src, { quills: [{ name: 'memo', version: '1.0.0' }] });
 
-		await Quiver.build(SAMPLE_FIXTURE, out);
+		await expect(buildQuiver(src, src)).rejects.toThrow(
+			expect.objectContaining({ code: 'transport_error' })
+		);
+		await access(join(src, 'Quiver.yaml'));
+	});
 
-		const raw = await readFile(join(out, 'latest.json'), 'utf-8');
-		const pointer = JSON.parse(raw) as { manifest: string };
-		expect(pointer.manifest).toMatch(/^manifest\.[0-9a-f]{6}\.json$/);
+	it('refuses an outDir that is an ancestor of the source quiver', async () => {
+		const parent = tempDir();
+		const src = join(parent, 'quiver');
+		tmpDirs.push(parent);
+		await seedSourceQuiver(src, { quills: [{ name: 'memo', version: '1.0.0' }] });
+
+		await expect(buildQuiver(src, parent)).rejects.toThrow(
+			expect.objectContaining({ code: 'transport_error' })
+		);
+		await access(join(src, 'Quiver.yaml'));
+	});
+
+	it('refuses an outDir that is the working directory', async () => {
+		// A source outside the cwd, so only the cwd rule can fire.
+		const src = tempDir();
+		tmpDirs.push(src);
+		await seedSourceQuiver(src, { quills: [{ name: 'memo', version: '1.0.0' }] });
+
+		await expect(buildQuiver(src, '.')).rejects.toThrow(
+			expect.objectContaining({ code: 'transport_error' })
+		);
+		await access(join(process.cwd(), 'package.json'));
+	});
+
+	it('allows an outDir nested inside the source quiver', async () => {
+		const src = tempDir();
+		tmpDirs.push(src);
+		await seedSourceQuiver(src, { quills: [{ name: 'memo', version: '1.0.0' }] });
+
+		await buildQuiver(src, join(src, 'dist'));
+		await access(join(src, 'dist', 'latest.json'));
 	});
 });
 
-describe('Quiver.buildPackage', () => {
+describe('build (node entry)', () => {
+	const tmpDirs: string[] = [];
+
+	afterEach(async () => {
+		for (const d of tmpDirs.splice(0)) {
+			await rm(d, { recursive: true, force: true });
+		}
+	});
+
+	it('build delegates to buildQuiver and writes latest.json', async () => {
+		const out = tempDir();
+		tmpDirs.push(out);
+
+		await build(SAMPLE_FIXTURE, out);
+
+		const raw = await readFile(join(out, 'latest.json'), 'utf-8');
+		const pointer = JSON.parse(raw) as { manifest: string };
+		expect(pointer.manifest).toMatch(
+			new RegExp(`^manifest\\.[0-9a-f]{${NAME_DIGEST_LENGTH}}\\.json$`)
+		);
+	});
+});
+
+describe('buildPackage', () => {
 	it('throws transport_error when the specifier cannot be resolved', async () => {
 		const out = tempDir();
-		await expect(Quiver.buildPackage('@nonexistent/quiver-pkg-xyz', out)).rejects.toThrow(
+		await expect(buildPackage('@nonexistent/quiver-pkg-xyz', out)).rejects.toThrow(
 			expect.objectContaining({ code: 'transport_error' })
 		);
-		await expect(Quiver.buildPackage('@nonexistent/quiver-pkg-xyz', out)).rejects.toBeInstanceOf(
+		await expect(buildPackage('@nonexistent/quiver-pkg-xyz', out)).rejects.toBeInstanceOf(
 			QuiverError
 		);
+	});
+});
+
+describe('buildQuiver — every name carries the digest of its own bytes', () => {
+	// What the loader checks on fetch. If the build's hash and the loader's ever
+	// disagree, nothing downstream loads at all, so the round trip is pinned here
+	// rather than at each end separately.
+	const tmpDirs: string[] = [];
+
+	afterEach(async () => {
+		for (const d of tmpDirs.splice(0)) {
+			await rm(d, { recursive: true, force: true });
+		}
+	});
+
+	it('manifest, bundle, and store names are SHA-256 of their contents', async () => {
+		const src = tempDir();
+		const out = tempDir();
+		tmpDirs.push(src, out);
+
+		await seedSourceQuiver(src, {
+			quills: [
+				{
+					name: 'memo',
+					version: '1.0.0',
+					fonts: [{ path: 'fonts/body.ttf', content: new Uint8Array([1, 2, 3, 4]) }]
+				}
+			]
+		});
+		await buildQuiver(src, out);
+
+		const pointer = JSON.parse(await readFile(join(out, 'latest.json'), 'utf-8')) as {
+			manifest: string;
+		};
+		const manifestBytes = new Uint8Array(await readFile(join(out, pointer.manifest)));
+		const manifest = JSON.parse(new TextDecoder().decode(manifestBytes)) as {
+			quills: Array<{ bundle: string; fonts: Record<string, string> }>;
+		};
+
+		const digestOf = async (bytes: Uint8Array) => (await sha256Hex(bytes))!;
+		const short = (hex: string) => hex.slice(0, NAME_DIGEST_LENGTH);
+
+		expect(pointer.manifest).toBe(`manifest.${short(await digestOf(manifestBytes))}.json`);
+
+		const [entry] = manifest.quills;
+		const zipBytes = new Uint8Array(await readFile(join(out, entry!.bundle)));
+		expect(entry!.bundle).toBe(`memo@1.0.0.${short(await digestOf(zipBytes))}.zip`);
+
+		const fontHash = entry!.fonts['fonts/body.ttf']!;
+		const fontBytes = new Uint8Array(await readFile(join(out, 'store', fontHash)));
+		// Full width, not truncated: the store is keyed by hash, so two distinct
+		// fonts sharing a prefix would merge into one entry.
+		expect(fontHash).toBe(await digestOf(fontBytes));
+		expect(fontHash).toHaveLength(64);
 	});
 });

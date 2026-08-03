@@ -16,6 +16,8 @@ import type { BuiltTransport } from '../built-loader.js';
 export class FsBuiltTransport implements BuiltTransport {
 	constructor(private readonly rootDir: string) {}
 
+	// No cache sits between this and the bytes, so `FetchOptions` has nothing to
+	// act on here.
 	async fetchBytes(relativePath: string): Promise<Uint8Array> {
 		if (isAbsolute(relativePath)) {
 			throw new QuiverError(

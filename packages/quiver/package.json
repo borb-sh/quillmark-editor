@@ -41,11 +41,7 @@
 			"import": "./dist/preview.js"
 		}
 	},
-	"sideEffects": [
-		"./dist/node.js",
-		"./dist/testing.js",
-		"./dist/preview.js"
-	],
+	"sideEffects": false,
 	"files": [
 		"dist",
 		"README.md"

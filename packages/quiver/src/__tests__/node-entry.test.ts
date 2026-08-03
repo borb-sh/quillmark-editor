@@ -1,51 +1,47 @@
 /**
  * Regression tests for the Node entry design.
  *
- * The package ships two TypeScript entries that resolve to the *same* runtime
- * `Quiver` constructor. Importing `@quillmark/quiver/node` is a side-effecting
- * declaration of intent: it installs `fromDir`, `fromPackage`, `build`, and
- * `buildPackage` on the shared class.
+ * The filesystem factories are free functions in `@quillmark/quiver/node`; the
+ * `Quiver` class is the browser-safe one from the main entry, unmodified.
+ * Importing `/node` must therefore leave the shared constructor exactly as the
+ * main entry left it, so the import-order hazard a runtime patch carries (a
+ * `Quiver` binding whose statics depend on what else got imported first) cannot
+ * arise.
  */
 
 import { describe, it, expect } from 'vitest';
 import { Quiver as MainQuiver } from '../index.js';
-import { Quiver as NodeQuiver } from '../node.js';
+import { Quiver as NodeQuiver, fromDir, fromPackage, fromBuiltDir, build } from '../node.js';
 
-describe('node entry — runtime identity', () => {
-	it('the constructor exported from /node is the same as from main', () => {
+describe('node entry — the class is untouched', () => {
+	it('re-exports the same constructor as the main entry', () => {
 		expect(NodeQuiver).toBe(MainQuiver);
 	});
 
-	it('instance returned from fromDir is instanceof Quiver imported from main', async () => {
-		const fixture = new URL('./fixtures/sample-quiver', import.meta.url).pathname;
-		const q = await NodeQuiver.fromDir(fixture);
-		expect(q).toBeInstanceOf(MainQuiver);
+	it('installs no statics on it', () => {
+		for (const verb of ['fromDir', 'fromPackage', 'fromBuiltDir', 'build', 'buildPackage']) {
+			expect(MainQuiver).not.toHaveProperty(verb);
+		}
+	});
+
+	it('leaves the browser-safe statics in place', () => {
+		expect(typeof MainQuiver.fromBuiltUrl).toBe('function');
+		expect(typeof MainQuiver.fromManifest).toBe('function');
 	});
 });
 
-describe('node entry — augmented surface', () => {
-	it('installs fromDir on the shared class', () => {
-		expect(typeof NodeQuiver.fromDir).toBe('function');
+describe('node entry — the factories', () => {
+	it('exports each filesystem factory as a free function', () => {
+		expect([fromDir, fromPackage, fromBuiltDir, build].map((f) => typeof f)).toEqual([
+			'function',
+			'function',
+			'function',
+			'function'
+		]);
 	});
 
-	it('installs fromPackage on the shared class', () => {
-		expect(typeof NodeQuiver.fromPackage).toBe('function');
-	});
-
-	it('installs build on the shared class', () => {
-		expect(typeof NodeQuiver.build).toBe('function');
-	});
-
-	it('installs buildPackage on the shared class', () => {
-		expect(typeof NodeQuiver.buildPackage).toBe('function');
-	});
-
-	it('installs fromBuiltDir on the shared class', () => {
-		expect(typeof NodeQuiver.fromBuiltDir).toBe('function');
-	});
-
-	it('preserves fromBuiltUrl from the base class', () => {
-		expect(typeof NodeQuiver.fromBuiltUrl).toBe('function');
-		expect(NodeQuiver.fromBuiltUrl).toBe(MainQuiver.fromBuiltUrl);
+	it('returns an instance of the constructor the main entry exports', async () => {
+		const fixture = new URL('./fixtures/sample-quiver', import.meta.url).pathname;
+		expect(await fromDir(fixture)).toBeInstanceOf(MainQuiver);
 	});
 });

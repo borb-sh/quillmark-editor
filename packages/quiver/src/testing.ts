@@ -15,10 +15,7 @@
  */
 
 import { describe, it, before } from 'node:test';
-// Import from the Node entry: this installs the runtime patch so
-// `Quiver.fromDir` is callable at runtime, and gives us the augmented
-// static-method type signature.
-import { Quiver } from './node.js';
+import { fromDir, type Quiver } from './node.js';
 import type { Engine } from '@quillmark/wasm';
 
 /**
@@ -37,7 +34,7 @@ export function runQuiverTests(metaUrlOrDir: string, engine: Engine): void {
 		let quiver!: Quiver;
 
 		before(async () => {
-			quiver = await Quiver.fromDir(metaUrlOrDir);
+			quiver = await fromDir(metaUrlOrDir);
 		});
 
 		it('has at least one quill', () => {
