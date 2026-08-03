@@ -171,6 +171,11 @@ export class Quiver {
 	 * first. Materializes once and caches per canonical ref — concurrent calls
 	 * coalesce into a single load.
 	 *
+	 * BORROWED, not handed over: the quill is the quiver's, shared with every
+	 * other caller for the same ref, and lives as long as the quiver. Do not
+	 * `free()` it — the next `getQuill` for that ref would hand out a freed
+	 * handle. A caller wanting one of its own mints it from `.toTree()`.
+	 *
 	 * Throws:
 	 *   - `invalid_ref` if ref is malformed
 	 *   - `quill_not_found` if ref does not match any version in this quiver

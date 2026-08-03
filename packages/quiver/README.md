@@ -40,6 +40,11 @@ consumer.
 - `quiver.getQuill(ref)` returns a core `Quill` — engine-free, portable data,
   good for schema inspection, validation, blueprint access, and seeding. It is
   the **only** way to obtain a quill from a quiver.
+- That quill is **borrowed, not owned**: it is cached per canonical ref, handed
+  to every caller asking for that ref, and lives as long as the quiver. Do not
+  `free()` it — the next caller would receive a freed handle. Code that owns
+  its quill mints one from `(await quiver.getQuill(ref)).toTree()` and frees
+  that.
 - `const engine = new Engine()` (from the `@quillmark/wasm` root) renders it:
   `await engine.render(quill, doc, opts?)`. The Engine routes on
   `quill.backendId`, lazily loads that backend, clones the quill and document
