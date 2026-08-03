@@ -4,8 +4,9 @@
  `writer.set(field, wholeArray)` (arrays are not op-addressed). Element control
  by `items.type`: `string` → text input, `richtext` → a prose element
  ({@link ProseArrayElement}), `object` → a minimal JSON editor, keeping the prior
- element value on an entry that does not parse. The add affordance sits in the label header row (space-between with the field
- label); {@link Field} skips its own label for array controls.
+ element value on an entry that does not parse. The add affordance sits in the
+ label header row (space-between with the field label); {@link Field} skips its
+ own label for array controls.
 
  A row ends in the section's reserved action column (Card `--action-col`), which the
  field reaches back across: the element controls stop where a scalar's does and the

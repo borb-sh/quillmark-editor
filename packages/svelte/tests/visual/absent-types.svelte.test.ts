@@ -2,7 +2,7 @@
 // The three controls the reference quill declares no field for: the boolean
 // switch, the object subform, and the array's `object` element. The rest of the
 // suite drives the fixture's own leaves; these have none, so the quill grows them
-// here, through the in-memory YAML patch `reorder.svelte.test.ts` also spends,
+// here, through the same in-memory YAML patch `reorder.svelte.test.ts` uses,
 // rather than a second fixture on disk or a hand-built schema the WASM boundary
 // never sees.
 //
