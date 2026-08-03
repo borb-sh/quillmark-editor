@@ -42,7 +42,7 @@ consumer.
   the **only** way to obtain a quill from a quiver.
 - That quill is **borrowed, not owned**: it is cached per canonical ref, handed
   to every caller asking for that ref, and lives as long as the quiver. Do not
-  `free()` it — the next caller would receive a freed handle. Code that owns
+  `free()` it: the next caller would receive a freed handle. Code that owns
   its quill mints one from `(await quiver.getQuill(ref)).toTree()` and frees
   that.
 - `const engine = new Engine()` (from the `@quillmark/wasm` root) renders it:

@@ -1,10 +1,9 @@
 // @vitest-environment jsdom
-// The remount contract on the two vanilla-core surfaces. A guard over `session`
-// alone taught a consumer that the surface complains when it ignores a prop, which
-// made silence on `margin`, `overlays`, `onCaretPick`, `strings` and `SourceView`'s
-// `doc` read as reactivity. What is asserted is the whole set, one report per
-// surface, and — the case that costs the guard its worth if it is wrong — that a
-// mount which swaps nothing reports nothing.
+// The remount contract on the two vanilla-core surfaces: EVERY once-bound prop
+// answers a swap, in one report per surface naming whichever went stale. A guard
+// covering part of a set is what teaches a consumer to read silence on the rest as
+// reactivity, so the set is what is asserted. The last case is the one that costs
+// the guard its worth if it fails: a mount that swaps nothing reports nothing.
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
 import { Document, type LiveSession } from '@quillmark/wasm';

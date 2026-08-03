@@ -50,7 +50,7 @@ Reaching for `Quill.fromTree` inside a quiver consumer bypasses that cache and r
 
 Two narrower verbs sit beside it: `resolve(ref)` returns the canonical ref without materializing anything, and `warm()` prefetches every quill's tree without materializing or needing an engine (a later `getQuill` is then microseconds).
 
-`resolve` is **sync**, and so are `quillNames()` and `versionsOf()`: the catalog is materialized as the quiver is built — `fromBuiltUrl` fetches `latest.json`, `fromDir` scans the source tree — and `QuiverLoader` carries one verb, `loadTree`, which resolution never reaches. A promise there would price I/O the design does not admit.
+`resolve` is **sync**, and so are `quillNames()` and `versionsOf()`: the catalog is materialized as the quiver is built (`fromBuiltUrl` fetches `latest.json`, `fromDir` scans the source tree), and `QuiverLoader` carries one verb, `loadTree`, which resolution never reaches. A promise there would price I/O the design does not admit.
 
 ## The render boundary
 

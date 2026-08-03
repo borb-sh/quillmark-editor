@@ -17,10 +17,10 @@
 	 * to `doc` or `onError` is NOT observed. Swap the document by REMOUNTING
 	 * (`{#key doc}`); reflect in-place edits through the `refresh()` method. Either
 	 * swapped in place reports `rebind-ignored`, as `Preview` does for its own
-	 * once-bound props: the two vanilla-core surfaces answer a swap the same way.
+	 * once-bound props.
 	 *
-	 * `onError` is itself once-bound, so a swapped handler means the report of its
-	 * own swap reaches the handler it replaced. `class` and `style` land on the root
+	 * `onError` is itself once-bound, so a swapped handler means the report of its own
+	 * swap reaches the handler it replaced. `class` and `style` land on the root
 	 * element Svelte owns, so they stay live.
 	 */
 	interface Props {
@@ -37,8 +37,7 @@
 	let containerEl: HTMLDivElement | undefined = $state();
 	let controller: SourceViewController | undefined;
 
-	// The contract above, said out loud: a mirror still serializing the previous
-	// document reads as a mirror that is merely behind.
+	// A mirror still serializing the previous document reads as one merely behind.
 	guardRebind(() => ({ doc, onError }), 'Remount the source view ({#key doc}) to rebind.');
 
 	onMount(() => {

@@ -173,7 +173,7 @@ export class Quiver {
 	 *
 	 * BORROWED, not handed over: the quill is the quiver's, shared with every
 	 * other caller for the same ref, and lives as long as the quiver. Do not
-	 * `free()` it — the next `getQuill` for that ref would hand out a freed
+	 * `free()` it: the next `getQuill` for that ref would hand out a freed
 	 * handle. A caller wanting one of its own mints it from `.toTree()`.
 	 *
 	 * Throws:

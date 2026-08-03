@@ -1,12 +1,11 @@
 // The remount contract, enforced. `Preview` and `SourceView` bind their props ONCE,
 // in `onMount`, and observe nothing after: the vanilla cores below them own scroll
 // position, mounted slots and observer sets that a remount would discard on every
-// apply, which is what makes the contract right rather than a shortcut. What the
-// surfaces owe is to stop being silent about a prop they were handed and ignored.
+// apply. So a prop swapped in place is reported, not dropped in silence.
 //
-// A guard over ONE prop is worse than no guard: a consumer who learns the surface
-// complains when it ignores a prop reads silence on the rest as reactivity. So the
-// snapshot is every once-bound prop, and one report names whichever went stale.
+// A guard over ONE prop of a set is worse than none: a consumer who learns the
+// surface complains when it ignores a prop reads silence on the rest as reactivity.
+// The snapshot is every once-bound prop, and one report names whichever went stale.
 import { reportError, type EditorErrorHandler } from './errors.js';
 
 /** The once-bound props by name, `onError` among them. */
@@ -14,15 +13,15 @@ export type Bound = Record<string, unknown> & { onError?: EditorErrorHandler };
 
 /**
  * Report `rebind-ignored` once, at `dev`, when any prop `snapshot` names is swapped
- * in place. `remount` completes the message with the surface's own remount spelling
- * (`Remount it ({#key session}) to rebind.`).
+ * in place. `remount` closes the message with the surface's own remount spelling
+ * (`Remount the preview ({#key session}) to rebind.`).
  *
- * The mounted identities are recorded on the effect's FIRST run: the same flush the
- * surface binds in, and every comparison after it comes from the same reader.
+ * Mounted identities are recorded on the effect's FIRST run, the flush the surface
+ * binds in; every later comparison reads them through the same `snapshot`.
  *
  * The report goes to the SNAPSHOT's `onError`: every other error these surfaces
- * report reaches the handler they bound, and a swapped `onError` is one of the
- * things being reported.
+ * report reaches the handler they bound, and a swapped `onError` is itself one of
+ * the reports.
  */
 export function guardRebind(snapshot: () => Bound, remount: string): void {
 	let mounted: Bound | undefined;

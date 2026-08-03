@@ -16,17 +16,15 @@
 	import type { EditorErrorHandler } from '../core/errors.js';
 
 	/**
-	 * REMOUNT CONTRACT. `createPreview` binds once in `onMount`; a later change to
-	 * ANY prop it closed over — `session`, `margin`, `overlays`, `onCaretPick`,
-	 * `onError`, `strings` — is NOT observed. Swap the session by REMOUNTING
-	 * (`{#key session}`, as the playground does); drive in-place edits through the
-	 * `refresh(change)` method, not a prop change. Every one of them reports
-	 * `rebind-ignored` when swapped, so the contract is enforced rather than
-	 * merely written here.
+	 * REMOUNT CONTRACT. `createPreview` binds once in `onMount`; a later change to any
+	 * prop it closed over (`session`, `margin`, `overlays`, `onCaretPick`, `onError`,
+	 * `strings`) is NOT observed, and each reports `rebind-ignored` when swapped. Swap
+	 * the session by REMOUNTING (`{#key session}`, as the playground does); drive
+	 * in-place edits through the `refresh(change)` method, not a prop change.
 	 *
-	 * `onError` is itself once-bound, so a swapped handler means the report of its
-	 * own swap reaches the handler it replaced. `class` and `style` are the
-	 * exceptions: they land on the root element Svelte owns, so they stay live.
+	 * `onError` is itself once-bound, so a swapped handler means the report of its own
+	 * swap reaches the handler it replaced. `class` and `style` are the exceptions:
+	 * they land on the root element Svelte owns, so they stay live.
 	 */
 	interface Props {
 		session: LiveSession;
@@ -59,11 +57,6 @@
 	let containerEl: HTMLDivElement | undefined = $state();
 	let controller: PreviewController | undefined;
 
-	// The contract above, said out loud, over every prop `createPreview` closed over.
-	// The editor re-keys on its own `doc`; this surface cannot, because the paint
-	// loop owns scroll position, mounted page slots and an observer set that a
-	// remount would discard on every apply — so the swap stays the consumer's
-	// `{#key session}`.
 	guardRebind(
 		() => ({ session, margin, overlays, onCaretPick, onError, strings }),
 		'Remount the preview ({#key session}) to rebind.'
