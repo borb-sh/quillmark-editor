@@ -24,7 +24,7 @@ import type { EditorErrorHandler } from '../errors.js';
 import { reportError, errorMessage } from '../errors.js';
 import { decode } from './decode.js';
 import { usvToPM, pmToUsv, buildLineIndex, type LineIndex } from './positions.js';
-import { lower, pmToContent, insertReintroducesIslandSlot } from './encode.js';
+import { lower, pmToContent, contentEdit, insertReintroducesIslandSlot } from './encode.js';
 import { anchorsFromContent, type AnchorPos } from './marks.js';
 import { createReconciler, type Reconciler } from './reconcile.js';
 import { inputRulesPlugin } from './inputrules.js';
@@ -267,21 +267,21 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	// Returns whether anything landed: the caller's change signal, which must not
 	// be a property of which branch the commit took.
 	function commitEdit(oldRt: Content, newDoc: PMNode): boolean {
-		const newRt = pmToContent(newDoc);
+		// The projection and its text splice, each computed ONCE per keystroke: the gate
+		// below, both install fallbacks, and `lower` all read this one `edit`.
+		const edit = contentEdit(oldRt, pmToContent(newDoc));
 		try {
 			// `applyChange` throws on an absent declared field (verified), so the FIRST
 			// edit to one installs the value (creating it; no prior anchors to lose);
 			// island creation is the other install case (`insertReintroducesIslandSlot`).
-			if (!leafPresent(doc, addr) || insertReintroducesIslandSlot(oldRt, newRt)) {
-				doc.install(addr, newRt); // create-or-structural fallback; pays this field's anchors
+			if (!leafPresent(doc, addr) || insertReintroducesIslandSlot(edit)) {
+				doc.install(addr, edit.newRt); // create-or-structural fallback; pays this field's anchors
 			} else {
 				// Pre-edit anchors are the stored content's anchors (USV); post-edit
 				// anchors are the plugin's positions (mapped through the tr) as USV.
 				const oldAnchors = plaintext ? [] : anchorsFromContent(oldRt);
 				const newAnchors = plaintext ? [] : readAnchorsUsv(newDoc);
-				// `newRt` above is the projection `lower` diffs against: projecting the
-				// doc a second time here would double the per-keystroke tree walk.
-				doc.applyChange(addr, lower(oldRt, newRt, { oldAnchors, newAnchors }));
+				doc.applyChange(addr, lower(edit, { oldAnchors, newAnchors }));
 			}
 			reconciler.commit(readLeaf(doc, addr));
 			return true;
@@ -298,7 +298,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 				cause: e
 			});
 			try {
-				doc.install(addr, newRt);
+				doc.install(addr, edit.newRt);
 				reconciler.commit(readLeaf(doc, addr));
 				return true;
 			} catch (e2) {

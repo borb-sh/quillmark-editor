@@ -35,18 +35,18 @@ Two mark kinds do **not** become PM marks: see §Marks.
 
 ## Encode: PM edit → `ChangeBundle`
 
-`lower(oldRt, newDoc)` projects the new PM doc to content (`pmToContent`) and diffs `old → new` into the three channels, in `applyChange`'s application order (`delta`, then `lineOps`, then `markOps`, all in *post-delta* coordinates):
+`contentEdit(oldRt, newRt)` pairs the stored content with the new PM doc's projection (`pmToContent`) and diffs their text once; `lower(edit)` fills out the three channels around that splice, in `applyChange`'s application order (`delta`, then `lineOps`, then `markOps`, all in *post-delta* coordinates):
 
 - **text**: a minimal single-splice diff of the flat USV text becomes `delta` ops (`retain` / `insert` / `delete`). A line split or join rides the delta: an inserted `\n` splits a line, a deleted `\n` joins; there is no separate split/join op.
 - **line metadata**: when any line's `kind` / `containers` / `continues` changed, `lineOps` restate every line's metadata (`setKind`, `setContainers`, and `setContinues` for lines ≥ 1). Redundant restatements are safe no-ops, so the pass is correct whatever intermediate metadata the delta's split/join left.
 - **formatting**: the mark-coverage difference becomes `markOps` `add` / `remove` over post-delta USV ranges; old marks are first rebased through the delta exactly as `applyChange` rebases them (start-assoc `after`, end-assoc `before` ≡ `mapPos`).
 - **anchors**: the decoration-set difference by id becomes `add {type:"anchor", id}` / `removeAnchor {id}`, positions already in final coords.
 
-Everything reads against the *post-delta* content, so the bundle reads the same way `applyChange` applies it. The one edit the op vocabulary can't reach is **island creation**: a `delta` insert carrying an island slot throws `IslandSlotInInsert`, so the field falls back to `install`.
+Everything reads against the *post-delta* content, so the bundle reads the same way `applyChange` applies it. The one edit the op vocabulary can't reach is **island creation**: a `delta` insert carrying an island slot throws `IslandSlotInInsert`, so the field falls back to `install`. The gate is a predicate on the splice (`insertReintroducesIslandSlot(edit)`), so the field decides `install` vs ops and then lowers, both off the one diff.
 
 ## Positions: USV ↔ PM
 
-`usvToPM(pos)` / `pmToUsv(pmPos)`: a content USV offset is a character index into `text` (with `\n` and `U+FFFC` each one USV); a PM position counts node tokens. The map is a list of RUNS that tile the text: a `text` run where the two advance together, an `nl` run spanning a block boundary or hard break, an `atom` run for an island slot, each carrying its PM start and its USV start. The runs come off the same single walk that produces the content projection, so the map and the projection can never disagree; the whole list is rebuilt on structural change. This is the function a `positionAt` result (`ContentHit.pos`) and a `FieldRegion.span` pass through to reach a PM caret, and the one `locate` runs in reverse for the preview overlay.
+`usvToPM(pos)` / `pmToUsv(pmPos)`: a content USV offset is a character index into `text` (with `\n` and `U+FFFC` each one USV); a PM position counts node tokens. The map is a list of RUNS that tile the text: a `text` run where the two advance together, an `nl` run spanning a block boundary or hard break, an `atom` run for an island slot, each carrying its PM start and its USV start. The runs come off the same single walk that produces the content projection, so the map and the projection can never disagree; the whole list is rebuilt on structural change. Document order makes both coordinates increasing across the list, so a conversion bisects rather than scans: what keeps the bulk callers (every held anchor, on every commit) off O(anchors × runs). This is the function a `positionAt` result (`ContentHit.pos`) and a `FieldRegion.span` pass through to reach a PM caret, and the one `locate` runs in reverse for the preview overlay.
 
 **UTF-16 hazard.** JS strings (and the text offsets inside PM positions) are UTF-16; content offsets are USV (code points). An astral character is two UTF-16 units but one USV, so the map converts; skip it and a caret drifts one unit per emoji it passes. quillmark's `usv` helper does not cross to WASM: the codec owns the conversion.
 
