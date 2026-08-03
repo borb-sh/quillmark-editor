@@ -44,9 +44,7 @@ describe('Quiver.resolve', () => {
 
 	it('7. "" (empty string) → invalid_ref', async () => {
 		const quiver = await fromDir(SAMPLE_FIXTURE);
-		expect(() => quiver.resolve('')).toThrow(
-			expect.objectContaining({ code: 'invalid_ref' })
-		);
+		expect(() => quiver.resolve('')).toThrow(expect.objectContaining({ code: 'invalid_ref' }));
 	});
 
 	it('8. unknown name → quill_not_found', async () => {
