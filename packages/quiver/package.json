@@ -45,7 +45,8 @@
 	"files": [
 		"dist",
 		"README.md",
-		"LICENSE"
+		"LICENSE",
+		"NOTICE"
 	],
 	"peerDependencies": {
 		"@quillmark/wasm": ">=0.100.0-0"

@@ -58,7 +58,8 @@
 		"dist",
 		"README.md",
 		"THEMING.md",
-		"LICENSE"
+		"LICENSE",
+		"NOTICE"
 	],
 	"sideEffects": [
 		"**/*.css"

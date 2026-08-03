@@ -22,7 +22,7 @@ npm Trusted Publishing (OIDC) mints the credential, so no token is stored.
 
 ## The tarball
 
-`files` is the whole answer to what ships: `dist`, plus the docs a consumer reads from `node_modules` (`README.md`, `LICENSE`, and in `svelte` the `THEMING.md` its README links). `prepack` rebuilds `dist` from clean, so a publish cannot carry a stale artifact.
+`files` is the whole answer to what ships: `dist`, plus the docs a consumer reads from `node_modules` (`README.md`, `LICENSE`, `NOTICE`, and in `svelte` the `THEMING.md` its README links). Every published package carries a verbatim copy of the workspace's Apache-2.0 `LICENSE` and the `NOTICE` naming the copyright holder, because a tarball is redistributed on its own and §4 asks the recipient for both. `NOTICE` earns its line in `files`; npm includes `README` and `LICENSE` on its own but not that. `prepack` rebuilds `dist` from clean, so a publish cannot carry a stale artifact.
 
 `publint` runs from the root `release` script, after the build and before `changeset publish` — never from `prepack`, which it would recurse through: publint packs the package to lint it, and packing runs `prepack`.
 
