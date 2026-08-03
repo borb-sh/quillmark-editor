@@ -29,6 +29,7 @@ import { createReconciler, type Reconciler } from './reconcile.js';
 import { inputRulesPlugin } from './inputrules.js';
 import { bodyKeymap } from './keymap.js';
 import { blockSchema, inlineSchema } from './schema.js';
+import { DEFAULT_TABLE_STRINGS, tableNodeView, type TableChromeStrings } from './table-view.js';
 
 /** Options for {@link createField}. */
 export interface CreateFieldOpts {
@@ -45,6 +46,10 @@ export interface CreateFieldOpts {
 	plaintext?: boolean;
 	/** Suppress the markdown-shorthand input rules. */
 	noInputRules?: boolean;
+	/** The island chrome's wording, read LIVE (per render) so a consumer swapping
+	 *  locale mid-session re-renders rather than freezing it at mount. Absent leaves
+	 *  the package's English; an inline leaf never asks (it holds no island). */
+	tableStrings?: () => TableChromeStrings;
 	/** Accessible name → `aria-label` on the `contenteditable`. For a leaf NOTHING
 	 * else names: an array element (the field label plus its 1-based index), the
 	 * card body (no visible label at all). A leaf with a field label takes
@@ -114,6 +119,22 @@ export interface FieldController {
 	/** The current PM selection as a USV `{ from, to }` range (the boundary currency). */
 	selectionRange(): { from: number; to: number };
 	destroy(): void;
+}
+
+/**
+ * The ProseMirror handles a chrome surface reaches a mounted leaf through. Not part
+ * of {@link FieldController}: they are PM internals, and a consumer's contract is the
+ * controller's verbs. The format popover is the one caller, and it needs both —
+ * `view` to name the leaf's own document, `focusedView` to act on wherever the caret
+ * actually is, which inside a table island is a NESTED cell view (`table-view.ts`).
+ * The two being different is exactly what tells the popover to withhold its
+ * `anchor` button: an anchor is the FIELD's coordinate space, and a cell is not in it.
+ */
+export interface LeafViews {
+	view: EditorView;
+	focusedView(): EditorView;
+	/** Every view nested inside this leaf, in mount order: one per table cell. */
+	nestedViews(): EditorView[];
 }
 
 const anchorKey = new PluginKey<AnchorPos[]>('quill-anchors');
@@ -217,12 +238,34 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	// is an assignment plus a re-render rather than a rebuilt plugin stack.
 	let placeholderText = opts.placeholder;
 
+	// The views nested INSIDE this leaf: one per table cell (`table-view.ts`). The
+	// leaf holds the set because chrome asks the leaf, not the island, which view
+	// holds the caret: the format popover raises over a cell exactly as over the
+	// body, and only the leaf knows both.
+	const nested = new Set<EditorView>();
+
 	const state = buildState(reconciler.last);
 	index = buildLineIndex(state.doc);
 
 	view = new EditorView(container, {
 		state,
 		attributes: proseAttributes(opts),
+		// Islands are block-schema only, so an inline leaf mounts no node view at all.
+		nodeViews: inline
+			? undefined
+			: {
+					island_block: tableNodeView({
+						strings: opts.tableStrings ?? (() => DEFAULT_TABLE_STRINGS),
+						register: (cellView) => {
+							nested.add(cellView);
+							return () => nested.delete(cellView);
+						},
+						// A focus event does not bubble, so the leaf's own `focus` handler
+						// never fires for a cell: without this the active address would not
+						// follow a caret clicked straight into a table.
+						onCellFocus: () => opts.onFocus?.(addr)
+					})
+				},
 		dispatchTransaction: (tr) => {
 			const oldRt = reconciler.last;
 			const next = view.state.apply(tr);
@@ -405,9 +448,15 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			view.destroy();
 		}
 	};
-	// The underlying view, exposed as an available (undocumented) handle: the
-	// VisualEditor composes views, and tests drive edits through it.
-	(controller as FieldController & { view: EditorView }).view = view;
+	// The underlying views, exposed as available (undocumented) handles: the
+	// VisualEditor composes views, and tests drive edits through them.
+	const handles = controller as FieldController & LeafViews;
+	handles.view = view;
+	handles.nestedViews = () => [...nested];
+	handles.focusedView = () => {
+		for (const cellView of nested) if (cellView.hasFocus()) return cellView;
+		return view;
+	};
 	return controller;
 }
 

@@ -140,3 +140,105 @@ li.ProseMirror-selectednode::after {
 	font-size: inherit;
 	font-weight: var(--_qm-weight-label);
 }
+
+/* ── The table island ────────────────────────────────────────────────────────
+
+   The one construct in this file with CHROME in it. The rest of the stylesheet
+   states what a block is and lets paper set its size; a table island is edited
+   through controls that do not print, so it also has a recede ladder, a target
+   floor and a reveal. Those live here rather than in `visual/controls.css` for the
+   same reason the NodeView is vanilla: the island is inside the leaf, and the leaf
+   is the codec's. What it does NOT restate is the surface's dials: every value
+   below is a `--_qm-*` rung, so the island retints with everything else. */
+.qm-table-island {
+	/* The one horizontally scrolling box in a leaf: a table is as wide as its
+	   columns, and a wide one must not push the card's own layout. */
+	overflow-x: auto;
+}
+.qm-table {
+	border-collapse: collapse;
+}
+/* A cell is a box like the leaf's own: the same hairline, the same inner rhythm.
+   `vertical-align: top` because cells in a row are of different heights the moment
+   one of them wraps, and a table whose text floats to the middle of its tallest
+   neighbour reads as a layout, not as a row of values. */
+.qm-table-cell {
+	border: var(--_qm-border-width) solid var(--_qm-border);
+	padding: var(--_qm-space) var(--_qm-space-2);
+	vertical-align: top;
+	font-weight: inherit;
+	text-align: inherit;
+}
+/* The header row is the ONE weight distinction the island draws: `header` is a
+   separate field in the model rather than a flag on a row, so the surface says so.
+   The rest of a table's type is paper's. */
+.qm-table-header-row .qm-table-cell {
+	font-weight: var(--_qm-weight-label);
+}
+/* A cell holds a whole nested view. Its measure floor keeps an empty table from
+   collapsing to a row of hairlines with nothing to aim at, and the caret is the
+   focus indicator here exactly as it is in the leaf (no ring, VISUAL_EDITOR_UIUX). */
+.qm-table-cell-host {
+	min-width: 4rem;
+}
+.qm-table-cell-host .ProseMirror {
+	outline: none;
+}
+
+/* The gutters carry the handles and nothing else: no border, no ink, no box. They
+   are the table's margin, drawn as cells so a handle lines up with the row or the
+   column it acts on by CONSTRUCTION rather than by a measured overlay. */
+.qm-table-gutter,
+.qm-table-corner {
+	border: none;
+	padding: 0;
+	vertical-align: middle;
+}
+.qm-table-gutter-row .qm-table-handle {
+	justify-content: center;
+}
+
+/* The reveal is POINTER OR FOCUS, and it is the card stack's rule unchanged
+   (VISUAL_EDITOR_UIUX §"Card stack"): hidden by opacity so the controls stay in the
+   tab order, revealed while the pointer or the caret is inside the island, full ink
+   on the control itself. A hover-only rule hands a keyboard a focused control it
+   cannot see and hands a touch pointer, which never hovers, no path to reorder at
+   all. `:focus-within` on the island is what covers the caret in a cell as well as
+   a focused handle. */
+.qm-table-handle {
+	display: flex;
+	padding: var(--_qm-space-half);
+	opacity: 0;
+	transition: opacity var(--_qm-duration-fast) var(--_qm-ease-reverse);
+}
+.qm-table-island:hover .qm-table-handle,
+.qm-table-island:focus-within .qm-table-handle {
+	opacity: var(--_qm-opacity-idle);
+}
+.qm-table-handle:hover,
+.qm-table-handle:focus-within {
+	opacity: 1;
+}
+/* A handle button is a glyph at the label rung, sized to the icon rather than to the
+   tap floor: a table's gutter cannot spend 44px per control per row and still be a
+   table. The floor is answered by the handle GROUP, which is one target the pointer
+   finds as a strip. */
+.qm-table-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--_qm-space-half);
+	border: none;
+	border-radius: var(--_qm-radius-inner);
+	background: none;
+	color: var(--_qm-ink-label);
+	cursor: pointer;
+}
+.qm-table-btn:hover {
+	background: var(--_qm-surface-hover);
+	color: var(--_qm-ink);
+}
+.qm-table-btn svg {
+	width: 0.875rem;
+	height: 0.875rem;
+}

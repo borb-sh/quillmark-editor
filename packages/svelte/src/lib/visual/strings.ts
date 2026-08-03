@@ -19,9 +19,17 @@
 // which is a prop that means nothing to any of them.
 import { getContext, setContext } from 'svelte';
 import type { Diagnostic } from '@quillmark/wasm';
+import { DEFAULT_TABLE_STRINGS, type TableChromeStrings } from '../core/codec/index.js';
 import type { BodyPlaceholder } from './structure.js';
 
-export interface VisualStrings {
+/**
+ * The table island's keys come from the CODEC, which is what draws that chrome
+ * (`codec/table-view.ts`: a NodeView, vanilla, inside the leaf). Extending rather
+ * than restating them is what keeps one English list: a consumer overrides an island
+ * handle's name beside the card controls' and the codec still has a default for a
+ * leaf mounted directly.
+ */
+export interface VisualStrings extends TableChromeStrings {
 	// ── Card controls (accessible names: the buttons are glyphs) ───────────────
 	cardMoveUp: string;
 	cardMoveDown: string;
@@ -120,6 +128,7 @@ export type FormatDiagnostic = (d: Diagnostic) => string | undefined;
 
 /** The package's English. Every key, so the merge below is total. */
 export const DEFAULT_VISUAL_STRINGS: VisualStrings = {
+	...DEFAULT_TABLE_STRINGS,
 	cardMoveUp: 'Move up',
 	cardMoveDown: 'Move down',
 	cardDelete: 'Delete card',

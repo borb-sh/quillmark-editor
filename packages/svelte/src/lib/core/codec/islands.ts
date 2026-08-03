@@ -9,8 +9,9 @@
 // reads it rather than hand-rolling a shape or guard. The open `type` arm means
 // a discriminant check does not auto-narrow `props`; key off `type` and read
 // `props` as the matching upstream type.
-import type { NodeSpec } from 'prosemirror-model';
-import type { ContentIsland } from '@quillmark/wasm';
+import type { Node as PMNode, NodeSpec } from 'prosemirror-model';
+import { isTableIsland } from '@quillmark/wasm';
+import type { ContentIsland, TableProps } from '@quillmark/wasm';
 
 /** The `U+FFFC` object-replacement char that occupies one island slot in `text`. */
 export const ISLAND_SLOT = '￼';
@@ -77,4 +78,34 @@ export function islandEntryFromNode(attrs: IslandNodeAttrs): ContentIsland {
 		props: attrs.props,
 		loss: attrs.loss
 	};
+}
+
+/** A node's `TableProps`, or `undefined` for any other island: the boundary's own
+ *  guard over the entry the node carries, so the open `type` arm narrows once here
+ *  rather than at each reader. */
+export function tablePropsOfNode(node: PMNode): TableProps | undefined {
+	const entry = islandEntryFromNode(node.attrs as IslandNodeAttrs);
+	return isTableIsland(entry) ? entry.props : undefined;
+}
+
+/**
+ * The next island id for a field: the positional `isl-{n}` sequence continued past
+ * the highest one the field already holds. A minted id is this tier's to produce
+ * and it is part of the document's canonical bytes (CODEC §Islands), so it is a
+ * counter over the projection in hand — never a UUID, never a clock reading, and
+ * never a re-numbering of the ids already there, which are identities.
+ *
+ * Reads the PM doc rather than the stored content because that is what the caller
+ * (an insert command) holds and what the commit will project: an id minted against
+ * a stale content could collide with one the same transaction places.
+ */
+export function mintIslandId(doc: PMNode): string {
+	let next = 0;
+	doc.descendants((node) => {
+		if (node.type.name !== 'island_block' && node.type.name !== 'island_inline') return true;
+		const m = /^isl-(\d+)$/.exec(node.attrs.id as string);
+		if (m) next = Math.max(next, Number(m[1]) + 1);
+		return false;
+	});
+	return `isl-${next}`;
 }

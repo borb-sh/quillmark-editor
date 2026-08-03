@@ -59,10 +59,10 @@
 	import Code from '@lucide/svelte/icons/code';
 	import Link from '@lucide/svelte/icons/link';
 	import Hash from '@lucide/svelte/icons/hash';
-	import type { FieldController } from '../core/codec/index.js';
+	import type { FieldController, LeafViews } from '../core/codec/index.js';
 	import './controls.css';
 
-	type LeafWithView = FieldController & { view?: EditorView };
+	type LeafWithView = FieldController & Partial<LeafViews>;
 
 	interface Props {
 		/** The observation seam VisualEditor exposes over its `leaves` registry. */
@@ -87,6 +87,9 @@
 		undefined
 	);
 	let activeMarks = $state<Record<string, boolean>>({});
+	/** Whether the selection is in the FIELD's coordinate space, which an anchor needs
+	 *  and a table cell is not (see `sync`). */
+	let anchorAvailable = $state(true);
 	let linkPromptOpen = $state(false);
 	let linkValue = $state('');
 	let contentEl = $state<HTMLElement | undefined>(undefined);
@@ -106,8 +109,13 @@
 		};
 	});
 
+	/** The view the caret is actually in: the leaf's own, or the NESTED cell view of a
+	 * table island (`codec/table-view.ts`). The six marks are the inline schema's
+	 * too, so a selection in a cell raises the same popover and toggles the same
+	 * commands; only `anchor` is withheld (below). */
 	function activeLeafView(): EditorView | undefined {
-		return (getActiveLeaf() as LeafWithView | undefined)?.view;
+		const leaf = getActiveLeaf() as LeafWithView | undefined;
+		return leaf?.focusedView?.() ?? leaf?.view;
 	}
 
 	/** Recompute open/position/active-marks from the active leaf's CURRENT PM selection. */
@@ -115,8 +123,8 @@
 		const insidePopover =
 			!!contentEl && !!document.activeElement && contentEl.contains(document.activeElement);
 		if (insidePopover) return; // interacting with the popover itself (e.g. the link input): leave state as-is
-		const leaf = getActiveLeaf();
-		const view = (leaf as LeafWithView | undefined)?.view;
+		const leaf = getActiveLeaf() as LeafWithView | undefined;
+		const view = leaf?.focusedView?.() ?? leaf?.view;
 		if (!view || !view.hasFocus() || view.state.selection.empty) {
 			open = false;
 			linkPromptOpen = false;
@@ -139,7 +147,13 @@
 		}
 		// `anchor` is a decoration, not a PM mark (CODEC §Marks): its active state is
 		// whether the selection covers an identity anchor, read off the leaf in USV.
-		if (leaf) {
+		//
+		// A selection inside a table CELL is not in that coordinate space at all: the
+		// field's position map holds one `atom` run for the whole island, so there is
+		// no USV offset to mint an anchor at. The button is withheld rather than
+		// disabled, because what it would toggle does not exist there (CODEC §Islands).
+		anchorAvailable = !!leaf && view === leaf.view;
+		if (leaf && anchorAvailable) {
 			const sel = leaf.selectionRange();
 			marks.anchor = leaf.anchorsInRange(sel.from, sel.to).length > 0;
 		}
@@ -322,15 +336,17 @@
 										onclick={() => toggle(m.name)}><Icon size={GLYPH} /></button
 									>
 								{/each}
-								<button
-									type="button"
-									class="qm-icon-btn qm-mark-btn"
-									class:active={activeMarks.anchor}
-									title={t.strings.formatAnchorTitle}
-									aria-label={t.strings.formatAnchor}
-									onmousedown={keepFocus}
-									onclick={toggleAnchor}><Hash size={GLYPH} /></button
-								>
+								{#if anchorAvailable}
+									<button
+										type="button"
+										class="qm-icon-btn qm-mark-btn"
+										class:active={activeMarks.anchor}
+										title={t.strings.formatAnchorTitle}
+										aria-label={t.strings.formatAnchor}
+										onmousedown={keepFocus}
+										onclick={toggleAnchor}><Hash size={GLYPH} /></button
+									>
+								{/if}
 							</div>
 						{/if}
 					</div>

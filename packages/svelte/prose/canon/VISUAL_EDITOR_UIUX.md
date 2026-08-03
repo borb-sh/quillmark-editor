@@ -60,7 +60,21 @@ The popover is a translucent, backdrop-blurred pill (SURFACES §Elevation: the o
 
 **Input rules: typist shorthand, no chrome.** `**`, `*`, `~~`, `` ` ``, `# `, `- `, `1. `, `> `, and a ` ``` ` code fence. These cover the marks and the block shorthands (headings, lists, quote, code); underline is keymap-only (`Mod-u`), and no table-entry rule ships (island authoring does not ship, §Open). Markdown is an input shorthand, never the stored form.
 
-**Past V1: the position anchor.** A gutter insert affordance, its menu, and a slash command, together the doors onto insertion. Without them the editor does not author tables or islands in V1. Editing a table already present in an imported document is a separate concern (the island controls), not gated by this.
+**Past V1: the position anchor.** A gutter insert affordance, its menu, and a slash command, together the doors onto insertion (§Open). Editing a table already present in an imported document is a separate concern and is not gated by them: the island's own chrome ships (§"Table island").
+
+## Table island
+
+A table is edited in place, as a table: one nested prose leaf per cell (CODEC §"The table island"), with the row and column handles in gutters the table draws for them.
+
+**The handles are the card stack's rules, unchanged.** Revealed on pointer **or** focus, hidden by opacity so they stay in the tab order, dim while the pointer is anywhere in the island and full ink on the control itself; reorder is buttons, not drag. The reveal is read off the island (`:hover`, `:focus-within`), so the caret in any cell holds it, exactly as the caret in any leaf holds a card's. The one rung it does not take is the card's always-visible delete: a table's controls are all inside the reading surface, and a delete resting at full ink in every row would be the loudest thing in the block.
+
+**A handle sits in a gutter cell of the table itself**, so it lines up with the row or column it acts on by construction rather than by a measured overlay that a re-wrap would put out of register. The gutters draw no border and no ink: they are the table's margin, and what makes them a gutter is that nothing is in them until a handle is revealed.
+
+**A row offers insert, reorder, and (below the header) delete.** The header's delete is ABSENT, not disabled: `header: []` is not a table, so there is nothing there to explain away. A column offers the same three plus its alignment, which cycles through the four the content declares on ONE control: four buttons per column is a toolbar in a table header, and the glyph names the state it is in.
+
+**A handle button is sized to its glyph, not to the tap floor.** A gutter cannot spend the floor per control per row and still leave a table that reads as one. The floor is answered by the handle GROUP, which is one strip the pointer finds; the row it acts on is the target the eye already has.
+
+**A table scrolls inside the leaf.** A table is as wide as its columns, and a wide one must not push the card's layout around; the island is the one horizontally scrolling box a leaf contains.
 
 ## Fields
 
@@ -100,5 +114,5 @@ Debug-only, per [ARCHITECTURE.md](ARCHITECTURE.md): not an editable dual mode. T
 ## Open
 
 - **Control slots**: a per-`ControlKind` extension point past the tokens does not ship until a consumer needs one. The constraint is recorded: the package owns reconciliation (`syncedLocal`), so a slot handing out a raw `value` reintroduces a caret reset in consumer code, invisibly to this repo's tests.
-- **Insert surface (post-V1)**: the position anchor: gutter affordance, menu, slash command, and table/island authoring.
+- **Insert surface (post-V1)**: the position anchor: the gutter affordance, its menu, and the slash command. Table EDITING ships (§"Table island"), so a table reaches the editor by import and is authored in place; INSERTING one does not, and neither does image or figure authoring, which needs an asset story the editor does not have.
 - **Formatting reach (post-V1)**: the touch accessory bar and keymap shortcuts for `strike` / `code` / `link` (only `Mod-b`/`i`/`u` bind today). The popover's `anchor` button ships (§Formatting): it mints a unique id and toggles an identity handle over the selection through `FieldController.insertAnchor`. The chrome that makes an anchor *useful* (comment-thread UX bound to the handle) is post-V1.

@@ -10,6 +10,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createField, type FieldController } from '../core/codec/index.js';
+	import { wording } from './strings.js';
 	import './controls.css';
 	import type { Document, Quill, Addr } from '@quillmark/wasm';
 	import type { EditorErrorHandler } from '../core/errors.js';
@@ -78,6 +79,11 @@
 
 	let containerEl: HTMLDivElement | undefined = $state();
 
+	// The island chrome's wording, read where every other surface reads it. Passed as
+	// a GETTER: the codec draws that chrome on each render, so a locale swap reaches a
+	// mounted table without remounting the leaf and losing the caret.
+	const t = wording();
+
 	// Block prose vs a control in a row of controls: the SAME predicate the codec
 	// picks its schema by (`createField`: `plaintext` implies `inline`), so the box a
 	// leaf draws and the schema it holds cannot disagree. Keyed on `inline` alone, a
@@ -110,6 +116,7 @@
 			labelledBy,
 			describedBy,
 			placeholder,
+			tableStrings: () => t.strings,
 			onFocus,
 			onCaretMove,
 			onChange,

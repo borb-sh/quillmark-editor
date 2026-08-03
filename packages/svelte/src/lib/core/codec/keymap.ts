@@ -4,10 +4,13 @@
 // A body is a document, so its structural keys are STRUCTURAL; a surface nested in
 // it that owns a key more locally joins the chain rather than rewriting the binding.
 // Precedence is inner surface first: the `code_block` link, then the
-// list links, and an island's cell traversal once added. Each link
-// declines outside its surface, so the first link that claims the key gets it; and
-// where none does, the key is not swallowed at all and leaves the body a keyboard
-// exit.
+// list links. Each link declines outside its surface, so the first link that claims
+// the key gets it; and where none does, the key is not swallowed at all and leaves
+// the body a keyboard exit.
+//
+// A table island's cell traversal is NOT a link here: it binds on the NESTED cell
+// view (`table-view.ts`), a keymap over a different document, so a key a cell
+// handled never reaches this map at all.
 //
 // The composition lives HERE rather than in either surface: `lists.ts` must not
 // import the code-block commands to know it comes second.
