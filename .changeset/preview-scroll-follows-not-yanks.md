@@ -7,3 +7,5 @@ The preview's follow-the-caret scroll moves the pane only when the caret has lef
 The scroll is written as `container.scrollTop` rather than `scrollIntoView`, which walks every scrollable ancestor: a host whose document scrolls had the whole page dragged to the preview by a keystroke in the editor, taking the editor off screen.
 
 `refresh` re-locates the last followed caret. `session.locate` answers against the last compiled layout while a consumer debounces `update`, so a caret typed past that layout is off-content for the whole burst and the pane sits still until some later caret event asks again.
+
+`onCaretMove` reports a place rather than a transaction. A leaf dispatches one caret signal per transaction and a transaction need not have moved the caret to exist, so a repeat of the place last reported no longer reaches a consumer; the memo spans leaves, so a place left and returned to still reports twice.
