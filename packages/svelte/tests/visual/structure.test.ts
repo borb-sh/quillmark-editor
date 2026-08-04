@@ -69,9 +69,8 @@ describe('interpolateTitle + cardTitle', () => {
 
 describe('placeFields', () => {
 	// A projected field, minus the projection: `control`/`inline` are what `packable`
-	// reads for the field itself, `schema.items` what it reads one level down for an
-	// array. The schema stands in for both, so a fake that omits it is a fake of a
-	// model that cannot exist.
+	// reads. The schema rides along because a model carries one, and the array cases
+	// vary its `items` to hold that the decline reads none of them.
 	const mk = (name: string, compact: boolean, extra: Record<string, unknown> = {}) =>
 		({
 			name,
@@ -134,33 +133,25 @@ describe('placeFields', () => {
 		]);
 	});
 
-	it('packs an array on its ITEMS: one-line elements pack, growing ones do not', () => {
-		// `memo_for` in the reference quill: an address block of one-line strings, which
-		// grows a line at a time like the label beside it. An array with no `items` has
-		// text elements, so it packs on the same reading.
+	it('declines the compact hint for an array whatever its items are', () => {
+		// `memo_for` in the reference quill: an address block of one-line strings, the
+		// shape that packs on any per-items reading. The element count is the document's,
+		// so a packed array pays a cell of whitespace for every element its neighbour has
+		// past it. An array with no `items` has text elements and declines the same.
 		expect(
 			spans([
 				arr('strings', true, { type: 'string' }),
 				arr('untyped', true),
-				arr('inline_prose', true, { type: 'richtext', inline: true })
-			])
-		).toEqual([
-			['strings', 'cell'],
-			['untyped', 'cell'],
-			['inline_prose', 'cell']
-		]);
-		// Elements that hold paragraphs or a subform decline by the rule above, one
-		// level down.
-		expect(
-			spans([
+				arr('inline_prose', true, { type: 'richtext', inline: true }),
 				arr('blocks', true, { type: 'richtext' }),
-				arr('objects', true, { type: 'object' }),
-				arr('nested', true, { type: 'array' })
+				arr('objects', true, { type: 'object' })
 			])
 		).toEqual([
+			['strings', 'full'],
+			['untyped', 'full'],
+			['inline_prose', 'full'],
 			['blocks', 'full'],
-			['objects', 'full'],
-			['nested', 'full']
+			['objects', 'full']
 		]);
 	});
 
