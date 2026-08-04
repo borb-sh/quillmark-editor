@@ -9,7 +9,15 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { createField, type FieldController } from '../core/codec/index.js';
+	import {
+		createField,
+		type FieldController,
+		type IslandMenuState,
+		type SlashState
+	} from '../core/codec/index.js';
+	import SlashMenu from './SlashMenu.svelte';
+	import TableMenu from './TableMenu.svelte';
+	import { wording } from './strings.js';
 	import './controls.css';
 	import type { Document, Quill, Addr } from '@quillmark/wasm';
 	import type { EditorErrorHandler } from '../core/errors.js';
@@ -78,6 +86,23 @@
 
 	let containerEl: HTMLDivElement | undefined = $state();
 
+	// The island chrome's wording, read where every other surface reads it. Passed as
+	// a GETTER: the codec draws that chrome on each render, so a locale swap reaches a
+	// mounted table without remounting the leaf and losing the caret.
+	const t = wording();
+
+	/** The insert menu's live state, pushed by the leaf's trigger plugin. Held HERE
+	 * rather than in the shell: a trigger belongs to one caret in one leaf, so the
+	 * menu is the leaf's surface, unlike the one format popover that follows whichever
+	 * leaf is active. A constrained leaf never receives one (`createField` mounts the
+	 * trigger on the block schema alone). */
+	let slash: SlashState | undefined = $state();
+
+	/** A table island's line menu, raised from one of its handles. Held beside the
+	 * slash menu and for the same reason: it belongs to this leaf's content, not to
+	 * whichever leaf the shell thinks is active. */
+	let islandMenu: IslandMenuState | undefined = $state();
+
 	// Block prose vs a control in a row of controls: the SAME predicate the codec
 	// picks its schema by (`createField`: `plaintext` implies `inline`), so the box a
 	// leaf draws and the schema it holds cannot disagree. Keyed on `inline` alone, a
@@ -110,6 +135,14 @@
 			labelledBy,
 			describedBy,
 			placeholder,
+			tableStrings: () => t.strings,
+			slashStrings: () => t.strings,
+			onSlash: (next) => {
+				slash = next;
+			},
+			onIslandMenu: (next) => {
+				islandMenu = next;
+			},
 			onFocus,
 			onCaretMove,
 			onChange,
@@ -139,6 +172,11 @@
 	class:qm-prose-block={block}
 	data-leaf-key={leafKey}
 ></div>
+<SlashMenu menu={slash} leaf={() => controller} label={t.strings.slashLabel} />
+<TableMenu
+	menu={islandMenu}
+	root={() => containerEl?.closest<HTMLElement>('[data-qm-root]') ?? undefined}
+/>
 
 <style>
 	/* The box is `.qm-control-box` (controls.css): the same rule the input beside it

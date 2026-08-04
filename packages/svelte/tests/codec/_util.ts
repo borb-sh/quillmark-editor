@@ -4,6 +4,7 @@
 // tests assert POST-NORMALIZE equality.
 import { expect } from 'vitest';
 import type { Node as PMNode } from 'prosemirror-model';
+import type { EditorView } from 'prosemirror-view';
 import { EditorState, TextSelection, type Command } from 'prosemirror-state';
 import { baseKeymap } from 'prosemirror-commands';
 import { Document, importMarkdown, type Content } from '@quillmark/wasm';
@@ -89,6 +90,22 @@ export function run(state: EditorState, cmd: Command): EditorState | null {
 		out = state.apply(tr);
 	});
 	return handled ? out : null;
+}
+
+/** A container in the jsdom document for a mounted view: what every leaf test opens
+ *  with, and what a `createField` needs to hold a view at all. */
+export function mount(): HTMLElement {
+	const el = document.createElement('div');
+	document.body.appendChild(el);
+	return el;
+}
+
+/** Drive one key at a MOUNTED view the way the browser does, through the props the
+ *  plugin stack registered. The `keyDriver` above is the other half of this: it runs
+ *  a keymap directly, without a view, where what is under test is the binding. */
+export function press(view: EditorView, key: string): void {
+	const event = new KeyboardEvent('keydown', { key, bubbles: true });
+	view.someProp('handleKeyDown', (f) => f(view, event));
 }
 
 /** `doc(bullet_list(list_item(paragraph("a"))))`: PM's own compact rendering. */

@@ -9,17 +9,11 @@ import { createField, blockSchema, pmToContent } from '$lib/core/codec';
 import type { FieldController } from '$lib/core/codec';
 import type { Document, TableProps } from '@quillmark/wasm';
 import { undo } from 'prosemirror-history';
-import { quill, normalize, contentEqual, md } from './_util.js';
+import { mount, quill, normalize, contentEqual, md } from './_util.js';
 
 /** The view is attached to the controller as an undocumented handle. */
 function viewOf(f: FieldController): EditorView {
 	return (f as FieldController & { view: EditorView }).view;
-}
-
-function mount(): HTMLElement {
-	const el = document.createElement('div');
-	document.body.appendChild(el);
-	return el;
 }
 
 describe('createField over a real usaf_memo leaf', () => {
