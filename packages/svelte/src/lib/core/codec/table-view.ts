@@ -15,9 +15,14 @@
 // is preserved, never minted), and no placeholder.
 //
 // The CHROME is two affordances and a handle per line: a `+` strip on each growing
-// edge, and one bar per row and column that raises a menu of that line's ops. The
-// ops themselves are `table.ts`'s constructors; what is here is which of them a line
-// offers and where the caret lands after one.
+// edge, and one bar per row and column that raises a menu of that line's ops, plus
+// the corner, which is the island's own handle. The ops themselves are `table.ts`'s
+// constructors; what is here is which of them a line offers and where the caret
+// lands after one.
+//
+// A POINTER PRESS ON THE CHROME RESOLVES TO A CARET, always: click-to-NodeSelect
+// belongs to an atom with no interior, and a table has cells (CODEC §"The table
+// island"). Selecting the island is a named gesture instead: the corner, or Escape.
 import { baseKeymap, toggleMark } from 'prosemirror-commands';
 import { redo, undo } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
@@ -67,6 +72,9 @@ export interface TableChromeStrings {
 	/** A handle's name, and its menu's: the line it acts on is the whole of what it is. */
 	tableRowMenu: (index: number) => string;
 	tableColumnMenu: (index: number) => string;
+	/** The corner's, whose line is the whole table. */
+	tableMenu: string;
+	tableDeleteTable: string;
 	tableInsertRowAbove: string;
 	tableInsertRowBelow: string;
 	tableDeleteRow: string;
@@ -96,6 +104,8 @@ export const DEFAULT_TABLE_STRINGS: TableChromeStrings = {
 	tableAddColumn: 'Add column',
 	tableRowMenu: (index) => `Row ${index} actions`,
 	tableColumnMenu: (index) => `Column ${index} actions`,
+	tableMenu: 'Table actions',
+	tableDeleteTable: 'Delete table',
 	tableInsertRowAbove: 'Insert row above',
 	tableInsertRowBelow: 'Insert row below',
 	tableDeleteRow: 'Delete row',
@@ -204,16 +214,46 @@ function cellPlugins(keys: Record<string, Command>) {
 	return [inputRulesPlugin(inlineSchema), keymap(keys), keymap(baseKeymap)];
 }
 
+/** What the nested views and the controls answer for themselves. `stopEvent` reads
+ *  it to hand PM everything else, and the pointer guard reads it to leave those
+ *  presses alone: one list, so the two cannot disagree about what a cell owns. */
+const OWNED = '.qm-table-cell-host, .qm-table-handle, .qm-table-add';
+
+/** A viewport point: where a press landed, which is the only thing the two bands are
+ *  told apart by. */
+interface Point {
+	x: number;
+	y: number;
+}
+
+const within = (rect: DOMRect, p: Point): boolean =>
+	p.x >= rect.left && p.x <= rect.right && p.y >= rect.top && p.y <= rect.bottom;
+
+/** A point's distance to a rect: zero inside it, the gap to the nearest edge outside. */
+function distance(rect: DOMRect, p: Point): number {
+	return Math.hypot(
+		Math.max(rect.left - p.x, 0, p.x - rect.right),
+		Math.max(rect.top - p.y, 0, p.y - rect.bottom)
+	);
+}
+
 interface MountedCell {
 	view: EditorView;
+	/** The cell's box, which the nearest-cell measure reads: the view's own `dom` is
+	 *  the contenteditable inside it and stops at the text. */
+	host: HTMLElement;
 	unregister: () => void;
 	r: number;
 	c: number;
 }
 
+/** Which line a menu acts on. `island` is the corner's: the whole rectangle, and the
+ *  one kind whose offers are not a line's. */
+type MenuKind = 'row' | 'column' | 'island';
+
 /** The open menu: which line it acts on, and the handle it hangs off. */
 interface OpenMenu {
-	kind: 'row' | 'column';
+	kind: MenuKind;
 	index: number;
 	trigger: HTMLButtonElement;
 }
@@ -235,6 +275,7 @@ class TableIslandView implements NodeView {
 		this.dom = el('div', 'qm-island qm-table-island');
 		this.dom.setAttribute('data-island', node.attrs.islandType as string);
 		this.dom.setAttribute('data-island-id', node.attrs.id as string);
+		this.dom.addEventListener('mousedown', this.onPointerDown);
 		this.render();
 	}
 
@@ -268,11 +309,13 @@ class TableIslandView implements NodeView {
 	}
 
 	/** The nested views own every event inside a cell or a control; everything else
-	 *  (the island's own padding, its border) stays PM's, so a click beside the table
-	 *  still selects the node and Backspace still deletes it. */
+	 *  stays PM's, so a key pressed over a selected island still reaches the field's
+	 *  keymap. What a POINTER press means on the rest of the chrome is
+	 *  {@link TableIslandView.onPointerDown}'s and not this one's: `stopEvent` gates
+	 *  the whole subtree, so widening it would take that routing with it. */
 	stopEvent(event: Event): boolean {
 		const target = event.target as Element | null;
-		return !!target?.closest?.('.qm-table-cell-host, .qm-table-handle, .qm-table-add');
+		return !!target?.closest?.(OWNED);
 	}
 
 	/** Nothing in this subtree is PM-managed: the cells are separate views. */
@@ -281,8 +324,97 @@ class TableIslandView implements NodeView {
 	}
 
 	destroy(): void {
+		this.dom.removeEventListener('mousedown', this.onPointerDown);
 		this.closeMenu();
 		this.teardownCells();
+	}
+
+	// ── The pointer ───────────────────────────────────────────────────────────
+
+	/**
+	 * The chrome is two bands with two owners, and neither of them selects the node
+	 * (VISUAL_EDITOR_UIUX §"Table island").
+	 *
+	 * INSIDE the frame (gutter, corner, cell padding, the borders between cells) is
+	 * the table's: the press lands in the nearest cell, measured against the mounted
+	 * hosts' rects. Geometry rather than the last cell focused: one press with two
+	 * outcomes depending on history is a surface that feels haunted. OUTSIDE it (the
+	 * island's own padding, the space beside the grid) is the DOCUMENT's, and means
+	 * "write here, beside the table".
+	 *
+	 * A `mousedown` listener, and it stops the event: PM's own mousedown is what arms
+	 * the node selection the matching mouseup then takes. `stopEvent` is the other
+	 * way to reach that, and it gates the subtree's keydown and drag routing too.
+	 */
+	private readonly onPointerDown = (event: MouseEvent): void => {
+		// Any other island type is an atom with NO interior: a press on it is
+		// unambiguous, and PM's to answer. So is a secondary press, which types nothing
+		// and is on its way to a context menu.
+		if (!this.rendered || event.button !== 0) return;
+		const target = event.target as Element | null;
+		if (target?.closest?.(OWNED)) return; // a cell or a control answers for itself
+		event.preventDefault();
+		event.stopPropagation();
+		const point = { x: event.clientX, y: event.clientY };
+		const grid = this.dom.querySelector('.qm-table-grid');
+		if (grid && within(grid.getBoundingClientRect(), point)) this.focusNearestCell(point);
+		else this.caretBeside(point);
+	};
+
+	/** The cell a press inside the frame belongs to: the nearest by rect, which for a
+	 *  press on a border or a cell's own padding is the cell it is against. */
+	private focusNearestCell(point: Point): void {
+		let best: MountedCell | undefined;
+		let nearest = Infinity;
+		for (const mounted of this.cells) {
+			const at = distance(mounted.host.getBoundingClientRect(), point);
+			if (at >= nearest) continue;
+			nearest = at;
+			best = mounted;
+		}
+		if (best) this.focusCell(best.r, best.c);
+	}
+
+	/** A caret beside the island, on the side the press landed: a GAP CURSOR where the
+	 *  document holds no text position there, and the neighbouring block's own edge
+	 *  where it holds one. Never a node selection, which is the whole point.
+	 *
+	 *  The gap is asked for through the plugin's own `createSelectionBetween` rather
+	 *  than built here: whether a position takes one is the gap cursor's rule, and a
+	 *  leaf mounted without that plugin then answers "no gap" instead of dispatching
+	 *  a selection nothing draws. */
+	private caretBeside(point: Point): void {
+		const pos = this.getPos();
+		if (pos == null) return;
+		const box = this.dom.getBoundingClientRect();
+		const before = point.y < (box.top + box.bottom) / 2;
+		const $at = this.outer.state.doc.resolve(before ? pos : pos + this.node.nodeSize);
+		const selection =
+			this.outer.someProp('createSelectionBetween', (f) => f(this.outer, $at, $at)) ??
+			Selection.findFrom($at, before ? -1 : 1, true);
+		if (!selection) return;
+		this.outer.focus();
+		this.outer.dispatch(this.outer.state.tr.setSelection(selection));
+	}
+
+	/** The island as the selection: the corner's gesture, and Escape's out of a cell.
+	 *  Those two are the whole of what selects it. */
+	private selectIsland(): void {
+		const pos = this.getPos();
+		if (pos == null) return;
+		this.outer.focus();
+		this.outer.dispatch(
+			this.outer.state.tr.setSelection(NodeSelection.create(this.outer.state.doc, pos))
+		);
+	}
+
+	/** Delete the whole island: a NAMED item beside the row and column deletes, rather
+	 *  than a keystroke over an armed selection. */
+	private deleteIsland(): void {
+		const pos = this.getPos();
+		if (pos == null) return;
+		this.outer.focus();
+		this.outer.dispatch(this.outer.state.tr.delete(pos, pos + this.node.nodeSize));
 	}
 
 	// ── Render ────────────────────────────────────────────────────────────────
@@ -350,7 +482,9 @@ class TableIslandView implements NodeView {
 	/** The row above the table: the corner, then one handle per column. */
 	private columnGutter(props: TableProps, s: TableChromeStrings): HTMLElement {
 		const tr = el('tr', 'qm-table-gutter-row');
-		tr.appendChild(el('td', 'qm-table-corner'));
+		const corner = el('td', 'qm-table-corner');
+		corner.appendChild(this.cornerHandle(s));
+		tr.appendChild(corner);
 		for (let c = 0; c < columnCount(props); c++) {
 			const cell = el('td', 'qm-table-gutter');
 			cell.appendChild(this.handle('column', c, s.tableColumnMenu(c + 1)));
@@ -395,6 +529,26 @@ class TableIslandView implements NodeView {
 		return btn;
 	}
 
+	/**
+	 * The island's own handle, in the empty `td` at the grid origin: the spreadsheet's
+	 * select-all position, and where the row and column handles already converge. A
+	 * press SELECTS the island and raises its menu, which is the pointer path to
+	 * selection, copy and delete that the two bands give up.
+	 *
+	 * A square rather than a bar, because what it acts on is the whole rectangle and
+	 * not a line of it.
+	 */
+	private cornerHandle(s: TableChromeStrings): HTMLButtonElement {
+		const btn = chromeButton('qm-table-handle qm-table-corner-handle', s.tableMenu, () => {
+			this.selectIsland();
+			this.toggleMenu('island', 0, btn);
+		});
+		btn.setAttribute('aria-haspopup', 'menu');
+		btn.setAttribute('aria-expanded', 'false');
+		btn.appendChild(el('span', 'qm-table-corner-mark'));
+		return btn;
+	}
+
 	private mountCell(host: HTMLElement, r: number, c: number, s: TableChromeStrings): void {
 		const props = this.props();
 		const name = s.tableCell(r === 0 ? s.tableHeaderRow : s.tableRow(r), s.tableColumn(c + 1));
@@ -418,12 +572,12 @@ class TableIslandView implements NodeView {
 				}
 			}
 		});
-		this.cells.push({ view, unregister: this.deps.register(view), r, c });
+		this.cells.push({ view, host, unregister: this.deps.register(view), r, c });
 	}
 
 	// ── The line menu ─────────────────────────────────────────────────────────
 
-	private toggleMenu(kind: 'row' | 'column', index: number, trigger: HTMLButtonElement): void {
+	private toggleMenu(kind: MenuKind, index: number, trigger: HTMLButtonElement): void {
 		if (this.menu?.kind === kind && this.menu.index === index) {
 			this.closeMenu();
 			return;
@@ -433,8 +587,8 @@ class TableIslandView implements NodeView {
 		trigger.setAttribute('aria-expanded', 'true');
 		const s = this.deps.strings();
 		this.deps.onMenu({
-			label: kind === 'row' ? s.tableRowMenu(index) : s.tableColumnMenu(index + 1),
-			items: kind === 'row' ? this.rowItems(s) : this.columnItems(index, s),
+			label: this.menuLabel(kind, index, s),
+			items: this.menuOffers(kind, index, s),
 			trigger,
 			run: (id) => this.runMenuItem(kind, index, id),
 			close: () => this.closeMenu()
@@ -446,6 +600,20 @@ class TableIslandView implements NodeView {
 		this.menu.trigger.setAttribute('aria-expanded', 'false');
 		this.menu = undefined;
 		this.deps.onMenu(undefined);
+	}
+
+	private menuLabel(kind: MenuKind, index: number, s: TableChromeStrings): string {
+		if (kind === 'row') return s.tableRowMenu(index);
+		if (kind === 'column') return s.tableColumnMenu(index + 1);
+		return s.tableMenu;
+	}
+
+	/** The island's menu holds ONE item: whole-table delete, which stops riding the
+	 *  atom's selection and becomes a named offer beside the line deletes. */
+	private menuOffers(kind: MenuKind, index: number, s: TableChromeStrings): IslandMenuItem[] {
+		if (kind === 'row') return this.rowItems(s);
+		if (kind === 'column') return this.columnItems(index, s);
+		return [{ id: 'delete', label: s.tableDeleteTable }];
 	}
 
 	private rowItems(s: TableChromeStrings): IslandMenuItem[] {
@@ -478,9 +646,13 @@ class TableIslandView implements NodeView {
 
 	/** Apply a picked item and say where the caret lands: every one of these rebuilds
 	 *  the views the caret was in, so the op that moved it names the cell. */
-	private runMenuItem(kind: 'row' | 'column', index: number, id: string): void {
+	private runMenuItem(kind: MenuKind, index: number, id: string): void {
 		const props = this.props();
 		this.closeMenu();
+		if (kind === 'island') {
+			if (id === 'delete') this.deleteIsland();
+			return;
+		}
 		if (kind === 'row') {
 			if (id === 'insert-above') this.write(insertRow(props, index - 1), { r: index, c: 0 });
 			else if (id === 'insert-below') this.write(insertRow(props, index), { r: index + 1, c: 0 });
@@ -577,12 +749,7 @@ class TableIslandView implements NodeView {
 			// The innermost Escape: out of the cell, onto the island. What the next one
 			// means is the shell's (VISUAL_EDITOR §"Settled and open").
 			Escape: () => {
-				const pos = this.getPos();
-				if (pos == null) return true;
-				this.outer.focus();
-				this.outer.dispatch(
-					this.outer.state.tr.setSelection(NodeSelection.create(this.outer.state.doc, pos))
-				);
+				this.selectIsland();
 				return true;
 			}
 		};

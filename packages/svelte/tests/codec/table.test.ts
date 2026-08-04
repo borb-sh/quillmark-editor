@@ -9,7 +9,8 @@
 // normalization drift because it is mark union; a table's drift is structural. So
 // every row and column op is asserted install-then-read against its own projection.
 import { describe, it, expect } from 'vitest';
-import { EditorState, NodeSelection } from 'prosemirror-state';
+import { GapCursor } from 'prosemirror-gapcursor';
+import { EditorState, NodeSelection, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { createField, decode, blockSchema, inlineSchema } from '$lib/core/codec';
 import type { FieldController, IslandMenuState, LeafViews } from '$lib/core/codec';
@@ -193,14 +194,26 @@ function tableLeaf(props?: TableProps) {
 	return { doc, field, menu: () => menu };
 }
 
-/** The row handles, in order (body rows only), and the column handles. */
+/** The row handles, in order (body rows only), and the column handles. Both read off
+ *  a GUTTER cell, which is what leaves the corner (the island's own handle) out of
+ *  either set. */
 function handles(field: FieldController, kind: 'row' | 'column'): HTMLButtonElement[] {
 	const rows = field.el.querySelectorAll<HTMLButtonElement>(
 		kind === 'column'
-			? '.qm-table-gutter-row .qm-table-handle'
-			: 'tr:not(.qm-table-gutter-row) .qm-table-handle'
+			? '.qm-table-gutter-row .qm-table-gutter .qm-table-handle'
+			: 'tr:not(.qm-table-gutter-row) .qm-table-gutter .qm-table-handle'
 	);
 	return Array.from(rows);
+}
+
+/** The corner: the island's block handle. */
+function corner(field: FieldController): HTMLButtonElement {
+	return field.el.querySelector<HTMLButtonElement>('.qm-table-corner-handle')!;
+}
+
+/** The leaf's own view: the document the island sits in. */
+function outerView(field: FieldController): EditorView {
+	return (field as FieldController & LeafViews).view;
 }
 
 /** The nested cell views, in mount (reading) order: the leaf's own handle, which
@@ -362,7 +375,7 @@ describe('the table NodeView', () => {
 		const first = cellViews(field)[0];
 		first.focus();
 		press(first, 'Escape');
-		const outer = (field as FieldController & LeafViews).view;
+		const outer = outerView(field);
 		const selection = outer.state.selection;
 		expect(selection instanceof NodeSelection && selection.node.type.name).toBe('island_block');
 		outer.dispatch(outer.state.tr.deleteSelection());
@@ -393,6 +406,208 @@ describe('the table NodeView', () => {
 		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
 		expect(field.el.querySelector('table')).toBeNull();
 		expect(field.el.textContent).toContain('[chart]');
+		field.destroy();
+	});
+});
+
+// ── The pointer, and what a selection is for ────────────────────────────────
+//
+// Click-to-NodeSelect belongs to an atom with no interior, and a table has cells. So
+// a press on the chrome resolves to a CARET (inside the frame the nearest cell's,
+// outside it the document's), and a printable key over a selected island writes past
+// it rather than replacing it. What selects the island is a named gesture: the
+// corner, or Escape.
+
+interface Box {
+	left: number;
+	top: number;
+	right: number;
+	bottom: number;
+}
+
+const domRect = (box: Box): DOMRect =>
+	({
+		...box,
+		x: box.left,
+		y: box.top,
+		width: box.right - box.left,
+		height: box.bottom - box.top,
+		toJSON: () => box
+	}) as DOMRect;
+
+// The island's boxes, which jsdom lays nothing out to produce: the bands are geometry,
+// so a test that drives them supplies one. The grid sits inset in the island, and the
+// six cell hosts (reading order) tile it inside a gutter row and column.
+const ISLAND: Box = { left: 0, top: 0, right: 200, bottom: 120 };
+const GRID: Box = { left: 10, top: 10, right: 190, bottom: 90 };
+const HOSTS: Box[] = [
+	{ left: 30, top: 20, right: 100, bottom: 40 },
+	{ left: 110, top: 20, right: 180, bottom: 40 },
+	{ left: 30, top: 45, right: 100, bottom: 65 },
+	{ left: 110, top: 45, right: 180, bottom: 65 },
+	{ left: 30, top: 70, right: 100, bottom: 85 },
+	{ left: 110, top: 70, right: 180, bottom: 85 }
+];
+
+function layout(field: FieldController, hosts: Box[] = HOSTS): void {
+	const stub = (el: Element | null, box: Box) => {
+		if (el) (el as HTMLElement).getBoundingClientRect = () => domRect(box);
+	};
+	stub(field.el.querySelector('.qm-table-island'), ISLAND);
+	stub(field.el.querySelector('.qm-table-grid'), GRID);
+	field.el
+		.querySelectorAll('.qm-table-cell-host')
+		.forEach((host, i) => hosts[i] && stub(host, hosts[i]));
+}
+
+// jsdom implements no `Range` rects, and PM reads them to scroll a caret it just
+// moved into view. The one browser API a landing past the island touches, stubbed at
+// the zero box: what is under test is where the caret WENT, not what scrolled.
+Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
+Range.prototype.getBoundingClientRect = () => domRect({ left: 0, top: 0, right: 0, bottom: 0 });
+
+/** A press at a viewport point, on the element under it: `mousedown` is where the
+ *  guard sits, being where PM arms the selection the mouseup would take. */
+function pressAt(target: Element, x: number, y: number): void {
+	target.dispatchEvent(
+		new MouseEvent('mousedown', { bubbles: true, cancelable: true, clientX: x, clientY: y })
+	);
+}
+
+/** The `td` of a cell, which is the cell's PADDING and its borders: chrome inside the
+ *  frame, and the commonest place a press misses a host by a few pixels. */
+function cellBox(field: FieldController, index: number): Element {
+	return field.el.querySelectorAll('.qm-table-cell')[index];
+}
+
+/** Drive a printable key at a mounted view the way an input event does: PM routes
+ *  text over a non-`TextSelection` through this prop before replacing the selection. */
+function type(view: EditorView, text: string): boolean {
+	const { from, to } = view.state.selection;
+	return !!view.someProp('handleTextInput', (f) => f(view, from, to, text, () => view.state.tr));
+}
+
+describe('a pointer press on the island resolves to a caret', () => {
+	it('inside the frame it lands in the NEAREST cell, by geometry', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		// The border between the two cells of row 1, a hair into the left one.
+		pressAt(cellBox(field, 2), 103, 55);
+		expect((field as FieldController & LeafViews).focusedView()).toBe(cellViews(field)[2]);
+		expect(outerView(field).state.selection instanceof NodeSelection).toBe(false);
+		field.destroy();
+	});
+
+	it("the gutter is the table's band too: it focuses, it does not select", () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		const gutter = field.el.querySelectorAll('tr:not(.qm-table-gutter-row) .qm-table-gutter')[1];
+		pressAt(gutter, 20, 78); // beside the last row, left of every cell
+		expect((field as FieldController & LeafViews).focusedView()).toBe(cellViews(field)[4]);
+		field.destroy();
+	});
+
+	it('outside the frame it writes beside the table, on the side it landed', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		const island = field.el.querySelector('.qm-table-island')!;
+		pressAt(island, 195, 110); // below the grid: the document's band
+		const after = outerView(field).state.selection;
+		expect(after instanceof TextSelection).toBe(true);
+		expect(after.$head.parent.textContent).toBe('tail');
+		pressAt(island, 5, 5); // above it
+		const before = outerView(field).state.selection;
+		expect(before.$head.parent.textContent).toBe('para');
+		field.destroy();
+	});
+
+	it('a gap cursor is the caret where the document holds no text position', () => {
+		// The island is the whole document, so there is no block beside it to write in.
+		const doc = quill().seedDocument();
+		doc.install({}, md('| a | b |\n|---|---|\n| 1 | 2 |'));
+		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
+		layout(field, HOSTS.slice(0, 4));
+		pressAt(field.el.querySelector('.qm-table-island')!, 195, 110);
+		expect(outerView(field).state.selection instanceof GapCursor).toBe(true);
+		field.destroy();
+	});
+
+	it('an island with no interior keeps the click: the rule, not an exception', () => {
+		const doc = quill().seedDocument();
+		const rt = md(TABLE_MD);
+		rt.islands[0] = { id: 'isl-0', type: 'chart', props: { any: 1 }, loss: 'unrepresentable' };
+		doc.install({}, rt);
+		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
+		// Dispatched AT the island rather than through it: PM's own mousedown wants a
+		// `elementFromPoint` jsdom does not have, and what is asserted is that the
+		// guard declined to stand in front of it.
+		const event = new MouseEvent('mousedown', { cancelable: true, clientX: 5, clientY: 5 });
+		field.el.querySelector('.qm-table-island')!.dispatchEvent(event);
+		expect(event.defaultPrevented).toBe(false);
+		field.destroy();
+	});
+});
+
+describe("the corner is the island's handle", () => {
+	it('a press selects the island and raises the whole-table delete', () => {
+		const { doc, field, menu } = tableLeaf(LETTERED);
+		corner(field).click();
+		const selection = outerView(field).state.selection;
+		expect(selection instanceof NodeSelection && selection.node.type.name).toBe('island_block');
+		expect(menu()?.items.map((i) => i.id)).toEqual(['delete']);
+		menu()!.run('delete');
+		expect(doc.main.body.islands).toHaveLength(0);
+		expect(doc.main.body.text).toBe('para\ntail');
+		field.destroy();
+	});
+
+	it('it is not a line handle: the row and column sets are unchanged', () => {
+		const { field } = tableLeaf(LETTERED);
+		expect(handles(field, 'column')).toHaveLength(2);
+		expect(handles(field, 'row')).toHaveLength(2);
+		expect(field.el.querySelectorAll('.qm-table-corner-handle')).toHaveLength(1);
+		field.destroy();
+	});
+});
+
+describe('a selection is the subject of the next command', () => {
+	it('a printable key over a BLOCK island opens a paragraph after it', () => {
+		const { doc, field } = tableLeaf(LETTERED);
+		const first = cellViews(field)[0];
+		first.focus();
+		press(first, 'Escape');
+		const outer = outerView(field);
+		expect(type(outer, 'x')).toBe(true);
+		expect(doc.main.body.islands).toHaveLength(1); // the table stands
+		expect(outer.state.doc.child(2).textContent).toBe('x');
+		expect(outer.state.selection instanceof TextSelection).toBe(true);
+		expect(outer.state.selection.empty).toBe(true);
+		field.destroy();
+	});
+
+	it('a printable key over an INLINE island lands after the image, in its line', () => {
+		const doc = quill().seedDocument();
+		doc.install({}, md('a ![alt](url) b'));
+		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
+		const outer = outerView(field);
+		let at = -1;
+		outer.state.doc.descendants((node, pos) => {
+			if (node.type.name === 'island_inline') at = pos;
+		});
+		expect(at).toBeGreaterThan(-1);
+		outer.dispatch(outer.state.tr.setSelection(NodeSelection.create(outer.state.doc, at)));
+		expect(type(outer, 'x')).toBe(true);
+		expect(doc.main.body.islands).toHaveLength(1); // the image stands
+		expect(doc.main.body.text).toBe('a ￼x b');
+		field.destroy();
+	});
+
+	it('Backspace still deletes it: the destructive key is the deliberate one', () => {
+		const { doc, field } = tableLeaf(LETTERED);
+		corner(field).click();
+		const outer = outerView(field);
+		outer.dispatch(outer.state.tr.deleteSelection());
+		expect(doc.main.body.islands).toHaveLength(0);
 		field.destroy();
 	});
 });

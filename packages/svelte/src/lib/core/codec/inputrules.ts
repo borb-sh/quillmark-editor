@@ -1,5 +1,6 @@
 // Input rules: the markdown-shorthand plugin the codec owns (`**`→strong, `*`→em,
-// `~~`→strike, `` ` ``→code, `# `→heading, `- `/`1. `→lists, `> `→blockquote).
+// `~~`→strike, `` ` ``→code, `# `→heading, `- `/`1. `→lists, `> `→blockquote,
+// `---`→divider).
 // Mark rules are hand-rolled (prosemirror-inputrules ships only node rules); block
 // rules reuse `wrappingInputRule` / `textblockTypeInputRule`. These produce
 // transactions the codec already lowers: they add no new lowering surface.
@@ -11,6 +12,7 @@ import {
 } from 'prosemirror-inputrules';
 import type { Attrs, MarkType, Node as PMNode, NodeType, Schema } from 'prosemirror-model';
 import { canJoin, findWrapping } from 'prosemirror-transform';
+import { Selection } from 'prosemirror-state';
 import type { EditorState, Plugin, Transaction } from 'prosemirror-state';
 
 /**
@@ -139,9 +141,47 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 	if (schema.nodes.code_block) {
 		rules.push(textblockTypeInputRule(/^```$/, schema.nodes.code_block));
 	}
-	// The list shorthands are the ONLY entry point that starts a list:
-	// there is no toggle command and no toolbar affordance, so `- ` / `1. ` at the
-	// start of a block is how one begins, here or nested inside an item.
+	if (schema.nodes.horizontal_rule && schema.nodes.paragraph) {
+		// A divider is a whole block, so this rule REPLACES its textblock rather than
+		// retyping one: `horizontal_rule` holds no content to retype into.
+		const rule = schema.nodes.horizontal_rule;
+		const paragraph = schema.nodes.paragraph;
+		const item = schema.nodes.list_item;
+		rules.push(
+			new InputRule(
+				/^---$/,
+				(state: EditorState, _match: RegExpMatchArray, start: number, end: number) => {
+					const $start = state.doc.resolve(start);
+					// The block ENTIRELY, not a prefix of one. `[start, end)` is the match minus
+					// the just-typed `-`, so the block holds `--` when this fires; anything else
+					// in it is a paragraph being edited, which a replace would eat.
+					if ($start.parentOffset !== 0 || $start.parent.content.size !== end - start) {
+						return null;
+					}
+					// The `# ` rule's guard, for its reason: `list_item` is `block+`, so a
+					// divider inside an item is representable and renders to nothing.
+					for (let d = $start.depth; d > 0; d--) {
+						if (item && $start.node(d).type === item) return null;
+					}
+					if (!$start.node(-1).canReplaceWith($start.index(-1), $start.indexAfter(-1), rule)) {
+						return null;
+					}
+					const from = $start.before();
+					const tr = state.tr.replaceWith(from, $start.after(), rule.create());
+					// A divider at the end of a body leaves nowhere to type; the paragraph after
+					// it is the exit, and it is where the caret lands (`slash.ts` §insertBlock
+					// opens the same block for the same reason).
+					const at = from + 1;
+					if (!tr.doc.nodeAt(at)) tr.insert(at, paragraph.create());
+					tr.setSelection(Selection.near(tr.doc.resolve(at), 1));
+					return tr;
+				}
+			)
+		);
+	}
+	// `- ` / `1. ` at the start of a block, here or nested inside an item. These are
+	// the one pair of shorthands the slash menu ALSO carries: a list opens an item the
+	// caret then lives in, which is what that menu is the set of (`slash.ts`).
 	if (schema.nodes.bullet_list && schema.nodes.paragraph) {
 		rules.push(
 			listWrappingRule(/^\s*([-+*])\s$/, schema.nodes.bullet_list, schema.nodes.paragraph)

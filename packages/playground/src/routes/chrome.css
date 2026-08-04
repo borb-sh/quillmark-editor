@@ -18,27 +18,6 @@
 	padding-inline: var(--pg-space-6);
 }
 
-/* ── The two-column layout ─────────────────────────────────────────────────── */
-/* Every route's body: the thing the page is about, and the aside beside it
-   (instruments on a tool route, the live sheet on the front page). One recipe, so
-   the aside sits on the same edge and collapses at the same width whichever route
-   the visitor is on. Margins are the route's own; this places the columns and
-   nothing more. */
-.pg-layout {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) var(--pg-aside);
-	gap: var(--pg-space-8);
-	align-items: start;
-}
-
-/* Below the width where the aside stops fitting, it drops under the content it
-   annotates; the same stack the rail takes, at the same threshold. */
-@media (width < 60rem) {
-	.pg-layout {
-		grid-template-columns: minmax(0, 1fr);
-	}
-}
-
 /* ── The rail ──────────────────────────────────────────────────────────────── */
 /* A block is an annotation in the margin and the content it names (PLAYGROUND
    §"The rail"). Below the width where the margin stops fitting, the rail stacks
@@ -149,33 +128,6 @@ pre.pg-readout {
 	padding: var(--pg-space-4);
 }
 
-/* The instrument column: the switches and readouts beside a mounted surface, on
-   a panel: sticky under the running head, each label sitting on its value with
-   the space between the groups. It caps at the viewport and scrolls in place,
-   because a column carrying a document dump is the one thing on these pages that
-   can outgrow the page it sits on. */
-.pg-instruments {
-	position: sticky;
-	top: var(--pg-space-16);
-	display: flex;
-	flex-direction: column;
-	gap: var(--pg-space-half);
-	max-height: var(--pg-mount-max);
-	overflow: auto;
-}
-
-.pg-instruments .pg-label:not(:first-child) {
-	margin-top: var(--pg-space-4);
-}
-
-@media (width < 60rem) {
-	.pg-instruments {
-		position: static;
-		max-height: none;
-		overflow: visible;
-	}
-}
-
 /* The mounting site: the frame a surface is dropped into, and the tone behind its
    column; the properties THEMING §"What is behind the column is yours" leaves to
    the host. `border-box`, like the panel: both take a padding from here and a
@@ -220,7 +172,7 @@ pre.pg-readout {
 	background: var(--pg-surface-hover);
 }
 
-/* The one filled element in the playground. It is the front page's single action
+/* The one filled element in the playground. It is the front page's first action
    (open the surface the visitor came to see), and it is ink on page rather than a
    hue, so it inverts with the scheme like everything else. */
 .pg-cta {
@@ -243,6 +195,25 @@ pre.pg-readout {
 .pg-cta:hover {
 	background: var(--pg-ink-meta);
 	border-color: var(--pg-ink-meta);
+}
+
+/* The action beside it: the same shape, unfilled, so the pair reads as one
+   choice and the page still spends its one fill once. Boxed like the harness's
+   switches, since a bare link beside a solid button reads as a footnote. */
+.pg-cta-quiet {
+	display: inline-block;
+	background: var(--pg-page);
+	color: var(--pg-ink);
+	border: var(--pg-border-width) solid var(--pg-border-strong);
+	border-radius: var(--pg-radius-inner);
+	padding: var(--pg-space-2) var(--pg-space-4);
+	font-weight: var(--pg-weight-mid);
+	text-decoration: none;
+	transition: background-color var(--pg-duration) var(--pg-ease-reverse);
+}
+
+.pg-cta-quiet:hover {
+	background: var(--pg-surface-hover);
 }
 
 /* A text link in the reading column: underlined at the border rung rather than

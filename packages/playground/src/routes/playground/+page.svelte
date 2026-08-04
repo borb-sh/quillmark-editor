@@ -1,6 +1,6 @@
 <!--
-  The reference SPLIT-PANE SHELL. One consumer-owned LiveSession drives all three
-  surfaces over one seeded document:
+  The reference SPLIT-PANE SHELL, and the page the site is named for. One
+  consumer-owned LiveSession drives all three surfaces over one seeded document:
     • <VisualEditor> (left): the edit surface; commits land on `doc`.
     • <Preview>      (right): a pure view of the session; never mutates it.
     • <SourceView>   (drawer): read-only canonical markdown of `doc`.
@@ -31,6 +31,10 @@
   failure the surfaces recovered from is visible rather than console-only. `inject-diagnostics` stands in for a live
   render-error feed: a real consumer derives external diagnostics from
   `session.warnings` (wired here, `[]` for usaf_memo) plus render errors.
+
+  The fixture variants are query flags with no chrome: schema or seed changes read
+  once at mount, for the branches the reference quill on disk reaches none of
+  (PLAYGROUND §"Fixture variants").
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -46,7 +50,7 @@
 	import type { ActiveLeaf, EditorChange } from '@quillmark/svelte/visual';
 	import { Preview } from '@quillmark/svelte/preview';
 	import { SourceView } from '@quillmark/svelte/source';
-	import { loadUsafMemoTree } from '../fixture';
+	import { loadUsafMemoTree, withMainDateDefault, withSecondCardKind } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
 	type VisualEditorComponent = typeof import('@quillmark/svelte/visual').VisualEditor;
@@ -216,14 +220,41 @@
 				// same import. The fixture fetch is independent of both, so it runs alongside
 				// them.
 				const treeP = loadUsafMemoTree();
-				const [{ Engine, Quill }, { init }, visual] = await Promise.all([
+				const [{ Engine, Quill, Document, MAIN_CARD_ADDR }, { init }, visual] = await Promise.all([
 					import('@quillmark/wasm'),
 					import('@quillmark/svelte/core'),
 					import('@quillmark/svelte/visual')
 				]);
 				init();
-				const quill = Quill.fromTree(await treeP);
+				const tree = await treeP;
+				// The SCHEMA variants, patched into the tree before the quill is built:
+				// `?dateDefault=YYYY-MM-DD` gives the main `date` a literal default (the
+				// reference quill declares a blank one, which ghosts nothing), `?kinds2` a
+				// second card kind, so the add affordance takes its menu branch.
+				const params = new URLSearchParams(window.location.search);
+				const dateDefault = params.get('dateDefault');
+				if (dateDefault) withMainDateDefault(tree, dateDefault);
+				if (params.has('kinds2')) withSecondCardKind(tree);
+				const quill = Quill.fromTree(tree);
 				const doc = quill.seedDocument();
+				// The SEED variants. `?foreign` holds a card whose kind the schema cannot
+				// project: `Document.insertCard` is schema-agnostic where the Quill-bound
+				// writer would reject it, which is the case the recovery shell handles.
+				// `?tips` seeds the guidance channel a quill or consumer supplies (`$ext`,
+				// not schema), through `patchEditorExt`, so a consumer seeding one key does
+				// not replace the namespace.
+				if (params.has('foreign')) {
+					doc.insertCard(Document.makeCard('legacy_kind', {}, 'Trapped legacy body.'));
+				}
+				if (params.has('tips')) {
+					visual.patchEditorExt(doc, MAIN_CARD_ADDR, {
+						tips: [
+							'Press **Tab** to move on.',
+							'Run `npm run dev` for the playground.',
+							'Last one — dismissing clears the channel.'
+						]
+					});
+				}
 				const engine = new Engine();
 				const openedSession = await engine.open(quill, doc);
 				if (cancelled) {
@@ -256,9 +287,9 @@
 	});
 </script>
 
-<main class="pg-width">
+<main class="pg-width page">
 	<header class="pg-head">
-		<h1 class="pg-title">Editor</h1>
+		<h1 class="pg-title">Playground</h1>
 		{#if status.phase === 'loading'}
 			<p data-testid="status" class="pg-status loading">Opening…</p>
 		{:else if status.phase === 'error'}
@@ -375,12 +406,23 @@
 </main>
 
 <style>
+	/* The page takes what the shell hands it and never scrolls itself: the panes
+	   below own their overflow, so the surfaces stay put while their contents move.
+	   Below the split's threshold the shell stops filling and this stops applying,
+	   which is what leaves the stacked panes reachable. */
+	.page {
+		display: flex;
+		flex-direction: column;
+		gap: var(--pg-space-4);
+		min-height: 0;
+		padding-bottom: var(--pg-space-4);
+	}
+
 	.strip {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: baseline;
 		gap: var(--pg-space-2) var(--pg-space-6);
-		margin-bottom: var(--pg-space-4);
 	}
 
 	.stat {
@@ -401,12 +443,14 @@
 	}
 
 	/* `--split` comes in inline from `splitPct`: the middle track holds the resizer,
-	   the two side tracks are the panes. */
+	   the two side tracks are the panes. One row, taking the height the page has
+	   left after the head and the strip, and the drawer when it is open. */
 	.shell {
 		display: grid;
 		grid-template-columns: var(--split);
-		align-items: start;
-		height: var(--pg-mount-tall);
+		grid-template-rows: minmax(0, 1fr);
+		flex: 2 1 0;
+		min-height: 0;
 	}
 
 	/* Both panes are the shell's frame; what each states here is the mounting site
@@ -415,7 +459,7 @@
 	   behind the column, the supported bare case, and its end padding is the tail. */
 	.editor-pane {
 		min-width: 0;
-		height: 100%;
+		min-height: 0;
 		overflow: auto;
 		padding: var(--pg-space-2) var(--pg-space-2) var(--pg-tail);
 		background: var(--pg-page);
@@ -425,7 +469,7 @@
 	   painted sheet inset on it. The frame carries the rest. */
 	.preview-pane {
 		min-width: 0;
-		height: 100%;
+		min-height: 0;
 		padding: var(--pg-space-2);
 	}
 
@@ -482,8 +526,13 @@
 		opacity: 1;
 	}
 
+	/* Open, the drawer takes a third of what the panes had rather than a height of
+	   its own: the page cannot grow, so the room comes from the split. */
 	.drawer {
-		margin-top: var(--pg-space-4);
+		display: flex;
+		flex-direction: column;
+		flex: 1 1 0;
+		min-height: 0;
 	}
 
 	.drawer-label {
@@ -492,19 +541,21 @@
 	}
 
 	.source-host {
-		height: var(--pg-mount);
+		flex: 1 1 0;
+		min-height: 0;
 		background: var(--pg-page);
 	}
 
 	/* Below the width that fits two panes side by side, the split stops being one: the
 	   tracks stack, the divider has nothing left to divide, and each pane takes the
-	   short mount so both are reachable by scrolling the page. Same threshold as the
-	   aside on every other route. */
+	   short mount so both are reachable by scrolling the page. The shell stops
+	   filling the viewport at the same threshold, so nothing here flexes. */
 	@media (width < 60rem) {
 		.shell {
 			grid-template-columns: minmax(0, 1fr);
+			grid-template-rows: none;
 			gap: var(--pg-space-4);
-			height: auto;
+			flex: 0 0 auto;
 		}
 
 		.resizer {
@@ -512,8 +563,13 @@
 		}
 
 		.editor-pane,
-		.preview-pane {
+		.preview-pane,
+		.source-host {
 			height: var(--pg-mount);
+		}
+
+		.drawer {
+			flex: 0 0 auto;
 		}
 	}
 </style>

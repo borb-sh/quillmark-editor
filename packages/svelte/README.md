@@ -224,7 +224,7 @@ const path = fieldPathForAddr(
 
 A consumer calling this once reads `doc.cards` and moves on; the per-keystroke path is the one that cannot afford to, since each read serializes every card.
 
-The playground's `/editor` route is the full reference split-pane shell: one session, both bridge directions, the preview following edits, diagnostics routed inline, and the source view.
+The playground app's split-pane route is the full reference shell: one session, both bridge directions, the preview following edits, diagnostics routed inline, and the source view.
 
 ## Errors
 
