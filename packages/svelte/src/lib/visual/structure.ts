@@ -328,31 +328,22 @@ export interface PlacedField {
 }
 
 /**
- * Whether a field can share a row. `ui.compact` asks; a shape declines when it grows
- * in units its neighbours do not, because a row is as tall as its tallest cell: an
- * object nests a whole field set, and block richtext (`inline` absent) holds
- * paragraphs, so either one stands its neighbours in a column of whitespace. An
+ * Whether a field can share a row. `ui.compact` asks; a shape declines when the
+ * DOCUMENT sets its height, because a row is as tall as its tallest cell and the cell
+ * beside it does not grow in step: an object nests a whole field set, block richtext
+ * (`inline` absent) holds paragraphs, and an array holds however many elements the
+ * document carries. Any of them stands its neighbour in a column of whitespace. An
  * inline prose leaf is one line tall and packs like any scalar.
  *
- * An ARRAY packs on its ITEMS' shape rather than on its own. Its own height is
- * unbounded either way, but it grows one LINE at a time when its elements are
- * one-line controls, which is the same step a wrapped label or a diagnostic takes;
- * a row that ends taller for it is a row of address lines beside a row of address
- * lines. An array of objects or of block prose is the shape that declines, by the
- * rule above, one level down.
+ * An array declines WHATEVER ITS ITEMS ARE: one-line elements make a one-line step,
+ * but nothing holds two arrays to the same number of them, so the shorter of a packed
+ * pair pays a cell of whitespace for every element the taller one has past it, and
+ * pays more of it as the document is filled.
  */
 function packable(f: FieldModel): boolean {
 	if (!f.compact) return false;
-	// An array declaring no `items` has text elements (ArrayField), which are one line.
-	if (f.control === 'array')
-		return f.schema.items == null || oneLine(controlKind(f.schema.items), !!f.schema.items.inline);
-	return oneLine(f.control, f.inline);
-}
-/** Whether a control is one line tall at rest: everything but a subform and block
- *  prose. An array is never one line, so a nested one declines here too. */
-function oneLine(control: ControlKind, inline: boolean): boolean {
-	if (control === 'object' || control === 'array') return false;
-	return control !== 'prose' || inline;
+	if (f.control === 'object' || f.control === 'array') return false;
+	return f.control !== 'prose' || f.inline;
 }
 
 /**
