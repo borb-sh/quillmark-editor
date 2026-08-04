@@ -35,7 +35,9 @@ export interface PreviewController {
 	/** Scroll `field`'s first box into view and bloom it. */
 	scrollToField(field: DocPath): void;
 	/**
-	 * Scroll the caret at `at` into view and bloom its field on arrival.
+	 * Bring the caret at `at` into view and bloom its field on arrival. Both halves
+	 * are change-guarded: the pane moves only when the caret has left the fold, the
+	 * bloom fires only on a change of address.
 	 *
 	 * Takes the editor's own `onCaretMove` payload, so the editor→preview half of
 	 * the bridge is `onCaretMove={preview.focusPosition}` and translates nothing. A
@@ -107,7 +109,7 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	// swapped on reconcile, and both attach DOM/listeners per slot.
 	function attach(): void {
 		overlay = overlaysEnabled ? createOverlay(session, paintLoop.slots) : undefined;
-		bridge = createBridge(session, paintLoop.slots, opts.onCaretPick);
+		bridge = createBridge(session, container, paintLoop.slots, opts.onCaretPick);
 	}
 	function detach(): void {
 		overlay?.destroy();
@@ -156,15 +158,28 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 
 	render(session.pageCount, []);
 
+	// The last place the editor put the caret, re-located after every recompile.
+	// `session.locate` answers against the LAST COMPILED layout and a consumer
+	// debounces `update`, so a caret typed past that layout's content is off-content
+	// for the whole burst: `focusPosition` no-ops and the pane sits still, and a
+	// caret event is otherwise the only thing that asks again. The re-locate is the
+	// preview's, not the consumer's: the staleness sits between two session queries
+	// this module owns both ends of.
+	let followed: Place | undefined;
+
 	return {
 		refresh(change) {
 			render(change.pageCount, change.dirtyPages);
+			// Guarded like any other caret hop, so a caret already clear of the fold
+			// leaves a pane the user scrolled where they left it.
+			if (followed) bridge?.focusPosition(followed.field, followed.pos);
 		},
 		scrollToField(field) {
 			bridge?.scrollToField(field);
 			overlay?.flashField(field);
 		},
 		focusPosition(at) {
+			followed = at;
 			bridge?.focusPosition(at.field, at.pos);
 			overlay?.flashField(at.field);
 		},
