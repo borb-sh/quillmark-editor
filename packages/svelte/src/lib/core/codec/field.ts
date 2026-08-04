@@ -13,10 +13,19 @@
 // `StepMap`; an EXTERNAL content change re-hydrates through `applyExternal`, gated
 // by `reconcile`.
 import { baseKeymap, toggleMark } from 'prosemirror-commands';
+import { gapCursor } from 'prosemirror-gapcursor';
 import { history, redo, undo } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
 import type { Node as PMNode, Schema } from 'prosemirror-model';
-import { EditorState, Plugin, PluginKey, Selection, type Command } from 'prosemirror-state';
+import {
+	EditorState,
+	NodeSelection,
+	Plugin,
+	PluginKey,
+	Selection,
+	TextSelection,
+	type Command
+} from 'prosemirror-state';
 import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
 import type { Document, DocumentReader, Content, Addr, Quill } from '@quillmark/wasm';
 import type { EditorErrorHandler } from '../errors.js';
@@ -527,7 +536,9 @@ export function createField(opts: CreateFieldOpts): FieldController {
  * so the two never fork the keymap/plugin ordering. History first, then any
  * leaf-specific plugins (`afterHistory`: the addressed leaf passes its
  * anchor-position plugin; a by-value array element passes none), the
- * markdown-shorthand input rules, then the field keymap over the base keymap.
+ * markdown-shorthand input rules, then the field keymap over the base keymap, and
+ * last the two that answer to a caret or a selection BESIDE a block: the gap cursor
+ * and {@link pastAtomPlugin}.
  *
  * A `plaintext` field carries no marks (decode strips them, the keymap suppresses
  * Mod-b/i/u), so it also skips the input rules: `inlineSchema` still declares the
@@ -556,8 +567,45 @@ export function proseLeafPlugins(
 	if (!opts.noInputRules && !opts.plaintext) list.push(inputRulesPlugin(schema));
 	list.push(keymap(editorKeymap(schema, opts.inline, opts.plaintext, opts.slash?.items)));
 	list.push(keymap(baseKeymap));
+	// Both answer to a selection over an ATOM, which only a block leaf holds: an
+	// inline leaf is one textblock with no island and no gap to put a cursor in.
+	if (!opts.inline) list.push(gapCursor(), pastAtomPlugin());
 	if (opts.placeholder) list.push(placeholderPlugin(opts.placeholder));
 	return list;
+}
+
+/**
+ * A printable key over a selected atom writes PAST it (VISUAL_EDITOR_UIUX §"Table
+ * island"). A selection is the subject of the next command, never a thing armed for
+ * replacement: Backspace deletes it, Mod-C copies it, and a character lands beside
+ * it. A BLOCK island takes a new paragraph after it, an INLINE one the caret after
+ * the image in the same line: one rule, both node types.
+ *
+ * PM routes text input over a non-`TextSelection` through `handleTextInput` before
+ * falling back to replacing the selection, so this one prop is the whole of it.
+ * Paste keeps replacing: a paste is deliberate, and it is the gesture that swaps one
+ * island for another.
+ */
+function pastAtomPlugin(): Plugin {
+	return new Plugin({
+		props: {
+			handleTextInput(view, _from, _to, text) {
+				const { selection, schema } = view.state;
+				if (!text || !(selection instanceof NodeSelection) || !selection.node.isAtom) return false;
+				const tr = view.state.tr;
+				const at = selection.to; // just past the node, in both coordinate senses
+				if (selection.node.isInline) {
+					tr.setSelection(TextSelection.create(tr.doc, at)).insertText(text);
+				} else {
+					const para = schema.nodes.paragraph.create(null, schema.text(text));
+					tr.insert(at, para);
+					tr.setSelection(TextSelection.create(tr.doc, at + para.nodeSize - 1));
+				}
+				view.dispatch(tr.scrollIntoView());
+				return true;
+			}
+		}
+	});
 }
 
 /**
