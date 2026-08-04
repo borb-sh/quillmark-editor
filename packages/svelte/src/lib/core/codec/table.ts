@@ -10,7 +10,7 @@
 // constructor here therefore ends in {@link normalizeTable}, and a caller reaches
 // the shape only through them.
 //
-// A cell is a corpus of its own: `marks` are USV offsets into that cell's `text`,
+// A cell is its own content unit: `marks` are USV offsets into that cell's `text`,
 // not into `Content.text`. That is the second coordinate space, and the inline mode
 // the codec already runs (one paragraph, no containers, no islands) is exactly its
 // shape, so a cell decodes and projects through the same machinery a

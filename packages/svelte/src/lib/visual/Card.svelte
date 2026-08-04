@@ -44,7 +44,7 @@
 	interface Props {
 		card: CardModel;
 		doc: Document;
-		/** The schema a prose leaf reads its corpus through (`ProseField`). */
+		/** The schema a prose leaf reads its content through (`ProseField`). */
 		quill: Quill;
 		index: number;
 		isFirst: boolean;

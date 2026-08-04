@@ -12,8 +12,8 @@ import './theme.css';
 // handles cross this package's surfaces untouched (no wrapper types, per
 // DOCUMENT_MODEL §What the editor owns), so the boundary needs no second door
 // here. What earns a line is what more than one surface speaks and no other
-// package declares: the address vocabulary and the error channel, plus the
-// panic-hook install.
+// package declares: the address vocabulary and the error channel, plus the WASM
+// init gate.
 
 export { init } from './lifecycle.js';
 

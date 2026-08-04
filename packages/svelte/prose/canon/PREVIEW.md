@@ -20,7 +20,7 @@ The **consumer** owns the session and drives edits, from any source (source edit
 const session = engine.open(quill, doc);            // consumer owns
 const preview = createPreview(session, { container });
 // …
-const changeSet = session.apply(nextDoc);           // edit from any source
+const changeSet = session.update(nextDoc);           // edit from any source
 preview.refresh(changeSet);                         // repaint dirty ∩ visible
 ```
 

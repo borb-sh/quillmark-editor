@@ -113,7 +113,7 @@ export interface VisualStrings extends TableChromeStrings, SlashStrings {
  *   testifying to what it saw) and never from the document at `path`: validation
  *   runs post-coercion, so the validator read a value the document does not hold and
  *   a sentence built from `path` names a spelling the user never typed.
- * - **`edit::field_conform`**: re-words from the app's own control state, the
+ * - **`edit::field_coercion_failed`**: re-words from the app's own control state, the
  *   refused value being in neither document (unchanged on throw) nor schema.
  * - **`parse::yaml_error_with_location`, `invalid_structure`**: does not re-word. No
  *   `path`, and `args` carries the LOCATION (`blockIndex`, `line`) and nothing else,

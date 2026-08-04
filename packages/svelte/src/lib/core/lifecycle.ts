@@ -1,19 +1,22 @@
-// WASM lifecycle. The core build (`Quill`/`Document`/codec) loads eagerly on
-// first import via wasm-bindgen's bundler target, so no async bootstrap gates
-// use; `init()` only installs the panic hook that turns a Rust panic into a
-// legible JS error. Idempotent: the hook installs once per page regardless of
-// how many surfaces call it, so every entry point may call it defensively.
-import { init as installPanicHook } from '@quillmark/wasm';
+// `@quillmark/wasm` ships wasm-bindgen's web target: the core build is
+// instantiated by an explicit `await init()`, and every export throws
+// `runtime::not_initialized` until it resolves. Instantiation carries the panic
+// hook on its start section, so a Rust panic reaches JS as a stack trace.
+import { init as initWasm } from '@quillmark/wasm';
 
-let installed = false;
+let started: Promise<void> | undefined;
 
 /**
- * Install the WASM panic hook once. Safe to call from any surface's setup path;
- * repeat calls are no-ops. Optional (the boundary works without it), but a
- * panic surfaces as a readable error only after it runs.
+ * Instantiate the core WASM build. Await once before any other boundary verb,
+ * from any surface's setup path; the promise is memoized, so concurrent callers
+ * share one instantiation and repeat calls are free. A failed init clears the
+ * memo, leaving a retry possible.
  */
-export function init(): void {
-	if (installed) return;
-	installPanicHook();
-	installed = true;
+export function init(): Promise<void> {
+	if (started) return started;
+	started = initWasm().catch((err: unknown) => {
+		started = undefined;
+		throw err;
+	});
+	return started;
 }

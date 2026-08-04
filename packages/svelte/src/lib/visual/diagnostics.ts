@@ -13,7 +13,7 @@
 //      field/card being committed, so these are keyed directly at the call site
 //      with a `FieldKey`; never parsed from a message. The thrown
 //      `QuillmarkError`'s `diagnostics[0]` carries `code` and a canonical `path`
-//      (`edit::field_conform` / `edit::unknown_field`), so the editor surfaces that
+//      (`edit::field_coercion_failed` / `edit::unknown_field`), so the editor surfaces that
 //      diagnostic verbatim under its own id-keyed address.
 // 3. External diagnostics: the consumer-supplied `diagnostics?: Diagnostic[]`
 //      prop (`LiveSession.warnings` + render errors via `FieldRegion.field`),

@@ -3,7 +3,7 @@
 // leaf's `Content`, decodes to a PM state, mounts a view + plugin stack (history,
 // keymap, input rules, the anchor-position plugin), and `dispatchTransaction`:
 //   (a) apply optimistically to the view,
-//   (b) lower the tr to a `ChangeBundle` (or `install` for a field not yet at
+//   (b) lower the tr to a `ChangeBundle` (or `overwrite` for a field not yet at
 //       content rest, which has nothing to splice),
 //   (c) commit via `doc.applyChange(addr, bundle)`,
 //   (d) fire `onChange` when the transaction COMMITTED, then `onCaretMove` with
@@ -122,7 +122,7 @@ export interface CreateFieldOpts {
 	 * move, so a host driving a recompile off it recompiles on every arrow key.
 	 *
 	 * Fires for every commit regardless of which branch it took (`applyChange`, the
-	 * first-edit `install`, the fallback `install`) and for an anchor mutation,
+	 * first-edit `overwrite`, the fallback `overwrite`) and for an anchor mutation,
 	 * which changes no text. A commit that failed outright (`commit-lost`) does not
 	 * fire it: nothing landed.
 	 */
@@ -223,13 +223,13 @@ function anchorPlugin(seed: AnchorPos[]): Plugin<AnchorPos[]> {
 	});
 }
 
-/** Read the leaf's `Content` corpus for `addr`: `reader.getContent` (DOCUMENT_MODEL),
+/** Read the leaf's `Content` for `addr`: `reader.getContent` (DOCUMENT_MODEL),
  * the schema-plane read that decodes through the codec the field's declared type
- * names. A field value, or the body corpus when `addr.field` is absent, without
+ * names. A field value, or the body `Content` when `addr.field` is absent, without
  * materializing the whole card. Reads are total over the field axis, so an absent
  * field, a default-only richtext field (e.g. `tag_line`, no stored value until
  * first edited), reads `undefined`; decode an empty content rather than crash, and
- * the first edit installs it. Only an out-of-range `addr.card` throws, unreachable
+ * the first edit overwrites it. Only an out-of-range `addr.card` throws, unreachable
  * here: a removed card unmounts its keyed leaf before a stale index is read.
  *
  * Bound rather than verbatim, because the storage form is not the leaf's business
@@ -249,13 +249,13 @@ export function emptyContent(): Content {
 }
 
 /** Whether ops may commit here: the stored value is a `Content` object, so
- * `applyChange` splices exactly the corpus the leaf read and PM is showing.
+ * `applyChange` splices exactly the content the leaf read and PM is showing.
  *
- * The two other rest forms both take `install` instead. An UNSET field (`undefined`;
+ * The two other rest forms both take `overwrite` instead. An UNSET field (`undefined`;
  * a default-only richtext field before its first edit) has nothing to splice.
  * An AUTHORED STRING is the trap: `applyChange` reads it as markdown whatever the
- * declared type is, so on a `plaintext` field its pre-image is not the corpus the
- * leaf read and a delta computed against that corpus lands at the wrong offsets.
+ * declared type is, so on a `plaintext` field its pre-image is not the content the
+ * leaf read and a delta computed against that content lands at the wrong offsets.
  * Installing over it costs nothing either way, since content-only marks do not
  * survive markdown and a string therefore carries no anchors to pay. A body always
  * rests as `Content`. */
@@ -380,22 +380,22 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		});
 	}
 
-	// (b)+(c): lower the edit to ops and commit, or `install` a field not yet at
+	// (b)+(c): lower the edit to ops and commit, or `overwrite` a field not yet at
 	// content rest. Keep the optimistic PM on throw.
 	// Returns whether anything landed: the caller's change signal, which must not
 	// be a property of which branch the commit took.
 	function commitEdit(oldRt: Content, newDoc: PMNode): boolean {
 		// The projection and its text splice, each computed ONCE per keystroke: the gate
-		// below, both install fallbacks, and `lower` all read this one `edit`.
+		// below, both overwrite fallbacks, and `lower` all read this one `edit`.
 		const edit = contentEdit(oldRt, pmToContent(newDoc));
 		try {
-			// A field not yet at content rest is the only edit that installs by choice:
+			// A field not yet at content rest is the only edit that overwrites by choice:
 			// `applyChange` throws on an absent declared field (verified) and mis-reads
 			// an authored string (`opsCommittable`), and neither has anchors to lose.
 			// Every structural edit lowers, island creation included: the island channel
 			// places a slot the `delta` may not carry.
 			if (!opsCommittable(doc, addr)) {
-				doc.install(addr, edit.newRt); // brings the field to content rest
+				doc.overwrite(addr, edit.newRt); // brings the field to content rest
 			} else {
 				// Pre-edit anchors are the stored content's anchors (USV); post-edit
 				// anchors are the plugin's positions (mapped through the tr) as USV.
@@ -414,11 +414,11 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			reportError(opts.onError, {
 				code: 'commit-fallback',
 				severity: 'error',
-				message: `applyChange refused; re-installed the whole field: ${errorMessage(e)}`,
+				message: `applyChange refused; overwrote the whole field: ${errorMessage(e)}`,
 				cause: e
 			});
 			try {
-				doc.install(addr, edit.newRt);
+				doc.overwrite(addr, edit.newRt);
 				reconciler.commit(readLeaf(reader, addr));
 				return true;
 			} catch (e2) {
@@ -426,7 +426,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 				reportError(opts.onError, {
 					code: 'commit-lost',
 					severity: 'error',
-					message: `install fallback failed; the stored value is stale while the editor keeps the edit: ${errorMessage(e2)}`,
+					message: `overwrite fallback failed; the stored value is stale while the editor keeps the edit: ${errorMessage(e2)}`,
 					cause: e2
 				});
 				return false;
@@ -482,9 +482,9 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			if (plaintext) return; // a plaintext field carries no marks (§Inline mode)
 			if (heldAnchors().some((a) => a.id === id)) return; // ids are unique + invariant (0.97 policy)
 			// An anchor commits through `applyChange`, so the field is brought to content
-			// rest first; else the commit's install branch (value semantics) would drop
+			// rest first; else the commit's overwrite branch (value semantics) would drop
 			// the just-added anchor.
-			if (!opsCommittable(doc, addr)) doc.install(addr, reconciler.last);
+			if (!opsCommittable(doc, addr)) doc.overwrite(addr, reconciler.last);
 			const pm = usvToPM(index, pos);
 			view.dispatch(view.state.tr.setMeta(anchorKey, { op: 'add', id, pos: pm } as AnchorEdit));
 		},

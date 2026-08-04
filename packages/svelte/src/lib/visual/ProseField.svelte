@@ -24,7 +24,7 @@
 
 	interface Props {
 		doc: Document;
-		/** The schema this leaf reads its corpus through: `createField` binds a reader
+		/** The schema this leaf reads its content through: `createField` binds a reader
 		 *  off it, so a stored string decodes by declared type rather than by guess. */
 		quill: Quill;
 		addr: Addr;
@@ -110,7 +110,7 @@
 	const block = $derived(!(inline || plaintext));
 
 	// An absent richtext field (a `default:`-only field like `tag_line`) is handled
-	// by the codec itself: `createField` decodes an empty content and installs on
+	// by the codec itself: `createField` decodes an empty content and overwrites on
 	// the first edit; so this wrapper adds no pre-seeding, and an untouched field
 	// stays absent (its default rendering intact) until actually edited.
 	let controller: FieldController | undefined;

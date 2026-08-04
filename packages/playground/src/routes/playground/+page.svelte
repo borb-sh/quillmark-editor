@@ -8,7 +8,7 @@
   It wires the glue the primitives push outward (ARCHITECTURE §Playground), all
   through the PUBLIC API; no reach-through:
 
-    edit ─► (debounced) session.apply(doc) ─► preview.refresh(change)
+    edit ─► (debounced) session.update(doc) ─► preview.refresh(change)
                                             └► sourceView.refresh()
                                             └► diagnostics = session.warnings
     preview click ─► onCaretPick(hit) ─► editor.setCaret(hit)     (preview→editor)
@@ -159,7 +159,7 @@
 		recompileTimer = undefined;
 		if (!session || !docHandle) return;
 		try {
-			const change = session.apply(docHandle);
+			const change = session.update(docHandle);
 			lastChange = change;
 			previewRef?.refresh(change);
 			sourceRef?.refresh();
@@ -215,18 +215,18 @@
 		let cancelled = false;
 		(async () => {
 			try {
-				// Dynamic import keeps WASM's top-level await out of the route module, so
-				// Safari/dev doesn't TDZ on Kit's `component` export; VisualEditor rides the
-				// same import. The fixture fetch is independent of both, so it runs alongside
-				// them.
-				const treeP = loadUsafMemoTree();
+				// Dynamic: the WASM binary and VisualEditor's ProseMirror stack are the
+				// route's heaviest payload and nothing before paint needs them, so they load
+				// after mount. `init` instantiates the core and every boundary verb throws
+				// `runtime::not_initialized` until it resolves. The fixture load is one of
+				// them (it materializes a quill to read its tree), so it waits.
 				const [{ Engine, Quill, Document, MAIN_CARD_ADDR }, { init }, visual] = await Promise.all([
 					import('@quillmark/wasm'),
 					import('@quillmark/svelte/core'),
 					import('@quillmark/svelte/visual')
 				]);
-				init();
-				const tree = await treeP;
+				await init();
+				const tree = await loadUsafMemoTree();
 				// The SCHEMA variants, patched into the tree before the quill is built:
 				// `?dateDefault=YYYY-MM-DD` gives the main `date` a literal default (the
 				// reference quill declares a blank one, which ghosts nothing), `?kinds2` a

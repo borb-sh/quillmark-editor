@@ -28,7 +28,7 @@ export function freshDoc(): Document {
 /** Install `rt` into a fresh main body and read it back; the canonical (normalized) form. */
 export function normalize(rt: Content): Content {
 	const doc = freshDoc();
-	doc.install({}, rt);
+	doc.overwrite({}, rt);
 	return doc.main.body;
 }
 

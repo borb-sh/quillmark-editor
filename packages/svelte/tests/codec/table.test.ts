@@ -57,7 +57,7 @@ function withTable(props: TableProps): Content {
  *  a ragged op would be caught by. */
 function stored(rt: Content): Content {
 	const doc = quill().seedDocument();
-	doc.install({}, rt);
+	doc.overwrite({}, rt);
 	return doc.main.body;
 }
 
@@ -144,7 +144,7 @@ describe('what the model already answers', () => {
 	});
 });
 
-describe('the cell codec: a cell is a corpus of its own', () => {
+describe('the cell codec: a cell is its own content unit', () => {
 	/** A cell through decode and back: the round-trip a keystroke rides. */
 	function roundTrip(c: TableCell): TableCell {
 		return cellFromDoc(decode(cellContent(c), inlineSchema), c);
@@ -180,7 +180,7 @@ describe('the cell codec: a cell is a corpus of its own', () => {
  *  captured: the chrome's whole view of the island. */
 function tableLeaf(props?: TableProps) {
 	const doc = quill().seedDocument();
-	doc.install({}, props ? withTable(props) : md(TABLE_MD));
+	doc.overwrite({}, props ? withTable(props) : md(TABLE_MD));
 	let menu: IslandMenuState | undefined;
 	const field = createField({
 		doc,
@@ -386,7 +386,7 @@ describe('the table NodeView', () => {
 	it('an external re-hydrate reseeds the cells', () => {
 		const { doc, field } = tableLeaf(LETTERED);
 		const next = withCell(LETTERED, 0, 0, cell('EXTERNAL'));
-		doc.install({}, withTable(next));
+		doc.overwrite({}, withTable(next));
 		field.applyExternal();
 		expect(cellViews(field)[0].state.doc.textContent).toBe('EXTERNAL');
 		field.destroy();
@@ -402,7 +402,7 @@ describe('the table NodeView', () => {
 		const doc = quill().seedDocument();
 		const rt = md(TABLE_MD);
 		rt.islands[0] = { id: 'isl-0', type: 'chart', props: { any: 1 }, loss: 'unrepresentable' };
-		doc.install({}, rt);
+		doc.overwrite({}, rt);
 		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
 		expect(field.el.querySelector('table')).toBeNull();
 		expect(field.el.textContent).toContain('[chart]');
@@ -524,7 +524,7 @@ describe('a pointer press on the island resolves to a caret', () => {
 	it('a gap cursor is the caret where the document holds no text position', () => {
 		// The island is the whole document, so there is no block beside it to write in.
 		const doc = quill().seedDocument();
-		doc.install({}, md('| a | b |\n|---|---|\n| 1 | 2 |'));
+		doc.overwrite({}, md('| a | b |\n|---|---|\n| 1 | 2 |'));
 		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
 		layout(field, HOSTS.slice(0, 4));
 		pressAt(field.el.querySelector('.qm-table-island')!, 195, 110);
@@ -536,7 +536,7 @@ describe('a pointer press on the island resolves to a caret', () => {
 		const doc = quill().seedDocument();
 		const rt = md(TABLE_MD);
 		rt.islands[0] = { id: 'isl-0', type: 'chart', props: { any: 1 }, loss: 'unrepresentable' };
-		doc.install({}, rt);
+		doc.overwrite({}, rt);
 		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
 		// Dispatched AT the island rather than through it: PM's own mousedown wants a
 		// `elementFromPoint` jsdom does not have, and what is asserted is that the
@@ -587,7 +587,7 @@ describe('a selection is the subject of the next command', () => {
 
 	it('a printable key over an INLINE island lands after the image, in its line', () => {
 		const doc = quill().seedDocument();
-		doc.install({}, md('a ![alt](url) b'));
+		doc.overwrite({}, md('a ![alt](url) b'));
 		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
 		const outer = outerView(field);
 		let at = -1;

@@ -11,7 +11,7 @@ export const INSTALL = `npm install @quillmark/svelte @quillmark/wasm`;
 export const OPEN_SESSION = `import { Engine, Quill } from '@quillmark/wasm';
 import { init } from '@quillmark/svelte/core';
 
-init(); // one-time, installs the WASM panic hook
+await init(); // one-time, instantiates the WASM core
 
 const quill = Quill.fromTree(tree); // the quill's files
 const doc = quill.seedDocument(); // or Document.fromMarkdown(md)
@@ -33,5 +33,5 @@ export const VISUAL = `<script lang="ts">
 <VisualEditor
   {doc}
   {quill}
-  onChange={() => preview.refresh(session.apply(doc))}
+  onChange={() => preview.refresh(session.update(doc))}
 />`;

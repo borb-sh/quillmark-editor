@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // A document a consumer LOADED rather than seeded (`Document.fromMarkdown`, the
 // transport door every saved document comes back through) rests as AUTHORED: a
-// content field holds the string it parsed, not the corpus. The leaf reads through
+// content field holds the string it parsed, not the `Content`. The leaf reads through
 // `reader.getContent`, which decodes by declared type, so it takes both rest forms
 // and an edit lands back in the same document.
 import { describe, it, expect } from 'vitest';
@@ -100,7 +100,7 @@ describe('a document loaded from markdown', () => {
 
 	it('reads a richtext field through the bound door too (`quill.parse`)', () => {
 		// The other lane of the same read: `quill.parse` conforms on the way in, so the
-		// field rests as the corpus. `getContent` answers identically either way, which
+		// field rests as the `Content`. `getContent` answers identically either way, which
 		// is the property that lets the leaf stop asking which door built its document.
 		const q = quill();
 		const seed = q.seedDocument();

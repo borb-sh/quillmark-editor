@@ -83,7 +83,7 @@ const preview = createPreview(session, {
 });
 
 // after an edit lands on `doc`, from any source:
-preview.refresh(session.apply(doc)); // repaint dirtyPages ∩ visible
+preview.refresh(session.update(doc)); // repaint dirtyPages ∩ visible
 ```
 
 In Svelte, `<Preview {session} onCaretPick={…} />` exposes the same verbs (`refresh`, `scrollToField`, `focusPosition`, `setZoom`) via `bind:this`.
@@ -190,7 +190,7 @@ function scheduleRecompile() {
 }
 function recompileNow() {
 	timer = undefined;
-	const change = session.apply(doc);
+	const change = session.update(doc);
 	preview.refresh(change);
 	source.refresh();
 	diagnostics = [...session.warnings]; // → the editor's `diagnostics` prop
