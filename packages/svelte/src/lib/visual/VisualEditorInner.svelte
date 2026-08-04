@@ -272,7 +272,7 @@
 	//
 	// A bad value makes `writer.set` THROW a `QuillmarkError`, whose
 	// `diagnostics[0]` carries a `code` and a canonical `path` (e.g.
-	// `edit::field_conform` at `main.font_size`, or `edit::unknown_field`). The
+	// `edit::field_coercion_failed` at `main.font_size`, or `edit::unknown_field`). The
 	// editor already KNOWS the field/card being committed, so it KEYS the entry
 	// from THAT address: id-keyed so it survives a later card reorder, never
 	// parsed from the positional path; while surfacing the thrown diagnostic

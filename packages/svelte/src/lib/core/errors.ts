@@ -19,11 +19,11 @@ export type EditorErrorCode =
 	/** A scalar/array/object write the boundary refused. Also pinned as a
 	 *  diagnostic on its own field; editing continues, the value is unwritten. */
 	| 'commit-refused'
-	/** A prose commit whose op path the boundary refused: the leaf re-installed
+	/** A prose commit whose op path the boundary refused: the leaf overwrote
 	 *  the whole projection instead, so the store is correct and this field's
 	 *  identity anchors were paid. */
 	| 'commit-fallback'
-	/** The install fallback ALSO failed: the optimistic PM state stands and the
+	/** The overwrite fallback ALSO failed: the optimistic PM state stands and the
 	 *  store is stale for this field. The one code here that leaves damage. */
 	| 'commit-lost'
 	/** A card operation (add, move, remove, retype) that threw. The document is

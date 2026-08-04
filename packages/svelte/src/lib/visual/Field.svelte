@@ -40,7 +40,7 @@
 		 * source. Feeds the placeholder / fallback only, never `value`. */
 		provenance?: ResolvedField;
 		doc: Document;
-		/** The schema a prose leaf reads its corpus through (`ProseField`). */
+		/** The schema a prose leaf reads its content through (`ProseField`). */
 		quill: Quill;
 		/** LIVE prose address (getter-`card`); used only when control === 'prose'. */
 		proseAddr: Addr;

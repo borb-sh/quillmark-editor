@@ -1,5 +1,5 @@
 // Encode: PM → a `ChangeBundle` for `applyChange` (CODEC §Encode). Direction:
-// content is truth, PM its projection, edits are OPS. We do NOT re-`install`; we
+// content is truth, PM its projection, edits are OPS. We do NOT re-`overwrite`; we
 // lower to `{ delta?, islandOps?, lineOps?, markOps? }` so identity anchors rebase
 // through the splice.
 //

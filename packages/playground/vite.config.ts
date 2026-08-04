@@ -1,16 +1,16 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
-import wasm from 'vite-plugin-wasm';
-import topLevelAwait from 'vite-plugin-top-level-await';
 
-// @quillmark/wasm ships wasm-bindgen's "bundler" target, which imports its
-// .wasm binaries as ESM modules (`import * as wasm from "./x_bg.wasm"`).
-// Vite has no native support for that import form; wasm() + topLevelAwait()
-// are required for both `vite dev` and `vite build` to resolve it.
+// @quillmark/wasm ships wasm-bindgen's web target: no `.wasm` import and no
+// top-level await, so a static import of it is safe on any route's graph and
+// Vite resolves it unaided. Dev-server pre-bundling is the one exception — it
+// relocates the package away from the binary `init()` resolves against, which
+// surfaces as `runtime::init_failed`, so the package stays unbundled.
 //
 // The reference quill is not a bundler input at all: it is packed into
 // `static/quiver/` before dev and build, and fetched at runtime. So nothing here
 // reaches outside the app root.
 export default defineConfig({
-	plugins: [wasm(), topLevelAwait(), sveltekit()]
+	plugins: [sveltekit()],
+	optimizeDeps: { exclude: ['@quillmark/wasm'] }
 });

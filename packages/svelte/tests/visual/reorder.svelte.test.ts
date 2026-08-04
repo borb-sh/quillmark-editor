@@ -22,9 +22,9 @@ import { loadFixtureTree } from '../helpers/fixtures.js';
  * The reference quill with the indorsement card's `date` retyped to `datetime`.
  * The only commit the fixture's own schema REFUSES from a mounted control: the V1
  * date control emits `YYYY-MM-DD` whatever the declared type, and a `datetime`
- * field conforms none of them (`edit::field_conform`). Every other control on this
- * quill emits a value its field accepts, so this is the one door to the commit-error
- * lane that a driven surface can walk through.
+ * field coerces none of them (`edit::field_coercion_failed`). Every other control on
+ * this quill emits a value its field accepts, so this is the one door to the
+ * commit-error lane that a driven surface can walk through.
  */
 function quillWithDatetimeDate(): Quill {
 	const tree = loadFixtureTree();
@@ -156,7 +156,7 @@ describe('a reorder through the card control', () => {
 		// the field, and the document is unchanged (the write threw).
 		fillDate(slots(target)[0]);
 		expect(slots(target)[0].querySelector('.qm-diag-line')?.textContent).toContain(
-			'does not conform'
+			'could not be coerced'
 		);
 		expect(slots(target)[1].querySelector('.qm-diag-line')).toBeNull();
 
@@ -165,7 +165,7 @@ describe('a reorder through the card control', () => {
 		// The map is keyed by session id, so the error goes where the card goes.
 		const after = slots(target);
 		expect(after[0].querySelector('.qm-diag-line')).toBeNull();
-		expect(after[1].querySelector('.qm-diag-line')?.textContent).toContain('does not conform');
+		expect(after[1].querySelector('.qm-diag-line')?.textContent).toContain('could not be coerced');
 		expect(leafKeys(after[1])).toContain('c0:$body');
 	});
 });

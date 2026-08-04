@@ -117,7 +117,7 @@ describe('a plaintext leaf over an authored string', () => {
 	it('commits the first edit CLEANLY, taking no recovery path', () => {
 		// The commit half, and the reason the leaf gates on the rest form rather than on
 		// mere presence. `applyChange` reads an authored string as markdown whatever the
-		// declared type, so a delta over the literal corpus meets a shorter pre-image and
+		// declared type, so a delta over the literal content meets a shorter pre-image and
 		// is refused; the value survives (the whole-field install fallback catches it)
 		// but the host is handed a `commit-fallback` error for an ordinary keystroke.
 		// Choosing `install` up front is what makes the first edit unremarkable.

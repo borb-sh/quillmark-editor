@@ -23,7 +23,7 @@ beforeAll(() => {
 /** A body leaf over `markdown`, with the menu's reports captured. */
 function leaf(markdown = 'para') {
 	const doc: Document = quill().seedDocument();
-	doc.install({}, md(markdown));
+	doc.overwrite({}, md(markdown));
 	const reports: (SlashState | undefined)[] = [];
 	const field = createField({
 		doc,
@@ -267,7 +267,7 @@ describe('the menu does not disturb the body it sits in', () => {
 
 	it("a leaf given no `onSlash` mounts no trigger, so the keys stay the body's", () => {
 		const doc = quill().seedDocument();
-		doc.install({}, md(''));
+		doc.overwrite({}, md(''));
 		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
 		const view = (field as FieldController & LeafViews).view;
 		field.setCaret(0);

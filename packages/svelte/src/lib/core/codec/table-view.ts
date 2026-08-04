@@ -3,7 +3,7 @@
 // rather than Svelte chrome, because what it renders is PM's own: a leaf node's
 // substitute DOM, holding one nested `EditorView` per cell.
 //
-// A cell is a second corpus inside the first, so it gets the codec's INLINE mode
+// A cell is a second content unit inside the first, so it gets the codec's INLINE mode
 // (one paragraph, no containers, no islands, marks and input rules intact);
 // `table.ts` owns that translation. A cell edit does not touch the field's text:
 // the projection goes back onto the node's `props` attribute with `setNodeMarkup`,

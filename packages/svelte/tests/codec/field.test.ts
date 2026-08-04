@@ -376,7 +376,7 @@ describe('an island edit on the op path', () => {
 
 	/** A body holding a block island between two paragraphs, mounted as a leaf. */
 	function tableBody(doc: Document): FieldController {
-		doc.install({}, md(TABLE_MD));
+		doc.overwrite({}, md(TABLE_MD));
 		return createField({ doc, quill: quill(), addr: {}, container: mount() });
 	}
 

@@ -18,7 +18,7 @@ interface AnchorOpts {
 /** Install `rt`, build a PM tr, lower+apply, and assert the store matches PM. */
 function lowerApply(rt: Content, mkTr: (state: EditorState) => Transaction, opts: AnchorOpts = {}) {
 	const doc = freshDoc();
-	doc.install({}, rt);
+	doc.overwrite({}, rt);
 	const oldRt = doc.main.body; // normalized starting content
 	const state = EditorState.create({ doc: decode(oldRt, blockSchema) });
 	const tr = mkTr(state);
@@ -175,7 +175,7 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 
 	it('an anchor survives an edit before it (auto-rebase, no op needed)', () => {
 		const doc = freshDoc();
-		doc.install({}, anchorRt);
+		doc.overwrite({}, anchorRt);
 		const oldRt = doc.main.body;
 		const state = EditorState.create({ doc: decode(oldRt, blockSchema) });
 		const tr = state.tr.insertText('XX', 1); // insert before the anchor at USV 6
@@ -192,7 +192,7 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 
 	it('adding a new anchor emits an add op', () => {
 		const doc = freshDoc();
-		doc.install({}, md('plain text'));
+		doc.overwrite({}, md('plain text'));
 		const oldRt = doc.main.body;
 		const newDoc = decode(oldRt, blockSchema);
 		const bundle = lower(contentEdit(oldRt, pmToContent(newDoc)), {
@@ -207,7 +207,7 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 
 	it('removing an anchor emits removeAnchor', () => {
 		const doc = freshDoc();
-		doc.install({}, anchorRt);
+		doc.overwrite({}, anchorRt);
 		const oldRt = doc.main.body;
 		const newDoc = decode(oldRt, blockSchema);
 		const bundle = lower(contentEdit(oldRt, pmToContent(newDoc)), {
@@ -229,7 +229,7 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 			marks: [{ start: 3, end: 3, type: 'anchor', id: 'c1' } as never],
 			islands: []
 		};
-		doc.install({}, codeRt);
+		doc.overwrite({}, codeRt);
 		const oldRt = doc.main.body;
 		const state = EditorState.create({ doc: decode(oldRt, blockSchema) });
 		const tr = state.tr.insertText('\n', 2); // a code-interior line before the anchor
@@ -279,7 +279,7 @@ describe('the island channel — an island edit lowers op-wise', () => {
 		opts: AnchorOpts = {}
 	) {
 		const doc = freshDoc();
-		doc.install({}, rt);
+		doc.overwrite({}, rt);
 		const oldRt = doc.main.body;
 		const state = EditorState.create({ doc: decode(oldRt, blockSchema) });
 		const newDoc = mkTr(state).doc;
