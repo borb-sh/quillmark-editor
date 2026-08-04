@@ -1,90 +1,71 @@
 <!--
-  The playground's front page, and the one route written for a stranger. It opens
-  a session over the reference quill exactly as the tool routes do, then spends it
-  twice: the hero mounts <Preview> over it, so the first thing a visitor sees is a
-  real compiled page painted by the package rather than a picture of one, and the
-  panel at the foot reports the boundary quantities off the same handles
-  (pageCount / supportsCanvas / warnings).
+  The front page: the thesis, then the quickstart. Each step pairs the smallest
+  code that reaches a surface with that surface running beside it, over a session
+  of the reference quill opened exactly as a consumer's would be, so a step shows
+  its own output rather than a picture of one.
 
-  Clicking the hero sheet is the package's thesis in one gesture: a hit on the
-  painted page resolves to a content address, printed under it. Nothing else on
-  the page claims anything the session is not already proving.
+  Two documents off one quill: the preview's is the one its session paints, the
+  editor's is its own. No apply loop runs here, so a shared document would let
+  typing in the editor step desynchronize the page painted in the one above it;
+  the two wired together is `/playground`.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
 	import { Preview } from '@quillmark/svelte/preview';
-	import type { ContentHit, Diagnostic, LiveSession } from '@quillmark/wasm';
+	import type { ContentHit, Document, LiveSession, Quill } from '@quillmark/wasm';
 	import { loadUsafMemoTree } from './fixture';
+	import { INSTALL, OPEN_SESSION, PREVIEW, VISUAL } from './samples';
 
-	type Status =
-		| { phase: 'loading' }
-		| { phase: 'error'; message: string }
-		| {
-				phase: 'ready';
-				quillName: string;
-				quillVersion: string;
-				backendId: string;
-				fieldCount: number;
-				cardKinds: string[];
-				pageCount: number;
-				supportsCanvas: boolean;
-				warnings: Diagnostic[];
-		  };
-
-	// The running head routes to these; what it cannot carry is what each one is.
-	const SURFACES = [
-		{ path: '/preview', name: 'Preview', line: 'paint, overlay, click bridge' },
-		{ path: '/visual', name: 'Visual', line: 'the WYSIWYG over a seeded document' },
-		{ path: '/editor', name: 'Editor', line: 'both surfaces, one session, caret bridged' }
-	];
+	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
+	type VisualEditorComponent = typeof import('@quillmark/svelte/visual').VisualEditor;
 
 	let status = $state<Status>({ phase: 'loading' });
+	let VisualEditor = $state<VisualEditorComponent | undefined>();
 	let session = $state<LiveSession | undefined>();
+	let quillHandle = $state<Quill | undefined>();
+	let editDoc = $state<Document | undefined>();
 	let lastHit = $state<ContentHit | undefined>();
 	let toFree: Array<{ free(): void }> = [];
 
 	onMount(() => {
 		let cancelled = false;
 		(async () => {
-			// Handles created so far, newest first; freed in reverse creation
-			// order on unmount-during-open AND on a mid-chain failure (e.g.
-			// `engine.open` throwing after `quill`/`doc` already exist).
+			// Handles created so far, newest first; freed in reverse creation order on
+			// unmount-during-open AND on a mid-chain failure (e.g. `engine.open`
+			// throwing after `quill`/`doc` already exist).
 			const created: Array<{ free(): void }> = [];
 			try {
 				// Dynamic: keep WASM's top-level await out of the route module so
-				// Safari/dev doesn't TDZ on Kit's `component` export. The fixture fetch is
-				// independent of it, so it runs alongside rather than behind it.
+				// Safari/dev doesn't TDZ on Kit's `component` export. VisualEditor pulls the
+				// codec, so it rides the same import; the fixture fetch is independent of
+				// both, so it runs alongside them.
 				const treeP = loadUsafMemoTree();
-				const [{ Engine, Quill }, { init }] = await Promise.all([
+				const [{ Engine, Quill }, { init }, visual] = await Promise.all([
 					import('@quillmark/wasm'),
-					import('@quillmark/svelte/core')
+					import('@quillmark/svelte/core'),
+					import('@quillmark/svelte/visual')
 				]);
 				init();
 				const quill = Quill.fromTree(await treeP);
 				created.unshift(quill);
+				const previewDoc = quill.seedDocument();
+				created.unshift(previewDoc);
+				const engine = new Engine();
+				const openedSession = await engine.open(quill, previewDoc);
+				created.unshift(openedSession);
 				const doc = quill.seedDocument();
 				created.unshift(doc);
-				const engine = new Engine();
-				const openedSession = await engine.open(quill, doc);
-				created.unshift(openedSession);
 				if (cancelled) {
 					for (const h of created) h.free();
 					return;
 				}
 				toFree = created;
+				VisualEditor = visual.VisualEditor;
 				session = openedSession;
-				status = {
-					phase: 'ready',
-					quillName: quill.metadata.name,
-					quillVersion: quill.metadata.version,
-					backendId: quill.backendId,
-					fieldCount: Object.keys(quill.schema.main.fields).length,
-					cardKinds: Object.keys(quill.schema.card_kinds ?? {}),
-					pageCount: openedSession.pageCount,
-					supportsCanvas: openedSession.supportsCanvas,
-					warnings: openedSession.warnings
-				};
+				quillHandle = quill;
+				editDoc = doc;
+				status = { phase: 'ready' };
 			} catch (e) {
 				for (const h of created) h.free();
 				if (!cancelled)
@@ -95,107 +76,142 @@
 			cancelled = true;
 			for (const h of toFree) h.free();
 			toFree = [];
+			VisualEditor = undefined;
 			session = undefined;
+			quillHandle = undefined;
+			editDoc = undefined;
 		};
 	});
 </script>
 
 <main class="pg-width">
-	<section class="pg-layout hero">
-		<div class="thesis">
-			<h1 class="pg-title">Editor + live preview for Quillmark</h1>
-			<div class="actions">
-				<a class="pg-cta" href="{base}/editor">Open the editor</a>
-				<a class="pg-link" href="https://github.com/borb-sh/quillmark-js">Source</a>
-			</div>
+	<section class="hero">
+		<h1 class="pg-title">Editor + live preview for Quillmark</h1>
+		<p class="lede">
+			A WYSIWYG over the document and a canvas over the compiled page, on one session: an edit
+			repaints the page, a click on the page moves the caret.
+		</p>
+		<div class="actions">
+			<a class="pg-cta" href="{base}/playground">Open the playground</a>
+			<a class="pg-cta-quiet" href="#get-started">Get started</a>
+			<a class="pg-link" href="https://github.com/borb-sh/quillmark-js">Source</a>
 		</div>
-
-		<!-- The sheet: the reference quill, compiled and painted, on a page tone the
-		     host supplies. Sized to the first page and non-scrolling; a wheel over
-		     the hero scrolls the PAGE, not the paper (PLAYGROUND §"The routes"). -->
-		<figure class="sheet">
-			<div class="pg-frame sheet-frame">
-				{#if session}
-					<Preview
-						{session}
-						margin={0}
-						style="overflow-y: hidden"
-						onCaretPick={(hit) => (lastHit = hit)}
-					/>
-				{/if}
-			</div>
-			<figcaption class="sheet-caption">
-				<span class="pg-label">Caret pick</span>
-				<span class="pg-readout" data-testid="hero-hit">
-					{lastHit ? `${lastHit.field} @ ${lastHit.pos}` : 'click any text on the page'}
-				</span>
-			</figcaption>
-		</figure>
 	</section>
 
-	<section class="pg-rail block">
-		<h2 class="pg-label">Surfaces</h2>
-		<ul class="surfaces">
-			{#each SURFACES as surface (surface.path)}
-				<li>
-					<a class="pg-link" href="{base}{surface.path}">{surface.name}</a> — {surface.line}
-				</li>
-			{/each}
-		</ul>
-	</section>
-
-	<section class="pg-rail block">
-		<h2 class="pg-label">Install</h2>
-		<pre class="pg-readout install">npm install @quillmark/svelte</pre>
-	</section>
-
-	<section class="pg-rail block">
-		<h2 class="pg-label">Session</h2>
-		<div class="pg-panel readout-panel">
+	<section id="get-started" class="pg-rail block">
+		<h2 class="pg-label">Get started</h2>
+		<div class="intro">
+			<p>Four steps to a running editor. Every sample runs the surface beside it.</p>
 			{#if status.phase === 'loading'}
-				<p data-testid="status" class="pg-status loading">Loading reference quill…</p>
+				<p data-testid="status" class="pg-status loading">Opening the reference quill…</p>
 			{:else if status.phase === 'error'}
 				<p data-testid="status" class="pg-status error">Error: {status.message}</p>
-			{:else}
-				<dl class="facts">
-					<dt>quill</dt>
-					<dd>{status.quillName}@{status.quillVersion}</dd>
-					<dt>backend</dt>
-					<dd>{status.backendId}</dd>
-					<dt>main fields</dt>
-					<dd>{status.fieldCount}</dd>
-					<dt>card kinds</dt>
-					<dd>{status.cardKinds.join(', ') || '—'}</dd>
-					<dt>pageCount</dt>
-					<dd data-testid="pageCount">{status.pageCount}</dd>
-					<dt>supportsCanvas</dt>
-					<dd data-testid="supportsCanvas">{status.supportsCanvas}</dd>
-					<dt>warnings</dt>
-					<dd data-testid="warnings">{status.warnings.length}</dd>
-				</dl>
 			{/if}
+		</div>
+	</section>
+
+	<section class="pg-rail block">
+		<h3 class="pg-label">01 · Install</h3>
+		<div class="step">
+			<p>
+				<code>@quillmark/svelte</code> is the surfaces;
+				<code>@quillmark/wasm</code> is the engine they view.
+			</p>
+			<pre class="pg-readout sample">{INSTALL}</pre>
+		</div>
+	</section>
+
+	<section class="pg-rail block">
+		<h3 class="pg-label">02 · Open a session</h3>
+		<div class="step">
+			<p>
+				A quill is a template's file tree; a document is the content in it. Opening the two compiles
+				the first page and gives you the handle both surfaces read.
+			</p>
+			<pre class="pg-readout sample">{OPEN_SESSION}</pre>
+		</div>
+	</section>
+
+	<section class="pg-rail block">
+		<h3 class="pg-label">03 · Preview</h3>
+		<div class="step">
+			<p>
+				<code>&lt;Preview&gt;</code> paints the session's pages to canvas and resolves a click to the
+				content under it, so the compiled page is addressable rather than a picture.
+			</p>
+			<div class="pair">
+				<pre class="pg-readout sample">{PREVIEW}</pre>
+				<div class="demo">
+					<div class="pg-frame preview-frame">
+						{#if session}
+							<Preview {session} margin={0} onCaretPick={(hit) => (lastHit = hit)} />
+						{/if}
+					</div>
+					<p class="caption">
+						<span class="pg-label">Caret pick</span>
+						<span class="pg-readout" data-testid="demo-hit">
+							{lastHit ? `${lastHit.field} @ ${lastHit.pos}` : 'click any text on the page'}
+						</span>
+					</p>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="pg-rail block">
+		<h3 class="pg-label">04 · Edit</h3>
+		<div class="step">
+			<p>
+				<code>&lt;VisualEditor&gt;</code> projects the quill's schema onto the document: prose where
+				the field takes prose, a control where it takes a value, a card per block.
+				<code>onChange</code> fires when an edit lands, and applying it to the session hands the preview
+				the pages to repaint.
+			</p>
+			<div class="pair">
+				<pre class="pg-readout sample">{VISUAL}</pre>
+				<div class="demo">
+					<div class="pg-frame editor-frame">
+						{#if VisualEditor && editDoc && quillHandle}
+							<VisualEditor doc={editDoc} quill={quillHandle} />
+						{/if}
+					</div>
+					<p class="caption">
+						<span class="pg-label">Document</span>
+						<span class="pg-readout">the reference quill's seeded memo</span>
+					</p>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="pg-rail block">
+		<h3 class="pg-label">Next</h3>
+		<div class="step">
+			<p>
+				Both surfaces on one session, the caret bridged in both directions:
+				<a class="pg-link" href="{base}/playground">the playground</a>.
+			</p>
 		</div>
 	</section>
 </main>
 
 <style>
-	/* The thesis and the artifact it describes, on the shell's two columns; the sheet
-	   drops under the text where the columns do not fit side by side. The route sets
-	   only the room around the block: a front page opens on air, where a tool route
-	   opens on its surface. */
+	/* A front page opens on air, where a tool route opens on its surface. */
 	.hero {
-		padding-block: var(--pg-space-16);
-	}
-
-	.thesis {
 		display: flex;
 		flex-direction: column;
 		gap: var(--pg-space-4);
 		max-width: var(--pg-measure);
+		padding-block: var(--pg-space-16);
 	}
 
 	h1 {
 		text-wrap: balance;
+	}
+
+	.lede {
+		margin: 0;
+		color: var(--pg-ink-meta);
 	}
 
 	.actions {
@@ -206,91 +222,103 @@
 		margin-top: var(--pg-space-2);
 	}
 
-	.sheet {
-		margin: 0;
-		display: flex;
-		flex-direction: column;
-		gap: var(--pg-space-2);
+	/* ── The quickstart ─────────────────────────────────────────────────────── */
+	/* One rail per step: the step's name in the margin, its content in the column
+	   (PLAYGROUND §"The rail"). The anchor clears the running head, which sits over
+	   whatever the jump lands on. */
+	#get-started {
+		scroll-margin-top: var(--pg-space-16);
 	}
-
-	/* The desk inset: the painted page carries its own edge, so what the host owes
-	   it is room to sit in and a tone to read against. US Letter's ratio
-	   on the border box, so the whole first page fits the frame: the padding's
-	   worth of spare (~10px) is under the page-gap the paint loop puts before page
-	   2, which is what keeps the fold clean. */
-	.sheet-frame {
-		aspect-ratio: 17 / 22;
-		padding: var(--pg-space-4);
-	}
-
-	.sheet-caption {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: var(--pg-space-2);
-	}
-
-	.sheet-caption .pg-readout {
-		color: var(--pg-ink-meta);
-	}
-
-	/* ── Sections ───────────────────────────────────────────────────────────── */
 
 	.block {
 		padding-block: var(--pg-space-12);
 		border-top: var(--pg-border-width) solid var(--pg-border);
 	}
 
-	/* Three lines of prose, not three cards: the running head already routes here,
-	   so what is left to say is one clause each. */
-	.surfaces {
-		list-style: none;
+	.intro,
+	.step {
+		display: flex;
+		flex-direction: column;
+		gap: var(--pg-space-4);
+	}
+
+	.step p,
+	.intro p {
 		margin: 0;
-		padding: 0;
 		max-width: var(--pg-measure);
+	}
+
+	.intro p {
 		color: var(--pg-ink-meta);
 	}
 
-	.install {
-		max-width: var(--pg-measure);
-	}
-
-	.readout-panel {
-		display: flex;
-		flex-direction: column;
-		gap: var(--pg-space-3);
-		max-width: var(--pg-measure);
-	}
-
-	.facts {
-		display: grid;
-		grid-template-columns: max-content minmax(0, 1fr);
-		gap: var(--pg-space) var(--pg-space-6);
-		margin: 0;
+	code {
 		font-family: var(--pg-font-mono);
 		font-size: var(--pg-text-label);
-		line-height: var(--pg-leading-tight);
-		font-variant-numeric: tabular-nums;
 	}
 
-	dt {
-		color: var(--pg-ghost);
+	/* The sample and what it runs, side by side, so a reader compares them without
+	   scrolling between them; stacked where a half column stops holding a line of
+	   code, at the shell's one threshold. */
+	.pair {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--pg-space-4);
+		align-items: start;
 	}
 
-	dd {
+	/* Code keeps its own line breaks and scrolls sideways rather than wrapping: a
+	   wrapped line reads as two statements. The block form's cap is off, since a
+	   sample is short by construction and a scrollbar inside a scrollbar is not. */
+	.sample {
+		white-space: pre;
+		word-break: normal;
+		max-height: none;
+	}
+
+	.demo {
+		display: flex;
+		flex-direction: column;
+		gap: var(--pg-space-2);
+		min-width: 0;
+	}
+
+	/* The desk inset: the painted page carries its own edge, so what the host owes
+	   it is room to sit in and a tone to read against. */
+	.preview-frame {
+		height: var(--pg-mount);
+		padding: var(--pg-space-4);
+	}
+
+	/* The editor's column is the host's: the gutter, the scroll container, the page
+	   tone and the tail are the four THEMING §"What is behind the column is yours"
+	   leaves here. */
+	.editor-frame {
+		height: var(--pg-mount);
+		overflow: auto;
+		padding: var(--pg-space-2) var(--pg-space-2) var(--pg-tail);
+		background: var(--pg-page);
+	}
+
+	.caption {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--pg-space-2);
 		margin: 0;
-		overflow-wrap: anywhere;
+	}
+
+	.caption .pg-readout {
+		color: var(--pg-ink-meta);
 	}
 
 	@media (width < 60rem) {
 		.hero {
 			padding-block: var(--pg-space-12) var(--pg-space-8);
 		}
-		/* Stacked, the sheet keeps the width it had beside the thesis rather than
-		   spanning the page; a painted page blown up to full width reads as a
-		   backdrop, not as an artifact. */
-		.sheet {
-			max-width: var(--pg-aside);
+
+		.pair {
+			grid-template-columns: minmax(0, 1fr);
 		}
 	}
 </style>

@@ -16,35 +16,46 @@
 	// Named for what the page shows.
 	const ROUTES = [
 		{ path: '/', label: 'Overview' },
-		{ path: '/preview', label: 'Preview' },
-		{ path: '/visual', label: 'Visual' },
-		{ path: '/editor', label: 'Editor' }
+		{ path: '/playground', label: 'Playground' }
 	];
 
 	// The path with the deploy's base prefix removed: a project-subpath host
 	// (`/quillmark-js`) leaves the root as the bare base, so the empty
 	// remainder is `/`.
 	const here = $derived(page.url.pathname.slice(base.length) || '/');
+	// The tool route is a workspace, not a page: it takes the viewport less the
+	// head and scrolls inside its panes, so the shell holds the head and hands it
+	// the rest. Narrow, the panes stack and the page scrolls again, which is why
+	// the fill is a media query rather than the route's own business.
+	const fills = $derived(here === '/playground');
 </script>
 
-<header class="head">
-	<div class="pg-width head-row">
-		<a class="mark" href="{base}/">quillmark<span class="slash">/</span>playground</a>
-		<nav class="nav" aria-label="Playground">
-			{#each ROUTES as route (route.path)}
-				<a
-					href="{base}{route.path}"
-					class="nav-link"
-					aria-current={here === route.path ? 'page' : undefined}>{route.label}</a
-				>
-			{/each}
-		</nav>
-	</div>
-</header>
+<div class="app" class:fills>
+	<header class="head">
+		<div class="pg-width head-row">
+			<a class="mark" href="{base}/">quillmark<span class="slash">/</span>playground</a>
+			<nav class="nav" aria-label="Playground">
+				{#each ROUTES as route (route.path)}
+					<a
+						href="{base}{route.path}"
+						class="nav-link"
+						aria-current={here === route.path ? 'page' : undefined}>{route.label}</a
+					>
+				{/each}
+			</nav>
+		</div>
+	</header>
 
-{@render children()}
+	{@render children()}
+</div>
 
 <style>
+	/* No box of its own: a page's bands sit in the document's flow, so the sticky
+	   head sticks to the viewport rather than to a wrapper. */
+	.app {
+		display: contents;
+	}
+
 	/* A running head, sticky so the switch between surfaces is always one click
 	   away; one hairline, no fill; a rule on the page, not a bar over it. */
 	.head {
@@ -101,5 +112,16 @@
 	.nav-link[aria-current='page'] {
 		color: var(--pg-ink);
 		border-bottom-color: var(--pg-ink);
+	}
+
+	/* The filled shell: two rows, the second whatever is left, and nothing scrolls
+	   at this level. The route's own overflow is its panes'. */
+	@media (width >= 60rem) {
+		.app.fills {
+			display: grid;
+			grid-template-rows: auto minmax(0, 1fr);
+			height: 100dvh;
+			overflow: hidden;
+		}
 	}
 </style>

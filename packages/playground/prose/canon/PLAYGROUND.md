@@ -10,9 +10,9 @@ The dev app around the library: the reference wiring for the glue the primitives
 
 The playground is a harness *and* the package's front door (it deploys as the project's Pages site), and those pull in opposite directions. A harness wants its instruments where a hand can reach them: state strips, live document dumps, fixture variants, the `data-testid` hooks a headless pass drives. A front door wants a page a stranger can read.
 
-The resolution is placement, not subtraction. **Every instrument stays and every instrument is demoted**: a readout sits on a plate in the margin of a reading column, never in it.
+The resolution is **placement**: the harness is one route, and the instruments on it sit on plates rather than in the reading column. What has no reader outside a hand driving the harness (fixture variants, the consumer channels a quill cannot declare) is a query flag, not chrome.
 
-So the front page **proves rather than claims**. It opens a session over the reference quill exactly as the tool routes do and mounts `<Preview>` on it, so the first thing above the fold is a real compiled page painted by the library, and clicking it resolves a content address, which is the package's whole thesis in one gesture. The boundary quantities (`pageCount`, `supportsCanvas`, `warnings`) read off the same handles, at the foot, on a plate.
+So the front page **proves rather than claims**. It is a quickstart, and every step that names a surface mounts that surface beside its sample, over a session of the reference quill opened exactly as a consumer's is: the page a stranger reads is also the page that runs. Nothing on it claims a capability the mounted surface is not already showing.
 
 ## The look
 
@@ -22,7 +22,7 @@ Three places the host parts from the package, each because the host is a *page* 
 
 - **The host's controls are boxed.** With no typing on these pages to be confused with, a box says "this is a control": all a harness's strip of switches needs. The package's buttons stay unboxed for the opposite reason (SURFACES §"The shared recipe").
 - **The body rung is larger** than the surface's: the page is prose to read, the surface is UI to operate.
-- **One element is filled**: the front page's single action, in solid ink. Boldness spent once reads as a choice.
+- **One element is filled**: the front page's first action, in solid ink; the action beside it takes the same shape unfilled. Boldness spent once reads as a choice.
 
 ## Two faces
 
@@ -34,13 +34,13 @@ Monospace is the vernacular of what this package addresses (field paths, content
 
 A block is **an annotation in the margin and the content it names**. What would otherwise be a section heading moves out of the reading column, so the content starts at the top of its own block.
 
-The annotation earns its column by answering something the content does not repeat: the section labels down the front page. A rail restating the title beside it would be the redundancy AESTHETIC strips, one scale up.
+The annotation earns its column by answering something the content does not repeat: the step numbers down the quickstart. A rail restating the title beside it would be the redundancy AESTHETIC strips, one scale up.
 
 A tool route's head is **one line**: the surface's name, and the boundary's phase while it is not open. What the surface does is the surface, mounted below; a passage explaining it says nothing the page is not already showing, which is the same subtraction one scale up.
 
 ## What takes a fill
 
-**Only an instrument.** A plate means "the harness showing its work": the state strip, the document dump, the boundary readout, the frame around a surface. The reading column takes none, so the meaning holds: the front page's surface list is three lines of prose, not three cards.
+**Only an instrument.** A plate means "the harness showing its work": the state strip, the frame around a surface, the block a sample sits in. The reading column takes none, so the meaning holds: a quickstart step is a line of prose and the thing it describes, not a card around them.
 
 ## Colour
 
@@ -50,12 +50,18 @@ The hue is spent on one thing: a boundary that failed. An open session takes no 
 
 ## The routes
 
-- **`/`**: the overview: the thesis, the live sheet, the surfaces, install, and the session readout. The sheet is sized to the whole first page and does not scroll; a wheel over the hero scrolls the page, not the paper, while the click bridge keeps working on what is shown.
-- **`/preview`**: paint, overlay and the click bridge. The frame is deliberately short and `margin={0}`, so scrolling swaps which page is mounted; the paint loop's bound is only falsifiable at that size.
-- **`/visual`**: the VisualEditor over a seeded document, with the consumer channels the reference quill cannot declare (external diagnostics, an enum policy, body wording) as switches, and the fixture variants as links. The variants are schema or seed changes read once at mount, so they reload the page rather than navigating within it.
-- **`/editor`**: the reference split-pane shell; its architecture is ARCHITECTURE §Playground's.
+Two, because the site has two readers.
 
-Two guardrails hold across all four: the playground consumes only the public subpath API (a needed internal is an API gap to fix), and it stays a harness, not a product: no auth, persistence, or multi-doc management.
+- **`/`**: the quickstart. The thesis and two actions, then one step per thing a consumer does: install, open a session, mount `<Preview>`, mount `<VisualEditor>`. A step that names a surface puts its sample and that surface side by side, so the code and its output are read without scrolling between them. The samples are strings in `samples.ts`, one per step: a Svelte sample carries a `</script>` that would close the route's own script block, and a step's code is the value the tutorial edits.
+- **`/playground`**: the reference split-pane shell, and the harness; its architecture is ARCHITECTURE §Playground's. It is a **workspace, not a page**: the shell hands it the viewport less the running head and it scrolls nowhere, so the panes hold still while their contents move. Below the width that fits two panes the split stacks and the page scrolls again.
+
+Both surfaces run on the front page too, each over its own document. No apply loop runs there, so one document across two steps would let typing in the editor desynchronize the page painted above it; the two wired together is what `/playground` is.
+
+Two guardrails hold across both: the playground consumes only the public subpath API (a needed internal is an API gap to fix), and it stays a harness, not a product: no auth, persistence, or multi-doc management.
+
+## Fixture variants
+
+The reference quill on disk reaches some branches and not others: it declares one card kind, a blank date default, no guidance channel, and no card whose kind the schema cannot project. The variants that reach them are **query flags on `/playground`**, read once at mount: `?kinds2`, `?dateDefault=YYYY-MM-DD` (schema, patched into the tree before the quill is built), `?tips`, `?foreign` (seeds, applied to the document after). They carry no chrome, because the only reader is a hand driving the harness, and a switch for one is a control on the front door for everyone else.
 
 ## Where the quills come from
 
@@ -63,9 +69,9 @@ Every route opens its session over the reference quill, and gets it from a **qui
 
 This is the workspace's one edge to `@quillmark/quiver`. The library has none ([DEPENDENCIES.md](../../../../prose/canon/DEPENDENCIES.md)), so the app is where the two tiers meet, and this route set is the demonstration that they compose without an edge between them.
 
-One `Quiver` serves the page. Its quill cache is per canonical ref and lives as long as the quiver does, so a client-side navigation between routes reuses one materialization rather than paying for its own. Routes mint and free their own `Quill` from the tree: the `/visual` fixture variants rewrite schema bytes, which a materialized quill has no seam for, so the loader hands back `getQuill(ref).toTree()` and the caller owns what it builds from it. The discarded materialization is the cost of that seam.
+One `Quiver` serves the page. Its quill cache is per canonical ref and lives as long as the quiver does, so a client-side navigation between routes reuses one materialization rather than paying for its own. Routes mint and free their own `Quill` from the tree: the schema variants rewrite bytes a materialized quill has no seam for, so the loader hands back `getQuill(ref).toTree()` and the caller owns what it builds from it. The discarded materialization is the cost of that seam.
 
-THEMING.md §"What is behind the column is yours" leaves four properties to the host, and the playground demonstrates **both** documented answers to the page tone rather than leaving one on paper: `/editor`'s editor pane carries all four on its single rule with plain `--qm-bg` behind the column (the supported bare case), while the front page's sheet, `/preview`'s frame and `/editor`'s preview pane put a tone of the host's own behind the paper, inset so the painted page reads against it.
+THEMING.md §"What is behind the column is yours" leaves four properties to the host, and the playground demonstrates **both** documented answers to the page tone rather than leaving one on paper: the editor's column carries all four on one rule with plain `--qm-bg` behind it (the supported bare case), on `/playground`'s left pane and the front page's editor step alike, while every mounted `<Preview>` sits inset on a tone of the host's own, so the painted page reads against it.
 
 ## Preventing drift
 
