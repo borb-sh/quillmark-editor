@@ -109,8 +109,9 @@ describe('the query filters, and a miss closes', () => {
 
 	it('narrows on the id, which the label does not carry', () => {
 		const { field, view, state } = leaf('');
-		typeAt(field, view, 0, '/h2');
-		expect(state()?.items.map((i) => i.id)).toEqual(['h2']);
+		// `ordered` is the id; the label it draws is `Numbered list`.
+		typeAt(field, view, 0, '/ord');
+		expect(state()?.items.map((i) => i.id)).toEqual(['ordered']);
 		field.destroy();
 	});
 
@@ -130,8 +131,8 @@ describe('the query filters, and a miss closes', () => {
 	});
 
 	it('filters case-insensitively, over the words the chrome displays', () => {
-		expect(filterItems(slashItems(DEFAULT_SLASH_STRINGS), 'QUOTE').map((i) => i.id)).toEqual([
-			'quote'
+		expect(filterItems(slashItems(DEFAULT_SLASH_STRINGS), 'BULLETED').map((i) => i.id)).toEqual([
+			'bullet'
 		]);
 	});
 });
@@ -176,27 +177,31 @@ describe('a dismissal edits no text; a pick consumes exactly the run', () => {
 		field.destroy();
 	});
 
-	it('Enter picks: the run is gone and the block converted, in ONE commit', () => {
+	it('Enter picks: the run is gone and the block wrapped, in ONE commit', () => {
 		const { field, view, state } = leaf('');
-		typeAt(field, view, 0, '/h2');
-		expect(state()?.items[0].id).toBe('h2');
+		typeAt(field, view, 0, '/bul');
+		expect(state()?.items[0].id).toBe('bullet');
 		const before = view.state.doc.toString();
 		press(view, 'Enter');
 		expect(before).not.toBe(view.state.doc.toString());
 		const stored = field.getContent();
 		expect(stored.text).toBe('');
-		expect(stored.lines[0]).toMatchObject({ kind: 'heading', level: 2 });
-		expect(stored.lines).toHaveLength(1); // one block, not a split and a convert
+		expect(stored.lines[0].containers).toEqual([
+			{ container: 'list_item', ordered: false, start: 1, ordinal: 0 }
+		]);
+		expect(stored.lines).toHaveLength(1); // one block, not a split and a wrap
 		field.destroy();
 	});
 
 	it('a pick mid-paragraph keeps the text and takes only the run', () => {
 		const { field, view } = leaf('para');
-		typeAt(field, view, 4, ' /quote');
+		typeAt(field, view, 4, ' /ordered');
 		press(view, 'Enter');
 		const stored = field.getContent();
 		expect(stored.text).toBe('para ');
-		expect(stored.lines[0].containers).toEqual([{ container: 'quote' }]);
+		expect(stored.lines[0].containers).toEqual([
+			{ container: 'list_item', ordered: true, start: 1, ordinal: 0 }
+		]);
 		field.destroy();
 	});
 
@@ -225,18 +230,20 @@ describe('a dismissal edits no text; a pick consumes exactly the run', () => {
 
 	it('a pointer pick runs the same path as Enter', () => {
 		const { field, view } = leaf('');
-		typeAt(field, view, 0, '/div');
-		field.slashPick('rule');
-		expect(field.getContent().lines[0].kind).toBe('rule');
+		typeAt(field, view, 0, '/bul');
+		field.slashPick('bullet');
+		expect(field.getContent().lines[0].containers).toEqual([
+			{ container: 'list_item', ordered: false, start: 1, ordinal: 0 }
+		]);
 		field.destroy();
 	});
 
 	it('a pointer entering an item moves the ONE highlight the keys drive', () => {
 		const { field, view, state } = leaf('');
 		typeAt(field, view, 0, '/');
-		field.slashFocus('quote');
+		field.slashFocus('ordered');
 		const items = state()!.items;
-		expect(items[state()!.index].id).toBe('quote');
+		expect(items[state()!.index].id).toBe('ordered');
 		field.destroy();
 	});
 });

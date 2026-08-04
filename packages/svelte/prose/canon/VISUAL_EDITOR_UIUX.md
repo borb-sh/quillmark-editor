@@ -58,7 +58,7 @@ Formatting splits by what an action anchors to: a **selection** (marks) or a **p
 
 The popover is a translucent, backdrop-blurred pill (SURFACES §Elevation: the one floating surface earns the lift), top-center over the selection and flipping below when it nears the viewport top, scaling in on each raise and back out on each dismissal (SURFACES §Motion; the field-description surface takes the same pair). Each mark is a Lucide glyph, the icon naming its action (AESTHETIC §Icons): bold, italic, underline, strikethrough, code, link, with `anchor` a 7th, toggling an identity handle over the selection (its codec seam ships: `FieldController.insertAnchor`).
 
-**Input rules: typist shorthand, no chrome.** `**`, `*`, `~~`, `` ` ``, `# `, `- `, `1. `, `> `, and a ` ``` ` code fence. These cover the marks and the block shorthands (headings, lists, quote, code); underline is keymap-only (`Mod-u`), and no table-entry rule ships (island authoring does not ship, §Open). Markdown is an input shorthand, never the stored form.
+**Input rules: typist shorthand, no chrome.** `**`, `*`, `~~`, `` ` ``, `# `, `- `, `1. `, `> `, `---`, and a ` ``` ` code fence. These cover the marks and every block construct but the table: underline is keymap-only (`Mod-u`), and no table-entry rule ships, a pipe row not being a prefix a rule can fire on. Markdown is an input shorthand, never the stored form.
 
 **The position anchor: the slash menu.** The insert surface's keyboard door ships (§"Slash menu"); the gutter affordance beside it does not (§Open). Editing a table already present in an imported document is a separate concern and is not gated by either: the island's own chrome ships (§"Table island").
 
@@ -76,7 +76,7 @@ The popover is a translucent, backdrop-blurred pill (SURFACES §Elevation: the o
 
 **What a pick inserts is a default shape, not a size picker.** A table opens at three columns and two rows and grows for free (Tab at the last cell appends a row), which is cheaper than a picker for every table that is not exactly the size the picker was asked for. The caret lands in the first cell.
 
-**The offers are the block vocabulary, not the island alone.** A menu of one item is a menu nobody opens, so the headings, the lists, the quote, the code block and the divider are offered beside the table: the same constructs the input-rule shorthands reach, for the author who did not learn them. The island is first, being the one thing with no other door.
+**The offers are the CONTAINERS: the table and the two lists.** A construct that opens a place the caret then lives in is the menu's; one that retypes the block the caret is already in is the shorthand's. A heading, a quote, a code block and a divider are the second kind, and `# `, `> `, ` ``` ` and `---` reach all four, so the menu carries none of them: an offer that only saves the author a shorthand is a row to scan past on the way to the one that does not. The island is first, being the one construct no shorthand reaches, a pipe row not being a prefix a rule can fire on. The lists are offered though `- ` and `1. ` reach them too: the test is what a construct IS, not whether something else opens it, and a list opens an item exactly as a table opens a cell.
 
 ## Table island
 

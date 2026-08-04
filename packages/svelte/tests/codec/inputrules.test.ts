@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-// Behavioral input-rule coverage: the rule COUNT test (edges.test.ts) cannot
-// catch a rule that fires with wrong positions. Typing is simulated the way the
-// browser drives it: per-char through `handleTextInput` (the inputrules plugin's
-// entry), falling back to a plain insert when no rule claims the char.
+// Behavioral input-rule coverage, which is the only kind there is: counting the
+// mounted rules proves nothing, a rule that fires at the wrong position still being
+// one rule (edges.test.ts states the same). Typing is simulated the way the browser
+// drives it: per-char through `handleTextInput` (the inputrules plugin's entry),
+// falling back to a plain insert when no rule claims the char.
 import { describe, it, expect } from 'vitest';
 import { EditorState, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
@@ -157,6 +158,46 @@ describe('the heading/list shorthands never mint a heading inside an item', () =
 		type(view, '### deep');
 		expect(view.state.doc.toString()).toBe('doc(heading("deep"))');
 		expect(view.state.doc.child(0).attrs.level).toBe(3);
+		view.destroy();
+	});
+});
+
+// `---` replaces its whole block, which is what the other block shorthands never do:
+// a divider holds no content to retype into. So the cases are about what it consumes.
+describe('the `---` divider shorthand', () => {
+	it('replaces its block and opens the paragraph after it', () => {
+		const view = mountView();
+		type(view, '---');
+		expect(view.state.doc.toString()).toBe('doc(horizontal_rule, paragraph)');
+		// The caret is in the exit, not on the divider.
+		expect(view.state.selection.$from.parent.type.name).toBe('paragraph');
+		view.destroy();
+	});
+
+	it('keeps the block that already follows rather than opening a second', () => {
+		const view = mountView();
+		const { paragraph } = blockSchema.nodes;
+		// A block after the caret's is the exit already; the rule adds none.
+		view.dispatch(view.state.tr.insert(2, paragraph.create(null, blockSchema.text('after'))));
+		view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 1)));
+		type(view, '---');
+		expect(view.state.doc.toString()).toBe('doc(horizontal_rule, paragraph("after"))');
+		view.destroy();
+	});
+
+	it('stays literal when the block holds anything else', () => {
+		const view = mountView();
+		type(view, 'a---');
+		expect(view.state.doc.toString()).toBe('doc(paragraph("a---"))');
+		view.destroy();
+	});
+
+	it('stays literal inside a list item', () => {
+		const view = mountView();
+		type(view, '- item');
+		view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 3)));
+		type(view, '---');
+		expect(view.state.doc.toString()).toBe('doc(bullet_list(list_item(paragraph("---item"))))');
 		view.destroy();
 	});
 });
