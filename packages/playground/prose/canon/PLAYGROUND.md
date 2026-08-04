@@ -73,6 +73,18 @@ One `Quiver` serves the page. Its quill cache is per canonical ref and lives as 
 
 THEMING.md §"What is behind the column is yours" leaves four properties to the host, and the playground demonstrates **both** documented answers to the page tone rather than leaving one on paper: the editor's column carries all four on one rule with plain `--qm-bg` behind it (the supported bare case), on `/playground`'s left pane and the front page's editor step alike, while every mounted `<Preview>` sits inset on a tone of the host's own, so the painted page reads against it.
 
+## What a deploy reaches
+
+Every push to `main` rebuilds the site and republishes it whole, so the previous build's files are gone rather than shadowed. Pages puts one `cache-control: max-age=600` on everything it serves and takes no header from the repository, so naming alone decides what a cache may hold.
+
+**Content-addressed names are immune**: everything under `_app/immutable/`, and every quiver entry but the pointer. A name fixes bytes, so a cached copy is never wrong and changed bytes never reuse the name.
+
+**Four mutable pointers carry the whole lag**: `index.html`, the `404.html` copy of it, `_app/version.json`, `quiver/latest.json`. A reload sees the new build within ten minutes of the deploy finishing, and the two caches do not stack: browser freshness is `max-age` less `Age`, so one ten-minute window covers edge and tab together. SvelteKit fetches `version.json` `no-cache`, so its own check reads through.
+
+An open tab sits outside that window. No service worker, no `kit.version.pollInterval`, nothing pushed: a tab keeps the chrome it loaded until something reloads it. One path self-heals: a client-side navigation whose route chunk the redeploy removed rejects on import, SvelteKit compares `version.json` against the version baked into the bundle, and a mismatch turns the navigation into a full page load.
+
+Triage reads **CSS hashes only**. `kit.version.name` defaults to a build timestamp baked into a chunk `index.html` preloads, so unchanged source still mints new `start.*.js`, `app.*.js` and `nodes/*.js` names on every build: a JS hash differing from a local build is evidence of nothing. A CSS hash that matches proves the live shell points at that build's stylesheet. A chunk the redeploy removed answers with the SPA fallback, not a bare 404, so the console reads as a MIME failure on `text/html`.
+
 ## Preventing drift
 
 The host derivation and its recipes are **two stylesheets**, the split `core/theme.css` and `visual/controls.css` make and for the same reason: a rung fixes a value, a recipe fixes which declarations make a thing, and only the second can be checked against the first. The derivation is exempt from the literal rules, so a recipe beside it would inherit the exemption.
