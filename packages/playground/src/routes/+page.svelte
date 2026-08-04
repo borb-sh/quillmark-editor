@@ -1,8 +1,6 @@
 <!--
-  The front page: the thesis, then the quickstart. Each step pairs the smallest
-  code that reaches a surface with that surface running beside it, over a session
-  of the reference quill opened exactly as a consumer's would be, so a step shows
-  its own output rather than a picture of one.
+  The front page: the thesis, then the quickstart, each step's sample mounted
+  beside the surface it describes (PLAYGROUND §"The routes").
 
   Two documents off one quill: the preview's is the one its session paints, the
   editor's is its own. No apply loop runs here, so a shared document would let
@@ -32,14 +30,14 @@
 		let cancelled = false;
 		(async () => {
 			// Handles created so far, newest first; freed in reverse creation order on
-			// unmount-during-open AND on a mid-chain failure (e.g. `engine.open`
-			// throwing after `quill`/`doc` already exist).
+			// unmount-during-open and on a mid-chain failure (`engine.open` throwing
+			// after `quill`/`doc` already exist).
 			const created: Array<{ free(): void }> = [];
 			try {
 				// Dynamic: the WASM binary and VisualEditor's ProseMirror stack are the
-				// route's heaviest payload and nothing before paint needs them, so they load
-				// after mount. `init` instantiates the core and every boundary verb throws
-				// `runtime::not_initialized` until it resolves. The fixture load is one of
+				// route's heaviest payload and nothing before paint needs them. `init`
+				// instantiates the core and every boundary verb throws
+				// `runtime::not_initialized` until it resolves; the fixture load is one of
 				// them (it materializes a quill to read its tree), so it waits.
 				const [{ Engine, Quill }, { init }, visual] = await Promise.all([
 					import('@quillmark/wasm'),
@@ -217,9 +215,8 @@
 	}
 
 	/* ── The quickstart ─────────────────────────────────────────────────────── */
-	/* One rail per step: the step's name in the margin, its content in the column
-	   (PLAYGROUND §"The rail"). The anchor clears the running head, which sits over
-	   whatever the jump lands on. */
+	/* The anchor clears the running head, which sits over whatever the jump lands
+	   on. */
 	#get-started {
 		scroll-margin-top: var(--pg-space-16);
 	}
@@ -251,9 +248,8 @@
 		font-size: var(--pg-text-label);
 	}
 
-	/* The sample and what it runs, side by side, so a reader compares them without
-	   scrolling between them; stacked where a half column stops holding a line of
-	   code, at the shell's one threshold. */
+	/* The sample and what it runs, side by side; stacked where a half column stops
+	   holding a line of code, at the shell's one threshold. */
 	.pair {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -283,16 +279,15 @@
 		min-width: 0;
 	}
 
-	/* The desk inset: the painted page carries its own edge, so what the host owes
-	   it is room to sit in and a tone to read against. */
+	/* The painted page carries its own edge, so what the host owes it is room to sit
+	   in and a tone to read against. */
 	.preview-frame {
 		height: var(--pg-mount);
 		padding: var(--pg-space-4);
 	}
 
-	/* The editor's column is the host's: the gutter, the scroll container, the page
-	   tone and the tail are the four THEMING §"What is behind the column is yours"
-	   leaves here. */
+	/* The four properties THEMING §"What is behind the column is yours" leaves to
+	   the host: the gutter, the scroll container, the page tone and the tail. */
 	.editor-frame {
 		height: var(--pg-mount);
 		min-width: 0;

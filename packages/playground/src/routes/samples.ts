@@ -1,7 +1,7 @@
 // The quickstart's code, one string per step: the smallest thing that reaches
 // each surface, as a consumer writes it. Strings in their own module because a
 // Svelte sample carries a `</script>` that would close the route's own script
-// block, and because a step's code is the value the tutorial edits.
+// block.
 //
 // Lines stay under ~68 characters: a sample sits in half of the step's column
 // beside the surface it runs, and a wrapped line of code reads as two.
