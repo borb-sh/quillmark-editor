@@ -2,11 +2,11 @@
 
 The JavaScript tier downstream of the [`@quillmark/wasm`](https://github.com/borb-sh/quillmark) artifact.
 
-| Package                                |           |                                                           |
-| -------------------------------------- | --------- | --------------------------------------------------------- |
-| [`@quillmark/svelte`](packages/svelte) | published | Editing, live-preview and source surfaces over a session. |
-| [`@quillmark/quiver`](packages/quiver) | published | Collections of quills, resolved and loaded.               |
-| [`playground`](packages/playground)    | private   | The app that composes them, deployed as the Pages site.   |
+| Package                                |                                                           |
+| -------------------------------------- | --------------------------------------------------------- |
+| [`@quillmark/svelte`](packages/svelte) | Editing, live-preview and source surfaces over a session. |
+| [`@quillmark/quiver`](packages/quiver) | Collections of quills, resolved and loaded.               |
+| [`playground`](packages/playground)    | The app that composes them, deployed as the Pages site.   |
 
 Every published package peers `@quillmark/wasm` and none depends on it, so a consumer supplies the one copy whose linear memory the handles index into. `check:deps` holds that and the rest of the graph ([DEPENDENCIES.md](prose/canon/DEPENDENCIES.md)).
 
