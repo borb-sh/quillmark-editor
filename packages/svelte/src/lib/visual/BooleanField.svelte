@@ -74,7 +74,7 @@
 	/* The focus ring rides `.qm-focus-ring` on the switch (controls.css). */
 	/* The thumb reads on tone alone: the base surface over the track's `hover` rung
 	 unchecked, and over `--_qm-accent` checked. No edge of its own: a hairline around
-	 a 12px pill is a second box inside the track's (SURFACES §Elevation). */
+	 a 12px pill is a second box inside the track's. */
 	.qm-switch-wrap :global(.qm-switch-thumb) {
 		width: 0.75rem;
 		height: 0.75rem;

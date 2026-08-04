@@ -1,5 +1,5 @@
 <!--
- The ephemeral tips card (VISUAL_EDITOR_UIUX §"Tips card"). Renders the
+ The ephemeral tips card. Renders the
  `$ext.editor.tips` channel one tip at a time: dots reach any tip in the set, and the
  foot's one button advances until the last, where it becomes the dismiss. Dismissal
  CLEARS the channel in the Document, so the card is gone and does not reappear.
@@ -32,7 +32,7 @@
 	}
 	let { tips, onDismiss, onError }: Props = $props();
 
-	/** Control-glyph size: the shared rule (AESTHETIC §Icons), as CardControls. */
+	/** Control-glyph size: the shared rule, as CardControls. */
 	const GLYPH = 14;
 
 	let cursor = $state(0);
@@ -68,7 +68,7 @@
 	<div class="qm-tips-body" aria-live="polite" bind:this={bodyEl}></div>
 	<div class="qm-tips-foot">
 		<!-- One tip is its own whole set, so a lone dot reports nothing the card does
-		     not already show (AESTHETIC §"Strip redundancy"). -->
+		     not already show. -->
 		{#if tips.length > 1}
 			<div class="qm-tips-dots">
 				{#each tips as _, i (i)}
@@ -99,17 +99,16 @@
 	 so its background fills the notches `main`'s rounded bottom corners cut and `main`
 	 paints over the rest. The seam is `main`'s own bottom hairline, and the two read as
 	 one block, which is what document-level guidance is: the main card's, not a card of
-	 its own. Still in-flow, one hairline, no lift, no fill beyond the card recipe
-	 (SURFACES §Elevation). It reads as guidance rather than as a field by TONE and
-	 TYPE: the label rung in the muted label colour; not by a badge or an accent
-	 (AESTHETIC §"Secondary text recedes"). It mints no token of its own; every value
-	 here is an existing dial.
+	 its own. Still in-flow, one hairline, no lift, no fill beyond the card recipe. It
+	 reads as guidance rather than as a field by TONE and TYPE: the label rung in the
+	 muted label colour; not by a badge or an accent. It mints no token of its own;
+	 every value here is an existing dial.
 
 	 The top inset takes the tuck back, so the space above the tip is the space below
 	 the foot.
 
 	 Leading is the reading rung, not the tight one the label SIZE would suggest: a
-	 tip is a passage that wraps, and the two axes are independent (SURFACES §Rhythm). */
+	 tip is a passage that wraps, and the two axes are independent. */
 	.qm-tips {
 		margin-top: calc(var(--_qm-radius) * -1);
 		border: var(--_qm-border-width) solid var(--_qm-border);

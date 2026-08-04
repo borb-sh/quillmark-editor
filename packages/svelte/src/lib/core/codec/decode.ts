@@ -44,9 +44,8 @@ interface DecodeOpts {
  * A `Content` as READ-ONLY DOM: decode under `schema`, then the nodes' own `toDOM`.
  * The rendering half of the codec's job with no editing attached (no PM view, no
  * plugins, no `contenteditable`) for chrome that must show content in the same
- * mark vocabulary a leaf edits it in (the tips card, VISUAL_EDITOR_UIUX §"Tips
- * card"). A second renderer over the same content would drift from `decode`; this
- * cannot.
+ * mark vocabulary a leaf edits it in (the tips card). A second renderer over the
+ * same content would drift from `decode`; this cannot.
  *
  * `DOMSerializer.fromSchema` memoizes on the schema, so repeat calls build no
  * serializer.

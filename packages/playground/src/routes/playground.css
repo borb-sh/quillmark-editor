@@ -24,8 +24,8 @@
 	--pg-ink-meta: color-mix(in oklab, var(--pg-ink), var(--pg-page) 45%);
 	--pg-ghost: color-mix(in oklab, var(--pg-ink), var(--pg-page) 60%);
 	/* Two planes behind content, stepping toward the ink exactly as the package's
-	   surfaces do and at the same 4pp apart (SURFACES §Elevation), so a host plate
-	   and a card on it agree about which way "raised" goes in both schemes. */
+	   surfaces do and at the same 4pp apart, so a host plate and a card on it agree
+	   about which way "raised" goes in both schemes. */
 	--pg-surface: color-mix(in oklab, var(--pg-page), var(--pg-ink) 4%);
 	--pg-surface-hover: color-mix(in oklab, var(--pg-page), var(--pg-ink) 8%);
 	--pg-border: color-mix(in oklab, var(--pg-page), var(--pg-ink) 17%);
@@ -107,7 +107,7 @@
 	/* ── Motion ──────────────────────────────────────────────────────────────── */
 	/* One rung of each: every transition on these pages is a state toggling under
 	   the pointer that nobody watches, so every one of them is a trip between two
-	   rest states that reverses mid-flight (SURFACES §Motion). A second duration
+	   rest states that reverses mid-flight. A second duration
 	   would need something the eye tracks and a second curve something that arrives
 	   or leaves, and the playground's chrome has neither. */
 	--pg-duration: 140ms;

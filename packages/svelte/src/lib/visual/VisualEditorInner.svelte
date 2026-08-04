@@ -146,7 +146,7 @@
 
 	const kinds = $derived(Object.keys(quill.schema.card_kinds ?? {}));
 
-	/** Control-glyph size: the shared rule (AESTHETIC §Icons), as CardControls. */
+	/** Control-glyph size: the shared rule, as CardControls. */
 	const GLYPH = 14;
 
 	/**
@@ -219,7 +219,7 @@
 	// `activeCardId` is the id-keyed half of `activeAddr` (whose `card` is positional),
 	// and it feeds lookups only: the `activeController` seam below, and the clear on
 	// delete. Nothing draws it: a card's active treatment is its controls' reveal,
-	// which the card reads off `:focus-within` (SURFACES §"Focus and active state").
+	// which the card reads off `:focus-within`.
 	let activeAddr = $state<Addr | undefined>(undefined);
 	let activeCardId = $state<CardId | undefined>(undefined);
 
@@ -377,7 +377,7 @@
 			return undefined;
 		}
 	}
-	// The reorder gesture's arming window (SURFACES §Motion): the reconcile that moves a
+	// The reorder gesture's arming window: the reconcile that moves a
 	// slot is the trip, and every other reconcile that happens to move one is not. Read
 	// through a getter rather than passed as a value, so the flag stays out of the
 	// template and needs no reactivity for it: `animate:` asks at apply time, which is a
@@ -939,7 +939,7 @@
 		margin-top: calc(var(--_qm-space-2) * -1);
 		margin-bottom: calc(var(--_qm-space-2) * -1);
 	}
-	/* Unboxed, like every button (SURFACES §"The shared recipe"), and not dashed: a
+	/* Unboxed, like every button, and not dashed: a
 	 dashed edge is the PLACEHOLDER idiom ("nothing is here yet") which on a button
 	 reads as disabled or as a drop target. It stays honest in one place, the
 	 un-schemable card (`Card.svelte`), which is a state rather than a control. Hover
@@ -961,7 +961,7 @@
 		align-items: center;
 		justify-content: center;
 		width: 100%;
-		/* Recede until engaged (AESTHETIC §"minimal UI"): the glyph rests on the idle
+		/* Recede until engaged: the glyph rests on the idle
 		 rung and comes to full ink on hover or keyboard focus, so the stack reads as
 		 content rather than a toolbar per gap. Dim, not absent: an insert point that
 		 surfaces under the pointer is reachable only by a reader who already knows it

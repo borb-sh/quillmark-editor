@@ -1,5 +1,5 @@
 <!--
-  Card controls (VISUAL_EDITOR_UIUX §"Card controls"), composable cards only.
+  Card controls, composable cards only.
   Right-aligned in the header: a move-up/move-down chevron pair revealed while the
   pointer or the caret is in the card (each disabled at its edge), then an
   always-visible delete. Reorder is BUTTONS, not drag (V1). The card scopes that
@@ -26,7 +26,7 @@
 	}
 	let { isFirst, isLast, onMoveUp, onMoveDown, onDelete }: Props = $props();
 
-	/** Control-glyph size: the shared rule for the reorder/delete icons (AESTHETIC §Icons). */
+	/** Control-glyph size: the shared rule for the reorder/delete icons. */
 	const GLYPH = 14;
 </script>
 

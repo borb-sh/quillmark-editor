@@ -1,7 +1,7 @@
 <!--
  The schema `description` as a themed floating surface: the second that is READ
  rather than picked from, so it shares {@link FormatPopover}'s translucent recipe
- (SURFACES §Elevation) and portals into the nearest `[data-qm-root]` like every
+ and portals into the nearest `[data-qm-root]` like every
  other floating surface, so a consumer's dials still reach it.
 
  It replaces the native `title` tooltip, which reached no dial, waited ~1s, could
@@ -101,8 +101,8 @@
 		>
 			<!-- The `child` snippet, the same shape {@link FormatPopover} takes and for
 			 the same reason: the surface is the primitive's own content node, so the
-			 dismissal animation is one the primitive waits on before unmounting
-			 (SURFACES §Motion). `data-qm-root` because a portalled subtree is
+			 dismissal animation is one the primitive waits on before unmounting.
+			 `data-qm-root` because a portalled subtree is
 			 detached for the derivation's purposes, and the marker is what applies
 			 it; `wrapperProps` is floating-ui's positioning box, spread and never
 			 styled. `inert` is the half of the dismissal the recipe cannot carry: the

@@ -1,6 +1,6 @@
-// The anchor for a surface with no element to anchor to (SURFACES §Anchoring: an
-// anchor is a live reference to what the surface floats over, never a rect measured
-// off it). A range of TEXT is that case; every other surface passes its own element.
+// The anchor for a surface with no element to anchor to: a live reference to what
+// the surface floats over, never a rect measured off it. A range of TEXT is that
+// case; every other surface passes its own element.
 //
 // `contextElement` is why this is a named type rather than an object literal per call
 // site. floating-ui's `autoUpdate` tracks a DOM ELEMENT: overflow ancestors for

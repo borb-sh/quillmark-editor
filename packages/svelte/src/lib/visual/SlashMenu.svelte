@@ -1,5 +1,5 @@
 <!--
- The slash menu (VISUAL_EDITOR_UIUX §"Slash menu"). The leaf's own surface, not the
+ The slash menu. The leaf's own surface, not the
  shell's: the trigger belongs to one caret in one leaf, so it is mounted by
  `ProseField` beside the view it reads from, unlike the ONE shell-owned format
  popover that follows whichever leaf is active.

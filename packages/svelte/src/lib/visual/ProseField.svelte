@@ -202,8 +202,8 @@
 		min-height: calc(var(--_qm-text-body) * var(--_qm-leading-body) * 3);
 	}
 	/* The caret is the prose leaf's focus indicator, not a ring: a ring around a
-	 contenteditable reads as the form chrome AESTHETIC strips. So the outline is
-	 dropped; a boxed leaf tints its wrapper border below (SURFACES §Focus). */
+	 contenteditable reads as form chrome rather than as paper. So the outline is
+	 dropped; a boxed leaf tints its wrapper border below. */
 	.qm-prose :global(.ProseMirror) {
 		outline: none;
 	}
@@ -217,8 +217,8 @@
 		border-color: var(--_qm-accent);
 	}
 	/* Empty-leaf ghost: the resolved `default:` as dim/italic ghost,
-	   matching the scalar ghost rung (AESTHETIC §"secondary text
-	   recedes"). Rendered from a node decoration's data attr so it stays out of the
+	   matching the scalar ghost rung. Rendered from a node decoration's data attr so
+	   it stays out of the
 	   document; `float`/`height:0` keep it from displacing the caret. */
 	.qm-prose :global(.ProseMirror .qm-prose-placeholder::before) {
 		content: attr(data-placeholder);

@@ -1,6 +1,6 @@
 // The table island's NodeView: the surface a `table` island is edited through
-// (CODEC §"The table island", VISUAL_EDITOR_UIUX §"Table island"). Vanilla DOM
-// rather than Svelte chrome, because what it renders is PM's own: a leaf node's
+// (CODEC §"The table island"). Vanilla DOM rather than Svelte chrome, because what
+// it renders is PM's own: a leaf node's
 // substitute DOM, holding one nested `EditorView` per cell.
 //
 // A cell is a second content unit inside the first, so it gets the codec's INLINE mode
@@ -139,7 +139,7 @@ export interface IslandMenuState {
 	label: string;
 	items: IslandMenuItem[];
 	/** The handle itself, to anchor on. The element rather than its rect, so
-	 *  floating-ui tracks it as the leaf scrolls (SURFACES §Anchoring). */
+	 *  floating-ui tracks it as the leaf scrolls. */
 	trigger: HTMLElement;
 	run: (id: string) => void;
 	close: () => void;
@@ -332,8 +332,7 @@ class TableIslandView implements NodeView {
 	// ── The pointer ───────────────────────────────────────────────────────────
 
 	/**
-	 * The chrome is two bands with two owners, and neither of them selects the node
-	 * (VISUAL_EDITOR_UIUX §"Table island").
+	 * The chrome is two bands with two owners, and neither of them selects the node.
 	 *
 	 * INSIDE the frame (gutter, corner, cell padding, the borders between cells) is
 	 * the table's: the press lands in the nearest cell, measured against the mounted
@@ -451,7 +450,7 @@ class TableIslandView implements NodeView {
 
 		// The two growing edges. A `+` per EDGE rather than per line: growth is the one
 		// op every table needs and the only one whose target is the table itself, so it
-		// is two controls whatever the rectangle is (VISUAL_EDITOR_UIUX §"Table island").
+		// is two controls whatever the rectangle is.
 		const frame = el('div', 'qm-table-frame');
 		frame.append(
 			table,

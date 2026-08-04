@@ -36,17 +36,12 @@ A **field box** is the rectangle on the rendered page where a schema field's con
 
 ## Overlay
 
-**The preview draws nothing on the page at rest.** It is the surface a user proofs against (its claim is *this is the output*), so any ink the overlay leaves is ink the reader has to discount. That rules out a resting hairline, and it rules out a resting wash more strongly: a hairline becomes a filled area over `main.body`, present during the activity that dominates the session. There is no alpha band that is both legible at pane scale and non-tinting, so the answer is not a fainter resting state but no resting state.
+**The preview draws nothing on the page at rest.** It is the surface a user proofs against (its claim is _this is the output_), so any ink the overlay leaves is ink the reader has to discount, and there is no alpha band both legible at pane scale and non-tinting. Nothing advertises that the text is clickable either: the click target is the text itself, which is what a reader tries first.
 
 The boxes serve geometry and one event:
 
-- **Geometry.** The bridge scrolls a field by its first box, reading the rect and not a pixel of the box itself. Each box carries `data-qm-field` (its address) and `.qm-field-box`: the hooks a consumer targets, since the wash itself is animated from a script and cannot be restyled away.
-- **The correlation bloom.** On a change of active address the field's boxes wash to `--_qm-accent-wash` and decay to zero over `--_qm-bloom-dwell`. A field's boxes share one start time, so a two-box `main.subject` blooms in step instead of shimmering.
-
-Two rules the bloom lives under:
-
-- **A rebuilt box RESUMES its bloom, never restarts it.** `refresh` re-creates every box, and the playground recompiles 120ms after each keystroke burst; a CSS animation on a fresh node re-blooms continuously while the user writes. The bloom carries its start time, so a rebuilt node picks up at the offset the old one reached (`core/bloom.ts`).
-- **Discoverability is not the overlay's job.** Nothing on the page advertises that preview text is clickable. The click target is the text itself, which is what a reader tries first; touch has no hover affordance either way. The reserve answer is an off-paper mark in the pane margin beside the page: the only form that can rest without contaminating the proof.
+- **Geometry.** The bridge scrolls a field by its first box, reading the rect and not a pixel of the box itself. Each box carries `data-qm-field` (its address) and `.qm-field-box`: the hooks a consumer targets, since the correlation wash is animated from a script and cannot be restyled away.
+- **The correlation bloom.** A change of active address is an EVENT, so the field's boxes wash and decay to nothing rather than resting lit. A field's boxes share one start time, so a two-box `main.subject` blooms in step instead of shimmering, and a **rebuilt box resumes its bloom, never restarts it**: `refresh` re-creates every box (the playground recompiles 120ms after each keystroke burst), so the bloom carries its start time and a fresh node picks up where the old one reached (`core/bloom.ts`). Without that, writing re-blooms the page continuously.
 
 ## Click bridge
 

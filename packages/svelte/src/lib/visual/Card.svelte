@@ -1,6 +1,6 @@
 <!--
- One card block (VISUAL_EDITOR_UIUX §"Card stack"): the header (composable cards
- only: an inline-editable title over a full-width rename region, and the reorder/
+ One card block: the header (composable cards only: an inline-editable title over
+ a full-width rename region, and the reorder/
  delete controls), the grouped field list packed by `ui.group`/`ui.compact`, and
  the body prose leaf. `main` is headerless with no controls. Every prose leaf
  takes a parent-built LIVE address so a card reorder re-targets its commits
@@ -207,7 +207,7 @@
 
 <!-- `qm-main` is a structural marker and carries no fill: a tone here would bet on
      what the consumer put behind the column, and structure already says which card
-     this is (SURFACES §Elevation). -->
+     this is. -->
 <section
 	bind:this={el}
 	class="qm-card"
@@ -314,8 +314,8 @@
 									>
 										<ChevronRight class="qm-group-chevron" size={14} />{section.label}
 									</button>
-									<!-- `inert` is what makes closed mean CLOSED (SURFACES §"Focus and active
-								     state"): the panel is clipped, not unmounted, so without it every field
+									<!-- `inert` is what makes closed mean CLOSED: the panel is clipped, not
+								     unmounted, so without it every field
 								     in a hidden section keeps its place in the tab order and in the a11y
 								     tree, under a header announcing `aria-expanded="false"`. Paint is
 								     untouched, so the 0fr↔1fr slide is the same slide. -->
@@ -337,8 +337,8 @@
 			{/if}
 
 			<!-- The body: no label and no box. "Body" names the surface the
-		 card is printed on, which is the redundancy AESTHETIC §"Strip redundancy"
-		 cuts; and the accessible name survives on the leaf itself, so the region
+		 card is printed on, so a label restates it; and the accessible name
+		 survives on the leaf itself, so the region
 		 is still announced. Unframed is the point rather than a saving: the body is
 		 the ONLY surface in the card without an edge, which is what makes it read
 		 as paper instead of as one more field, and the bracket's bottom rule
@@ -454,7 +454,7 @@
 	.qm-card {
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
-		/* Uniform inset on every side (SURFACES §Rhythm): a body-shown and a
+		/* Uniform inset on every side: a body-shown and a
 		 body-hidden card stay symmetric, every left edge on one gutter. The SAME rung
 		 as the gap between the card's stacked regions below: the card's inset and its
 		 internal rhythm are one number, so what separates the header from the fields is
@@ -479,9 +479,8 @@
 	/* Reveal the reorder chevrons while the pointer or the caret is in the card
 	 (CardControls owns the default hidden state). Focus is read off the CARD, so a
 	 caret in any leaf, the title, or a chevron itself holds the reveal: hover
-	 alone would strand the pair on keyboard and touch (SURFACES §"Focus and active
-	 state"). This is the card's whole active treatment; nothing marks the section
-	 itself. */
+	 alone would strand the pair on keyboard and touch. This is the card's whole
+	 active treatment; nothing marks the section itself. */
 	.qm-card:hover :global(.qm-card-reorder),
 	.qm-card:focus-within :global(.qm-card-reorder) {
 		opacity: 1;
@@ -494,7 +493,7 @@
 
 	 It HANGS by the title's own box, so the title's first character lands on the
 	 card's gutter with the field list, the bracket's rules and the body's first
-	 character (SURFACES §Rhythm). The title is the one region that carries a box
+	 character. The title is the one region that carries a box
 	 (it has to, since the box IS the rename affordance) and a box on the gutter puts
 	 its text a padding and a hairline right of it. The REGION hangs, not the input:
 	 the autosize mirror stays in register with what it measures, and the flex basis
@@ -568,15 +567,15 @@
 	 horizontals here and the open section's vertical below; because a bracket whose
 	 sides disagree on width or tone reads as three unrelated lines rather than as
 	 one figure. That sameness is the whole effect; it is why the vertical takes
-	 `--_qm-border` and not `--_qm-accent`, which under AESTHETIC §Rules would be
-	 ornament with the chevron and the header's ink step already saying open.
+	 `--_qm-border` and not `--_qm-accent`, which would be ornament with the chevron
+	 and the header's ink step already saying open.
 
 	 Both horizontals are conditional, and each condition is what the stroke means: a
 	 top rule is the line under a card title, so the headerless `main` has none and
 	 its bracket starts at the card's own top inset; a bottom rule divides fields from
 	 body, so a card with no body has nothing to divide. The bracket is therefore
 	 sometimes two strokes and sometimes one: an open figure by construction, which
-	 is what distinguishes it from the second box SURFACES §Elevation forbids. */
+	 is what distinguishes it from a second box inside the card. */
 	.qm-meta-top {
 		border-top: var(--_qm-border-width) solid var(--_qm-border);
 	}
@@ -654,7 +653,7 @@
 			--cols-half: 2;
 		}
 	}
-	/* Group accordion (VISUAL_EDITOR_UIUX §Fields). The header is a toggle
+	/* Group accordion. The header is a toggle
 	   at the field-label rung; the panel slides via a 0fr↔1fr grid row so the height
 	   animates without a magic max-height. */
 	/* The wrapper carries NO gap: the headers' own padding is the rhythm (see the
@@ -726,14 +725,14 @@
 		flex-shrink: 0;
 		transition: transform var(--_qm-duration-slow) var(--_qm-ease-reverse);
 	}
-	/* An ink step, not a hue: AESTHETIC §Rules keeps the three status hues as the only
-	   exits from the greyscale, and a section standing open is not a status anyway.
+	/* An ink step, not a hue: the three status hues are the only exits from the
+	   greyscale, and a section standing open is not a status anyway.
 
 	   HOVER'S ALONE, though the step suits open as well. `color` is one transition
 	   declaration, and open is the accordion's gesture where hover is its own, so the two
 	   share a rung and one of them is wrong: an ink step at the slow rung lags the
-	   pointer, and at the fast one it settles 80ms before the panel it belongs to
-	   (SURFACES §Motion). Hover keeps the property because open has another cue in the
+	   pointer, and at the fast one it settles 80ms before the panel it belongs to.
+	   Hover keeps the property because open has another cue in the
 	   chevron's rotation and hover has none, a big borderless target drawing no box. */
 	.qm-group-header:hover {
 		color: var(--_qm-ink);
@@ -743,7 +742,7 @@
 	}
 	/* Sliding panel: the grid track goes 0fr→1fr; the inner clips at min-height 0.
 	 Clipping is the whole of what CSS does here: what a closed panel is OUT of is
-	 `inert`'s to say, on the element (SURFACES §"Focus and active state"). The panel
+	 `inert`'s to say, on the element. The panel
 	 draws no rule of its own: the vertical is the section's (`.qm-group`), which is
 	 what spans the header too. */
 	.qm-group-panel {
@@ -786,7 +785,7 @@
 	}
 	/* One typographic role with the editable title above, so it reads the same three
 	 rungs: including the tight leading a card title takes over the root's reading
-	 rhythm (SURFACES §Rhythm). */
+	 rhythm. */
 	.qm-card-title-static {
 		font-size: var(--_qm-text-title);
 		font-weight: var(--_qm-weight-label);

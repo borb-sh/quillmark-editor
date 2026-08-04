@@ -71,7 +71,7 @@ export function createPaintLoop(
 		// The sheet's own edge, and the only thing separating it from the desk: the
 		// page is at `--_qm-surface`, and the tone behind it is the host's, which
 		// THEMING permits to be plain `--qm-bg` (the same value). A hairline holds at
-		// both poles where a shadow's offset does not (SURFACES §Elevation), and the
+		// both poles where a shadow's offset does not, and the
 		// boundary of the paper is not a mark on it, so the overlay's no-ink-at-rest
 		// rule is untouched (PREVIEW §Overlay). `border-box`, so the stroke lands
 		// inside the width the container gives and `clientWidth` below still measures

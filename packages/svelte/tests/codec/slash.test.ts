@@ -285,7 +285,7 @@ describe('the menu anchors to a reference, not a measurement', () => {
 		const { field, view, state } = leaf('');
 		typeAt(field, view, 0, '/');
 		// The field floating-ui unwraps to decide what to observe for scroll, resize and
-		// layout shift (SURFACES §Anchoring). Dropping it leaves the menu anchored to
+		// layout shift. Dropping it leaves the menu anchored to
 		// numbers taken at this keystroke, which nothing then refreshes.
 		expect(state()?.anchor.contextElement).toBe(view.dom);
 		field.destroy();

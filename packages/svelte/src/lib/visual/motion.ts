@@ -1,4 +1,4 @@
-// The card stack's reorder trip (SURFACES §Motion): a slot's position ↔ position in a
+// The card stack's reorder trip: a slot's position ↔ position in a
 // keyed list, the one row of the mechanism table no CSS rule can serve, because the
 // two frames belong to different elements. Svelte's `animate:` supplies the halves CSS
 // cannot see (the rects either side of the reconciliation) and WAAPI paints the trip,

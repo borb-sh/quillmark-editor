@@ -316,7 +316,7 @@ export function initialExpandedGroup(sections: GroupSection[]): string | null {
 	return sections.find((s) => s.group != null)?.group ?? null;
 }
 
-/** How wide a field sits in its section grid (VISUAL_EDITOR_UIUX §"Section grid"). */
+/** How wide a field sits in its section grid. */
 export type FieldSpan =
 	| 'cell' // one column, auto-placed among its neighbours
 	| 'lone' // half the capacity from column 1: a packable run of one

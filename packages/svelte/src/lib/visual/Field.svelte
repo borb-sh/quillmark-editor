@@ -223,7 +223,7 @@
 	/* The `full` span, and the base every field starts from: its own row, a plain
 	   stack. Nothing shares the row, so there are no internals to align against.
 
-	   THE ACTION COLUMN IS THE FIELD'S INSET (SURFACES §Rhythm), not the section's:
+	   THE ACTION COLUMN IS THE FIELD'S INSET, not the section's:
 	   a row action's tap target plus the grid's own column gutter, held clear at the
 	   end of whatever the field spans. On the SECTION it reserves one trailing column
 	   for the whole grid, which reaches only a field that stops short of it. The array
