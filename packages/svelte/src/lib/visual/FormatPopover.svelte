@@ -16,8 +16,13 @@
  Fallback: a document-level `selectionchange` listener, coalesced to one
  `requestAnimationFrame`-deferred check (see `deferredSync` below: a bare
  microtask is NOT late enough; verified a "select all" gesture fires several
- transient `selectionchange` events first). `focusout`/scroll/resize keep the
- popover honest when focus leaves the leaf or the page scrolls.
+ transient `selectionchange` events first). `focusout` keeps the popover honest
+ when focus leaves the leaf.
+
+ Nothing here watches SCROLL. `sync` decides whether the surface is up and what
+ its buttons read, which a scroll changes neither of; where it sits is the
+ anchor's own question, and the anchor answers it by measuring when floating-ui
+ asks rather than by being handed a rect (`codec/anchor.ts`).
 
  FOCUS DISCIPLINE. Three failure modes a naive Popover.Content invites:
  (1) its default `trapFocus` (true) redirects any focus landing outside its
@@ -60,7 +65,12 @@
 	import Code from '@lucide/svelte/icons/code';
 	import Link from '@lucide/svelte/icons/link';
 	import Hash from '@lucide/svelte/icons/hash';
-	import type { FieldController, LeafViews } from '../core/codec/index.js';
+	import {
+		rangeAnchor,
+		type FieldController,
+		type LeafViews,
+		type RangeAnchor
+	} from '../core/codec/index.js';
 	import './controls.css';
 
 	type LeafWithView = FieldController & Partial<LeafViews>;
@@ -84,9 +94,6 @@
 	]);
 
 	let open = $state(false);
-	let rect = $state<{ left: number; top: number; right: number; bottom: number } | undefined>(
-		undefined
-	);
 	let activeMarks = $state<Record<string, boolean>>({});
 	/** Whether the selection is in the FIELD's coordinate space, which an anchor needs
 	 *  and a table cell is not (see `sync`). */
@@ -101,14 +108,8 @@
 	 * mounted outside any root. */
 	let portalTarget = $state<HTMLElement | undefined>(undefined);
 
-	/** A floating-ui `Measurable` virtual anchor over the selection rect: a NEW object each time `rect` changes, so bits-ui's `watch( => opts.customAnchor.current, …)` sees the change and repositions (a mutated-in-place object would not). */
-	const anchor = $derived.by(() => {
-		const r = rect;
-		if (!r) return null;
-		return {
-			getBoundingClientRect: () => new DOMRect(r.left, r.top, r.right - r.left, r.bottom - r.top)
-		};
-	});
+	/** The selection the surface hangs off, live rather than measured (`codec/anchor.ts`): floating-ui re-reads it through every scroll and reflow, so `sync` mints one only when the RANGE moves. A NEW object each time it does, so bits-ui's `watch( => opts.customAnchor.current, …)` sees the change and repositions (a mutated-in-place object would not). */
+	let anchor = $state<RangeAnchor | undefined>(undefined);
 
 	/** The view the caret is actually in: the leaf's own, or the NESTED cell view of a
 	 * table island (`codec/table-view.ts`). The six marks are the inline schema's
@@ -119,11 +120,14 @@
 		return leaf?.focusedView?.() ?? leaf?.view;
 	}
 
-	/** Recompute open/position/active-marks from the active leaf's CURRENT PM selection. */
+	/** Recompute open/anchor/active-marks from the active leaf's CURRENT PM selection. */
 	function sync(): void {
 		const insidePopover =
 			!!contentEl && !!document.activeElement && contentEl.contains(document.activeElement);
-		if (insidePopover) return; // interacting with the popover itself (e.g. the link input): leave state as-is
+		// Interacting with the popover itself (e.g. the link input): leave state as-is.
+		// Costs nothing to hold: the anchor minted below goes on measuring while this
+		// returns early, so a surface frozen here still tracks the selection it covers.
+		if (insidePopover) return;
 		const leaf = getActiveLeaf() as LeafWithView | undefined;
 		const view = leaf?.focusedView?.() ?? leaf?.view;
 		// A non-empty TEXT selection. A NODE selection is non-empty too and has nothing
@@ -138,14 +142,7 @@
 		}
 		portalTarget = view.dom.closest<HTMLElement>('[data-qm-root]') ?? undefined;
 		const { from, to } = view.state.selection;
-		const a = view.coordsAtPos(from);
-		const b = view.coordsAtPos(to);
-		rect = {
-			left: Math.min(a.left, b.left),
-			top: Math.min(a.top, b.top),
-			right: Math.max(a.right, b.right),
-			bottom: Math.max(a.bottom, b.bottom)
-		};
+		anchor = rangeAnchor(view, from, to);
 		const marks: Record<string, boolean> = {};
 		for (const m of MARKS) {
 			const type = view.state.schema.marks[m.name];
@@ -194,13 +191,9 @@
 	$effect(() => {
 		document.addEventListener('selectionchange', deferredSync);
 		document.addEventListener('focusout', deferredSync);
-		window.addEventListener('scroll', deferredSync, true);
-		window.addEventListener('resize', deferredSync);
 		return () => {
 			document.removeEventListener('selectionchange', deferredSync);
 			document.removeEventListener('focusout', deferredSync);
-			window.removeEventListener('scroll', deferredSync, true);
-			window.removeEventListener('resize', deferredSync);
 			// A burst-coalescing rAF may still be in flight at teardown; cancel it so
 			// `sync()` never runs against the destroyed component.
 			if (pending) cancelAnimationFrame(rafHandle);
@@ -276,7 +269,7 @@
 <Popover.Root bind:open>
 	<Popover.Portal to={portalTarget}>
 		<Popover.Content
-			customAnchor={anchor}
+			customAnchor={anchor ?? null}
 			side="top"
 			align="center"
 			trapFocus={false}

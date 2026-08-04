@@ -128,8 +128,9 @@ export interface IslandMenuState {
 	/** The menu's accessible name: the line it acts on. */
 	label: string;
 	items: IslandMenuItem[];
-	/** The handle's viewport rect, to anchor on. */
-	rect: { left: number; top: number; right: number; bottom: number };
+	/** The handle itself, to anchor on. The element rather than its rect, so
+	 *  floating-ui tracks it as the leaf scrolls (SURFACES §Anchoring). */
+	trigger: HTMLElement;
 	run: (id: string) => void;
 	close: () => void;
 }
@@ -431,11 +432,10 @@ class TableIslandView implements NodeView {
 		this.menu = { kind, index, trigger };
 		trigger.setAttribute('aria-expanded', 'true');
 		const s = this.deps.strings();
-		const box = trigger.getBoundingClientRect();
 		this.deps.onMenu({
 			label: kind === 'row' ? s.tableRowMenu(index) : s.tableColumnMenu(index + 1),
 			items: kind === 'row' ? this.rowItems(s) : this.columnItems(index, s),
-			rect: { left: box.left, top: box.top, right: box.right, bottom: box.bottom },
+			trigger,
 			run: (id) => this.runMenuItem(kind, index, id),
 			close: () => this.closeMenu()
 		});

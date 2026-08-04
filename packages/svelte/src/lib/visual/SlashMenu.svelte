@@ -46,16 +46,6 @@
 	 * `undefined` falls back to bits-ui's `document.body`. */
 	const portalTarget = $derived(leaf()?.el.closest<HTMLElement>('[data-qm-root]') ?? undefined);
 
-	/** A floating-ui virtual anchor over the trigger's rect: a NEW object per rect, so
-	 * bits-ui sees the change and repositions (a mutated one would not). */
-	const anchor = $derived.by(() => {
-		const r = menu?.rect;
-		if (!r) return null;
-		return {
-			getBoundingClientRect: () => new DOMRect(r.left, r.top, r.right - r.left, r.bottom - r.top)
-		};
-	});
-
 	/** Swallow the item's own mousedown: without it the browser focuses the item and
 	 *  blurs the leaf, taking the trigger run's caret with it. */
 	function keepFocus(e: MouseEvent): void {
@@ -66,7 +56,7 @@
 <Popover.Root bind:open>
 	<Popover.Portal to={portalTarget}>
 		<Popover.Content
-			customAnchor={anchor}
+			customAnchor={menu?.anchor ?? null}
 			side="bottom"
 			align="start"
 			trapFocus={false}

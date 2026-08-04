@@ -9,6 +9,11 @@
 import 'prosemirror-view/style/prosemirror.css';
 import './prose.css';
 
+// What a floating surface anchors to. The visual tier's own surfaces mint one over a
+// selection (`visual/FormatPopover.svelte`), so it is reached off-barrel.
+export { rangeAnchor } from './anchor.js';
+export type { RangeAnchor } from './anchor.js';
+
 // The prose leaf.
 export { createField, emptyContent, proseLeafPlugins } from './field.js';
 export type { CreateFieldOpts, FieldController, LeafViews } from './field.js';

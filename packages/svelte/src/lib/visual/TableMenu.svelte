@@ -11,8 +11,9 @@
  text here (a handle was pressed), so the menu is the thing to navigate. The
  primitive brings the roving focus, the typeahead, Escape and outside-press
  dismissal, and the `menu`/`menuitem` roles that make those honest. Its trigger is
- the island's own vanilla button, which is why the anchor is a rect rather than a
- `DropdownMenu.Trigger`.
+ the island's own vanilla button rather than a `DropdownMenu.Trigger`, so it reaches
+ the primitive as `customAnchor`: the ELEMENT, which is what floating-ui tracks
+ through a scroll (SURFACES §Anchoring).
 -->
 <script lang="ts">
 	import { DropdownMenu } from 'bits-ui';
@@ -38,16 +39,6 @@
 	$effect(() => {
 		open = !!menu;
 	});
-
-	/** A floating-ui virtual anchor over the handle's rect: a NEW object per rect, so
-	 * bits-ui sees the change and repositions (a mutated one would not). */
-	const anchor = $derived.by(() => {
-		const r = menu?.rect;
-		if (!r) return null;
-		return {
-			getBoundingClientRect: () => new DOMRect(r.left, r.top, r.right - r.left, r.bottom - r.top)
-		};
-	});
 </script>
 
 <DropdownMenu.Root
@@ -57,7 +48,12 @@
 	}}
 >
 	<DropdownMenu.Portal to={root()}>
-		<DropdownMenu.Content customAnchor={anchor} side="bottom" align="start" sideOffset={4}>
+		<DropdownMenu.Content
+			customAnchor={menu?.trigger ?? null}
+			side="bottom"
+			align="start"
+			sideOffset={4}
+		>
 			<!-- Portalled out of the island but INTO the editor's root, and carrying the
 			     marker itself: floating is still a detached subtree to the derivation, like
 			     the format popover and the enum listbox. -->
