@@ -30,6 +30,14 @@ li.ProseMirror-selectednode::after {
 	left: calc(var(--_qm-space-4) * -1);
 }
 
+/* The GAP CURSOR (`prosemirror-gapcursor`, imported beside this file): a caret
+   between two blocks, where the document holds no text position for an ordinary one.
+   It is what a press beside an island lands, so it is drawn in the surface's ink
+   rather than the upstream sheet's `black`, which is the `#8cf` defect again. */
+.ProseMirror-gapcursor::after {
+	border-top-color: var(--_qm-ink);
+}
+
 /* Everything starts flush. Not a list of the block tags: the subtree is entirely
    what the codec emits, a paragraph-only reset leaves headings and lists on UA
    margins (two rhythms in one leaf), and an enumeration silently lags the schema:
@@ -185,10 +193,12 @@ li.ProseMirror-selectednode::after {
 	outline: none;
 }
 /* A selected island takes the node outline every leaf block does
-   (`.ProseMirror-selectednode`, above), and that is the state Escape leaves a cell
-   FOR: the caret is out, the island is what is selected, and Backspace deletes it. A
-   caret inside a cell is not that state and does not paint it: the outer view's
-   selection stays where the insert left it. */
+   (`.ProseMirror-selectednode`, above), and that is the state the corner and Escape
+   leave a cell FOR: the caret is out, the island is what is selected, and Backspace
+   deletes it. No POINTER press on the chrome reaches it, which is what keeps a
+   misclick off a state the next keystroke would act on. A caret inside a cell is not
+   that state and does not paint it: the outer view's selection stays where the
+   insert left it. */
 
 /* The gutters carry the handles and nothing else: no border, no ink, no box. They
    are the table's margin, drawn as cells so a handle lines up with the row or the
@@ -233,6 +243,21 @@ tr:not(.qm-table-gutter-row) .qm-table-handle-bar {
 	width: 0.1875rem;
 	height: 100%;
 	min-height: 0.75rem;
+}
+
+/* The corner is the ISLAND's handle: the grid origin, where the two lines of handles
+   converge, and the one gesture that selects the whole table. Its mark is a square
+   because what it acts on is the rectangle and not a line of it; the target is the
+   gutter cell, as every handle's is. */
+.qm-table-corner-mark {
+	display: block;
+	width: 0.4375rem;
+	height: 0.4375rem;
+	border-radius: var(--_qm-radius-pill);
+	background: var(--_qm-border);
+}
+.qm-table-corner-handle[aria-expanded='true'] .qm-table-corner-mark {
+	background: var(--_qm-ink-label);
 }
 
 /* The two growing edges: a `+` strip along the bottom and one down the right, each

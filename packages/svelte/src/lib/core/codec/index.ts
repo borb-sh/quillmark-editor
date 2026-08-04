@@ -3,10 +3,12 @@
 // `ChangeBundle` for `applyChange`), the USV↔PM position map, and the `createField`
 // prose leaf. Consumed by the VisualEditor and the codec test suite.
 
-// ProseMirror's structural base styles, then the retint of the one hue they mint.
-// Imported HERE because `createField` is what mounts a view: a consumer reaching
-// the codec directly gets them with it, and the order is what makes the retint win.
+// ProseMirror's structural base styles and the gap cursor's, then the retint of the
+// hues they mint. Imported HERE because `createField` is what mounts a view: a
+// consumer reaching the codec directly gets them with it, and the order is what makes
+// the retint win.
 import 'prosemirror-view/style/prosemirror.css';
+import 'prosemirror-gapcursor/style/gapcursor.css';
 import './prose.css';
 
 // The prose leaf.
