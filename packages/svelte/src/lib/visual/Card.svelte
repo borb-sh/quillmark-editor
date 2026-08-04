@@ -229,8 +229,12 @@
 				     not a persistent box. `data-value` falls back to the
 				     placeholder so an empty title still reserves its resolved-title width. -->
 					<span class="qm-card-title-sizer" data-value={localTitle || card.titlePlaceholder}>
+						<!-- `qm-focus-ring` is what the box used to do: it was this control's ONLY
+					     focus indicator, and the ink step that replaced it cannot be one, since
+					     hover already takes that step. `:focus-visible`, so a press enters the
+					     edit unringed while a tab into it draws one. -->
 						<input
-							class="qm-card-title"
+							class="qm-card-title qm-focus-ring"
 							value={localTitle}
 							placeholder={card.titlePlaceholder}
 							aria-label={t.strings.cardTitle}
@@ -471,10 +475,24 @@
 		justify-content: space-between;
 		gap: var(--_qm-space-2);
 	}
+	/* The header's other end, hung so the row is balanced: the title's ink sits on the
+	 card's gutter, and this puts the control glyphs on the opposite one. What stands
+	 between a glyph and the region's edge is the tap target's own centring — half the
+	 difference between `--_qm-tap-min` and the glyph — which is a target, not a
+	 rhythm, and so is exactly what a gutter should not be measured from. Both ends
+	 therefore hang by the chrome they carry and by nothing else; the title's is now
+	 zero, and this one is the arithmetic of two rungs rather than a rung of its own,
+	 because the amount is off the space scale (5px at the shipped dials) and a scale
+	 that could express it would be a scale with a step nothing else uses.
+
+	 It is the fill, not the box, that overhangs the gutter here: an icon button rests
+	 unboxed and fills only under the pointer (SURFACES §"The shared recipe"), so the
+	 thing crossing the line is a transient target wash, not an edge the card claims. */
 	.qm-card-header-right {
 		display: flex;
 		align-items: center;
 		gap: var(--_qm-space-2);
+		margin-right: calc(-1 * (var(--_qm-tap-min) - var(--_qm-glyph-control)) / 2);
 	}
 	/* Reveal the reorder chevrons while the pointer or the caret is in the card
 	 (CardControls owns the default hidden state). Focus is read off the CARD, so a
@@ -492,14 +510,12 @@
 	 header's `align-items: center` so the region is the row's whole height rather
 	 than the input's.
 
-	 It HANGS by the title's own box, so the title's first character lands on the
-	 card's gutter with the field list, the bracket's rules and the body's first
-	 character (SURFACES §Rhythm). The title is the one region that carries a box
-	 (it has to, since the box IS the rename affordance) and a box on the gutter puts
-	 its text a padding and a hairline right of it. The REGION hangs, not the input:
-	 the autosize mirror stays in register with what it measures, and the flex basis
-	 grows by what the margin took, so the right edge holds. The margin is exactly the
-	 box it cancels, so the two move together at any dial. */
+	 It hangs by NOTHING, which is the whole of what the title carrying no box buys:
+	 the first character lands on the card's gutter with the field list, the
+	 bracket's rules and the body's first character (SURFACES §Rhythm) because
+	 nothing stands between the region's edge and the glyph. The stretch is also what
+	 keeps the target legal with the padding gone: WCAG 2.5.8's floor is the ROW's,
+	 which the controls hold at `--_qm-tap-min`, so the input never carried it. */
 	.qm-card-rename {
 		flex: 1;
 		min-width: 0;
@@ -507,7 +523,6 @@
 		display: flex;
 		align-items: center;
 		cursor: text;
-		margin-left: calc(-1 * (var(--_qm-space) + var(--_qm-border-width)));
 	}
 	/* Autosize sizer: an inline-grid whose ::after mirrors the text
 	 into the single cell, so the overlaid input tracks its content width. Bounded
@@ -525,16 +540,30 @@
 		line-height: var(--_qm-leading-tight);
 		font-family: inherit;
 	}
+	/* The mirror has no box model to match, because the input has none: with the
+	 padding and the hairline gone from both, the two measure alike by carrying the
+	 same nothing. */
 	.qm-card-title-sizer::after {
 		content: attr(data-value) ' ';
 		grid-area: 1 / 1;
 		visibility: hidden;
 		white-space: pre;
 		min-width: 2ch;
-		/* Match the input's box model so the mirror and the input measure alike. */
-		padding: var(--_qm-space);
-		border: var(--_qm-border-width) solid transparent;
 	}
+	/* The title draws NO box, in any state (AESTHETIC §"Strip redundancy"). A box is
+	 what says "type here", and a card title is already the one line of a card that
+	 reads as its name; the region's `cursor: text` and the caret that lands on a
+	 press say the rest. A hover-summoned box was also the inverse of the recipe every
+	 other control follows, where the box rests drawn and hover changes nothing
+	 (SURFACES §"The shared recipe"), and it filled to `--_qm-surface` — the page rung,
+	 BELOW the card it sits on, so the one hover on this surface that receded instead
+	 of lifting.
+
+	 What replaces it is an ink step, the same cue the group header takes for the same
+	 reason: a wide borderless target drawing no box has no other way to answer the
+	 pointer. Rest is `--_qm-ink-label`, which is where the recovery shell's static
+	 title already sits, so the editable title and its unschemable twin finally agree
+	 on tone as well as on the three type rungs they share. */
 	.qm-card-title {
 		grid-area: 1 / 1;
 		width: 100%;
@@ -543,17 +572,15 @@
 		/* `font: inherit` does not carry colour: an actual form control, unlike this
 		 rule's neighbours, defaults to the UA's own text colour rather than the
 		 header's ink without this line. */
-		color: var(--_qm-ink);
-		border: var(--_qm-border-width) solid transparent;
-		border-radius: var(--_qm-radius-inner);
-		padding: var(--_qm-space);
+		color: var(--_qm-ink-label);
+		border: none;
+		padding: 0;
 		background: transparent;
+		transition: color var(--_qm-duration-fast) var(--_qm-ease-reverse);
 	}
 	.qm-card-title:hover,
 	.qm-card-title:focus {
-		border-color: var(--_qm-border);
-		background: var(--_qm-surface);
-		outline: none;
+		color: var(--_qm-ink);
 	}
 	/* One rhythm for the card's stacked regions and for the metadata block inside it:
 	   the gap between a field list and the body is the gap between two field lists. */

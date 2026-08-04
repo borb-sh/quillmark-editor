@@ -4,7 +4,9 @@
   pointer or the caret is in the card (each disabled at its edge), then an
   always-visible delete. Reorder is BUTTONS, not drag (V1). The card scopes that
   reveal, so its condition lives in the parent's CSS; the pair keeps the narrower
-  guarantee here, that a focused chevron is a visible one.
+  guarantee here, that a focused chevron is a visible one. The card also hangs this
+  cluster to land these glyphs on its right gutter, and reads `--_qm-glyph-control`
+  to do it: the size is the stylesheet's below, never an attribute.
 -->
 <script lang="ts">
 	import { wording } from './strings.js';
@@ -25,9 +27,6 @@
 		onDelete: () => void;
 	}
 	let { isFirst, isLast, onMoveUp, onMoveDown, onDelete }: Props = $props();
-
-	/** Control-glyph size: the shared rule for the reorder/delete icons (AESTHETIC §Icons). */
-	const GLYPH = 14;
 </script>
 
 <div class="qm-card-controls">
@@ -37,21 +36,21 @@
 			class="qm-icon-btn"
 			title={t.strings.cardMoveUp}
 			disabled={isFirst}
-			onclick={onMoveUp}><ChevronUp size={GLYPH} /></button
+			onclick={onMoveUp}><ChevronUp /></button
 		>
 		<button
 			type="button"
 			class="qm-icon-btn"
 			title={t.strings.cardMoveDown}
 			disabled={isLast}
-			onclick={onMoveDown}><ChevronDown size={GLYPH} /></button
+			onclick={onMoveDown}><ChevronDown /></button
 		>
 	</div>
 	<button
 		type="button"
 		class="qm-icon-btn qm-card-delete"
 		title={t.strings.cardDelete}
-		onclick={onDelete}><X size={GLYPH} /></button
+		onclick={onDelete}><X /></button
 	>
 </div>
 
@@ -60,6 +59,15 @@
 		display: flex;
 		align-items: center;
 		gap: var(--_qm-space);
+	}
+	/* The glyph rung in CSS rather than through Lucide's `size`, because the card
+	 header's right hang is arithmetic over this number and the tap floor: an
+	 attribute set in the script is a second place the size lives, and the balance
+	 breaks silently when the two disagree. A stylesheet beats an SVG presentation
+	 attribute, so the rung wins without the attribute being removed from the icon. */
+	.qm-card-controls :global(svg) {
+		width: var(--_qm-glyph-control);
+		height: var(--_qm-glyph-control);
 	}
 	.qm-card-reorder {
 		display: flex;
