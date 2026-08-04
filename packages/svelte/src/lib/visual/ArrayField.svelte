@@ -6,11 +6,12 @@
  ({@link ProseArrayElement}), `object` → a minimal JSON editor, keeping the prior
  element value on an entry that does not parse. The add affordance sits in the
  label header row (space-between with the field label); {@link Field} skips its
- own label for array controls.
+ own label for array controls and hands this component the label track with it.
 
- A row ends in the section's reserved action column (Card `--action-col`), which the
- field reaches back across: the element controls stop where a scalar's does and the
- remove sits beyond them, on the one right edge the section keeps (SURFACES §Rhythm).
+ A row ends in the reserved action column (`--action-col`), which the field insets
+ and this reaches back across: the element controls stop where a scalar's does and
+ the remove sits beyond them, on the right edge the field's track keeps (SURFACES
+ §Rhythm).
 
  Keys carry the list without the mouse (VISUAL_EDITOR_UIUX §Fields): Enter inserts a
  sibling below and takes the caret there, Backspace on an EMPTY element removes it
@@ -276,11 +277,18 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space);
-		/* The one field that reaches across the section's reserved action column: its
-		   rows END in that column, so an element control stops exactly where the scalar
-		   above it does and the remove never sits over a long value. */
+		/* The one field that reaches across the reserved action column: its rows END in
+		   that column, so an element control stops exactly where the scalar beside it
+		   does and the remove never sits over a long value. The reservation is the
+		   FIELD's inset (Field.svelte), so this cancels it wherever the field landed:
+		   its own row, or one track of a shared one. */
 		margin-right: calc(-1 * var(--action-col));
 	}
+	/* The array's first line IS the row's label line: this component owns the label
+	 track (Field.svelte), so the header has to measure what a `.qm-field-label-row`
+	 measures or an array shares a row with a scalar and their labels sit apart. The
+	 label is the same component; what had to give was the add affordance's height,
+	 below. */
 	.qm-array-header {
 		display: flex;
 		align-items: center;
@@ -308,13 +316,39 @@
 		min-height: 2.5rem;
 	}
 	/* Chrome, hover fill and target come from `.qm-add-affordance` (controls.css);
-	 what is here is this trigger's own inset and recede ladder: the foot add rests
-	 dim like the card stack's gap triggers, and comes up on hover of the field or on
-	 focus. The field, not the button: one trigger at the foot of a row of controls
-	 is found by looking at the array, not by grazing its last line. */
+	 what is here is this trigger's own type, box and recede ladder. It rests dim like
+	 the card stack's gap triggers and comes up on hover of the FIELD or on focus: one
+	 trigger at the head of a row of controls is found by looking at the array, not by
+	 grazing its first line.
+
+	 THE BOX IS THE LABEL'S LINE BOX, and the target is the `::after`: the same split
+	 the field label's guidance marker takes, for the same reason and one row over
+	 (SURFACES §"The shared recipe"). This is the other affordance that sits IN a line
+	 of text rather than in a row of its own, and the line is a label's, so a
+	 target-sized box would stand the header 8px taller than the `.qm-field-label-row`
+	 beside it in a shared row and put the two labels on different lines. So the family's
+	 floor comes off the box and goes out of flow, unpainted and centred on it: the row
+	 keeps the label's line box, the press keeps the floor. The horizontal edges are the
+	 button's own, the word being already wider than the threshold.
+
+	 The type is the LABEL rung in place of the family's body rung, which the family
+	 invites (controls.css: a caller whose button carries a label restates the rung it
+	 wants). It reads as one more thing on the label line rather than as a control that
+	 wandered up from the row below. */
 	.qm-add-el {
-		padding: var(--_qm-space) var(--_qm-space-2);
+		position: relative;
+		min-height: 0;
+		padding: 0 var(--_qm-space);
+		font-size: var(--_qm-text-label);
 		opacity: var(--_qm-opacity-idle);
+	}
+	.qm-add-el::after {
+		content: '';
+		position: absolute;
+		inset-inline: 0;
+		top: 50%;
+		height: var(--_qm-tap-min);
+		transform: translateY(-50%);
 	}
 	.qm-array:hover .qm-add-el,
 	.qm-add-el:focus-visible {

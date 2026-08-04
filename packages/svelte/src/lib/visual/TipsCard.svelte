@@ -114,7 +114,7 @@
 		margin-top: calc(var(--_qm-radius) * -1);
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: 0 0 var(--_qm-radius) var(--_qm-radius);
-		padding: calc(var(--_qm-space-3) + var(--_qm-radius)) var(--_qm-space-4) var(--_qm-space-3);
+		padding: calc(var(--_qm-space-3) + var(--_qm-radius)) var(--_qm-space-3) var(--_qm-space-3);
 		background: var(--_qm-surface-raised);
 		display: flex;
 		flex-direction: column;
