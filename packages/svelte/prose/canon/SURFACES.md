@@ -11,6 +11,8 @@ Two orthogonal rules decide how a surface looks, each with a single source so a 
 1. **Elevation**: is the surface in the document flow, or floating over it?
 2. **Rhythm**: one closed spacing scale and one radius base, not a per-component choice.
 
+A third decides where a floating one SITS rather than how it looks: **anchoring**, a live reference to whatever the surface floats over, never a rect measured off it.
+
 ## Elevation
 
 Elevation is produced with **surfaces and lines**: a tone rung and a hairline, never a shadow. A rung and a stroke say the same thing at both poles, so the whole ladder, from an in-flow card to a menu floating over the content it belongs to, is built from those two plus the blur behind the glass ones. A shadow states a light source as geometry, an offset, where the poles carry colour only: one declaration reads as lit from above under a light palette and as a glow pooling underneath in its inverse, so the hue inverts and the direction does not. There is no shadow rung, and `check:style` forbids the property outright in the derivation as well as over the surfaces, so the absence is gated rather than remembered (THEMING.md).
@@ -25,6 +27,18 @@ The card is the container; nothing inside it is a second box.
 - **The rungs step toward the ink, which the word "raised" only half means.** A card is *darker* than the page in light and *lighter* in dark: a tinted plate laid on the page, not a lit surface floating above it. The three surface rungs sit 4pp apart (the step at which a hovered item reads against a card), so each carries a plane on its own. "Elevated is lighter" in both poles needs a mode signal the derivation deliberately does not have (THEMING.md).
 - **The painted page carries an edge because its backdrop cannot.** It sits at `--_qm-surface`, and the tone behind it is the host's, which THEMING permits to be plain `--qm-bg` (the same value), so the hairline the cards carry is the only thing dividing sheet from desk (`preview/paint.ts`). It is the one surface where the line is load-bearing rather than a choice between the two means. A sheet's boundary is not a mark on the sheet, so it is not the resting ink PREVIEW §Overlay rules out.
 - **The floating surfaces are lifted by the same two means**, in two shapes rather than one per component. **Translucent** (`--_qm-surface-popover`, the *raised* surface mixed toward transparent, behind a `--_qm-blur` backdrop and a hairline) carries what floats over the content it is about: the selection popover, and the field-guidance popover, which adds only a measure and the meta type rung, since it holds prose where the other holds glyphs (VISUAL_EDITOR_UIUX §Fields). **Opaque** (the same hairline over `--_qm-surface`) carries the lists, the enum's and the card stack's kind menu (§"The shared recipe"): a row of choices reads through a blur worse than a row of glyphs does. What lifts them off the card is a surface rung, a hairline, and behind the two that read as glass, the blur. All four sit over content with nothing behind them, and all four portal into the nearest `[data-qm-root]` rather than `document.body`; floating still leaves the editor's subtree, and the marker is what carries the consumer's dials back to it.
+
+## Anchoring
+
+Elevation is what lifts a floating surface off the content; anchoring is what keeps it WITH the content it was lifted off. Every floating surface hangs off something that moves as the leaf scrolls and reflows: a selection range, a caret, a table island's line handle, a field's hint button. So the rule is one line: **an anchor is a live reference to that thing, never a rect measured off it.**
+
+A rect is a measurement taken at one moment. A surface handed one is pinned to viewport coordinates its content has since left, and nothing about it reads as wrong until something scrolls.
+
+floating-ui's `autoUpdate` is what holds a surface to its anchor, and it tracks a DOM ELEMENT: it walks the element's overflow ancestors for scroll, observes it for resize, and watches it for layout shift. A bare `{ getBoundingClientRect }` unwraps to no element, so all three are skipped and the listeners left are the FLOATING element's own, which for a surface portalled to `[data-qm-root]` need not share a scroll container with the editor at all. Three of the four tracking mechanisms are gone, and the fourth recomputes a position out of a closure over numbers taken once.
+
+A surface with an element to anchor to therefore passes the ELEMENT to `customAnchor`, and most have one. A surface anchored to a range of TEXT has none, and passes `rangeAnchor` (`codec/anchor.ts`) instead: a virtual anchor carrying `contextElement`, which is what `autoUpdate` walks in an element's place, and a measure that reads layout at the moment it is asked.
+
+**A rect never crosses a channel.** `SlashState` carries an anchor and `IslandMenuState` the handle itself, which is what makes the rule hold rather than be remembered: a surface cannot return to a stale rect without reintroducing the field, and none of them owns a scroll listener to refresh one with. The measure is TOTAL in exchange, since `autoUpdate` calls it at moments none of its callers choose: an unmeasurable position returns the last rect that measured rather than throwing out of a positioning pass.
 
 ## The shared recipe
 
@@ -137,6 +151,7 @@ The bloom shortens instead of collapsing: its reduced form holds at full and cut
 
 - **Chrome → rungs.** The look lives in the `--_qm-*` scale; a component reads a rung, it does not mint a value.
 - **Scale → a closed set.** Spacing, radius, type, colour, and duration are small fixed scales; a value outside them is a review smell.
+- **Anchor → a reference.** A floating surface holds the thing it floats over, not a rect taken off it; a rect in a state channel is the drift, and removing the field is what prevents it.
 - **Public surface → the minimum.** The dials are the contract ([`THEMING.md`](../../THEMING.md) counts them); a rung is promotable the day a consumer needs it. Fewer names is the point; each one is a thing a reader holds.
 - **Rule → this page.** The elevation and rhythm questions have a written answer, so they are not re-argued per change.
 

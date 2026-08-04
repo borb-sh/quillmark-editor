@@ -279,3 +279,42 @@ describe('the menu does not disturb the body it sits in', () => {
 		field.destroy();
 	});
 });
+
+describe('the menu anchors to a reference, not a measurement', () => {
+	it('reports an anchor carrying the leaf as `contextElement`', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/');
+		// The field floating-ui unwraps to decide what to observe for scroll, resize and
+		// layout shift (SURFACES §Anchoring). Dropping it leaves the menu anchored to
+		// numbers taken at this keystroke, which nothing then refreshes.
+		expect(state()?.anchor.contextElement).toBe(view.dom);
+		field.destroy();
+	});
+
+	it('measures on demand, so a second read follows the leaf', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/');
+		const anchor = state()!.anchor;
+		// The trigger's caret is a `Range` measure, and the stub stands in for the layout
+		// jsdom has none of; moving it is the leaf scrolling under an open menu.
+		let top = 10;
+		Range.prototype.getBoundingClientRect = () => new DOMRect(0, top, 1, 12);
+		expect(anchor.getBoundingClientRect().top).toBe(10);
+		top = 90;
+		expect(anchor.getBoundingClientRect().top).toBe(90);
+		field.destroy();
+	});
+
+	it('holds its last rect once the position stops measuring', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/');
+		const anchor = state()!.anchor;
+		Range.prototype.getBoundingClientRect = () => new DOMRect(0, 42, 1, 12);
+		expect(anchor.getBoundingClientRect().top).toBe(42);
+		// floating-ui calls the measure at moments none of its callers choose, a torn-down
+		// view among them, so it may not throw out of a positioning pass.
+		field.destroy();
+		expect(() => anchor.getBoundingClientRect()).not.toThrow();
+		expect(anchor.getBoundingClientRect().top).toBe(42);
+	});
+});
