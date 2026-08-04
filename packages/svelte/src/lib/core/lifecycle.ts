@@ -1,5 +1,5 @@
-// WASM lifecycle. `@quillmark/wasm` ships wasm-bindgen's web target: the core
-// build is instantiated by an explicit `await init()`, and every export throws
+// `@quillmark/wasm` ships wasm-bindgen's web target: the core build is
+// instantiated by an explicit `await init()`, and every export throws
 // `runtime::not_initialized` until it resolves. Instantiation carries the panic
 // hook on its start section, so a Rust panic reaches JS as a stack trace.
 import { init as initWasm } from '@quillmark/wasm';

@@ -217,9 +217,9 @@
 			try {
 				// Dynamic: the WASM binary and VisualEditor's ProseMirror stack are the
 				// route's heaviest payload and nothing before paint needs them, so they load
-				// after mount. `init` instantiates the core; every boundary verb throws
-				// `runtime::not_initialized` until it resolves, and the fixture load is one
-				// of them — it materializes a quill to read its tree — so it waits.
+				// after mount. `init` instantiates the core and every boundary verb throws
+				// `runtime::not_initialized` until it resolves. The fixture load is one of
+				// them (it materializes a quill to read its tree), so it waits.
 				const [{ Engine, Quill, Document, MAIN_CARD_ADDR }, { init }, visual] = await Promise.all([
 					import('@quillmark/wasm'),
 					import('@quillmark/svelte/core'),
