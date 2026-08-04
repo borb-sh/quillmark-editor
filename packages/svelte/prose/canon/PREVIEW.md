@@ -60,6 +60,16 @@ click → PDF-pt → session.positionAt(p, x, y) → ContentHit → onCaretPick(
 
 `ContentHit.granularity` decides precision: `'cluster'` → caret-exact; `'segment'` → focus the field/segment, no exact caret. `positionAt` returns nothing for non-field ink (margins, page chrome): the hook does not fire. One hook suffices: `ContentHit` carries `field`, so coarse "focus this field" is just ignoring `pos`.
 
+## Follow-the-caret scroll
+
+`focusPosition` locates the caret rect and `scrollToField` a field's first box; both place a throwaway absolute marker at the `%` position, measure it, and remove it, so the trip is computed off the same percent geometry the overlay draws and needs no separate zoom or DPR term.
+
+**The preview scrolls its own scrollport and nothing else.** `container.scrollTop`, never `marker.scrollIntoView()`: that walks *every* scrollable ancestor, so a host whose document scrolls has the whole page dragged to the preview by a keystroke in the editor, taking the surface the user is typing on off screen. Instant, and with no `prefers-reduced-motion` term: no `scroll-behavior` on the container means no motion for one to cancel.
+
+**The two commands split the way the bloom does** (VISUAL_EDITOR_UIUX §Editor↔preview), and for the same reason. `scrollToField` is a discrete act, so it centres every time. `focusPosition` is the CONTINUOUS signal (one call per keystroke and per arrow key), so it moves the pane only when the caret is not clear of the fold: the caret rect's own height of clearance at each edge, since a rect flush against one is visible and unusable, and the next line typed lands past it. The clearance derives from the target, not from a margin dial, so it scales with zoom as the caret does. Centring on every call takes the scrollport back from the user on each of them, and a preview click is one of them: the click already put its target on screen, and the `setCaret` it drives comes back through `onCaretMove` as a caret move like any other. The change-guard answers that hop too; a suppression flag for it would be redundant state.
+
+**A recompile re-locates the followed caret.** `session.locate` answers against the last COMPILED layout while a consumer debounces `update`, so a caret typed past that layout's content is off-content for the whole burst: `focusPosition` no-ops and the pane sits still. Nothing re-asks when the compile lands, because the next caret event is the only thing that would, so `refresh` re-runs the last followed place through the same guard. It belongs here rather than at the consumer: the staleness sits between two session queries this module owns both ends of.
+
 ## Minimal surface
 
 ```ts
@@ -74,9 +84,9 @@ interface PreviewOptions {
 }
 
 interface PreviewController {
-  refresh(change: ChangeSet): void;                  // repaint dirty ∩ visible, re-read geometry
-  scrollToField(field: DocPath): void;               // fieldBoxes → scroll into view
-  focusPosition(at: Place): void;                    // editor → preview: locate → caret rect → scroll
+  refresh(change: ChangeSet): void;                  // repaint dirty ∩ visible, re-read geometry, re-locate
+  scrollToField(field: DocPath): void;               // fieldBoxes → centre in the scrollport
+  focusPosition(at: Place): void;                    // editor → preview: locate → caret rect → centre if past the fold
   setZoom(scale: number): void;                       // folds into densityScale, repaints visible
   destroy(): void;
 }
