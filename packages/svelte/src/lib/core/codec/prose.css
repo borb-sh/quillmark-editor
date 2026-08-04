@@ -272,13 +272,10 @@ tr:not(.qm-table-gutter-row) .qm-table-handle-bar {
 	color: var(--_qm-ink);
 }
 
-/* The reveal is POINTER OR FOCUS, and it is the card stack's rule unchanged
-   (VISUAL_EDITOR_UIUX §"Card stack"): hidden by opacity so the controls stay in the
-   tab order, revealed while the pointer or the caret is inside the island, full ink
-   on the control itself. A hover-only rule hands a keyboard a focused control it
-   cannot see and hands a touch pointer, which never hovers, no path to the ops at
-   all. `:focus-within` on the island is what covers the caret in a cell as well as a
-   focused control. */
+/* Pointer OR focus, the card stack's rule unchanged (VISUAL_EDITOR_UIUX §"Card
+   stack"): opacity rather than absence, so the controls stay in the tab order, and
+   `:focus-within` on the ISLAND, so a caret in a cell holds the reveal as a focused
+   control does. */
 .qm-table-handle,
 .qm-table-add {
 	opacity: 0;

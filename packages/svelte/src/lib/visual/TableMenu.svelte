@@ -4,8 +4,8 @@
 
  The channel carries VERBS rather than an address (`codec/table-view.ts`
  §`IslandMenuState`): a row index inside one island is not a coordinate the leaf's
- surface speaks, and the menu belongs to the island that raised it. So this
- component knows the label, the items, and the rect, and nothing about tables.
+ surface speaks. So this component knows a label, some items and a rect, and nothing
+ about tables.
 
  A real `DropdownMenu`, not the popover the slash menu draws: the caret is NOT in
  text here (a handle was pressed), so the menu is the thing to navigate. The

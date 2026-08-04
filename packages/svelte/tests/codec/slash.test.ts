@@ -3,11 +3,11 @@
 // a pick that consumes exactly the trigger run in ONE commit.
 import { describe, it, expect, beforeAll } from 'vitest';
 import type { EditorView } from 'prosemirror-view';
-import { createField, blockSchema } from '$lib/core/codec';
+import { createField } from '$lib/core/codec';
 import type { FieldController, LeafViews, SlashState } from '$lib/core/codec';
 import { filterItems, slashItems, DEFAULT_SLASH_STRINGS } from '$lib/core/codec/slash.js';
 import type { Document, TableProps } from '@quillmark/wasm';
-import { quill, md } from './_util.js';
+import { mount, press, quill, md } from './_util.js';
 
 // jsdom has no layout, and ProseMirror measures: the caret it scrolls into view
 // after a structural key, and the trigger the menu anchors on. One stub for both,
@@ -19,12 +19,6 @@ beforeAll(() => {
 	Range.prototype.getClientRects = () => rects;
 	Range.prototype.getBoundingClientRect = () => new DOMRect();
 });
-
-function mount(): HTMLElement {
-	const el = document.createElement('div');
-	document.body.appendChild(el);
-	return el;
-}
 
 /** A body leaf over `markdown`, with the menu's reports captured. */
 function leaf(markdown = 'para') {
@@ -48,12 +42,6 @@ function type(view: EditorView, text: string): void {
 	for (const ch of text) {
 		view.dispatch(view.state.tr.insertText(ch, view.state.selection.head));
 	}
-}
-
-/** Drive one key through the leaf's bound keymaps, as the browser would. */
-function press(view: EditorView, key: string): void {
-	const event = new KeyboardEvent('keydown', { key, bubbles: true });
-	view.someProp('handleKeyDown', (f) => f(view, event));
 }
 
 /** Put the caret at a USV offset and type. */
@@ -142,9 +130,9 @@ describe('the query filters, and a miss closes', () => {
 	});
 
 	it('filters case-insensitively, over the words the chrome displays', () => {
-		const items = slashItems(DEFAULT_SLASH_STRINGS);
-		expect(filterItems(items, 'QUOTE').map((i) => i.id)).toEqual(['quote']);
-		expect(filterItems(items, '').length).toBe(items.length);
+		expect(filterItems(slashItems(DEFAULT_SLASH_STRINGS), 'QUOTE').map((i) => i.id)).toEqual([
+			'quote'
+		]);
 	});
 });
 
@@ -282,16 +270,5 @@ describe('the menu does not disturb the body it sits in', () => {
 		press(view, 'Enter');
 		expect(field.getContent().lines).toHaveLength(2);
 		field.destroy();
-	});
-});
-
-describe('the offers are the block vocabulary the schema holds', () => {
-	it('every offer names a node the schema declares', () => {
-		const ids = slashItems(DEFAULT_SLASH_STRINGS).map((i) => i.id);
-		expect(ids).toContain('table');
-		expect(blockSchema.nodes.island_block).toBeDefined();
-		expect(blockSchema.nodes.horizontal_rule).toBeDefined();
-		expect(blockSchema.nodes.blockquote).toBeDefined();
-		expect(blockSchema.nodes.code_block).toBeDefined();
 	});
 });

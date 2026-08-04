@@ -66,10 +66,10 @@ export interface CreateFieldOpts {
 	 *  the package's English; an inline leaf never asks (it holds no island). */
 	tableStrings?: () => TableChromeStrings;
 	/**
-	 * A table island's line menu opened or closed, or `undefined` when it closed: the
-	 * channel the chrome draws it through (`visual/TableMenu.svelte`). The island
-	 * raises it and carries its own verbs, so the leaf is a pass-through: a row index
-	 * inside one island is not a coordinate `FieldController` speaks.
+	 * A table island's line menu, or `undefined` when none is open: the channel the
+	 * chrome draws it through (`visual/TableMenu.svelte`). The island raises it and it
+	 * carries its own verbs, so the leaf is a pass-through: a row index inside one
+	 * island is not a coordinate `FieldController` speaks.
 	 *
 	 * Absent, the handles still render and do nothing on press: a leaf mounted without
 	 * chrome keeps every op the keyboard has (Tab grows, Escape selects) and loses the
@@ -83,8 +83,8 @@ export interface CreateFieldOpts {
 	 * chrome draws from (`visual/SlashMenu.svelte`).
 	 *
 	 * Its PRESENCE is what mounts the menu at all. The trigger and its keys are the
-	 * leaf's, but a surface only a keyboard can reach — claiming Enter, Escape and the
-	 * arrows with nothing on screen — is worse than no surface, so the door exists
+	 * leaf's, but a surface only a keyboard can reach (claiming Enter, Escape and the
+	 * arrows with nothing on screen) is worse than no surface, so the door exists
 	 * exactly where something can draw it. A constrained inline leaf never has one:
 	 * it holds no island and no block to convert.
 	 */
@@ -172,7 +172,7 @@ export interface FieldController {
 /**
  * The ProseMirror handles a chrome surface reaches a mounted leaf through. Not part
  * of {@link FieldController}: they are PM internals, and a consumer's contract is the
- * controller's verbs. The format popover is the one caller, and it needs both —
+ * controller's verbs. The format popover is the one caller and it needs both:
  * `view` to name the leaf's own document, `focusedView` to act on wherever the caret
  * actually is, which inside a table island is a NESTED cell view (`table-view.ts`).
  * The two being different is exactly what tells the popover to withhold its

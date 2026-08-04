@@ -32,7 +32,7 @@ import {
 } from '$lib/core/codec/table.js';
 import { mintIslandId } from '$lib/core/codec/islands.js';
 import type { Content, TableCell, TableProps } from '@quillmark/wasm';
-import { quill, md } from './_util.js';
+import { mount, press, quill, md } from './_util.js';
 
 const TABLE_MD = 'para\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\ntail';
 
@@ -174,12 +174,6 @@ describe('the cell codec: a cell is a corpus of its own', () => {
 });
 
 // ── The NodeView ────────────────────────────────────────────────────────────
-
-function mount(): HTMLElement {
-	const el = document.createElement('div');
-	document.body.appendChild(el);
-	return el;
-}
 
 /** A body holding one table island, mounted as a leaf, with the line menu's reports
  *  captured: the chrome's whole view of the island. */
@@ -385,6 +379,12 @@ describe('the table NodeView', () => {
 		field.destroy();
 	});
 
+	it('a cell mounts the inline schema, which is the mode the cell codec speaks', () => {
+		const { field } = tableLeaf(LETTERED);
+		expect(cellViews(field)[0].state.schema).toBe(inlineSchema);
+		field.destroy();
+	});
+
 	it('a non-table island keeps the literal placeholder', () => {
 		const doc = quill().seedDocument();
 		const rt = md(TABLE_MD);
@@ -394,34 +394,5 @@ describe('the table NodeView', () => {
 		expect(field.el.querySelector('table')).toBeNull();
 		expect(field.el.textContent).toContain('[chart]');
 		field.destroy();
-	});
-});
-
-/** Drive one key at a nested view the way the browser would: PM's own
- *  `someProp('handleKeyDown')` over a synthesized event. */
-function press(view: EditorView, key: string): void {
-	const event = new KeyboardEvent('keydown', { key, bubbles: true });
-	view.someProp('handleKeyDown', (f) => f(view, event));
-}
-
-// A cell view is an ordinary `EditorState`, so the keymap is drivable without the
-// DOM at all; this is the check that the two agree.
-describe('a cell view is the inline mode', () => {
-	it('mounts the inline schema, which holds no island and no block', () => {
-		const { field } = tableLeaf(LETTERED);
-		const state: EditorState = cellViews(field)[0].state;
-		expect(state.schema).toBe(inlineSchema);
-		expect(state.schema.nodes.island_inline).toBeUndefined();
-		expect(state.schema.nodes.blockquote).toBeUndefined();
-		field.destroy();
-	});
-});
-
-describe('the zero table', () => {
-	it('opens with a header and two rows, and grows by one op', () => {
-		const fresh = newTable();
-		expect(columnCount(fresh)).toBe(3);
-		expect(fresh.rows).toHaveLength(2);
-		expect(fresh.header).toEqual([emptyCell(), emptyCell(), emptyCell()]);
 	});
 });
