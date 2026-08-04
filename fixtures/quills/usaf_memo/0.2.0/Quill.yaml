@@ -25,6 +25,7 @@ main:
         - ORG2/SYMBOL
       ui:
         group: addressing
+        compact: true
       description: "Organization/office symbol in UPPERCASE. To address a specific person, add their rank and name in parentheses (e.g., 'ORG/SYMBOL (LT COL JANE DOE)'). For many recipients, enter 'SEE DISTRIBUTION' and list them in the Distribution field."
 
     memo_from:
@@ -39,6 +40,7 @@ main:
         - City ST 12345-6789
       ui:
         group: addressing
+        compact: true
       description: "If recipients are on the same installation, use only the office symbol. For recipients on other installations, include the full mailing address to enable return correspondence. Omit entirely to produce a Memorandum for Record (no MEMO FROM line)."
 
     subject:
@@ -58,6 +60,7 @@ main:
         - Duty Title
       ui:
         group: addressing
+        compact: true
       description: "Line 1: Name in UPPERCASE as signed, grade, and service. Line 2: Duty title."
 
     letterhead_title:
@@ -246,12 +249,14 @@ card_kinds:
         example: ORG/SYMBOL
         ui:
           group: addressing
+          compact: true
         description: Office symbol or Rank Name of the endorsing official.
       for:
         type: string
         example: ORG/SYMBOL
         ui:
           group: addressing
+          compact: true
         description: Office symbol or organization receiving the endorsed memo.
       signature_block:
         type: array
@@ -262,6 +267,7 @@ card_kinds:
           - Duty Title
         ui:
           group: addressing
+          compact: true
         description: "Line 1: Name in UPPERCASE as signed, grade, and service. Line 2: Duty title."
       format:
         type: string

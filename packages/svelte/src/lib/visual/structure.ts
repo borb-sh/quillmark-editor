@@ -328,16 +328,31 @@ export interface PlacedField {
 }
 
 /**
- * Whether a field can share a row. `ui.compact` asks; three shapes decline, because
- * a row is as tall as its tallest cell and each of these grows under its neighbours:
- * an array owns its label and its own rows, an object nests a whole field set, and
- * block richtext (`inline` absent) holds paragraphs. An inline prose leaf is one line
- * tall and packs like any scalar.
+ * Whether a field can share a row. `ui.compact` asks; a shape declines when it grows
+ * in units its neighbours do not, because a row is as tall as its tallest cell: an
+ * object nests a whole field set, and block richtext (`inline` absent) holds
+ * paragraphs, so either one stands its neighbours in a column of whitespace. An
+ * inline prose leaf is one line tall and packs like any scalar.
+ *
+ * An ARRAY packs on its ITEMS' shape rather than on its own. Its own height is
+ * unbounded either way, but it grows one LINE at a time when its elements are
+ * one-line controls, which is the same step a wrapped label or a diagnostic takes;
+ * a row that ends taller for it is a row of address lines beside a row of address
+ * lines. An array of objects or of block prose is the shape that declines, by the
+ * rule above, one level down.
  */
 function packable(f: FieldModel): boolean {
 	if (!f.compact) return false;
-	if (f.control === 'array' || f.control === 'object') return false;
-	return f.control !== 'prose' || f.inline;
+	// An array declaring no `items` has text elements (ArrayField), which are one line.
+	if (f.control === 'array')
+		return f.schema.items == null || oneLine(controlKind(f.schema.items), !!f.schema.items.inline);
+	return oneLine(f.control, f.inline);
+}
+/** Whether a control is one line tall at rest: everything but a subform and block
+ *  prose. An array is never one line, so a nested one declines here too. */
+function oneLine(control: ControlKind, inline: boolean): boolean {
+	if (control === 'object' || control === 'array') return false;
+	return control !== 'prose' || inline;
 }
 
 /**

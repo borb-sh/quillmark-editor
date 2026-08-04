@@ -68,10 +68,22 @@ describe('interpolateTitle + cardTitle', () => {
 });
 
 describe('placeFields', () => {
+	// A projected field, minus the projection: `control`/`inline` are what `packable`
+	// reads for the field itself, `schema.items` what it reads one level down for an
+	// array. The schema stands in for both, so a fake that omits it is a fake of a
+	// model that cannot exist.
 	const mk = (name: string, compact: boolean, extra: Record<string, unknown> = {}) =>
-		({ name, compact, control: 'text', inline: false, ...extra }) as unknown as ReturnType<
-			typeof fieldModels
-		>[number];
+		({
+			name,
+			compact,
+			control: 'text',
+			inline: false,
+			schema: { type: 'string' },
+			...extra
+		}) as unknown as ReturnType<typeof fieldModels>[number];
+	/** An array field of `items`, with the control the projection would give it. */
+	const arr = (name: string, compact: boolean, items?: Record<string, unknown>) =>
+		mk(name, compact, { control: 'array', schema: { type: 'array', items } });
 	const spans = (fields: ReturnType<typeof mk>[]) =>
 		placeFields(fields).map((p) => [p.field.name, p.span]);
 
@@ -108,18 +120,47 @@ describe('placeFields', () => {
 	});
 
 	it('declines the compact hint for shapes that grow under their neighbours', () => {
-		// Block richtext (`inline` absent) holds paragraphs; an array owns its own rows;
-		// an object nests a field set. All three take a full row despite `ui.compact`.
+		// Block richtext (`inline` absent) holds paragraphs and an object nests a field
+		// set: either one stands its neighbours in a column of whitespace, so both take
+		// a full row despite `ui.compact`.
 		expect(
 			spans([
 				mk('block', true, { control: 'prose', inline: false }),
-				mk('arr', true, { control: 'array' }),
-				mk('obj', true, { control: 'object' })
+				mk('obj', true, { control: 'object', schema: { type: 'object' } })
 			])
 		).toEqual([
 			['block', 'full'],
-			['arr', 'full'],
 			['obj', 'full']
+		]);
+	});
+
+	it('packs an array on its ITEMS: one-line elements pack, growing ones do not', () => {
+		// `memo_for` in the reference quill: an address block of one-line strings, which
+		// grows a line at a time like the label beside it. An array with no `items` has
+		// text elements, so it packs on the same reading.
+		expect(
+			spans([
+				arr('strings', true, { type: 'string' }),
+				arr('untyped', true),
+				arr('inline_prose', true, { type: 'richtext', inline: true })
+			])
+		).toEqual([
+			['strings', 'cell'],
+			['untyped', 'cell'],
+			['inline_prose', 'cell']
+		]);
+		// Elements that hold paragraphs or a subform decline by the rule above, one
+		// level down.
+		expect(
+			spans([
+				arr('blocks', true, { type: 'richtext' }),
+				arr('objects', true, { type: 'object' }),
+				arr('nested', true, { type: 'array' })
+			])
+		).toEqual([
+			['blocks', 'full'],
+			['objects', 'full'],
+			['nested', 'full']
 		]);
 	});
 

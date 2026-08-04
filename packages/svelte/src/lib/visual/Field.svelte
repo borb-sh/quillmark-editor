@@ -117,7 +117,12 @@
 	);
 </script>
 
-<div class="qm-field" class:cell={span === 'cell'} class:lone={span === 'lone'}>
+<div
+	class="qm-field"
+	class:cell={span === 'cell'}
+	class:lone={span === 'lone'}
+	class:owns-label={field.control === 'array'}
+>
 	{#if field.control !== 'array'}
 		<FieldLabel
 			label={field.label}
@@ -221,13 +226,26 @@
 
 <style>
 	/* The `full` span, and the base every field starts from: its own row, a plain
-	   stack. Nothing shares the row, so there are no internals to align against. */
+	   stack. Nothing shares the row, so there are no internals to align against.
+
+	   THE ACTION COLUMN IS THE FIELD'S INSET (SURFACES §Rhythm), not the section's:
+	   a row action's tap target plus the grid's own column gutter, held clear at the
+	   end of whatever the field spans. On the SECTION it reserves one trailing column
+	   for the whole grid, which is the right edge only while every field that has an
+	   action owns its row; the moment an array shares one, its rows reach across a
+	   reservation that belongs to the LAST column and land on the neighbour beside
+	   it. Per field the reservation travels with the thing that uses it: one right
+	   edge per track, every control in a row ending on it, and an array reaching back
+	   across its own (ArrayField) at any span. Every field pays the width, including
+	   one with no action in it; a right edge that moved with a field's contents is the
+	   raggedness this removes. */
 	.qm-field {
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space);
 		grid-column: 1 / -1;
 		min-width: 0;
+		padding-right: var(--action-col);
 	}
 	/* A row-sharing field subgrids onto the section's row tracks instead of sizing its
 	 own: three tracks (label, control, diagnostics) taken from the parent, so every
@@ -244,6 +262,19 @@
 		grid-template-rows: subgrid;
 		row-gap: var(--_qm-space);
 		align-items: start;
+	}
+	/* The one field that renders no label of its own: an array's sits inside its
+	 control, paired with the add affordance (ArrayField). So the control takes the
+	 label track WITH the control track, and the array's first line lands on the row's
+	 label line rather than a track below it. Aligned by construction, not by a
+	 number: the array's internal gap and the subgrid's row-gap are one rung, and the
+	 add affordance's box is a label's line box (ArrayField), so the array's header
+	 measures exactly what the labels beside it do. Without the span the control
+	 auto-places into the LABEL track and the row's two labels sit a track apart.
+	 The `full` span is a plain stack with no tracks to land in, so it is unaffected. */
+	.qm-field.owns-label.cell > .qm-field-control,
+	.qm-field.owns-label.lone > .qm-field-control {
+		grid-row: span 2;
 	}
 	.qm-field.cell {
 		grid-column: span 1;
