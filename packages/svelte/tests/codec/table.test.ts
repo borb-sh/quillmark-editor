@@ -12,20 +12,17 @@ import { describe, it, expect } from 'vitest';
 import { EditorState, NodeSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { createField, decode, blockSchema, inlineSchema } from '$lib/core/codec';
-import type { FieldController, LeafViews } from '$lib/core/codec';
+import type { FieldController, IslandMenuState, LeafViews } from '$lib/core/codec';
 import {
-	ALIGN_CYCLE,
+	ALIGNS,
 	cellContent,
 	cellFromDoc,
 	columnCount,
-	cycleAlign,
 	deleteColumn,
 	deleteRow,
 	emptyCell,
 	insertColumn,
 	insertRow,
-	moveColumn,
-	moveRow,
 	newTable,
 	normalizeTable,
 	rowCells,
@@ -84,13 +81,11 @@ describe('the rectangle survives every op', () => {
 		{ name: 'insert a row below the header', run: (p) => insertRow(p, 0) },
 		{ name: 'insert a row below the last', run: (p) => insertRow(p, rowCount(p) - 1) },
 		{ name: 'delete a body row', run: (p) => deleteRow(p, 1) },
-		{ name: 'move a row down', run: (p) => moveRow(p, 1, 1) },
-		{ name: 'move the header down', run: (p) => moveRow(p, 0, 1) },
-		{ name: 'insert a column', run: (p) => insertColumn(p, 0) },
+		{ name: 'insert a column left', run: (p) => insertColumn(p, -1) },
+		{ name: 'insert a column right', run: (p) => insertColumn(p, 0) },
 		{ name: 'delete a column', run: (p) => deleteColumn(p, 1) },
-		{ name: 'move a column right', run: (p) => moveColumn(p, 0, 1) },
 		{ name: 'set an alignment', run: (p) => setAlign(p, 1, 'center') },
-		{ name: 'cycle an alignment', run: (p) => cycleAlign(p, 0) },
+		{ name: 'clear an alignment back to the default', run: (p) => setAlign(p, 0, 'none') },
 		{ name: 'set a cell', run: (p) => withCell(p, 1, 0, cell('typed')) }
 	];
 
@@ -124,29 +119,20 @@ describe('what the model already answers', () => {
 		expect(grid(deleteRow(LETTERED, 0))).toEqual(grid(LETTERED));
 	});
 
-	it('moving the header trades its CELLS with the first body row', () => {
-		const moved = moveRow(LETTERED, 0, 1);
-		expect(moved.header.map((c) => c.text)).toEqual(['a1', 'a2']);
-		expect(moved.rows[0].map((c) => c.text)).toEqual(['h1', 'h2']);
-		expect(moved.rows[1].map((c) => c.text)).toEqual(['b1', 'b2']);
-	});
-
 	it('a one-column table keeps its column', () => {
 		const one = newTable(1, 1);
 		expect(columnCount(deleteColumn(one, 0))).toBe(1);
 	});
 
-	it('a column carries its alignment when it moves', () => {
-		const moved = moveColumn(LETTERED, 0, 1);
-		expect(moved.aligns).toEqual(['right', 'left']);
-		expect(moved.header.map((c) => c.text)).toEqual(['h2', 'h1']);
+	it('an insert to the left of the first column lands at the front', () => {
+		const wider = insertColumn(LETTERED, -1);
+		expect(wider.header.map((c) => c.text)).toEqual(['', 'h1', 'h2']);
+		expect(wider.aligns).toEqual(['none', 'left', 'right']);
 	});
 
-	it('the alignment control walks the four the content declares', () => {
-		let props = setAlign(LETTERED, 0, 'none');
-		for (const expected of [...ALIGN_CYCLE.slice(1), 'none']) {
-			props = cycleAlign(props, 0);
-			expect(props.aligns[0]).toBe(expected);
+	it('every alignment the content declares is settable, the default included', () => {
+		for (const align of ALIGNS) {
+			expect(setAlign(LETTERED, 0, align).aligns[0]).toBe(align);
 		}
 	});
 
@@ -195,12 +181,32 @@ function mount(): HTMLElement {
 	return el;
 }
 
-/** A body holding one table island, mounted as a leaf. */
+/** A body holding one table island, mounted as a leaf, with the line menu's reports
+ *  captured: the chrome's whole view of the island. */
 function tableLeaf(props?: TableProps) {
 	const doc = quill().seedDocument();
 	doc.install({}, props ? withTable(props) : md(TABLE_MD));
-	const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
-	return { doc, field };
+	let menu: IslandMenuState | undefined;
+	const field = createField({
+		doc,
+		quill: quill(),
+		addr: {},
+		container: mount(),
+		onIslandMenu: (next) => {
+			menu = next;
+		}
+	});
+	return { doc, field, menu: () => menu };
+}
+
+/** The row handles, in order (body rows only), and the column handles. */
+function handles(field: FieldController, kind: 'row' | 'column'): HTMLButtonElement[] {
+	const rows = field.el.querySelectorAll<HTMLButtonElement>(
+		kind === 'column'
+			? '.qm-table-gutter-row .qm-table-handle'
+			: 'tr:not(.qm-table-gutter-row) .qm-table-handle'
+	);
+	return Array.from(rows);
 }
 
 /** The nested cell views, in mount (reading) order: the leaf's own handle, which
@@ -215,14 +221,16 @@ function leafProps(field: FieldController): TableProps {
 }
 
 describe('the table NodeView', () => {
-	it('renders a cell editor per cell, header included', () => {
+	it('draws one handle per line and a `+` per growing edge, and nothing else', () => {
 		const { field } = tableLeaf(LETTERED);
 		expect(field.el.querySelectorAll('.qm-table-cell-host').length).toBe(6);
 		expect(field.el.querySelectorAll('th.qm-table-cell').length).toBe(2);
-		// The header row offers add and reorder but never delete; a body row has all four.
-		const handles = field.el.querySelectorAll('.qm-table-handle');
-		// One per column, then one per row (header + 2 body rows).
-		expect(handles.length).toBe(2 + 3);
+		// One handle per COLUMN and per BODY row: the header carries none, since its
+		// menu would hold one item the first body row's "insert above" already is.
+		expect(handles(field, 'column')).toHaveLength(2);
+		expect(handles(field, 'row')).toHaveLength(2);
+		// Two `+` strips, whatever the rectangle is.
+		expect(field.el.querySelectorAll('.qm-table-add')).toHaveLength(2);
 		field.destroy();
 	});
 
@@ -258,26 +266,78 @@ describe('the table NodeView', () => {
 		field.destroy();
 	});
 
-	it('a row op rebuilds the rectangle and the store agrees', () => {
-		const { field } = tableLeaf(LETTERED);
-		const rowHandles = field.el.querySelectorAll('.qm-table-handle');
-		// Handles are the columns' first, then the rows': the header's insert is the
-		// first button of the third handle.
-		const headerHandle = rowHandles[columnCount(LETTERED)];
-		(headerHandle.querySelector('button') as HTMLButtonElement).click();
+	it('a row handle raises its three offers, and a pick lands', () => {
+		const { field, menu } = tableLeaf(LETTERED);
+		handles(field, 'row')[0].click();
+		expect(menu()?.items.map((i) => i.id)).toEqual(['insert-above', 'insert-below', 'delete']);
+		menu()!.run('insert-below');
 		const props = leafProps(field);
 		expect(props.rows).toHaveLength(3);
-		expect(props.rows[0].map((c) => c.text)).toEqual(['', '']);
-		expect(field.el.querySelectorAll('.qm-table-cell-host').length).toBe(8);
+		expect(props.rows[1].map((c) => c.text)).toEqual(['', '']); // the fresh row is BELOW row 1
+		expect(menu()).toBeUndefined(); // a pick closes
 		field.destroy();
 	});
 
-	it('a column op carries the alignment and stays rectangular', () => {
+	it('a row handle deletes its own row', () => {
+		const { field, menu } = tableLeaf(LETTERED);
+		handles(field, 'row')[0].click();
+		menu()!.run('delete');
+		expect(grid(leafProps(field))).toEqual([
+			['h1', 'h2'],
+			['b1', 'b2']
+		]);
+		field.destroy();
+	});
+
+	it("a column handle carries the alignments, marking the column's own", () => {
+		const { field, menu } = tableLeaf(LETTERED);
+		handles(field, 'column')[1].click();
+		const items = menu()!.items;
+		expect(items.map((i) => i.id)).toEqual([
+			'insert-left',
+			'insert-right',
+			'align:none',
+			'align:left',
+			'align:center',
+			'align:right',
+			'delete'
+		]);
+		expect(items.find((i) => i.checked)?.id).toBe('align:right'); // LETTERED's column 2
+		menu()!.run('align:center');
+		expect(leafProps(field).aligns).toEqual(['left', 'center']);
+		field.destroy();
+	});
+
+	it('the last column offers no delete: absent, not disabled', () => {
+		const { field, menu } = tableLeaf(newTable(1, 1));
+		handles(field, 'column')[0].click();
+		expect(menu()?.items.some((i) => i.id === 'delete')).toBe(false);
+		field.destroy();
+	});
+
+	it('a second press on the same handle closes the menu', () => {
+		const { field, menu } = tableLeaf(LETTERED);
+		const handle = handles(field, 'row')[0];
+		handle.click();
+		expect(menu()).toBeDefined();
+		expect(handle.getAttribute('aria-expanded')).toBe('true');
+		handle.click();
+		expect(menu()).toBeUndefined();
+		expect(handle.getAttribute('aria-expanded')).toBe('false');
+		field.destroy();
+	});
+
+	it('the `+` strips grow the table by one line each', () => {
 		const { field } = tableLeaf(LETTERED);
-		const columnHandle = field.el.querySelectorAll('.qm-table-handle')[0];
-		// The first button is the alignment cycle.
-		(columnHandle.querySelector('button') as HTMLButtonElement).click();
-		expect(leafProps(field).aligns).toEqual(['center', 'right']);
+		const [addColumn, addRow] = Array.from(
+			field.el.querySelectorAll<HTMLButtonElement>('.qm-table-add')
+		);
+		addColumn.click();
+		expect(columnCount(leafProps(field))).toBe(3);
+		addRow.click();
+		expect(leafProps(field).rows).toHaveLength(3);
+		// Both grew the rectangle rather than the axis they were on alone.
+		expect(grid(leafProps(field)).every((row) => row.length === 3)).toBe(true);
 		field.destroy();
 	});
 

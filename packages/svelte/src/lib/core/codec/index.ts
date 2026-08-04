@@ -16,7 +16,7 @@ export type { CreateFieldOpts, FieldController, LeafViews } from './field.js';
 // The table island's chrome vocabulary: the visual tier's `strings` set extends it,
 // so the island's wording is overridden beside every other key.
 export { DEFAULT_TABLE_STRINGS } from './table-view.js';
-export type { TableChromeStrings } from './table-view.js';
+export type { IslandMenuItem, IslandMenuState, TableChromeStrings } from './table-view.js';
 
 // The slash menu: the codec owns the model and the picks, the chrome the words and
 // the pixels (`visual/SlashMenu.svelte` is the only off-barrel caller).

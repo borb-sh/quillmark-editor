@@ -13,6 +13,11 @@
 // The nested views are NOT the field's: they carry no history (Mod-z routes to the
 // field's, so one undo stack covers the leaf), no anchor plugin (an anchor in a cell
 // is preserved, never minted), and no placeholder.
+//
+// The CHROME is two affordances and a handle per line: a `+` strip on each growing
+// edge, and one bar per row and column that raises a menu of that line's ops. The
+// ops themselves are `table.ts`'s constructors; what is here is which of them a line
+// offers and where the caret lands after one.
 import { baseKeymap, toggleMark } from 'prosemirror-commands';
 import { redo, undo } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
@@ -25,48 +30,53 @@ import { inputRulesPlugin } from './inputrules.js';
 import { tablePropsOfNode } from './islands.js';
 import { inlineSchema } from './schema.js';
 import {
+	ALIGNS,
 	cellAt,
 	cellContent,
 	cellEqual,
 	cellFromDoc,
 	columnCount,
-	cycleAlign,
 	deleteColumn,
 	deleteRow,
 	insertColumn,
 	insertRow,
-	moveColumn,
-	moveRow,
 	normalizeTable,
 	rowCells,
 	rowCount,
+	setAlign,
 	shapeEqual,
 	withCell,
 	type TableAlign
 } from './table.js';
 
-/** Everything the island's chrome says. Accessible names, not decoration: the
- *  handles are glyphs, so an untranslated one reads the wrong language rather than
- *  merely inconsistent (VISUAL_EDITOR §"What the surface says"). */
+/** Everything the island's chrome says. Accessible names, not decoration: a handle
+ *  is a bar and the `+` strips are glyphs, so an untranslated one reads the wrong
+ *  language rather than merely inconsistent (VISUAL_EDITOR §"What the surface says"). */
 export interface TableChromeStrings {
 	/** The island's own name, on the wrapper. */
 	tableLabel: string;
-	/** A row handle group's name. Row 0 is the header, which is not "Row 0". */
+	/** Row 0 is the header, which is not "Row 0". */
 	tableHeaderRow: string;
 	tableRow: (index: number) => string;
 	tableColumn: (index: number) => string;
 	/** A cell's accessible name: nothing else names a nested leaf. */
 	tableCell: (row: string, column: string) => string;
-	tableRowInsert: string;
-	tableRowMoveUp: string;
-	tableRowMoveDown: string;
-	tableRowDelete: string;
-	tableColumnInsert: string;
-	tableColumnMoveLeft: string;
-	tableColumnMoveRight: string;
-	tableColumnDelete: string;
-	/** The alignment control's name, which says the state it will move to. */
-	tableAlign: (align: TableAlign) => string;
+	/** The two growing edges. */
+	tableAddRow: string;
+	tableAddColumn: string;
+	/** A handle's name, and its menu's: the line it acts on is the whole of what it is. */
+	tableRowMenu: (index: number) => string;
+	tableColumnMenu: (index: number) => string;
+	tableInsertRowAbove: string;
+	tableInsertRowBelow: string;
+	tableDeleteRow: string;
+	tableInsertColumnLeft: string;
+	tableInsertColumnRight: string;
+	tableDeleteColumn: string;
+	tableAlignDefault: string;
+	tableAlignLeft: string;
+	tableAlignCenter: string;
+	tableAlignRight: string;
 }
 
 /**
@@ -82,19 +92,51 @@ export const DEFAULT_TABLE_STRINGS: TableChromeStrings = {
 	tableRow: (index) => `Row ${index}`,
 	tableColumn: (index) => `Column ${index}`,
 	tableCell: (row, column) => `${row}, ${column}`,
-	tableRowInsert: 'Insert row below',
-	tableRowMoveUp: 'Move row up',
-	tableRowMoveDown: 'Move row down',
-	tableRowDelete: 'Delete row',
-	tableColumnInsert: 'Insert column after',
-	tableColumnMoveLeft: 'Move column left',
-	tableColumnMoveRight: 'Move column right',
-	tableColumnDelete: 'Delete column',
-	tableAlign: (align) => `Alignment: ${align}`
+	tableAddRow: 'Add row',
+	tableAddColumn: 'Add column',
+	tableRowMenu: (index) => `Row ${index} actions`,
+	tableColumnMenu: (index) => `Column ${index} actions`,
+	tableInsertRowAbove: 'Insert row above',
+	tableInsertRowBelow: 'Insert row below',
+	tableDeleteRow: 'Delete row',
+	tableInsertColumnLeft: 'Insert column left',
+	tableInsertColumnRight: 'Insert column right',
+	tableDeleteColumn: 'Delete column',
+	tableAlignDefault: 'Align: default',
+	tableAlignLeft: 'Align left',
+	tableAlignCenter: 'Align center',
+	tableAlignRight: 'Align right'
 };
 
+/** One offer in a line's menu. `checked` marks the alignment a column already has:
+ *  a set of exclusive states, so the menu shows which one is live. */
+export interface IslandMenuItem {
+	id: string;
+	label: string;
+	checked?: boolean;
+}
+
+/**
+ * A raised line menu, as the chrome sees it: `undefined` is a closed one.
+ *
+ * It carries its own verbs rather than an address the chrome would hand back. The
+ * menu belongs to ONE island in one leaf and names a row or column inside it, which
+ * is not a coordinate the leaf's public surface speaks; a channel that made it one
+ * would put a table's internal geometry in `FieldController` for a single caller.
+ */
+export interface IslandMenuState {
+	/** The menu's accessible name: the line it acts on. */
+	label: string;
+	items: IslandMenuItem[];
+	/** The handle's viewport rect, to anchor on. */
+	rect: { left: number; top: number; right: number; bottom: number };
+	run: (id: string) => void;
+	close: () => void;
+}
+
 /** What the field hands each island view: its wording (read live, so a locale swap
- *  re-renders), and the two callbacks that keep a nested view visible to the leaf. */
+ *  re-renders), the callbacks that keep a nested view visible to the leaf, and the
+ *  channel a line menu is drawn through. */
 export interface TableViewDeps {
 	strings: () => TableChromeStrings;
 	/** Register a mounted cell view; the returned function unregisters it. The field
@@ -103,31 +145,17 @@ export interface TableViewDeps {
 	/** A cell took focus: the leaf's own `focus` handler never fires for one (a focus
 	 *  event does not bubble), so the active address would not follow the caret. */
 	onCellFocus: () => void;
+	/** A line menu opened or closed. The chrome draws it (`visual/TableMenu.svelte`):
+	 *  the menu recipe is the visual tier's, and duplicating it here would be a second
+	 *  copy that agrees until one is edited. */
+	onMenu: (state: IslandMenuState | undefined) => void;
 }
 
-/** Lucide geometry, as the path data a DOM node can carry: the glyphs the card
- *  stack's controls draw, in the one place chrome is built without Svelte. */
-const GLYPHS: Record<string, string[]> = {
-	plus: ['M5 12h14', 'M12 5v14'],
-	up: ['m18 15-6-6-6 6'],
-	down: ['m6 9 6 6 6-6'],
-	left: ['m15 18-6-6 6-6'],
-	right: ['m9 18 6-6-6-6'],
-	x: ['M18 6 6 18', 'M6 6l12 12'],
-	alignNone: ['M3 12h18', 'M3 18h18', 'M3 6h18'],
-	alignLeft: ['M21 6H3', 'M15 12H3', 'M17 18H3'],
-	alignCenter: ['M21 6H3', 'M17 12H7', 'M19 18H5'],
-	alignRight: ['M21 6H3', 'M21 12H9', 'M21 18H7']
-};
+/** Lucide geometry, as the path data a DOM node can carry: the one glyph this
+ *  chrome draws, in the one place chrome is built without Svelte. */
+const PLUS = ['M5 12h14', 'M12 5v14'];
 
-const ALIGN_GLYPH: Record<TableAlign, string> = {
-	none: 'alignNone',
-	left: 'alignLeft',
-	center: 'alignCenter',
-	right: 'alignRight'
-};
-
-function svg(name: string): SVGElement {
+function svg(paths: string[]): SVGElement {
 	const el = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 	el.setAttribute('viewBox', '0 0 24 24');
 	el.setAttribute('fill', 'none');
@@ -136,7 +164,7 @@ function svg(name: string): SVGElement {
 	el.setAttribute('stroke-linecap', 'round');
 	el.setAttribute('stroke-linejoin', 'round');
 	el.setAttribute('aria-hidden', 'true');
-	for (const d of GLYPHS[name] ?? []) {
+	for (const d of paths) {
 		const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
 		path.setAttribute('d', d);
 		el.appendChild(path);
@@ -153,15 +181,14 @@ function el<K extends keyof HTMLElementTagNameMap>(
 	return node;
 }
 
-/** One handle button. It swallows its own `mousedown` (prosemirror-menu's trick, and
+/** A chrome button. It swallows its own `mousedown` (prosemirror-menu's trick, and
  *  the format popover's): without it the browser focuses the button, blurring the
  *  cell whose caret the op is about to be measured against. */
-function handleButton(glyph: string, label: string, run: () => void): HTMLButtonElement {
-	const btn = el('button', 'qm-table-btn');
+function chromeButton(className: string, label: string, run: () => void): HTMLButtonElement {
+	const btn = el('button', className);
 	btn.type = 'button';
 	btn.title = label;
 	btn.setAttribute('aria-label', label);
-	btn.appendChild(svg(glyph));
 	btn.addEventListener('mousedown', (e) => e.preventDefault());
 	btn.addEventListener('click', (e) => {
 		e.preventDefault();
@@ -183,12 +210,20 @@ interface MountedCell {
 	c: number;
 }
 
+/** The open menu: which line it acts on, and the handle it hangs off. */
+interface OpenMenu {
+	kind: 'row' | 'column';
+	index: number;
+	trigger: HTMLButtonElement;
+}
+
 class TableIslandView implements NodeView {
 	readonly dom: HTMLElement;
 	private cells: MountedCell[] = [];
-	/** The props the current DOM was built from: what a `update` compares against to
+	/** The props the current DOM was built from: what an `update` compares against to
 	 *  tell a reseed from a rebuild. */
 	private rendered: TableProps | undefined;
+	private menu: OpenMenu | undefined;
 
 	constructor(
 		private node: PMNode,
@@ -231,12 +266,12 @@ class TableIslandView implements NodeView {
 		return true;
 	}
 
-	/** The nested views own every event inside a cell or a handle; everything else
+	/** The nested views own every event inside a cell or a control; everything else
 	 *  (the island's own padding, its border) stays PM's, so a click beside the table
 	 *  still selects the node and Backspace still deletes it. */
 	stopEvent(event: Event): boolean {
 		const target = event.target as Element | null;
-		return !!target?.closest?.('.qm-table-cell-host, .qm-table-handle');
+		return !!target?.closest?.('.qm-table-cell-host, .qm-table-handle, .qm-table-add');
 	}
 
 	/** Nothing in this subtree is PM-managed: the cells are separate views. */
@@ -245,6 +280,7 @@ class TableIslandView implements NodeView {
 	}
 
 	destroy(): void {
+		this.closeMenu();
 		this.teardownCells();
 	}
 
@@ -259,6 +295,8 @@ class TableIslandView implements NodeView {
 	}
 
 	private render(): void {
+		// Every rebuild moves the handles, so a menu hanging off one is stale.
+		this.closeMenu();
 		this.teardownCells();
 		this.dom.textContent = '';
 		const props = tablePropsOfNode(this.node);
@@ -271,12 +309,41 @@ class TableIslandView implements NodeView {
 		const s = this.deps.strings();
 		this.dom.setAttribute('role', 'group');
 		this.dom.setAttribute('aria-label', s.tableLabel);
+
 		const table = el('table', 'qm-table');
 		const body = el('tbody');
 		body.appendChild(this.columnGutter(props, s));
 		for (let r = 0; r < rowCount(props); r++) body.appendChild(this.row(props, r, s));
 		table.appendChild(body);
-		this.dom.appendChild(table);
+
+		// The two growing edges. A `+` per EDGE rather than per line: growth is the one
+		// op every table needs and the only one whose target is the table itself, so it
+		// is two controls whatever the rectangle is (VISUAL_EDITOR_UIUX §"Table island").
+		const frame = el('div', 'qm-table-frame');
+		frame.append(
+			table,
+			chromeButton('qm-table-add qm-table-add-column', s.tableAddColumn, () =>
+				this.write(insertColumn(this.props(), columnCount(this.props()) - 1), {
+					r: 0,
+					c: columnCount(this.props())
+				})
+			)
+		);
+		const addColumn = frame.lastElementChild as HTMLElement;
+		addColumn.appendChild(svg(PLUS));
+
+		const grid = el('div', 'qm-table-grid');
+		grid.append(
+			frame,
+			chromeButton('qm-table-add qm-table-add-row', s.tableAddRow, () =>
+				this.write(insertRow(this.props(), rowCount(this.props()) - 1), {
+					r: rowCount(this.props()),
+					c: 0
+				})
+			)
+		);
+		(grid.lastElementChild as HTMLElement).appendChild(svg(PLUS));
+		this.dom.appendChild(grid);
 	}
 
 	/** The row above the table: the corner, then one handle per column. */
@@ -285,42 +352,20 @@ class TableIslandView implements NodeView {
 		tr.appendChild(el('td', 'qm-table-corner'));
 		for (let c = 0; c < columnCount(props); c++) {
 			const cell = el('td', 'qm-table-gutter');
-			cell.appendChild(this.columnHandle(props, c, s));
+			cell.appendChild(this.handle('column', c, s.tableColumnMenu(c + 1)));
 			tr.appendChild(cell);
 		}
 		return tr;
-	}
-
-	private columnHandle(props: TableProps, c: number, s: TableChromeStrings): HTMLElement {
-		const group = el('div', 'qm-table-handle');
-		group.setAttribute('role', 'group');
-		group.setAttribute('aria-label', s.tableColumn(c + 1));
-		const align = props.aligns[c] ?? 'none';
-		group.append(
-			handleButton(ALIGN_GLYPH[align], s.tableAlign(align), () =>
-				this.write(cycleAlign(this.props(), c))
-			),
-			handleButton('plus', s.tableColumnInsert, () =>
-				this.write(insertColumn(this.props(), c), { r: 0, c: c + 1 })
-			),
-			handleButton('left', s.tableColumnMoveLeft, () =>
-				this.write(moveColumn(this.props(), c, -1), { r: 0, c: Math.max(0, c - 1) })
-			),
-			handleButton('right', s.tableColumnMoveRight, () =>
-				this.write(moveColumn(this.props(), c, 1), { r: 0, c: c + 1 })
-			),
-			handleButton('x', s.tableColumnDelete, () =>
-				this.write(deleteColumn(this.props(), c), { r: 0, c: Math.max(0, c - 1) })
-			)
-		);
-		return group;
 	}
 
 	/** One table row: its handle, then its cells. */
 	private row(props: TableProps, r: number, s: TableChromeStrings): HTMLElement {
 		const tr = el('tr', r === 0 ? 'qm-table-header-row' : undefined);
 		const gutter = el('td', 'qm-table-gutter');
-		gutter.appendChild(this.rowHandle(r, s));
+		// The HEADER carries no handle. Its menu would hold one item: it cannot be
+		// deleted (`header: []` is not a table) and nothing goes above it, so
+		// "insert below" is what the first body row's "insert above" already is.
+		if (r > 0) gutter.appendChild(this.handle('row', r, s.tableRowMenu(r)));
 		tr.appendChild(gutter);
 		rowCells(props, r).forEach((cell, c) => {
 			const box = el(r === 0 ? 'th' : 'td', 'qm-table-cell');
@@ -336,34 +381,17 @@ class TableIslandView implements NodeView {
 	}
 
 	/**
-	 * A row's handle: insert and reorder on every row, delete on the body rows only.
-	 * The header has no delete because `header: []` is not a table (`table.ts`), and
-	 * the asymmetry has to READ rather than merely be guarded: the button is absent,
-	 * not disabled.
+	 * A line's handle: ONE target per row and column, and the whole of that line's
+	 * chrome. It is a bar rather than a glyph because its POSITION is its meaning:
+	 * what it acts on is the row or column it sits against, and no icon says that
+	 * better than being there.
 	 */
-	private rowHandle(r: number, s: TableChromeStrings): HTMLElement {
-		const group = el('div', 'qm-table-handle');
-		group.setAttribute('role', 'group');
-		group.setAttribute('aria-label', r === 0 ? s.tableHeaderRow : s.tableRow(r));
-		group.append(
-			handleButton('plus', s.tableRowInsert, () =>
-				this.write(insertRow(this.props(), r), { r: r + 1, c: 0 })
-			),
-			handleButton('up', s.tableRowMoveUp, () =>
-				this.write(moveRow(this.props(), r, -1), { r: Math.max(0, r - 1), c: 0 })
-			),
-			handleButton('down', s.tableRowMoveDown, () =>
-				this.write(moveRow(this.props(), r, 1), { r: r + 1, c: 0 })
-			)
-		);
-		if (r > 0) {
-			group.appendChild(
-				handleButton('x', s.tableRowDelete, () =>
-					this.write(deleteRow(this.props(), r), { r: r - 1, c: 0 })
-				)
-			);
-		}
-		return group;
+	private handle(kind: 'row' | 'column', index: number, label: string): HTMLButtonElement {
+		const btn = chromeButton('qm-table-handle', label, () => this.toggleMenu(kind, index, btn));
+		btn.setAttribute('aria-haspopup', 'menu');
+		btn.setAttribute('aria-expanded', 'false');
+		btn.appendChild(el('span', 'qm-table-handle-bar'));
+		return btn;
 	}
 
 	private mountCell(host: HTMLElement, r: number, c: number, s: TableChromeStrings): void {
@@ -390,6 +418,84 @@ class TableIslandView implements NodeView {
 			}
 		});
 		this.cells.push({ view, unregister: this.deps.register(view), r, c });
+	}
+
+	// ── The line menu ─────────────────────────────────────────────────────────
+
+	private toggleMenu(kind: 'row' | 'column', index: number, trigger: HTMLButtonElement): void {
+		if (this.menu?.kind === kind && this.menu.index === index) {
+			this.closeMenu();
+			return;
+		}
+		this.closeMenu();
+		this.menu = { kind, index, trigger };
+		trigger.setAttribute('aria-expanded', 'true');
+		const s = this.deps.strings();
+		const box = trigger.getBoundingClientRect();
+		this.deps.onMenu({
+			label: kind === 'row' ? s.tableRowMenu(index) : s.tableColumnMenu(index + 1),
+			items: kind === 'row' ? this.rowItems(s) : this.columnItems(index, s),
+			rect: { left: box.left, top: box.top, right: box.right, bottom: box.bottom },
+			run: (id) => this.runMenuItem(kind, index, id),
+			close: () => this.closeMenu()
+		});
+	}
+
+	private closeMenu(): void {
+		if (!this.menu) return;
+		this.menu.trigger.setAttribute('aria-expanded', 'false');
+		this.menu = undefined;
+		this.deps.onMenu(undefined);
+	}
+
+	private rowItems(s: TableChromeStrings): IslandMenuItem[] {
+		return [
+			{ id: 'insert-above', label: s.tableInsertRowAbove },
+			{ id: 'insert-below', label: s.tableInsertRowBelow },
+			{ id: 'delete', label: s.tableDeleteRow }
+		];
+	}
+
+	private columnItems(c: number, s: TableChromeStrings): IslandMenuItem[] {
+		const props = this.props();
+		const align = props.aligns[c] ?? 'none';
+		const labels: Record<TableAlign, string> = {
+			none: s.tableAlignDefault,
+			left: s.tableAlignLeft,
+			center: s.tableAlignCenter,
+			right: s.tableAlignRight
+		};
+		const items: IslandMenuItem[] = [
+			{ id: 'insert-left', label: s.tableInsertColumnLeft },
+			{ id: 'insert-right', label: s.tableInsertColumnRight },
+			...ALIGNS.map((a) => ({ id: `align:${a}`, label: labels[a], checked: a === align }))
+		];
+		// A table has at least one column, so the last one offers no delete: absent
+		// rather than disabled, like the header's (§"The table island").
+		if (columnCount(props) > 1) items.push({ id: 'delete', label: s.tableDeleteColumn });
+		return items;
+	}
+
+	/** Apply a picked item and say where the caret lands: every one of these rebuilds
+	 *  the views the caret was in, so the op that moved it names the cell. */
+	private runMenuItem(kind: 'row' | 'column', index: number, id: string): void {
+		const props = this.props();
+		this.closeMenu();
+		if (kind === 'row') {
+			if (id === 'insert-above') this.write(insertRow(props, index - 1), { r: index, c: 0 });
+			else if (id === 'insert-below') this.write(insertRow(props, index), { r: index + 1, c: 0 });
+			else if (id === 'delete') this.write(deleteRow(props, index), { r: index - 1, c: 0 });
+			return;
+		}
+		if (id === 'insert-left') this.write(insertColumn(props, index - 1), { r: 0, c: index });
+		else if (id === 'insert-right') this.write(insertColumn(props, index), { r: 0, c: index + 1 });
+		else if (id === 'delete')
+			this.write(deleteColumn(props, index), { r: 0, c: Math.max(0, index - 1) });
+		else if (id.startsWith('align:'))
+			this.write(setAlign(props, index, id.slice('align:'.length) as TableAlign), {
+				r: 0,
+				c: index
+			});
 	}
 
 	// ── Ops ───────────────────────────────────────────────────────────────────
@@ -483,8 +589,8 @@ class TableIslandView implements NodeView {
 	}
 
 	/** Tab's traversal: the next (or previous) cell in reading order. Past the last
-	 *  cell it APPENDS a row, which is the whole growth affordance the default shape
-	 *  leans on; before the first it declines and the caret stays. */
+	 *  cell it APPENDS a row, which is the growth affordance the keyboard has; before
+	 *  the first it declines and the caret stays. */
 	private step(r: number, c: number, dir: 1 | -1): void {
 		const props = this.props();
 		const cols = columnCount(props);

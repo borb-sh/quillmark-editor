@@ -187,7 +187,7 @@ li.ProseMirror-selectednode::after {
 /* A selected island takes the node outline every leaf block does
    (`.ProseMirror-selectednode`, above), and that is the state Escape leaves a cell
    FOR: the caret is out, the island is what is selected, and Backspace deletes it. A
-   caret inside a cell is not that state and does not paint it — the outer view's
+   caret inside a cell is not that state and does not paint it: the outer view's
    selection stays where the insert left it. */
 
 /* The gutters carry the handles and nothing else: no border, no ink, no box. They
@@ -197,53 +197,106 @@ li.ProseMirror-selectednode::after {
 .qm-table-corner {
 	border: none;
 	padding: 0;
-	vertical-align: middle;
-}
-.qm-table-gutter-row .qm-table-handle {
-	justify-content: center;
 }
 
-/* The reveal is POINTER OR FOCUS, and it is the card stack's rule unchanged
-   (VISUAL_EDITOR_UIUX §"Card stack"): hidden by opacity so the controls stay in the
-   tab order, revealed while the pointer or the caret is inside the island, full ink
-   on the control itself. A hover-only rule hands a keyboard a focused control it
-   cannot see and hands a touch pointer, which never hovers, no path to reorder at
-   all. `:focus-within` on the island is what covers the caret in a cell as well as
-   a focused handle. */
+/* ONE control per line, and it is a bar rather than a glyph: what a handle acts on
+   is the row or column it sits against, and position says that better than an icon
+   would.
+
+   The TARGET is the floor and the MARK is drawn small inside it, which is the rule
+   the tips card's dots already state: the handle spans its line on one axis and the
+   tap minimum on the other, and the bar in the middle of it is 3px. A gutter sized
+   to the bar would be a 7px target on a control a pointer has to find. */
 .qm-table-handle {
 	display: flex;
-	padding: var(--_qm-space-half);
-	opacity: 0;
-	transition: opacity var(--_qm-duration-fast) var(--_qm-ease-reverse);
-}
-.qm-table-island:hover .qm-table-handle,
-.qm-table-island:focus-within .qm-table-handle {
-	opacity: var(--_qm-opacity-idle);
-}
-.qm-table-handle:hover,
-.qm-table-handle:focus-within {
-	opacity: 1;
-}
-/* A handle button is a glyph at the label rung, sized to the icon rather than to the
-   tap floor: a table's gutter cannot spend 44px per control per row and still be a
-   table. The floor is answered by the handle GROUP, which is one target the pointer
-   finds as a strip. */
-.qm-table-btn {
-	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	width: 100%;
+	height: 100%;
+	min-width: var(--_qm-tap-min);
+	min-height: var(--_qm-tap-min);
 	padding: var(--_qm-space-half);
+	border: none;
+	background: none;
+	cursor: pointer;
+}
+.qm-table-handle-bar {
+	display: block;
+	border-radius: var(--_qm-radius-pill);
+	background: var(--_qm-border);
+}
+.qm-table-gutter-row .qm-table-handle-bar {
+	width: 100%;
+	height: 0.1875rem;
+}
+tr:not(.qm-table-gutter-row) .qm-table-handle-bar {
+	width: 0.1875rem;
+	height: 100%;
+	min-height: 0.75rem;
+}
+
+/* The two growing edges: a `+` strip along the bottom and one down the right, each
+   spanning the side it grows. A strip rather than a button, for the reason the card
+   stack's add affordance is one: an edge is found by POSITION, and a control sized
+   to its glyph is a thing to aim at in the middle of a space the eye reads as empty. */
+.qm-table-grid {
+	width: max-content;
+}
+.qm-table-frame {
+	display: flex;
+	align-items: stretch;
+}
+.qm-table-add {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	border: none;
 	border-radius: var(--_qm-radius-inner);
 	background: none;
 	color: var(--_qm-ink-label);
 	cursor: pointer;
 }
-.qm-table-btn:hover {
+.qm-table-add svg {
+	width: 0.875rem;
+	height: 0.875rem;
+}
+.qm-table-add-column {
+	width: var(--_qm-tap-min);
+}
+.qm-table-add-row {
+	width: 100%;
+	height: var(--_qm-tap-min);
+}
+.qm-table-add:hover {
 	background: var(--_qm-surface-hover);
 	color: var(--_qm-ink);
 }
-.qm-table-btn svg {
-	width: 0.875rem;
-	height: 0.875rem;
+
+/* The reveal is POINTER OR FOCUS, and it is the card stack's rule unchanged
+   (VISUAL_EDITOR_UIUX §"Card stack"): hidden by opacity so the controls stay in the
+   tab order, revealed while the pointer or the caret is inside the island, full ink
+   on the control itself. A hover-only rule hands a keyboard a focused control it
+   cannot see and hands a touch pointer, which never hovers, no path to the ops at
+   all. `:focus-within` on the island is what covers the caret in a cell as well as a
+   focused control. */
+.qm-table-handle,
+.qm-table-add {
+	opacity: 0;
+	transition: opacity var(--_qm-duration-fast) var(--_qm-ease-reverse);
+}
+.qm-table-island:hover :is(.qm-table-handle, .qm-table-add),
+.qm-table-island:focus-within :is(.qm-table-handle, .qm-table-add) {
+	opacity: var(--_qm-opacity-idle);
+}
+.qm-table-handle:hover,
+.qm-table-handle:focus-visible,
+.qm-table-handle[aria-expanded='true'],
+.qm-table-add:hover,
+.qm-table-add:focus-visible {
+	opacity: 1;
+}
+/* A handle whose menu is open holds the full rung and the ink with it: the surface
+   it raised is still on screen, so the control it came from is not at rest. */
+.qm-table-handle[aria-expanded='true'] .qm-table-handle-bar {
+	background: var(--_qm-ink-label);
 }

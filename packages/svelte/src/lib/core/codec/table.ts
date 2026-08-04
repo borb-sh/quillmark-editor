@@ -23,9 +23,9 @@ import { contentEdit, pmToContent } from './encode.js';
 /** One column's alignment, read off the boundary rather than restated. */
 export type TableAlign = TableProps['aligns'][number];
 
-/** The cycle one alignment control walks: the four the content declares, `none`
- *  first because it is what a column arrives at. */
-export const ALIGN_CYCLE: readonly TableAlign[] = ['none', 'left', 'center', 'right'];
+/** The alignments a column can take: the four the content declares, `none` first
+ *  because it is what a column arrives at and what a set is cleared back to. */
+export const ALIGNS: readonly TableAlign[] = ['none', 'left', 'center', 'right'];
 
 /** The zero cell: empty text, no marks. */
 export function emptyCell(): TableCell {
@@ -116,25 +116,6 @@ export function deleteRow(props: TableProps, r: number): TableProps {
 	return normalizeTable({ ...props, rows: props.rows.filter((_, i) => i !== r - 1) });
 }
 
-/**
- * Swap row `r` with its neighbour in `dir`. What moves is a row's CELLS, not its
- * role: the header slot stays the header, so moving it down trades its cells with
- * the first body row's and the table still has a header.
- */
-export function moveRow(props: TableProps, r: number, dir: -1 | 1): TableProps {
-	const to = r + dir;
-	if (r < 0 || to < 0 || r >= rowCount(props) || to >= rowCount(props))
-		return normalizeTable(props);
-	const a = rowCells(props, r);
-	const b = rowCells(props, to);
-	const put = (i: number): TableCell[] => (i === r ? b : i === to ? a : rowCells(props, i));
-	return normalizeTable({
-		...props,
-		header: put(0),
-		rows: props.rows.map((_, i) => put(i + 1))
-	});
-}
-
 /** A new empty column after column `c`. */
 export function insertColumn(props: TableProps, c: number): TableProps {
 	const at = Math.max(0, Math.min(c + 1, columnCount(props)));
@@ -157,20 +138,6 @@ export function deleteColumn(props: TableProps, c: number): TableProps {
 	});
 }
 
-/** Swap column `c` with its neighbour in `dir`, alignment travelling with it. */
-export function moveColumn(props: TableProps, c: number, dir: -1 | 1): TableProps {
-	const to = c + dir;
-	if (c < 0 || to < 0 || c >= columnCount(props) || to >= columnCount(props)) {
-		return normalizeTable(props);
-	}
-	const swap = <T>(xs: T[]): T[] => xs.map((x, i) => (i === c ? xs[to] : i === to ? xs[c] : x));
-	return normalizeTable({
-		header: swap(props.header),
-		rows: props.rows.map(swap),
-		aligns: swap(props.aligns)
-	});
-}
-
 /** Set column `c`'s alignment: the one table capability the content round-trips
  *  today and nothing in the editor could reach. */
 export function setAlign(props: TableProps, c: number, align: TableAlign): TableProps {
@@ -178,14 +145,6 @@ export function setAlign(props: TableProps, c: number, align: TableAlign): Table
 		...props,
 		aligns: props.aligns.map((a, i) => (i === c ? align : a))
 	});
-}
-
-/** The next alignment in {@link ALIGN_CYCLE}: one control for the four states,
- *  because four buttons per column is a toolbar in a table header. */
-export function cycleAlign(props: TableProps, c: number): TableProps {
-	const now = props.aligns[c] ?? 'none';
-	const i = ALIGN_CYCLE.indexOf(now);
-	return setAlign(props, c, ALIGN_CYCLE[(i + 1) % ALIGN_CYCLE.length] ?? 'left');
 }
 
 // ── The cell codec ──────────────────────────────────────────────────────────
