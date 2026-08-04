@@ -1,6 +1,6 @@
 # quillmark-js
 
-The JavaScript tier downstream of the [`@quillmark/wasm`](https://github.com/borb-sh/quillmark) artifact. Membership is that sentence: the wasm crate and its hand-written runtime stay in the Rust repo, since they ship _inside_ the artifact rather than downstream of it.
+The JavaScript tier downstream of the [`@quillmark/wasm`](https://github.com/borb-sh/quillmark) artifact.
 
 | Package                                |           |                                                           |
 | -------------------------------------- | --------- | --------------------------------------------------------- |
@@ -8,7 +8,7 @@ The JavaScript tier downstream of the [`@quillmark/wasm`](https://github.com/bor
 | [`@quillmark/quiver`](packages/quiver) | published | Collections of quills, resolved and loaded.               |
 | [`playground`](packages/playground)    | private   | The app that composes them, deployed as the Pages site.   |
 
-`svelte` and `quiver` are siblings with no edge between them, in either direction; the playground is the only node with two inbound edges. Every published package peers `@quillmark/wasm` and none depends on it, so a consumer supplies the one copy whose linear memory the handles index into. Both rules are gated by `check:deps` and reasoned out in [`prose/canon/DEPENDENCIES.md`](prose/canon/DEPENDENCIES.md).
+Every published package peers `@quillmark/wasm` and none depends on it, so a consumer supplies the one copy whose linear memory the handles index into. `check:deps` holds that and the rest of the graph ([DEPENDENCIES.md](prose/canon/DEPENDENCIES.md)).
 
 ## Development
 
@@ -24,7 +24,7 @@ npm run check:style        # the closed `--_qm-*` / `--pg-*` scales
 npm run check:deps         # the dependency law
 ```
 
-Everything runs against the one reference quill, [`fixtures/quills/usaf_memo/0.2.0`](fixtures/quills/usaf_memo), a dev fixture at the workspace root, never published. `fixtures/` is a source quiver, which is how the playground loads it.
+Everything runs against the one reference quill, [`fixtures/quills/usaf_memo/0.2.0`](fixtures/quills/usaf_memo), a dev fixture at the workspace root, never published.
 
 ## Canon
 
