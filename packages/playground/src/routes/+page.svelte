@@ -122,7 +122,7 @@
 	</section>
 
 	<section class="pg-rail block">
-		<h3 class="pg-label">02 · Open a session</h3>
+		<h3 class="pg-label">02 · Session</h3>
 		<div class="step">
 			<p>
 				A quill is a template's file tree; a document is the content in it. Opening the two compiles
@@ -169,16 +169,10 @@
 			</p>
 			<div class="pair">
 				<pre class="pg-readout sample">{VISUAL}</pre>
-				<div class="demo">
-					<div class="pg-frame editor-frame">
-						{#if VisualEditor && editDoc && quillHandle}
-							<VisualEditor doc={editDoc} quill={quillHandle} />
-						{/if}
-					</div>
-					<p class="caption">
-						<span class="pg-label">Document</span>
-						<span class="pg-readout">the reference quill's seeded memo</span>
-					</p>
+				<div class="pg-frame editor-frame">
+					{#if VisualEditor && editDoc && quillHandle}
+						<VisualEditor doc={editDoc} quill={quillHandle} />
+					{/if}
 				</div>
 			</div>
 		</div>
@@ -276,6 +270,12 @@
 		max-height: none;
 	}
 
+	/* A sample with no surface beside it takes the reading column's width, not the
+	   page's: a shell line in a box the width of the shell reads as a banner. */
+	.step > .sample {
+		max-width: var(--pg-measure);
+	}
+
 	.demo {
 		display: flex;
 		flex-direction: column;
@@ -295,6 +295,7 @@
 	   leaves here. */
 	.editor-frame {
 		height: var(--pg-mount);
+		min-width: 0;
 		overflow: auto;
 		padding: var(--pg-space-2) var(--pg-space-2) var(--pg-tail);
 		background: var(--pg-page);

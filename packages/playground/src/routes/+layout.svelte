@@ -114,13 +114,16 @@
 		border-bottom-color: var(--pg-ink);
 	}
 
-	/* The filled shell: two rows, the second whatever is left, and nothing scrolls
-	   at this level. The route's own overflow is its panes'. */
+	/* The filled shell: two rows, the second whatever is left. Pinned to the
+	   viewport rather than sized to it, so the document keeps no scrollable region
+	   at all: a page-height box still leaves the root scroller counting the overflow
+	   its panes clip, and a wheel over the chrome drags the whole app off the top. */
 	@media (width >= 60rem) {
 		.app.fills {
+			position: fixed;
+			inset: 0;
 			display: grid;
 			grid-template-rows: auto minmax(0, 1fr);
-			height: 100dvh;
 			overflow: hidden;
 		}
 	}
