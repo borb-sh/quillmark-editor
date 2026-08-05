@@ -1,26 +1,59 @@
 {
-	"name": "studio",
-	"private": true,
+	"name": "@quillmark/studio",
 	"version": "0.0.0",
-	"description": "The quill author's surface: a quiver's quills, worked live. Never published.",
+	"description": "The quill author's surface: a quiver's quills, worked live.",
 	"license": "Apache-2.0",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/borb-sh/quillmark-js.git",
+		"directory": "packages/studio"
+	},
+	"bugs": {
+		"url": "https://github.com/borb-sh/quillmark-js/issues"
+	},
+	"homepage": "https://github.com/borb-sh/quillmark-js/tree/main/packages/studio#readme",
+	"keywords": [
+		"quillmark",
+		"quiver",
+		"typst",
+		"markdown"
+	],
+	"author": "Quillmark Contributors",
 	"type": "module",
 	"engines": {
 		"node": ">=22"
 	},
+	"bin": {
+		"studio": "./dist/node/bin.js"
+	},
+	"files": [
+		"dist",
+		"NOTICE"
+	],
 	"scripts": {
 		"dev": "vite",
-		"build": "vite build",
-		"preview": "vite preview",
-		"check": "svelte-check --tsconfig ./tsconfig.json"
+		"build": "vite build && tsc -p tsconfig.node.json",
+		"preview": "cd ../../fixtures && node ../packages/studio/dist/node/bin.js",
+		"check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json --noEmit",
+		"check:pack": "publint",
+		"prepack": "rm -rf dist && npm run build"
+	},
+	"peerDependencies": {
+		"@quillmark/wasm": ">=0.101.0-0"
+	},
+	"peerDependenciesMeta": {
+		"@quillmark/wasm": {
+			"optional": true
+		}
 	},
 	"dependencies": {
-		"@quillmark/quiver": "*",
-		"@quillmark/svelte": "*"
+		"@quillmark/quiver": "^0.16.0"
 	},
 	"devDependencies": {
-		"@quillmark/wasm": ">=0.101.0-0",
+		"@quillmark/svelte": "*",
 		"@sveltejs/vite-plugin-svelte": "^6.0.0",
+		"@types/node": "^25.3.3",
+		"publint": "^0.3.0",
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.1.0",
 		"typescript": "^5.7.0",

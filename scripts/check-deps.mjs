@@ -17,6 +17,10 @@
 //      1.0 makes a narrow one honest), and root `overrides` pins the
 //      developed-against version to exactly one. Loose ranges permit two installs
 //      rather than preventing them, which is why the pin is the half that works.
+//      An OPTIONAL peer is the executable's case and only that: a package with a
+//      `bin` discovers the artifact in the consumer's own tree, so declaring it
+//      would install a second copy beside the one it went looking for. A library
+//      has no tree to look in, so its peer stays required.
 //
 //   3. THE `/preview` BUNDLE WEIGHT. A preview consumer does not pull ProseMirror,
 //      which is what makes the subpath claim ("a bundler pulls only what the imported
@@ -32,7 +36,7 @@ import { ROOT, packages, report } from './workspace.mjs';
 /** The graph. An edge absent from this table is a violation; an edge in it is optional. */
 const ALLOWED = {
 	playground: ['@quillmark/svelte', '@quillmark/quiver'],
-	studio: ['@quillmark/svelte', '@quillmark/quiver'],
+	'@quillmark/studio': ['@quillmark/svelte', '@quillmark/quiver'],
 	'@quillmark/svelte': [],
 	'@quillmark/quiver': []
 };
@@ -108,6 +112,10 @@ for (const { dir, json } of PACKAGES) {
 		);
 		continue;
 	}
+	if (json.peerDependenciesMeta?.[WASM]?.optional && !json.bin)
+		fail(
+			`packages/${dir}/package.json: \`${WASM}\` is an optional peer of a package with no \`bin\` — only an executable has a consumer's tree to discover the artifact in`
+		);
 	const floor = floorOf(range);
 	if (!floor)
 		fail(

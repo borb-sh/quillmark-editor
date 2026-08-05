@@ -15,7 +15,7 @@
     preview click ─► onCaretPick(hit) ─► editor.setCaret(hit)
     editor caret  ─► onCaretMove(at)  ─► preview.focusPosition(at)
 
-  A repack of the source quiver arrives as one dev-server signal and is answered by
+  A repack of the source quiver arrives as one event from the Node half and is answered by
   minting a fresh `Quiver`: the manifest is content-addressed and the quill cache
   lives as long as the quiver does, so the quiver is dropped rather than invalidated.
   The DOCUMENT crosses (STUDIO §"The document survives the quill"), which is what
@@ -37,8 +37,11 @@
 	import { close, openRef, type Opened } from './session';
 	import { collect, diagnosticsOf, messageOf, type NoteSet } from './notes';
 
-	/** The dev-server signal the Node half sends after a repack. */
-	const REPACKED = 'studio:quiver-repacked';
+	/** The Node half's event stream, and the one event it carries. Served by the bin
+	 *  and by the dev adapter alike, so the repack loop is the same thing built as it
+	 *  is under a dev server and no client code knows which it is talking to. */
+	const EVENTS = '__studio/events';
+	const REPACKED = 'repacked';
 	/** One apply per settled burst of keystrokes. A structure op skips it. */
 	const RECOMPILE_MS = 120;
 
@@ -249,15 +252,15 @@
 			}
 		})();
 
-		// The repack signal, dev only: a built studio has no dev server behind it and
-		// nothing to repack.
-		const hot = import.meta.hot;
-		hot?.on(REPACKED, reload);
+		// The repack signal. `EventSource` reconnects on its own, so a Node half
+		// restarted under the page picks the loop back up.
+		const events = new EventSource(new URL(EVENTS, document.baseURI));
+		events.addEventListener(REPACKED, reload);
 
 		return () => {
 			cancelled = true;
 			clearTimeout(settle);
-			hot?.off(REPACKED, reload);
+			events.close();
 			if (open) close(open);
 			open = undefined;
 		};

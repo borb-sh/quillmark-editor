@@ -6,8 +6,8 @@ The JavaScript tier downstream of the [`@quillmark/wasm`](https://github.com/bor
 | -------------------------------------- | -------------------------------------------------------------------------------------------- |
 | [`@quillmark/svelte`](packages/svelte) | Editing, live-preview and source surfaces over a session.                                    |
 | [`@quillmark/quiver`](packages/quiver) | Collections of quills, resolved and loaded.                                                  |
+| [`@quillmark/studio`](packages/studio) | The app that composes them, for an author working on a quill: `npx @quillmark/studio`.       |
 | [`playground`](packages/playground)    | The app that composes them, for a developer reading the library; deployed as the Pages site. |
-| [`studio`](packages/studio)            | The app that composes them, for an author working on a quill.                                |
 
 Every published package peers `@quillmark/wasm` and none depends on it, so a consumer supplies the one copy whose linear memory the handles index into. `check:deps` holds that and the rest of the graph ([DEPENDENCIES.md](prose/canon/DEPENDENCIES.md)).
 
@@ -16,7 +16,8 @@ Every published package peers `@quillmark/wasm` and none depends on it, so a con
 ```sh
 npm install                # one install, every package
 npm run dev                # the playground at :5173
-npm run dev:studio         # studio at :5173
+npm run dev:studio         # studio at :5173, against fixtures/
+npm run preview -w packages/studio   # studio's published path: the bin, over the built client
 npm run build              # quiver → ui → the apps, in that order
 npm test                   # every package's suite
 npm run check              # types, per package

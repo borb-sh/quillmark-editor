@@ -13,14 +13,14 @@ Who may depend on whom, and why exactly one copy of `@quillmark/wasm` is install
   ├── @quillmark/svelte    the Svelte binding: surfaces over a session
   ├── @quillmark/quiver    collections → quills
   ├── playground           the composing apps: the only nodes
-  └── studio               with two inbound edges
+  └── @quillmark/studio    with two inbound edges
 ```
 
 `svelte ↛ quiver` and `quiver ↛ svelte`, both directions: siblings at one tier with no edge between them. Not `svelte` peer-depending on `quiver`, which is the opposite arrangement and the one the word invites.
 
 The seam that keeps it true is the resolved `Quill` handle: a stored document names its quill (`doc.quillRef`), the host maps the ref to a `Quill` before mount, and `svelte` takes the handle as a prop. Resolution is host code — `svelte` calls no resolver, so one resolution per document holds by construction, with no second surface to double-load from. Quiver's `getQuill` is one implementation, caching per canonical ref for its lifetime; an app bundling its one template resolves nothing and pulls no registry client. Neither package knows the other exists.
 
-The apps are where the two meet, and they are the demonstration rather than the exception: each loads its quill from a built quiver and hands the result to `svelte`'s surfaces, with no specifier crossing between the siblings in either direction. They compose the same pair for different readers: the playground for a developer reading the library ([PLAYGROUND.md](../../packages/playground/prose/canon/PLAYGROUND.md)), studio for an author working on a quill ([STUDIO.md](../../packages/studio/prose/canon/STUDIO.md)).
+The apps are where the two meet, and they are the demonstration rather than the exception: each loads its quill from a built quiver and hands the result to `svelte`'s surfaces, with no specifier crossing between the siblings in either direction. They compose the same pair for different readers: the playground for a developer reading the library ([PLAYGROUND.md](../../packages/playground/prose/canon/PLAYGROUND.md)), studio for an author working on a quill ([STUDIO.md](../../packages/studio/prose/canon/STUDIO.md)). Studio publishes, so which *field* its edges land in is load-bearing: quiver is a dependency its Node half imports, `svelte` a dev dependency whose surfaces ship inside the built client. An app's composition is the same either way; only the tarball can tell.
 
 In a workspace the edge is one relative path away, so a gate holds the separation that distance cannot: `check:deps` reads declared dependencies **and** source specifiers, since either alone is half a check. An undeclared import resolves fine in a workspace, and a declared dependency nothing imports is still a promise.
 
@@ -31,6 +31,8 @@ Membership in this repo is "downstream of the wasm artifact". The Rust workspace
 Every published package **peers** `@quillmark/wasm` and none depends on it. The handles cross the package boundary (a `Quill` minted by `svelte` is handed to quiver's loader, a `Document` seeded by quiver is opened by `svelte`'s session), and a handle is an index into one wasm instance's linear memory. Two installed copies are two linear memories, so a handle from one is foreign to the other. The runtime refuses it at every door that takes one, as a `QuillmarkError` coded `runtime::foreign_handle` naming the cause and the `npm ls @quillmark/wasm` that diagnoses it: the failure is loud at the first crossing rather than a wrong render later. The consumer supplies the one copy; the check reports the breach, it does not repair it.
 
 The range is loose (`>=0.101.0-0`, one `>=` comparator) until wasm 1.0 makes compatibility predictable enough to claim a narrow one honestly. Its floor is a claim, not a formality: it names the release that first carries every verb the packages call, and it rises with the first call to a newer one.
+
+One package peers it **optionally**, and that is the executable's case rather than an exception to the law. `@quillmark/studio` never imports the artifact into a Node process — nothing renders on its server — and its client's imports are externalized and resolved in the browser against the copy installed beside the author's quiver, found the way the CLI's engine discovery finds it. A required peer would have npm install a second copy next to the one the bin went looking for, which is the duplicate this section exists to prevent. Only a package with a `bin` has a consumer's tree to discover anything in, so that is exactly where `check:deps` permits the optionality; a library's peer stays required.
 
 The non-obvious half: **loose ranges do not prevent two installs, they permit them.** Two wide ranges overlapping is exactly when npm is free to resolve twice. So the published claim stays wide and the developed-against version is exactly one, pinned by root `overrides` with the root devDependency installing it. Under loose ranges the range half of `check:deps` is weak (the override satisfies everything) and starts earning its keep on the same clock as the range.
 

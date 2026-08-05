@@ -1,10 +1,10 @@
 # Studio
 
-> **Implementation**: `src/` (the browser half) · the Vite config's `studio:quiver-source` plugin (the Node half)
+> **Implementation**: `src/` (the browser half) · `node/` (the Node half, and the bin that is it)
 
 ## TL;DR
 
-The surface a quill author looks at their quiver through: pick a quill, edit, watch it paint, read the errors. `quiver test` answers *does it work*; studio answers *what is it like to use*, which is where most of what makes a quill good or bad lives. One reader: the author, mid-edit, locally, against files on disk. This doc is its shape: two halves, the repack loop the document survives, and a host scale of its own.
+The surface a quill author looks at their quiver through: pick a quill, edit, watch it paint, read the errors. `quiver test` answers *does it work*; studio answers *what is it like to use*, which is where most of what makes a quill good or bad lives. One reader: the author, mid-edit, locally, against files on disk — `npx @quillmark/studio` in a quiver root, on the cwd convention `quiver build` and `quiver test` already use. This doc is its shape: two halves, the repack loop the document survives, and a host scale of its own.
 
 ## Looked at, not blocked on
 
@@ -22,17 +22,21 @@ Studio also sheds the playground's front-door job. Its reader arrives already co
 
 A browser cannot read the source layout, so studio ends at a built artifact behind a base URL, consumed with `Quiver.fromBuiltUrl`.
 
-**The Node half** packs and watches, and does nothing else: `build()` into the directory the dev server serves, watch the source tree, repack, signal. It is a Vite plugin, so one hook covers `vite dev` and `vite build` alike. Two constraints come from the serving layer rather than from quivers, and both are stated where the plugin is: the first pack lands before the server is created, and the packed tree stays watched.
+**The Node half** packs, watches and serves, and does nothing else: `build()` into a tree outside the client's, watch the source, repack, signal. It is a plain module, because a published studio has no Vite behind it to hang on; in this repo a plugin mounts its middleware and Vite serves the client, and from a tarball the bin serves both. Its dependency is `@quillmark/quiver/node` and the standard library, which is what an author downloads to look at a quill.
 
-**A generation is never observably half-written.** `build` clears its output before writing it, so a pack is assembled outside the served tree and moved in with one rename. Without that, a client reading the pointer mid-pack reports a broken quiver for an edit that was fine.
+**A generation is never observably half-written.** `build` clears its output before writing it, so a pack is assembled outside the served tree and moved in with one rename. Without that, a client reading the pointer mid-pack reports a broken quiver for an edit that was fine. A read waits for quiet rather than racing the swap: the rename is atomic, but a client that opened between two of them would pair a new pointer with a manifest already gone.
+
+**One signal, one client.** The repack arrives as a server-sent event on `/__studio/events`, served by the bin and the dev adapter alike. A client that listened on `import.meta.hot` would be a different client published, and losing the repack loop is losing most of what studio is.
 
 **The browser half** is an ordinary quiver consumer: `fromBuiltUrl(base)`, a picker over `quillNames()` and `versionsOf()` (both sync, so it needs no loading state), `getQuill(ref)`, then the surfaces over one `LiveSession`. The quill it holds is **borrowed** (cached per canonical ref for the quiver's lifetime and handed to every caller), so studio frees the session and the document and nothing else. It rewrites no quill bytes, so it needs no quill of its own.
 
 **Nothing renders on the server.** The WASM boundary and the paint loop are browser concerns, which is what keeps the Node half a packer and a file watcher.
 
-**One wasm.** The root `overrides` pin is the workspace's only copy, so studio and `quiver test` render through one instance and cannot disagree.
+**The author's wasm, or none.** Every note studio shows is the artifact's output, so a client carrying its own copy would render through a different program than the gate does: it could show a `conform::*` the author's `quiver test` never produces, and hide one it will. The client's `@quillmark/wasm` imports are therefore left **bare** at build, and the bin resolves the copy installed beside the quiver — the CLI's engine discovery, from the same cwd — serves that package tree, and mints the import map the bare specifiers resolve through. Package-level parity is the whole of what that buys: a custom `engine` from `quiver.config.js` is a Node object, so it stays the gate's alone.
 
-**The client is not prebuilt.** Shipping it built is a launch constraint only a published studio carries, so studio is an ordinary Vite dev server, with HMR on its own chrome.
+The artifact is an **optional peer**: a package with a `bin` discovers it in the consumer's tree, and declaring it a dependency would install a second copy beside the one it went looking for. Absent, or below the floor the client was built against, is answered at boot in one line — unanswered it surfaces as `runtime::init_failed` or a foreign handle, both of which read like the quill's fault.
+
+**The client ships prebuilt.** An author cannot run a bundler over studio's source, so `vite build` lands in `dist/client` and the tarball carries it. In this repo the Vite dev server serves the same client with HMR on studio's own chrome. The two paths differ in who serves the client and in nothing else the client can observe.
 
 **The bridge is studio's own.** The caret bridge and the debounced recompile are consumer-layer by design, and studio's chrome diverges from the playground's anyway. A shared shell promoted into the package would contradict the reason the shell is the consumer's.
 
@@ -71,9 +75,13 @@ Every note keeps its **address**, and that is the load-bearing column. The edito
 
 The band is under the panes rather than over them: it is consulted, not watched, and a surface that appears and disappears would reflow the thing being judged every time a keystroke fixed a field.
 
-## Built as though it publishes
+## Published, and built that way
 
-Studio is private, so it depends on `@quillmark/wasm` rather than peering it, and it launches against `fixtures/`, the workspace's source quiver. Publishing it is a packaging change rather than a rewrite, and that is a property the browser half maintains rather than one it would acquire: it takes its base URL at **runtime**, off the document's own, and imports nothing workspace-relative. The source path and the output directory are the Node half's alone.
+`npx @quillmark/studio` in a quiver root: the author's three moves over a quiver are pack it, gate it, look at it, and all three are asked for from the same directory. The bin refuses a directory with no `Quiver.yaml` rather than packing nothing, binds to localhost alone (the trees it serves are the author's own disk, and nothing here authenticates a reader), and stages generations under `node_modules/.studio`, on the source's filesystem so the swap is a rename and inside what the watch already ignores.
+
+The browser half maintains what makes that a packaging change rather than a rewrite: it takes its base URL at **runtime**, off the document's own, and imports nothing workspace-relative. The source path, the output directory and the artifact's mount are the Node half's alone. In this repo the source is `fixtures/`, the workspace's source quiver, and nothing else about the client differs.
+
+The dependency shape follows the graph rather than the app: `@quillmark/quiver` is a real dependency, because the Node half imports it at runtime; `@quillmark/svelte` is a **dev** dependency, because the client is built and its surfaces ship inside `dist/client` — declaring it a dependency would download the editor twice, once in the tarball and once beside it. A studio release therefore pins the `@quillmark/svelte` it was built against, which is the right way round: studio is an app, and its reader composes no package.
 
 ## Preventing drift
 
@@ -85,7 +93,7 @@ The scale is shorter than the playground's, and the derivation states which rung
 
 ## Not
 
-A Typst IDE: studio shows a quill, it does not edit the plate or the schema. Not a CMS: no auth, no persistence, no multi-doc management, matching the playground's own limit. Not a gate: `quiver test` is blocked on, studio is looked at. Not toolchain: studio absorbs no verb from quiver and carries no CLI.
+A Typst IDE: studio shows a quill, it does not edit the plate or the schema. Not a CMS: no auth, no persistence, no multi-doc management, matching the playground's own limit. Not a gate: `quiver test` is blocked on, studio is looked at. Not toolchain: studio absorbs no verb from quiver, and its bin launches the app rather than adding one. Not a hosted service, which is a different reader.
 
 ## Links
 

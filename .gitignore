@@ -101,9 +101,9 @@ dist
 # SvelteKit adapter-static playground output
 packages/*/build/
 
-# The fixture quiver, packed into each app's served tree before dev/build.
+# The fixture quiver, packed into the playground's served tree before dev/build.
+# Studio's generations live under `node_modules/.studio`, ignored with the rest.
 packages/playground/static/quiver/
-packages/studio/public/quiver/
 
 # vitepress build output
 **/.vitepress/dist

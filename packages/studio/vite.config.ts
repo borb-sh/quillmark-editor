@@ -1,99 +1,62 @@
-import { mkdir, rename, rm } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
-import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
-import { build } from '@quillmark/quiver/node';
 import { defineConfig, type Plugin } from 'vite';
+import { createStudio } from './node/studio.js';
 
-// THE NODE HALF, whole: pack the source quiver into the tree the dev server serves,
-// and repack it when it changes. Nothing renders here: the WASM boundary and the paint
-// loop are browser concerns (STUDIO §"The two halves").
+// THE DEV ADAPTER, and nothing more. The Node half is a plain module (`node/`), so a
+// published studio can run it with no Vite behind it; here the plugin mounts that
+// module's middleware and Vite serves the client. The client cannot tell the two
+// apart: same routes, same repack signal (STUDIO §"The two halves").
 
-/** The workspace's source quiver. A browser cannot read the source layout, so this
- *  pack is the step every browser consumer of a quiver performs. */
+/** The workspace's source quiver, which is what studio launches against in this repo.
+ *  From a tarball the source is the author's cwd, and the bin passes that instead. */
 const SOURCE = fileURLToPath(new URL('../../fixtures', import.meta.url));
-/** Vite's verbatim-copy tree, so one output serves `vite dev` and the build alike.
- *  Generated, and gitignored. */
-const OUT = fileURLToPath(new URL('public/quiver', import.meta.url));
-/** Where a pack is assembled, and where the tree it replaces waits to be deleted.
- *  Outside the served tree, so a half-written generation is never reachable and the
- *  public directory only ever holds the one that is current. */
-const NEXT = fileURLToPath(new URL('node_modules/.studio/quiver-next', import.meta.url));
-const PREV = fileURLToPath(new URL('node_modules/.studio/quiver-prev', import.meta.url));
-/** The dev-only signal that a repack landed. The client answers it by minting a
- *  fresh `Quiver`; nothing on this side knows what a quill is. */
-const REPACKED = 'studio:quiver-repacked';
-/** One repack per settled burst: an editor's save arrives as several watcher events. */
-const SETTLE_MS = 80;
-
-/**
- * Pack into a staging tree, then move it into place: a generation becomes visible in
- * one rename rather than over the length of a pack. `build` clears its output before
- * writing it, so packing straight into the served tree leaves a window where the
- * pointer is missing or torn, and a client that reads it there reports a broken quiver
- * for an edit that was fine.
- */
-async function swapIn(): Promise<void> {
-	await build(SOURCE, NEXT);
-	await mkdir(dirname(OUT), { recursive: true });
-	await rm(PREV, { recursive: true, force: true });
-	if (existsSync(OUT)) await rename(OUT, PREV);
-	await rename(NEXT, OUT);
-	await rm(PREV, { recursive: true, force: true });
-}
+/** Where generations are staged and served from. Under `node_modules`, which is what
+ *  the watch already ignores, and on the source's filesystem, so the swap is a rename. */
+const HOME = fileURLToPath(new URL('node_modules/.studio', import.meta.url));
 
 function quiverSource(): Plugin {
-	// Serialized rather than concurrent: `build` owns its output directory and clears
-	// it first, so two overlapping packs would race over the same tree.
-	let packing: Promise<void> = Promise.resolve();
-	const pack = (): Promise<void> => (packing = packing.then(swapIn));
-
 	return {
 		name: 'studio:quiver-source',
-		// `configResolved` rather than `buildStart`, and the reason is the serving
-		// layer: Vite mounts its static middleware only for a public directory that
-		// EXISTS when the server is created, which is before any build hook runs. So
-		// the first pack lands here, the one hook every mode awaits before that.
-		async configResolved() {
-			await pack();
-		},
+		// Dev alone. `vite build` emits the client and no quiver: what a built client
+		// reads is the author's quiver, packed by the bin against their cwd.
+		apply: 'serve',
 		configureServer(server) {
-			// The source tree sits outside the Vite root, so the watcher is told about it
-			// by hand. The packed output stays watched: Vite serves a public file only if
-			// it is in the set the watcher maintains, and a file no module graph reaches
-			// triggers no reload, so the page survives a repack.
-			server.watcher.add(SOURCE);
-			let settle: ReturnType<typeof setTimeout> | undefined;
-			const repack = (path: string): void => {
-				if (!path.startsWith(SOURCE)) return;
-				clearTimeout(settle);
-				settle = setTimeout(async () => {
-					try {
-						await pack();
-						server.hot.send({ type: 'custom', event: REPACKED });
-					} catch (err) {
-						// A quiver mid-edit is invalid as often as not (a half-written
-						// `Quill.yaml`). A failed pack never reaches the swap, so the last
-						// good generation stays served and the failure is a log line.
-						server.config.logger.error(
-							`[studio] quiver pack failed: ${err instanceof Error ? err.message : String(err)}`
-						);
-					}
-				}, SETTLE_MS);
-			};
-			for (const event of ['add', 'change', 'unlink', 'addDir', 'unlinkDir'] as const)
-				server.watcher.on(event, repack);
+			const log = (err: unknown): void =>
+				server.config.logger.error(`[studio] ${err instanceof Error ? err.message : String(err)}`);
+			const studio = createStudio({ source: SOURCE, home: HOME, onError: log });
+			studio.ready.catch(log);
+			// Ahead of Vite's own middleware, and it answers only `/quiver/` and the
+			// event stream: the served tree lives outside the Vite root, so nothing
+			// here depends on a public directory existing when the server is created.
+			server.middlewares.use((req, res, next) => studio.middleware(req, res, next));
+			server.httpServer?.on('close', () => studio.close());
 		}
 	};
 }
 
 export default defineConfig({
 	// Relative asset URLs, and the client resolves the quiver off `document.baseURI`
-	// for the same reason: the base is a runtime fact, so a built studio serves from
-	// wherever it is put (STUDIO §"Built as though it publishes").
+	// for the same reason: the base is a runtime fact, so the built client serves from
+	// wherever it is put (STUDIO §"Published, and built that way").
 	base: './',
+	// Nothing static of studio's own: the two trees a client reads, the quiver and the
+	// artifact, are the Node half's to serve and neither belongs in the tarball.
+	publicDir: false,
 	plugins: [svelte(), quiverSource()],
+	build: {
+		// The tarball's two halves, side by side: `dist/client` here, `dist/node` from
+		// `tsc`. The bin serves the first and is the second.
+		outDir: 'dist/client',
+		emptyOutDir: true,
+		rollupOptions: {
+			// The one specifier left BARE in the built client. A baked artifact would
+			// render through a different copy than `quiver test` does, so the bin
+			// resolves the author's and mints the import map that answers this
+			// (STUDIO §"The author's wasm, or none").
+			external: ['@quillmark/wasm']
+		}
+	},
 	// @quillmark/wasm ships wasm-bindgen's web target: no `.wasm` import and no
 	// top-level await, so a static import is safe and Vite resolves it unaided.
 	// Dev-server pre-bundling is the one exception: it relocates the package away
