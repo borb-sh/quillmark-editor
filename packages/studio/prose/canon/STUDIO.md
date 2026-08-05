@@ -10,7 +10,7 @@ The surface a quill author looks at their quiver through: pick a quill, edit, wa
 
 `build` and `test` are what quiver gives a quill author, and they are the whole of it. The boundary is **looked at** against **blocked on**: `test` runs in the author's CI, against the author's own wasm through the CLI's engine discovery, and installs a loader rather than an app. Studio is reached for when someone wants to see the thing.
 
-The two share one artifact, and it is the **blueprint**: `runQuiverTests` seeds with `quill.seedDocument()` and so does studio, so the document the gate renders is the document the author judges, and it is the only document either one can name.
+The two share one artifact, and it is the **blueprint**: `quiver test` seeds with `quill.seedDocument()` and so does studio, so the document the gate renders is the document the author judges, and it is the only document either one can name.
 
 Keeping the gate in quiver is what lets studio be an app at all. Nothing fails a build on studio's verdict, so studio's chrome, its weight and its wasm are its own problem.
 
