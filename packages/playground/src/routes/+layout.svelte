@@ -1,11 +1,15 @@
 <!--
   The playground shell: the host-side stylesheets and the running head every route
-  is reached from. Both stylesheets are global imports, so the shared chrome
-  reaches every route's markup rather than being scoped out of it:
-  `playground.css` derives the `--pg-*` scale, `chrome.css` is the recipes that
-  read it. Nothing here mounts, loads, or frees a session: the routes own that.
+  is reached from. All three are global imports, so the shared chrome reaches every
+  route's markup rather than being scoped out of it. `@quillmark/svelte/preset` is
+  the endorsed look — the same import a third-party consumer makes, which is what
+  makes "the playground looks like the endorsed version" a fact rather than a claim;
+  `playground.css` is the front door's own rungs on top of it, and `chrome.css` the
+  recipes that read both. Nothing here mounts, loads, or frees a session: the routes
+  own that.
 -->
 <script lang="ts">
+	import '@quillmark/svelte/preset';
 	import './playground.css';
 	import './chrome.css';
 	import { base } from '$app/paths';
@@ -62,56 +66,56 @@
 		position: sticky;
 		top: 0;
 		z-index: 1;
-		background: var(--pg-page);
-		border-bottom: var(--pg-border-width) solid var(--pg-border);
+		background: var(--qmh-page);
+		border-bottom: var(--qmh-border-width) solid var(--qmh-border);
 	}
 
 	.head-row {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: var(--pg-space-2) var(--pg-space-6);
-		padding-block: var(--pg-space-3);
+		gap: var(--qmh-space-2) var(--pg-space-6);
+		padding-block: var(--qmh-space-3);
 	}
 
 	.mark {
-		font-family: var(--pg-font-mono);
-		font-size: var(--pg-text-label);
-		font-weight: var(--pg-weight-mid);
-		line-height: var(--pg-leading-tight);
-		color: var(--pg-ink);
+		font-family: var(--qmh-font-mono);
+		font-size: var(--qmh-text-label);
+		font-weight: var(--qmh-weight-mid);
+		line-height: var(--qmh-leading-tight);
+		color: var(--qmh-ink);
 		text-decoration: none;
 		margin-inline-end: auto;
 	}
 
 	.slash {
-		color: var(--pg-ghost);
+		color: var(--qmh-ghost);
 	}
 
 	.nav {
 		display: flex;
-		gap: var(--pg-space-4);
+		gap: var(--qmh-space-4);
 	}
 
 	/* The current route takes a rule under it, not a fill. */
 	.nav-link {
-		font-family: var(--pg-font-mono);
-		font-size: var(--pg-text-label);
-		line-height: var(--pg-leading-tight);
-		color: var(--pg-ink-meta);
+		font-family: var(--qmh-font-mono);
+		font-size: var(--qmh-text-label);
+		line-height: var(--qmh-leading-tight);
+		color: var(--qmh-ink-meta);
 		text-decoration: none;
-		padding-block: var(--pg-space-half);
-		border-bottom: var(--pg-ring-width) solid transparent;
-		transition: color var(--pg-duration) var(--pg-ease-reverse);
+		padding-block: var(--qmh-space-half);
+		border-bottom: var(--qmh-ring-width) solid transparent;
+		transition: color var(--qmh-duration) var(--qmh-ease-reverse);
 	}
 
 	.nav-link:hover {
-		color: var(--pg-ink);
+		color: var(--qmh-ink);
 	}
 
 	.nav-link[aria-current='page'] {
-		color: var(--pg-ink);
-		border-bottom-color: var(--pg-ink);
+		color: var(--qmh-ink);
+		border-bottom-color: var(--qmh-ink);
 	}
 
 	/* The filled shell: two rows, the second whatever is left. Pinned to the

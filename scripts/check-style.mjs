@@ -124,7 +124,11 @@ const RHYTHM_MARKER = /(padding|margin|gap|radius)/i;
 const STROKE_MARKER = /border(?!-?radius)/i;
 /** A `--x:` DEFINITION — a consumption is `var(--x)`, which has no colon. */
 const privateDef = (prefix) => new RegExp(`(${prefix}[\\w-]+)\\s*:`);
-const readsRung = (prefix) => new RegExp(`var\\(${prefix}`);
+/** Reading a rung of ANY scale the scope is entitled to. An app reads two: the
+ *  preset's, which is most of what it draws with, and its own for what it adds on
+ *  top — so a rung-required axis must see both, or every `--qmh-` a migrated app reads
+ *  looks like a bare literal. */
+const readsRung = (prefixes) => new RegExp(`var\\((${prefixes.join('|')})`);
 
 // Three shapes of rule. `literal` FORBIDS a pattern — most properties take values a
 // literal cannot be mistaken for, so naming the bad shape is enough. `allowBare`
@@ -306,12 +310,18 @@ const hostScales = [];
 let scanned = 0;
 
 for (const scope of SCOPES) {
-	const READS_RUNG = readsRung(scope.prefix);
+	// An app scale sits ON the preset, so both are legible to it; the preset and the
+	// package each read one scale only.
+	const reads = scope.host && scope.prefix !== '--qmh-' ? [scope.prefix, '--qmh-'] : [scope.prefix];
+	const READS_RUNG = readsRung(reads);
 	const PRIVATE_DEF = privateDef(scope.prefix);
-	// The axis table names the package's rungs; a host failure points at the same
-	// family under the host's prefix, and at the doc that states the rule there.
+	// The axis table names the package's rungs; a failure elsewhere points at the same
+	// family under the prefix that scope draws with, and at the doc that states the
+	// rule there. For an app that is the PRESET's prefix rather than its own: the
+	// families the axes name — type, colour, motion — are the endorsed look's, and an
+	// app's own rungs are the handful it adds beside them.
 	const hint = (text) =>
-		scope.prefix === '--_qm-' ? text : text.replaceAll('--_qm-', scope.prefix);
+		scope.prefix === '--_qm-' ? text : text.replaceAll('--_qm-', reads.at(-1));
 
 	for (const full of sources(scope.dir, scope.exclude)) {
 		const file = relative(ROOT, full);

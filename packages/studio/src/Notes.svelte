@@ -27,14 +27,14 @@
 <details class="notes" open data-testid="notes">
 	<summary class="summary">
 		{#if notes.all.length === 0}
-			<span class="st-label">no notes</span>
+			<span class="qm-label">no notes</span>
 		{:else}
 			<span class="count" class:alert={errors > 0} data-testid="note-count">
 				{errors} error{errors === 1 ? '' : 's'} · {warnings} warning{warnings === 1 ? '' : 's'}
 			</span>
 			{#if notes.unrouted > 0}
 				<!-- The gap, counted: these reach no control in the editor. -->
-				<span class="st-label" data-testid="note-unrouted">{notes.unrouted} unrouted</span>
+				<span class="qm-label" data-testid="note-unrouted">{notes.unrouted} unrouted</span>
 			{/if}
 		{/if}
 	</summary>
@@ -43,13 +43,13 @@
 		<ul class="list">
 			{#each notes.all as note}
 				<li class="note" class:alert={note.severity === 'error'}>
-					<span class="st-label origin">{note.origin}</span>
-					<span class="st-readout where" class:unrouted={note.path === undefined}>
+					<span class="qm-label origin">{note.origin}</span>
+					<span class="qm-readout where" class:unrouted={note.path === undefined}>
 						{note.path ?? 'unrouted'}
 					</span>
 					<span class="message">
 						{note.message}
-						{#if note.code}<span class="st-label code">{note.code}</span>{/if}
+						{#if note.code}<span class="qm-label code">{note.code}</span>{/if}
 						{#if note.hint}<span class="hint">{note.hint}</span>{/if}
 					</span>
 				</li>
@@ -60,35 +60,35 @@
 
 <style>
 	.notes {
-		border-top: var(--st-border-width) solid var(--st-border);
-		background: var(--st-page);
+		border-top: var(--qmh-border-width) solid var(--qmh-border);
+		background: var(--qmh-page);
 	}
 
 	.summary {
 		display: flex;
 		align-items: baseline;
-		gap: var(--st-space-3);
-		padding: var(--st-space) var(--st-space-4);
+		gap: var(--qmh-space-3);
+		padding: var(--qmh-space) var(--qmh-space-4);
 		cursor: pointer;
 	}
 
 	.count {
-		font-family: var(--st-font-mono);
-		font-size: var(--st-text-meta);
-		letter-spacing: var(--st-track-label);
+		font-family: var(--qmh-font-mono);
+		font-size: var(--qmh-text-meta);
+		letter-spacing: var(--qmh-track-label);
 		text-transform: uppercase;
-		color: var(--st-ink-meta);
+		color: var(--qmh-ink-meta);
 	}
 
 	.count.alert {
-		color: var(--st-alert);
+		color: var(--qmh-alert);
 	}
 
 	/* Bounded, because a quill with thirty must-fill fields would otherwise take the
 	   panes. It is a list to scroll, not a page to read. */
 	.list {
 		margin: 0;
-		padding: 0 var(--st-space-4) var(--st-space-2);
+		padding: 0 var(--qmh-space-4) var(--qmh-space-2);
 		list-style: none;
 		max-height: var(--st-notes);
 		overflow: auto;
@@ -99,48 +99,48 @@
 	.note {
 		display: grid;
 		grid-template-columns: 4.5rem minmax(6rem, 14rem) minmax(0, 1fr);
-		gap: var(--st-space-2);
+		gap: var(--qmh-space-2);
 		align-items: baseline;
-		padding-block: var(--st-space-half);
-		border-top: var(--st-border-width) solid var(--st-border);
+		padding-block: var(--qmh-space-half);
+		border-top: var(--qmh-border-width) solid var(--qmh-border);
 	}
 
 	.origin {
-		color: var(--st-ghost);
+		color: var(--qmh-ghost);
 	}
 
 	.where {
-		color: var(--st-ink-meta);
+		color: var(--qmh-ink-meta);
 	}
 
 	/* An unrouted note has no address to print, so the word takes the address column
 	   and says why the row is here at all. */
 	.where.unrouted {
-		color: var(--st-warn);
+		color: var(--qmh-warn);
 		font-style: italic;
 	}
 
 	.message {
-		font-size: var(--st-text-label);
-		line-height: var(--st-leading-tight);
-		color: var(--st-ink);
+		font-size: var(--qmh-text-label);
+		line-height: var(--qmh-leading-tight);
+		color: var(--qmh-ink);
 		overflow-wrap: anywhere;
 	}
 
 	.note.alert .message {
-		color: var(--st-alert);
+		color: var(--qmh-alert);
 	}
 
 	.code {
-		color: var(--st-ghost);
-		margin-inline-start: var(--st-space);
+		color: var(--qmh-ghost);
+		margin-inline-start: var(--qmh-space);
 	}
 
 	/* The hint is the fix, so it reads as a second sentence rather than a second
 	   column: an author reading a note wants both at once. */
 	.hint {
 		display: block;
-		font-size: var(--st-text-meta);
-		color: var(--st-ink-meta);
+		font-size: var(--qmh-text-meta);
+		color: var(--qmh-ink-meta);
 	}
 </style>

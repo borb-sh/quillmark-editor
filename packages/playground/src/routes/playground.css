@@ -1,85 +1,50 @@
-/* The HOST's derivation: public dials in, the `--pg-*` scale the playground's
-   chrome reads out (PLAYGROUND.md is the language; the recipes are
-   `routes/chrome.css`). Literals live here and nowhere else under `src/routes`:
-   `check:style` runs its axes over the host scope too, with this file exempt as
-   the place the defaults are minted.
+/* What the playground adds ON TOP of the preset, and nothing the preset already
+   carries: `@quillmark/svelte/preset` is the endorsed page scale, imported in
+   `+layout.svelte`, and the front door reads `--qmh-*` throughout. What survives here
+   is the front door's own — a reading column with an annotation margin, a display run,
+   a draggable split — which no consumer mounting a surface has and no preset should
+   ship (PLAYGROUND.md is the language; the recipes are `routes/chrome.css`).
 
-   `light dark` follows the OS, and every `[data-qm-root]` inside inherits it, so
-   page and surface invert together; the declaration THEMING.md asks a host app
-   for, made once here rather than a mode implemented. The poles are the SYSTEM
-   colours, so unstyled text and a `--pg-*` rung land on the same tone; a host
-   knows its canvas; the package does not, so it ships calibrated literals. The
-   dials still sit in front, so `--qm-bg`/`--qm-fg` on the shell retunes page and
-   surface at once; nothing here reads a `--_qm-*` rung.
-
-   The mid-tones are mixes, not picks. `--pg-ink-meta` lands at 7.5:1 on the page
-   in light and 7.3:1 in dark; a grey chosen by eye holds one of those at best. */
+   Literals live here and nowhere else under `src/routes`: `check:style` runs its axes
+   over this scope too, with this file exempt as the place these defaults are minted,
+   and its conformance rule fails a rung that restates one of the preset's. */
 
 :root {
-	color-scheme: light dark;
-
-	/* ── Colour ──────────────────────────────────────────────────────────────── */
-	--pg-page: var(--qm-bg, Canvas);
-	--pg-ink: var(--qm-fg, CanvasText);
-	--pg-ink-meta: color-mix(in oklab, var(--pg-ink), var(--pg-page) 45%);
-	--pg-ghost: color-mix(in oklab, var(--pg-ink), var(--pg-page) 60%);
-	/* Two planes behind content, stepping toward the ink exactly as the package's
-	   surfaces do and at the same 4pp apart, so a host plate and a card on it agree
-	   about which way "raised" goes in both schemes. */
-	--pg-surface: color-mix(in oklab, var(--pg-page), var(--pg-ink) 4%);
-	--pg-surface-hover: color-mix(in oklab, var(--pg-page), var(--pg-ink) 8%);
-	--pg-border: color-mix(in oklab, var(--pg-page), var(--pg-ink) 17%);
-	--pg-border-strong: color-mix(in oklab, var(--pg-page), var(--pg-ink) 40%);
-
-	/* The alert hue: no dial derives it, and a single literal reads as a stain on
-	   one of the two schemes, so it is a pair. */
-	--pg-alert: light-dark(#c5221f, #ff9c94);
-
 	/* ── Rhythm ──────────────────────────────────────────────────────────────── */
-	/* One base and its multiples, the package's scale widened at the top: a page
-	   separates SECTIONS where a card separates fields, so the ramp runs to 6rem.
-	   An in-between value is the drift this prevents. */
-	--pg-space: 0.25rem;
-	--pg-space-half: calc(var(--pg-space) / 2);
-	--pg-space-2: calc(var(--pg-space) * 2);
-	--pg-space-3: calc(var(--pg-space) * 3);
-	--pg-space-4: calc(var(--pg-space) * 4);
-	--pg-space-6: calc(var(--pg-space) * 6);
-	--pg-space-8: calc(var(--pg-space) * 8);
-	--pg-space-12: calc(var(--pg-space) * 12);
-	--pg-space-16: calc(var(--pg-space) * 16);
-	--pg-space-24: calc(var(--pg-space) * 24);
-	--pg-border-width: 1px;
-	--pg-ring-width: 2px;
-	--pg-radius: var(--qm-radius, 8px);
-	--pg-radius-inner: calc(var(--pg-radius) / 2);
-	/* A shape tier beside the ramp rather than a step on it, so an end cap stays
-	   round at any `--qm-radius`. */
+	/* The preset's ramp WIDENED at the top, derived from its base rather than a second
+	   base beside it: a page separates SECTIONS where a card separates fields, so the
+	   ramp runs to 6rem. An in-between value is the drift this prevents. */
+	--pg-space-6: calc(var(--qmh-space) * 6);
+	--pg-space-8: calc(var(--qmh-space) * 8);
+	--pg-space-12: calc(var(--qmh-space) * 12);
+	--pg-space-16: calc(var(--qmh-space) * 16);
+	--pg-space-24: calc(var(--qmh-space) * 24);
+	/* A shape tier beside the ramp rather than a step on it, so an end cap stays round
+	   at any `--qm-radius`. */
 	--pg-radius-pill: 999px;
 
-	/* The two widths the layout is built from: the measure a passage wraps at, and
-	   the margin the annotation column sits in (PLAYGROUND §"The rail"). Both are
-	   reading geometry (what a line of text needs), so neither derives from the
-	   spacing dial, the same reason the package's capacity ramp does not. */
-	--pg-measure: 34rem;
+	/* ── The reading column ──────────────────────────────────────────────────── */
+	/* The margin the annotation column sits in (PLAYGROUND §"The rail"); the measure a
+	   passage wraps at is the preset's. Reading geometry, so it does not derive from
+	   the spacing dial. */
 	--pg-rail: 8rem;
-	/* ONE page width for the whole shell; a per-route maximum would step the
-	   running head in and out over the surface it sits above. */
+	/* ONE page width for the whole shell; a per-route maximum would step the running
+	   head in and out over the surface it sits above. */
 	--pg-max: 84rem;
 
 	/* ── Containers ──────────────────────────────────────────────────────────── */
-	/* ONE mount height, for every surface the front page stands beside its sample.
-	   It stays under a painted page BY DESIGN: usaf_memo is two pages, and a frame
-	   shorter than one of them is what makes scrolling swap which page is mounted,
-	   which is what keeps the paint loop's bound falsifiable by hand. The ceiling is
-	   the page itself (~1053px at the fixture's scale), so this has room to grow and
-	   none to double. The tool route states no height at all: it takes the viewport
-	   less the head. */
-	--pg-mount: 38rem;
-	/* The scroll TAIL: dead space under the last card so it can reach the middle of
-	   a pane rather than stopping at its bottom edge. One of the four properties
-	   THEMING §"What is behind the column is yours" leaves to the host. */
-	--pg-tail: 40vh;
+	/* The height of a front-page DEMO frame, and the one number here staked to the
+	   fixture rather than to the layout: it sits under a painted page by design, since
+	   usaf_memo is two pages and a frame shorter than one of them is what makes
+	   scrolling swap which page is mounted, which is what keeps the paint loop's bound
+	   falsifiable by hand. The ceiling is the page itself (~1053px at the fixture's
+	   scale), so this has room to grow and none to double. */
+	--pg-demo: 38rem;
+	/* What a pane takes once the split has stacked: a viewport's worth of mount, and a
+	   different decision from the frame above — the two shared a name and a number
+	   until the split told them apart. Studio's is the same job, and `check:style`
+	   holds the two to one value. */
+	--pg-pane: 34rem;
 	/* The split's hit track, and the hairline in it at rest and engaged. A pointer
 	   target is a reach, not a rhythm, so these do not read the spacing ramp. */
 	--pg-resizer: 11px;
@@ -87,50 +52,9 @@
 	--pg-rule-strong: 5.5px;
 
 	/* ── Type ────────────────────────────────────────────────────────────────── */
-	/* Two faces with a job each: prose is sans, chrome is mono (PLAYGROUND §"Two
-	   faces"). Both are system stacks; a downloaded face would put the front door
-	   on a network request the static build otherwise does not make. */
-	--pg-font: ui-sans-serif, system-ui, sans-serif;
-	--pg-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-
-	--pg-text: 1rem;
+	/* The one run of type a front door has and a mounted surface does not: a landing
+	   thesis, a route's title. Fluid, because it is the only size on the page big
+	   enough for the viewport to matter to it. */
 	--pg-text-display: clamp(1.9rem, 1.3rem + 1.9vw, 2.6rem);
-	--pg-text-label: 0.8125rem;
-	--pg-text-meta: 0.6875rem;
-	--pg-weight-strong: 600;
-	--pg-weight-mid: 500;
-	--pg-leading-body: 1.6;
-	--pg-leading-tight: 1.25;
 	--pg-track-display: -0.02em;
-	--pg-track-label: 0.08em;
-
-	/* ── Motion ──────────────────────────────────────────────────────────────── */
-	/* One rung of each: every transition on these pages is a state toggling under
-	   the pointer that nobody watches, so every one of them is a trip between two
-	   rest states that reverses mid-flight. A second duration
-	   would need something the eye tracks and a second curve something that arrives
-	   or leaves, and the playground's chrome has neither. */
-	--pg-duration: 140ms;
-	--pg-ease-reverse: cubic-bezier(0.4, 0, 0.6, 1);
-}
-
-/* Collapse the SCALE, not each transition: every animated rule reads the rung,
-   so one override reaches all of them with no `*` rule touching mounted package
-   elements. */
-@media (prefers-reduced-motion: reduce) {
-	:root {
-		--pg-duration: 1ms;
-	}
-}
-
-/* The page's own baseline, which every route inherits by sitting in the document;
-   the same job `core/theme.css`'s root rule does for a mounted surface. */
-body {
-	margin: 0;
-	background: var(--pg-page);
-	color: var(--pg-ink);
-	font-family: var(--pg-font);
-	font-size: var(--pg-text);
-	line-height: var(--pg-leading-body);
-	-webkit-font-smoothing: antialiased;
 }

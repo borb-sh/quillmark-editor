@@ -934,6 +934,7 @@
 	   card, so it can be read mid-pane rather than against the bottom edge. */
 	.qm-editor.qm-pane {
 		overflow: auto;
+		overscroll-behavior: contain;
 		padding-block-end: var(--_qm-tail);
 	}
 	/* The stack's one gapless seam, which `TipsCard` draws and this holds the two

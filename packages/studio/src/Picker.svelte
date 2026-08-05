@@ -31,11 +31,11 @@
 </script>
 
 <div class="picker">
-	<span class="st-label">{catalog.name}</span>
+	<span class="qm-label">{catalog.name}</span>
 	<label class="field">
-		<span class="st-label">quill</span>
+		<span class="qm-label">quill</span>
 		<select
-			class="st-select"
+			class="qm-control"
 			data-testid="pick-quill"
 			{disabled}
 			value={picked?.name ?? ''}
@@ -47,9 +47,9 @@
 		</select>
 	</label>
 	<label class="field">
-		<span class="st-label">version</span>
+		<span class="qm-label">version</span>
 		<select
-			class="st-select"
+			class="qm-control"
 			data-testid="pick-version"
 			disabled={disabled || versions.length < 2}
 			value={picked?.version ?? ''}
@@ -67,7 +67,7 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: var(--st-space) var(--st-space-3);
+		gap: var(--qmh-space) var(--qmh-space-3);
 		min-width: 0;
 	}
 
@@ -76,6 +76,6 @@
 	.field {
 		display: flex;
 		align-items: center;
-		gap: var(--st-space);
+		gap: var(--qmh-space);
 	}
 </style>
