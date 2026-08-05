@@ -91,6 +91,47 @@ describe('preview controller empty-state across page-count transitions', () => {
 	});
 });
 
+// `locate` answers against the last COMPILED layout, so a caret typed past it is
+// off-content until the compile lands, and the next caret event is the only thing
+// that would ask again. `refresh` has to re-ask (PREVIEW §"Follow-the-caret
+// scroll"); WHERE the scroll ends up is geometry jsdom does not have, so what is
+// asserted is the query, not a scrollTop.
+describe('a recompile re-locates the followed caret', () => {
+	let container: HTMLDivElement;
+	let located: Array<[string, number]>;
+	beforeEach(() => {
+		container = document.createElement('div');
+		document.body.appendChild(container);
+		located = [];
+	});
+
+	function trackingSession(): LiveSession {
+		return {
+			...mockSession(1),
+			locate: (field: string, pos: number) => {
+				located.push([field, pos]);
+				return undefined;
+			}
+		} as unknown as LiveSession;
+	}
+
+	it('re-asks for the last followed place, and asks for nothing before one exists', () => {
+		const preview = createPreview(trackingSession(), { container });
+		preview.refresh(change(1));
+		expect(located).toEqual([]);
+
+		preview.focusPosition({ field: 'main.body', pos: 12 });
+		expect(located).toEqual([['main.body', 12]]);
+
+		preview.refresh(change(1));
+		expect(located).toEqual([
+			['main.body', 12],
+			['main.body', 12]
+		]);
+		preview.destroy();
+	});
+});
+
 // `supportsCanvas` must gate the view (runtime.d.ts says re-check the
 // getter after `open`), and the gate is re-read per compile so a non-paintable
 // compile that later becomes paintable recovers; the zero-page escape, generalized.

@@ -28,6 +28,9 @@ export interface VisualEditorProps {
 	 * A SELECTION signal, not a change signal: an arrow key fires it and commits
 	 * nothing. One keystroke fires `onChange` first and this second, so the edit
 	 * has landed by the time the caret names where it is.
+	 *
+	 * A PLACE, so consecutive duplicates do not arrive: landing the caret where it
+	 * already sits reports nothing, and a place left and returned to reports twice.
 	 */
 	onCaretMove?: (at: Place) => void;
 	/**

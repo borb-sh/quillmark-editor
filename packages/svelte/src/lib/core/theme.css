@@ -173,6 +173,15 @@
 		   it does not move when `--qm-space` does. Both button families read it, so the
 		   floor is one number instead of one expression per control. */
 		--_qm-tap-min: 24px;
+		/* The reorder/delete glyph. A rung because the card header's
+		   right hang is HALF the difference between this and the tap floor: the glyph
+		   centres in a target sized by the floor, so what stands between it and the
+		   card's gutter is an arithmetic of the two, and a literal on either side is a
+		   balance that silently breaks when the glyph moves. Sized in CSS rather than
+		   through Lucide's `size`, so the hang and the glyph read one number. Scoped to
+		   the control pair: the hint and the format marks take their own sizes, and a
+		   rung claiming to be every glyph would be false at three of them. */
+		--_qm-glyph-control: 14px;
 
 		/* ── Type ────────────────────────────────────────────────────────────────
 		   `--qm-font-size` anchors the body rung; 1.125 is the ratio between adjacent

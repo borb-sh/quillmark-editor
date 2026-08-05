@@ -253,9 +253,24 @@
 	function pathFor(addr: Addr): DocPath | undefined {
 		return fieldPathForAddr(addr, addr.card == null ? NO_KINDS : liveKinds());
 	}
+	// The last PLACE reported, so a caret that did not move is not news. A leaf fires
+	// one caret signal per transaction, and a transaction need not have moved the
+	// caret to exist: a mark toggle over the same range, an anchor op, a plugin's own
+	// bookkeeping. The memo is the editor's rather than each leaf's, because a place
+	// spans leaves: a caret that leaves `main.body` at 5 for a card leaf and comes
+	// back to 5 made two moves, and a per-leaf memo would swallow the second. An edit
+	// that reflows the page UNDER a caret holding its offset is the case this drops,
+	// and a preview does not need the signal to answer it: the place is unchanged, so
+	// the one it already followed is the one its recompile re-locates.
+	let lastCaretField: DocPath | undefined;
+	let lastCaretPos: number | undefined;
 	function handleCaret(addr: Addr, pos: number): void {
 		const field = pathFor(normalize(addr));
-		if (field != null) onCaretMove?.({ field, pos });
+		if (field == null) return;
+		if (field === lastCaretField && pos === lastCaretPos) return;
+		lastCaretField = field;
+		lastCaretPos = pos;
+		onCaretMove?.({ field, pos });
 	}
 	/** A prose leaf's own commit: the third change lane, and the one that must not
 	 *  bump `revision` (see {@link bump}). */
