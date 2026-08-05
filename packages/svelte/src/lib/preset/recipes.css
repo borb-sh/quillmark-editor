@@ -1,0 +1,188 @@
+/* THE ENDORSED LOOK: the rules a host draws around a mounted surface, as classes it
+   puts on its own elements. The rungs beside this in `scale.css` are the invisible
+   half — a scale alone still leaves a consumer writing every declaration before
+   anything on the page looks like anything — so the recipes are what the preset is
+   for. This file mints nothing; `check:style` runs its axes here.
+
+   These are HOST classes. They land on the consumer's DOM, never on a mounted root, so
+   they freeze nothing about the surfaces' interior — the reason the package withholds
+   its own internal classes does not reach them.
+
+   UNLAYERED, deliberately. `@layer qm` exists so consumer CSS beats the surfaces
+   without `!important`, and the same has to be true here; a layer of the preset's own
+   would put a second name in the contract and change what `revert-layer` at the foot
+   of this file resolves against. Unlayered, a consumer's own rules win by ordinary
+   precedence and the focus rule works with nothing declared. */
+
+/* ── The page ──────────────────────────────────────────────────────────────── */
+
+/* The baseline, on a CLASS rather than `body`: a preset that restyled the document
+   root would land on an app that already has a page and change it out from under
+   whatever was there. The host puts this where its own layout starts — `body`, or the
+   element the app mounts into.
+
+   `color-scheme` is declared HERE and not by the package: light or dark is the
+   mounting site's, and this file is the mounting site. `light dark` follows the OS;
+   a host pinning one declares it on the same element and wins by source order. */
+.qm-page {
+	color-scheme: light dark;
+	margin: 0;
+	background: var(--qmh-page);
+	color: var(--qmh-ink);
+	font-family: var(--qmh-font);
+	font-size: var(--qmh-text);
+	line-height: var(--qmh-leading-body);
+	-webkit-font-smoothing: antialiased;
+}
+
+/* A column of prose at the measure. The width only; what sits inside it is the
+   route's, since a passage and a stack of panels want different rhythms. */
+.qm-measure {
+	max-width: var(--qmh-measure);
+}
+
+/* ── Type ──────────────────────────────────────────────────────────────────── */
+
+/* A run of chrome type: a section's label, a panel's caption, the name over a readout.
+   Uppercase and tracked, which is what keeps a run this small legible at the ghost
+   rung. */
+.qm-label {
+	font-family: var(--qmh-font-mono);
+	font-size: var(--qmh-text-meta);
+	line-height: var(--qmh-leading-tight);
+	letter-spacing: var(--qmh-track-label);
+	text-transform: uppercase;
+	color: var(--qmh-ghost);
+	margin: 0;
+}
+
+/* A value read back out of the running session: an address, a page index, a count.
+   Monospace and tabular, because these are read by comparison — two addresses one
+   above the other line up character for character. */
+.qm-readout {
+	font-family: var(--qmh-font-mono);
+	font-size: var(--qmh-text-label);
+	line-height: var(--qmh-leading-tight);
+	font-variant-numeric: tabular-nums;
+	color: var(--qmh-ink);
+	overflow-wrap: anywhere;
+}
+
+/* The block form: a dump, or a snippet. `pre` keeps the wrapping the value came with;
+   the plate is the page's own, one rung under whatever it sits in. How TALL such a
+   block may grow before it scrolls is the host's policy rather than the look, so no
+   height is stated here. */
+pre.qm-readout {
+	box-sizing: border-box;
+	background: var(--qmh-page);
+	border: var(--qmh-border-width) solid var(--qmh-border);
+	border-radius: var(--qmh-radius-inner);
+	padding: var(--qmh-space-2);
+	margin: 0;
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+/* ── Status ────────────────────────────────────────────────────────────────── */
+
+/* The boundary's phase while it is not open. An open session says the rest by painting
+   the page, so the states worth a word are the ones before and instead of that. */
+.qm-status {
+	font-family: var(--qmh-font-mono);
+	font-size: var(--qmh-text-meta);
+	line-height: var(--qmh-leading-tight);
+	letter-spacing: var(--qmh-track-label);
+	text-transform: uppercase;
+	color: var(--qmh-ghost);
+	margin: 0;
+}
+
+/* A failure carries a message rather than a state word, so it drops the label treatment
+   and reads as a sentence; and it breaks anywhere, because a WASM error is one long
+   token in whatever room the line has left. */
+.qm-status-error {
+	color: var(--qmh-alert);
+	font-size: var(--qmh-text-label);
+	text-transform: none;
+	letter-spacing: normal;
+	overflow-wrap: anywhere;
+}
+
+.qm-status-warn {
+	color: var(--qmh-warn);
+}
+
+/* ── Surfaces ──────────────────────────────────────────────────────────────── */
+
+/* The instrument plate: what a host puts its controls and readouts on. One rung off the
+   page and a hairline, which is the same way a card steps off the base surface, so a
+   panel beside a mounted editor reads as the same material. `border-box`, so a height
+   from the caller is the height it draws. */
+.qm-panel {
+	box-sizing: border-box;
+	background: var(--qmh-surface);
+	border: var(--qmh-border-width) solid var(--qmh-border);
+	border-radius: var(--qmh-radius);
+	padding: var(--qmh-space-4);
+}
+
+/* ── Controls ──────────────────────────────────────────────────────────────── */
+
+/* A host's controls ARE boxed, where the package's buttons are not: inside a card a
+   button sits beside typing and a box would read as a field, and out here there is no
+   typing to be confused with, so the box is what says "this is a control".
+   `font: inherit` first, since the shorthand resets whatever precedes it. */
+.qm-control {
+	font: inherit;
+	font-family: var(--qmh-font-mono);
+	font-size: var(--qmh-text-label);
+	line-height: var(--qmh-leading-tight);
+	color: var(--qmh-ink);
+	background: var(--qmh-page);
+	border: var(--qmh-border-width) solid var(--qmh-border);
+	border-radius: var(--qmh-radius-inner);
+	padding: var(--qmh-space) var(--qmh-space-2);
+	cursor: pointer;
+	text-align: left;
+	transition: background-color var(--qmh-duration) var(--qmh-ease-reverse);
+}
+
+.qm-control:hover {
+	background: var(--qmh-surface-hover);
+}
+
+/* On, whichever way the control says so: a switch that is pressed, or the link to the
+   variant you are already in. */
+.qm-control[aria-pressed='true'],
+.qm-control[aria-current='true'] {
+	border-color: var(--qmh-border-strong);
+	background: var(--qmh-surface-hover);
+}
+
+/* One choice means nothing to pick: the control stays, because what it reads is a fact
+   worth having, and it recedes to say it is not a choice. */
+.qm-control:disabled {
+	color: var(--qmh-ink-meta);
+	background: var(--qmh-surface);
+	cursor: default;
+}
+
+/* ── Focus ─────────────────────────────────────────────────────────────────── */
+
+/* One visible indicator for the whole host, since none of these controls draws a ring
+   of its own. It reads the INK rung rather than a hue: the page is monochrome, and a
+   focus ring is a position, not a destination. */
+:focus-visible {
+	outline: var(--qmh-ring-width) solid var(--qmh-ink);
+	outline-offset: var(--qmh-space-half);
+}
+
+/* The mounted surfaces are the exception, and the rule above is why: an unlayered host
+   declaration beats `@layer qm.chrome` by design, so a ring written for controls that
+   draw none repaints the ones that do. `revert-layer` hands each control back to the
+   layer under this one, which is the package's own ring at its own offset — and is
+   what makes this file's own lack of a layer load-bearing rather than a preference. */
+[data-qm-root] :focus-visible {
+	outline: revert-layer;
+	outline-offset: revert-layer;
+}

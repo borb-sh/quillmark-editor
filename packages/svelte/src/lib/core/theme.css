@@ -173,6 +173,13 @@
 		--_qm-space-2: calc(var(--_qm-space) * 2);
 		--_qm-space-3: calc(var(--_qm-space) * 3);
 		--_qm-space-4: calc(var(--_qm-space) * 4);
+		/* The scroll TAIL: dead space under the last card, so it can be read at the
+		   middle of a pane rather than at its bottom edge. A fraction of the VIEWPORT
+		   rather than a step on the ramp, because what it answers is how far the eye
+		   sits from the bottom of the screen, which no spacing dial knows. Spent by
+		   the editor alone (`.qm-pane`): a stack of cards is what has a last one to
+		   reach, where a page and a text mirror end where the document ends. */
+		--_qm-tail: 40vh;
 		/* WCAG 2.5.8's 24x24 pointer-target floor. A rung rather than a sixth step on
 		   the space scale: it is a threshold the spec fixes, not a rhythm choice, so
 		   it does not move when `--qm-space` does. Both button families read it, so the

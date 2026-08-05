@@ -1,0 +1,97 @@
+/* THE HOST'S DERIVATION: the same public dials in, a closed `--qmh-*` scale for the
+   page AROUND the surfaces out. `core/theme.css` is the same shape one level down —
+   dials in, `--_qm-*` out — and the two are calibrated against each other: the mixes
+   here are the percentages there (4pp between surface steps, 17% border, 45% and 60%
+   ink), so a host plate and a card on it agree about which way "raised" goes and land
+   on the same tone at both poles.
+
+   TWO SCALES rather than one because they answer to different roots. `--_qm-*` is
+   declared ON each mounted root, out of reach from an ancestor, so a surface holds its
+   scale wherever it is dropped. A host scale has the opposite job: it is the document,
+   so it is declared at `:root` and everything on the page reads it. A single namespace
+   could not be both.
+
+   Literals live here and nowhere else in the preset: `check:style` runs its axes over
+   `recipes.css` beside it, with this file exempt as the place the defaults are minted.
+
+   The poles fall back to the SYSTEM colours, so a host that turns no dial still lands
+   where its own unstyled text does. The dials sit in front, so `--qm-bg`/`--qm-fg` on
+   an ancestor retunes page and surface together. */
+
+:root {
+	/* ── Colour ──────────────────────────────────────────────────────────────── */
+	--qmh-page: var(--qm-bg, Canvas);
+	--qmh-ink: var(--qm-fg, CanvasText);
+	--qmh-ink-meta: color-mix(in oklab, var(--qmh-ink), var(--qmh-page) 45%);
+	--qmh-ghost: color-mix(in oklab, var(--qmh-ink), var(--qmh-page) 60%);
+	/* Two planes behind content, 4pp apart exactly as the surfaces step, so a host
+	   plate and a card on it agree about which way "raised" goes in both schemes. */
+	--qmh-surface: color-mix(in oklab, var(--qmh-page), var(--qmh-ink) 4%);
+	--qmh-surface-hover: color-mix(in oklab, var(--qmh-page), var(--qmh-ink) 8%);
+	--qmh-border: color-mix(in oklab, var(--qmh-page), var(--qmh-ink) 17%);
+	/* The edge that says "engaged" where the hairline says "edge": a pressed switch,
+	   the underline under a link. */
+	--qmh-border-strong: color-mix(in oklab, var(--qmh-page), var(--qmh-ink) 40%);
+
+	/* The two hues a host spends, and it spends them on a message. Both read the DIAL,
+	   so a page carries one colour meaning error and one meaning warning rather than a
+	   second pair beside the surfaces'. The dark half is a lift the dials do not carry:
+	   a hue calibrated against white reads as a stain on a dark page. */
+	--qmh-alert: light-dark(var(--qm-danger, #c5221f), #ff9c94);
+	--qmh-warn: light-dark(var(--qm-warning, #b25000), #e0b44c);
+
+	/* ── Rhythm ──────────────────────────────────────────────────────────────── */
+	/* One base and its multiples, the same four steps the surfaces derive. A host
+	   separating SECTIONS down a page wants steps above these; it derives them from
+	   this base rather than minting them, which is what keeps its ramp one ramp. */
+	--qmh-space: var(--qm-space, 0.25rem);
+	--qmh-space-half: calc(var(--qmh-space) / 2);
+	--qmh-space-2: calc(var(--qmh-space) * 2);
+	--qmh-space-3: calc(var(--qmh-space) * 3);
+	--qmh-space-4: calc(var(--qmh-space) * 4);
+	--qmh-border-width: 1px;
+	--qmh-ring-width: 2px;
+	--qmh-radius: var(--qm-radius, 8px);
+	--qmh-radius-inner: calc(var(--qmh-radius) / 2);
+
+	/* The measure a passage wraps at. Reading geometry — what a line of text needs —
+	   so it does not derive from the spacing dial. */
+	--qmh-measure: 34rem;
+
+	/* ── Type ────────────────────────────────────────────────────────────────── */
+	/* Two faces with a job each: prose is sans, chrome is mono. Both are system stacks,
+	   so the preset costs no network request. The sans face reads the same dial the
+	   surfaces do, so one override moves page and card together; the mono stack is
+	   spelled out past the dial's default, because a host's chrome leans on it for
+	   tabular readouts and the two-name fallback is thin for that. */
+	--qmh-font: var(--qm-font, ui-sans-serif, system-ui, sans-serif);
+	--qmh-font-mono: var(--qm-font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+
+	/* The page's own ramp, and it does NOT read `--qm-font-size`: that dial anchors the
+	   surfaces' ramp, which is chrome inside a card, and a page's body text is a
+	   different job at a different size. A host that wants them locked sets both. */
+	--qmh-text: 1rem;
+	--qmh-text-label: 0.8125rem;
+	--qmh-text-meta: 0.6875rem;
+	--qmh-weight-strong: 600;
+	--qmh-weight-mid: 500;
+	--qmh-leading-body: 1.6;
+	--qmh-leading-tight: 1.25;
+	--qmh-track-label: 0.08em;
+
+	/* ── Motion ──────────────────────────────────────────────────────────────── */
+	/* One rung of each: a host's chrome is states toggling under the pointer that
+	   nobody watches, so every trip is between two rest states and reverses mid-flight.
+	   A second duration would need something the eye tracks, and a second curve
+	   something that arrives or leaves. */
+	--qmh-duration: 140ms;
+	--qmh-ease-reverse: cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+/* Collapse the SCALE, not each transition: every animated recipe reads the rung, so one
+   override reaches all of them with no `*` rule touching mounted package elements. */
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--qmh-duration: 1ms;
+	}
+}

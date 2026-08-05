@@ -52,7 +52,8 @@
 			"types": "./dist/source/index.d.ts",
 			"svelte": "./dist/source/index.js",
 			"default": "./dist/source/index.js"
-		}
+		},
+		"./preset": "./dist/preset/index.css"
 	},
 	"files": [
 		"dist",
