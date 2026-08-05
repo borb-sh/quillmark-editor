@@ -93,6 +93,11 @@
 	/** Whether an open is in flight: the picker is inert while one is. */
 	const busy = $derived(phase.kind === 'booting' || phase.kind === 'opening');
 
+	/** The open in progress. An open takes as long as the backend takes to load and
+	 *  compile a page, which is long enough for a second repack to land inside one, so
+	 *  the loser drops what it built instead of both writing the same slot. */
+	let turn = 0;
+
 	/**
 	 * Replace what is mounted with `ref`, over `carry` when the document should cross.
 	 * The old handles are freed only after the surfaces are gone: a live `<Preview>`
@@ -101,6 +106,7 @@
 	 */
 	async function mount(ref: string, carry?: string): Promise<void> {
 		if (!engine || !quiver) return;
+		const mine = ++turn;
 		phase = { kind: 'opening', ref };
 		const previous = open;
 		open = undefined;
@@ -109,12 +115,14 @@
 		recovered = [];
 		try {
 			const next = await openRef(engine, quiver, ref, carry);
+			if (mine !== turn) return close(next);
 			open = next;
 			held = undefined;
 			thrown = [];
 			carried = next.carry.how === 'carried' ? next.carry.stranded : [];
 			phase = { kind: 'ready' };
 		} catch (err) {
+			if (mine !== turn) return;
 			// A quill that does not open is the case `/preview` used to answer: the
 			// diagnostics are the whole point, so they land in the notes panel and the
 			// panes stay empty rather than the failure being one line of chrome. The
@@ -281,7 +289,9 @@
 			{:else if phase.kind === 'opening'}
 				<span class="st-status" data-testid="phase">Opening {phase.ref}…</span>
 			{:else if phase.kind === 'failed'}
-				<span class="st-status failed" data-testid="phase">{phase.message}</span>
+				<!-- The head says the STATE; what went wrong is a sentence, and it belongs
+				     where the panes were and in the notes band, not on one line of chrome. -->
+				<span class="st-status failed" data-testid="phase">Open failed</span>
 				{#if held}
 					<!-- The document is not gone with the quill that would not open: it waits
 					     as text for the repack that fixes it. -->
@@ -324,8 +334,13 @@
 			</section>
 		</div>
 	{:else}
-		<!-- Nothing is mounted: the notes below carry why. -->
-		<div class="panes vacant"></div>
+		<!-- Nothing is mounted, so the room the panes had says why: the message where
+		     the paint would be, and the notes band below it with the code and the hint. -->
+		<div class="vacant">
+			{#if phase.kind === 'failed'}
+				<p class="reason" data-testid="reason">{phase.message}</p>
+			{/if}
+		</div>
 	{/if}
 
 	<Notes {notes} />
@@ -404,8 +419,22 @@
 		background: var(--st-surface);
 	}
 
+	/* Where the panes were. It takes the same room so the bands do not move when a
+	   quill stops opening, and it holds the one sentence that says why. */
 	.vacant {
+		display: grid;
+		place-items: center;
+		min-height: 0;
+		padding: var(--st-space-4);
 		background: var(--st-surface);
+	}
+
+	.reason {
+		margin: 0;
+		max-width: var(--st-measure);
+		text-align: center;
+		color: var(--st-alert);
+		overflow-wrap: anywhere;
 	}
 
 	/* Below the width that fits two panes, the split stops being one: the panes stack

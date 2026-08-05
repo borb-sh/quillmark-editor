@@ -1,3 +1,6 @@
+import { mkdir, rename, rm } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { build } from '@quillmark/quiver/node';
@@ -13,18 +16,38 @@ const SOURCE = fileURLToPath(new URL('../../fixtures', import.meta.url));
 /** Vite's verbatim-copy tree, so one output serves `vite dev` and the build alike.
  *  Generated, and gitignored. */
 const OUT = fileURLToPath(new URL('public/quiver', import.meta.url));
+/** Where a pack is assembled, and where the tree it replaces waits to be deleted.
+ *  Outside the served tree, so a half-written generation is never reachable and the
+ *  public directory only ever holds the one that is current. */
+const NEXT = fileURLToPath(new URL('node_modules/.studio/quiver-next', import.meta.url));
+const PREV = fileURLToPath(new URL('node_modules/.studio/quiver-prev', import.meta.url));
 /** The dev-only signal that a repack landed. The client answers it by minting a
  *  fresh `Quiver`; nothing on this side knows what a quill is. */
 const REPACKED = 'studio:quiver-repacked';
-/** One repack per settled burst: an editor's save arrives as several watcher events,
- *  and a `build` clears its output before writing it. */
+/** One repack per settled burst: an editor's save arrives as several watcher events. */
 const SETTLE_MS = 80;
+
+/**
+ * Pack into a staging tree, then move it into place: a generation becomes visible in
+ * one rename rather than over the length of a pack. `build` clears its output before
+ * writing it, so packing straight into the served tree leaves a window where the
+ * pointer is missing or torn — and the client that reads it there reports a broken
+ * quiver for an edit that was fine.
+ */
+async function swapIn(): Promise<void> {
+	await build(SOURCE, NEXT);
+	await mkdir(dirname(OUT), { recursive: true });
+	await rm(PREV, { recursive: true, force: true });
+	if (existsSync(OUT)) await rename(OUT, PREV);
+	await rename(NEXT, OUT);
+	await rm(PREV, { recursive: true, force: true });
+}
 
 function quiverSource(): Plugin {
 	// Serialized rather than concurrent: `build` owns its output directory and clears
 	// it first, so two overlapping packs would race over the same tree.
 	let packing: Promise<void> = Promise.resolve();
-	const pack = (): Promise<void> => (packing = packing.then(() => build(SOURCE, OUT)));
+	const pack = (): Promise<void> => (packing = packing.then(swapIn));
 
 	return {
 		name: 'studio:quiver-source',

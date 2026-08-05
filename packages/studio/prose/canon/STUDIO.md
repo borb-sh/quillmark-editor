@@ -79,7 +79,7 @@ The host derivation and its recipes are **two stylesheets**, the split the packa
 
 Literals live in the derivation and nowhere else under `src`: `check:style` runs its axes over the `--st-*` scope too, so a component that mints a grey, a size, a radius or a duration fails CI rather than review. A value that cannot be minted in a card must not become mintable one directory over.
 
-The scale is shorter than the playground's on purpose. Studio has one screen and no reading column, so it has no display type, no measure and no rail; a rung it does not need is a value nothing checks. What it does carry that the playground does not is a second hue, because a note has two severities and studio's one job is to show them.
+The scale is shorter than the playground's on purpose. Studio has one screen and no reading column, so it has no display type and no rail, and its one measure is what a failure's sentence wraps at where the panes would be; a rung it does not need is a value nothing checks. What it does carry that the playground does not is a second hue, because a note has two severities and studio's one job is to show them.
 
 ## Not
 

@@ -58,6 +58,10 @@
 	   before it competes with the surface, the other is a viewport's worth of mount. */
 	--st-notes: 14rem;
 	--st-mount: 34rem;
+	/* The one reading width studio has: what a failure's sentence wraps at where the
+	   panes would be. Reading geometry rather than rhythm, so it does not derive from
+	   the spacing ramp. */
+	--st-measure: 34rem;
 
 	/* ── Type ────────────────────────────────────────────────────────────────── */
 	/* Two faces with a job each: the document is the package's, so every face here is
