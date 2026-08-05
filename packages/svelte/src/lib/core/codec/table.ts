@@ -175,7 +175,7 @@ export function moveColumn(props: TableProps, c: number, by: number): TableProps
 /** Column `c` with every cell emptied, alignment kept: what a delete gesture means at
  *  the LAST column, which the model keeps. There is no row analogue: the header is the
  *  only row a delete is refused for, and it carries no handle to select it from.
- *  Alignment survives because the column does — nothing was removed. */
+ *  Alignment survives because the column does: nothing was removed. */
 export function clearColumn(props: TableProps, c: number): TableProps {
 	const blank = (cells: TableCell[]): TableCell[] =>
 		cells.map((cell, i) => (i === c ? emptyCell() : cell));

@@ -17,11 +17,11 @@
 // THE CHROME OCCUPIES NO LAYOUT. Every control is absolutely positioned inside a real
 // data cell, hanging into a band the scroller carries as padding: a column's handle
 // lives in its own `th`, a row's in that row's first `td`. Alignment is therefore
-// structural — a handle tracks its line through wrap, zoom, a font-size change and a
-// horizontal scroll with nothing measured and no rect crossing a state channel — while
-// the grid itself holds the box a paragraph would. Gutter cells bought the same
-// alignment and cost the table's shape: they put an empty row and an empty column in
-// the accessibility tree, so a 3x3 table read as 4x4 with its headers at column 2.
+// structural (a handle tracks its line through wrap, zoom, a font-size change and a
+// horizontal scroll with nothing measured and no rect crossing a state channel) while
+// the grid itself holds the box a paragraph would. Gutter cells buy that same
+// alignment and charge the table's shape for it: an empty row and an empty column in
+// the accessibility tree, so a 3x3 table reads as 4x4 with its headers at column 2.
 //
 // A POINTER PRESS RESOLVES TO A CARET, always, except on a handle
 // (CODEC §"The table island"). Click-to-NodeSelect belongs to an atom with no
@@ -196,7 +196,7 @@ function cellPlugins(keys: Record<string, Command>) {
 const OWNED = '.qm-table-cell-host, .qm-table-handle, .qm-table-seam, .qm-table-align';
 
 /** How far a press travels before it is a drag rather than a click: the playground
- *  resizer's threshold, and for its reason — under it, a press that jitters is still
+ *  resizer's threshold, and for its reason. Under it, a press that jitters is still
  *  the selection gesture it was aimed as. */
 const DEAD_ZONE = 3;
 
@@ -441,11 +441,11 @@ class TableIslandView implements NodeView {
 	// ── The line selection ────────────────────────────────────────────────────
 
 	/**
-	 * Select a line. This is the whole of what a handle press does, and every verb a
-	 * menu used to carry is then the selection's: Backspace deletes it, Alt+arrow
-	 * moves it, an arrow steps to the next one. The handle keeps the FOCUS, so those
-	 * keys have somewhere to land — which is why it does not go through
-	 * {@link chromeButton}'s focus-preserving press.
+	 * Select a line. This is the whole of what a handle press does, and the verbs are
+	 * then the selection's: Backspace deletes it, Alt+arrow moves it, an arrow steps to
+	 * the next one. The handle keeps the FOCUS, so those keys have somewhere to land,
+	 * which is why it does not go through {@link chromeButton}'s focus-preserving
+	 * press.
 	 */
 	private selectLine(line: Line): void {
 		this.selected = line;
@@ -485,8 +485,7 @@ class TableIslandView implements NodeView {
 	}
 
 	/**
-	 * A selected line's keys. The verbs a menu used to list, as the selection's own:
-	 * delete, move, and a way back into the text.
+	 * A selected line's keys: delete, move, and a way back into the text.
 	 *
 	 * Backspace CLEARS rather than deletes at the LAST column, which the model keeps.
 	 * Absent rather than disabled was the menu's rule there; a selection has no item to
@@ -581,9 +580,9 @@ class TableIslandView implements NodeView {
 	 * is what tells the two apart, so a click that jitters is the gesture it was
 	 * aimed as and only a real travel becomes a drag.
 	 *
-	 * The drop index is read off the cell rects under the pointer, which is
-	 * measurement — and it is the one place measurement belongs, because a drag is a
-	 * question about where the pointer is and has no structural answer.
+	 * The drop index is read off the cell rects under the pointer, which is the one
+	 * place measurement belongs: a drag asks where the pointer is, and that has no
+	 * structural answer.
 	 */
 	private readonly onHandleDown = (
 		line: Line,
@@ -689,7 +688,7 @@ class TableIslandView implements NodeView {
 		if (drag.line.axis === 'row') {
 			mark.style.top = `${(after ? last.bottom : first.top) - box.top + scroller.scrollTop}px`;
 			mark.style.left = `${first.left - box.left + scroller.scrollLeft}px`;
-			mark.style.width = `${first.width}px`;
+			mark.style.width = `${last.right - first.left}px`;
 			mark.style.height = '';
 		} else {
 			mark.style.left = `${(after ? first.right : first.left) - box.left + scroller.scrollLeft}px`;
@@ -830,8 +829,7 @@ class TableIslandView implements NodeView {
 	/**
 	 * A seam: the boundary between two lines, and the whole of how a table grows.
 	 * One per boundary including the leading and trailing ones, so an append and an
-	 * interior insert are the same gesture at different places rather than a strip
-	 * and a menu item.
+	 * interior insert are one gesture at different places.
 	 */
 	private seam(
 		axis: Axis,

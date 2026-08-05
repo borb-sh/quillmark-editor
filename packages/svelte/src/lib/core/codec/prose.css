@@ -246,8 +246,8 @@ li.ProseMirror-selectednode::after {
    deletes it. A caret inside a cell is not that state and does not paint it. */
 
 /* A SELECTED LINE, washed across its cells: what Backspace deletes and Alt+arrow
-   moves. The hover rung, because it is the same claim a hover makes — this line, the
-   one the next command is about — held rather than passing. */
+   moves. The hover rung, because it makes a hover's claim (this line, the one the next
+   command is about) held rather than passing. */
 .qm-table-cell.qm-table-line {
 	background: var(--_qm-surface-hover);
 }
@@ -321,7 +321,7 @@ li.ProseMirror-selectednode::after {
 
 /* A SEAM: the boundary between two lines, and the whole of how a table grows. One per
    boundary including the leading and trailing ones, so an append and an interior
-   insert are the same gesture at two places rather than a strip and a menu item.
+   insert are one gesture at different places.
 
    It sits OVER the handles in the band, and it is narrow, so the two share the band
    without a dead zone: the handle owns the line's length and the seam owns its ends. */
@@ -347,9 +347,15 @@ li.ProseMirror-selectednode::after {
 	width: var(--_qm-tap-min);
 	left: calc(var(--_qm-tap-min) / -2);
 }
+/* The TRAILING seams sit flush inside their edge rather than centred on it. A
+   boundary seam is centred, and the last boundary is the grid's own edge, so
+   centring one would hang it half outside the scroller, where the padding does not
+   reach and the clip does, making the append affordance the one control that could
+   not be pressed. Off-centre by half a target is imperceptible on a control whose
+   whole meaning is "and one more at the end". */
 .qm-table-seam[data-axis='column'][data-side='trail'] {
 	left: auto;
-	right: calc(var(--_qm-tap-min) / -2);
+	right: 0;
 }
 .qm-table-seam[data-axis='row'] {
 	right: 100%;
@@ -359,7 +365,7 @@ li.ProseMirror-selectednode::after {
 }
 .qm-table-seam[data-axis='row'][data-side='trail'] {
 	top: auto;
-	bottom: calc(var(--_qm-tap-min) / -2);
+	bottom: 0;
 }
 
 /* The alignment cluster: the one op with no gesture, so the one surface the chrome
@@ -440,6 +446,18 @@ li.ProseMirror-selectednode::after {
 .qm-table-seam:hover,
 .qm-table-seam:focus-visible {
 	opacity: 1;
+}
+
+/* The ring, on the chrome and nowhere else in this file. A prose leaf's focus
+   indicator is its CARET and a cell's is too, so the outline is dropped there; a
+   handle is a button, and a button that takes focus to hold a selection has to show
+   it. Declared here rather than reached for as `.qm-focus-ring`: that recipe is the
+   visual tier's stylesheet, and the island is inside the leaf, which is the codec's. */
+.qm-table-handle:focus-visible,
+.qm-table-seam:focus-visible,
+.qm-table-align-item:focus-visible {
+	outline: var(--_qm-ring-focus);
+	outline-offset: var(--_qm-ring-offset);
 }
 
 /* A DRAG in flight. The lifted line reads as picked up by tone and a hairline, never
