@@ -332,19 +332,23 @@ li.ProseMirror-selectednode::after {
    boundary including the leading and trailing ones, so an append and an interior
    insert are one gesture at different places.
 
-   It sits OVER the handles in the band, and it is narrow, so the two share the band
-   without a dead zone: the handle owns the line's length and the seam owns its ends. */
+   It sits OVER the handle in the band, so its extent ALONG the line is the one
+   measurement here that is not the tap floor. A one-line row is about 29px, and a
+   boundary seam is centred on the edge it opens: at 24px, the seams above and below a
+   row cover it end to end and the handle between them cannot be pressed at all. Half
+   the floor leaves the handle its middle, and a seam is still a full target across the
+   band, which is the axis a boundary is aimed at. */
 .qm-table-seam {
 	position: absolute;
 	z-index: 1;
-	width: var(--_qm-tap-min);
-	height: var(--_qm-tap-min);
 	border-radius: var(--_qm-radius-pill);
 	color: var(--_qm-accent);
 }
 .qm-table-seam[data-axis='column'] {
 	bottom: 100%;
-	left: calc(var(--_qm-tap-min) / -2);
+	width: calc(var(--_qm-tap-min) / 2);
+	height: var(--_qm-tap-min);
+	left: calc(var(--_qm-tap-min) / -4);
 }
 /* The TRAILING seams sit flush inside their edge rather than centred on it: the last
    boundary is the grid's own edge, and a seam centred on it would hang half outside
@@ -356,7 +360,9 @@ li.ProseMirror-selectednode::after {
 }
 .qm-table-seam[data-axis='row'] {
 	right: 100%;
-	top: calc(var(--_qm-tap-min) / -2);
+	width: var(--_qm-tap-min);
+	height: calc(var(--_qm-tap-min) / 2);
+	top: calc(var(--_qm-tap-min) / -4);
 }
 .qm-table-seam[data-axis='row'][data-side='trail'] {
 	top: auto;
