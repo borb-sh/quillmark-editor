@@ -3,16 +3,18 @@
   consulted, not watched, and a surface that appears and disappears would reflow the
   thing being judged every time a keystroke fixed a field.
 
-  Each row carries its ORIGIN and its address. The address is the point: the editor
-  routes a diagnostic to a control by `path`, so a row with none reached no field, and
-  the summary counts those. A diagnostic detached from the field that provoked it is a
-  quill's problem, invisible everywhere else.
+  Each row carries its ORIGIN and its address. The address is the point, and it is
+  written in one of two spaces: the document's, which the editor routes to a control,
+  or the quill's source, which a compile failure names and this band only prints. A row
+  with neither is UNROUTED, naming no place at all, and the summary counts those. A
+  diagnostic detached from what provoked it is a quill's problem, invisible everywhere
+  else.
 
   `<details>` rather than a button and a flag: the disclosure is the platform's, and
   the summary stays a row of counts either way.
 -->
 <script lang="ts">
-	import type { NoteSet } from './notes';
+	import { placeOf, type NoteSet } from './notes';
 
 	interface Props {
 		notes: NoteSet;
@@ -33,7 +35,7 @@
 				{errors} error{errors === 1 ? '' : 's'} · {warnings} warning{warnings === 1 ? '' : 's'}
 			</span>
 			{#if notes.unrouted > 0}
-				<!-- The gap, counted: these reach no control in the editor. -->
+				<!-- The gap, counted: these name no place in either space. -->
 				<span class="qm-label" data-testid="note-unrouted">{notes.unrouted} unrouted</span>
 			{/if}
 		{/if}
@@ -44,8 +46,14 @@
 			{#each notes.all as note}
 				<li class="note" class:alert={note.severity === 'error'}>
 					<span class="qm-label origin">{note.origin}</span>
-					<span class="qm-readout where" class:unrouted={note.path === undefined}>
-						{note.path ?? 'unrouted'}
+					<!-- The best address the note has: the document's field, else the line of
+					     source that raised it, else the word for having neither. -->
+					<span
+						class="qm-readout where"
+						class:source={note.path === undefined && note.location !== undefined}
+						class:unrouted={note.path === undefined && note.location === undefined}
+					>
+						{note.path ?? (note.location ? placeOf(note.location) : 'unrouted')}
 					</span>
 					<span class="message">
 						{note.message}
@@ -111,6 +119,12 @@
 
 	.where {
 		color: var(--qmh-ink-meta);
+	}
+
+	/* A source address is a place the author opens in their other editor, so it reads as
+	   the coordinate it is rather than as a field name. */
+	.where.source {
+		color: var(--qmh-ink);
 	}
 
 	/* An unrouted note has no address to print, so the word takes the address column

@@ -10,6 +10,8 @@ The surface a quill author looks at their quiver through: pick a quill, edit, wa
 
 `build` and `test` are what quiver gives a quill author, and they are the whole of it. The boundary is **looked at** against **blocked on**: `test` runs in the author's CI, against the author's own wasm through the CLI's engine discovery, and installs a loader rather than an app. Studio is reached for when someone wants to see the thing.
 
+The two share one artifact, and it is the **blueprint**: `runQuiverTests` seeds with `quill.seedDocument()` and so does studio, so the document the gate renders is the document the author judges, and it is the only document either one can name.
+
 Keeping the gate in quiver is what lets studio be an app at all. Nothing fails a build on studio's verdict, so studio's chrome, its weight and its wasm are its own problem.
 
 ## Why it is not the playground
@@ -26,7 +28,7 @@ A browser cannot read the source layout, so studio ends at a built artifact behi
 
 **A generation is never observably half-written.** `build` clears its output before writing it, so a pack is assembled outside the served tree and moved in with one rename. Without that, a client reading the pointer mid-pack reports a broken quiver for an edit that was fine.
 
-**The browser half** is an ordinary quiver consumer: `fromBuiltUrl(base)`, a picker over `quillNames()` and `versionsOf()` (both sync, so it needs no loading state), `getQuill(ref)`, then the surfaces over one `LiveSession`. The quill it holds is **borrowed** (cached per canonical ref for the quiver's lifetime and handed to every caller), so studio frees the session and the document and nothing else. It rewrites no quill bytes, so it needs no quill of its own.
+**The browser half** is an ordinary quiver consumer: `fromBuiltUrl(base)`, a picker over `quillNames()` and `versionsOf()` (both sync, so it needs no loading state), `getQuill(ref)`, then the surfaces over one `LiveSession`. The picker offers only what varies: an axis holding one value is printed rather than selected, since a working tree is usually one quill at one version and a control that cannot be used is chrome competing with the surface. The fact stays either way, an author having to know what they are looking at. The quill it holds is **borrowed** (cached per canonical ref for the quiver's lifetime and handed to every caller), so studio frees the session and the document and nothing else. It rewrites no quill bytes, so it needs no quill of its own.
 
 **Nothing renders on the server.** The WASM boundary and the paint loop are browser concerns, which is what keeps the Node half a packer and a file watcher.
 
@@ -35,6 +37,14 @@ A browser cannot read the source layout, so studio ends at a built artifact behi
 **The client is not prebuilt.** Shipping it built is a launch constraint only a published studio carries, so studio is an ordinary Vite dev server, with HMR on its own chrome.
 
 **The bridge is studio's own.** The caret bridge and the debounced recompile are consumer-layer by design, and studio's chrome diverges from the playground's anyway. A shared shell promoted into the package would contradict the reason the shell is the consumer's.
+
+## The document is the blueprint's
+
+Studio holds one document and it is the schema's own: `seedDocument()` over the `example:` values in `Quill.yaml`. There is no door in and no door out: no file it is read from, none it is written to, and nothing of studio's own that outlives the tab.
+
+**Reload is the reseed.** A boot seeds, and the carry keeps a running session on the document in hand, so an `example:` edited mid-session does not appear until the page reloads. F5 is the whole of that verb, and it costs a keystroke rather than a control.
+
+**What that costs.** The failures that only a long list, a wrapping value or an empty optional reveal are invisible here, and to `quiver test` with it: neither renders a document the schema did not write. The corpus *is* the `example:` block, so an author buys that coverage by writing examples that are uncomfortable rather than tidy.
 
 ## The document survives the quill
 
@@ -67,9 +77,11 @@ Four producers say something about the document in hand, and an author reading t
 
 A throw is unwrapped rather than reported as one line: a `QuillmarkError` carries every diagnostic, and a broken plate is the case that matters.
 
-Every note keeps its **address**, and that is the load-bearing column. The editor routes a diagnostic to its control by `path`, so a note with none reached no field and is visible only here; the summary counts them. A diagnostic detached from the field that provoked it is a quill's problem, and nothing else in the toolchain shows it.
+Every note keeps its **address**, and that is the load-bearing column. An address is written in one of two spaces. `path` is the document's: the editor routes a diagnostic to its control by it. `location` is the quill's source, a file, a line and a column, which a compile failure carries and nothing the schema says does; it routes to nothing here and is what an author opens their other editor at. A note with neither is **unrouted**: it names no place at all, and the summary counts those. A diagnostic detached from what provoked it is a quill's problem, and nothing else in the toolchain shows it.
 
 The band is under the panes rather than over them: it is consulted, not watched, and a surface that appears and disappears would reflow the thing being judged every time a keystroke fixed a field.
+
+**A document that will not compile is a state of the paint, not a row under it.** The session is transactional, so the last good paint stays on screen and stops answering the document. That is what a failed open reports one pane over, so it takes the same register: the failure at the surface it is about, carrying the place to open. The paint stays whole underneath, being the only evidence of what the plate did before it stopped compiling, and the strip is laid over rather than stacked above, so breaking a plate and fixing it do not resize what is being judged. The band still lists the diagnostics, one list being its job.
 
 ## Built as though it publishes
 
