@@ -2,7 +2,33 @@
 
 `@quillmark/svelte` ships complex UX over a thin skin: the surfaces carry the behavior (direct manipulation, the caret bridge, per-field state) against a neutral visual baseline a consumer restyles to its brand without fighting baked-in design.
 
-The whole contract is **ten CSS custom properties**. They are dials, not a palette: each derives a closed private scale (`--_qm-*`) that every component reads, so one override rescales or recolors the whole surface. Set them on any ancestor of a mounted surface (the app, or one pane):
+There are three depths to that, and most apps stop at the first:
+
+|                   | You write             | You get                                                 |
+| ----------------- | --------------------- | ------------------------------------------------------- |
+| **Drop it in**    | nothing               | a mounted surface that looks right in a bare `<div>`    |
+| **Make it yours** | ten custom properties | the whole surface rescaled and recolored to your brand  |
+| **Match ours**    | one CSS import        | the page around the surface, drawn the way we draw ours |
+
+## Drop it in
+
+```svelte
+<VisualEditor {doc} {quill} />
+```
+
+Nothing to import and nothing to set. The package pulls its own stylesheet, and each surface owns its whole **column**, not only the cards in it: the gutter the stack sits in, the tone behind it, and — for the preview — the desk the painted sheet floats on. A bare `<div>` is a mounting site.
+
+**Mounting into a fixed-height pane**: pass `class="qm-pane"`. The surface becomes its own scroll container and takes a scroll tail, so the last card can be read at the middle of your pane rather than against its bottom edge. Without it the editor grows to its content and your page scrolls, which is what you want when the editor _is_ the page. The preview and the source view always scroll — a viewport onto a document has nothing else to be.
+
+`.qm-pane` is opt-in on the editor rather than the default because the editor is what its own popovers portal into, and a scroll container clips them. In a pane you would have had that clipping from your own scrolling frame anyway; in a page you should not have it at all.
+
+**Placing and sizing**: each surface carries a stable root class — `.qm-editor`, `.qm-preview`, `.qm-source` — so you can place it from your own stylesheet without a wrapper. Each also takes a `class` prop that merges onto the same element, which is the better handle when you have one to give.
+
+**Taking the column back**: your CSS is unlayered and ours is not (below), so `padding: 0` or a `background` of your own on `.qm-editor` wins outright. Nothing is locked.
+
+## Make it yours
+
+The whole contract is **ten CSS custom properties**. They are dials, not a palette: each derives a closed private scale that every component reads, so one override rescales or recolors the whole surface. Set them on any ancestor of a mounted surface (the app, or one pane):
 
 ```css
 .my-editor {
@@ -13,13 +39,11 @@ The whole contract is **ten CSS custom properties**. They are dials, not a palet
 }
 ```
 
-Nothing to import: the package pulls its own stylesheet, which applies the derivation to every surface it mounts.
-
-## The dials
+### The dials
 
 | Token            | Default                                | What it sets                                                                                            |
 | ---------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `--qm-bg`        | `#fff` / `#14171c`                     | Base surface. Cards, fields, the painted page, and the popover step off it.                             |
+| `--qm-bg`        | `#fff` / `#14171c`                     | Base surface. Cards, fields, the painted page, the popover, and the column behind them step off it.     |
 | `--qm-fg`        | `#1a1a1a` / `#e8eaed`                  | Base ink. Body text, labels, and borders step off it.                                                   |
 | `--qm-accent`    | `#2563eb`                              | Focus rings, active marks, the preview's active field box.                                              |
 | `--qm-danger`    | `#c5221f`                              | Error diagnostics, the required marker, the delete glyph.                                               |
@@ -32,7 +56,7 @@ Nothing to import: the package pulls its own stylesheet, which applies the deriv
 
 Give a length dial a length: `--qm-space: 4` is a valid custom property and an invalid length, so it substitutes through every `calc()` that reads it. Where `@property` is supported the surface absorbs that, landing on the package default rather than collapsing the padding to zero.
 
-## Your CSS beats ours
+### Your CSS beats ours
 
 The surfaces' own rules live in the `qm` cascade layer, so **unlayered CSS of yours beats them outright**, at any specificity and without `!important`. Nothing to declare; this is the case most apps are in.
 
@@ -44,11 +68,7 @@ If your app uses cascade layers of its own, layer order decides it, and layer or
 
 Declared before our sheet it fixes the order outright; declared after, `qm` is already first and `app` appends behind it. Either way your layer lands after ours and wins. `qm` is the contract; the sub-layers under it (`qm.scale`, `qm.chrome`) are ours to re-cut.
 
-## What is behind the column is yours
-
-The package draws cards, not the column they sit in. Four properties are the mounting site's: the gutter between your pane edge and the cards, the scroll container, the page tone behind the column, and the scroll tail that lets the last card reach the middle of your viewport. Nothing needs setting for the surface to look right: every card sits one rung off the base surface and every control one rung inside its card, so a control reads against its card whatever you put behind it.
-
-## The surface follows your colour scheme
+### The surface follows your colour scheme
 
 Surfaces step `bg → fg` and ink steps `fg → bg`, mixed in **oklab**, so inverting the two poles inverts the whole scale, including borders and the popover's translucent fill.
 
@@ -65,7 +85,7 @@ html.dark {
 }
 ```
 
-Declare nothing and you get light. A dark app that skips this line gets a light editor in a dark page, and light scrollbars, date pickers and carets throughout.
+Declare nothing and you get light. A dark app that skips this line gets a light editor in a dark page, and light scrollbars, date pickers and carets throughout. (The preset below declares `light dark` for you.)
 
 Setting the poles yourself wins over the default in both schemes, so a fixed palette stays fixed:
 
@@ -80,13 +100,53 @@ A palette **pinned against** your own scheme is the one case needing a second li
 
 No JS runs and no media query: the derivation resolves through the cascade at paint time, so there is no `dark` prop and no mode toggle. The consumer's palette decides.
 
-## The three class handles
+## Match ours
 
-Each mounted surface carries a stable root class, so you can place and size it from your own stylesheet without a wrapper: `.qm-editor`, `.qm-preview`, `.qm-source`. Each also takes a `class` prop that merges onto the same element, which is the better handle when you have one to give.
+A mounted surface looks right on its own. The page around it — the label over a readout, the status line, the plate your controls sit on — is yours, and if you have a design system it should stay yours. If you do not, take ours:
 
-Those three are the whole class contract. Every other `qm-*` class in the DOM is internal and renames without notice: a class contract over the interior would freeze the DOM shape the surfaces are free to re-cut, and the dials already reach the values a restyle wants.
+```js
+import '@quillmark/svelte/preset';
+```
 
-The derived scale (surface / border / ink rungs, the blur radius, the popover's translucency ratio, the recede-opacity ladder, the two leading rungs, the overlay ring widths) is internal on the same terms, and declared **on** each root element, so setting a rung from an ancestor does nothing. A dial appears when a real consumer needs one; every dial is one more thing a reader has to hold.
+```html
+<body class="qm-page">
+	<p class="qm-label">quill</p>
+	<pre class="qm-readout">usaf_memo@0.2.0</pre>
+</body>
+```
+
+This is the stylesheet our own apps import — the playground and studio draw with these rules and nothing else, so what you get is what we ship, not a reduction of it.
+
+It carries a `--qmh-*` scale for the page, derived from the same ten dials and calibrated against the surfaces' own steps, so a plate of yours and a card of ours agree about which way "raised" goes. Turning a dial moves both.
+
+| Class         | What it is                                                                                                                           |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `.qm-page`    | The page baseline: tone, ink, face, leading, and `color-scheme: light dark`. Put it on `<body>` or the element your app mounts into. |
+| `.qm-panel`   | The plate your controls and readouts sit on: one rung off the page, a hairline, a corner.                                            |
+| `.qm-label`   | A run of chrome type — a section label, the name over a value.                                                                       |
+| `.qm-readout` | A value read back out of the session, monospace and tabular. `<pre class="qm-readout">` is the block form.                           |
+| `.qm-status`  | A phase line. `.qm-status-error` and `.qm-status-warn` are the two it fails to.                                                      |
+| `.qm-control` | A boxed button or select, which is what a host's controls are and the package's are not.                                             |
+| `.qm-measure` | A reading column at the width a passage wants.                                                                                       |
+
+It is **unlayered**, so your own rules beat it by ordinary precedence, exactly as they beat the surfaces. It is also opt-in and side-effect free until imported: nothing that styles your document arrives with a component.
+
+One rule in it earns its place regardless of whether you take the rest, and you want it if you draw a focus ring of your own:
+
+```css
+[data-qm-root] :focus-visible {
+	outline: revert-layer;
+	outline-offset: revert-layer;
+}
+```
+
+A blanket `:focus-visible` of yours is unlayered, so it beats `@layer qm.chrome` — including on the controls that already draw a ring. `revert-layer` hands those back to ours and leaves yours everywhere else.
+
+## What is deliberately not public
+
+The three root classes and `.qm-pane` are the whole class contract on the surfaces. Every other `qm-*` class inside them is internal and renames without notice: a class contract over the interior would freeze the DOM shape the surfaces are free to re-cut, and the dials already reach the values a restyle wants. The preset's classes are a contract of their own — they land on _your_ DOM, so they freeze nothing of ours.
+
+The derived surface scale (surface / border / ink rungs, the blur radius, the popover's translucency ratio, the recede-opacity ladder, the two leading rungs, the overlay ring widths, the scroll tail) is internal on the same terms, and declared **on** each root element, so setting a rung from an ancestor does nothing. A dial appears when a real consumer needs one; every dial is one more thing a reader has to hold.
 
 ## Requirements
 
