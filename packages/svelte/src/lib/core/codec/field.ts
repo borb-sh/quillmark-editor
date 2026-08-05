@@ -38,12 +38,7 @@ import { createReconciler, type Reconciler } from './reconcile.js';
 import { inputRulesPlugin } from './inputrules.js';
 import { bodyKeymap } from './keymap.js';
 import { blockSchema, inlineSchema } from './schema.js';
-import {
-	DEFAULT_TABLE_STRINGS,
-	tableNodeView,
-	type IslandMenuState,
-	type TableChromeStrings
-} from './table-view.js';
+import { DEFAULT_TABLE_STRINGS, tableNodeView, type TableChromeStrings } from './table-view.js';
 import {
 	DEFAULT_SLASH_STRINGS,
 	focusSlashItem,
@@ -74,17 +69,6 @@ export interface CreateFieldOpts {
 	 *  locale mid-session re-renders rather than freezing it at mount. Absent leaves
 	 *  the package's English; an inline leaf never asks (it holds no island). */
 	tableStrings?: () => TableChromeStrings;
-	/**
-	 * A table island's line menu, or `undefined` when none is open: the channel the
-	 * chrome draws it through (`visual/TableMenu.svelte`). The island raises it and it
-	 * carries its own verbs, so the leaf is a pass-through: a row index inside one
-	 * island is not a coordinate `FieldController` speaks.
-	 *
-	 * Absent, the handles still render and do nothing on press: a leaf mounted without
-	 * chrome keeps every op the keyboard has (Tab grows, Escape selects) and loses the
-	 * ones only a menu offers.
-	 */
-	onIslandMenu?(state: IslandMenuState | undefined): void;
 	/** The slash menu's wording, read live for the same reason. */
 	slashStrings?: () => SlashStrings;
 	/**
@@ -325,8 +309,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 						// A focus event does not bubble, so the leaf's own `focus` handler
 						// never fires for a cell: without this the active address would not
 						// follow a caret clicked straight into a table.
-						onCellFocus: () => opts.onFocus?.(addr),
-						onMenu: (state) => opts.onIslandMenu?.(state)
+						onCellFocus: () => opts.onFocus?.(addr)
 					})
 				},
 		dispatchTransaction: (tr) => {

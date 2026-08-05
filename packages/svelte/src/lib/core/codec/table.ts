@@ -138,6 +138,54 @@ export function deleteColumn(props: TableProps, c: number): TableProps {
 	});
 }
 
+/** Body row `r` moved by `by` places, clamped: a drag that leaves the rectangle is a
+ *  no-op rather than an error, since the drop target is geometry and geometry runs
+ *  past the last row. The header does not move (`r === 0` has no destination: it is
+ *  a separate field), so it is the floor rather than a guard. */
+export function moveRow(props: TableProps, r: number, by: number): TableProps {
+	const from = r - 1;
+	const to = Math.max(0, Math.min(from + by, props.rows.length - 1));
+	if (r === 0 || from === to || from < 0 || from >= props.rows.length) return normalizeTable(props);
+	const rows = [...props.rows];
+	const [moved] = rows.splice(from, 1);
+	rows.splice(to, 0, moved!);
+	return normalizeTable({ ...props, rows });
+}
+
+/** Column `c` moved by `by` places, clamped. `aligns` travels with the column: an
+ *  alignment is the column's property, so a move that left it behind would retint the
+ *  column that took the index. */
+export function moveColumn(props: TableProps, c: number, by: number): TableProps {
+	const cols = columnCount(props);
+	const to = Math.max(0, Math.min(c + by, cols - 1));
+	if (c === to || c < 0 || c >= cols) return normalizeTable(props);
+	const shift = <T>(xs: T[]): T[] => {
+		const next = [...xs];
+		const [moved] = next.splice(c, 1);
+		next.splice(to, 0, moved!);
+		return next;
+	};
+	return normalizeTable({
+		header: shift(props.header),
+		rows: props.rows.map(shift),
+		aligns: shift(props.aligns)
+	});
+}
+
+/** Column `c` with every cell emptied, alignment kept: what a delete gesture means at
+ *  the LAST column, which the model keeps. There is no row analogue: the header is the
+ *  only row a delete is refused for, and it carries no handle to select it from.
+ *  Alignment survives because the column does — nothing was removed. */
+export function clearColumn(props: TableProps, c: number): TableProps {
+	const blank = (cells: TableCell[]): TableCell[] =>
+		cells.map((cell, i) => (i === c ? emptyCell() : cell));
+	return normalizeTable({
+		header: blank(props.header),
+		rows: props.rows.map(blank),
+		aligns: props.aligns
+	});
+}
+
 /** Set column `c`'s alignment: the one table capability the content round-trips
  *  today and nothing in the editor could reach. */
 export function setAlign(props: TableProps, c: number, align: TableAlign): TableProps {

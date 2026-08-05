@@ -96,6 +96,11 @@
 		--_qm-surface-raised: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 4%);
 		--_qm-surface-hover: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 8%);
 		--_qm-border: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 17%);
+		/* A rule that separates without structuring: the lines BETWEEN a table's cells,
+		   where the frame around them is the structure. Half the border's mix rather
+		   than a fourth surface rung, because it is a stroke and reads against the
+		   surface behind it, not a fill stacked on one. */
+		--_qm-border-faint: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 9%);
 		--_qm-ink: var(--_qm-fg);
 		--_qm-ink-label: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 35%);
 		--_qm-ink-meta: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 45%);

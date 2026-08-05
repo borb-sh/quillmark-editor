@@ -13,7 +13,7 @@ import { GapCursor } from 'prosemirror-gapcursor';
 import { EditorState, NodeSelection, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { createField, decode, blockSchema, inlineSchema } from '$lib/core/codec';
-import type { FieldController, IslandMenuState, LeafViews } from '$lib/core/codec';
+import type { FieldController, LeafViews } from '$lib/core/codec';
 import {
 	ALIGNS,
 	cellContent,
@@ -176,34 +176,45 @@ describe('the cell codec: a cell is its own content unit', () => {
 
 // ── The NodeView ────────────────────────────────────────────────────────────
 
-/** A body holding one table island, mounted as a leaf, with the line menu's reports
- *  captured: the chrome's whole view of the island. */
+/** A body holding one table island, mounted as a leaf. */
 function tableLeaf(props?: TableProps) {
 	const doc = quill().seedDocument();
 	doc.overwrite({}, props ? withTable(props) : md(TABLE_MD));
-	let menu: IslandMenuState | undefined;
-	const field = createField({
-		doc,
-		quill: quill(),
-		addr: {},
-		container: mount(),
-		onIslandMenu: (next) => {
-			menu = next;
-		}
-	});
-	return { doc, field, menu: () => menu };
+	const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
+	return { doc, field };
 }
 
 /** The row handles, in order (body rows only), and the column handles. Both read off
- *  a GUTTER cell, which is what leaves the corner (the island's own handle) out of
- *  either set. */
+ *  the axis each declares, which is what leaves the corner (the island's own handle)
+ *  out of either set: it names no line. */
 function handles(field: FieldController, kind: 'row' | 'column'): HTMLButtonElement[] {
-	const rows = field.el.querySelectorAll<HTMLButtonElement>(
-		kind === 'column'
-			? '.qm-table-gutter-row .qm-table-gutter .qm-table-handle'
-			: 'tr:not(.qm-table-gutter-row) .qm-table-gutter .qm-table-handle'
+	return Array.from(
+		field.el.querySelectorAll<HTMLButtonElement>(
+			`.qm-table-handle[data-axis='${kind}']:not(.qm-table-corner-handle)`
+		)
 	);
-	return Array.from(rows);
+}
+
+/** The seams of one axis, in order: every boundary a line can open at, the leading
+ *  and trailing ones included. */
+function seams(field: FieldController, kind: 'row' | 'column'): HTMLButtonElement[] {
+	return Array.from(
+		field.el.querySelectorAll<HTMLButtonElement>(`.qm-table-seam[data-axis='${kind}']`)
+	);
+}
+
+/** Drive a key at a focused handle, where a line selection's verbs live. */
+function key(target: Element, k: string, init: KeyboardEventInit = {}): void {
+	target.dispatchEvent(
+		new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init })
+	);
+}
+
+/** Which cells the surface is washing: the selected line, read back off the DOM. */
+function washed(field: FieldController): string[] {
+	return Array.from(field.el.querySelectorAll('.qm-table-cell.qm-table-line')).map(
+		(c) => `${c.getAttribute('data-r')},${c.getAttribute('data-c')}`
+	);
 }
 
 /** The corner: the island's block handle. */
@@ -228,16 +239,22 @@ function leafProps(field: FieldController): TableProps {
 }
 
 describe('the table NodeView', () => {
-	it('draws one handle per line and a `+` per growing edge, and nothing else', () => {
+	it('draws one handle per line and one seam per boundary, and no track for either', () => {
 		const { field } = tableLeaf(LETTERED);
 		expect(field.el.querySelectorAll('.qm-table-cell-host').length).toBe(6);
 		expect(field.el.querySelectorAll('th.qm-table-cell').length).toBe(2);
-		// One handle per COLUMN and per BODY row: the header carries none, since its
-		// menu would hold one item the first body row's "insert above" already is.
+		// One handle per COLUMN and per BODY row: the header carries no row handle,
+		// since `header: []` is not a table and nothing goes above it.
 		expect(handles(field, 'column')).toHaveLength(2);
 		expect(handles(field, 'row')).toHaveLength(2);
-		// Two `+` strips, whatever the rectangle is.
-		expect(field.el.querySelectorAll('.qm-table-add')).toHaveLength(2);
+		// One seam per boundary, the trailing one included: n lines, n+1 boundaries.
+		expect(seams(field, 'column')).toHaveLength(3);
+		expect(seams(field, 'row')).toHaveLength(3);
+		// And the grid is the DATA's shape: the chrome is in no row and no column of
+		// it, so nothing empty reaches the accessibility tree.
+		const rows = field.el.querySelectorAll('.qm-table tr');
+		expect(rows).toHaveLength(3);
+		rows.forEach((row) => expect(row.children).toHaveLength(2));
 		field.destroy();
 	});
 
@@ -273,22 +290,25 @@ describe('the table NodeView', () => {
 		field.destroy();
 	});
 
-	it('a row handle raises its three offers, and a pick lands', () => {
-		const { field, menu } = tableLeaf(LETTERED);
+	it('a handle SELECTS its line: the wash is the whole of what a press does', () => {
+		const { field } = tableLeaf(LETTERED);
 		handles(field, 'row')[0].click();
-		expect(menu()?.items.map((i) => i.id)).toEqual(['insert-above', 'insert-below', 'delete']);
-		menu()!.run('insert-below');
-		const props = leafProps(field);
-		expect(props.rows).toHaveLength(3);
-		expect(props.rows[1].map((c) => c.text)).toEqual(['', '']); // the fresh row is BELOW row 1
-		expect(menu()).toBeUndefined(); // a pick closes
+		// Row 1 in the chrome's space, which is the first BODY row.
+		expect(washed(field)).toEqual(['1,0', '1,1']);
+		expect(handles(field, 'row')[0].getAttribute('aria-pressed')).toBe('true');
+		// Nothing was armed on the document: the island is not what got selected.
+		expect(outerView(field).state.selection instanceof NodeSelection).toBe(false);
+		handles(field, 'column')[1].click();
+		expect(washed(field)).toEqual(['0,1', '1,1', '2,1']);
+		expect(handles(field, 'row')[0].getAttribute('aria-pressed')).toBe('false');
 		field.destroy();
 	});
 
-	it('a row handle deletes its own row', () => {
-		const { field, menu } = tableLeaf(LETTERED);
-		handles(field, 'row')[0].click();
-		menu()!.run('delete');
+	it('Backspace over a selected row deletes it', () => {
+		const { field } = tableLeaf(LETTERED);
+		const handle = handles(field, 'row')[0];
+		handle.click();
+		key(handle, 'Backspace');
 		expect(grid(leafProps(field))).toEqual([
 			['h1', 'h2'],
 			['b1', 'b2']
@@ -296,55 +316,153 @@ describe('the table NodeView', () => {
 		field.destroy();
 	});
 
-	it("a column handle carries the alignments, marking the column's own", () => {
-		const { field, menu } = tableLeaf(LETTERED);
-		handles(field, 'column')[1].click();
-		const items = menu()!.items;
-		expect(items.map((i) => i.id)).toEqual([
-			'insert-left',
-			'insert-right',
-			'align:none',
-			'align:left',
-			'align:center',
-			'align:right',
-			'delete'
+	it('Backspace over a selected column deletes it, alignment and all', () => {
+		const { field } = tableLeaf(LETTERED);
+		const handle = handles(field, 'column')[1];
+		handle.click();
+		key(handle, 'Backspace');
+		expect(grid(leafProps(field))).toEqual([['h1'], ['a1'], ['b1']]);
+		expect(leafProps(field).aligns).toEqual(['left']);
+		field.destroy();
+	});
+
+	it('an arrow steps the selection, and stops where the axis does', () => {
+		const { field } = tableLeaf(LETTERED);
+		const handle = handles(field, 'row')[0];
+		handle.click();
+		key(handle, 'ArrowDown');
+		expect(washed(field)).toEqual(['2,0', '2,1']);
+		// Up twice from there stops at the first BODY row: the header carries no handle,
+		// so it is never the selected line.
+		key(handles(field, 'row')[1], 'ArrowUp');
+		key(handles(field, 'row')[0], 'ArrowUp');
+		expect(washed(field)).toEqual(['1,0', '1,1']);
+		field.destroy();
+	});
+
+	it('where the model keeps the line, the gesture CLEARS it: the last column', () => {
+		const { field } = tableLeaf(newTable(1, 1));
+		const handle = handles(field, 'column')[0];
+		handle.click();
+		key(handle, 'Backspace');
+		expect(columnCount(leafProps(field))).toBe(1);
+		field.destroy();
+	});
+
+	it('Alt+arrow moves the selected line, and the selection travels with it', () => {
+		const { field } = tableLeaf(LETTERED);
+		const handle = handles(field, 'row')[0];
+		handle.click();
+		key(handle, 'ArrowDown', { altKey: true });
+		expect(grid(leafProps(field))).toEqual([
+			['h1', 'h2'],
+			['b1', 'b2'],
+			['a1', 'a2']
 		]);
-		expect(items.find((i) => i.checked)?.id).toBe('align:right'); // LETTERED's column 2
-		menu()!.run('align:center');
+		// Row 2 now, which is where the moved row went: a selection left behind would
+		// aim the next press at whatever took the index.
+		expect(washed(field)).toEqual(['2,0', '2,1']);
+		field.destroy();
+	});
+
+	it('a column moves with its alignment', () => {
+		const { field } = tableLeaf(LETTERED);
+		const handle = handles(field, 'column')[1];
+		handle.click();
+		key(handle, 'ArrowLeft', { altKey: true });
+		expect(grid(leafProps(field))).toEqual([
+			['h2', 'h1'],
+			['a2', 'a1'],
+			['b2', 'b1']
+		]);
+		expect(leafProps(field).aligns).toEqual(['right', 'left']);
+		field.destroy();
+	});
+
+	it("a selected column raises the alignment cluster, marking the column's own", () => {
+		const { field } = tableLeaf(LETTERED);
+		handles(field, 'column')[1].click();
+		const open = field.el.querySelectorAll('.qm-table-align.qm-table-align-open');
+		expect(open).toHaveLength(1);
+		expect(open[0].getAttribute('data-c')).toBe('1');
+		const marked = open[0].querySelector('[aria-pressed="true"]');
+		expect(marked?.getAttribute('data-align')).toBe('right'); // LETTERED's column 2
+		open[0].querySelector<HTMLButtonElement>('[data-align="center"]')!.click();
 		expect(leafProps(field).aligns).toEqual(['left', 'center']);
 		field.destroy();
 	});
 
-	it('the last column offers no delete: absent, not disabled', () => {
-		const { field, menu } = tableLeaf(newTable(1, 1));
-		handles(field, 'column')[0].click();
-		expect(menu()?.items.some((i) => i.id === 'delete')).toBe(false);
-		field.destroy();
-	});
-
-	it('a second press on the same handle closes the menu', () => {
-		const { field, menu } = tableLeaf(LETTERED);
+	it('Escape leaves a line selection for the island, one rung up the ladder', () => {
+		const { field } = tableLeaf(LETTERED);
 		const handle = handles(field, 'row')[0];
 		handle.click();
-		expect(menu()).toBeDefined();
-		expect(handle.getAttribute('aria-expanded')).toBe('true');
-		handle.click();
-		expect(menu()).toBeUndefined();
-		expect(handle.getAttribute('aria-expanded')).toBe('false');
+		key(handle, 'Escape');
+		const selection = outerView(field).state.selection;
+		expect(selection instanceof NodeSelection && selection.node.type.name).toBe('island_block');
+		expect(washed(field)).toEqual([]);
 		field.destroy();
 	});
 
-	it('the `+` strips grow the table by one line each', () => {
+	it('a caret in a cell drops the line selection: one subject at a time', () => {
 		const { field } = tableLeaf(LETTERED);
-		const [addColumn, addRow] = Array.from(
-			field.el.querySelectorAll<HTMLButtonElement>('.qm-table-add')
-		);
-		addColumn.click();
+		handles(field, 'row')[0].click();
+		expect(washed(field)).not.toEqual([]);
+		cellViews(field)[0].focus();
+		expect(washed(field)).toEqual([]);
+		field.destroy();
+	});
+
+	it('a seam opens a line at its own boundary, the trailing one included', () => {
+		const { field } = tableLeaf(LETTERED);
+		// The leading column seam: a column before the first.
+		seams(field, 'column')[0].click();
+		expect(grid(leafProps(field))[0]).toEqual(['', 'h1', 'h2']);
+		field.destroy();
+	});
+
+	it('the trailing seams are how a table grows on either axis', () => {
+		const { field } = tableLeaf(LETTERED);
+		const cols = seams(field, 'column');
+		cols[cols.length - 1].click();
 		expect(columnCount(leafProps(field))).toBe(3);
-		addRow.click();
+		const rows = seams(field, 'row');
+		rows[rows.length - 1].click();
 		expect(leafProps(field).rows).toHaveLength(3);
 		// Both grew the rectangle rather than the axis they were on alone.
 		expect(grid(leafProps(field)).every((row) => row.length === 3)).toBe(true);
+		field.destroy();
+	});
+
+	it('an arrow at a cell text edge walks the grid; inside the text it declines', () => {
+		const { field } = tableLeaf(LETTERED);
+		const views = cellViews(field);
+		views[0].focus();
+		// Caret at the end of "h1": Right leaves for the next cell.
+		views[0].dispatch(views[0].state.tr.setSelection(TextSelection.atEnd(views[0].state.doc)));
+		press(views[0], 'ArrowRight');
+		expect((field as FieldController & LeafViews).focusedView()).toBe(views[1]);
+		// Down from there is the cell below, in the same column.
+		press(views[1], 'ArrowDown');
+		expect((field as FieldController & LeafViews).focusedView()).toBe(views[3]);
+		// And a caret mid-text keeps the key: the browser still owns it.
+		const mid = cellViews(field)[3];
+		mid.dispatch(mid.state.tr.setSelection(TextSelection.create(mid.state.doc, 1)));
+		press(mid, 'ArrowRight');
+		expect((field as FieldController & LeafViews).focusedView()).toBe(mid);
+		field.destroy();
+	});
+
+	it('Mod-Enter opens a row below the caret, from anywhere in it', () => {
+		const { field } = tableLeaf(LETTERED);
+		const views = cellViews(field);
+		views[3].focus(); // row 1, column 2
+		// The modifier rides the EVENT: `press` names a key, and prosemirror-keymap
+		// resolves `Mod-` against the platform rather than against a string.
+		views[3].someProp('handleKeyDown', (f) =>
+			f(views[3], new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true, bubbles: true }))
+		);
+		expect(leafProps(field).rows).toHaveLength(3);
+		expect(grid(leafProps(field))[2]).toEqual(['', '']);
 		field.destroy();
 	});
 
@@ -436,8 +554,8 @@ const domRect = (box: Box): DOMRect =>
 	}) as DOMRect;
 
 // The island's boxes, which jsdom lays nothing out to produce: the bands are geometry,
-// so a test that drives them supplies one. The grid sits inset in the island, and the
-// six cell hosts (reading order) tile it inside a gutter row and column.
+// so a test that drives them supplies one. The grid sits inset in the island by the
+// band the scroller opens, and the six cell hosts (reading order) tile it.
 const ISLAND: Box = { left: 0, top: 0, right: 200, bottom: 120 };
 const GRID: Box = { left: 10, top: 10, right: 190, bottom: 90 };
 const HOSTS: Box[] = [
@@ -454,7 +572,7 @@ function layout(field: FieldController, hosts: Box[] = HOSTS): void {
 		if (el) (el as HTMLElement).getBoundingClientRect = () => domRect(box);
 	};
 	stub(field.el.querySelector('.qm-table-island'), ISLAND);
-	stub(field.el.querySelector('.qm-table-grid'), GRID);
+	stub(field.el.querySelector('.qm-table'), GRID);
 	field.el
 		.querySelectorAll('.qm-table-cell-host')
 		.forEach((host, i) => hosts[i] && stub(host, hosts[i]));
@@ -498,12 +616,15 @@ describe('a pointer press on the island resolves to a caret', () => {
 		field.destroy();
 	});
 
-	it("the gutter is the table's band too: it focuses, it does not select", () => {
+	it("the band is the table's too, where no handle is under the press", () => {
 		const { field } = tableLeaf(LETTERED);
 		layout(field);
-		const gutter = field.el.querySelectorAll('tr:not(.qm-table-gutter-row) .qm-table-gutter')[1];
-		pressAt(gutter, 20, 78); // beside the last row, left of every cell
+		// Inside the frame, beside the last row and left of every cell: the band the
+		// scroller opens is the table's, and a press in it lands in the nearest cell
+		// rather than selecting anything.
+		pressAt(cellBox(field, 4), 20, 78);
 		expect((field as FieldController & LeafViews).focusedView()).toBe(cellViews(field)[4]);
+		expect(outerView(field).state.selection instanceof NodeSelection).toBe(false);
 		field.destroy();
 	});
 
@@ -549,13 +670,15 @@ describe('a pointer press on the island resolves to a caret', () => {
 });
 
 describe("the corner is the island's handle", () => {
-	it('a press selects the island and raises the whole-table delete', () => {
-		const { doc, field, menu } = tableLeaf(LETTERED);
+	it('a press selects the island, which Backspace then deletes', () => {
+		const { doc, field } = tableLeaf(LETTERED);
 		corner(field).click();
-		const selection = outerView(field).state.selection;
+		const outer = outerView(field);
+		const selection = outer.state.selection;
 		expect(selection instanceof NodeSelection && selection.node.type.name).toBe('island_block');
-		expect(menu()?.items.map((i) => i.id)).toEqual(['delete']);
-		menu()!.run('delete');
+		// Delete is the SELECTION's verb, the one every island already answered to;
+		// nothing names it a second time.
+		outer.dispatch(outer.state.tr.deleteSelection());
 		expect(doc.main.body.islands).toHaveLength(0);
 		expect(doc.main.body.text).toBe('para\ntail');
 		field.destroy();

@@ -9,14 +9,8 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import {
-		createField,
-		type FieldController,
-		type IslandMenuState,
-		type SlashState
-	} from '../core/codec/index.js';
+	import { createField, type FieldController, type SlashState } from '../core/codec/index.js';
 	import SlashMenu from './SlashMenu.svelte';
-	import TableMenu from './TableMenu.svelte';
 	import { wording } from './strings.js';
 	import './controls.css';
 	import type { Document, Quill, Addr } from '@quillmark/wasm';
@@ -98,11 +92,6 @@
 	 * trigger on the block schema alone). */
 	let slash: SlashState | undefined = $state();
 
-	/** A table island's line menu, raised from one of its handles. Held beside the
-	 * slash menu and for the same reason: it belongs to this leaf's content, not to
-	 * whichever leaf the shell thinks is active. */
-	let islandMenu: IslandMenuState | undefined = $state();
-
 	// Block prose vs a control in a row of controls: the SAME predicate the codec
 	// picks its schema by (`createField`: `plaintext` implies `inline`), so the box a
 	// leaf draws and the schema it holds cannot disagree. Keyed on `inline` alone, a
@@ -140,9 +129,6 @@
 			onSlash: (next) => {
 				slash = next;
 			},
-			onIslandMenu: (next) => {
-				islandMenu = next;
-			},
 			onFocus,
 			onCaretMove,
 			onChange,
@@ -173,10 +159,6 @@
 	data-leaf-key={leafKey}
 ></div>
 <SlashMenu menu={slash} leaf={() => controller} label={t.strings.slashLabel} />
-<TableMenu
-	menu={islandMenu}
-	root={() => containerEl?.closest<HTMLElement>('[data-qm-root]') ?? undefined}
-/>
 
 <style>
 	/* The box is `.qm-control-box` (controls.css): the same rule the input beside it
