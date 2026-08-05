@@ -24,9 +24,9 @@
 	// remainder is `/`.
 	const here = $derived(page.url.pathname.slice(base.length) || '/');
 	// The tool route is a workspace, not a page: it takes the viewport less the
-	// head and scrolls inside its panes, so the shell holds the head and hands it
-	// the rest. Narrow, the panes stack and the page scrolls again, which is why
-	// the fill is a media query rather than the route's own business.
+	// head and scrolls inside itself, so the shell holds the head and hands it the
+	// rest. At every width — a narrow viewport stacks the panes into a column that
+	// scrolls where it sits, and the document still has nowhere to go.
 	const fills = $derived(here === '/playground');
 </script>
 
@@ -117,14 +117,22 @@
 	/* The filled shell: two rows, the second whatever is left. Pinned to the
 	   viewport rather than sized to it, so the document keeps no scrollable region
 	   at all: a page-height box still leaves the root scroller counting the overflow
-	   its panes clip, and a wheel over the chrome drags the whole app off the top. */
-	@media (width >= 60rem) {
-		.app.fills {
-			position: fixed;
-			inset: 0;
-			display: grid;
-			grid-template-rows: auto minmax(0, 1fr);
-			overflow: hidden;
-		}
+	   its panes clip, and a wheel over the chrome drags the whole app off the top.
+	   At every width, not the ones that fit two panes: a narrow viewport is where a
+	   document scroll is easiest to reach, and the room the stacked panes want comes
+	   from a scroller inside the route. */
+	.app.fills {
+		position: fixed;
+		inset: 0;
+		display: grid;
+		grid-template-rows: auto minmax(0, 1fr);
+		overflow: hidden;
+	}
+
+	/* The last way a pinned shell still moves: a gesture that runs past the end of a
+	   pane chains out to the viewport, which bounces a document with nothing in it.
+	   Scoped to the workspace, so the quickstart keeps a page's own feel. */
+	:global(html:has(.app.fills)) {
+		overscroll-behavior: none;
 	}
 </style>

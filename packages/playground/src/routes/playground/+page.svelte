@@ -408,8 +408,9 @@
 <style>
 	/* The page takes what the shell hands it and never scrolls itself: the panes
 	   below own their overflow, so the surfaces stay put while their contents move.
-	   Below the split's threshold the shell stops filling and this stops applying,
-	   which is what leaves the stacked panes reachable. */
+	   Below the split's threshold the stacked panes outgrow it and this column takes
+	   the scroll: the shell is pinned to the viewport at every width, so this is the
+	   one place on the route a scroll can land. */
 	.page {
 		display: flex;
 		flex-direction: column;
@@ -456,11 +457,14 @@
 	/* Both panes are the shell's frame; what each states here is the mounting site
 	   THEMING §"What is behind the column is yours" leaves to the host: the gutter,
 	   the scroll container, the page tone, the tail. This one puts plain `--qm-bg`
-	   behind the column, the supported bare case, and its end padding is the tail. */
+	   behind the column, the supported bare case, and its end padding is the tail. A
+	   gesture past its last row stops there rather than scrolling the column behind
+	   it. */
 	.editor-pane {
 		min-width: 0;
 		min-height: 0;
 		overflow: auto;
+		overscroll-behavior: contain;
 		padding: var(--pg-space-2) var(--pg-space-2) var(--pg-tail);
 		background: var(--pg-page);
 	}
@@ -548,9 +552,13 @@
 
 	/* Below the width that fits two panes side by side, the split stops being one: the
 	   tracks stack, the divider has nothing left to divide, and each pane takes the
-	   short mount so both are reachable by scrolling the page. The shell stops
-	   filling the viewport at the same threshold, so nothing here flexes. */
+	   short mount. Nothing flexes, so the column outgrows the shell and scrolls inside
+	   it: both panes are reachable and the document is still not a scroller. */
 	@media (width < 60rem) {
+		.page {
+			overflow: auto;
+		}
+
 		.shell {
 			grid-template-columns: minmax(0, 1fr);
 			grid-template-rows: none;
