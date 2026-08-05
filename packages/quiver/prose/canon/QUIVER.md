@@ -4,7 +4,7 @@
 
 ## TL;DR
 
-A quiver is a collection of quills, addressed by ref and resolved to a `Quill`. This package loads one from wherever it lives (an npm package, a directory, a URL, an in-hand manifest) and hands out quills. It never renders: `@quillmark/wasm` does that, and the handles pass to it untouched.
+A quiver is a collection of quills, addressed by ref and resolved to a `Quill`. This package loads one from wherever it lives (an npm package, a directory, a URL, an in-hand manifest) and hands out quills. The **loaders** never render: `@quillmark/wasm` does that, and the handles pass to it untouched. The author-side gate is the one thing here that does, since proving a quill renders is what a gate for quills is.
 
 ## One authored shape, four ways to consume it
 
@@ -64,10 +64,10 @@ The canonical `Quill` / `Document` / `Engine` types are **not** re-exported here
 
 Every error is a `QuiverError` carrying a `code`, a human-readable `message`, and the offending `ref` where there is one. The codes are a closed set: `invalid_ref`, `quill_not_found`, `quiver_invalid`, `transport_error`, so a consumer branches on `code` rather than parsing text.
 
-## Author-side harnesses
+## The author-side gate
 
-Two subpaths exist for quiver authors rather than quiver consumers, so a validation failure surfaces on publish instead of on someone else's build.
+One subpath exists for quiver authors rather than quiver consumers, so a validation failure surfaces on publish instead of on someone else's build.
 
-`/testing` runs `runQuiverTests(import.meta.url, engine)`: it loads with `fromDir`, compiles every quill, and renders each quill's example document. It uses `node:test`, so it adds no test-runner dependency.
+`/testing` runs `runQuiverTests(import.meta.url, engine)`: it loads with `fromDir`, compiles every quill, and renders each quill's example document. It uses `node:test`, so it adds no test-runner dependency. Samples are seeded with `quill.seedDocument()`, since the blueprint carries `<must-fill>` sentinels and is not directly renderable.
 
-`/preview` runs `renderQuiverSamples(import.meta.url, { engine })`: the same sweep, but writing artifacts a human can look at, one rendered file per quill plus an `index.html` gallery, into `outDir` (default `preview/`, with a `.gitignore` written into it so the output is never committed). Samples are seeded with `quill.seedDocument()`, since the blueprint carries `<must-fill>` sentinels and is not directly renderable. A quill that throws is recorded as failed with every diagnostic and the run continues, so one broken quill never hides the rest. `include` / `exclude` narrow the sweep by quill name or canonical ref.
+`build` and `test` are the whole of what this package gives a quill author, and the boundary is **blocked on** against **looked at**. `test` is blocked on: it runs in the author's CI, against the author's own wasm through the CLI's engine discovery, and installs a loader rather than an app. Looking at rendered output — a document the author controls, a schema they can feel — needs a browser, a paint loop and chrome, so it is an app on top of this package rather than a subpath inside it ([STUDIO.md](../../../studio/prose/canon/STUDIO.md)). Keeping the gate here is what lets that app be an app: nothing fails a build on its verdict.

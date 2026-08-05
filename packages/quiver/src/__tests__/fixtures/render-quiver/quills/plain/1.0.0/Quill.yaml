@@ -2,7 +2,7 @@ quill:
   name: plain
   version: "1.0.0"
   backend: typst
-  description: Preview fixture (plain)
+  description: Render fixture (plain)
 main:
   fields:
     title:
