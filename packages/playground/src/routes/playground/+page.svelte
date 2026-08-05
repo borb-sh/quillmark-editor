@@ -458,7 +458,7 @@
 	/* Both panes are the shell's frame, and what each owes its surface is room: the
 	   gutter, the scroll container, the tone and the tail are the surface's own
 	   (THEMING §"Drop it in"), so the editor takes `.qm-pane` in the markup and the
-	   two rules here are what is left — a track that may shrink below its content. */
+	   two rules here are what is left: a track that may shrink below its content. */
 	.editor-pane {
 		min-width: 0;
 		min-height: 0;

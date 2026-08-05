@@ -280,8 +280,8 @@
 	}
 
 	/* What a demo frame owes a surface is a height to sit in. The gutter, the tone and
-	   the desk are the surface's own now (THEMING §"Drop it in"), so a frame that
-	   states them would be restating the package to itself. */
+	   the desk are the surface's own (THEMING §"Drop it in"), so a frame that states
+	   them would be restating the package to itself. */
 	.preview-frame {
 		height: var(--pg-demo);
 	}

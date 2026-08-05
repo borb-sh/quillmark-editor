@@ -1,8 +1,8 @@
 /* What the playground adds ON TOP of the preset, and nothing the preset already
    carries: `@quillmark/svelte/preset` is the endorsed page scale, imported in
    `+layout.svelte`, and the front door reads `--qmh-*` throughout. What survives here
-   is the front door's own — a reading column with an annotation margin, a display run,
-   a draggable split — which no consumer mounting a surface has and no preset should
+   is the front door's own (a reading column with an annotation margin, a display run,
+   a draggable split), which no consumer mounting a surface has and no preset should
    ship (PLAYGROUND.md is the language; the recipes are `routes/chrome.css`).
 
    Literals live here and nowhere else under `src/routes`: `check:style` runs its axes
@@ -41,9 +41,8 @@
 	   scale), so this has room to grow and none to double. */
 	--pg-demo: 38rem;
 	/* What a pane takes once the split has stacked: a viewport's worth of mount, and a
-	   different decision from the frame above — the two shared a name and a number
-	   until the split told them apart. Studio's is the same job, and `check:style`
-	   holds the two to one value. */
+	   decision the frame above does not share, which is why they are two rungs. Studio's
+	   is the same job, and `check:style` holds the two to one value. */
 	--pg-pane: 34rem;
 	/* The split's hit track, and the hairline in it at rest and engaged. A pointer
 	   target is a reach, not a rhythm, so these do not read the spacing ramp. */

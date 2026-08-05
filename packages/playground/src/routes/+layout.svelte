@@ -2,7 +2,7 @@
   The playground shell: the host-side stylesheets and the running head every route
   is reached from. All three are global imports, so the shared chrome reaches every
   route's markup rather than being scoped out of it. `@quillmark/svelte/preset` is
-  the endorsed look — the same import a third-party consumer makes, which is what
+  the endorsed look, and the same import a third-party consumer makes, which is what
   makes "the playground looks like the endorsed version" a fact rather than a claim;
   `playground.css` is the front door's own rungs on top of it, and `chrome.css` the
   recipes that read both. Nothing here mounts, loads, or frees a session: the routes

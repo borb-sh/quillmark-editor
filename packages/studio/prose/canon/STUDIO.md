@@ -77,9 +77,9 @@ Studio is private, so it depends on `@quillmark/wasm` rather than peering it, an
 
 ## Preventing drift
 
-Studio's chrome is `@quillmark/svelte/preset` — the same import a third-party consumer makes, and the reason "studio looks like the endorsed version" is a fact about the build rather than a claim in a doc. It has no recipes of its own: every rule it used to carry was the endorsed look under a local prefix, so the file holding them is gone rather than rewritten.
+Studio's chrome is `@quillmark/svelte/preset`, the same import a third-party consumer makes, and the reason "studio looks like the endorsed version" is a fact about the build rather than a claim in a doc. It has no recipes of its own: every rule a host draws its chrome with is the endorsed look, and studio adds none beside them.
 
-What `studio.css` still mints is two heights, which is the whole of what one screen adds to the endorsed look. `check:style` runs its axes over this scope, so a component that mints a grey, a size, a radius or a duration fails CI rather than review — and its conformance rule fails a rung that restates one of the preset's, or that names the same concept as the playground's at a different value. The pane height is exactly that case: it is the playground's `--pg-pane` job, and the two are now held to one number.
+What `studio.css` still mints is two heights, which is the whole of what one screen adds to the endorsed look. `check:style` runs its axes over this scope, so a component that mints a grey, a size, a radius or a duration fails CI rather than review, and its conformance rule fails a rung that restates one of the preset's, or that names the same concept as the playground's at a different value. The pane height is exactly that case: it is the playground's `--pg-pane` job, and the two are held to one number.
 
 ## Not
 

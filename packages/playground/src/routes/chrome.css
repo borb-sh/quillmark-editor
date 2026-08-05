@@ -1,6 +1,6 @@
 /* The front door's own recipes: what more than one route draws that the preset does
-   not carry. The endorsed look — the label, the readout, the status line, the plate,
-   the boxed control, the focus ring — comes from `@quillmark/svelte/preset`, so what is
+   not carry. The endorsed look (the label, the readout, the status line, the plate,
+   the boxed control, the focus ring) comes from `@quillmark/svelte/preset`, so what is
    left here is the shape of a front door: a width, a rail, a heading, a display run, a
    pair of calls to action, a link in running prose.
 
@@ -80,9 +80,9 @@
 
 /* ── Surfaces ──────────────────────────────────────────────────────────────── */
 
-/* The mounting site, and what is left of it now that a surface paints its own column:
-   an edge, a corner, and the clip that holds the surface to them. No tone and no
-   gutter — those are the surface's own (THEMING §"Drop it in"). `border-box`, so a
+/* The mounting site, which a surface painting its own column reduces to an edge, a
+   corner, and the clip that holds the surface to them. No tone and no
+   gutter: those are the surface's own (THEMING §"Drop it in"). `border-box`, so a
    stated height is the height it draws. */
 .pg-frame {
 	box-sizing: border-box;

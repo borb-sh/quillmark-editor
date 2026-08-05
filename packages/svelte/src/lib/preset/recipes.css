@@ -1,11 +1,11 @@
 /* THE ENDORSED LOOK: the rules a host draws around a mounted surface, as classes it
    puts on its own elements. The rungs beside this in `scale.css` are the invisible
-   half — a scale alone still leaves a consumer writing every declaration before
-   anything on the page looks like anything — so the recipes are what the preset is
+   half (a scale alone still leaves a consumer writing every declaration before
+   anything on the page looks like anything), so the recipes are what the preset is
    for. This file mints nothing; `check:style` runs its axes here.
 
    These are HOST classes. They land on the consumer's DOM, never on a mounted root, so
-   they freeze nothing about the surfaces' interior — the reason the package withholds
+   they freeze nothing about the surfaces' interior: the reason the package withholds
    its own internal classes does not reach them.
 
    UNLAYERED, deliberately. `@layer qm` exists so consumer CSS beats the surfaces
@@ -18,7 +18,7 @@
 
 /* The baseline, on a CLASS rather than `body`: a preset that restyled the document
    root would land on an app that already has a page and change it out from under
-   whatever was there. The host puts this where its own layout starts — `body`, or the
+   whatever was there. The host puts this where its own layout starts: `body`, or the
    element the app mounts into.
 
    `color-scheme` is declared HERE and not by the package: light or dark is the
@@ -35,8 +35,8 @@
 	-webkit-font-smoothing: antialiased;
 }
 
-/* A column of prose at the measure. The width only; what sits inside it is the
-   route's, since a passage and a stack of panels want different rhythms. */
+/* A column of prose at the measure, and the width only: what sits inside it is the
+   caller's, since a passage and a stack of panels want different rhythms. */
 .qm-measure {
 	max-width: var(--qmh-measure);
 }
@@ -57,7 +57,7 @@
 }
 
 /* A value read back out of the running session: an address, a page index, a count.
-   Monospace and tabular, because these are read by comparison — two addresses one
+   Monospace and tabular, because these are read by comparison: two addresses one
    above the other line up character for character. */
 .qm-readout {
 	font-family: var(--qmh-font-mono);
@@ -180,7 +180,7 @@ pre.qm-readout {
 /* The mounted surfaces are the exception, and the rule above is why: an unlayered host
    declaration beats `@layer qm.chrome` by design, so a ring written for controls that
    draw none repaints the ones that do. `revert-layer` hands each control back to the
-   layer under this one, which is the package's own ring at its own offset — and is
+   layer under this one, which is the package's own ring at its own offset, and is
    what makes this file's own lack of a layer load-bearing rather than a preference. */
 [data-qm-root] :focus-visible {
 	outline: revert-layer;

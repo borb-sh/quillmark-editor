@@ -59,7 +59,7 @@ import { ROOT, canonDocs, canonRoots, report } from './workspace.mjs';
 const THEMING = join(ROOT, 'packages', 'svelte', 'THEMING.md');
 
 /** The closed scales, each with the tree that reads it and the one file that mints it.
- *  `census` marks the scopes the dial contract is measured over — the package's, since
+ *  `census` marks the scopes the dial contract is measured over: the package's, since
  *  THEMING.md documents what the PACKAGE consumes, and the preset's, which consumes the
  *  same dials for the page. `host` marks the scales that dress a DOCUMENT rather than a
  *  mounted root, which is the set the conformance rule below runs over. `exclude` is
@@ -126,7 +126,7 @@ const STROKE_MARKER = /border(?!-?radius)/i;
 const privateDef = (prefix) => new RegExp(`(${prefix}[\\w-]+)\\s*:`);
 /** Reading a rung of ANY scale the scope is entitled to. An app reads two: the
  *  preset's, which is most of what it draws with, and its own for what it adds on
- *  top — so a rung-required axis must see both, or every `--qmh-` a migrated app reads
+ *  top, so a rung-required axis must see both, or every `--qmh-` a migrated app reads
  *  looks like a bare literal. */
 const readsRung = (prefixes) => new RegExp(`var\\((${prefixes.join('|')})`);
 
@@ -318,7 +318,7 @@ for (const scope of SCOPES) {
 	// The axis table names the package's rungs; a failure elsewhere points at the same
 	// family under the prefix that scope draws with, and at the doc that states the
 	// rule there. For an app that is the PRESET's prefix rather than its own: the
-	// families the axes name — type, colour, motion — are the endorsed look's, and an
+	// families the axes name (type, colour, motion) are the endorsed look's, and an
 	// app's own rungs are the handful it adds beside them.
 	const hint = (text) =>
 		scope.prefix === '--_qm-' ? text : text.replaceAll('--_qm-', reads.at(-1));
@@ -404,7 +404,7 @@ for (const scope of SCOPES) {
 	// What each host scale CALLS things, for the conformance rule below. Keyed on the
 	// suffix after the prefix, which is the concept: `--qmh-text-label` and
 	// `--pg-text-label` are one decision under two names. The value is normalized so
-	// two scales expressing the same derivation compare equal — whitespace collapsed,
+	// two scales expressing the same derivation compare equal: whitespace collapsed,
 	// and each scale's own prefix folded to a sentinel, since `calc(var(--pg-space) *
 	// 2)` and `calc(var(--st-space) * 2)` are the same rung twice.
 	if (scope.host) {
@@ -419,14 +419,14 @@ for (const scope of SCOPES) {
 
 // THE CONFORMANCE RULE, and it is the one thing no per-scope axis can see: every scope
 // above is checked against ITSELF, its derivation exempt as the place its defaults are
-// minted, so two scales minting one concept at two values is legal by construction —
-// which is how `--pg-mount: 38rem` sat beside `--st-mount: 34rem`, the same job at two
-// numbers, with nothing to say whether that was a decision or a slip.
+// minted, so two scales minting one concept at two values is legal by construction:
+// one app's pane height sits beside another's at a different number, the same job at
+// two values, with nothing to say whether that is a decision or a slip.
 //
 // The preset is the endorsed answer, so an app REDEFINING a name it carries is the
 // claim coming apart: the app is meant to look like the preset, and a local copy is
-// where it stops. What stays legal is a name the preset does not carry — an app's own
-// rail width, its own display size — which is the whole of what a host adds on top.
+// where it stops. What stays legal is a name the preset does not carry (an app's own
+// rail width, its own display size), which is the whole of what a host adds on top.
 const preset = hostScales.find((h) => h.scope.prefix === '--qmh-');
 for (const { scope, rungs } of hostScales) {
 	if (scope === preset?.scope) continue;
@@ -438,7 +438,7 @@ for (const { scope, rungs } of hostScales) {
 }
 
 // And between two apps: one concept, two values, neither of them the preset's. A
-// second copy that AGREES is not reported — it cannot drift silently, because this
+// second copy that AGREES is not reported: it cannot drift silently, because this
 // fires the moment it stops agreeing.
 for (const [i, a] of hostScales.entries())
 	for (const b of hostScales.slice(i + 1))

@@ -16,11 +16,11 @@ So the front page **proves rather than claims**. It is a quickstart, and every s
 
 ## The host scale
 
-The playground draws with `@quillmark/svelte/preset` — the same import a third-party consumer makes, and the reason "the playground looks like the endorsed version" is a fact about the build rather than a claim in a doc. The preset carries the `--qmh-*` scale and the recipes; `playground.css` carries what a front door adds on top and nothing the preset already has: a rail width and a page maximum, a display size, the split's hit track, two container heights, and the ramp's upper steps derived from the preset's base.
+The playground draws with `@quillmark/svelte/preset`, the same import a third-party consumer makes, and the reason "the playground looks like the endorsed version" is a fact about the build rather than a claim in a doc. The preset carries the `--qmh-*` scale and the recipes; `playground.css` carries what a front door adds on top and nothing the preset already has: a rail width and a page maximum, a display size, the split's hit track, two container heights, and the ramp's upper steps derived from the preset's base.
 
 A drift the preset cannot see is the front door minting its own copy of a rung the preset carries, so `check:style` fails that outright: an app scale may not restate a name the preset defines, and two app scales may not mint one concept at two values.
 
-What a mounting site costs is now the thing on display: each pane states a track that may shrink below its content, the editor carries `.qm-pane` because it is mounted in a fixed height rather than a page, and the gutter, the tone, the desk and the tail are the surface's own (THEMING §"Drop it in"). A demo frame on the front page states a height and nothing else.
+What a mounting site costs is the thing on display: each pane states a track that may shrink below its content, the editor carries `.qm-pane` because it is mounted in a fixed height rather than a page, and the gutter, the tone, the desk and the tail are the surface's own (THEMING §"Drop it in"). A demo frame on the front page states a height and nothing else.
 
 What the chrome around a mounted surface does is **decline to compete**: the surface stays the most detailed thing on any route. Colour is spent on one thing, a boundary that failed; an open session takes no colour and no word, because it paints the page, which is the claim.
 
@@ -51,7 +51,7 @@ One `Quiver` serves the page. Its quill cache is per canonical ref and lives as 
 
 The derivation and the recipes are **two stylesheets**, the split the package and the preset both make and for the same reason ([ARCHITECTURE.md](../../../svelte/prose/canon/ARCHITECTURE.md) §Styling): a rung fixes a value, a recipe fixes which declarations make a thing, and only the second can be checked against the first. The derivation is exempt from the literal rules, so a recipe beside it would inherit the exemption.
 
-Literals live in the derivation and nowhere else under `src/routes`: `check:style` runs its axes over this scope too, so a route that mints a grey, a size, a radius or a duration fails CI rather than review. A route reads two scales — the preset's for most of what it draws, the local one for what the front door adds — and the axes accept either. What stays the package's alone is the **dial census**: that the consumed `--qm-*` set equals THEMING.md's is a claim about the package's contract.
+Literals live in the derivation and nowhere else under `src/routes`: `check:style` runs its axes over this scope too, so a route that mints a grey, a size, a radius or a duration fails CI rather than review. A route reads two scales (the preset's for most of what it draws, the local one for what the front door adds) and the axes accept either. What stays the package's alone is the **dial census**: that the consumed `--qm-*` set equals THEMING.md's is a claim about the package's contract.
 
 ## Links
 
