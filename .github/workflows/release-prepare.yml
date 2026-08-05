@@ -1,0 +1,132 @@
+# Cut a release for one package: bump its version, promote its curated
+# `## Unreleased` section to the version's own, and open the release PR. Merging
+# that PR is what tags and publishes (release.yml). Versions are independent, so a
+# release names its package and leaves the other's alone.
+name: Prepare release
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Package to release
+        required: true
+        type: choice
+        options:
+          - svelte
+          - quiver
+      bump:
+        description: Version bump
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      # This job rewrites the lockfile, so it writes under the npm the
+      # `packageManager` pin names rather than whichever the runner ships. A bump
+      # under a mismatched npm resolves optional dependencies differently and
+      # desyncs the lock, which then fails `npm ci` on the release PR alone.
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Bump the version
+        id: version
+        run: |
+          PKG="${{ inputs.package }}"
+          CURRENT=$(node -p "require('./packages/$PKG/package.json').version")
+
+          npm version "${{ inputs.bump }}" -w "packages/$PKG" \
+            --no-git-tag-version --allow-same-version >/dev/null
+          NEXT=$(node -p "require('./packages/$PKG/package.json').version")
+
+          # Reify the lock the one way every other install produces it, rather
+          # than trusting npm version's partial rewrite.
+          npm install --package-lock-only --no-audit --no-fund
+
+          echo "next=$NEXT" >> "$GITHUB_OUTPUT"
+          echo "Bumping $PKG $CURRENT → $NEXT"
+
+      - name: Refuse a release already in flight
+        run: |
+          BRANCH="release/${{ inputs.package }}-v${{ steps.version.outputs.next }}"
+          if git ls-remote --exit-code origin "refs/heads/$BRANCH" >/dev/null 2>&1; then
+            echo "::error::$BRANCH exists; that release is already open."
+            exit 1
+          fi
+
+      - name: Promote the curated section
+        run: |
+          PKG="${{ inputs.package }}"
+          VERSION="${{ steps.version.outputs.next }}"
+          FILE="packages/$PKG/CHANGELOG.md"
+
+          # `## Unreleased` is a permanent fixture at the top of the file: an
+          # entry is written into it by the change that earns it, and a release
+          # names the body already under it. Splicing the version heading in below
+          # the fixture is the whole promotion — the entries do not move, and the
+          # heading stays for the next cycle. Only the first fixture is read; a
+          # later one is stray data and passes through untouched.
+          awk -v hdr="## v${VERSION} - $(date +%Y-%m-%d)" \
+            '!done && $0 == "## Unreleased" { print; print ""; print hdr; done=1; next } { print }' \
+            "$FILE" > CHANGELOG.new && mv CHANGELOG.new "$FILE"
+
+      - name: Push branch and open PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PKG="${{ inputs.package }}"
+          VERSION="${{ steps.version.outputs.next }}"
+          BRANCH="release/${PKG}-v${VERSION}"
+
+          # Coverage cross-check: what landed under this package since its last
+          # release, for the reviewer to read the curated section against. It
+          # lives in the PR rather than in CHANGELOG.md, so nothing rides onto
+          # main waiting to be deleted. Path-filtered, so a package's tags and a
+          # package's commits answer for that package alone.
+          LAST=$(git tag -l --sort=-v:refname \
+            | grep -E "^${PKG}-v[0-9]+\.[0-9]+\.[0-9]+$" | head -n1 || true)
+          git log --no-merges --pretty='- %s' ${LAST:+"${LAST}..HEAD"} \
+            -- "packages/$PKG" > commits.md
+
+          {
+            echo "Automated version bump: \`@quillmark/${PKG}\` → \`v${VERSION}\`."
+            echo
+            echo "**Before merging:** read the \`## v${VERSION}\` section of \`packages/${PKG}/CHANGELOG.md\` on this branch. It is the curated \`## Unreleased\` body, promoted, and it becomes the GitHub Release notes verbatim."
+            echo
+            echo "Merging tags \`${PKG}-v${VERSION}\` and publishes \`@quillmark/${PKG}\`."
+            echo
+            echo "<details><summary>Commits touching <code>packages/${PKG}</code> since ${LAST:-the first commit}</summary>"
+            echo
+            cat commits.md
+            echo
+            echo "</details>"
+          } > pr-body.md
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add "packages/$PKG/package.json" "packages/$PKG/CHANGELOG.md" package-lock.json
+          git commit -m "chore(release): @quillmark/${PKG} v${VERSION}"
+          git push -u origin "$BRANCH"
+
+          gh pr create \
+            --title "chore(release): @quillmark/${PKG} v${VERSION}" \
+            --body-file pr-body.md \
+            --base main \
+            --head "$BRANCH"

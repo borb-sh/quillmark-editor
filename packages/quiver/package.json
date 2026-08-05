@@ -51,6 +51,7 @@
 	},
 	"devDependencies": {
 		"@types/node": "^25.3.3",
+		"publint": "^0.3.0",
 		"typescript": "^5.9.3",
 		"vitest": "^4.0.18"
 	},
@@ -62,6 +63,10 @@
 		"prepare": "npm run build",
 		"prepack": "rm -rf dist && npm run build",
 		"test": "vitest run",
-		"check": "tsc --noEmit"
+		"check": "tsc --noEmit",
+		"check:pack": "publint"
+	},
+	"publishConfig": {
+		"access": "public"
 	}
 }

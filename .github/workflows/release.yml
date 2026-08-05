@@ -1,12 +1,13 @@
-# Release, on changesets. A push to main with pending `.changeset/*.md` opens (or
-# refreshes) a "Version Packages" PR carrying the version bumps and changelogs;
-# merging that PR leaves no changesets, and this run publishes whatever the
-# registry does not have. Versions are independent per package, and `playground`
-# is ignored (private).
+# Publish one package, on the merge of the release PR release-prepare.yml opened.
+# The branch name carries what is being released; package.json is what proves it.
+# Everything that can fail freely runs before the tag, because the tag is the last
+# point at which a failure costs nothing: a dangling tag is deleted, a published
+# version is permanent.
 name: Release
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches: [main]
 
 concurrency:
@@ -15,18 +16,19 @@ concurrency:
 
 jobs:
   release:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
     runs-on: ubuntu-latest
     environment: release
     permissions:
       # npm Trusted Publishing (OIDC token exchange); no stored token.
       id-token: write
-      # The version PR's branch and its commits.
+      # The tag and the GitHub Release.
       contents: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: main
 
       - uses: actions/setup-node@v4
         with:
@@ -34,8 +36,28 @@ jobs:
           registry-url: https://registry.npmjs.org
           cache: npm
 
-      # Trusted Publishing requires npm >= 11.5.1.
-      - run: npm install -g npm@latest
+      - name: Read the release from the branch name
+        id: release
+        run: |
+          BRANCH="${{ github.event.pull_request.head.ref }}"
+          if [[ ! "$BRANCH" =~ ^release/([a-z]+)-v(.+)$ ]]; then
+            echo "::error::$BRANCH is not release/<package>-v<version>"
+            exit 1
+          fi
+          PKG="${BASH_REMATCH[1]}"
+          VERSION="${BASH_REMATCH[2]}"
+
+          # The branch name is a claim and package.json is the fact; a mismatch
+          # would tag one version and publish another.
+          ACTUAL=$(node -p "require('./packages/$PKG/package.json').version")
+          if [ "$ACTUAL" != "$VERSION" ]; then
+            echo "::error::branch says v$VERSION, packages/$PKG/package.json says v$ACTUAL"
+            exit 1
+          fi
+
+          echo "pkg=$PKG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=${PKG}-v${VERSION}" >> "$GITHUB_OUTPUT"
 
       - run: npm ci
 
@@ -44,13 +66,48 @@ jobs:
       - name: Gate
         run: npm run gate
 
-      - uses: changesets/action@v1
-        with:
-          version: npm run version
-          publish: npm run release
-          commit: 'chore(release): version packages'
-          title: 'chore(release): version packages'
+      - name: Build
+        run: npm run build -w packages/${{ steps.release.outputs.pkg }}
+
+      - name: Package (publint)
+        run: npm run check:pack -w packages/${{ steps.release.outputs.pkg }}
+
+      - name: Tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ steps.release.outputs.tag }}" \
+            -m "@quillmark/${{ steps.release.outputs.pkg }} ${{ steps.release.outputs.version }}"
+          git push origin "${{ steps.release.outputs.tag }}"
+
+      # Trusted Publishing requires npm >= 11.5.1.
+      - name: Upgrade npm for Trusted Publishing
+        run: npm install -g npm@latest
+
+      - name: Publish
+        run: |
+          npm publish -w "packages/${{ steps.release.outputs.pkg }}" \
+            --provenance --access public
+
+      - name: Create GitHub Release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # `changeset publish` shells out to `npm publish`, which reads this.
-          NPM_CONFIG_PROVENANCE: true
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PKG="${{ steps.release.outputs.pkg }}"
+          VERSION="${{ steps.release.outputs.version }}"
+
+          # The version's own section, verbatim: everything between its heading
+          # and the next one.
+          awk -v v="## v${VERSION} - " \
+            'index($0, v) == 1 {f=1; next} /^## / && f {exit} f {print}' \
+            "packages/$PKG/CHANGELOG.md" > notes.md || true
+          # A whitespace-only section would publish blank notes, and `-s` alone is
+          # true for one.
+          grep -q '[^[:space:]]' notes.md || echo "@quillmark/${PKG} ${VERSION}" > notes.md
+
+          # No release is the repository's latest: two packages release on their
+          # own clocks, so whichever went last would claim the label for both.
+          gh release create "${{ steps.release.outputs.tag }}" \
+            --title "@quillmark/${PKG} ${VERSION}" \
+            --notes-file notes.md \
+            --latest=false
