@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
- * Quiver CLI — build, test, and preview a quiver collection.
+ * Quiver CLI — build and test a quiver collection. Two verbs, and they are the
+ * whole of what a quiver author gets from here: `build` packs, `test` gates.
+ * Looking at rendered output is studio's, an app rather than a verb.
  *
  * Commands:
  *   quiver build [--out <dir>]
  *   quiver test
- *   quiver preview [--out <dir>] [--format <fmt>] [--quiet]
- *                  [--include <ref>...] [--exclude <ref>...]
  *
- * Engine discovery (for `test` and `preview`):
+ * Engine discovery (for `test`):
  *   1. Named export `engine` from `quiver.config.js` at the collection root,
  *      if the file exists.
  *   2. Auto-imported `@quillmark/wasm` from the collection's node_modules.
@@ -18,7 +18,6 @@ import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { build as buildQuiver, fromDir } from '../node.js';
-import { renderQuiverSamples } from '../preview.js';
 import type { Engine } from '@quillmark/wasm';
 
 // ---------------------------------------------------------------------------
@@ -28,21 +27,10 @@ import type { Engine } from '@quillmark/wasm';
 const argv = process.argv.slice(2);
 const command = argv[0];
 
+/** One flag with a value. `build --out` is the only one either verb takes. */
 function flag(name: string): string | undefined {
 	const i = argv.indexOf(name);
 	return i !== -1 && i + 1 < argv.length ? argv[i + 1] : undefined;
-}
-
-function multiFlag(name: string): string[] {
-	const out: string[] = [];
-	for (let i = 0; i < argv.length - 1; i++) {
-		if (argv[i] === name) out.push(argv[i + 1]);
-	}
-	return out;
-}
-
-function hasFlag(name: string): boolean {
-	return argv.includes(name);
 }
 
 // ---------------------------------------------------------------------------
@@ -140,38 +128,12 @@ async function test(): Promise<void> {
 	if (fail > 0) process.exit(1);
 }
 
-async function preview(): Promise<void> {
-	const cwd = process.cwd();
-	const engine = await loadEngine(cwd);
-	const outDir = flag('--out');
-	const format = flag('--format');
-	const quiet = hasFlag('--quiet');
-	const include = multiFlag('--include');
-	const exclude = multiFlag('--exclude');
-	await renderQuiverSamples(cwd, {
-		engine,
-		...(outDir !== undefined && { outDir }),
-		...(format !== undefined && { format }),
-		quiet,
-		...(include.length > 0 && { include }),
-		...(exclude.length > 0 && { exclude })
-	});
-}
-
 // ---------------------------------------------------------------------------
 // Dispatch
 // ---------------------------------------------------------------------------
 
 function usage(): void {
-	console.error(
-		[
-			'Usage:',
-			'  quiver build [--out <dir>]',
-			'  quiver test',
-			'  quiver preview [--out <dir>] [--format <fmt>] [--quiet]',
-			'                 [--include <ref>...] [--exclude <ref>...]'
-		].join('\n')
-	);
+	console.error(['Usage:', '  quiver build [--out <dir>]', '  quiver test'].join('\n'));
 }
 
 function die(err: unknown): never {
@@ -186,9 +148,6 @@ switch (command) {
 		break;
 	case 'test':
 		test().catch(die);
-		break;
-	case 'preview':
-		preview().catch(die);
 		break;
 	default:
 		usage();

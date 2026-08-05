@@ -153,7 +153,7 @@ my-quiver/
 }
 ```
 
-Two harnesses run the quiver in CI so a validation failure surfaces on publish rather than on a consumer's build. `/testing` loads with `fromDir`, compiles every quill, and renders each quill's example document; it runs on `node:test`, so it adds no test-runner dependency.
+One harness runs the quiver in CI so a validation failure surfaces on publish rather than on a consumer's build. `/testing` loads with `fromDir`, compiles every quill, and renders each quill's example document; it runs on `node:test`, so it adds no test-runner dependency.
 
 ```ts
 // quiver.test.ts — run with: node --test
@@ -163,13 +163,4 @@ import { runQuiverTests } from '@quillmark/quiver/testing';
 runQuiverTests(import.meta.url, new Engine());
 ```
 
-`/preview` is the same sweep, writing artifacts a human can look at: one rendered file per quill plus an `index.html` gallery, into `outDir` (default `preview/`, with a `.gitignore` written into it). Samples are seeded with `quill.seedDocument()`, since the blueprint carries `<must-fill>` sentinels and is not directly renderable. A quill that throws is recorded as failed with every diagnostic and the run continues, so one broken quill never hides the rest. `include` / `exclude` narrow the sweep by quill name or canonical ref.
-
-```ts
-// scripts/preview.ts — run with: node --experimental-strip-types scripts/preview.ts
-import { Engine } from '@quillmark/wasm';
-import { renderQuiverSamples } from '@quillmark/quiver/preview';
-
-await renderQuiverSamples(import.meta.url, { engine: new Engine() });
-// → writes ./preview/<name>@<version>.<fmt> + index.html
-```
+It answers _does it work_, and that is the whole of what this package offers a quill author: _what is it like to use_ is answered by working a real document through the quill live, which is an app rather than a subpath.

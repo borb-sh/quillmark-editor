@@ -2,7 +2,7 @@ quill:
   name: memo
   version: "1.0.0"
   backend: typst
-  description: Preview fixture (memo)
+  description: Render fixture (memo)
 main:
   fields:
     title:

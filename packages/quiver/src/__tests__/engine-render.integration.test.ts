@@ -2,8 +2,8 @@
  * Real-engine integration test.
  *
  * Every other render-path test in the suite drives a MOCK engine
- * (`preview.test.ts` `makeEngine()`, `integration.test.ts` "mock render"). This
- * file is the only one that wires a TRUE `new Engine()` from `@quillmark/wasm`
+ * (`integration.test.ts` "mock render"). This file is the only one that wires a
+ * TRUE `new Engine()` from `@quillmark/wasm`
  * to a quiver-materialized core `Quill` and renders end-to-end: it loads the
  * private Typst backend binary, clones the core handles across the WASM-memory
  * seam, and produces real artifact bytes.
@@ -21,8 +21,7 @@
  * The last block closes the loop the package exists for, against the
  * workspace's reference quill rather than a toy: source layout → `build` →
  * transport fetch → digest check → font rehydration → `Quill.fromTree` →
- * `engine.render`. The playground walks the same loop, but only under a
- * human.
+ * `engine.render`. The apps walk the same loop, but only under a human.
  *
  * The Typst backend load makes this the slowest test in the suite (seconds).
  * It is kept in its own file so it stays cheap to skip locally.
@@ -36,10 +35,10 @@ import { fileURLToPath } from 'node:url';
 import { Document, Engine } from '@quillmark/wasm';
 import { build, fromBuiltDir, fromDir } from '../node.js';
 
-// The same fixture `preview.test.ts` uses: quills `memo@1.0.0` and
-// `plain@1.0.0`, both `backend: typst` (see their `Quill.yaml`), both
-// render-complete — a comment-only `template.typ` compiles to a valid PDF.
-const PREVIEW_FIXTURE = fileURLToPath(new URL('./fixtures/preview-quiver', import.meta.url));
+// Two quills, `memo@1.0.0` and `plain@1.0.0`, both `backend: typst` (see their
+// `Quill.yaml`) and both render-complete — a comment-only `template.typ`
+// compiles to a valid PDF.
+const RENDER_FIXTURE = fileURLToPath(new URL('./fixtures/render-quiver', import.meta.url));
 
 // The workspace's reference quiver: `usaf_memo@0.2.0`, a published-shape quill
 // with a Typst package tree, image assets, and seven fonts the build dehydrates
@@ -48,7 +47,7 @@ const REFERENCE_QUIVER = fileURLToPath(new URL('../../../../fixtures', import.me
 
 describe('Engine.render against a quiver quill', () => {
 	it('renders a fixture quill end-to-end with a real Engine', async () => {
-		const quiver = await fromDir(PREVIEW_FIXTURE);
+		const quiver = await fromDir(RENDER_FIXTURE);
 		const engine = new Engine();
 
 		const quill = await quiver.getQuill('memo@1.0.0');
@@ -69,7 +68,7 @@ describe('Engine.render against a quiver quill', () => {
 	}, 60000);
 
 	it('clones the quill on render — the same handle renders twice', async () => {
-		const quiver = await fromDir(PREVIEW_FIXTURE);
+		const quiver = await fromDir(RENDER_FIXTURE);
 		const engine = new Engine();
 
 		const quill = await quiver.getQuill('memo@1.0.0');
@@ -98,7 +97,7 @@ describe('Engine.render against a quiver quill', () => {
 	}, 60000);
 
 	it('resolves the quill from a stored document and renders', async () => {
-		const quiver = await fromDir(PREVIEW_FIXTURE);
+		const quiver = await fromDir(RENDER_FIXTURE);
 		const engine = new Engine();
 
 		// Authoring side: seed against a selector-resolved quill, store the markdown.

@@ -1,0 +1,100 @@
+/* The host's shared recipes: the declarations more than one component draws, so a
+   component carries a class instead of restating a rule. The rungs are minted in
+   `studio.css`; this file mints nothing (STUDIO §"Preventing drift"). Not merged into
+   the derivation, which is exempt from the literal rules; a recipe beside it would
+   inherit the exemption. */
+
+/* A run of chrome type: a control's name, a note's origin, the quiver's own name.
+   Uppercase and tracked, which is what keeps an 11px run legible at the ghost rung. */
+.st-label {
+	font-family: var(--st-font-mono);
+	font-size: var(--st-text-meta);
+	line-height: var(--st-leading-tight);
+	letter-spacing: var(--st-track-label);
+	text-transform: uppercase;
+	color: var(--st-ghost);
+	margin: 0;
+}
+
+/* A value read back out of the running session, here a field address. Monospace and
+   tabular, because these are read by comparison: two addresses one above the other
+   line up character for character. */
+.st-readout {
+	font-family: var(--st-font-mono);
+	font-size: var(--st-text-label);
+	line-height: var(--st-leading-tight);
+	font-variant-numeric: tabular-nums;
+	color: var(--st-ink);
+	overflow-wrap: anywhere;
+}
+
+/* The boundary's phase while it is not open, and what a repack did to the document
+   when it is. An open session says the rest by painting the page. */
+.st-status {
+	font-family: var(--st-font-mono);
+	font-size: var(--st-text-meta);
+	line-height: var(--st-leading-tight);
+	letter-spacing: var(--st-track-label);
+	text-transform: uppercase;
+	color: var(--st-ghost);
+}
+
+/* A failure carries a message rather than a state word, so it drops the label
+   treatment and reads as a sentence; and it breaks anywhere, because a WASM error is
+   one long token in whatever room the line has left. */
+.st-status.failed {
+	color: var(--st-alert);
+	font-size: var(--st-text-label);
+	text-transform: none;
+	letter-spacing: normal;
+	overflow-wrap: anywhere;
+}
+
+/* The picker's control. Boxed, where the package's own controls are not: there is no
+   typing in studio's chrome to be confused with, so the box is what says "this is a
+   control". `font: inherit` first, since the shorthand resets whatever precedes it. */
+.st-select {
+	font: inherit;
+	font-family: var(--st-font-mono);
+	font-size: var(--st-text-label);
+	line-height: var(--st-leading-tight);
+	color: var(--st-ink);
+	background: var(--st-page);
+	border: var(--st-border-width) solid var(--st-border);
+	border-radius: var(--st-radius-inner);
+	padding: var(--st-space-half) var(--st-space);
+	cursor: pointer;
+	transition: background-color var(--st-duration) var(--st-ease-reverse);
+}
+
+.st-select:hover {
+	background: var(--st-surface-hover);
+}
+
+/* One version means nothing to pick: the control stays, because the version is a fact
+   about the quill worth reading, and it recedes to say it is not a choice. */
+.st-select:disabled {
+	color: var(--st-ink-meta);
+	border-color: var(--st-border);
+	background: var(--st-surface);
+	cursor: default;
+}
+
+/* ── Focus ─────────────────────────────────────────────────────────────────── */
+/* One visible indicator for the whole host, since none of these controls draws a ring
+   of its own. It reads the INK rung: the chrome is monochrome, and a focus ring is a
+   position, not a destination. */
+:focus-visible {
+	outline: var(--st-ring-width) solid var(--st-ink);
+	outline-offset: var(--st-space-half);
+}
+
+/* The package's surfaces are the exception, and the rule above is why: an unlayered
+   host declaration beats `@layer qm.chrome` by design, so a ring written for controls
+   that draw none would repaint the ones that do. `revert-layer` hands each control
+   back to the layer under this one, which is the package's own ring at its own
+   offset. */
+[data-qm-root] :focus-visible {
+	outline: revert-layer;
+	outline-offset: revert-layer;
+}

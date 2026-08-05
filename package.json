@@ -13,7 +13,8 @@
 	],
 	"scripts": {
 		"dev": "npm run dev -w packages/playground",
-		"build": "npm run build -w packages/quiver -w packages/svelte && npm run build -w packages/playground",
+		"dev:studio": "npm run dev -w packages/studio",
+		"build": "npm run build -w packages/quiver -w packages/svelte && npm run build -w packages/playground -w packages/studio",
 		"check": "npm run check --workspaces --if-present",
 		"test": "npm run test --workspaces --if-present",
 		"lint": "prettier --check .",

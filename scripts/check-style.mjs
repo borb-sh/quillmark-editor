@@ -33,10 +33,10 @@
 //     the mounted surface roots, and the classes under them are deliberately not
 //     contract, so the unpromised ones are free rather than undocumented.
 //
-// TWO SCOPES, one table. The package derives `--_qm-*` from the dials for the
-// surfaces it ships; the playground derives `--pg-*` from the same dials for the
-// page it hosts them on. Both are closed scales a stylesheet reads rather than
-// mints, so both answer to the same axes — a value that cannot be minted in a card
+// MANY SCOPES, one table. The package derives `--_qm-*` from the dials for the
+// surfaces it ships; each app derives its own scale from the same dials for the page
+// it hosts them on. Every one is a closed scale a stylesheet reads rather than mints,
+// so all of them answer to the same axes — a value that cannot be minted in a card
 // must not become mintable one directory over. What is NOT shared is the dial
 // census — a package-contract claim, measured over the package scope alone.
 //
@@ -74,6 +74,13 @@ const SCOPES = [
 		prefix: '--pg-',
 		derivation: 'packages/playground/src/routes/playground.css',
 		doc: 'PLAYGROUND §"Preventing drift"',
+		census: false
+	},
+	{
+		dir: 'packages/studio/src',
+		prefix: '--st-',
+		derivation: 'packages/studio/src/studio.css',
+		doc: 'STUDIO §"Preventing drift"',
 		census: false
 	}
 ];

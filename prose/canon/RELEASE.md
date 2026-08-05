@@ -10,13 +10,13 @@ Two packages publish, on independent versions, through changesets. The app never
 
 Both packages publish, and both are pre-1.0: the consumers are first-party, so a break rides a minor rather than earning a major. Lockstep would drag one package's version through churn the other's consumers do not care about, so each carries its own version and a change to one leaves the other's alone. The packages have no edge between them ([DEPENDENCIES.md](DEPENDENCIES.md)), so there is no shared substrate co-evolving across them to argue the other way; that argument holds *within* `svelte`, which is why its surfaces are subpaths of one package rather than packages of their own.
 
-`playground` is `private: true`. It is the harness and the Pages site, never a tarball.
+`playground` and `studio` are `private: true`: the harness and Pages site, and the author's surface. Neither is ever a tarball.
 
 ## Changesets
 
 A change that should ship carries a `.changeset/*.md` naming the packages it bumps and the semver level. Release is then two mechanical steps: `changeset version` writes the version bumps and the changelogs, `changeset publish` publishes whatever the registry does not have.
 
-The intent lives with the commit that earns it rather than being reconstructed at release time from a range of history, and a repo where two packages release on their own clocks needs the per-package answer recorded per change. A change touching only the playground, or only prose, carries no changeset.
+The intent lives with the commit that earns it rather than being reconstructed at release time from a range of history, and a repo where two packages release on their own clocks needs the per-package answer recorded per change. A change touching only an app, or only prose, carries no changeset.
 
 npm Trusted Publishing (OIDC) mints the credential, so no token is stored.
 

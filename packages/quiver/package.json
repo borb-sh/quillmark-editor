@@ -35,10 +35,6 @@
 		"./testing": {
 			"types": "./dist/testing.d.ts",
 			"import": "./dist/testing.js"
-		},
-		"./preview": {
-			"types": "./dist/preview.d.ts",
-			"import": "./dist/preview.js"
 		}
 	},
 	"sideEffects": false,
