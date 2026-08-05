@@ -1,15 +1,17 @@
-/* The host's shared recipes: the declarations more than one route draws, so a
-   route carries a class instead of restating a rule. The rungs are minted in
-   `routes/playground.css`; this file mints nothing (PLAYGROUND §"Preventing
-   drift"). Not merged into the derivation, which is exempt from the literal
-   rules; a recipe beside it would inherit the exemption. */
+/* The front door's own recipes: what more than one route draws that the preset does
+   not carry. The endorsed look (the label, the readout, the status line, the plate,
+   the boxed control, the focus ring) comes from `@quillmark/svelte/preset`, so what is
+   left here is the shape of a front door: a width, a rail, a heading, a display run, a
+   pair of calls to action, a link in running prose.
 
-/* Every band of the shell (head, route, foot) starts on the same two edges.
-   The width must be stated: a band is a grid item and `margin-inline: auto`
-   switches its stretch alignment off, so `auto` sizes it to content. The gutter
-   sits inside the width (`border-box`), or a narrow viewport overflows by the two
-   gutters; declared here, not as a `*` reset that would re-box every package
-   element mounted inside the host. */
+   The rungs are the preset's `--qmh-*` and the local ones in `routes/playground.css`;
+   this file mints nothing (PLAYGROUND §"Preventing drift"). */
+
+/* Every band of the shell (head, route, foot) starts on the same two edges. The width
+   must be stated: a band is a grid item and `margin-inline: auto` switches its stretch
+   alignment off, so `auto` sizes it to content. The gutter sits inside the width
+   (`border-box`), or a narrow viewport overflows by the two gutters; declared here, not
+   as a `*` reset that would re-box every package element mounted inside the host. */
 .pg-width {
 	box-sizing: border-box;
 	width: 100%;
@@ -19,9 +21,9 @@
 }
 
 /* ── The rail ──────────────────────────────────────────────────────────────── */
-/* A block is an annotation in the margin and the content it names (PLAYGROUND
-   §"The rail"). Below the width where the margin stops fitting, the rail stacks
-   and the annotation stays the same run of type. */
+/* A block is an annotation in the margin and the content it names (PLAYGROUND §"The
+   rail"). Below the width where the margin stops fitting, the rail stacks and the
+   annotation stays the same run of type. */
 .pg-rail {
 	display: grid;
 	grid-template-columns: var(--pg-rail) minmax(0, 1fr);
@@ -29,10 +31,10 @@
 	align-items: start;
 }
 
-/* The annotation is whatever the block puts first: a section label, a status
-   line; the rail only places it. */
+/* The annotation is whatever the block puts first: a section label, a status line; the
+   rail only places it. */
 .pg-rail > :first-child {
-	padding-top: var(--pg-space);
+	padding-top: var(--qmh-space);
 }
 
 @media (width < 60rem) {
@@ -41,236 +43,107 @@
 	}
 	.pg-rail > :first-child {
 		padding-top: 0;
-		margin-bottom: var(--pg-space-3);
+		margin-bottom: var(--qmh-space-3);
 	}
 }
 
 /* ── The head ──────────────────────────────────────────────────────────────── */
-/* A tool route's whole heading on one line: which surface this is, and the
-   boundary's phase while it is not open. What the surface does is the surface
-   below, not a passage above it. */
+/* A tool route's whole heading on one line: which surface this is, and the boundary's
+   phase while it is not open. What the surface does is the surface below, not a passage
+   above it. */
 .pg-head {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: baseline;
-	gap: var(--pg-space-2) var(--pg-space-4);
-	padding-block: var(--pg-space-8) var(--pg-space-4);
+	gap: var(--qmh-space-2) var(--qmh-space-4);
+	padding-block: var(--pg-space-8) var(--qmh-space-4);
 }
 
-/* The phase reads off the end of the line, so the title holds its position when
-   it clears. */
-.pg-head .pg-status {
+/* The phase reads off the end of the line, so the title holds its position when it
+   clears. */
+.pg-head .qm-status {
 	margin-inline-start: auto;
 }
 
-/* ── Type recipes ──────────────────────────────────────────────────────────── */
+/* ── Type ──────────────────────────────────────────────────────────────────── */
 
-/* A run of chrome type: the rail's annotation, a panel's caption, the label over a
-   readout. Uppercase and tracked, which is what keeps an 11px run legible at the
-   ghost rung. */
-.pg-label {
-	font-family: var(--pg-font-mono);
-	font-size: var(--pg-text-meta);
-	line-height: var(--pg-leading-tight);
-	letter-spacing: var(--pg-track-label);
-	text-transform: uppercase;
-	color: var(--pg-ghost);
-	margin: 0;
-}
-
-/* A page's one display run: the landing thesis, a tool route's title. The type
-   is the recipe; margins are layout and stay the route's own (a route sets its
-   measure and the layout inside it, nothing more). */
+/* A page's one display run: the landing thesis, a tool route's title. The type is the
+   recipe; margins are layout and stay the route's own (a route sets its measure and the
+   layout inside it, nothing more). */
 .pg-title {
 	margin: 0;
 	font-size: var(--pg-text-display);
-	font-weight: var(--pg-weight-strong);
-	line-height: var(--pg-leading-tight);
+	font-weight: var(--qmh-weight-strong);
+	line-height: var(--qmh-leading-tight);
 	letter-spacing: var(--pg-track-display);
-}
-
-/* A value read back out of the running session: an address, a page index, a
-   count. Monospace and tabular, because these are read by comparison: two
-   addresses one above the other line up character for character. */
-.pg-readout {
-	font-family: var(--pg-font-mono);
-	font-size: var(--pg-text-label);
-	line-height: var(--pg-leading-tight);
-	font-variant-numeric: tabular-nums;
-	color: var(--pg-ink);
-	overflow-wrap: anywhere;
-}
-
-/* The block form: a dump long enough to scroll, or a snippet. `pre` keeps the
-   wrapping the value came with; the plate is the page's own, one rung under the
-   panel it sits in. */
-pre.pg-readout {
-	background: var(--pg-page);
-	border: var(--pg-border-width) solid var(--pg-border);
-	border-radius: var(--pg-radius-inner);
-	padding: var(--pg-space-2);
-	margin: 0;
-	white-space: pre-wrap;
-	word-break: break-all;
-	max-height: 20rem;
-	overflow: auto;
 }
 
 /* ── Surfaces ──────────────────────────────────────────────────────────────── */
 
-/* The instrument plate: the one thing on these pages that takes a fill, and the
-   reading column stays unboxed prose (PLAYGROUND §"What takes a fill"). */
-.pg-panel {
-	box-sizing: border-box;
-	background: var(--pg-surface);
-	border: var(--pg-border-width) solid var(--pg-border);
-	border-radius: var(--pg-radius);
-	padding: var(--pg-space-4);
-}
-
-/* The mounting site: the frame a surface is dropped into, and the tone behind its
-   column; the properties THEMING §"What is behind the column is yours" leaves to
-   the host. `border-box`, like the panel: both take a padding from here and a
-   size from their caller, so a stated height is the height they draw. */
+/* The mounting site, which a surface painting its own column reduces to an edge, a
+   corner, and the clip that holds the surface to them. No tone and no
+   gutter: those are the surface's own (THEMING §"Drop it in"). `border-box`, so a
+   stated height is the height it draws. */
 .pg-frame {
 	box-sizing: border-box;
-	background: var(--pg-surface);
-	border: var(--pg-border-width) solid var(--pg-border);
-	border-radius: var(--pg-radius);
+	border: var(--qmh-border-width) solid var(--qmh-border);
+	border-radius: var(--qmh-radius);
 	overflow: hidden;
 }
 
-/* ── Controls ──────────────────────────────────────────────────────────────── */
+/* ── Calls to action ───────────────────────────────────────────────────────── */
 
-/* The host's controls ARE boxed, where the package's buttons are not: with no
-   typing on these pages to be confused with, the box says "this is a control",
-   which is all a harness's strip of switches needs (PLAYGROUND §"The look"). */
-.pg-btn {
-	font: inherit;
-	font-family: var(--pg-font-mono);
-	font-size: var(--pg-text-label);
-	line-height: var(--pg-leading-tight);
-	color: var(--pg-ink);
-	background: var(--pg-page);
-	border: var(--pg-border-width) solid var(--pg-border);
-	border-radius: var(--pg-radius-inner);
-	padding: var(--pg-space) var(--pg-space-2);
-	cursor: pointer;
-	text-align: left;
-	transition: background-color var(--pg-duration) var(--pg-ease-reverse);
-}
-
-.pg-btn:hover {
-	background: var(--pg-surface-hover);
-}
-
-/* On, whichever way the control says so: a switch that is pressed, or the link to
-   the variant you are already in. */
-.pg-btn[aria-pressed='true'],
-.pg-btn[aria-current='true'] {
-	border-color: var(--pg-border-strong);
-	background: var(--pg-surface-hover);
-}
-
-/* The one filled element in the playground. It is the front page's first action
-   (open the surface the visitor came to see), and it is ink on page rather than a
-   hue, so it inverts with the scheme like everything else. */
+/* The one filled element in the playground. It is the front page's first action (open
+   the surface the visitor came to see), and it is ink on page rather than a hue, so it
+   inverts with the scheme like everything else. */
 .pg-cta {
 	display: inline-block;
-	background: var(--pg-ink);
-	color: var(--pg-page);
-	border: var(--pg-border-width) solid var(--pg-ink);
-	border-radius: var(--pg-radius-inner);
-	padding: var(--pg-space-2) var(--pg-space-4);
-	font-weight: var(--pg-weight-mid);
+	background: var(--qmh-ink);
+	color: var(--qmh-page);
+	border: var(--qmh-border-width) solid var(--qmh-ink);
+	border-radius: var(--qmh-radius-inner);
+	padding: var(--qmh-space-2) var(--qmh-space-4);
+	font-weight: var(--qmh-weight-mid);
 	text-decoration: none;
 	transition:
-		background-color var(--pg-duration) var(--pg-ease-reverse),
-		border-color var(--pg-duration) var(--pg-ease-reverse);
+		background-color var(--qmh-duration) var(--qmh-ease-reverse),
+		border-color var(--qmh-duration) var(--qmh-ease-reverse);
 }
 
-/* Hover steps the FILL down the ink ladder rather than fading the button out: an
-   opacity on a filled control lets the page read through what is meant to be
-   solid. */
+/* Hover steps the FILL down the ink ladder rather than fading the button out: an opacity
+   on a filled control lets the page read through what is meant to be solid. */
 .pg-cta:hover {
-	background: var(--pg-ink-meta);
-	border-color: var(--pg-ink-meta);
+	background: var(--qmh-ink-meta);
+	border-color: var(--qmh-ink-meta);
 }
 
-/* The action beside it: the same shape, unfilled, so the pair reads as one
-   choice and the page still spends its one fill once. Boxed like the harness's
-   switches, since a bare link beside a solid button reads as a footnote. */
+/* The action beside it: the same shape, unfilled, so the pair reads as one choice and
+   the page still spends its one fill once. Boxed like the preset's controls, since a
+   bare link beside a solid button reads as a footnote. */
 .pg-cta-quiet {
 	display: inline-block;
-	background: var(--pg-page);
-	color: var(--pg-ink);
-	border: var(--pg-border-width) solid var(--pg-border-strong);
-	border-radius: var(--pg-radius-inner);
-	padding: var(--pg-space-2) var(--pg-space-4);
-	font-weight: var(--pg-weight-mid);
+	background: var(--qmh-page);
+	color: var(--qmh-ink);
+	border: var(--qmh-border-width) solid var(--qmh-border-strong);
+	border-radius: var(--qmh-radius-inner);
+	padding: var(--qmh-space-2) var(--qmh-space-4);
+	font-weight: var(--qmh-weight-mid);
 	text-decoration: none;
-	transition: background-color var(--pg-duration) var(--pg-ease-reverse);
+	transition: background-color var(--qmh-duration) var(--qmh-ease-reverse);
 }
 
 .pg-cta-quiet:hover {
-	background: var(--pg-surface-hover);
+	background: var(--qmh-surface-hover);
 }
 
-/* A text link in the reading column: underlined at the border rung rather than
-   coloured, so the page keeps one ink. */
+/* A text link in the reading column: underlined at the border rung rather than coloured,
+   so the page keeps one ink. */
 .pg-link {
 	color: inherit;
-	text-decoration-color: var(--pg-border-strong);
+	text-decoration-color: var(--qmh-border-strong);
 	text-underline-offset: 0.2em;
 }
 
 .pg-link:hover {
 	text-decoration-color: currentColor;
-}
-
-/* ── Session status ────────────────────────────────────────────────────────── */
-/* The two states worth a word: opening, and failed. An open session says so by
-   painting the page below, so it says nothing here. */
-
-.pg-status {
-	font-family: var(--pg-font-mono);
-	font-size: var(--pg-text-meta);
-	line-height: var(--pg-leading-tight);
-	letter-spacing: var(--pg-track-label);
-	text-transform: uppercase;
-	margin: 0;
-}
-
-.pg-status.loading {
-	color: var(--pg-ghost);
-}
-
-/* An error carries a message rather than a state word, so it drops the label
-   treatment and reads as a sentence; and it breaks anywhere, because a WASM error
-   is one long token in whatever room the line has left. */
-.pg-status.error {
-	color: var(--pg-alert);
-	font-size: var(--pg-text-label);
-	text-transform: none;
-	letter-spacing: normal;
-	overflow-wrap: anywhere;
-}
-
-/* ── Focus ─────────────────────────────────────────────────────────────────── */
-/* One visible indicator for the whole host, since none of these controls draws a
-   ring of its own. It reads the INK rung rather than the link hue: the page is
-   monochrome, and a focus ring is a position, not a destination. */
-:focus-visible {
-	outline: var(--pg-ring-width) solid var(--pg-ink);
-	outline-offset: var(--pg-space-half);
-}
-/* The package's surfaces are the exception, and the rule above is why: an unlayered
-   host declaration beats `@layer qm.chrome` by design (controls.css), so a ring
-   written for controls that draw none repaints the ones that do, over
-   `--_qm-ring-focus`, on the one surface the package is checked by eye.
-   `revert-layer` hands each control back to the layer under this one, which is the
-   package's own ring at its own offset. */
-[data-qm-root] :focus-visible {
-	outline: revert-layer;
-	outline-offset: revert-layer;
 }

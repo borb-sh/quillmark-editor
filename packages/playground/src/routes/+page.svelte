@@ -97,48 +97,48 @@
 	</section>
 
 	<section id="get-started" class="pg-rail block">
-		<h2 class="pg-label">Get started</h2>
+		<h2 class="qm-label">Get started</h2>
 		<div class="intro">
 			<p>Four steps to a running editor. Every sample runs the surface beside it.</p>
 			{#if status.phase === 'loading'}
-				<p data-testid="status" class="pg-status loading">Opening the reference quill…</p>
+				<p data-testid="status" class="qm-status">Opening the reference quill…</p>
 			{:else if status.phase === 'error'}
-				<p data-testid="status" class="pg-status error">Error: {status.message}</p>
+				<p data-testid="status" class="qm-status qm-status-error">Error: {status.message}</p>
 			{/if}
 		</div>
 	</section>
 
 	<section class="pg-rail block">
-		<h3 class="pg-label">01 · Install</h3>
+		<h3 class="qm-label">01 · Install</h3>
 		<div class="step">
 			<p>
 				<code>@quillmark/svelte</code> is the surfaces;
 				<code>@quillmark/wasm</code> is the engine they view.
 			</p>
-			<pre class="pg-readout sample">{INSTALL}</pre>
+			<pre class="qm-readout sample">{INSTALL}</pre>
 		</div>
 	</section>
 
 	<section class="pg-rail block">
-		<h3 class="pg-label">02 · Session</h3>
+		<h3 class="qm-label">02 · Session</h3>
 		<div class="step">
 			<p>
 				A quill is a template's file tree; a document is the content in it. Opening the two compiles
 				the first page and gives you the handle both surfaces read.
 			</p>
-			<pre class="pg-readout sample">{OPEN_SESSION}</pre>
+			<pre class="qm-readout sample">{OPEN_SESSION}</pre>
 		</div>
 	</section>
 
 	<section class="pg-rail block">
-		<h3 class="pg-label">03 · Preview</h3>
+		<h3 class="qm-label">03 · Preview</h3>
 		<div class="step">
 			<p>
 				<code>&lt;Preview&gt;</code> paints the session's pages to canvas and resolves a click to the
 				content under it, so the compiled page is addressable rather than a picture.
 			</p>
 			<div class="pair">
-				<pre class="pg-readout sample">{PREVIEW}</pre>
+				<pre class="qm-readout sample">{PREVIEW}</pre>
 				<div class="demo">
 					<div class="pg-frame preview-frame">
 						{#if session}
@@ -146,8 +146,8 @@
 						{/if}
 					</div>
 					<p class="caption">
-						<span class="pg-label">Caret pick</span>
-						<span class="pg-readout" data-testid="demo-hit">
+						<span class="qm-label">Caret pick</span>
+						<span class="qm-readout" data-testid="demo-hit">
 							{lastHit ? `${lastHit.field} @ ${lastHit.pos}` : 'click any text on the page'}
 						</span>
 					</p>
@@ -157,7 +157,7 @@
 	</section>
 
 	<section class="pg-rail block">
-		<h3 class="pg-label">04 · Edit</h3>
+		<h3 class="qm-label">04 · Edit</h3>
 		<div class="step">
 			<p>
 				<code>&lt;VisualEditor&gt;</code> projects the quill's schema onto the document: prose where
@@ -166,10 +166,10 @@
 				the pages to repaint.
 			</p>
 			<div class="pair">
-				<pre class="pg-readout sample">{VISUAL}</pre>
+				<pre class="qm-readout sample">{VISUAL}</pre>
 				<div class="pg-frame editor-frame">
 					{#if VisualEditor && editDoc && quillHandle}
-						<VisualEditor doc={editDoc} quill={quillHandle} />
+						<VisualEditor class="qm-pane" doc={editDoc} quill={quillHandle} />
 					{/if}
 				</div>
 			</div>
@@ -177,7 +177,7 @@
 	</section>
 
 	<section class="pg-rail block">
-		<h3 class="pg-label">Next</h3>
+		<h3 class="qm-label">Next</h3>
 		<div class="step">
 			<p>
 				Both surfaces on one session, the caret bridged in both directions:
@@ -192,8 +192,8 @@
 	.hero {
 		display: flex;
 		flex-direction: column;
-		gap: var(--pg-space-4);
-		max-width: var(--pg-measure);
+		gap: var(--qmh-space-4);
+		max-width: var(--qmh-measure);
 		padding-block: var(--pg-space-16);
 	}
 
@@ -203,15 +203,15 @@
 
 	.lede {
 		margin: 0;
-		color: var(--pg-ink-meta);
+		color: var(--qmh-ink-meta);
 	}
 
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: var(--pg-space-4);
-		margin-top: var(--pg-space-2);
+		gap: var(--qmh-space-4);
+		margin-top: var(--qmh-space-2);
 	}
 
 	/* ── The quickstart ─────────────────────────────────────────────────────── */
@@ -223,29 +223,29 @@
 
 	.block {
 		padding-block: var(--pg-space-12);
-		border-top: var(--pg-border-width) solid var(--pg-border);
+		border-top: var(--qmh-border-width) solid var(--qmh-border);
 	}
 
 	.intro,
 	.step {
 		display: flex;
 		flex-direction: column;
-		gap: var(--pg-space-4);
+		gap: var(--qmh-space-4);
 	}
 
 	.step p,
 	.intro p {
 		margin: 0;
-		max-width: var(--pg-measure);
+		max-width: var(--qmh-measure);
 	}
 
 	.intro p {
-		color: var(--pg-ink-meta);
+		color: var(--qmh-ink-meta);
 	}
 
 	code {
-		font-family: var(--pg-font-mono);
-		font-size: var(--pg-text-label);
+		font-family: var(--qmh-font-mono);
+		font-size: var(--qmh-text-label);
 	}
 
 	/* The sample and what it runs, side by side; stacked where a half column stops
@@ -253,7 +253,7 @@
 	.pair {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: var(--pg-space-4);
+		gap: var(--qmh-space-4);
 		align-items: start;
 	}
 
@@ -269,43 +269,38 @@
 	/* A sample with no surface beside it takes the reading column's width, not the
 	   page's: a shell line in a box the width of the shell reads as a banner. */
 	.step > .sample {
-		max-width: var(--pg-measure);
+		max-width: var(--qmh-measure);
 	}
 
 	.demo {
 		display: flex;
 		flex-direction: column;
-		gap: var(--pg-space-2);
+		gap: var(--qmh-space-2);
 		min-width: 0;
 	}
 
-	/* The painted page carries its own edge, so what the host owes it is room to sit
-	   in and a tone to read against. */
+	/* What a demo frame owes a surface is a height to sit in. The gutter, the tone and
+	   the desk are the surface's own (THEMING §"Drop it in"), so a frame that states
+	   them would be restating the package to itself. */
 	.preview-frame {
-		height: var(--pg-mount);
-		padding: var(--pg-space-4);
+		height: var(--pg-demo);
 	}
 
-	/* The four properties THEMING §"What is behind the column is yours" leaves to
-	   the host: the gutter, the scroll container, the page tone and the tail. */
 	.editor-frame {
-		height: var(--pg-mount);
+		height: var(--pg-demo);
 		min-width: 0;
-		overflow: auto;
-		padding: var(--pg-space-2) var(--pg-space-2) var(--pg-tail);
-		background: var(--pg-page);
 	}
 
 	.caption {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: baseline;
-		gap: var(--pg-space-2);
+		gap: var(--qmh-space-2);
 		margin: 0;
 	}
 
-	.caption .pg-readout {
-		color: var(--pg-ink-meta);
+	.caption .qm-readout {
+		color: var(--qmh-ink-meta);
 	}
 
 	@media (width < 60rem) {

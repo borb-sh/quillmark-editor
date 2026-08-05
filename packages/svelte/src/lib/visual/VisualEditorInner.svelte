@@ -910,11 +910,32 @@
 	 a DETACHED root, one of those core/theme.css applies the derivation to. The
 	 root rule also carries the baseline font and colour, so nothing here restates
 	 them. Nothing here mints; `check:style` enforces that. */
+	/* The COLUMN, not only the cards in it: the gutter the stack sits in and the tone
+	   behind it are the surface's own, so a bare `<div>` is a mounting site and
+	   nothing is owed before the editor looks right. Consumer CSS is unlayered and
+	   beats all of it, which is how a host that wants the column back takes it.
+	   `border-box`, so a height from the caller is the height this draws. */
 	.qm-editor {
+		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
+		padding: var(--_qm-space-2);
+		background: var(--_qm-surface);
 		color: var(--_qm-ink);
+	}
+	/* A fixed-height pane, which the stack is NOT by default, and the four popovers
+	   are the reason: each resolves its portal target with
+	   `closest('[data-qm-root]')`, which is this element, so an `overflow` here
+	   clips the menu a leaf raised. Mounted in a page that scrolls, nothing clips;
+	   mounted in a pane that does, the host says so and takes the clipping it would
+	   have had from its own scrolling frame either way. The TAIL rides with the
+	   scroller because it is only meaningful under one: dead space below the last
+	   card, so it can be read mid-pane rather than against the bottom edge. */
+	.qm-editor.qm-pane {
+		overflow: auto;
+		overscroll-behavior: contain;
+		padding-block-end: var(--_qm-tail);
 	}
 	/* The stack's one gapless seam, which `TipsCard` draws and this holds the two
 	 blocks to. `main` has to paint OVER the tip: a later sibling paints over an earlier

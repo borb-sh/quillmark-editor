@@ -98,11 +98,21 @@
 <style>
 	/* A DETACHED root: the preview is not a descendant of the editor, so it carries
 	   `data-qm-root` for the page/overlay rungs paint.ts and overlay.ts read
-	   (core/theme.css). */
+	   (core/theme.css).
+
+	   The DESK as well as the paper: a sheet is at `--_qm-surface` (paint.ts), so the
+	   tone behind it is one rung raised and the gutter is the margin the sheet floats
+	   in. Both are the surface's own, so a bare `<div>` is a mounting site. The
+	   padding is safe against the paint loop: a slot is a `width: 100%` child and
+	   measures the CONTENT box, and the container's own `clientWidth` is read only as
+	   a change detector, which a constant inset does not disturb. */
 	.qm-preview {
+		box-sizing: border-box;
 		position: relative;
 		width: 100%;
 		height: 100%;
 		overflow-y: auto;
+		padding: var(--_qm-space-4);
+		background: var(--_qm-surface-raised);
 	}
 </style>

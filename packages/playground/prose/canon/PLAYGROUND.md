@@ -4,7 +4,7 @@
 
 ## TL;DR
 
-The dev app around the library: the reference wiring for the glue the primitives push outward, the manual harness for what a unit test cannot reach, and the page a stranger evaluating the package opens first. This doc is its shape: two routes, two readers, and a host scale of its own. What a host owes a mounted surface is [`THEMING.md`](../../../svelte/THEMING.md); nothing here reads a `--_qm-*` rung.
+The dev app around the library: the reference wiring for the glue the primitives push outward, the manual harness for what a unit test cannot reach, and the page a stranger evaluating the package opens first. This doc is its shape: two routes, two readers, and the endorsed look they are drawn with. What a host owes a mounted surface is [`THEMING.md`](../../../svelte/THEMING.md); nothing here reads a `--_qm-*` rung.
 
 ## Two jobs on one page
 
@@ -16,7 +16,11 @@ So the front page **proves rather than claims**. It is a quickstart, and every s
 
 ## The host scale
 
-The host is a page where the package is a control, so it carries a scale of its own: `--pg-*`, derived in `playground.css` and read everywhere under `src/routes`. It parts from the package's in what it derives FROM. The poles are the **system** colours behind the dials (`Canvas` / `CanvasText`): a host knows what canvas it sits on, where the package has to ship calibrated literals. `--qm-bg` / `--qm-fg` still sit in front, so setting the dials on the shell retunes page and surface together, and the shell's `color-scheme: light dark` is the host declaration THEMING.md asks for; every `[data-qm-root]` below inherits it, so page and surfaces invert together with no media query.
+The playground draws with `@quillmark/svelte/preset`, the same import a third-party consumer makes, and the reason "the playground looks like the endorsed version" is a fact about the build rather than a claim in a doc. The preset carries the `--qmh-*` scale and the recipes; `playground.css` carries what a front door adds on top and nothing the preset already has: a rail width and a page maximum, a display size, the split's hit track, two container heights, and the ramp's upper steps derived from the preset's base.
+
+A drift the preset cannot see is the front door minting its own copy of a rung the preset carries, so `check:style` fails that outright: an app scale may not restate a name the preset defines, and two app scales may not mint one concept at two values.
+
+What a mounting site costs is the thing on display: each pane states a track that may shrink below its content, the editor carries `.qm-pane` because it is mounted in a fixed height rather than a page, and the gutter, the tone, the desk and the tail are the surface's own (THEMING §"Drop it in"). A demo frame on the front page states a height and nothing else.
 
 What the chrome around a mounted surface does is **decline to compete**: the surface stays the most detailed thing on any route. Colour is spent on one thing, a boundary that failed; an open session takes no colour and no word, because it paints the page, which is the claim.
 
@@ -43,13 +47,11 @@ This is the workspace's one edge to `@quillmark/quiver`. The library has none ([
 
 One `Quiver` serves the page. Its quill cache is per canonical ref and lives as long as the quiver does, so a client-side navigation between routes reuses one materialization rather than paying for its own. Routes mint and free their own `Quill` from the tree: the schema variants rewrite bytes a materialized quill has no seam for, so the loader hands back `getQuill(ref).toTree()` and the caller owns what it builds from it. The discarded materialization is the cost of that seam.
 
-THEMING.md §"What is behind the column is yours" leaves four properties to the host, and the playground demonstrates **both** documented answers to the page tone rather than leaving one on paper: the editor's column carries all four on one rule with plain `--qm-bg` behind it (the supported bare case), on `/playground`'s left pane and the front page's editor step alike, while every mounted `<Preview>` sits inset on a tone of the host's own, so the painted page reads against it.
-
 ## Preventing drift
 
-The host derivation and its recipes are **two stylesheets**, the split the package makes and for the same reason ([ARCHITECTURE.md](../../../svelte/prose/canon/ARCHITECTURE.md) §Styling): a rung fixes a value, a recipe fixes which declarations make a thing, and only the second can be checked against the first. The derivation is exempt from the literal rules, so a recipe beside it would inherit the exemption.
+The derivation and the recipes are **two stylesheets**, the split the package and the preset both make and for the same reason ([ARCHITECTURE.md](../../../svelte/prose/canon/ARCHITECTURE.md) §Styling): a rung fixes a value, a recipe fixes which declarations make a thing, and only the second can be checked against the first. The derivation is exempt from the literal rules, so a recipe beside it would inherit the exemption.
 
-Literals live in the derivation and nowhere else under `src/routes`: `check:style` runs its axes over the host scope too, against the `--pg-*` rung, so a route that mints a grey, a size, a radius or a duration fails CI rather than review. What stays the package's alone is the **dial census**: that the consumed `--qm-*` set equals THEMING.md's is a claim about the package's contract.
+Literals live in the derivation and nowhere else under `src/routes`: `check:style` runs its axes over this scope too, so a route that mints a grey, a size, a radius or a duration fails CI rather than review. A route reads two scales (the preset's for most of what it draws, the local one for what the front door adds) and the axes accept either. What stays the package's alone is the **dial census**: that the consumed `--qm-*` set equals THEMING.md's is a claim about the package's contract.
 
 ## Links
 

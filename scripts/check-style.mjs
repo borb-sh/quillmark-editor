@@ -58,30 +58,47 @@ import { ROOT, canonDocs, canonRoots, report } from './workspace.mjs';
 
 const THEMING = join(ROOT, 'packages', 'svelte', 'THEMING.md');
 
-/** The two closed scales, each with the tree that reads it and the one file that
- *  mints it. `census` marks the scope the dial contract is measured over — the
- *  package's, since THEMING.md documents what the PACKAGE consumes. */
+/** The closed scales, each with the tree that reads it and the one file that mints it.
+ *  `census` marks the scopes the dial contract is measured over: the package's, since
+ *  THEMING.md documents what the PACKAGE consumes, and the preset's, which consumes the
+ *  same dials for the page. `host` marks the scales that dress a DOCUMENT rather than a
+ *  mounted root, which is the set the conformance rule below runs over. `exclude` is
+ *  what keeps a nested scope from being scanned twice: the preset ships from inside
+ *  `src/lib`, because `svelte-package` reads no other tree, so without this its
+ *  derivation is also an ordinary file under the package scope and every literal it
+ *  mints fails there. */
 const SCOPES = [
 	{
 		dir: 'packages/svelte/src/lib',
+		exclude: ['packages/svelte/src/lib/preset'],
 		prefix: '--_qm-',
 		derivation: 'packages/svelte/src/lib/core/theme.css',
 		doc: 'SURFACES §"Preventing drift"',
 		census: true
 	},
 	{
+		dir: 'packages/svelte/src/lib/preset',
+		prefix: '--qmh-',
+		derivation: 'packages/svelte/src/lib/preset/scale.css',
+		doc: 'THEMING §"Match ours"',
+		census: true,
+		host: true
+	},
+	{
 		dir: 'packages/playground/src/routes',
 		prefix: '--pg-',
 		derivation: 'packages/playground/src/routes/playground.css',
 		doc: 'PLAYGROUND §"Preventing drift"',
-		census: false
+		census: false,
+		host: true
 	},
 	{
 		dir: 'packages/studio/src',
 		prefix: '--st-',
 		derivation: 'packages/studio/src/studio.css',
 		doc: 'STUDIO §"Preventing drift"',
-		census: false
+		census: false,
+		host: true
 	}
 ];
 
@@ -107,7 +124,11 @@ const RHYTHM_MARKER = /(padding|margin|gap|radius)/i;
 const STROKE_MARKER = /border(?!-?radius)/i;
 /** A `--x:` DEFINITION — a consumption is `var(--x)`, which has no colon. */
 const privateDef = (prefix) => new RegExp(`(${prefix}[\\w-]+)\\s*:`);
-const readsRung = (prefix) => new RegExp(`var\\(${prefix}`);
+/** Reading a rung of ANY scale the scope is entitled to. An app reads two: the
+ *  preset's, which is most of what it draws with, and its own for what it adds on
+ *  top, so a rung-required axis must see both, or every `--qmh-` a migrated app reads
+ *  looks like a bare literal. */
+const readsRung = (prefixes) => new RegExp(`var\\((${prefixes.join('|')})`);
 
 // Three shapes of rule. `literal` FORBIDS a pattern — most properties take values a
 // literal cannot be mistaken for, so naming the bad shape is enough. `allowBare`
@@ -242,10 +263,13 @@ const AXES = [
 	}
 ];
 
-/** Every `.svelte`/`.ts`/`.css` source under a scope's tree, tests excluded, sorted. */
-function sources(dir) {
+/** Every `.svelte`/`.ts`/`.css` source under a scope's tree, tests and any nested scope
+ *  excluded, sorted. */
+function sources(dir, exclude = []) {
+	const skip = exclude.map((d) => join(ROOT, d));
 	const out = [];
 	(function walk(at) {
+		if (skip.includes(at)) return;
 		for (const e of readdirSync(at, { withFileTypes: true }).sort((a, b) =>
 			a.name < b.name ? -1 : 1
 		)) {
@@ -282,17 +306,24 @@ function styleRegion(text, file) {
 
 const errors = [];
 const consumed = new Set();
+const hostScales = [];
 let scanned = 0;
 
 for (const scope of SCOPES) {
-	const READS_RUNG = readsRung(scope.prefix);
+	// An app scale sits ON the preset, so both are legible to it; the preset and the
+	// package each read one scale only.
+	const reads = scope.host && scope.prefix !== '--qmh-' ? [scope.prefix, '--qmh-'] : [scope.prefix];
+	const READS_RUNG = readsRung(reads);
 	const PRIVATE_DEF = privateDef(scope.prefix);
-	// The axis table names the package's rungs; a host failure points at the same
-	// family under the host's prefix, and at the doc that states the rule there.
+	// The axis table names the package's rungs; a failure elsewhere points at the same
+	// family under the prefix that scope draws with, and at the doc that states the
+	// rule there. For an app that is the PRESET's prefix rather than its own: the
+	// families the axes name (type, colour, motion) are the endorsed look's, and an
+	// app's own rungs are the handful it adds beside them.
 	const hint = (text) =>
-		scope.prefix === '--_qm-' ? text : text.replaceAll('--_qm-', scope.prefix);
+		scope.prefix === '--_qm-' ? text : text.replaceAll('--_qm-', reads.at(-1));
 
-	for (const full of sources(scope.dir)) {
+	for (const full of sources(scope.dir, scope.exclude)) {
 		const file = relative(ROOT, full);
 		const region = styleRegion(readFileSync(full, 'utf8'), full);
 		if (!region) continue;
@@ -369,7 +400,54 @@ for (const scope of SCOPES) {
 			if (seen.has(name)) errors.push(`${scope.derivation}: \`${name}\` defined twice in one rule`);
 			else seen.add(name);
 	}
+
+	// What each host scale CALLS things, for the conformance rule below. Keyed on the
+	// suffix after the prefix, which is the concept: `--qmh-text-label` and
+	// `--pg-text-label` are one decision under two names. The value is normalized so
+	// two scales expressing the same derivation compare equal: whitespace collapsed,
+	// and each scale's own prefix folded to a sentinel, since `calc(var(--pg-space) *
+	// 2)` and `calc(var(--st-space) * 2)` are the same rung twice.
+	if (scope.host) {
+		const rungs = new Map();
+		for (const [, name, value] of derivation.matchAll(
+			new RegExp(`^\\s*${scope.prefix}([\\w-]+)\\s*:\\s*([^;]*);`, 'gm')
+		))
+			rungs.set(name, value.replaceAll(scope.prefix, '--~').replace(/\s+/g, ' ').trim());
+		hostScales.push({ scope, rungs });
+	}
 }
+
+// THE CONFORMANCE RULE, and it is the one thing no per-scope axis can see: every scope
+// above is checked against ITSELF, its derivation exempt as the place its defaults are
+// minted, so two scales minting one concept at two values is legal by construction:
+// one app's pane height sits beside another's at a different number, the same job at
+// two values, with nothing to say whether that is a decision or a slip.
+//
+// The preset is the endorsed answer, so an app REDEFINING a name it carries is the
+// claim coming apart: the app is meant to look like the preset, and a local copy is
+// where it stops. What stays legal is a name the preset does not carry (an app's own
+// rail width, its own display size), which is the whole of what a host adds on top.
+const preset = hostScales.find((h) => h.scope.prefix === '--qmh-');
+for (const { scope, rungs } of hostScales) {
+	if (scope === preset?.scope) continue;
+	for (const name of rungs.keys())
+		if (preset?.rungs.has(name))
+			errors.push(
+				`${scope.derivation}: \`${scope.prefix}${name}\` restates \`--qmh-${name}\` — read the preset's rung (${scope.doc})`
+			);
+}
+
+// And between two apps: one concept, two values, neither of them the preset's. A
+// second copy that AGREES is not reported: it cannot drift silently, because this
+// fires the moment it stops agreeing.
+for (const [i, a] of hostScales.entries())
+	for (const b of hostScales.slice(i + 1))
+		for (const [name, value] of a.rungs)
+			if (b.rungs.has(name) && b.rungs.get(name) !== value)
+				errors.push(
+					`${a.scope.derivation}: \`${a.scope.prefix}${name}\` is \`${value}\` where ` +
+						`\`${b.scope.prefix}${name}\` is \`${b.rungs.get(name)}\` — one concept, two values`
+				);
 
 // The dial census. THEMING.md is the contract, so it must match the consumed set
 // EXACTLY, both directions. Canon only ever names a subset, so it is checked one
@@ -400,7 +478,7 @@ for (const [abs, rel] of canonRoots().flatMap(canonDocs))
 const CLASS_IN_SRC = /(?<![-\w])qm-[\w-]+/g;
 const classes = new Set();
 for (const scope of SCOPES.filter((s) => s.census))
-	for (const full of sources(scope.dir))
+	for (const full of sources(scope.dir, scope.exclude))
 		for (const m of readFileSync(full, 'utf8').matchAll(CLASS_IN_SRC)) classes.add(m[0]);
 
 const promised = new Set(
