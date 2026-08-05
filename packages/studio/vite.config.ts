@@ -7,8 +7,8 @@ import { build } from '@quillmark/quiver/node';
 import { defineConfig, type Plugin } from 'vite';
 
 // THE NODE HALF, whole: pack the source quiver into the tree the dev server serves,
-// and repack it when it changes. Nothing renders here — the WASM boundary and the
-// paint loop are browser concerns (STUDIO §"The two halves").
+// and repack it when it changes. Nothing renders here: the WASM boundary and the paint
+// loop are browser concerns (STUDIO §"The two halves").
 
 /** The workspace's source quiver. A browser cannot read the source layout, so this
  *  pack is the step every browser consumer of a quiver performs. */
@@ -31,8 +31,8 @@ const SETTLE_MS = 80;
  * Pack into a staging tree, then move it into place: a generation becomes visible in
  * one rename rather than over the length of a pack. `build` clears its output before
  * writing it, so packing straight into the served tree leaves a window where the
- * pointer is missing or torn — and the client that reads it there reports a broken
- * quiver for an edit that was fine.
+ * pointer is missing or torn, and a client that reads it there reports a broken quiver
+ * for an edit that was fine.
  */
 async function swapIn(): Promise<void> {
 	await build(SOURCE, NEXT);
@@ -59,9 +59,10 @@ function quiverSource(): Plugin {
 			await pack();
 		},
 		configureServer(server) {
-			// The source tree sits outside the Vite root, so the watcher is told about
-			// it by hand; the packed output sits inside the root and is ignored there
-			// (`server.watch.ignored` below).
+			// The source tree sits outside the Vite root, so the watcher is told about it
+			// by hand. The packed output stays watched: Vite serves a public file only if
+			// it is in the set the watcher maintains, and a file no module graph reaches
+			// triggers no reload, so the page survives a repack.
 			server.watcher.add(SOURCE);
 			let settle: ReturnType<typeof setTimeout> | undefined;
 			const repack = (path: string): void => {
@@ -73,8 +74,8 @@ function quiverSource(): Plugin {
 						server.hot.send({ type: 'custom', event: REPACKED });
 					} catch (err) {
 						// A quiver mid-edit is invalid as often as not (a half-written
-						// `Quill.yaml`), so a failed pack is reported and the last good
-						// one stays served rather than the tree being left cleared.
+						// `Quill.yaml`). A failed pack never reaches the swap, so the last
+						// good generation stays served and the failure is a log line.
 						server.config.logger.error(
 							`[studio] quiver pack failed: ${err instanceof Error ? err.message : String(err)}`
 						);

@@ -6,12 +6,12 @@
     • <VisualEditor> (left): the edit surface; commits land on `open.doc`.
     • <Preview>     (right): a pure view of the session; never mutates it.
 
-  The bridge is studio's own — consumer-layer by design, and rewritten here rather
-  than shared with the playground, whose chrome shows its instruments where studio's
-  hides them:
+  The bridge is studio's own: consumer-layer by design, and rewritten here rather than
+  shared with the playground, whose chrome shows its instruments where studio's hides
+  them.
 
     edit ─► (debounced) session.update(doc) ─► preview.refresh(change)
-                                            └► notes = the three producers, merged
+                                            └► notes = every producer, merged
     preview click ─► onCaretPick(hit) ─► editor.setCaret(hit)
     editor caret  ─► onCaretMove(at)  ─► preview.focusPosition(at)
 
@@ -23,7 +23,7 @@
 -->
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import { Engine, isQuillmarkError } from '@quillmark/wasm';
+	import { Engine } from '@quillmark/wasm';
 	import type { ContentHit, Diagnostic } from '@quillmark/wasm';
 	import type { Quiver } from '@quillmark/quiver';
 	import { init } from '@quillmark/svelte/core';
@@ -33,9 +33,9 @@
 	import type { EditorChange } from '@quillmark/svelte/visual';
 	import Picker from './Picker.svelte';
 	import Notes from './Notes.svelte';
-	import { catalogOf, openQuiver, refOf, type Catalog } from './quiver';
-	import { carryOf, close, openRef, type Opened } from './session';
-	import { collect, type Notes as NoteSet } from './notes';
+	import { catalogOf, openQuiver, type Catalog } from './quiver';
+	import { close, openRef, type Opened } from './session';
+	import { collect, diagnosticsOf, messageOf, type NoteSet } from './notes';
 
 	/** The dev-server signal the Node half sends after a repack. */
 	const REPACKED = 'studio:quiver-repacked';
@@ -63,9 +63,7 @@
 	let held = $state.raw<string | undefined>();
 
 	// ── The errors ──────────────────────────────────────────────────────────────
-	/** The diagnostics of a throw: a failed open or a failed recompile. A broken
-	 *  plate is the case that matters — the engine reports it as a `QuillmarkError`
-	 *  carrying every diagnostic, and an author needs all of them. */
+	/** The diagnostics of a throw: a failed open or a failed recompile. */
 	let thrown = $state.raw<Diagnostic[]>([]);
 	/** What a surface recovered from, in its own slot so it neither clobbers a compile
 	 *  failure nor is clobbered by the next successful compile. */
@@ -119,13 +117,12 @@
 			open = next;
 			held = undefined;
 			thrown = [];
-			carried = next.carry.how === 'carried' ? next.carry.stranded : [];
+			carried = next.carry.stranded;
 			phase = { kind: 'ready' };
 		} catch (err) {
 			if (mine !== turn) return;
-			// A quill that does not open is the case `/preview` used to answer: the
-			// diagnostics are the whole point, so they land in the notes panel and the
-			// panes stay empty rather than the failure being one line of chrome. The
+			// A quill that does not open is the case an author most needs read to them, so
+			// the diagnostics land in the notes band and the panes stay empty. The
 			// document waits it out as text.
 			held = carry;
 			thrown = diagnosticsOf(err);
@@ -140,7 +137,7 @@
 	async function pick(name: string, version: string): Promise<void> {
 		picked = { name, version };
 		held = undefined;
-		await mount(refOf(name, version));
+		await mount(`${name}@${version}`);
 	}
 
 	/**
@@ -150,7 +147,7 @@
 	 * moved under it; a ref that vanished falls back to whatever the catalog now holds.
 	 */
 	async function reload(): Promise<void> {
-		const carry = open ? carryOf(open) : held;
+		const carry = open ? open.doc.toMarkdown() : held;
 		let next: Catalog;
 		try {
 			quiver = await openQuiver();
@@ -164,7 +161,7 @@
 		}
 		const at = picked;
 		if (at && next.quills.some((q) => q.name === at.name && q.versions.includes(at.version)))
-			return mount(refOf(at.name, at.version), carry);
+			return mount(`${at.name}@${at.version}`, carry);
 		// The ref went away under the author (a version directory renamed), so the
 		// document has nothing to land in: whatever the catalog holds now, seeded.
 		const first = next.quills[0];
@@ -225,16 +222,6 @@
 	function handleSurfaceError(err: EditorError): void {
 		recovered = [{ severity: 'warning', code: err.code, message: err.message }];
 		syncNotes();
-	}
-
-	// ── Errors, unwrapped ───────────────────────────────────────────────────────
-	function messageOf(err: unknown): string {
-		return err instanceof Error ? err.message : String(err);
-	}
-
-	function diagnosticsOf(err: unknown): Diagnostic[] {
-		if (isQuillmarkError(err) && err.diagnostics.length > 0) return err.diagnostics;
-		return [{ severity: 'error', message: messageOf(err) }];
 	}
 
 	onMount(() => {
@@ -348,7 +335,7 @@
 
 <style>
 	/* The whole viewport, three bands: the head, the panes, the errors. Studio is a
-	   workspace rather than a page — it scrolls nowhere, and the panes below own their
+	   workspace rather than a page: it scrolls nowhere, and the panes below own their
 	   overflow, so a surface holds still while its contents move. */
 	.app {
 		display: grid;

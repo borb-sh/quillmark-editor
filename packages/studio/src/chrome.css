@@ -16,7 +16,7 @@
 	margin: 0;
 }
 
-/* A value read back out of the running session — here, a field address. Monospace and
+/* A value read back out of the running session, here a field address. Monospace and
    tabular, because these are read by comparison: two addresses one above the other
    line up character for character. */
 .st-readout {

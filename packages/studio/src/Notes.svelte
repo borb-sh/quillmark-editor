@@ -5,17 +5,17 @@
 
   Each row carries its ORIGIN and its address. The address is the point: the editor
   routes a diagnostic to a control by `path`, so a row with none reached no field, and
-  the summary counts those — a diagnostic detached from the field that provoked it is
-  a quill's problem, and it is invisible everywhere else.
+  the summary counts those. A diagnostic detached from the field that provoked it is a
+  quill's problem, invisible everywhere else.
 
   `<details>` rather than a button and a flag: the disclosure is the platform's, and
   the summary stays a row of counts either way.
 -->
 <script lang="ts">
-	import type { Notes } from './notes';
+	import type { NoteSet } from './notes';
 
 	interface Props {
-		notes: Notes;
+		notes: NoteSet;
 	}
 
 	let { notes }: Props = $props();
@@ -41,7 +41,7 @@
 
 	{#if notes.all.length > 0}
 		<ul class="list">
-			{#each notes.all as note, i (`${note.origin}${note.path ?? ''}${note.message}${i}`)}
+			{#each notes.all as note}
 				<li class="note" class:alert={note.severity === 'error'}>
 					<span class="st-label origin">{note.origin}</span>
 					<span class="st-readout where" class:unrouted={note.path === undefined}>

@@ -10,9 +10,9 @@
    where the package has to ship calibrated literals. The dials still sit in front, so
    setting them on the shell retunes page and surface at once.
 
-   The scale is deliberately shorter than the playground's: studio has one screen and
-   no reading column, so it has no display type, no measure and no rail. A rung it
-   does not need is a value nothing checks. */
+   The scale is deliberately shorter than the playground's: studio has one screen and no
+   reading column, so it has no display type and no rail, and its one measure is what a
+   failure's sentence wraps at. A rung it does not need is a value nothing checks. */
 
 :root {
 	color-scheme: light dark;
@@ -28,7 +28,6 @@
 	--st-surface: color-mix(in oklab, var(--st-page), var(--st-ink) 4%);
 	--st-surface-hover: color-mix(in oklab, var(--st-page), var(--st-ink) 8%);
 	--st-border: color-mix(in oklab, var(--st-page), var(--st-ink) 17%);
-	--st-border-strong: color-mix(in oklab, var(--st-page), var(--st-ink) 40%);
 
 	/* The two hues studio spends, and it spends them on one thing: a note. No dial
 	   derives either, and a single literal reads as a stain on one of the two schemes,

@@ -1,6 +1,6 @@
 # quillmark-js
 
-The JS tier downstream of the `@quillmark/wasm` artifact: `packages/svelte` (the Svelte binding: surfaces over a session), `packages/quiver` (collections → quills), and two private apps that compose them — `packages/playground` (for a developer reading the library) and `packages/studio` (for an author working on a quill). One npm workspace, one install, one gate.
+The JS tier downstream of the `@quillmark/wasm` artifact: `packages/svelte` (the Svelte binding: surfaces over a session), `packages/quiver` (collections → quills), and two private apps that compose them: `packages/playground` (for a developer reading the library) and `packages/studio` (for an author working on a quill). One npm workspace, one install, one gate.
 
 Start at [`prose/canon/INDEX.md`](prose/canon/INDEX.md) for the rules spanning packages, then the package's own `prose/canon/`; work that is not settled lives in GitHub issues. Canon is **malleable** (no consumers, no compatibility promise): a doc that contradicts the design in hand gets rewritten in the same commit as the code.
 
