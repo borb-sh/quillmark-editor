@@ -59,7 +59,7 @@ li.ProseMirror-selectednode::after {
 
 /* A blockquote's UA indent was its only mark, and the reset above takes it. The rule
    and the inset carry it instead: the same hairline every surface reads, so a quote
-   reads as set apart without a fill or a second box (SURFACES §Elevation). */
+   reads as set apart without a fill or a second box. */
 .ProseMirror blockquote {
 	padding-left: var(--_qm-space-3);
 	border-left: var(--_qm-border-width) solid var(--_qm-border);
@@ -91,8 +91,8 @@ li.ProseMirror-selectednode::after {
 
 /* Code is a FACE: no chip, no fill, no inset, no size step. The blockquote above
    already argues the general form: a span reads as set apart without a fill or a
-   second box, on the one surface in the card with no edge of its own (SURFACES
-   §Elevation). A chip has nowhere to come from in any case: the card is
+   second box, on the one surface in the card with no edge of its own. A chip has
+   nowhere to come from in any case: the card is
    `--_qm-surface-raised` and the only rung over it is `--_qm-surface-hover`, the
    hover lane, so a chip at rest would read as a hovered button.
 
@@ -111,7 +111,7 @@ li.ProseMirror-selectednode::after {
    same schema, and a solid rule renders an authored `<u>` and a link identically in a
    paragraph that can hold both. An underline at all, where the tips card's link takes
    none, because this leaf is EDITABLE: the `href` is otherwise imperceptible, so
-   removing the rule loses an answer rather than ornament (AESTHETIC §Rules). No hue:
+   removing the rule loses an answer rather than ornament. No hue:
    `--_qm-accent` already means focus, and a body of accent-coloured links collides
    with the ring and with the correlation wash. */
 .ProseMirror a {
@@ -142,7 +142,7 @@ li.ProseMirror-selectednode::after {
    level stays in the model, which is where the codec round-trips it. It is also all
    the ramp could carry: `--_qm-text-title` is one 1.125 step over the body, the
    body sits on `--_qm-text-body` by decision, and leading alone is what separates
-   paper from chrome (AESTHETIC §"The look"). Six levels do not fit in one step, and
+   paper from chrome. Six levels do not fit in one step, and
    minting five more is the drift the scale exists to prevent. */
 .ProseMirror :is(h1, h2, h3, h4, h5, h6) {
 	font-size: inherit;
@@ -185,7 +185,7 @@ li.ProseMirror-selectednode::after {
 }
 /* A cell holds a whole nested view. Its measure floor keeps an empty table from
    collapsing to a row of hairlines with nothing to aim at, and the caret is the
-   focus indicator here exactly as it is in the leaf (no ring, VISUAL_EDITOR_UIUX). */
+   focus indicator here exactly as it is in the leaf: no ring. */
 .qm-table-cell-host {
 	min-width: 4rem;
 }
@@ -297,8 +297,8 @@ tr:not(.qm-table-gutter-row) .qm-table-handle-bar {
 	color: var(--_qm-ink);
 }
 
-/* Pointer OR focus, the card stack's rule unchanged (VISUAL_EDITOR_UIUX §"Card
-   stack"): opacity rather than absence, so the controls stay in the tab order, and
+/* Pointer OR focus, the card stack's rule unchanged: opacity rather than absence,
+   so the controls stay in the tab order, and
    `:focus-within` on the ISLAND, so a caret in a cell holds the reveal as a focused
    control does. */
 .qm-table-handle,

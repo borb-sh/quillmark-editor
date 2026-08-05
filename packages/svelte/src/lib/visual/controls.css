@@ -6,8 +6,8 @@
 
  NOT in `core/theme.css`: that file is the DERIVATION (public dials in, the
  private `--_qm-*` scale out) and it mints values. This file mints none; every
- declaration reads a rung, exactly as a component's own block must
- (SURFACES §"Preventing drift", enforced by `check:style` over `.css` too).
+ declaration reads a rung, exactly as a component's own block must; `check:style`
+ holds that over `.css` too.
 
  `@layer qm.chrome` is the second layer `theme.css` declares. Layered rules lose
  to unlayered ones, which is the point twice over: a consumer's stylesheet beats
@@ -16,7 +16,7 @@
  `.qm-json` adds the monospace face over `.qm-input`, with no specificity fight. */
 
 @layer qm.chrome {
-	/* The themed focus ring in place of the raw UA outline (SURFACES §Focus), as a
+	/* The themed focus ring in place of the raw UA outline, as a
 	 RULE rather than a pair of rungs each control assembles. `--_qm-ring-focus`
 	 fixes the VALUE; which properties draw a ring, and on what state, is the other
 	 half of the decision, and `check:style` sees a minted literal but never a
@@ -47,7 +47,7 @@
 	 each side reads a rung, never that both read the same one.
 
 	 The list is wider than either recipe's chrome: the body leaf withholds the box
-	 and still reads the ramp (SURFACES §"The shared recipe"), so `.qm-prose` is
+	 and still reads the ramp, so `.qm-prose` is
 	 here and not below.
 
 	 `font` is a shorthand carrying `line-height`, so each family's leading is
@@ -63,7 +63,7 @@
 
 	/* A typed value's box (every scalar control and every prose leaf): the text and
 	 numeric inputs, the array's JSON textarea, the enum trigger, the date field, and
-	 the inline richtext leaves (SURFACES §"The shared recipe"). ONE rule, because a
+	 the inline richtext leaves. ONE rule, because a
 	 leaf that agrees with the input beside it "by construction" has to draw the same
 	 declarations, not a copy of them: five hand-kept copies agree until one is
 	 edited, and nothing raises it (no literal is minted, so `check:style` stays
@@ -110,7 +110,7 @@
 
 	/* The second recipe, and it is not the box above: a field is a box because you
 	 type into it, a button is not a box because you press it. No resting border and
-	 no resting fill (AESTHETIC §Rules, "prefer removing chrome to adding it"); the
+	 no resting fill; the
 	 surface arrives on hover, off the rung the enum listbox already highlights with.
 	 Deliberately no `color`: the callers disagree on purpose (the card delete is
 	 `--_qm-danger`, the array remove inherits its row's ink), and a base colour here
@@ -224,7 +224,7 @@
 	 row of glyphs does.
 
 	 The raise and the dismissal are the recipe's too, one existence↔absence trip
-	 taken twice (SURFACES §Motion), which is why the class goes on the PRESENCE
+	 taken twice, which is why the class goes on the PRESENCE
 	 node (bits-ui's own content element, reached through its `child` snippet)
 	 rather than on a pill inside it: the node's animations are what the primitive
 	 waits on before unmounting, and an animation one level in is a fade it never

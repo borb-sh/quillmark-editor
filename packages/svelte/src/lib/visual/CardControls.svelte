@@ -1,5 +1,5 @@
 <!--
-  Card controls (VISUAL_EDITOR_UIUX §"Card controls"), composable cards only.
+  Card controls, composable cards only.
   Right-aligned in the header: a move-up/move-down chevron pair revealed while the
   pointer or the caret is in the card (each disabled at its edge), then an
   always-visible delete. Reorder is BUTTONS, not drag (V1). The card scopes that

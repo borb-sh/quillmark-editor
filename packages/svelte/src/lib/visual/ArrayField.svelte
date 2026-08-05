@@ -10,10 +10,9 @@
 
  A row ends in the reserved action column (`--action-col`), which the field insets
  and this reaches back across: the element controls stop where a scalar's does and
- the remove sits beyond them, on the right edge the field's track keeps (SURFACES
- §Rhythm).
+ the remove sits beyond them, on the right edge the field's track keeps.
 
- Keys carry the list without the mouse (VISUAL_EDITOR_UIUX §Fields): Enter inserts a
+ Keys carry the list without the mouse: Enter inserts a
  sibling below and takes the caret there, Backspace on an EMPTY element removes it
  and hands focus back up the list.
 
@@ -322,9 +321,9 @@
 	 grazing its first line.
 
 	 THE BOX IS THE LABEL'S LINE BOX, and the target is the `::after`: the same split
-	 the field label's guidance marker takes, for the same reason and one row over
-	 (SURFACES §"The shared recipe"). This is the other affordance that sits IN a line
-	 of text rather than in a row of its own, and the line is a label's, so a
+	 the field label's guidance marker takes, for the same reason and one row over.
+	 This is the other affordance that sits IN a line of text rather than in a row of
+	 its own, and the line is a label's, so a
 	 target-sized box would stand the header 8px taller than the `.qm-field-label-row`
 	 beside it in a shared row and put the two labels on different lines. So the family's
 	 floor comes off the box and goes out of flow, unpainted and centred on it: the row

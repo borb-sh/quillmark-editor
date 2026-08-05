@@ -4,7 +4,7 @@
 
 ## TL;DR
 
-The dev app around the library: the reference wiring for the glue the primitives push outward, the manual harness for what a unit test cannot reach, and the page a stranger evaluating the package opens first. This doc is its shape and its visual language: minimal modern paper at page scale, one closed `--pg-*` scale, one layout device. The package's own look is [AESTHETIC.md](../../../svelte/prose/canon/AESTHETIC.md) and [SURFACES.md](../../../svelte/prose/canon/SURFACES.md); what a host owes a mounted surface is [`THEMING.md`](../../../svelte/THEMING.md). Nothing here reads a `--_qm-*` rung.
+The dev app around the library: the reference wiring for the glue the primitives push outward, the manual harness for what a unit test cannot reach, and the page a stranger evaluating the package opens first. This doc is its shape: two routes, two readers, and a host scale of its own. What a host owes a mounted surface is [`THEMING.md`](../../../svelte/THEMING.md); nothing here reads a `--_qm-*` rung.
 
 ## Two jobs on one page
 
@@ -14,39 +14,11 @@ The resolution is **placement**: the harness is one route, and the instruments o
 
 So the front page **proves rather than claims**. It is a quickstart, and every step that names a surface mounts that surface beside its sample, over a session of the reference quill opened exactly as a consumer's is: the page a stranger reads is also the page that runs. Nothing on it claims a capability the mounted surface is not already showing.
 
-## The look
+## The host scale
 
-**Modern paper at page scale**: the same three words AESTHETIC gives the surfaces, one level out. Hierarchy comes from type, whitespace and hairlines; the page mints no hue that answers nothing, and no fill that is not doing a job. The mounted surface stays the most detailed thing on any route, because the chrome around it declines to compete.
+The host is a page where the package is a control, so it carries a scale of its own: `--pg-*`, derived in `playground.css` and read everywhere under `src/routes`. It parts from the package's in what it derives FROM. The poles are the **system** colours behind the dials (`Canvas` / `CanvasText`): a host knows what canvas it sits on, where the package has to ship calibrated literals. `--qm-bg` / `--qm-fg` still sit in front, so setting the dials on the shell retunes page and surface together, and the shell's `color-scheme: light dark` is the host declaration THEMING.md asks for; every `[data-qm-root]` below inherits it, so page and surfaces invert together with no media query.
 
-Three places the host parts from the package, each because the host is a *page* and the package is a *control*:
-
-- **The host's controls are boxed.** With no typing on these pages to be confused with, a box says "this is a control": all a harness's strip of switches needs. The package's buttons stay unboxed for the opposite reason (SURFACES §"The shared recipe").
-- **The body rung is larger** than the surface's: the page is prose to read, the surface is UI to operate.
-- **One element is filled**: the front page's first action, in solid ink; the action beside it takes the same shape unfilled. Boldness spent once reads as a choice.
-
-## Two faces
-
-**Prose is sans, chrome is mono.** Every label, wordmark, nav item, status line and readout is a monospace run; every passage meant to be read is sans.
-
-Monospace is the vernacular of what this package addresses (field paths, content positions, page indices, `dirtyPages` arrays), so a label set in it reads as an instrument's marking rather than as styling, and a column of addresses lines up character for character. It also keeps the host's chrome off the mounted surface's ground, which is sans throughout. Both are system stacks: a downloaded face would put the front door on a network request the static build otherwise does not make.
-
-## The rail
-
-A block is **an annotation in the margin and the content it names**. What would otherwise be a section heading moves out of the reading column, so the content starts at the top of its own block.
-
-The annotation earns its column by answering something the content does not repeat: the step numbers down the quickstart. A rail restating the title beside it would be the redundancy AESTHETIC strips, one scale up.
-
-A tool route's head is **one line**: the surface's name, and the boundary's phase while it is not open. What the surface does is the surface, mounted below; a passage explaining it says nothing the page is not already showing, which is the same subtraction one scale up.
-
-## What takes a fill
-
-**Only an instrument.** A plate means "the harness showing its work": the state strip, the frame around a surface, the block a sample sits in. The reading column takes none, so the meaning holds: a quickstart step is a line of prose and the thing it describes, not a card around them.
-
-## Colour
-
-Two poles and one hue. The poles are the **system** colours behind the dials: a host knows what canvas it sits on, so `Canvas`/`CanvasText` put unstyled text and a `--pg-*` rung on the same tone, where the package has to ship calibrated literals. `--qm-bg` / `--qm-fg` still sit in front, so setting the dials on the shell retunes page and surface together, and the shell's `color-scheme: light dark` is the host declaration THEMING.md asks for; every `[data-qm-root]` below inherits it, so page and surfaces invert together with no media query.
-
-The hue is spent on one thing: a boundary that failed. An open session takes no colour and no word; it paints the page, which is the claim. The hue is a light/dark pair, since a single literal reads as a stain on one of the two schemes. Everything else is a mix off the two poles, in oklab, so inverting the poles inverts the scale.
+What the chrome around a mounted surface does is **decline to compete**: the surface stays the most detailed thing on any route. Colour is spent on one thing, a boundary that failed; an open session takes no colour and no word, because it paints the page, which is the claim.
 
 ## The routes
 
@@ -75,10 +47,10 @@ THEMING.md §"What is behind the column is yours" leaves four properties to the 
 
 ## Preventing drift
 
-The host derivation and its recipes are **two stylesheets**, the split `core/theme.css` and `visual/controls.css` make and for the same reason: a rung fixes a value, a recipe fixes which declarations make a thing, and only the second can be checked against the first. The derivation is exempt from the literal rules, so a recipe beside it would inherit the exemption.
+The host derivation and its recipes are **two stylesheets**, the split the package makes and for the same reason ([ARCHITECTURE.md](../../../svelte/prose/canon/ARCHITECTURE.md) §Styling): a rung fixes a value, a recipe fixes which declarations make a thing, and only the second can be checked against the first. The derivation is exempt from the literal rules, so a recipe beside it would inherit the exemption.
 
 Literals live in the derivation and nowhere else under `src/routes`: `check:style` runs its axes over the host scope too, against the `--pg-*` rung, so a route that mints a grey, a size, a radius or a duration fails CI rather than review. What stays the package's alone is the **dial census**: that the consumed `--qm-*` set equals THEMING.md's is a claim about the package's contract.
 
 ## Links
 
-[ARCHITECTURE.md](../../../svelte/prose/canon/ARCHITECTURE.md) · [AESTHETIC.md](../../../svelte/prose/canon/AESTHETIC.md) · [SURFACES.md](../../../svelte/prose/canon/SURFACES.md) · [`THEMING.md`](../../../svelte/THEMING.md)
+[ARCHITECTURE.md](../../../svelte/prose/canon/ARCHITECTURE.md) · [`THEMING.md`](../../../svelte/THEMING.md)

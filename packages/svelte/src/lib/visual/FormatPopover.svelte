@@ -1,6 +1,6 @@
 <!--
- The formatting selection popover (VISUAL_EDITOR §Chrome, VISUAL_EDITOR_UIUX
- §Formatting). ONE popover, shell-owned, observing the ACTIVE leaf through
+ The formatting selection popover (VISUAL_EDITOR §Chrome). ONE popover,
+ shell-owned, observing the ACTIVE leaf through
  `getActiveLeaf`: the VisualEditor's accessor over its `leaves` registry, and
  the whole of what this surface knows about the editor. A non-empty selection in
  the active leaf raises it over
@@ -81,9 +81,9 @@
 	}
 	let { getActiveLeaf }: Props = $props();
 
-	/** Mark size: the shared control-glyph rule for the popover icons (AESTHETIC §Icons). */
+	/** Mark size: the shared control-glyph rule for the popover icons. */
 	const GLYPH = 15;
-	/** The six content formatting marks (VISUAL_EDITOR_UIUX §Formatting); `anchor` is a 7th, rendered separately (a decoration toggle, not a PM `toggleMark` (see the button below). Each carries its Lucide glyph) the icon *is* the label (AESTHETIC §Icons: a glyph names its action). */
+	/** The six content formatting marks; `anchor` is a 7th, rendered separately (a decoration toggle, not a PM `toggleMark` (see the button below). Each carries its Lucide glyph) the icon *is* the label. */
 	const MARKS: { name: string; icon: Component; title: string }[] = $derived([
 		{ name: 'strong', icon: Bold, title: t.strings.formatBold },
 		{ name: 'em', icon: Italic, title: t.strings.formatEmphasis },
@@ -279,8 +279,8 @@
 		>
 			<!-- The `child` snippet, so the surface IS the primitive's content node
 			 rather than a pill inside it: the dismissal is a CSS animation and the
-			 primitive unmounts on the content node's own animations finishing
-			 (SURFACES §Motion). It also keeps the recipe reachable from this
+			 primitive unmounts on the content node's own animations finishing. It
+			 also keeps the recipe reachable from this
 			 component's scoped styles, which a class handed to a primitive as a
 			 string never picks up the scoping hash for. `wrapperProps` is
 			 floating-ui's positioning box: spread, never styled. `inert` is the half
@@ -362,8 +362,7 @@
 	   still a detached subtree for the derivation's purposes, and the marker is what
 	   applies it (core/theme.css). */
 	/* The lift, the translucency, the blur and the scale-in come from
-	   `.qm-popover-surface` (controls.css); this surface's own is a row and an inset
-	   (VISUAL_EDITOR_UIUX §Formatting). */
+	   `.qm-popover-surface` (controls.css); this surface's own is a row and an inset. */
 	.qm-format-popover {
 		display: flex;
 		padding: var(--_qm-space);

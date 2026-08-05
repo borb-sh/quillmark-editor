@@ -93,8 +93,7 @@ export function createBridge(
 			const slot = slots[box.page];
 			if (!slot) return;
 			// A discrete act ("show me this field"), so it centres every time: the
-			// asymmetry the bloom draws between a continuous signal and a one-shot one
-			// (VISUAL_EDITOR_UIUX §Editor↔preview).
+			// asymmetry the bloom draws between a continuous signal and a one-shot one.
 			centre(measure(slot, rectToPercent(box.rect, slot.size)));
 		},
 		focusPosition(field, pos) {

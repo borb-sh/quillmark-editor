@@ -88,8 +88,7 @@
 
 <style>
 	/* Caret-primary, matching ProseField: the contenteditable outline is dropped
-	   and the active element is cued by the wrapper border tint below, not a ring
-	   (SURFACES §Focus). */
+	   and the active element is cued by the wrapper border tint below, not a ring. */
 	.qm-array-prose :global(.ProseMirror) {
 		outline: none;
 	}

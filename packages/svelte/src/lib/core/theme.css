@@ -1,7 +1,8 @@
-/* The one derivation: public dials in, a closed private scale out (THEMING.md;
-   SURFACES §"Preventing drift": a component reads a rung, it does not mint a
-   value). Colour, geometry and type are all derived here, so all three are minted
-   in ONE place instead of once per detached root.
+/* The one derivation: public dials in, a closed private scale out (THEMING.md).
+   Everything below reads a rung rather than minting a value, which is this file's
+   whole reason for existing and what `check:style` holds everywhere else. Colour,
+   geometry, type and motion are all derived here, so each is minted in ONE place
+   instead of once per detached root.
 
    TRANSPORT: a stylesheet, side-effect imported by `core/index.ts` and applied to
    every element marked `data-qm-root`. The package imports it itself, so there is
@@ -90,7 +91,7 @@
 		   distinguishable steps: uneven spacing spends one rung to buy another:
 		   widening `raised` alone would leave `hover` 1pp above it. `raised` steps
 		   toward the INK pole rather than away from it, so a card is darker than the
-		   page in light and lighter in dark (SURFACES §Elevation). */
+		   page in light and lighter in dark. */
 		--_qm-surface: var(--_qm-bg);
 		--_qm-surface-raised: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 4%);
 		--_qm-surface-hover: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 8%);
@@ -108,12 +109,12 @@
 		   No palette fixes these, so they are their own rungs. There is no shadow
 		   rung: elevation is a tone rung and a hairline, which say the same thing at
 		   both poles, where a shadow's offset states a light source the poles do not
-		   carry (SURFACES §Elevation). `check:style` forbids the property outright,
+		   carry. `check:style` forbids the property outright,
 		   here as well as over the surfaces, so the absence is gated rather than
 		   remembered. */
 		--_qm-blur: 8px;
 		/* The popover's translucency: the raised surface mixed toward transparent, so
-		   the page reads faintly through the pill (SURFACES §Elevation). */
+		   the page reads faintly through the pill. */
 		--_qm-surface-popover: color-mix(in oklab, var(--_qm-surface-raised) 82%, transparent);
 		/* The recede ladder: a hover-revealed or disabled affordance at rest, and a
 		   muted one. Opacity recedes toward whatever is behind, so these invert
@@ -121,7 +122,7 @@
 		--_qm-opacity-idle: 0.35;
 		--_qm-opacity-muted: 0.5;
 
-		/* ── Focus (SURFACES §Focus) ─────────────────────────────────────────────
+		/* ── Focus ───────────────────────────────────────────────────────────────
 		   These fix the ring's VALUE, so no control mints it. Which properties draw a
 		   ring, and on what state, is the other half: a rule, `.qm-focus-ring` in
 		   `visual/controls.css`, since a rung each control reassembles is a scale
@@ -131,7 +132,7 @@
 		--_qm-ring-focus: var(--_qm-ring-width) solid var(--_qm-accent);
 		--_qm-ring-offset: 1px;
 
-		/* ── Motion (SURFACES §Motion) ───────────────────────────────────────────
+		/* ── Motion ──────────────────────────────────────────────────────────────
 		   Two rungs, by what the trip disturbs: `fast` stays inside the element's own
 		   box, `slow` moves the layout around it. */
 		--_qm-duration-fast: 120ms;
@@ -148,7 +149,7 @@
 		--_qm-ease-arrive: cubic-bezier(0, 0, 0.2, 1);
 		--_qm-ease-depart: cubic-bezier(0.4, 0, 1, 1);
 
-		/* ── Geometry (SURFACES §Rhythm) ─────────────────────────────────────────*/
+		/* ── Geometry ──────────────────────────────────────────────────────────*/
 		/* ONE stroke width for every edge the chrome draws: a card's, a control's,
 		   and the metadata bracket's three rules alike. A threshold rather than a
 		   rhythm choice, like the tap floor: a hairline is a hairline at any
@@ -172,7 +173,7 @@
 		   it does not move when `--qm-space` does. Both button families read it, so the
 		   floor is one number instead of one expression per control. */
 		--_qm-tap-min: 24px;
-		/* The reorder/delete glyph (AESTHETIC §Icons). A rung because the card header's
+		/* The reorder/delete glyph. A rung because the card header's
 		   right hang is HALF the difference between this and the tap floor: the glyph
 		   centres in a target sized by the floor, so what stands between it and the
 		   card's gutter is an arithmetic of the two, and a literal on either side is a
@@ -243,7 +244,7 @@
 		line-height: var(--_qm-leading-body);
 	}
 
-	/* Reduced motion collapses the SCALE, never a list of selectors (SURFACES §Motion).
+	/* Reduced motion collapses the SCALE, never a list of selectors.
 	   Two values here are not the rung they look like:
 
 	   `1ms` rather than `none`, because a collapsed transition still FIRES: a surface

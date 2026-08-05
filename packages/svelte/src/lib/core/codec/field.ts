@@ -109,8 +109,8 @@ export interface CreateFieldOpts {
 	/** The parked `description` → `aria-describedby`; announced after the name. */
 	describedBy?: string;
 	/** Ghost text shown on the empty leaf: the resolved `default:` a field ghosts,
-	 * or a body's invitation (VISUAL_EDITOR_UIUX §Fields). The INITIAL value;
-	 * {@link FieldController.setPlaceholder} moves it after mount. Empty/absent
+	 * or a body's invitation. The INITIAL value; {@link
+	 * FieldController.setPlaceholder} moves it after mount. Empty/absent
 	 * shows no ghost. */
 	placeholder?: string;
 	onFocus?(addr: Addr): void;
@@ -575,8 +575,8 @@ export function proseLeafPlugins(
 }
 
 /**
- * A printable key over a selected atom writes PAST it (VISUAL_EDITOR_UIUX §"Table
- * island"). A selection is the subject of the next command, never a thing armed for
+ * A printable key over a selected atom writes PAST it. A selection is the subject
+ * of the next command, never a thing armed for
  * replacement: Backspace deletes it, Mod-C copies it, and a character lands beside
  * it. A BLOCK island takes a new paragraph after it, an INLINE one the caret after
  * the image in the same line: one rule, both node types.
@@ -609,8 +609,8 @@ function pastAtomPlugin(): Plugin {
 }
 
 /**
- * The empty-leaf ghost placeholder (VISUAL_EDITOR_UIUX §Fields). A
- * node decoration stamps the sole empty textblock with a class + the ghost text,
+ * The empty-leaf ghost placeholder. A node decoration stamps the sole empty
+ * textblock with a class + the ghost text,
  * which CSS renders via `::before { content: attr(data-placeholder) }`: so the
  * text never enters the document, the caret path, or a `pmToContent` export. It
  * vanishes the instant the leaf holds any content (the emptiness test fails).

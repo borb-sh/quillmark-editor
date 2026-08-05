@@ -1,5 +1,5 @@
 <!--
- A table island's line menu (VISUAL_EDITOR_UIUX §"Table island"). The island raises
+ A table island's line menu. The island raises
  it from a row or column handle; this draws it and hands the pick straight back.
 
  The channel carries VERBS rather than an address (`codec/table-view.ts`
@@ -13,7 +13,7 @@
  dismissal, and the `menu`/`menuitem` roles that make those honest. Its trigger is
  the island's own vanilla button rather than a `DropdownMenu.Trigger`, so it reaches
  the primitive as `customAnchor`: the ELEMENT, which is what floating-ui tracks
- through a scroll (SURFACES §Anchoring).
+ through a scroll.
 -->
 <script lang="ts">
 	import { DropdownMenu } from 'bits-ui';
@@ -29,7 +29,7 @@
 	}
 	let { menu, root }: Props = $props();
 
-	/** Mark size: the shared control-glyph rule (AESTHETIC §Icons). */
+	/** Mark size: the shared control-glyph rule. */
 	const GLYPH = 14;
 
 	// The island owns whether a menu is live; the primitive owns its own dismissals
