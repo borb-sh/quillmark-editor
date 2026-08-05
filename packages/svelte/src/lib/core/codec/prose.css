@@ -252,6 +252,21 @@ li.ProseMirror-selectednode::after {
 	background: var(--_qm-surface-hover);
 }
 
+/* Every control in the band is a flat centred button hung out of flow; what differs
+   is where it hangs and what it draws. */
+:is(.qm-table-handle, .qm-table-seam, .qm-table-align-item) {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	background: none;
+	cursor: pointer;
+}
+:is(.qm-table-seam, .qm-table-align-item) svg {
+	width: var(--_qm-glyph-control);
+	height: var(--_qm-glyph-control);
+}
+
 /* ONE control per line, and it is a bar rather than a glyph: what a handle acts on
    is the row or column it sits against, and position says that better than an icon
    would.
@@ -262,13 +277,7 @@ li.ProseMirror-selectednode::after {
    the bar would be a 3px target on a control a pointer has to find. */
 .qm-table-handle {
 	position: absolute;
-	display: flex;
-	align-items: center;
-	justify-content: center;
 	padding: var(--_qm-space-half);
-	border: none;
-	background: none;
-	cursor: pointer;
 	/* The pointer owns this gesture, not the page's scroll: a handle drags. */
 	touch-action: none;
 }
@@ -328,39 +337,25 @@ li.ProseMirror-selectednode::after {
 .qm-table-seam {
 	position: absolute;
 	z-index: 1;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	border: none;
+	width: var(--_qm-tap-min);
+	height: var(--_qm-tap-min);
 	border-radius: var(--_qm-radius-pill);
-	background: none;
 	color: var(--_qm-accent);
-	cursor: pointer;
-}
-.qm-table-seam svg {
-	width: var(--_qm-glyph-control);
-	height: var(--_qm-glyph-control);
 }
 .qm-table-seam[data-axis='column'] {
 	bottom: 100%;
-	height: var(--_qm-tap-min);
-	width: var(--_qm-tap-min);
 	left: calc(var(--_qm-tap-min) / -2);
 }
-/* The TRAILING seams sit flush inside their edge rather than centred on it. A
-   boundary seam is centred, and the last boundary is the grid's own edge, so
-   centring one would hang it half outside the scroller, where the padding does not
-   reach and the clip does, making the append affordance the one control that could
-   not be pressed. Off-centre by half a target is imperceptible on a control whose
-   whole meaning is "and one more at the end". */
+/* The TRAILING seams sit flush inside their edge rather than centred on it: the last
+   boundary is the grid's own edge, and a seam centred on it would hang half outside
+   the scroller, where the padding does not reach and the clip does, making the append
+   affordance the one control that could not be pressed. */
 .qm-table-seam[data-axis='column'][data-side='trail'] {
 	left: auto;
 	right: 0;
 }
 .qm-table-seam[data-axis='row'] {
 	right: 100%;
-	width: var(--_qm-tap-min);
-	height: var(--_qm-tap-min);
 	top: calc(var(--_qm-tap-min) / -2);
 }
 .qm-table-seam[data-axis='row'][data-side='trail'] {
@@ -375,7 +370,7 @@ li.ProseMirror-selectednode::after {
 .qm-table-align {
 	position: absolute;
 	z-index: 2;
-	display: none;
+	display: flex;
 	bottom: 100%;
 	left: 0;
 	height: var(--_qm-tap-min);
@@ -389,25 +384,12 @@ li.ProseMirror-selectednode::after {
 	left: auto;
 	right: 0;
 }
-.qm-table-align-open {
-	display: flex;
-}
 .qm-table-align-item {
-	display: flex;
-	align-items: center;
-	justify-content: center;
 	width: var(--_qm-tap-min);
 	height: 100%;
 	padding: 0;
-	border: none;
 	border-radius: var(--_qm-radius-pill);
-	background: none;
 	color: var(--_qm-ink-label);
-	cursor: pointer;
-}
-.qm-table-align-item svg {
-	width: var(--_qm-glyph-control);
-	height: var(--_qm-glyph-control);
 }
 .qm-table-align-item:hover {
 	background: var(--_qm-surface-hover);
@@ -421,23 +403,16 @@ li.ProseMirror-selectednode::after {
    the controls stay in the tab order, and `:focus-within` on the ISLAND, so a caret
    in a cell holds the reveal as a focused control does.
 
-   What is new is that the reveal is per LINE: the island's hover arms the band, and
-   `qm-hot` (the line the pointer is actually over) is what reaches the idle rung. A
-   table lighting every handle at once is thirteen controls answering a question about
-   one. */
+   The reveal is per LINE: the island's hover arms the band, and `qm-hot` (the line the
+   pointer is actually over) is what reaches the idle rung, so a hover answers about
+   one line rather than about every one at once. */
 .qm-table-handle,
 .qm-table-seam {
 	opacity: 0;
 	transition: opacity var(--_qm-duration-fast) var(--_qm-ease-reverse);
 }
-.qm-table-island:hover .qm-table-handle.qm-hot,
-.qm-table-island:hover .qm-table-corner-handle,
-.qm-table-island:focus-within .qm-table-handle.qm-hot,
-.qm-table-island:focus-within .qm-table-corner-handle {
-	opacity: var(--_qm-opacity-idle);
-}
-.qm-table-island:hover .qm-table-seam,
-.qm-table-island:focus-within .qm-table-seam {
+.qm-table-island:is(:hover, :focus-within)
+	:is(.qm-table-handle.qm-hot, .qm-table-corner-handle, .qm-table-seam) {
 	opacity: var(--_qm-opacity-idle);
 }
 .qm-table-handle:hover,
@@ -460,10 +435,10 @@ li.ProseMirror-selectednode::after {
 	outline-offset: var(--_qm-ring-offset);
 }
 
-/* A DRAG in flight. The lifted line reads as picked up by tone and a hairline, never
-   a shadow: elevation is a surface rung here, which says the same thing at both
-   poles. The drop rule is the accent, the surface's one saturated ink, spent where a
-   change is about to land. */
+/* A DRAG in flight. The lifted line reads as picked up by TONE, never a shadow:
+   elevation is a surface rung here, which says the same thing at both poles. The drop
+   rule is the accent, the surface's one saturated ink, spent where a change is about
+   to land. */
 .qm-table-dragging .qm-table-cell.qm-table-lifted {
 	background: var(--_qm-surface-raised);
 	opacity: var(--_qm-opacity-muted);

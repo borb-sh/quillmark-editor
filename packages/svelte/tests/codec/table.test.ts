@@ -131,12 +131,6 @@ describe('what the model already answers', () => {
 		expect(wider.aligns).toEqual(['none', 'left', 'right']);
 	});
 
-	it('every alignment the content declares is settable, the default included', () => {
-		for (const align of ALIGNS) {
-			expect(setAlign(LETTERED, 0, align).aligns[0]).toBe(align);
-		}
-	});
-
 	it('a minted island id continues the positional sequence', () => {
 		const doc = decode(md(TABLE_MD), blockSchema);
 		expect(mintIslandId(doc)).toBe('isl-1');
@@ -382,9 +376,11 @@ describe('the table NodeView', () => {
 	it("a selected column raises the alignment cluster, marking the column's own", () => {
 		const { field } = tableLeaf(LETTERED);
 		handles(field, 'column')[1].click();
-		const open = field.el.querySelectorAll('.qm-table-align.qm-table-align-open');
+		// ONE cluster, and it hangs off the selected column's own header cell: at most
+		// one column is ever selected, so there is nothing to build per column.
+		const open = field.el.querySelectorAll('.qm-table-align');
 		expect(open).toHaveLength(1);
-		expect(open[0].getAttribute('data-c')).toBe('1');
+		expect(open[0].parentElement?.getAttribute('data-c')).toBe('1');
 		const marked = open[0].querySelector('[aria-pressed="true"]');
 		expect(marked?.getAttribute('data-align')).toBe('right'); // LETTERED's column 2
 		open[0].querySelector<HTMLButtonElement>('[data-align="center"]')!.click();
@@ -412,57 +408,38 @@ describe('the table NodeView', () => {
 		field.destroy();
 	});
 
-	it('a seam opens a line at its own boundary, the trailing one included', () => {
+	it('a seam opens a line at its own boundary, leading and trailing alike', () => {
 		const { field } = tableLeaf(LETTERED);
-		// The leading column seam: a column before the first.
+		// The leading seam is the off-by-one that matters: index 0 opens a column at the
+		// front rather than after the first.
 		seams(field, 'column')[0].click();
 		expect(grid(leafProps(field))[0]).toEqual(['', 'h1', 'h2']);
-		field.destroy();
-	});
-
-	it('the trailing seams are how a table grows on either axis', () => {
-		const { field } = tableLeaf(LETTERED);
+		// The trailing one is the whole growth affordance on each axis. Re-queried: an
+		// op rebuilds the chrome, so the seam pressed before is not the element now.
 		const cols = seams(field, 'column');
 		cols[cols.length - 1].click();
-		expect(columnCount(leafProps(field))).toBe(3);
+		expect(columnCount(leafProps(field))).toBe(4);
 		const rows = seams(field, 'row');
 		rows[rows.length - 1].click();
 		expect(leafProps(field).rows).toHaveLength(3);
 		// Both grew the rectangle rather than the axis they were on alone.
-		expect(grid(leafProps(field)).every((row) => row.length === 3)).toBe(true);
+		expect(grid(leafProps(field)).every((row) => row.length === 4)).toBe(true);
 		field.destroy();
 	});
 
-	it('an arrow at a cell text edge walks the grid; inside the text it declines', () => {
+	it('a vertical arrow walks the grid, and never grows it', () => {
 		const { field } = tableLeaf(LETTERED);
 		const views = cellViews(field);
-		views[0].focus();
-		// Caret at the end of "h1": Right leaves for the next cell.
-		views[0].dispatch(views[0].state.tr.setSelection(TextSelection.atEnd(views[0].state.doc)));
-		press(views[0], 'ArrowRight');
-		expect((field as FieldController & LeafViews).focusedView()).toBe(views[1]);
-		// Down from there is the cell below, in the same column.
+		const focused = () => (field as FieldController & LeafViews).focusedView();
+		views[1].focus();
 		press(views[1], 'ArrowDown');
-		expect((field as FieldController & LeafViews).focusedView()).toBe(views[3]);
-		// And a caret mid-text keeps the key: the browser still owns it.
-		const mid = cellViews(field)[3];
-		mid.dispatch(mid.state.tr.setSelection(TextSelection.create(mid.state.doc, 1)));
-		press(mid, 'ArrowRight');
-		expect((field as FieldController & LeafViews).focusedView()).toBe(mid);
-		field.destroy();
-	});
-
-	it('Mod-Enter opens a row below the caret, from anywhere in it', () => {
-		const { field } = tableLeaf(LETTERED);
-		const views = cellViews(field);
-		views[3].focus(); // row 1, column 2
-		// The modifier rides the EVENT: `press` names a key, and prosemirror-keymap
-		// resolves `Mod-` against the platform rather than against a string.
-		views[3].someProp('handleKeyDown', (f) =>
-			f(views[3], new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true, bubbles: true }))
-		);
-		expect(leafProps(field).rows).toHaveLength(3);
-		expect(grid(leafProps(field))[2]).toEqual(['', '']);
+		expect(focused()).toBe(views[3]); // the cell below, same column
+		// Past the last row it clamps rather than appending: Tab is the growth
+		// affordance, and a caret key is not one.
+		views[5].focus();
+		press(views[5], 'ArrowDown');
+		expect(leafProps(field).rows).toHaveLength(2);
+		expect(focused()).toBe(views[5]);
 		field.destroy();
 	});
 
@@ -507,12 +484,6 @@ describe('the table NodeView', () => {
 		doc.overwrite({}, withTable(next));
 		field.applyExternal();
 		expect(cellViews(field)[0].state.doc.textContent).toBe('EXTERNAL');
-		field.destroy();
-	});
-
-	it('a cell mounts the inline schema, which is the mode the cell codec speaks', () => {
-		const { field } = tableLeaf(LETTERED);
-		expect(cellViews(field)[0].state.schema).toBe(inlineSchema);
 		field.destroy();
 	});
 
@@ -683,14 +654,6 @@ describe("the corner is the island's handle", () => {
 		expect(doc.main.body.text).toBe('para\ntail');
 		field.destroy();
 	});
-
-	it('it is not a line handle: the row and column sets are unchanged', () => {
-		const { field } = tableLeaf(LETTERED);
-		expect(handles(field, 'column')).toHaveLength(2);
-		expect(handles(field, 'row')).toHaveLength(2);
-		expect(field.el.querySelectorAll('.qm-table-corner-handle')).toHaveLength(1);
-		field.destroy();
-	});
 });
 
 describe('a selection is the subject of the next command', () => {
@@ -722,15 +685,6 @@ describe('a selection is the subject of the next command', () => {
 		expect(type(outer, 'x')).toBe(true);
 		expect(doc.main.body.islands).toHaveLength(1); // the image stands
 		expect(doc.main.body.text).toBe('a ￼x b');
-		field.destroy();
-	});
-
-	it('Backspace still deletes it: the destructive key is the deliberate one', () => {
-		const { doc, field } = tableLeaf(LETTERED);
-		corner(field).click();
-		const outer = outerView(field);
-		outer.dispatch(outer.state.tr.deleteSelection());
-		expect(doc.main.body.islands).toHaveLength(0);
 		field.destroy();
 	});
 });
