@@ -1,6 +1,6 @@
 # quillmark-js
 
-The JS tier downstream of the `@quillmark/wasm` artifact: `packages/svelte` (the Svelte binding: surfaces over a session), `packages/quiver` (collections → quills), `packages/playground` (the private app that composes them). One npm workspace, one install, one gate.
+The JS tier downstream of the `@quillmark/wasm` artifact: `packages/svelte` (the Svelte binding: surfaces over a session), `packages/quiver` (collections → quills), and two private apps that compose them — `packages/playground` (for a developer reading the library) and `packages/studio` (for an author working on a quill). One npm workspace, one install, one gate.
 
 Start at [`prose/canon/INDEX.md`](prose/canon/INDEX.md) for the rules spanning packages, then the package's own `prose/canon/`; work that is not settled lives in GitHub issues. Canon is **malleable** (no consumers, no compatibility promise): a doc that contradicts the design in hand gets rewritten in the same commit as the code.
 
@@ -14,9 +14,9 @@ Every command is the root's; a package script is reached with `-w packages/<name
 
 ## Boundaries
 
-- `svelte ↛ quiver` and `quiver ↛ svelte`, both directions; only the playground has edges to both. `check:deps` holds it.
+- `svelte ↛ quiver` and `quiver ↛ svelte`, both directions; only the composing apps have edges to both. `check:deps` holds it.
 - Every published package peers `@quillmark/wasm` and none depends on it; root `overrides` pins the developed-against version. The sibling `quillmark` checkout is reference only: read it, never build against it.
-- The playground uses only the public subpath API; a needed internal is an API gap to fix, not a reach-in.
+- The apps use only the public subpath API; a needed internal is an API gap to fix, not a reach-in.
 - `/preview` imports no editor-side code, transitively: a preview consumer does not pull ProseMirror.
 
 ## The WASM boundary
@@ -26,10 +26,10 @@ Every command is the root's; a package script is reached with `-w packages/<name
 
 ## Verification
 
-Vitest is the whole committed suite (real WASM under node; each package's `vitest.config.ts` documents its setup), and CI runs it in full. The playground is the surface for what a unit test cannot reach (canvas paint, scroll virtualization, DPR, the click round-trip), driven by hand or headlessly for the change in front of you. Chromium is preinstalled (`/opt/pw-browsers/chromium`, `PLAYWRIGHT_BROWSERS_PATH` preset; never run `playwright install`).
+Vitest is the whole committed suite (real WASM under node; each package's `vitest.config.ts` documents its setup), and CI runs it in full. The playground is the surface for what a unit test cannot reach (canvas paint, scroll virtualization, DPR, the click round-trip), and studio for the repack loop, driven by hand or headlessly for the change in front of you. Chromium is preinstalled (`/opt/pw-browsers/chromium`, `PLAYWRIGHT_BROWSERS_PATH` preset; never run `playwright install`).
 
 Nothing browser-driven is committed: a browser assertion over chrome restates a doctrine value (a leading rung, a control height, a gutter) outside the CSS that single-sources it, so it fails on every retune of a dial it does not own, and the failure is answered by pasting the new number; what survives that is a suite of numbers agreeing with themselves.
 
-Everything runs against the reference quill [`fixtures/quills/usaf_memo/0.2.0`](fixtures/quills/usaf_memo/0.2.0), a dev fixture at the workspace root, never published. `fixtures/` is a source quiver: the suite walks the version directory into a tree, the playground packs it and fetches it back over HTTP.
+Everything runs against the reference quill [`fixtures/quills/usaf_memo/0.2.0`](fixtures/quills/usaf_memo/0.2.0), a dev fixture at the workspace root, never published. `fixtures/` is a source quiver: the suite walks the version directory into a tree, and each app packs it and fetches it back over HTTP.
 
 In a cloud environment, commit early and often.
