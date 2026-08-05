@@ -6,10 +6,10 @@
 //
 //   1. THE GRAPH. `@quillmark/wasm` is external and above everything; `ui` and
 //      `quiver` are siblings at one tier with NO edge between them, in either
-//      direction; `playground` is the only node with two inbound edges. Declared
-//      dependencies and source specifiers both, since either alone is half a check:
-//      an undeclared import resolves fine in a workspace, and a declared dependency
-//      nothing imports is still a promise.
+//      direction; the composing apps are the only nodes with two inbound edges.
+//      Declared dependencies and source specifiers both, since either alone is half a
+//      check: an undeclared import resolves fine in a workspace, and a declared
+//      dependency nothing imports is still a promise.
 //
 //   2. THE WASM SINGLETON. A handle minted by one copy of the linear memory and
 //      handed to another is foreign. So every published package PEERS the artifact
@@ -32,6 +32,7 @@ import { ROOT, packages, report } from './workspace.mjs';
 /** The graph. An edge absent from this table is a violation; an edge in it is optional. */
 const ALLOWED = {
 	playground: ['@quillmark/svelte', '@quillmark/quiver'],
+	studio: ['@quillmark/svelte', '@quillmark/quiver'],
 	'@quillmark/svelte': [],
 	'@quillmark/quiver': []
 };
