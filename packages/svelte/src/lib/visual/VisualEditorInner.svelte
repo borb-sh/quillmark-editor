@@ -931,8 +931,21 @@
 	   mounted in a pane that does, the host says so and takes the clipping it would
 	   have had from its own scrolling frame either way. The TAIL rides with the
 	   scroller because it is only meaningful under one: dead space below the last
-	   card, so it can be read mid-pane rather than against the bottom edge. */
+	   card, so it can be read mid-pane rather than against the bottom edge.
+
+	   The HEIGHT is what makes the rest of the rule mean anything, and it is the
+	   pane's rather than a number of ours: `overflow` on a box that grows to its
+	   content never has anything to scroll, so the stack would run past the pane
+	   and be clipped by whatever the host frames it with. Taking the pane's height
+	   is the whole of what `.qm-pane` claims (THEMING §"Drop it in": the surface
+	   becomes its own scroll container), and it resolves to `auto` — today's page
+	   behaviour, so a class on a mounting site with no height of its own changes
+	   nothing. The cards below do not shrink to fit it: a flex item's automatic
+	   minimum floors each at its own height, so the stack overflows and scrolls
+	   rather than squashing. `.qm-preview` states the same thing for the same
+	   reason, unconditionally, having no page form to keep. */
 	.qm-editor.qm-pane {
+		height: 100%;
 		overflow: auto;
 		overscroll-behavior: contain;
 		padding-block-end: var(--_qm-tail);
