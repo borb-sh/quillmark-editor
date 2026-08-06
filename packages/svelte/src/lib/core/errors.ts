@@ -35,8 +35,6 @@ export type EditorErrorCode =
 	| 'resolve-failed'
 	/** A page paint the backend refused. The preview shows its error message state. */
 	| 'paint-failed'
-	/** `doc.toMarkdown` threw: the source view shows the error text in place. */
-	| 'serialize-failed'
 	/** A tip's markdown did not render: the tip shows as literal text. */
 	| 'tip-render-failed'
 	/**

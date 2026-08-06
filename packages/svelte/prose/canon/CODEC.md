@@ -93,7 +93,7 @@ A `table` island's props ARE a pipe table: one column count shared by `header`, 
 
 Every other island type keeps the literal placeholder the node's `toDOM` draws: the NodeView narrows through the boundary's own `isTableIsland` guard, and an unknown island renders as its tag rather than as a table it is not.
 
-What the shape does NOT buy yet is the escape hatch it makes cheap. `TableProps` *is* a pipe table, so a local serializer/parser would be small and lossless by construction, and it would carry a per-island source view, a paste path (pipe table → props) and a test oracle in one. It does not ship: `/source` cannot stand in (whole-document, read-only, `Document.toMarkdown()`), and the suite oracles the rectangle directly instead.
+What the shape does NOT buy yet is the escape hatch it makes cheap. `TableProps` *is* a pipe table, so a local serializer/parser would be small and lossless by construction, and it would carry a per-island source view, a paste path (pipe table → props) and a test oracle in one. It does not ship: `Document.toMarkdown()` cannot stand in (whole-document and read-only), and the suite oracles the rectangle directly instead.
 
 ## Open sets: an unknown must survive an edit
 
@@ -118,7 +118,7 @@ A carrier is dropped only by an **explicit** conversion (retyping the paragraph 
 
 **A plaintext field's codec is the boundary's, reached through `reader.getContent`.** Its rest form is the literal string, and its content is that string verbatim: the leaf never parses it, and `importMarkdown` on it would consume the delimiters the author is entitled to. The write side stays the content-object round-trip via `overwrite` / `applyChange`, which the mark-free inline schema keeps conforming. The reference quill declares no `plaintext` field and cannot: `plaintext` resolves to CONTENT for a backend exactly as `richtext` does, and its plate hands the string-typed slots to a vendored Typst package that coerces with `str()`. So the mode's suite builds a two-field schema of its own, the only one in the package that does.
 
-The schema distinction is also what sizes the leaf: a constrained leaf holds one paragraph, so it is one line tall and draws the same recipe a scalar control does, while the full schema grows. **The codec owns the stylesheet both depend on**: `codec/prose.css`, imported beside ProseMirror's own, which carries no block reset and so leaves every block on UA defaults. It lives here rather than per component because every prose leaf in the package (field, body, array element) mounts through the codec and inherits it without restating it. The source view is not one of them: it is a `<pre>` holding serialized text, outside `.ProseMirror` and outside every rule in that file. What the sheet states is that a span is code and a line is a heading; it predicts nothing about the size the rendered paper sets them at, which the package cannot know for a quill it has not seen.
+The schema distinction is also what sizes the leaf: a constrained leaf holds one paragraph, so it is one line tall and draws the same recipe a scalar control does, while the full schema grows. **The codec owns the stylesheet both depend on**: `codec/prose.css`, imported beside ProseMirror's own, which carries no block reset and so leaves every block on UA defaults. It lives here rather than per component because every prose leaf in the package (field, body, array element) mounts through the codec and inherits it without restating it. What the sheet states is that a span is code and a line is a heading; it predicts nothing about the size the rendered paper sets them at, which the package cannot know for a quill it has not seen.
 
 ## Markdown at the edges
 
@@ -126,7 +126,7 @@ Markdown never represents an edit, but it stays a boundary format:
 
 - **paste** markdown → `rebase(fieldCorpus, md)` (cold import + diff, surviving anchors rebased) → splice the returned `delta`.
 - **copy** → `exportMarkdown(rt)`, **lossy**: anchors, `underline`, and unknown marks have no markdown projection. Warn before a copy that would drop identity.
-- **debug source view**: `Document.toMarkdown()`, read-only.
+- **whole-document serialize**: `Document.toMarkdown()`, read-only, canonical.
 
 ## Reconciliation
 
