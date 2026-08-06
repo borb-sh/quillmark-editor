@@ -33,7 +33,7 @@
 	import { emptyContent } from '../core/codec/index.js';
 	import { createLifespan } from '../core/teardown.js';
 	import { IdSeq, controlKind } from './structure.js';
-	import X from '@lucide/svelte/icons/x';
+	import Icon from './icons/Icon.svelte';
 	import TextField from './TextField.svelte';
 	import ProseArrayElement from './ProseArrayElement.svelte';
 	import FieldLabel from './FieldLabel.svelte';
@@ -265,7 +265,7 @@
 				type="button"
 				class="qm-icon-btn qm-remove"
 				title={t.strings.arrayRemove}
-				onclick={() => remove(k)}><X size={14} /></button
+				onclick={() => remove(k)}><Icon name="x" size={14} /></button
 			>
 		</div>
 	{/each}

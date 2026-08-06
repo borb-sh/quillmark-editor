@@ -16,8 +16,7 @@
 	// The surface's words, ambient from the editor root; the package's English
 	// off-tree, so this component renders standalone too.
 	const t = wording();
-	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import X from '@lucide/svelte/icons/x';
+	import Icon from './icons/Icon.svelte';
 	import { renderTip } from './tips.js';
 	import type { EditorErrorHandler } from '../core/errors.js';
 	import './controls.css';
@@ -86,9 +85,9 @@
 		     and its end is the exit. -->
 		<button type="button" class="qm-icon-btn qm-tips-action" onclick={advance}>
 			{#if isLast}
-				{t.strings.tipsDismiss} <X size={GLYPH} />
+				{t.strings.tipsDismiss} <Icon name="x" size={GLYPH} />
 			{:else}
-				{t.strings.tipsNext} <ChevronRight size={GLYPH} />
+				{t.strings.tipsNext} <Icon name="chevron-right" size={GLYPH} />
 			{/if}
 		</button>
 	</div>
