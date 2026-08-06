@@ -17,7 +17,7 @@ A package whose JS a consumer imports peers `@quillmark/wasm` and never depends 
 npm install                # one install, every package
 npm run dev                # the playground at :5173
 npm run dev:studio         # studio at :5173
-npm run build              # quiver → ui → the apps, in that order
+npm run build              # quiver → svelte → the apps, in that order
 npm test                   # every package's suite
 npm run check              # types, per package
 npm run lint               # prettier, over the repo

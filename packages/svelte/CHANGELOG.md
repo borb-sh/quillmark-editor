@@ -10,7 +10,7 @@ Reading a document's canonical markdown is `doc.toMarkdown()` on the `@quillmark
 
 A fourth subpath is CSS: `/preset` is the endorsed look for the page around a surface, opt-in and never side-effect imported. Each surface owns its own column (the gutter, the tone, the preview's desk) and `class="qm-pane"` makes the editor a scroll container with a tail, so a bare `<div>` is a mounting site and nothing is owed before the surface looks right.
 
-The `@quillmark/wasm` peer floor is `>=0.101.0-0`. The prose leaf reads its corpus through `reader.getContent`, which decodes a content field by its declared type: a `plaintext` field keeps the markdown characters its author typed, on a document built through either door.
+The `@quillmark/wasm` peer floor is `>=0.102.0-0`: `init` returns the instantiation promise the lifecycle memoizes rather than installing a panic hook, and a content field comes to rest through `doc.overwrite`, which 0.101 spells `install`. The prose leaf reads its corpus through `reader.getContent`, which decodes a content field by its declared type: a `plaintext` field keeps the markdown characters its author typed, on a document built through either door.
 
 A table island is edited in place. A `table` island rendered as the literal `[table]` and had no way in; it is now a NodeView holding one nested inline-schema prose leaf per cell. Cell text and marks keep the cell-local coordinate space the boundary declares, an identity anchor inside a cell is preserved and rebased rather than dropped, and every edit lowers through the island channel, so the field's anchors survive a keystroke in a cell. Tab traverses cells and appends a row past the last; Enter is the next row, which is the only thing a cell with no line concept can mean.
 

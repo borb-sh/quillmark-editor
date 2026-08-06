@@ -33,7 +33,7 @@ jobs:
         uses: actions/deploy-pages@v4
 ```
 
-Inputs, all optional: `quiver-dir` (default `.`), `studio-package` (default `@quillmark/studio@latest`), `node-version` (default `22`).
+Inputs, all optional: `quiver-dir` (default `.`), `studio-package` (default `@quillmark/studio@latest`), `node-version` (default `22`), and `upload` (default `true`), which this repository's own CI sets false to assemble and assert the site without minting an artifact.
 
 Nothing else is configured. `quiver build` packs files and instantiates nothing, so the deploy installs no wasm; when your repository already has `@quillmark/quiver` installed, the workflow uses that copy rather than fetching one.
 
