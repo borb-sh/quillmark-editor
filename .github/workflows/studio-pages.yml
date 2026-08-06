@@ -36,7 +36,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      SITE: ${{ runner.temp }}/studio-site
+      # `inputs` reaches a job's env and `runner` does not, so the site is spelled
+      # from `$RUNNER_TEMP` in the steps that use it. Outside the workspace either
+      # way: the author's checkout is theirs, and `quiver build` owns what it writes.
       QUIVER_DIR: ${{ inputs.quiver-dir }}
       STUDIO_PACKAGE: ${{ inputs.studio-package }}
     steps:
@@ -58,7 +60,8 @@ jobs:
           if [ ! -x node_modules/.bin/quiver ]; then
             npm install --no-save --no-audit --no-fund @quillmark/quiver
           fi
-          node_modules/.bin/quiver --help >/dev/null 2>&1 || true
+          test -x node_modules/.bin/quiver \
+            || { echo "::error::no quiver CLI resolved in $GITHUB_WORKSPACE"; exit 1; }
 
       # `npm pack` takes a registry spec or a directory; a directory is built through
       # its own `prepack` first, which is how this repository rehearses the layout
@@ -79,6 +82,7 @@ jobs:
 
       - name: Lay the site out
         run: |
+          SITE="$RUNNER_TEMP/studio-site"
           rm -rf "$SITE"
           mkdir -p "$SITE"
           cp -R "$RUNNER_TEMP/client/dist/." "$SITE/"
