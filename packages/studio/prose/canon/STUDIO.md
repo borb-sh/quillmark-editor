@@ -32,7 +32,7 @@ A browser cannot read the source layout, so studio ends at a built artifact behi
 
 **Nothing renders on the server.** The WASM boundary and the paint loop are browser concerns, which is what keeps the Node half a packer and a file watcher.
 
-**One wasm.** The root `overrides` pin is the workspace's only copy, so studio and `quiver test` render through one instance and cannot disagree.
+**One wasm, and the head says which.** The root `overrides` pin is the workspace's only copy, so studio and `quiver test` render through one instance and cannot disagree. The version is stated anyway: a client bundles the copy it was built with, a gate runs whatever its own tree holds, and nothing at runtime reconciles them, so the reader who cannot run `npm ls` is told what painted the page.
 
 **The client is not prebuilt.** Shipping it built is a launch constraint only a published studio carries, so studio is an ordinary Vite dev server, with HMR on its own chrome.
 

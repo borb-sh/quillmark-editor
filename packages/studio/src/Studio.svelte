@@ -284,6 +284,12 @@
 <div class="app">
 	<header class="head">
 		<span class="mark">quillmark<span class="slash">/</span>studio</span>
+		<!-- The engine that painted what is on screen. A client renders through the wasm
+		     it was built with while the author's gate runs whatever they installed, and
+		     nothing at runtime reconciles the two, so the version is stated rather than
+		     left to `npm ls` — which the reader of a client served from elsewhere cannot
+		     run. -->
+		<span class="engine" data-testid="engine">wasm {__WASM_VERSION__}</span>
 		{#if catalog}
 			<Picker {catalog} {picked} disabled={busy} onPick={pick} />
 		{/if}
@@ -399,6 +405,14 @@
 	}
 
 	.slash {
+		color: var(--qmh-ghost);
+	}
+
+	/* Beside the mark, in the ghost the mark's own slash takes: a fact about the build,
+	   read once and not watched. */
+	.engine {
+		font-family: var(--qmh-font-mono);
+		font-size: var(--qmh-text-label);
 		color: var(--qmh-ghost);
 	}
 
