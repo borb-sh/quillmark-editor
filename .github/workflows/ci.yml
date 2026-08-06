@@ -51,3 +51,7 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # After the build, because publint reads the `dist` the manifest points at.
+      - name: Package (publint)
+        run: npm run check:pack

@@ -1,0 +1,31 @@
+# Changelog
+
+`@quillmark/svelte`. An entry is written into `## Unreleased` by the change that earns it; a release promotes that body to its own version section.
+
+## Unreleased
+
+First published version. The surfaces over a `@quillmark/wasm` session ship under four subpaths: `/core` (the `DocPath`/`Place` address vocabulary, the `EditorError` channel, `init`), `/preview` (`createPreview` + `<Preview>`), `/visual` (`<VisualEditor>` and the codec's `createField` leaf), `/source` (`createSourceView` + `<SourceView>`). `svelte@^5` and `@quillmark/wasm` are peers: the consumer owns the session and the handles cross untouched. Pre-1.0, so a minor is where a break lands.
+
+A fifth subpath is CSS: `/preset` is the endorsed look for the page around a surface, opt-in and never side-effect imported. Each surface owns its own column (the gutter, the tone, the preview's desk) and `class="qm-pane"` makes the editor a scroll container with a tail, so a bare `<div>` is a mounting site and nothing is owed before the surface looks right.
+
+The `@quillmark/wasm` peer floor is `>=0.101.0-0`. The prose leaf reads its corpus through `reader.getContent`, which decodes a content field by its declared type: a `plaintext` field keeps the markdown characters its author typed, on a document built through either door.
+
+A table island is edited in place. A `table` island rendered as the literal `[table]` and had no way in; it is now a NodeView holding one nested inline-schema prose leaf per cell. Cell text and marks keep the cell-local coordinate space the boundary declares, an identity anchor inside a cell is preserved and rebased rather than dropped, and every edit lowers through the island channel, so the field's anchors survive a keystroke in a cell. Tab traverses cells and appends a row past the last; Enter is the next row, which is the only thing a cell with no line concept can mean.
+
+Its chrome is two `+` strips (one per growing edge) and one handle per body row and column, each raising that line's menu: insert either side, delete, and for a column the four alignments — the one table capability the content round-trips and nothing in the editor could reach. The count does not grow with the rectangle. Rows and columns hold entry order and offer no reorder, matching the rule array fields already state.
+
+The island's wording joins the `strings` set (`tableAddRow`, `tableInsertColumnLeft`, `tableAlignCenter`, …), and `createField` takes an `onIslandMenu` channel the chrome draws that menu through.
+
+The insert surface's keyboard door: `/` at a word boundary raises a filtered menu of block constructs over the caret — a table, the three headings, both lists, a quote, a code block, a divider — and a pick consumes exactly the trigger run in one commit. The trigger is gated on the leaf's schema (a constrained inline or plaintext leaf has none) and on the word boundary, so `and/or` and a URL stay prose; ↑/↓/Enter/Escape belong to the leaf's keymap, so the caret never leaves the text the insert is measured against. A table pick mints the next positional island id and lands the caret in the first cell.
+
+The menu's wording joins the `strings` set (`slashTable`, `slashBulletList`, …), and each label is its own search key, so a translated menu filters in the language it displays. The selection popover no longer raises over a node selection, which has no text to format.
+
+An island edit commits as ops rather than an install. A table's cells and an image's url live in the island entry, not in the content text, so an edit to one produced no delta and no ops at all and never reached the store. It now lowers through the `islandOps` channel: a changed payload is `set`, a slot the text splice may not carry is `insert`, and a deleted island rides the delta that drops its slot. Every identity anchor in the field survives an island edit, and an island's `loss` class is carried by the projection instead of restamped `lossless` on every write.
+
+The preview's follow-the-caret scroll moves the pane only when the caret has left the fold, and moves its own scrollport when it does. `focusPosition` is the continuous hop (one call per keystroke and per arrow key), so centring on every call took the pane back from the user on all of them, and re-centred a preview click on a point that click already had on screen; the change-guard now mirrors the correlation bloom's. `scrollToField` stays unguarded: a discrete "show me this field" centres every time.
+
+The scroll is written as `container.scrollTop` rather than `scrollIntoView`, which walks every scrollable ancestor: a host whose document scrolls had the whole page dragged to the preview by a keystroke in the editor, taking the editor off screen.
+
+`refresh` re-locates the last followed caret. `session.locate` answers against the last compiled layout while a consumer debounces `update`, so a caret typed past that layout is off-content for the whole burst and the pane sits still until some later caret event asks again.
+
+`onCaretMove` reports a place rather than a transaction. A leaf dispatches one caret signal per transaction and a transaction need not have moved the caret to exist, so a repeat of the place last reported no longer reaches a consumer; the memo spans leaves, so a place left and returned to still reports twice.
