@@ -18,11 +18,11 @@ There are three depths to that, and most apps stop at the first:
 
 Nothing to import and nothing to set. The package pulls its own stylesheet, and each surface owns its whole **column**, not only the cards in it: the gutter the stack sits in, the tone behind it, and (for the preview) the desk the painted sheet floats on. A bare `<div>` is a mounting site.
 
-**Mounting into a fixed-height pane**: pass `class="qm-pane"`. The surface becomes its own scroll container and takes a scroll tail, so the last card can be read at the middle of your pane rather than against its bottom edge. Without it the editor grows to its content and your page scrolls, which is what you want when the editor _is_ the page. The preview and the source view always scroll: a viewport onto a document has nothing else to be.
+**Mounting into a fixed-height pane**: pass `class="qm-pane"`. The surface becomes its own scroll container and takes a scroll tail, so the last card can be read at the middle of your pane rather than against its bottom edge. Without it the editor grows to its content and your page scrolls, which is what you want when the editor _is_ the page. The preview always scrolls: a viewport onto a document has nothing else to be.
 
 `.qm-pane` is opt-in on the editor rather than the default because the editor is what its own popovers portal into, and a scroll container clips them. In a pane you would have had that clipping from your own scrolling frame anyway; in a page you should not have it at all.
 
-**Placing and sizing**: each surface carries a stable root class (`.qm-editor`, `.qm-preview`, `.qm-source`), so you can place it from your own stylesheet without a wrapper. Each also takes a `class` prop that merges onto the same element, which is the better handle when you have one to give.
+**Placing and sizing**: each surface carries a stable root class (`.qm-editor`, `.qm-preview`), so you can place it from your own stylesheet without a wrapper. Each also takes a `class` prop that merges onto the same element, which is the better handle when you have one to give.
 
 **Taking the column back**: your CSS is unlayered and ours is not (below), so `padding: 0` or a `background` of your own on `.qm-editor` wins outright. Nothing is locked.
 
@@ -49,7 +49,7 @@ The whole contract is **ten CSS custom properties**. They are dials, not a palet
 | `--qm-danger`    | `#c5221f`                              | Error diagnostics, the required marker, the delete glyph.                                               |
 | `--qm-warning`   | `#b25000`                              | Warning diagnostics.                                                                                    |
 | `--qm-font`      | `ui-sans-serif, system-ui, sans-serif` | The editor surface's font family. Controls and buttons take it too, in place of the UA face.            |
-| `--qm-font-mono` | `ui-monospace, monospace`              | The monospace face: the source mirror, the JSON array control, the tips card.                           |
+| `--qm-font-mono` | `ui-monospace, monospace`              | The monospace face: the JSON array control, the tips card.                                              |
 | `--qm-font-size` | `0.875rem`                             | Body text: every control's size, and the anchor the ramp derives up (title) and down (label/meta) from. |
 | `--qm-radius`    | `8px`                                  | Card & popover corner. Interior controls derive a tighter tier (half).                                  |
 | `--qm-space`     | `0.25rem`                              | Spacing base. Gaps and insets are `half`/`1×`/`2×`/`3×`/`4×` multiples of it.                           |

@@ -6,7 +6,7 @@
 // this module is the projection math it feeds.
 import type { QuillCardSchema, QuillFieldSchema, ResolvedField, Resolved } from '@quillmark/wasm';
 
-/** The control a field type maps to (VISUAL_EDITOR §"A control per field type"). */
+/** The control a field type maps to (VISUAL_EDITOR §"Structure mirrors the schema"). */
 export type ControlKind =
 	| 'prose' // richtext / plaintext → a codec prose leaf
 	| 'text' // string
@@ -240,7 +240,7 @@ export function fieldModels(cardSchema: QuillCardSchema): FieldModel[] {
 }
 
 /**
- * Group-section order (VISUAL_EDITOR §Layout): the schema's `ui.groups` registry
+ * Group-section order (VISUAL_EDITOR §"Structure mirrors the schema"): the schema's `ui.groups` registry
  * KEY ORDER when present: `QuillCardUi.groups` is a typed `Record` at the
  * boundary, so this reads it uncast: else the first-appearance order of each
  * field's `ui.group`.

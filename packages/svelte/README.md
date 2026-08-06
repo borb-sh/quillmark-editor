@@ -1,6 +1,6 @@
 # @quillmark/svelte
 
-Editor + live-preview components for [Quillmark](https://github.com/borb-sh/quillmark) WASM consumers. A WYSIWYG **VisualEditor**, a canvas **Preview** that paints the compiled document and round-trips clicks to the editor, and a read-only debug **source view**, over one `@quillmark/wasm` session. Vanilla-TS cores with thin Svelte 5 wrappers.
+Editor + live-preview components for [Quillmark](https://github.com/borb-sh/quillmark) WASM consumers. A WYSIWYG **VisualEditor**, and a canvas **Preview** that paints the compiled document and round-trips clicks to the editor, over one `@quillmark/wasm` session. Vanilla-TS cores with thin Svelte 5 wrappers.
 
 ## Install
 
@@ -19,7 +19,6 @@ Each subpath is its own module root; a bundler pulls only what the entry you imp
 | `@quillmark/svelte/core`    | What the surfaces share: the `DocPath`/`Place` address vocabulary, the `EditorError` channel, `init`. Framework-free. |
 | `@quillmark/svelte/preview` | The live preview: `createPreview` + `<Preview>`. Reaches nothing editor-side.                                         |
 | `@quillmark/svelte/visual`  | The federated WYSIWYG: `<VisualEditor>`, the codec's `createField` prose leaf.                                        |
-| `@quillmark/svelte/source`  | The read-only debug source view: `createSourceView` + `<SourceView>`.                                                 |
 | `@quillmark/svelte`         | Re-exports `/core`.                                                                                                   |
 
 ## Open a session
@@ -82,7 +81,7 @@ preview.refresh(session.update(doc)); // repaint dirtyPages ∩ visible
 
 In Svelte, `<Preview {session} onCaretPick={…} />` exposes the same verbs (`refresh`, `scrollToField`, `focusPosition`, `setZoom`) via `bind:this`.
 
-`<Preview>` binds **once**, at mount: swapping `session`, `margin`, `overlays`, `onCaretPick`, `onError` or `strings` in place changes nothing on screen and reports `rebind-ignored` through `onError` at `dev` severity, naming the prop. Swap by remounting (`{#key session}`); drive in-place edits through `refresh(change)`. `<SourceView>` is the same for `doc` and `onError`. `class` and `style` are the exceptions on both, landing on the root element and staying live.
+`<Preview>` binds **once**, at mount: swapping `session`, `margin`, `overlays`, `onCaretPick`, `onError` or `strings` in place changes nothing on screen and reports `rebind-ignored` through `onError` at `dev` severity, naming the prop. Swap by remounting (`{#key session}`); drive in-place edits through `refresh(change)`. `class` and `style` are the exceptions, landing on the root element and staying live.
 
 ## Visual editor
 
@@ -199,7 +198,7 @@ onCaretPick: (hit) => visualEditor.setCaret(hit);
 onCaretMove: preview.focusPosition;
 ```
 
-A consumer holding an `Addr` of its own maps it with `fieldPathForAddr` (from `@quillmark/svelte/core`). The playground app's split-pane route is the full reference shell: one session, both bridge directions, the preview following edits, diagnostics routed inline, and the source view.
+A consumer holding an `Addr` of its own maps it with `fieldPathForAddr` (from `@quillmark/svelte/core`). The playground app's split-pane route is the full reference shell: one session, both bridge directions, the preview following edits, and diagnostics routed inline.
 
 ## Errors
 
@@ -216,19 +215,15 @@ onError: (err) => {
 
 This is not the diagnostics channel. A `Diagnostic` is about the **document** and draws on the field it belongs to; an `EditorError` is about the **surface** and draws nowhere. A refused scalar commit produces both.
 
-## Source view (debug)
+## Canonical markdown
 
-A read-only mirror of `Document.toMarkdown()`: the canonical Quillmark markdown, not an editable dual mode.
+`doc.toMarkdown()` returns the document's canonical Quillmark markdown, which re-parses to an equal `Document`. A read-only mirror is that call in a `<pre>`, re-run after each edit lands, so it needs no surface from this package:
 
 ```ts
-import { createSourceView } from '@quillmark/svelte/source';
-
-const source = createSourceView({ container: el, doc });
-// after an edit lands:
-source.refresh();
+el.textContent = doc.toMarkdown();
 ```
 
-Or `<SourceView {doc} />` with a `refresh()` method.
+The playground's debug drawer is the worked version, holding scroll across the swap and showing a throw in place: `packages/playground/src/routes/playground/SourceMirror.svelte`.
 
 ## Theming
 

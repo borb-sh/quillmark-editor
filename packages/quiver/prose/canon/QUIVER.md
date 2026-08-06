@@ -46,7 +46,9 @@ One thing the addressing does not yet buy: `build` clears its output, so a clien
 
 Reaching for `Quill.fromTree` inside a quiver consumer bypasses that cache and redoes the work. `Quill.fromTree` is for quills built **outside** a quiver: a server route receiving a raw tree over the network, a test fixture assembling one by hand.
 
-Two narrower verbs sit beside it: `resolve(ref)` returns the canonical ref without materializing anything, and `warm()` prefetches every quill's tree without materializing or needing an engine (a later `getQuill` is then microseconds).
+One narrower verb sits beside it: `resolve(ref)` returns the canonical ref without materializing anything.
+
+The quill cache is the only one. A fetched tree lives for the length of the materialization that consumes it and no longer: a second cache holding trees would buy a retry after a `Quill.fromTree` throw its refetch, which is a round-trip saved on the path where the quill is broken, against a cache to evict, coalesce and reason about on every path where it is not.
 
 `resolve` is **sync**, and so are `quillNames()` and `versionsOf()`: the catalog is materialized as the quiver is built (`fromBuiltUrl` fetches `latest.json`, `fromDir` scans the source tree), and `QuiverLoader` carries one verb, `loadTree`, which resolution never reaches. A promise there would price I/O the design does not admit.
 

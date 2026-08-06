@@ -41,13 +41,6 @@ export class Quiver {
 	readonly #quillCache: Map<string, Promise<Quill>> = new Map();
 
 	/**
-	 * Cache of fetched trees, keyed by canonical ref. Populated by `warm()`
-	 * and on first `getQuill` for a ref; an entry is evicted once its quill
-	 * materializes successfully. Promise values so concurrent fetches coalesce.
-	 */
-	readonly #treeCache: Map<string, Promise<Map<string, Uint8Array>>> = new Map();
-
-	/**
 	 * Private constructor. A Quiver comes from a factory (`Quiver.fromBuiltUrl`,
 	 * or `fromDir` / `fromBuiltDir` from `@quillmark/quiver/node`), which is what
 	 * names the thing being read.
@@ -175,61 +168,20 @@ export class Quiver {
 	}
 
 	/**
-	 * Internal: load tree (cached) + construct via Quill.fromTree. Errors
-	 * propagate. On success the tree is evicted from `#treeCache` (the quill
-	 * cache now holds the materialized result), so the tree is not retained
-	 * past materialization. On `Quill.fromTree` failure the tree stays cached,
-	 * so a retry skips the refetch.
-	 */
-	async #materializeQuill(canonicalRef: string): Promise<Quill> {
-		const entry = this.#getTreeCached(canonicalRef);
-		const tree = await entry;
-		const quill = Quill.fromTree(tree);
-		// Evict by identity: only drop the entry if it is still the promise this
-		// materialization consumed (a concurrent refetch may have replaced it).
-		if (this.#treeCache.get(canonicalRef) === entry) {
-			this.#treeCache.delete(canonicalRef);
-		}
-		return quill;
-	}
-
-	/**
-	 * Internal: tree cache reader. On miss, delegates to the loader and stores
-	 * the in-flight Promise. On rejection, evicts so a retry can succeed. Every
-	 * caller arrives through `resolve` or the catalog itself, so the ref is
+	 * Internal: load the tree + construct via Quill.fromTree. Errors propagate.
+	 *
+	 * The tree is held only for the length of this call: the quill cache holds the
+	 * materialized result, and it is the one cache. A second tree cache beside it
+	 * would buy a retry after a `Quill.fromTree` throw its refetch, which is a
+	 * saved round-trip on the path where the quill is broken.
+	 *
+	 * Every caller arrives through `resolve` or the catalog itself, so the ref is
 	 * catalog-backed by construction and the loader needs no gate.
 	 */
-	#getTreeCached(canonicalRef: string): Promise<Map<string, Uint8Array>> {
-		let entry = this.#treeCache.get(canonicalRef);
-		if (entry === undefined) {
-			const at = canonicalRef.indexOf('@');
-			const name = canonicalRef.slice(0, at);
-			const version = canonicalRef.slice(at + 1);
-			entry = this.#loader.loadTree(name, version).catch((err) => {
-				this.#treeCache.delete(canonicalRef);
-				throw err;
-			});
-			this.#treeCache.set(canonicalRef, entry);
-		}
-		return entry;
-	}
-
-	/**
-	 * Prefetches the tree for every quill version in this quiver. Fail-fast.
-	 *
-	 * Network-bound only — does not materialize Quill instances and does not
-	 * require an engine. Subsequent `getQuill` calls reuse the cached trees,
-	 * skipping the fetch (the tree then evicts as its quill materializes).
-	 * Rejects on the first fetch failure.
-	 */
-	async warm(): Promise<void> {
-		const promises: Promise<unknown>[] = [];
-		for (const name of this.quillNames()) {
-			for (const version of this.versionsOf(name)) {
-				promises.push(this.#getTreeCached(`${name}@${version}`));
-			}
-		}
-		await Promise.all(promises);
+	async #materializeQuill(canonicalRef: string): Promise<Quill> {
+		const at = canonicalRef.indexOf('@');
+		const tree = await this.#loader.loadTree(canonicalRef.slice(0, at), canonicalRef.slice(at + 1));
+		return Quill.fromTree(tree);
 	}
 }
 

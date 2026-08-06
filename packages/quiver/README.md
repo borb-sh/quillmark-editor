@@ -45,11 +45,10 @@ That quill is **borrowed, not owned**: every caller asking for that ref gets the
 
 This package produces quills; `@quillmark/wasm` renders them. A quill from `getQuill` is engine-free portable data — schema inspection, validation, blueprint access, `seedDocument()` — and passes straight to `engine.render(quill, doc)`, which routes on `quill.backendId`, loads that backend, clones both handles into its memory, renders, and frees the clones. There is no boundary-crossing step to perform. `Engine.render`, `open`, `supportedFormats` and `supportsCanvas` are **async**. The canonical `Quill` / `Document` / `Engine` types are not re-exported here; import them from the `@quillmark/wasm` peer, their single source of truth.
 
-Two narrower verbs sit beside `getQuill`: `resolve(ref)` returns the canonical ref without materializing anything, and is **sync** (the catalog is in memory from the moment the quiver is built); `warm()` prefetches every quill's tree, so a later `getQuill` is microseconds.
+One narrower verb sits beside `getQuill`: `resolve(ref)` returns the canonical ref without materializing anything, and is **sync** (the catalog is in memory from the moment the quiver is built).
 
 ```ts
 const canonicalRef = quiver.resolve('memo'); // "memo@1.1.0"
-await quiver.warm();
 ```
 
 ## Consuming a quiver (browser)
