@@ -445,7 +445,7 @@ class TableIslandView implements NodeView {
 
 	/** The island as the selection: the corner's gesture, and Escape's out of a line.
 	 *  Those two are the whole of what selects it, and Backspace over it is what
-	 *  deletes the table (CODEC §"A selection is the subject of the next command"). */
+	 *  deletes the table (CODEC §"The table island"). */
 	private selectIsland(): void {
 		const pos = this.getPos();
 		if (pos == null) return;

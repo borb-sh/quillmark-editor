@@ -1,5 +1,5 @@
 <!--
- Type dispatch (VISUAL_EDITOR §"A control per field type"). Given one projected
+ Type dispatch (VISUAL_EDITOR §"Structure mirrors the schema"). Given one projected
  {@link FieldModel} and its live value, render the label + the control the type
  maps to. Array controls own their label (paired with the add affordance in
  {@link ArrayField}); other types render the label here. Prose leaves take a

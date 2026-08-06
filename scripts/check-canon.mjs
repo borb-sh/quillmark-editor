@@ -9,10 +9,10 @@
 //   2. (blank)
 //   3. `> **Implementation**: …` — a blockquote anchor, immediately after the title.
 //   4. `## TL;DR` — somewhere below.
-// The anchor points at FOLDERS or module names, never a source file (file paths
-// rot — the pre-spine CODEC anchor already named `positions.ts`/`reconcile.ts`,
-// neither of which exists). And no canon doc links into `phases/` (a plan tier;
-// canon references only settled ground).
+// The anchor points at FOLDERS or module names, never a source file: a folder
+// survives the split and rename a filename does not, and a doc anchored at one is
+// re-read rather than re-pointed. And no canon doc links into `phases/` (a plan
+// tier; canon references only settled ground).
 
 import { readFileSync } from 'node:fs';
 import { basename } from 'node:path';

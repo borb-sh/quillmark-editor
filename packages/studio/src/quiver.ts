@@ -5,7 +5,7 @@
 //
 // The base is a RUNTIME fact, taken off the document's own, and nothing here is
 // workspace-relative: the same client serves a dev server, a subpath, and a published
-// deploy unchanged (STUDIO §"Built as though it publishes").
+// deploy unchanged (STUDIO §"Published as a client").
 import { Quiver } from '@quillmark/quiver';
 
 /** The quiver's catalog, flattened for the picker. Sync, because `quillNames` and

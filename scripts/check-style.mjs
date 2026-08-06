@@ -1,5 +1,5 @@
 // The style gate — one rule over two scopes: a stylesheet reads a rung, it does not
-// mint a value (SURFACES §"Preventing drift"; PLAYGROUND §"Preventing drift"). The
+// mint a value (ARCHITECTURE §Styling; PLAYGROUND §"Preventing drift"). The
 // axes share that rule and differ only in which properties they own and which value
 // betrays a mint, so they are a table, not three scripts.
 //
@@ -73,7 +73,7 @@ const SCOPES = [
 		exclude: ['packages/svelte/src/lib/preset'],
 		prefix: '--_qm-',
 		derivation: 'packages/svelte/src/lib/core/theme.css',
-		doc: 'SURFACES §"Preventing drift"',
+		doc: 'ARCHITECTURE §Styling',
 		census: true
 	},
 	{
@@ -149,7 +149,7 @@ const AXES = [
 		props: /^(border(-[\w-]+)?-radius|gap|row-gap|column-gap|(padding|margin)(-[\w-]+)?)$/,
 		literal: /\b\d*\.?\d+(px|rem)\b/,
 		rung: '`var(--_qm-space-…)` / `var(--_qm-radius…)`',
-		doc: 'SURFACES §Rhythm',
+		doc: 'ARCHITECTURE §Styling',
 		marker: RHYTHM_MARKER
 	},
 	{
@@ -163,14 +163,14 @@ const AXES = [
 		props: /^border(-(top|right|bottom|left))?(-width)?$/,
 		literal: LENGTH_LITERAL,
 		rung: '`var(--_qm-border-width)`',
-		doc: 'SURFACES §Rhythm',
+		doc: 'ARCHITECTURE §Styling',
 		marker: STROKE_MARKER
 	},
 	{
 		props: /^font-size$/,
 		literal: LENGTH_LITERAL,
 		rung: '`var(--_qm-text-…)`',
-		doc: 'THEMING §Typography'
+		doc: 'THEMING §"The dials"'
 	},
 	{
 		// The CSS-wide keywords (inherit/initial/unset) carry no hierarchy decision,
@@ -178,7 +178,7 @@ const AXES = [
 		props: /^font-weight$/,
 		literal: /\b(\d{3}|bold|bolder|lighter|normal)\b/,
 		rung: '`var(--_qm-weight-…)`',
-		doc: 'THEMING §Typography'
+		doc: 'THEMING §"The dials"'
 	},
 	{
 		// Leading has no literal shape to forbid — a bare number is exactly what a rung
@@ -190,7 +190,7 @@ const AXES = [
 		props: /^line-height$/,
 		allowBare: /^1$/,
 		rung: '`var(--_qm-leading-…)`',
-		doc: 'SURFACES §Rhythm'
+		doc: 'ARCHITECTURE §Styling'
 	},
 	{
 		// A family is a scale decision whatever it names, so the rung is required
@@ -236,11 +236,11 @@ const AXES = [
 		props: /^(transition|animation)(-(duration|delay))?$/,
 		literal: /\b\d*\.?\d+m?s\b/,
 		rung: '`var(--_qm-duration-…)`',
-		doc: 'SURFACES §Motion'
+		doc: 'ARCHITECTURE §Styling'
 	},
 	{
-		// A curve is a rung like any other value, `ease` included: SURFACES §Motion has
-		// why the UA keyword is a mint rather than the absence of one.
+		// A curve is a rung like any other value, `ease` included: the UA keyword is a
+		// curve the surface chose, not the absence of one.
 		//
 		// Forbidding the bare keyword is what the rung-REQUIRED shape cannot do here: a
 		// `transition` value already reads the duration rung, so a value-level "does it
@@ -249,7 +249,7 @@ const AXES = [
 		props: /^(transition|animation)(-timing-function)?$/,
 		literal: /(?<![-\w])(ease|linear|cubic-bezier|steps|step-(start|end))\b/,
 		rung: '`var(--_qm-ease-…)`',
-		doc: 'SURFACES §Motion'
+		doc: 'ARCHITECTURE §Styling'
 	},
 	{
 		// `all` is not a property list, it is the absence of one: it animates whatever
@@ -259,7 +259,7 @@ const AXES = [
 		literal: /\ball\b/,
 		lead: 'animates an open set',
 		fix: 'name the properties that differ between the two rest states',
-		doc: 'SURFACES §Motion'
+		doc: 'ARCHITECTURE §Styling'
 	}
 ];
 
@@ -348,15 +348,15 @@ for (const scope of SCOPES) {
 
 			// Zero shadows, and BEFORE the derivation exemption, since what is forbidden
 			// is the property rather than one of its values: elevation is a tone rung and
-			// a hairline, so there is no shadow rung to mint and none to read (SURFACES
-			// §Elevation). The colour axis sees `box-shadow` but fires only on a hex or a
+			// a hairline, so there is no shadow rung to mint and none to read. The colour
+			// axis sees `box-shadow` but fires only on a hex or a
 			// colour function, so `0 1px 4px black` and one mixed from `var()` rungs both
 			// walk through it; that gap is why this sits outside the table. Both
 			// spellings, since `preview/paint.ts` carries declarations as JS strings.
 			const shade = line.match(/^\s*(box-shadow|text-shadow|boxShadow|textShadow)\s*:\s*([^;,]*)/);
 			if (shade && !/^'?(none|inherit|initial|unset|revert)'?$/.test(shade[2].trim()))
 				fail(
-					`\`${shade[1]}\` — lift with a surface rung and a hairline, not a shadow (SURFACES §Elevation; ${scope.doc})`
+					`\`${shade[1]}\` — lift with a surface rung and a hairline, not a shadow (${scope.doc})`
 				);
 
 			if (file === scope.derivation) return; // literals here ARE the defaults
@@ -471,7 +471,7 @@ for (const [abs, rel] of canonRoots().flatMap(canonDocs))
 // dials are a closed contract, so a consumed-but-undocumented one is drift. The
 // classes are not: the package promises the mounted surface roots and withholds
 // everything under them, because a full class contract freezes internal DOM shape
-// (AESTHETIC §"What a restyle keeps"). So an internal class appears, moves and
+// (ARCHITECTURE §Styling). So an internal class appears, moves and
 // vanishes freely, and what is checked is the half a consumer can be hurt by — a
 // promised class the DOM stopped carrying. The lookbehind is what separates a class
 // from a dial: `--qm-space` and `--_qm-space` both carry `qm-space` after a dash.

@@ -1,7 +1,7 @@
 <!--
  A `string` field → text input. Commits a non-empty edit LIVE (on input) via the
  parent's typed `writer.set`, so the preview tracks typing. A cleared field is the
- UNSET rung of the commitment ladder (VISUAL_EDITOR §"the commitment ladder"): it
+ UNSET rung of the commitment ladder (VISUAL_EDITOR §"Structure mirrors the schema"): it
  commits `undefined` (the parent removes the field, ghosted `default:` renders):
  but at `change` (blur), NOT per keystroke, so select-all-and-retype doesn't flash
  the field through its default between the delete and the first typed char.
