@@ -12,11 +12,16 @@
 //      dependency nothing imports is still a promise.
 //
 //   2. THE WASM SINGLETON. A handle minted by one copy of the linear memory and
-//      handed to another is foreign. So every published package PEERS the artifact
-//      and none depends on it, the range is a single `>=` comparator (loose, until
-//      1.0 makes a narrow one honest), and root `overrides` pins the
+//      handed to another is foreign. So a package whose JS a consumer imports PEERS
+//      the artifact and never depends on it, the range is a single `>=` comparator
+//      (loose, until 1.0 makes a narrow one honest), and root `overrides` pins the
 //      developed-against version to exactly one. Loose ranges permit two installs
 //      rather than preventing them, which is why the pin is the half that works.
+//      A package that exports no JS is a BUNDLED TERMINAL: nothing imports it, so no
+//      handle crosses out of it and there is no second copy to be foreign to. It
+//      depends on the artifact like any consumer, at build time, and ships no runtime
+//      dependencies at all — what it bundles, a consumer must not install a second
+//      time beside a tarball that already contains it.
 //
 //   3. THE `/preview` BUNDLE WEIGHT. A preview consumer does not pull ProseMirror,
 //      which is what makes the subpath claim ("a bundler pulls only what the imported
@@ -32,7 +37,7 @@ import { ROOT, packages, report } from './workspace.mjs';
 /** The graph. An edge absent from this table is a violation; an edge in it is optional. */
 const ALLOWED = {
 	playground: ['@quillmark/svelte', '@quillmark/quiver'],
-	studio: ['@quillmark/svelte', '@quillmark/quiver'],
+	'@quillmark/studio': ['@quillmark/svelte', '@quillmark/quiver'],
 	'@quillmark/svelte': [],
 	'@quillmark/quiver': []
 };
@@ -87,13 +92,28 @@ const below = (a, b) => {
 	return false;
 };
 
+/** What a consumer can import: an entry, a subpath map, or an executable. A package
+ *  with none is a bundled terminal — served, never imported, so no handle leaves it. */
+const exportsJs = (json) =>
+	json.exports !== undefined || json.main !== undefined || json.bin !== undefined;
+
 for (const { dir, json } of PACKAGES) {
-	if (json.private) {
-		// The app is not a published claim; it installs the artifact like any consumer.
+	if (json.private || !exportsJs(json)) {
+		// Neither is a published claim on the artifact: the app installs it like any
+		// consumer, and the bundled terminal contains it.
+		const what = json.private ? 'a private package' : 'a package that exports no JS';
 		if (json.peerDependencies?.[WASM])
-			fail(
-				`packages/${dir}/package.json: \`${WASM}\` is a peer of a private package — depend on it`
-			);
+			fail(`packages/${dir}/package.json: \`${WASM}\` is a peer of ${what} — depend on it`);
+		if (!json.private) {
+			if (!json.devDependencies?.[WASM])
+				fail(
+					`packages/${dir}/package.json: \`${WASM}\` is not a devDependency — a bundled terminal builds against the copy it ships`
+				);
+			for (const dep of Object.keys(json.dependencies ?? {}))
+				fail(
+					`packages/${dir}/package.json: \`dependencies.${dep}\` — a bundled terminal has no runtime dependencies; what it bundles is not installed beside it`
+				);
+		}
 		continue;
 	}
 	for (const f of DEP_FIELDS)

@@ -1,29 +1,52 @@
 {
-	"name": "studio",
-	"private": true,
+	"name": "@quillmark/studio",
 	"version": "0.0.0",
-	"description": "The quill author's surface: a quiver's quills, worked live. Never published.",
+	"description": "The quill author's surface, as a static client: a quiver's quills, worked live.",
 	"license": "Apache-2.0",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/borb-sh/quillmark-js.git",
+		"directory": "packages/studio"
+	},
+	"bugs": {
+		"url": "https://github.com/borb-sh/quillmark-js/issues"
+	},
+	"homepage": "https://github.com/borb-sh/quillmark-js/tree/main/packages/studio#readme",
+	"keywords": [
+		"quillmark",
+		"quiver",
+		"typst",
+		"markdown"
+	],
+	"author": "Quillmark Contributors",
 	"type": "module",
 	"engines": {
 		"node": ">=22"
 	},
+	"files": [
+		"dist",
+		"NOTICE"
+	],
 	"scripts": {
 		"dev": "vite",
-		"build": "vite build",
-		"preview": "vite preview",
-		"check": "svelte-check --tsconfig ./tsconfig.json"
-	},
-	"dependencies": {
-		"@quillmark/quiver": "*",
-		"@quillmark/svelte": "*"
+		"build": "vite build && node scripts/site.mjs",
+		"preview": "vite preview --outDir site",
+		"check": "svelte-check --tsconfig ./tsconfig.json",
+		"check:pack": "publint",
+		"prepack": "rm -rf dist site && npm run build"
 	},
 	"devDependencies": {
+		"@quillmark/quiver": "*",
+		"@quillmark/svelte": "*",
 		"@quillmark/wasm": ">=0.101.0-0",
 		"@sveltejs/vite-plugin-svelte": "^6.0.0",
+		"publint": "^0.3.0",
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.1.0",
 		"typescript": "^5.7.0",
 		"vite": "^6.0.0"
+	},
+	"publishConfig": {
+		"access": "public"
 	}
 }

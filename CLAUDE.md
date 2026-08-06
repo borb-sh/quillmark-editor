@@ -1,6 +1,6 @@
 # quillmark-js
 
-The JS tier downstream of the `@quillmark/wasm` artifact: `packages/svelte` (the Svelte binding: surfaces over a session), `packages/quiver` (collections → quills), and two private apps that compose them: `packages/playground` (for a developer reading the library) and `packages/studio` (for an author working on a quill). One npm workspace, one install, one gate.
+The JS tier downstream of the `@quillmark/wasm` artifact: `packages/svelte` (the Svelte binding: surfaces over a session), `packages/quiver` (collections → quills), and two apps that compose them: `packages/playground` (private, for a developer reading the library) and `packages/studio` (published as a static client, for an author working on a quill). One npm workspace, one install, one gate.
 
 Start at [`prose/canon/INDEX.md`](prose/canon/INDEX.md) for the rules spanning packages, then the package's own `prose/canon/`; work that is not settled lives in GitHub issues. Canon is **malleable** (no consumers, no compatibility promise): a doc that contradicts the design in hand gets rewritten in the same commit as the code.
 
@@ -15,7 +15,7 @@ Every command is the root's; a package script is reached with `-w packages/<name
 ## Boundaries
 
 - `svelte ↛ quiver` and `quiver ↛ svelte`, both directions; only the composing apps have edges to both. `check:deps` holds it.
-- Every published package peers `@quillmark/wasm` and none depends on it; root `overrides` pins the developed-against version. The sibling `quillmark` checkout is reference only: read it, never build against it.
+- A package whose JS a consumer imports peers `@quillmark/wasm` and never depends on it; a bundled terminal (exports no JS, so no handle crosses out) depends on it and ships no runtime dependencies. Root `overrides` pins the developed-against version. The sibling `quillmark` checkout is reference only: read it, never build against it.
 - The apps use only the public subpath API; a needed internal is an API gap to fix, not a reach-in.
 - `/preview` imports no editor-side code, transitively: a preview consumer does not pull ProseMirror.
 

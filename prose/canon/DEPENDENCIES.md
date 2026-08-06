@@ -9,11 +9,11 @@ Who may depend on whom, and why exactly one copy of `@quillmark/wasm` is install
 ## The graph
 
 ```
-@quillmark/wasm  (external, loose peer)
+@quillmark/wasm  (external, loose peer — a build-time dependency of the apps)
   ├── @quillmark/svelte    the Svelte binding: surfaces over a session
   ├── @quillmark/quiver    collections → quills
   ├── playground           the composing apps: the only nodes
-  └── studio               with two inbound edges
+  └── @quillmark/studio    with two inbound edges
 ```
 
 `svelte ↛ quiver` and `quiver ↛ svelte`, both directions: siblings at one tier with no edge between them. Not `svelte` peer-depending on `quiver`, which is the opposite arrangement and the one the word invites.
@@ -28,9 +28,13 @@ Membership in this repo is "downstream of the wasm artifact". The Rust workspace
 
 ## The wasm singleton
 
-Every published package **peers** `@quillmark/wasm` and none depends on it. The handles cross the package boundary (a `Quill` minted by `svelte` is handed to quiver's loader, a `Document` seeded by quiver is opened by `svelte`'s session), and a handle is an index into one wasm instance's linear memory. Two installed copies are two linear memories, so a handle from one is foreign to the other. The runtime refuses it at every door that takes one, as a `QuillmarkError` coded `runtime::foreign_handle` naming the cause and the `npm ls @quillmark/wasm` that diagnoses it: the failure is loud at the first crossing rather than a wrong render later. The consumer supplies the one copy; the check reports the breach, it does not repair it.
+A package whose JS a consumer imports **peers** `@quillmark/wasm` and never depends on it. The handles cross the package boundary (a `Quill` minted by `svelte` is handed to quiver's loader, a `Document` seeded by quiver is opened by `svelte`'s session), and a handle is an index into one wasm instance's linear memory. Two installed copies are two linear memories, so a handle from one is foreign to the other. The runtime refuses it at every door that takes one, as a `QuillmarkError` coded `runtime::foreign_handle` naming the cause and the `npm ls @quillmark/wasm` that diagnoses it: the failure is loud at the first crossing rather than a wrong render later. The consumer supplies the one copy; the check reports the breach, it does not repair it.
 
 The range is loose (`>=0.101.0-0`, one `>=` comparator) until wasm 1.0 makes compatibility predictable enough to claim a narrow one honestly. Its floor is a claim, not a formality: it names the release that first carries every verb the packages call, and it rises with the first call to a newer one.
+
+The rule is the crossing rather than the publishing, and `studio` is where the two come apart. A **bundled terminal** exports no JS — no entry, no subpath map, no bin — so nothing imports it, no handle crosses out of it, and there is no second copy for one to be foreign to. It depends on the artifact like any consumer, at build time, and its tarball declares no runtime dependencies at all: what a client bundles must not be installed a second time beside a tarball that already contains it. `check:deps` discriminates on exactly that, a package's own manifest saying which it is.
+
+What that costs is the pin. A bundled client renders through the copy baked in at publish time while an author's `quiver test` runs their own, and nothing at runtime reconciles them — the gate is authoritative and studio is advisory, so the disagreement is a caveat rather than a defect. The client states its version on screen, that being what a reader who cannot run `npm ls` has instead.
 
 The non-obvious half: **loose ranges do not prevent two installs, they permit them.** Two wide ranges overlapping is exactly when npm is free to resolve twice. So the published claim stays wide and the developed-against version is exactly one, pinned by root `overrides` with the root devDependency installing it. Under loose ranges the range half of `check:deps` is weak (the override satisfies everything) and starts earning its keep on the same clock as the range.
 

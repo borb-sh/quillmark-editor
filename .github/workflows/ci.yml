@@ -1,6 +1,10 @@
-# The whole gate, over the whole workspace. One job: every package runs each verb
-# its own way, and a verb name means one thing. Nothing here needs a browser, and
+# The whole gate, over the whole workspace. The verbs are one job: every package runs
+# each its own way, and a verb name means one thing. Nothing here needs a browser, and
 # nothing runs elsewhere.
+#
+# The second job is the deploy rehearsal, and it runs the reusable workflow a quiver
+# author calls rather than a copy of it: a layout that only this repository exercises
+# would break for them first.
 name: CI
 
 on:
@@ -55,3 +59,14 @@ jobs:
       # After the build, because publint reads the `dist` the manifest points at.
       - name: Package (publint)
         run: npm run check:pack
+
+  # The workspace's own quiver through the author's path: `npm pack` builds the local
+  # client, so this gates the client and the layout together, against the fixture the
+  # rest of the suite runs on. No artifact is minted — a rehearsal is not a deploy, and
+  # this repository's Pages holds the playground.
+  studio-pages:
+    uses: ./.github/workflows/studio-pages.yml
+    with:
+      quiver-dir: fixtures
+      studio-package: ./packages/studio
+      upload: false

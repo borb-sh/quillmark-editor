@@ -4,7 +4,9 @@
 
 ## TL;DR
 
-The surface a quill author looks at their quiver through: pick a quill, edit, watch it paint, read the errors. `quiver test` answers *does it work*; studio answers *what is it like to use*, which is where most of what makes a quill good or bad lives. One reader: the author, mid-edit, locally, against files on disk. This doc is its shape: two halves, the repack loop the document survives, and the endorsed look it is drawn with.
+The surface a quill author looks at their quiver through: pick a quill, edit, watch it paint, read the errors. `quiver test` answers *does it work*; studio answers *what is it like to use*, which is where most of what makes a quill good or bad lives. This doc is its shape: two halves, the repack loop the document survives, and the endorsed look it is drawn with.
+
+Two readers, one client. The author works mid-edit, locally, against files on disk, and the loop below is theirs. A deployed quiver is frozen at a commit, so the reader who arrives at a URL — a reviewer following a branch, someone evaluating a quiver — gets the picker, the surfaces and the errors over one built quiver, with the watch half inert and nothing to repack. One client rather than two: the carry costs nothing where there is nothing to carry, and it is the same client an `npx` over a working tree serves.
 
 ## Looked at, not blocked on
 
@@ -24,7 +26,7 @@ Studio also sheds the playground's front-door job. Its reader arrives already co
 
 A browser cannot read the source layout, so studio ends at a built artifact behind a base URL, consumed with `Quiver.fromBuiltUrl`.
 
-**The Node half** packs and watches, and does nothing else: `build()` into the directory the dev server serves, watch the source tree, repack, signal. It is a Vite plugin, so one hook covers `vite dev` and `vite build` alike. Two constraints come from the serving layer rather than from quivers, and both are stated where the plugin is: the first pack lands before the server is created, and the packed tree stays watched.
+**The Node half** packs and watches, and does nothing else: `build()` into the directory the dev server serves, watch the source tree, repack, signal. It is a Vite plugin, and the dev server's alone. Two constraints come from the serving layer rather than from quivers, and both are stated where the plugin is: the first pack lands before the server is created, and the packed tree stays watched.
 
 **A generation is never observably half-written.** `build` clears its output before writing it, so a pack is assembled outside the served tree and moved in with one rename. Without that, a client reading the pointer mid-pack reports a broken quiver for an edit that was fine.
 
@@ -32,9 +34,9 @@ A browser cannot read the source layout, so studio ends at a built artifact behi
 
 **Nothing renders on the server.** The WASM boundary and the paint loop are browser concerns, which is what keeps the Node half a packer and a file watcher.
 
-**One wasm.** The root `overrides` pin is the workspace's only copy, so studio and `quiver test` render through one instance and cannot disagree.
+**One wasm, and the head says which.** The root `overrides` pin is the workspace's only copy, so studio and `quiver test` render through one instance and cannot disagree. The version is stated anyway: a client bundles the copy it was built with, a gate runs whatever its own tree holds, and nothing at runtime reconciles them, so the reader who cannot run `npm ls` is told what painted the page.
 
-**The client is not prebuilt.** Shipping it built is a launch constraint only a published studio carries, so studio is an ordinary Vite dev server, with HMR on its own chrome.
+**The client ships built and runs unbuilt.** The tarball is what `vite build` produced; locally it is an ordinary Vite dev server, with HMR on its own chrome. An author who cannot run a bundler is the reason for the first, and the reason the wasm is bundled with it.
 
 **The bridge is studio's own.** The caret bridge and the debounced recompile are consumer-layer by design, and studio's chrome diverges from the playground's anyway. A shared shell promoted into the package would contradict the reason the shell is the consumer's.
 
@@ -83,9 +85,15 @@ The band is under the panes rather than over them: it is consulted, not watched,
 
 **A document that will not compile is a state of the paint, not a row under it.** The session is transactional, so the last good paint stays on screen and stops answering the document. That is what a failed open reports one pane over, so it takes the same register: the failure at the surface it is about, carrying the place to open. The paint stays whole underneath, being the only evidence of what the plate did before it stopped compiling, and the strip is laid over rather than stacked above, so breaking a plate and fixing it do not resize what is being judged. The band still lists the diagnostics, one list being its job.
 
-## Built as though it publishes
+## Published as a client
 
-Studio is private, so it depends on `@quillmark/wasm` rather than peering it, and it launches against `fixtures/`, the workspace's source quiver. Publishing it is a packaging change rather than a rewrite, and that is a property the browser half maintains rather than one it would acquire: it takes its base URL at **runtime**, off the document's own, and imports nothing workspace-relative. The source path and the output directory are the Node half's alone.
+The tarball is `dist` and nothing else: no bin, no server, no watcher. `@quillmark/svelte`, `@quillmark/quiver` and the wasm are bundled into it at build time, so it has no runtime dependencies and exports no JS — a **bundled terminal**, which is why it depends on the artifact rather than peering it ([DEPENDENCIES.md](../../../../prose/canon/DEPENDENCIES.md)).
+
+The base is a **runtime** fact, off the document's own, and nothing workspace-relative is imported, so one build serves a dev server, a subpath and a deploy unchanged. The source path and the output directory are the Node half's alone, which is what makes that true rather than aspirational.
+
+`studio-pages.yml` is the author's whole addition: a reusable workflow that builds their quiver, lays the client over it and uploads the Pages artifact. The deploy stays in their file, so nothing outside their repository holds `pages: write`. `build` packs files and instantiates nothing, so they install no wasm, write no code and configure nothing but the reference.
+
+**The built client carries no quiver.** A quiver is what the client is laid *over*, at the `quiver/` its base resolves to, so one packed inside it occupies that URL and the winner is whichever copy lands last — the workspace's fixture, on a site that meant to serve its own. `scripts/site.mjs` is the arrangement stated once: assert the client is quiverless, lay it out, build a quiver beside it, assert the pointer is reachable. `vite preview` serves what it assembles, so the shape a deploy makes is the shape looked at locally.
 
 ## Preventing drift
 
