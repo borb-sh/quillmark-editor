@@ -18,9 +18,9 @@ Both packages publish, and both are pre-1.0: the consumers are first-party, so a
 
 The version lives in the package's own manifest, so there is nothing repo-wide to bump and no arithmetic for the workflow to redo: `npm version` computes it, and a package left alone stays where it is. The tag carries the package name for the same reason — a bare `v0.1.0` would say nothing about which package reached it, and the next release's commit range is read off the last tag that names its own package.
 
-Nothing between the tag and the publish can fail: the gate, the build and `publint` all run first, because a dangling tag is deleted and a published version is permanent.
+Nothing between the tag and the publish can fail: the gate, the build and `publint` all run first, because a dangling tag is deleted and a published version is permanent. The publish skips a version the registry already has, so a run that failed after it is re-run rather than unpicked.
 
-npm Trusted Publishing (OIDC) mints the credential, so no token is stored. It names a workflow and an environment, which is why the publish lives in one workflow file and runs in `release`.
+npm Trusted Publishing (OIDC) mints the credential, so no token is stored. It names a workflow and an environment, which is why the publish lives in one workflow file and runs in `release`. A package with no versions has no settings page to configure it on, so a first publish is a hand upload from the release branch and the merged run agrees with what it finds.
 
 ## The curated section
 

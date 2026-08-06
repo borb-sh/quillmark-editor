@@ -84,10 +84,20 @@ jobs:
       - name: Upgrade npm for Trusted Publishing
         run: npm install -g npm@latest
 
+      # Skipping a version the registry already has is what makes the job safe to
+      # re-run, and it is the whole of the first-publish bootstrap: a package with
+      # no versions has no trusted publisher to configure, so its first upload is
+      # a hand publish from the release branch and this run agrees rather than
+      # 403s on it.
       - name: Publish
         run: |
-          npm publish -w "packages/${{ steps.release.outputs.pkg }}" \
-            --provenance --access public
+          PKG="${{ steps.release.outputs.pkg }}"
+          VERSION="${{ steps.release.outputs.version }}"
+          if [ "$(npm view "@quillmark/${PKG}@${VERSION}" version 2>/dev/null)" = "$VERSION" ]; then
+            echo "@quillmark/${PKG}@${VERSION} is already on the registry; nothing to publish."
+            exit 0
+          fi
+          npm publish -w "packages/$PKG" --provenance --access public
 
       - name: Create GitHub Release
         env:
