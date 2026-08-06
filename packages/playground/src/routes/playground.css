@@ -26,8 +26,8 @@
 	/* ── The reading column ──────────────────────────────────────────────────── */
 	/* ONE page width for the whole shell; a per-route maximum would step the running
 	   head in and out over the surface it sits above. The column a passage wraps at is
-	   the preset's measure, and the front page's split reads it directly: what is left
-	   of the page beside a reading column is the surface those steps mount. */
+	   the preset's measure, which the front page's split reads directly: the surface
+	   takes what is left of the page beside it. */
 	--pg-max: 84rem;
 
 	/* ── Containers ──────────────────────────────────────────────────────────── */

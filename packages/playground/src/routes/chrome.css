@@ -56,9 +56,16 @@
 /* The mounting site, which a surface painting its own column reduces to an edge, a
    corner, and the clip that holds the surface to them. No tone and no
    gutter: those are the surface's own (THEMING §"Drop it in"). `border-box`, so a
-   stated height is the height it draws. */
+   stated height is the height it draws.
+
+   Positioned, because a clip reaches only what it is the containing block for: a
+   surface's out-of-flow parts (a parked description, an overlay) resolve against the
+   nearest positioned ancestor, and with none between them and the document they land
+   at their static position UNCLIPPED, leaving the page to scroll past its own foot by
+   however far a frame's contents run over. */
 .pg-frame {
 	box-sizing: border-box;
+	position: relative;
 	border: var(--qmh-border-width) solid var(--qmh-border);
 	border-radius: var(--qmh-radius);
 	overflow: hidden;
