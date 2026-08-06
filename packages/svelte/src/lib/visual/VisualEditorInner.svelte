@@ -302,7 +302,7 @@
 		try {
 			if (value === undefined) {
 				// The UNSET rung of the commitment ladder (a cleared scalar control,
-				// VISUAL_EDITOR §"the commitment ladder"): REMOVE the field so the
+				// VISUAL_EDITOR §"Structure mirrors the schema"): REMOVE the field so the
 				// engine's authored › `default:` › zero-fill resolve renders the
 				// default, rather than baking a snapshot the schema can't track
 				// (canon SCHEMAS.md: the engine never persists a default; nor do we).

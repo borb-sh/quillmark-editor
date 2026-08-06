@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+`Quiver.warm()` is removed. It prefetched every quill's tree so a later `getQuill` would be microseconds, and it was the only reason the quiver held a tree cache beside its quill cache; call `getQuill` for the refs you want ahead of time instead. The quill cache is untouched — one instance per canonical ref, concurrent calls coalescing — and a retry after a `Quill.fromTree` throw now refetches rather than reusing the retained tree.
+
 The Node factories become free functions: `import { fromDir, fromPackage, fromBuiltDir, build, buildPackage } from '@quillmark/quiver/node'`, replacing the statics `/node` installed on the shared `Quiver` class. The class is browser-pure, the package has no side effects, and `Quiver._fromLoader` is gone from the public surface. `Quiver.fromBuiltUrl` and `Quiver.fromManifest` are unchanged.
 
 `fromPackage` and `buildPackage` take a `from` argument — pass `import.meta.url`. Without it resolution runs from this package's own install location, so a consumer's quiver was unreachable under an isolated `node_modules` layout.

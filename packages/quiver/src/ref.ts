@@ -13,9 +13,9 @@ const NAME_RE = /^[A-Za-z0-9_-]+$/;
 const SELECTOR_RE = /^\d+(\.\d+){0,2}$/;
 
 /**
- * Throws QuiverError('invalid_ref') on malformed input.
- * Validates name charset: [A-Za-z0-9_-]+
- * Validates selector per §5 (x, x.y, x.y.z — digits only, no ranges/operators).
+ * Throws QuiverError('invalid_ref') on malformed input. The name is
+ * `[A-Za-z0-9_-]+`; the selector is `x`, `x.y` or `x.y.z`, digits only, with no
+ * ranges or operators — a quiver resolves a prefix, it does not solve a range.
  */
 export function parseQuillRef(ref: string): ParsedQuillRef {
 	if (!ref) {

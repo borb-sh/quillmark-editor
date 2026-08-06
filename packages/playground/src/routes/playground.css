@@ -24,7 +24,7 @@
 	--pg-radius-pill: 999px;
 
 	/* ── The reading column ──────────────────────────────────────────────────── */
-	/* The margin the annotation column sits in (PLAYGROUND §"The rail"); the measure a
+	/* The margin the annotation column sits in (PLAYGROUND §"The host scale"); the measure a
 	   passage wraps at is the preset's. Reading geometry, so it does not derive from
 	   the spacing dial. */
 	--pg-rail: 8rem;

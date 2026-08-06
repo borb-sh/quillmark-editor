@@ -1,5 +1,5 @@
-// The debug source view: `createSourceView` (ARCHITECTURE §Packaging,
-// VISUAL_EDITOR §Source view). A read-only text mirror of `Document.toMarkdown()`:
+// The debug source view: `createSourceView` (ARCHITECTURE §Packaging). A
+// read-only text mirror of `Document.toMarkdown()`:
 // the whole-document serialize the layer federation deletes, kept for debugging
 // only. NOT an editable dual mode; the federated leaves are the edit surface;
 // this is a mirror. `refresh()` re-serializes after the consumer's edit lands, so
