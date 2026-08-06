@@ -1,11 +1,9 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
-import { fromDir, fromPackage } from '../node.js';
-import { QuiverError } from '../errors.js';
+import { fromDir } from '../node.js';
 import { mockQuillFromTree } from './helpers/mock-engine.js';
 
 // Absolute path to the committed fixture
@@ -165,50 +163,5 @@ describe('fromDir', () => {
 		const b = q.versionsOf('memo');
 		expect(a).not.toBe(b);
 		expect(a).toEqual(b);
-	});
-});
-
-describe('fromPackage', () => {
-	// Resolution runs from `from`, not from where @quillmark/quiver is installed.
-	// The isolated node_modules layout below is what pnpm gives every consumer:
-	// the quiver package is reachable from the consumer's module and from
-	// nowhere else, so the default base cannot find it.
-	const tempDirs: string[] = [];
-
-	afterEach(async () => {
-		for (const d of tempDirs.splice(0)) {
-			await rm(d, { recursive: true, force: true });
-		}
-	});
-
-	/** A consumer tree holding `@fixture/quiver` only it can see. */
-	async function seedConsumer(): Promise<{ from: string }> {
-		const root = makeTempDir();
-		tempDirs.push(root);
-		const pkg = join(root, 'node_modules', '@fixture', 'quiver');
-		await mkdir(join(pkg, 'quills', 'memo', '1.0.0'), { recursive: true });
-		await writeFile(join(pkg, 'package.json'), '{"name":"@fixture/quiver","version":"1.0.0"}\n');
-		await writeFile(join(pkg, 'Quiver.yaml'), 'name: fixture\n');
-		await writeFile(join(pkg, 'quills', 'memo', '1.0.0', 'Quill.yaml'), 'name: memo\n');
-		return { from: pathToFileURL(join(root, 'consumer.js')).href };
-	}
-
-	it('loads a quiver reachable only from `from`', async () => {
-		const { from } = await seedConsumer();
-		const q = await fromPackage('@fixture/quiver', from);
-		expect(q.name).toBe('fixture');
-		expect(q.quillNames()).toEqual(['memo']);
-	});
-
-	it('without `from`, the same package is unresolvable', async () => {
-		await seedConsumer();
-		await expect(fromPackage('@fixture/quiver')).rejects.toThrow(
-			expect.objectContaining({ code: 'transport_error' })
-		);
-	});
-
-	it('reports the base it resolved from', async () => {
-		const { from } = await seedConsumer();
-		await expect(fromPackage('@nonexistent/quiver', from)).rejects.toThrow(from);
 	});
 });

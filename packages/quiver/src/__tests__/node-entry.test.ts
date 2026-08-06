@@ -11,7 +11,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { Quiver as MainQuiver } from '../index.js';
-import { Quiver as NodeQuiver, fromDir, fromPackage, fromBuiltDir, build } from '../node.js';
+import { Quiver as NodeQuiver, fromDir, fromBuiltDir, build } from '../node.js';
 
 describe('node entry — the class is untouched', () => {
 	it('re-exports the same constructor as the main entry', () => {
@@ -19,21 +19,19 @@ describe('node entry — the class is untouched', () => {
 	});
 
 	it('installs no statics on it', () => {
-		for (const verb of ['fromDir', 'fromPackage', 'fromBuiltDir', 'build', 'buildPackage']) {
+		for (const verb of ['fromDir', 'fromBuiltDir', 'build']) {
 			expect(MainQuiver).not.toHaveProperty(verb);
 		}
 	});
 
-	it('leaves the browser-safe statics in place', () => {
+	it('leaves the browser-safe static in place', () => {
 		expect(typeof MainQuiver.fromBuiltUrl).toBe('function');
-		expect(typeof MainQuiver.fromManifest).toBe('function');
 	});
 });
 
 describe('node entry — the factories', () => {
 	it('exports each filesystem factory as a free function', () => {
-		expect([fromDir, fromPackage, fromBuiltDir, build].map((f) => typeof f)).toEqual([
-			'function',
+		expect([fromDir, fromBuiltDir, build].map((f) => typeof f)).toEqual([
 			'function',
 			'function',
 			'function'
@@ -47,26 +45,19 @@ describe('node entry — the factories', () => {
 });
 
 /**
- * The `file://` guards send the reader to the disk factory by name. The name has
+ * The `file://` guard sends the reader to the disk factory by name. The name has
  * to be one that resolves: a consumer who follows `Quiver.fromBuiltDir` gets
  * `is not a function`, and the guard's whole job is to be followable.
  */
-describe('the file:// refusals name a real export', () => {
-	const refusals = [
-		() => MainQuiver.fromBuiltUrl('file:///tmp/quiver/'),
-		() => MainQuiver.fromManifest('file:///tmp/quiver/', new TextEncoder().encode('{}'))
-	];
+describe('the file:// refusal names a real export', () => {
+	const refuse = () => MainQuiver.fromBuiltUrl('file:///tmp/quiver/');
 
 	it('points at the free function, not a static that does not exist', async () => {
-		for (const refuse of refusals) {
-			await expect(refuse()).rejects.toThrow(/\bfromBuiltDir\b/);
-			await expect(refuse()).rejects.not.toThrow(/Quiver\.fromBuiltDir/);
-		}
+		await expect(refuse()).rejects.toThrow(/\bfromBuiltDir\b/);
+		await expect(refuse()).rejects.not.toThrow(/Quiver\.fromBuiltDir/);
 	});
 
 	it('names the module the free function is reachable from', async () => {
-		for (const refuse of refusals) {
-			await expect(refuse()).rejects.toThrow(/@quillmark\/quiver\/node/);
-		}
+		await expect(refuse()).rejects.toThrow(/@quillmark\/quiver\/node/);
 	});
 });

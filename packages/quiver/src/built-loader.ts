@@ -316,30 +316,7 @@ function catalogOf(index: Map<string, BuiltQuillEntry>): Map<string, string[]> {
 	return catalog;
 }
 
-/**
- * Validate manifest bytes (`quiver_invalid` on format errors) and assemble a
- * Quiver backed by a BuiltLoader over `transport`. Shared by `loadBuiltQuiver`
- * (pointer-following) and `seedBuiltQuiver` (seed).
- */
-function buildQuiverFromManifestBytes(
-	transport: BuiltTransport,
-	manifestBytes: Uint8Array
-): Quiver {
-	const manifest = parseManifest(new TextDecoder().decode(manifestBytes));
-
-	const index = new Map<string, BuiltQuillEntry>();
-	for (const entry of manifest.quills) {
-		const key = `${entry.name}@${entry.version}`;
-		if (index.has(key)) {
-			throw new QuiverError('quiver_invalid', `Duplicate quill entry in manifest: "${key}"`);
-		}
-		index.set(key, entry);
-	}
-
-	return createQuiver(manifest.name, catalogOf(index), new BuiltLoader(transport, index));
-}
-
-// ─── Main entry points ────────────────────────────────────────────────────────
+// ─── Main entry point ─────────────────────────────────────────────────────────
 
 /**
  * Load a build-output quiver via the given transport.
@@ -385,14 +362,16 @@ export async function loadBuiltQuiver(transport: BuiltTransport): Promise<Quiver
 	}
 
 	// 3–4. Validate manifest + assemble catalog/loader.
-	return buildQuiverFromManifestBytes(transport, manifestBytes);
-}
+	const manifest = parseManifest(new TextDecoder().decode(manifestBytes));
 
-/**
- * Seed a quiver from caller-provided manifest bytes, skipping the latest.json
- * pointer fetch. `transport` is used only for lazy bundle/font fetches.
- * Throws `quiver_invalid` on malformed bytes.
- */
-export function seedBuiltQuiver(transport: BuiltTransport, manifestBytes: Uint8Array): Quiver {
-	return buildQuiverFromManifestBytes(transport, manifestBytes);
+	const index = new Map<string, BuiltQuillEntry>();
+	for (const entry of manifest.quills) {
+		const key = `${entry.name}@${entry.version}`;
+		if (index.has(key)) {
+			throw new QuiverError('quiver_invalid', `Duplicate quill entry in manifest: "${key}"`);
+		}
+		index.set(key, entry);
+	}
+
+	return createQuiver(manifest.name, catalogOf(index), new BuiltLoader(transport, index));
 }

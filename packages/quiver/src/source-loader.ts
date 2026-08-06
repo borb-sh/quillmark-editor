@@ -2,7 +2,7 @@
  * Internal filesystem scanner for Source Quiver layout.
  *
  * Uses Node.js `fs/promises` — this module must only be imported from
- * Node-only contexts (fromDir, fromPackage, etc.).
+ * Node-only contexts (`fromDir`, `build`).
  */
 
 import { readdir, readFile, stat } from 'node:fs/promises';

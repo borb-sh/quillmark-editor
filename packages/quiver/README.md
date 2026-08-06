@@ -12,25 +12,26 @@ npm install @quillmark/quiver @quillmark/wasm
 
 A quiver has one authored shape, the **source layout** (`Quiver.yaml` at the package root, quills under `quills/<name>/<x.y.z>/`), published as an npm package. Browsers cannot read that layout, so `build(src, out)` packs it at deploy time and the output is served as static assets. Each loader names exactly what it reads; there is no auto-detection.
 
-| Loader                                | Reads                         | Import                   |
-| ------------------------------------- | ----------------------------- | ------------------------ |
-| `fromPackage(specifier, from?)`       | the source layout             | `@quillmark/quiver/node` |
-| `fromDir(path)`                       | the source layout             | `@quillmark/quiver/node` |
-| `fromBuiltDir(path)`                  | build output, off disk        | `@quillmark/quiver/node` |
-| `Quiver.fromBuiltUrl(url)`            | build output, over HTTP       | `@quillmark/quiver`      |
-| `Quiver.fromManifest(baseUrl, bytes)` | build output, pointer skipped | `@quillmark/quiver`      |
+| Loader                     | Reads                   | Import                   |
+| -------------------------- | ----------------------- | ------------------------ |
+| `fromDir(path)`            | the source layout       | `@quillmark/quiver/node` |
+| `fromBuiltDir(path)`       | build output, off disk  | `@quillmark/quiver/node` |
+| `Quiver.fromBuiltUrl(url)` | build output, over HTTP | `@quillmark/quiver`      |
 
-The filesystem factories are free functions from `/node`; the two that reach across HTTP are statics on `Quiver`. Importing `/node` adds nothing to the class, so a bundler drops the verbs you do not call.
+The filesystem factories are free functions from `/node`; the one that reaches across HTTP is a static on `Quiver`. Importing `/node` adds nothing to the class, so a bundler drops the verbs you do not call.
 
 ## Consuming a quiver (Node)
 
-```ts
-import { Engine, Document } from '@quillmark/wasm';
-import { fromPackage } from '@quillmark/quiver/node';
+A quiver installed from npm is a directory like any other. Resolve its root from your own module: your dependencies are reachable from your module, not from this package's install location.
 
-// `import.meta.url` is where resolution starts: your dependencies are
-// reachable from your module, not from this package's install location.
-const quiver = await fromPackage('@org/my-quiver', import.meta.url);
+```ts
+import { createRequire } from 'node:module';
+import { dirname } from 'node:path';
+import { Engine, Document } from '@quillmark/wasm';
+import { fromDir } from '@quillmark/quiver/node';
+
+const root = dirname(createRequire(import.meta.url).resolve('@org/my-quiver/Quiver.yaml'));
+const quiver = await fromDir(root);
 const engine = new Engine();
 
 const doc = Document.fromMarkdown(markdownString);
@@ -89,28 +90,9 @@ import { fromBuiltDir } from '@quillmark/quiver/node';
 const quiver = await fromBuiltDir('./static/quills/my-quiver');
 ```
 
-## SSR seeding (skip the `latest.json` pointer)
+## The `latest.json` pointer
 
-`Quiver.fromBuiltUrl(url)` first fetches `<url>/latest.json`, a stable-named pointer to the current manifest. Everything behind that pointer is content-addressed and checked against the digest in its name; the pointer itself is not, so a cache layer can serve a stale one and silently pin the client to the old catalog.
-
-A consumer already holding the manifest bytes at build time (the SSR case: it reads the built artifact during its own build) seeds the catalog directly with `Quiver.fromManifest` and never requests the pointer. Bundles and fonts are still fetched lazily and content-addressed, relative to `baseUrl`:
-
-```ts
-// Server build step — read the manifest the build wrote.
-// build-output/latest.json → { "manifest": "manifest.<hash>.json" }
-import { readFile } from 'node:fs/promises';
-
-const { manifest } = JSON.parse(await readFile('./public/quivers/my-quiver/latest.json', 'utf8'));
-const manifestBytes = new Uint8Array(await readFile(`./public/quivers/my-quiver/${manifest}`));
-// Inline manifestBytes into the page payload (e.g. base64) for the client.
-```
-
-```ts
-// Browser / SSR runtime — seed from the bytes you shipped, no pointer fetch.
-const quiver = await Quiver.fromManifest('/quivers/my-quiver/', manifestBytes);
-```
-
-`fromManifest` is browser-safe (no `node:*` imports) and shares `fromBuiltUrl`'s error semantics.
+`Quiver.fromBuiltUrl(url)` first fetches `<url>/latest.json`, a stable-named pointer to the current manifest. Everything behind that pointer is content-addressed and checked against the digest in its name; the pointer itself is not, so a cache layer can serve a stale one and silently pin the client to the old catalog. It is therefore the one request fetched `no-cache` (revalidate with the origin; a 304 still serves from disk), which closes the browser-cache layer. A stale CDN edge is answered by that host's cache headers.
 
 ## Error handling
 
@@ -140,7 +122,7 @@ my-quiver/
   package.json
 ```
 
-`fromPackage` and `buildPackage` resolve `<specifier>/Quiver.yaml` through your `exports` map. A package that declares one must expose that subpath, or the quiver is unreachable however correct its layout; a package with no `exports` map needs nothing.
+A consumer reaches an installed quiver by resolving `<specifier>/Quiver.yaml`, which goes through your `exports` map. A package that declares one must expose that subpath, or the quiver is unreachable however correct its layout; a package with no `exports` map needs nothing.
 
 ```jsonc
 // package.json

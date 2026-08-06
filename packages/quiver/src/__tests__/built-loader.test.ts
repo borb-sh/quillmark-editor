@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, afterEach } from 'vitest';
-import { loadBuiltQuiver, seedBuiltQuiver } from '../built-loader.js';
+import { loadBuiltQuiver } from '../built-loader.js';
 import { packFiles } from '../bundle.js';
 import { NAME_DIGEST_LENGTH, sha256Hex } from '../digest.js';
 import { QuiverError } from '../errors.js';
@@ -112,14 +112,9 @@ interface Artifact {
 
 /**
  * A packed artifact whose every name is the digest of its own bytes: the shape
- * `build` writes. `pointer: false` omits `latest.json`, for the seeding
- * path that never fetches it.
+ * `build` writes.
  */
-async function makeArtifact(
-	quiverName: string,
-	quills: QuillSpec[],
-	opts: { pointer?: boolean } = {}
-): Promise<Artifact> {
+async function makeArtifact(quiverName: string, quills: QuillSpec[]): Promise<Artifact> {
 	const entries: Record<string, Uint8Array> = {};
 	const bundles: Record<string, string> = {};
 	const manifestQuills = [];
@@ -145,7 +140,7 @@ async function makeArtifact(
 	);
 	const manifestFileName = `manifest.${await nameDigest(manifestBytes)}.json`;
 	entries[manifestFileName] = manifestBytes;
-	if (opts.pointer !== false) entries['latest.json'] = makePointer(manifestFileName);
+	entries['latest.json'] = makePointer(manifestFileName);
 
 	return { transport: new MemTransport(entries), manifestBytes, manifestFileName, bundles };
 }
@@ -503,33 +498,6 @@ describe('loadBuiltQuiver — path validation (security)', () => {
 				})
 			)
 		).rejects.toThrow(expect.objectContaining({ code: 'quiver_invalid' }));
-	});
-});
-
-describe('seedBuiltQuiver — manifest seeding (no pointer fetch)', () => {
-	it('builds the catalog without fetching the pointer, then fetches bundles lazily', async () => {
-		const { transport, manifestBytes, bundles } = await makeArtifact(
-			'sample',
-			[
-				{ name: 'memo', version: '1.0.0' },
-				{ name: 'memo', version: '1.1.0' }
-			],
-			{ pointer: false }
-		);
-
-		const q = seedBuiltQuiver(transport, manifestBytes);
-		expect(q.name).toBe('sample');
-		expect(q.versionsOf('memo')).toEqual(['1.1.0', '1.0.0']);
-		expect(transport.fetchLog).toEqual([]); // catalog built without any fetch
-
-		await loadTreeViaGetQuill(q, 'memo', '1.0.0');
-		expect(transport.fetchLog).toEqual([bundles['memo@1.0.0']]);
-	});
-
-	it('malformed manifest bytes → quiver_invalid', () => {
-		expect(() => seedBuiltQuiver(new MemTransport({}), enc.encode('x'))).toThrow(
-			expect.objectContaining({ code: 'quiver_invalid' })
-		);
 	});
 });
 

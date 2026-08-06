@@ -4,9 +4,9 @@
 
 ## TL;DR
 
-A quiver is a collection of quills, addressed by ref and resolved to a `Quill`. This package loads one from wherever it lives (an npm package, a directory, a URL, an in-hand manifest) and hands out quills. The **loaders** never render: `@quillmark/wasm` does that, and the handles pass to it untouched. The author-side gate is the one thing here that does, since proving a quill renders is what a gate for quills is.
+A quiver is a collection of quills, addressed by ref and resolved to a `Quill`. This package loads one from wherever it lives (a source directory, a packed artifact on disk, a URL) and hands out quills. The **loaders** never render: `@quillmark/wasm` does that, and the handles pass to it untouched. The author-side gate is the one thing here that does, since proving a quill renders is what a gate for quills is.
 
-## One authored shape, four ways to consume it
+## One authored shape, three ways to consume it
 
 Authors write **one** layout: `Quiver.yaml` at the package root, quills under `quills/<name>/<x.y.z>/`, published as an npm package or a git tag. The deployment-topology decision belongs to the consumer, not the author, so the author flow stays one command and the loaders fan out below it.
 
@@ -14,25 +14,23 @@ The loaders name exactly what they read; there is no auto-detection and no branc
 
 | Loader | Reads | Where |
 | --- | --- | --- |
-| `fromPackage(specifier, from?)` | the source layout | `/node` |
 | `fromDir(path)` | the source layout | `/node` |
 | `fromBuiltDir(path)` | build output | `/node` |
 | `Quiver.fromBuiltUrl(url)` | build output | anywhere |
-| `Quiver.fromManifest(baseUrl, bytes)` | build output, pointer skipped | anywhere |
 
-The `/node` factories are free functions, not statics: the class stays browser-pure, the entry that reads a filesystem imports nothing onto it, and a bundler drops the verbs a consumer does not call. Construction itself is sealed: `Quiver` has a private constructor and the loader seam is reachable from no entry in `exports`. There is no public transport API (auth headers, custom fetch, `AbortSignal`) and no consumer story asking for one; a sealed seam keeps that option clean, a half-open one lets dependents grow on an unsupported surface.
+Three rows is what a consumer chooses among, and each names a topology someone runs. Reaching a quiver installed from npm is not a fourth: `dirname(createRequire(import.meta.url).resolve('<pkg>/Quiver.yaml'))` handed to `fromDir` or `build` is one line at the call site, where the resolution base belongs to the caller and the `exports`-map subpath it lands on is visible rather than a rule this package documents and holds.
 
-`fromPackage` and `buildPackage` resolve `<specifier>/Quiver.yaml` from `from`: pass `import.meta.url`. The default (this package's own location) finds only what is hoisted beside `@quillmark/quiver`; under an isolated `node_modules` layout the caller's dependencies are reachable from the caller alone. The resolution also goes through the target's `exports` map, so a quiver published as a package exposes `./Quiver.yaml` there or is unreachable however correct its layout.
+The `/node` factories are free functions, not statics: the class stays browser-pure, the entry that reads a filesystem imports nothing onto it, and a bundler drops the verbs a consumer does not call. `fromBuiltUrl` is the only static, so `Quiver` is a class a consumer constructs one way. Construction itself is sealed: `Quiver` has a private constructor and the loader seam is reachable from no entry in `exports`. There is no public transport API (auth headers, custom fetch, `AbortSignal`) and no consumer story asking for one; a sealed seam keeps that option clean, a half-open one lets dependents grow on an unsupported surface.
 
-Browsers cannot read the source layout, so `build(src, out)` packs it at deploy time and the output is served as static assets. `fromBuiltDir` exists for the server that ships the packed artifact in its own image: it avoids the self-fetch round-trip `fromBuiltUrl` would force on a self-hosted deployment, and lets the source quiver stay a devDependency.
+Browsers cannot read the source layout, so `build(src, out)` packs it at deploy time and the output is served as static assets. `fromBuiltDir` exists for the server that ships the packed artifact in its own image: it avoids the self-fetch round-trip `fromBuiltUrl` would force on a self-hosted deployment, and lets the source quiver stay a devDependency. It carries `transports/fs-built-transport.ts` and the path-escape validation reading manifest-named files off a disk needs.
 
 `build` owns `out` outright: it clears the directory before writing, so the previous generation never bleeds into the new one. An `out` that is, or contains, the source quiver or the working directory is refused rather than cleared: `--out .` and a slipped `--out ..` are one keystroke away and the deletion is unrecoverable. An `out` nested *inside* the source (`dist/` under the quiver root) is the ordinary layout and stays allowed, since the scan reads the source before the first write.
 
-## The pointer, and skipping it
+## The pointer
 
 `fromBuiltUrl` fetches `<url>/latest.json` first: a stable-named, non-content-addressed pointer to the current manifest. Everything behind it is content-addressed and safe to cache forever; that one filename is not. A CDN edge or a browser cache can serve a stale pointer after a release and silently pin the client to the old catalog, with no error, and per-host cache headers fix one serving layer at a time. The pointer is therefore the one request fetched `no-cache` (revalidate with the origin, a 304 still serving from disk), which closes the browser-cache layer and nothing above it.
 
-A consumer already holding the manifest bytes at build time (the SSR case: it reads the built artifact during its own build) seeds the catalog with `fromManifest` and never requests the pointer. Bundles and fonts are still fetched lazily, content-addressed, relative to `baseUrl`.
+The fetch is unconditional: there is no door that seeds the catalog from manifest bytes a consumer already holds. It would close one layer above the one `no-cache` closes, for an SSR consumer that does not exist, and the shape is recoverable from `fromBuiltUrl` when one does.
 
 ## Content addressing is checked, not asserted
 
