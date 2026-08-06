@@ -84,67 +84,6 @@
 	let lastError = $state('none');
 	let showSource = $state(false);
 
-	// ── Split resizer (playground reference) ─────────────────────────────────────
-	// The editor|preview divider: a hairline thickening on hover/drag with an
-	// ellipsis grip. A press only becomes a drag past a small dead-zone (swallows
-	// click-jitter), the ratio clamps to 30–70% so neither pane collapses, and the
-	// body takes a cursor/user-select lock for the drag so it reads as one gesture
-	// and no text selects under the pointer. Playground-only; the split shell is the
-	// consumer's per ARCHITECTURE §Playground.
-	let shellEl: HTMLDivElement | undefined = $state();
-	let splitPct = $state(50);
-	let dragging = $state(false);
-	const SPLIT_MIN = 30;
-	const SPLIT_MAX = 70;
-	const DEAD_ZONE = 3; // px moved before a press engages as a drag
-	const clampSplit = (pct: number): number => Math.min(SPLIT_MAX, Math.max(SPLIT_MIN, pct));
-
-	function onResizerPointerDown(e: PointerEvent): void {
-		if (!shellEl) return;
-		e.preventDefault();
-		const target = e.currentTarget as HTMLElement;
-		const width = shellEl.getBoundingClientRect().width;
-		const startX = e.clientX;
-		const startPct = splitPct;
-		let engaged = false;
-		target.setPointerCapture(e.pointerId);
-
-		const move = (ev: PointerEvent): void => {
-			const dx = ev.clientX - startX;
-			if (!engaged) {
-				if (Math.abs(dx) < DEAD_ZONE) return; // dead-zone: ignore click-jitter
-				engaged = true;
-				dragging = true;
-				document.body.style.cursor = 'col-resize';
-				document.body.style.userSelect = 'none';
-			}
-			splitPct = clampSplit(startPct + (dx / width) * 100);
-		};
-		const up = (ev: PointerEvent): void => {
-			target.releasePointerCapture?.(ev.pointerId);
-			target.removeEventListener('pointermove', move);
-			target.removeEventListener('pointerup', up);
-			if (engaged) {
-				dragging = false;
-				document.body.style.cursor = '';
-				document.body.style.userSelect = '';
-			}
-		};
-		target.addEventListener('pointermove', move);
-		target.addEventListener('pointerup', up);
-	}
-
-	function onResizerKeyDown(e: KeyboardEvent): void {
-		let next = splitPct;
-		if (e.key === 'ArrowLeft') next -= 2;
-		else if (e.key === 'ArrowRight') next += 2;
-		else if (e.key === 'Home') next = SPLIT_MIN;
-		else if (e.key === 'End') next = SPLIT_MAX;
-		else return;
-		e.preventDefault();
-		splitPct = clampSplit(next);
-	}
-
 	let toFree: Array<{ free(): void }> = [];
 
 	// ── Debounced recompile ─────────────────────────────────────────────────────
@@ -346,14 +285,7 @@
 			</span>
 		</div>
 
-		<!-- The split rides a custom property rather than `grid-template-columns`
-		     itself, so the narrow-width rule below can stack the panes: an inline
-		     track list would outrank any stylesheet. -->
-		<div
-			class="shell"
-			bind:this={shellEl}
-			style="--split: minmax(0, {splitPct}fr) var(--pg-resizer) minmax(0, {100 - splitPct}fr)"
-		>
+		<div class="shell">
 			<section class="pg-frame editor-pane" aria-label="Visual editor">
 				{#if VisualEditor && docHandle && quillHandle}
 					<VisualEditor
@@ -369,25 +301,6 @@
 					/>
 				{/if}
 			</section>
-			<!-- A focusable role="separator" with aria-valuenow + arrow-key handling is
-			     the WAI-ARIA window-splitter pattern; the a11y lint is conservative here. -->
-			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-			<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-			<div
-				class="resizer"
-				class:dragging
-				role="separator"
-				aria-orientation="vertical"
-				aria-label="Resize editor and preview panes"
-				aria-valuemin={SPLIT_MIN}
-				aria-valuemax={SPLIT_MAX}
-				aria-valuenow={Math.round(splitPct)}
-				tabindex="0"
-				onpointerdown={onResizerPointerDown}
-				onkeydown={onResizerKeyDown}
-			>
-				<span class="grip" aria-hidden="true">⋮</span>
-			</div>
 			<section class="pg-frame preview-pane" aria-label="Live preview">
 				{#if session}
 					<Preview bind:this={previewRef} {session} onCaretPick={handleCaretPick} />
@@ -448,13 +361,14 @@
 		margin-inline-start: auto;
 	}
 
-	/* `--split` comes in inline from `splitPct`: the middle track holds the resizer,
-	   the two side tracks are the panes. One row, taking the height the page has
-	   left after the head and the strip, and the drawer when it is open. */
+	/* Two even tracks, one row, taking the height the page has left after the head and
+	   the strip, and the drawer when it is open. The panes carry their own borders, so
+	   the page gap is the whole of what sits between them. */
 	.shell {
 		display: grid;
-		grid-template-columns: var(--split);
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 		grid-template-rows: minmax(0, 1fr);
+		gap: var(--qmh-space-4);
 		flex: 2 1 0;
 		min-height: 0;
 	}
@@ -471,59 +385,6 @@
 	.preview-pane {
 		min-width: 0;
 		min-height: 0;
-	}
-
-	/* Reference resizer: a hairline in an 11px hit track, thickening on
-	   hover/drag, with an ellipsis grip that fades in over the line. */
-	.resizer {
-		position: relative;
-		align-self: stretch;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: col-resize;
-		touch-action: none; /* pointer drag owns the gesture, not scroll/pan */
-	}
-
-	.resizer::before {
-		content: '';
-		width: var(--pg-rule);
-		height: 100%;
-		border-radius: var(--pg-radius-pill);
-		background: var(--qmh-border);
-		transition:
-			width var(--qmh-duration) var(--qmh-ease-reverse),
-			background-color var(--qmh-duration) var(--qmh-ease-reverse);
-	}
-
-	.resizer:hover::before,
-	.resizer:focus-visible::before,
-	.resizer.dragging::before {
-		width: var(--pg-rule-strong);
-		background: var(--qmh-border-strong);
-	}
-
-	.resizer:focus-visible {
-		outline: none;
-	}
-
-	.grip {
-		position: absolute;
-		font-size: var(--qmh-text-label);
-		line-height: 1;
-		color: var(--qmh-ghost);
-		background: var(--qmh-page);
-		padding-block: var(--qmh-space-half);
-		border-radius: var(--pg-radius-pill);
-		opacity: 0;
-		transition: opacity var(--qmh-duration) var(--qmh-ease-reverse);
-		pointer-events: none;
-	}
-
-	.resizer:hover .grip,
-	.resizer:focus-visible .grip,
-	.resizer.dragging .grip {
-		opacity: 1;
 	}
 
 	/* Open, the drawer takes a third of what the panes had rather than a height of
@@ -546,10 +407,10 @@
 		background: var(--qmh-page);
 	}
 
-	/* Below the width that fits two panes side by side, the split stops being one: the
-	   tracks stack, the divider has nothing left to divide, and each pane takes the
-	   short mount. Nothing flexes, so the column outgrows the shell and scrolls inside
-	   it: both panes are reachable and the document is still not a scroller. */
+	/* Below the width that fits two panes side by side, the tracks stack and each pane
+	   takes the short mount. Nothing flexes, so the column outgrows the shell and
+	   scrolls inside it: both panes are reachable and the document is still not a
+	   scroller. */
 	@media (width < 60rem) {
 		.page {
 			overflow: auto;
@@ -558,12 +419,7 @@
 		.shell {
 			grid-template-columns: minmax(0, 1fr);
 			grid-template-rows: none;
-			gap: var(--qmh-space-4);
 			flex: 0 0 auto;
-		}
-
-		.resizer {
-			display: none;
 		}
 
 		.editor-pane,
