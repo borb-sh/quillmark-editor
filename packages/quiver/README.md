@@ -153,7 +153,24 @@ my-quiver/
 }
 ```
 
-One harness runs the quiver in CI so a validation failure surfaces on publish rather than on a consumer's build. `/testing` loads with `fromDir`, compiles every quill, and renders each quill's example document; it runs on `node:test`, so it adds no test-runner dependency.
+Gate the quiver in CI so a validation failure surfaces on publish rather than on a consumer's build. It loads with `fromDir`, compiles every quill, and renders each quill's example document. Two doors, same loop.
+
+The CLI needs no file. Installing the package links `quiver` into `node_modules/.bin`, which npm puts on PATH for every script:
+
+```jsonc
+// package.json
+{
+	"devDependencies": {
+		"@quillmark/quiver": "^0.16.0",
+		"@quillmark/wasm": "0.102.0"
+	},
+	"scripts": { "test": "quiver test" }
+}
+```
+
+It finds the engine itself: a named `engine` export from `quiver.config.js` at the collection root, else `@quillmark/wasm` from your own `node_modules`. `quiver build [--out <dir>]` packs the same source into a servable artifact.
+
+`/testing` is the same gate as a test file, on `node:test`, so it adds no test-runner dependency:
 
 ```ts
 // quiver.test.ts — run with: node --test
