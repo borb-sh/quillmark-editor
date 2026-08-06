@@ -4,13 +4,15 @@
 
 ## TL;DR
 
-Two packages publish, on independent versions, one at a time, through a release PR. The apps never publish. One CI workflow gates every package on every push.
+Three packages publish, on independent versions, one at a time, through a release PR. One CI workflow gates every package on every push.
 
 ## Independent, not lockstep
 
-Both packages publish, and both are pre-1.0: the consumers are first-party, so a break rides a minor rather than earning a major. Lockstep would drag one package's version through churn the other's consumers do not care about, so each carries its own version and a change to one leaves the other's alone. The packages have no edge between them ([DEPENDENCIES.md](DEPENDENCIES.md)), so there is no shared substrate co-evolving across them to argue the other way; that argument holds *within* `svelte`, which is why its surfaces are subpaths of one package rather than packages of their own.
+All three are pre-1.0: the consumers are first-party, so a break rides a minor rather than earning a major. Lockstep would drag one package's version through churn another's consumers do not care about, so each carries its own version and a change to one leaves the others alone. The libraries have no edge between them ([DEPENDENCIES.md](DEPENDENCIES.md)), so there is no shared substrate co-evolving across them to argue the other way; that argument holds *within* `svelte`, which is why its surfaces are subpaths of one package rather than packages of their own.
 
-`playground` and `studio` are `private: true`: the harness and Pages site, and the author's surface. Neither is ever a tarball.
+`studio` publishes as a **static client**: the tarball is the built client and nothing else, and what it bundles moves with its own version rather than a consumer's install. Its release is otherwise every other release — the same branch, the same tag shape, the same curated section.
+
+`playground` is `private: true`: the harness and the Pages site, never a tarball.
 
 ## The release PR
 
@@ -28,7 +30,7 @@ npm Trusted Publishing (OIDC) mints the credential, so no token is stored. It na
 
 The intent lives with the commit that earns it rather than being reconstructed at release time from a range of history, and prose written while the change is in hand says what a reader needs in a way a subject line cannot. What the range of history is good for is the coverage check, so the release PR carries the commit subjects touching that package since its last tag — in the PR body, where the reviewer reads the section against them, and where nothing rides onto main waiting to be deleted.
 
-A change touching only an app, or only prose, writes no entry.
+A change touching only the playground, or only prose, writes no entry.
 
 ## The tarball
 
@@ -39,5 +41,7 @@ A change touching only an app, or only prose, writes no entry.
 ## The gate
 
 One workflow over the workspace: `lint`, `check`, `check:canon`, `check:style`, `check:deps`, `test`, `build`, `check:pack`. Every package runs each verb its own way (`check` is `svelte-check` in `svelte` and `tsc --noEmit` in quiver), but a verb name means one thing, so the workflow names verbs and the packages own the implementations.
+
+Beside the verbs, the deploy rehearsal: `studio-pages.yml` is the workflow a quiver author calls, and CI runs that file rather than a copy of it, against `fixtures/` and the locally packed client. A layout only this repository exercises is one that breaks for an author first. It asserts and uploads nothing, this repository's Pages holding the playground.
 
 Nothing in the gate needs a browser, and nothing runs elsewhere.

@@ -1,6 +1,6 @@
 # Studio Canon Index
 
-Canonical documentation for `studio`, the private app a quill author looks at their quiver through. One doc, because the app is one thing:
+Canonical documentation for `@quillmark/studio`, the app a quill author looks at their quiver through, published as the static client a deploy serves. One doc, because the app is one thing:
 
 - [STUDIO.md](STUDIO.md): its two halves, the repack loop the document survives, and the preset its chrome is drawn with.
 
