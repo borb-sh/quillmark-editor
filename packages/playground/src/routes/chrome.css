@@ -1,8 +1,8 @@
 /* The front door's own recipes: what more than one route draws that the preset does
    not carry. The endorsed look (the label, the readout, the status line, the plate,
    the boxed control, the focus ring) comes from `@quillmark/svelte/preset`, so what is
-   left here is the shape of a front door: a width, a rail, a heading, a display run, a
-   pair of calls to action, a link in running prose.
+   left here is the shape of a front door: a width, a heading, a display run, a pair of
+   calls to action, a link in running prose.
 
    The rungs are the preset's `--qmh-*` and the local ones in `routes/playground.css`;
    this file mints nothing (PLAYGROUND §"Preventing drift"). */
@@ -18,33 +18,6 @@
 	max-width: var(--pg-max);
 	margin-inline: auto;
 	padding-inline: var(--pg-space-6);
-}
-
-/* ── The rail ──────────────────────────────────────────────────────────────── */
-/* A block is an annotation in the margin and the content it names (PLAYGROUND §"The
-   rail"). Below the width where the margin stops fitting, the rail stacks and the
-   annotation stays the same run of type. */
-.pg-rail {
-	display: grid;
-	grid-template-columns: var(--pg-rail) minmax(0, 1fr);
-	column-gap: var(--pg-space-8);
-	align-items: start;
-}
-
-/* The annotation is whatever the block puts first: a section label, a status line; the
-   rail only places it. */
-.pg-rail > :first-child {
-	padding-top: var(--qmh-space);
-}
-
-@media (width < 60rem) {
-	.pg-rail {
-		grid-template-columns: minmax(0, 1fr);
-	}
-	.pg-rail > :first-child {
-		padding-top: 0;
-		margin-bottom: var(--qmh-space-3);
-	}
 }
 
 /* ── The head ──────────────────────────────────────────────────────────────── */
