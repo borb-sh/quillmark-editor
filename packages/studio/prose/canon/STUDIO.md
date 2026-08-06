@@ -24,7 +24,7 @@ Studio also sheds the playground's front-door job. Its reader arrives already co
 
 A browser cannot read the source layout, so studio ends at a built artifact behind a base URL, consumed with `Quiver.fromBuiltUrl`.
 
-**The Node half** packs and watches, and does nothing else: `build()` into the directory the dev server serves, watch the source tree, repack, signal. It is a Vite plugin, so one hook covers `vite dev` and `vite build` alike. Two constraints come from the serving layer rather than from quivers, and both are stated where the plugin is: the first pack lands before the server is created, and the packed tree stays watched.
+**The Node half** packs and watches, and does nothing else: `build()` into the directory the dev server serves, watch the source tree, repack, signal. It is a Vite plugin, and the dev server's alone. Two constraints come from the serving layer rather than from quivers, and both are stated where the plugin is: the first pack lands before the server is created, and the packed tree stays watched.
 
 **A generation is never observably half-written.** `build` clears its output before writing it, so a pack is assembled outside the served tree and moved in with one rename. Without that, a client reading the pointer mid-pack reports a broken quiver for an edit that was fine.
 
@@ -86,6 +86,8 @@ The band is under the panes rather than over them: it is consulted, not watched,
 ## Built as though it publishes
 
 Studio is private, so it depends on `@quillmark/wasm` rather than peering it, and it launches against `fixtures/`, the workspace's source quiver. Publishing it is a packaging change rather than a rewrite, and that is a property the browser half maintains rather than one it would acquire: it takes its base URL at **runtime**, off the document's own, and imports nothing workspace-relative. The source path and the output directory are the Node half's alone.
+
+**The built client carries no quiver.** A quiver is what the client is laid *over*, at the `quiver/` its base resolves to, so one packed inside it occupies that URL and the winner is whichever copy lands last — the workspace's fixture, on a site that meant to serve its own. `scripts/site.mjs` is the arrangement stated once: assert the client is quiverless, lay it out, build a quiver beside it, assert the pointer is reachable. `vite preview` serves what it assembles, so the shape a deploy makes is the shape looked at locally.
 
 ## Preventing drift
 

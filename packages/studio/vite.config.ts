@@ -13,8 +13,9 @@ import { defineConfig, type Plugin } from 'vite';
 /** The workspace's source quiver. A browser cannot read the source layout, so this
  *  pack is the step every browser consumer of a quiver performs. */
 const SOURCE = fileURLToPath(new URL('../../fixtures', import.meta.url));
-/** Vite's verbatim-copy tree, so one output serves `vite dev` and the build alike.
- *  Generated, and gitignored. */
+/** Vite's verbatim-copy tree, which is the dev server's alone: the built client
+ *  carries no quiver, and `scripts/site.mjs` lays one beside it. Generated, and
+ *  gitignored. */
 const OUT = fileURLToPath(new URL('public/quiver', import.meta.url));
 /** Where a pack is assembled, and where the tree it replaces waits to be deleted.
  *  Outside the served tree, so a half-written generation is never reachable and the
@@ -55,8 +56,10 @@ function quiverSource(): Plugin {
 		// layer: Vite mounts its static middleware only for a public directory that
 		// EXISTS when the server is created, which is before any build hook runs. So
 		// the first pack lands here, the one hook every mode awaits before that.
-		async configResolved() {
-			await pack();
+		// `serve` alone: a quiver inside the client would occupy the URL the deploy
+		// writes the author's to.
+		async configResolved(config) {
+			if (config.command === 'serve') await pack();
 		},
 		configureServer(server) {
 			// The source tree sits outside the Vite root, so the watcher is told about it
@@ -94,6 +97,9 @@ export default defineConfig({
 	// wherever it is put (STUDIO §"Built as though it publishes").
 	base: './',
 	plugins: [svelte(), quiverSource()],
+	// The client is the whole output and it carries no quiver, so a public directory
+	// left behind by a dev run cannot ride into it.
+	build: { copyPublicDir: false },
 	// @quillmark/wasm ships wasm-bindgen's web target: no `.wasm` import and no
 	// top-level await, so a static import is safe and Vite resolves it unaided.
 	// Dev-server pre-bundling is the one exception: it relocates the package away
