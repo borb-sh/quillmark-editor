@@ -153,9 +153,9 @@ my-quiver/
 }
 ```
 
-Gate the quiver in CI so a validation failure surfaces on publish rather than on a consumer's build. It loads with `fromDir`, compiles every quill, and renders each quill's example document. Two doors, same loop.
+Gate the quiver in CI so a validation failure surfaces on publish rather than on a consumer's build. `quiver test` loads with `fromDir`, compiles every quill, and renders each quill's example document.
 
-The CLI needs no file. Installing the package links `quiver` into `node_modules/.bin`, which npm puts on PATH for every script:
+There is one way to run it and it needs no file. Installing the package links `quiver` into `node_modules/.bin`, which npm puts on PATH for every script, so a gated quiver is `Quiver.yaml`, `quills/`, and one line:
 
 ```jsonc
 // package.json
@@ -168,16 +168,8 @@ The CLI needs no file. Installing the package links `quiver` into `node_modules/
 }
 ```
 
-It finds the engine itself: a named `engine` export from `quiver.config.js` at the collection root, else `@quillmark/wasm` from your own `node_modules`. `quiver build [--out <dir>]` packs the same source into a servable artifact.
+CI needs nothing else: `npm ci && npm test`. The verb finds the engine itself: a named `engine` export from `quiver.config.js` at the collection root, else `@quillmark/wasm` from your own `node_modules`, so the gate renders through the engine you publish against. `quiver build [--out <dir>]` packs the same source into a servable artifact.
 
-`/testing` is the same gate as a test file, on `node:test`, so it adds no test-runner dependency:
-
-```ts
-// quiver.test.ts — run with: node --test
-import { Engine } from '@quillmark/wasm';
-import { runQuiverTests } from '@quillmark/quiver/testing';
-
-runQuiverTests(import.meta.url, new Engine());
-```
+If your CI is already a test runner and you want the gate inside it, write the loop: `fromDir`, `getQuill`, `seedDocument` and `engine.render` are public, and it is a dozen lines. Call `await init()` from `@quillmark/wasm` first, or every export throws `runtime::not_initialized`.
 
 It answers _does it work_, and that is the whole of what this package offers a quill author: _what is it like to use_ is answered by working a real document through the quill live, which is an app rather than a subpath.

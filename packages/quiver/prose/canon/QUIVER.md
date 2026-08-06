@@ -66,13 +66,14 @@ Every error is a `QuiverError` carrying a `code`, a human-readable `message`, an
 
 ## The author-side gate
 
-One subpath exists for quiver authors rather than quiver consumers, so a validation failure surfaces on publish instead of on someone else's build.
+The gate exists for quiver authors rather than quiver consumers, so a validation failure surfaces on publish instead of on someone else's build. `quiver test` loads with `fromDir` and renders every quill's example document, seeded with `quill.seedDocument()` since the blueprint carries `<must-fill>` sentinels and is not directly renderable.
 
-One loop reaches it through **two doors**, and they load, compile and render the same way: `fromDir`, then every quill's example document, seeded with `quill.seedDocument()` since the blueprint carries `<must-fill>` sentinels and is not directly renderable.
+**There is one way to run it, and it is a verb.** Installing the package links `quiver` into `node_modules/.bin`, which npm puts on PATH, so an author names it once in `scripts` and writes no file: the whole of a gated quiver is `Quiver.yaml`, `quills/`, and `"test": "quiver test"`. A library harness cannot reach that floor. npm has no way for a dependency to supply a default `npm test`, and `node --test` skips `node_modules` when it discovers files, so the author always ends up writing the file that imports it. Shipping both doors would mean shipping the worse one, and a package that offers two answers to one question has an opinion about neither.
 
-- **`quiver test`**, the `bin` npm links into `node_modules/.bin`. An author names it once in `scripts` and writes no file. It discovers the engine itself: a named `engine` export from `quiver.config.js` at the collection root, else `@quillmark/wasm` resolved from the collection's own `node_modules`. `quiver build [--out <dir>]` is the other verb, and the two are the whole of the bin.
-- **`/testing`**, `runQuiverTests(import.meta.url, engine)` on `node:test`, so it adds no test-runner dependency. The author writes the file and passes the engine.
+The verb owns engine discovery, which is what buys the empty file list: a named `engine` export from `quiver.config.js` at the collection root, else `@quillmark/wasm` resolved from the collection's own `node_modules`. That resolution is the author's copy, so the gate renders through the engine they publish against.
 
-**Each door instantiates the core.** Every `@quillmark/wasm` export throws `runtime::not_initialized` until `init()` resolves, and `new Engine()` is lazy, so a gate that skips it reports an uninitialized runtime as a failing quill. The suite spawns both against the reference quiver, since nothing that imports a module proves a surface reached through a linked bin or a published subpath.
+**It instantiates the core.** Every `@quillmark/wasm` export throws `runtime::not_initialized` until `init()` resolves, and `new Engine()` is lazy, so a gate that skips it reports an uninitialized runtime as a failing quill. The suite spawns the built bin against the reference quiver, since nothing that imports a module proves a surface reached through a linked bin.
+
+An author whose CI is already a test runner is not stranded: `fromDir`, `getQuill`, `seedDocument` and `engine.render` are public, and the loop over them is a dozen lines. It is a loop to write rather than a subpath to import, because one blessed path and a named escape beat two supported paths.
 
 `build` and `test` are the whole of what this package gives a quill author. The gate is what an author is **blocked on**: it runs in their CI, against their own wasm, and installs a loader rather than an app. Looking at rendered output needs a browser, a paint loop and chrome, so it is an app on top of this package rather than a subpath inside it ([STUDIO.md](../../../studio/prose/canon/STUDIO.md)).
