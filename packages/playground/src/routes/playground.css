@@ -1,9 +1,9 @@
 /* What the playground adds ON TOP of the preset, and nothing the preset already
    carries: `@quillmark/svelte/preset` is the endorsed page scale, imported in
    `+layout.svelte`, and the app reads `--qmh-*` throughout. What survives here is the
-   app's own (a reading column with an annotation margin, a display run, a draggable
-   split), which no consumer mounting a surface has and no preset should ship
-   (PLAYGROUND.md is the language; the recipes are `routes/chrome.css`).
+   app's own (a page maximum, a display run, two container heights), which no consumer
+   mounting a surface has and no preset should ship (PLAYGROUND.md is the language; the
+   recipes are `routes/chrome.css`).
 
    Literals live here and nowhere else under `src/routes`: `check:style` runs its axes
    over this scope too, with this file exempt as the place these defaults are minted,
@@ -19,9 +19,6 @@
 	--pg-space-12: calc(var(--qmh-space) * 12);
 	--pg-space-16: calc(var(--qmh-space) * 16);
 	--pg-space-24: calc(var(--qmh-space) * 24);
-	/* A shape tier beside the ramp rather than a step on it, so an end cap stays round
-	   at any `--qm-radius`. */
-	--pg-radius-pill: 999px;
 
 	/* ── The reading column ──────────────────────────────────────────────────── */
 	/* ONE page width for the whole shell; a per-route maximum would step the running
@@ -42,11 +39,6 @@
 	   separate decision from the frame above, so they are two rungs. Studio's is the
 	   same job, and `check:style` holds the two to one value. */
 	--pg-pane: 34rem;
-	/* The split's hit track, and the hairline in it at rest and engaged. Sized to the
-	   pointer, so these do not read the spacing ramp. */
-	--pg-resizer: 11px;
-	--pg-rule: 3px;
-	--pg-rule-strong: 5.5px;
 
 	/* ── Type ────────────────────────────────────────────────────────────────── */
 	/* The one run of type the app has and a mounted surface does not: a landing thesis,
