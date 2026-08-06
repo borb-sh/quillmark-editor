@@ -1,15 +1,14 @@
 /**
- * The gate, run as an author runs it. Two doors reach it and this file spawns both
- * against the workspace's reference quill: `dist/bin/quiver.js` in a quiver root, and
- * `node --test` over the `/testing` harness in `fixtures/quiver.test.js`.
+ * The gate, run as an author runs it: `dist/bin/quiver.js` spawned in a quiver root,
+ * against the workspace's reference quill.
  *
- * Every other test in the suite imports `src/`, which is what makes these worth their
- * seconds: what an author reaches is a linked bin and a published subpath, and nothing
- * that imports a module proves either works. Between them they pin engine discovery,
- * instantiating the core, the source load, and a real render of every quill's seeded
- * example, that last being what a gate for quills is.
+ * Every other test in the suite imports `src/`, which is what makes this one worth its
+ * seconds: what an author reaches is a linked bin, and nothing that imports a module
+ * proves one works. It pins engine discovery, instantiating the core, the source load,
+ * and a real render of every quill's seeded example, that last being what a gate for
+ * quills is.
  *
- * Both run against `dist/`, so they need the package built. `npm ci` builds it through
+ * It runs against `dist/`, so it needs the package built. `npm ci` builds it through
  * `prepare`, which is what CI does before it tests.
  */
 
@@ -44,20 +43,6 @@ describe('the author-side gate', () => {
 
 			expect(stdout).toContain('pass  usaf_memo@0.2.0');
 			expect(stdout).toContain('1/1 passed');
-		},
-		RENDER_MS
-	);
-
-	it(
-		'the /testing harness gates it through node:test',
-		async () => {
-			// The file is the one the README documents, in the quiver root it gates.
-			const { stdout } = await run(process.execPath, ['--test', 'quiver.test.js'], {
-				cwd: REFERENCE_QUIVER
-			});
-
-			expect(stdout).toContain("compiles and renders every quill's example without error");
-			expect(stdout).toMatch(/^# fail 0$/m);
 		},
 		RENDER_MS
 	);

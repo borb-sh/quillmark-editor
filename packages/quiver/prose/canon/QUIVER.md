@@ -66,13 +66,12 @@ Every error is a `QuiverError` carrying a `code`, a human-readable `message`, an
 
 ## The author-side gate
 
-One subpath exists for quiver authors rather than quiver consumers, so a validation failure surfaces on publish instead of on someone else's build.
+One verb exists for quiver authors rather than quiver consumers, so a validation failure surfaces on publish instead of on someone else's build.
 
-One loop reaches it through **two doors**, and they load, compile and render the same way: `fromDir`, then every quill's example document, seeded with `quill.seedDocument()` since the blueprint carries `<must-fill>` sentinels and is not directly renderable.
+**`quiver test`** is that verb, the `bin` npm links into `node_modules/.bin`. It loads with `fromDir`, then compiles and renders every quill's example document, seeded with `quill.seedDocument()` since the blueprint carries `<must-fill>` sentinels and is not directly renderable. An author names it once in `scripts` and writes no file. It discovers the engine itself: a named `engine` export from `quiver.config.js` at the collection root, else `@quillmark/wasm` resolved from the collection's own `node_modules`. `quiver build [--out <dir>]` is the other verb, and the two are the whole of the bin.
 
-- **`quiver test`**, the `bin` npm links into `node_modules/.bin`. An author names it once in `scripts` and writes no file. It discovers the engine itself: a named `engine` export from `quiver.config.js` at the collection root, else `@quillmark/wasm` resolved from the collection's own `node_modules`. `quiver build [--out <dir>]` is the other verb, and the two are the whole of the bin.
-- **`/testing`**, `runQuiverTests(import.meta.url, engine)` on `node:test`, so it adds no test-runner dependency. The author writes the file and passes the engine.
+**One door, so the loop and the engine contract have one home each.** A second entry onto the same verdict copies both, and a caller-supplied engine gates nothing about the discovery the bin does, so the two answer differently under one name. An author on vitest, jest or another runner spawns the bin (`execFileSync('quiver', ['test'])`) and gates what CI gates. The suite spawns it against the reference quiver, since nothing that imports a module proves a surface reached through a linked bin.
 
-**Each door instantiates the core.** Every `@quillmark/wasm` export throws `runtime::not_initialized` until `init()` resolves, and `new Engine()` is lazy, so a gate that skips it reports an uninitialized runtime as a failing quill. The suite spawns both against the reference quiver, since nothing that imports a module proves a surface reached through a linked bin or a published subpath.
+**The gate instantiates the core.** Every `@quillmark/wasm` export throws `runtime::not_initialized` until `init()` resolves, and `new Engine()` is lazy, so a gate that skips it reports an uninitialized runtime as a failing quill.
 
 `build` and `test` are the whole of what this package gives a quill author. The gate is what an author is **blocked on**: it runs in their CI, against their own wasm, and installs a loader rather than an app. Looking at rendered output needs a browser, a paint loop and chrome, so it is an app on top of this package rather than a subpath inside it ([STUDIO.md](../../../studio/prose/canon/STUDIO.md)).
