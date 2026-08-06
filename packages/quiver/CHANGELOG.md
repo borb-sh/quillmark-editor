@@ -4,9 +4,9 @@
 
 ## Unreleased
 
-The Node factories become free functions: `import { fromDir, fromPackage, fromBuiltDir, build, buildPackage } from '@quillmark/quiver/node'`, replacing the statics `/node` installed on the shared `Quiver` class. The class is browser-pure, the package has no side effects, and `Quiver._fromLoader` is gone from the public surface. `Quiver.fromBuiltUrl` and `Quiver.fromManifest` are unchanged.
+The Node factories become free functions: `import { fromDir, fromBuiltDir, build } from '@quillmark/quiver/node'`, replacing the statics `/node` installed on the shared `Quiver` class. The class is browser-pure, the package has no side effects, and `Quiver._fromLoader` is gone from the public surface. `Quiver.fromBuiltUrl` is unchanged, and is the class's one factory.
 
-`fromPackage` and `buildPackage` take a `from` argument — pass `import.meta.url`. Without it resolution runs from this package's own install location, so a consumer's quiver was unreachable under an isolated `node_modules` layout.
+Three loaders, not five. `fromPackage` and `buildPackage` are gone: an npm-installed quiver is a directory, and `dirname(createRequire(import.meta.url).resolve('<pkg>/Quiver.yaml'))` handed to `fromDir` or `build` is the line, written where the resolution base belongs to the caller. `Quiver.fromManifest` is gone with them: it closed a stale-pointer layer above the browser cache the pointer's `no-cache` fetch already closes, for an SSR consumer that does not exist. A published quiver still exposes `./Quiver.yaml` from its `exports` map or is unreachable.
 
 `build` refuses an output directory that is, or contains, the source quiver or the working directory, rather than clearing it.
 
@@ -28,7 +28,7 @@ The author-side gate instantiates the core before it renders. Every `@quillmark/
 
 `getQuill`'s returned quill is documented as **borrowed**: it is cached per canonical ref and handed to every caller for the quiver's lifetime, so `free()`ing it leaves the next caller holding a freed handle. Code that wants a quill of its own mints it from `(await quiver.getQuill(ref)).toTree()`.
 
-The `file://` refusals from `Quiver.fromBuiltUrl` and `Quiver.fromManifest` name a factory that exists: `import { fromBuiltDir } from '@quillmark/quiver/node'`, not the `Quiver.fromBuiltDir` static removed when the Node factories became free functions.
+The `file://` refusal from `Quiver.fromBuiltUrl` names a factory that exists: `import { fromBuiltDir } from '@quillmark/quiver/node'`, not the `Quiver.fromBuiltDir` static removed when the Node factories became free functions.
 
 The license is Apache-2.0, not MIT. The workspace's `LICENSE` was Apache-2.0 while every `package.json` declared MIT; the declaration now matches the text, and the tarball carries a copy of it alongside a `NOTICE` naming the copyright holder, Nibs.
 

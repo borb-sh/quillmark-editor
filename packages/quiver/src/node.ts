@@ -11,13 +11,10 @@
  */
 
 import { Quiver, createQuiver } from './quiver.js';
-import { QuiverError } from './errors.js';
 import { scanSourceQuiver, SourceLoader } from './source-loader.js';
 import { buildQuiver } from './build.js';
 import { loadBuiltQuiver } from './built-loader.js';
 import { FsBuiltTransport } from './transports/fs-built-transport.js';
-import { createRequire } from 'node:module';
-import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
@@ -26,6 +23,11 @@ import { fileURLToPath } from 'node:url';
  *
  * Also accepts an `import.meta.url`-style `file://` URL; the URL's parent
  * directory is used as the source root.
+ *
+ * A quiver installed from npm is a directory like any other:
+ * `dirname(createRequire(import.meta.url).resolve('<pkg>/Quiver.yaml'))` is its
+ * root, resolved from the caller, whose dependencies are reachable from the
+ * caller alone under an isolated `node_modules` layout.
  *
  * Throws `quiver_invalid` on schema violations, `transport_error` on I/O
  * failure.
@@ -36,18 +38,6 @@ export async function fromDir(pathOrFileUrl: string): Promise<Quiver> {
 		: pathOrFileUrl;
 	const { meta, catalog } = await scanSourceQuiver(dir);
 	return createQuiver(meta.name, catalog, new SourceLoader(dir));
-}
-
-/**
- * Resolves an npm specifier and loads the source layout at the package root.
- * The resolved package must have `Quiver.yaml` at its root and expose it from
- * its `exports` map.
- *
- * Throws `transport_error` on resolution/I/O failure, `quiver_invalid` on
- * schema violations.
- */
-export async function fromPackage(specifier: string, from?: string): Promise<Quiver> {
-	return fromDir(dirname(resolveQuiverYaml(specifier, from)));
 }
 
 /**
@@ -75,43 +65,6 @@ export async function fromBuiltDir(dirPath: string): Promise<Quiver> {
  */
 export async function build(sourceDir: string, outDir: string): Promise<void> {
 	return buildQuiver(sourceDir, outDir);
-}
-
-/**
- * Resolves an npm specifier and builds the source layout at the package root.
- * Symmetric to `fromPackage` but writes a runtime build artifact to outDir
- * instead of loading.
- *
- * Throws `transport_error` on resolution/I/O failure, `quiver_invalid` on
- * source validation failures.
- */
-export async function buildPackage(
-	specifier: string,
-	outDir: string,
-	from?: string
-): Promise<void> {
-	return buildQuiver(dirname(resolveQuiverYaml(specifier, from)), outDir);
-}
-
-/**
- * Resolves `<specifier>/Quiver.yaml` from `from`: an `import.meta.url` or a
- * path, defaulting to this module. The default only finds packages hoisted
- * beside `@quillmark/quiver` itself; under an isolated `node_modules` layout a
- * caller's own dependencies are reachable only from the caller, so passing
- * `import.meta.url` is what makes resolution ask the right question.
- *
- * Throws `transport_error`.
- */
-function resolveQuiverYaml(specifier: string, from?: string): string {
-	try {
-		return createRequire(from ?? import.meta.url).resolve(`${specifier}/Quiver.yaml`);
-	} catch (err) {
-		throw new QuiverError(
-			'transport_error',
-			`Failed to resolve quiver package "${specifier}" from "${from ?? import.meta.url}": ${(err as Error).message}`,
-			{ cause: err }
-		);
-	}
 }
 
 // The rest of the public surface, so a Node consumer needs one import.

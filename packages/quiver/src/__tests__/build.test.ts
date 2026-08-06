@@ -6,8 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { buildQuiver } from '../build.js';
 import { unpackFiles } from '../bundle.js';
 import { NAME_DIGEST_LENGTH, sha256Hex } from '../digest.js';
-import { build, buildPackage } from '../node.js';
-import { QuiverError } from '../errors.js';
+import { build } from '../node.js';
 
 // Absolute path to the committed fixture
 const SAMPLE_FIXTURE = new URL('./fixtures/sample-quiver', import.meta.url).pathname;
@@ -466,18 +465,6 @@ describe('build (node entry)', () => {
 		const pointer = JSON.parse(raw) as { manifest: string };
 		expect(pointer.manifest).toMatch(
 			new RegExp(`^manifest\\.[0-9a-f]{${NAME_DIGEST_LENGTH}}\\.json$`)
-		);
-	});
-});
-
-describe('buildPackage', () => {
-	it('throws transport_error when the specifier cannot be resolved', async () => {
-		const out = tempDir();
-		await expect(buildPackage('@nonexistent/quiver-pkg-xyz', out)).rejects.toThrow(
-			expect.objectContaining({ code: 'transport_error' })
-		);
-		await expect(buildPackage('@nonexistent/quiver-pkg-xyz', out)).rejects.toBeInstanceOf(
-			QuiverError
 		);
 	});
 });

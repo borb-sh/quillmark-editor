@@ -4,9 +4,9 @@
  * Polymorphism via composition: internally stores a pluggable loader
  * (either source-backed or build-output-backed).
  *
- * This module is browser-safe: only `fromBuiltUrl`, `fromManifest`, and the
- * instance API live here. The filesystem factories are free functions in
- * `./node.js`; the class is the same either way.
+ * This module is browser-safe: only `fromBuiltUrl` and the instance API live
+ * here. The filesystem factories are free functions in `./node.js`; the class
+ * is the same either way.
  */
 
 import { QuiverError } from './errors.js';
@@ -49,8 +49,8 @@ export class Quiver {
 
 	/**
 	 * Private constructor. A Quiver comes from a factory (`Quiver.fromBuiltUrl`,
-	 * `Quiver.fromManifest`, or `fromDir` / `fromPackage` / `fromBuiltDir` from
-	 * `@quillmark/quiver/node`), which is what names the thing being read.
+	 * or `fromDir` / `fromBuiltDir` from `@quillmark/quiver/node`), which is what
+	 * names the thing being read.
 	 */
 	private constructor(name: string, catalog: Map<string, string[]>, loader: QuiverLoader) {
 		this.name = name;
@@ -83,28 +83,6 @@ export class Quiver {
 		const { loadBuiltQuiver } = await import('./built-loader.js');
 		const transport = new HttpTransport(url);
 		return loadBuiltQuiver(transport);
-	}
-
-	/**
-	 * Browser-safe factory. Seeds the catalog from caller-provided manifest
-	 * bytes — never fetches `latest.json` — then fetches bundles lazily and
-	 * content-addressed, relative to `baseUrl`, like `fromBuiltUrl`. For SSR
-	 * consumers that already hold the manifest at build time.
-	 *
-	 * Throws `quiver_invalid` on malformed manifest bytes, `transport_error`
-	 * on a `file://` baseUrl or a later bundle fetch failure.
-	 */
-	static async fromManifest(baseUrl: string, manifestBytes: Uint8Array): Promise<Quiver> {
-		if (baseUrl.startsWith('file://')) {
-			throw new QuiverError(
-				'transport_error',
-				`Quiver.fromManifest requires an http(s):// or origin-relative baseUrl; got "${baseUrl}". For local build output, use import { fromBuiltDir } from '@quillmark/quiver/node'.`
-			);
-		}
-		const { HttpTransport } = await import('./transports/http-transport.js');
-		const { seedBuiltQuiver } = await import('./built-loader.js');
-		const transport = new HttpTransport(baseUrl);
-		return seedBuiltQuiver(transport, manifestBytes);
 	}
 
 	/** Returns all known quill names, sorted lexicographically. */
