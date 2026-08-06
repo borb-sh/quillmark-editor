@@ -14,7 +14,7 @@
 -->
 <script lang="ts">
 	import { Select } from 'bits-ui';
-	import ChevronDown from '@lucide/svelte/icons/chevron-down';
+	import Icon from './icons/Icon.svelte';
 	import { syncedLocal } from './synced.svelte.js';
 	import './controls.css';
 
@@ -92,7 +92,7 @@
 			data-ghosted={unset ? '' : undefined}
 		>
 			{shown}
-			<ChevronDown size={14} aria-hidden="true" />
+			<Icon name="chevron-down" size={14} />
 		</Select.Trigger>
 		<Select.Portal to={portalTarget}>
 			<Select.Content sideOffset={4}>

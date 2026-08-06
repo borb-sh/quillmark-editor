@@ -13,7 +13,7 @@
 	// off-tree, so this component renders standalone too.
 	const t = wording();
 	import { untrack } from 'svelte';
-	import ChevronRight from '@lucide/svelte/icons/chevron-right';
+	import Icon from './icons/Icon.svelte';
 	import type { Document, Quill, Addr, Diagnostic } from '@quillmark/wasm';
 	import type { EditorErrorHandler } from '../core/errors.js';
 	import type { FieldController } from '../core/codec/index.js';
@@ -316,7 +316,7 @@
 										aria-controls={panelId}
 										onclick={() => toggleGroup(group)}
 									>
-										<ChevronRight class="qm-group-chevron" size={14} />{section.label}
+										<Icon name="chevron-right" class="qm-group-chevron" size={14} />{section.label}
 									</button>
 									<!-- `inert` is what makes closed mean CLOSED: the panel is clipped, not
 								     unmounted, so without it every field

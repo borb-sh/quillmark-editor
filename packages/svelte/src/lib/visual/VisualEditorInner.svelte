@@ -33,7 +33,7 @@
 <script lang="ts">
 	import { onDestroy, tick } from 'svelte';
 	import { DropdownMenu } from 'bits-ui';
-	import Plus from '@lucide/svelte/icons/plus';
+	import Icon from './icons/Icon.svelte';
 	import { isQuillmarkError, MAIN_CARD_ADDR } from '@quillmark/wasm';
 	import { cardPath, fieldPathForAddr, type DocPath } from '../core/address.js';
 	import { errorMessage, reportError } from '../core/errors.js';
@@ -873,7 +873,7 @@
 					type="button"
 					class="qm-add-btn qm-add-affordance"
 					aria-label={merged.addCardOfKind(humanize(kinds[0]))}
-					onclick={() => addCard(atIndex, kinds[0])}><Plus size={GLYPH} /></button
+					onclick={() => addCard(atIndex, kinds[0])}><Icon name="plus" size={GLYPH} /></button
 				>
 			{:else}
 				<!-- Multi-kind add: pick the kind, then seed + insert. A MENU rather than a
@@ -883,7 +883,7 @@
 			 recede ladder below reaches it through `:global`. -->
 				<DropdownMenu.Root>
 					<DropdownMenu.Trigger class="qm-add-btn qm-add-affordance" aria-label={merged.addCard}
-						><Plus size={GLYPH} /></DropdownMenu.Trigger
+						><Icon name="plus" size={GLYPH} /></DropdownMenu.Trigger
 					>
 					<DropdownMenu.Portal to={rootEl}>
 						<DropdownMenu.Content sideOffset={4}>

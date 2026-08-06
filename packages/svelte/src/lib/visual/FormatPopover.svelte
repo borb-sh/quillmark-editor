@@ -57,14 +57,8 @@
 	import type { EditorView } from 'prosemirror-view';
 	import type { MarkType } from 'prosemirror-model';
 	import { Popover } from 'bits-ui';
-	import type { Component } from 'svelte';
-	import Bold from '@lucide/svelte/icons/bold';
-	import Italic from '@lucide/svelte/icons/italic';
-	import Underline from '@lucide/svelte/icons/underline';
-	import Strikethrough from '@lucide/svelte/icons/strikethrough';
-	import Code from '@lucide/svelte/icons/code';
-	import Link from '@lucide/svelte/icons/link';
-	import Hash from '@lucide/svelte/icons/hash';
+	import Icon from './icons/Icon.svelte';
+	import type { IconName } from './icons/nodes.js';
 	import {
 		rangeAnchor,
 		type FieldController,
@@ -83,14 +77,14 @@
 
 	/** Mark size: the shared control-glyph rule for the popover icons. */
 	const GLYPH = 15;
-	/** The six content formatting marks; `anchor` is a 7th, rendered separately (a decoration toggle, not a PM `toggleMark` (see the button below). Each carries its Lucide glyph) the icon *is* the label. */
-	const MARKS: { name: string; icon: Component; title: string }[] = $derived([
-		{ name: 'strong', icon: Bold, title: t.strings.formatBold },
-		{ name: 'em', icon: Italic, title: t.strings.formatEmphasis },
-		{ name: 'underline', icon: Underline, title: t.strings.formatUnderline },
-		{ name: 'strike', icon: Strikethrough, title: t.strings.formatStrikethrough },
-		{ name: 'code', icon: Code, title: t.strings.formatCode },
-		{ name: 'link', icon: Link, title: t.strings.formatLink }
+	/** The six content formatting marks; `anchor` is a 7th, rendered separately (a decoration toggle, not a PM `toggleMark` (see the button below). Each carries a glyph) the icon *is* the label. */
+	const MARKS: { name: string; icon: IconName; title: string }[] = $derived([
+		{ name: 'strong', icon: 'bold', title: t.strings.formatBold },
+		{ name: 'em', icon: 'italic', title: t.strings.formatEmphasis },
+		{ name: 'underline', icon: 'underline', title: t.strings.formatUnderline },
+		{ name: 'strike', icon: 'strikethrough', title: t.strings.formatStrikethrough },
+		{ name: 'code', icon: 'code', title: t.strings.formatCode },
+		{ name: 'link', icon: 'link', title: t.strings.formatLink }
 	]);
 
 	let open = $state(false);
@@ -324,7 +318,6 @@
 							     a labelled group is the honest description. -->
 							<div class="qm-format-buttons" role="group" aria-label={t.strings.formatGroup}>
 								{#each MARKS as m (m.name)}
-									{@const Icon = m.icon}
 									<button
 										type="button"
 										class="qm-icon-btn qm-mark-btn"
@@ -332,7 +325,7 @@
 										title={m.title}
 										aria-label={m.title}
 										onmousedown={keepFocus}
-										onclick={() => toggle(m.name)}><Icon size={GLYPH} /></button
+										onclick={() => toggle(m.name)}><Icon name={m.icon} size={GLYPH} /></button
 									>
 								{/each}
 								{#if anchorAvailable}
@@ -343,7 +336,7 @@
 										title={t.strings.formatAnchorTitle}
 										aria-label={t.strings.formatAnchor}
 										onmousedown={keepFocus}
-										onclick={toggleAnchor}><Hash size={GLYPH} /></button
+										onclick={toggleAnchor}><Icon name="hash" size={GLYPH} /></button
 									>
 								{/if}
 							</div>

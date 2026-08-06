@@ -14,9 +14,7 @@
 	// The surface's words, ambient from the editor root; the package's English
 	// off-tree, so this component renders standalone too.
 	const t = wording();
-	import ChevronUp from '@lucide/svelte/icons/chevron-up';
-	import ChevronDown from '@lucide/svelte/icons/chevron-down';
-	import X from '@lucide/svelte/icons/x';
+	import Icon from './icons/Icon.svelte';
 	import './controls.css';
 
 	interface Props {
@@ -36,21 +34,21 @@
 			class="qm-icon-btn"
 			title={t.strings.cardMoveUp}
 			disabled={isFirst}
-			onclick={onMoveUp}><ChevronUp /></button
+			onclick={onMoveUp}><Icon name="chevron-up" /></button
 		>
 		<button
 			type="button"
 			class="qm-icon-btn"
 			title={t.strings.cardMoveDown}
 			disabled={isLast}
-			onclick={onMoveDown}><ChevronDown /></button
+			onclick={onMoveDown}><Icon name="chevron-down" /></button
 		>
 	</div>
 	<button
 		type="button"
 		class="qm-icon-btn qm-card-delete"
 		title={t.strings.cardDelete}
-		onclick={onDelete}><X /></button
+		onclick={onDelete}><Icon name="x" /></button
 	>
 </div>
 
@@ -60,7 +58,7 @@
 		align-items: center;
 		gap: var(--_qm-space);
 	}
-	/* The glyph rung in CSS rather than through Lucide's `size`, because the card
+	/* The glyph rung in CSS rather than through the icon's `size`, because the card
 	 header's right hang is arithmetic over this number and the tap floor: an
 	 attribute set in the script is a second place the size lives, and the balance
 	 breaks silently when the two disagree. A stylesheet beats an SVG presentation

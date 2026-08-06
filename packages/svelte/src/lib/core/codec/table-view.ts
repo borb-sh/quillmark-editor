@@ -125,8 +125,11 @@ export interface TableViewDeps {
 	onCellFocus: () => void;
 }
 
-/** Lucide geometry, as the path data a DOM node can carry: the glyphs this chrome
- *  draws, in the one place chrome is built without Svelte. */
+/** The glyphs this chrome draws, as the path data a DOM node can carry — its own set
+ *  rather than `visual/icons/nodes.ts`, this being the one place chrome is built
+ *  without Svelte, and `/core` reaching no surface module. Same 24×24 frame and the
+ *  same origin, off an earlier release than the thirteen there; `NOTICE` carries the
+ *  notices for both. */
 const PLUS = ['M5 12h14', 'M12 5v14'];
 const ALIGN_PATHS: Record<TableAlign, string[]> = {
 	none: ['M21 6H3', 'M21 12H3', 'M21 18H3'],

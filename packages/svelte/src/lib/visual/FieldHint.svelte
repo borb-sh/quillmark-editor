@@ -26,7 +26,7 @@
 -->
 <script lang="ts">
 	import { Popover } from 'bits-ui';
-	import Info from '@lucide/svelte/icons/info';
+	import Icon from './icons/Icon.svelte';
 	import './controls.css';
 
 	interface Props {
@@ -85,7 +85,7 @@
 			e.stopPropagation();
 			open = false;
 		}
-	}}><Info size={13} aria-hidden="true" /></button
+	}}><Icon name="info" size={13} /></button
 >
 
 <Popover.Root bind:open>
