@@ -291,53 +291,53 @@
 	<header class="pg-head">
 		<h1 class="pg-title">Playground</h1>
 		{#if status.phase === 'loading'}
-			<p data-testid="status" class="pg-status loading">Opening…</p>
+			<p data-testid="status" class="qm-status">Opening…</p>
 		{:else if status.phase === 'error'}
-			<p data-testid="status" class="pg-status error">Error: {status.message}</p>
+			<p data-testid="status" class="qm-status qm-status-error">Error: {status.message}</p>
 		{/if}
 	</header>
 
 	{#if status.phase === 'ready'}
 		<!-- The bridge, read back out: each hop's last outcome, so a round-trip that
 		     lands nowhere is visible rather than silent. -->
-		<div class="pg-panel strip">
+		<div class="qm-panel strip">
 			<span class="stat"
-				><span class="pg-label">active</span>
-				<span class="pg-readout" data-testid="active-addr">{activeAddr}</span></span
+				><span class="qm-label">active</span>
+				<span class="qm-readout" data-testid="active-addr">{activeAddr}</span></span
 			>
 			<span class="stat"
-				><span class="pg-label">hit</span>
-				<span class="pg-readout" data-testid="last-hit"
+				><span class="qm-label">hit</span>
+				<span class="qm-readout" data-testid="last-hit"
 					>{lastHit ? JSON.stringify({ field: lastHit.field, pos: lastHit.pos }) : 'none'}</span
 				></span
 			>
 			<span class="stat"
-				><span class="pg-label">focus→preview</span>
-				<span class="pg-readout" data-testid="last-focus">{lastFocus}</span></span
+				><span class="qm-label">focus→preview</span>
+				<span class="qm-readout" data-testid="last-focus">{lastFocus}</span></span
 			>
 			<span class="stat"
-				><span class="pg-label">dirty pages</span>
-				<span class="pg-readout" data-testid="last-change"
+				><span class="qm-label">dirty pages</span>
+				<span class="qm-readout" data-testid="last-change"
 					>{lastChange ? JSON.stringify(lastChange.dirtyPages) : 'none'}</span
 				></span
 			>
 			<span class="stat"
-				><span class="pg-label">lane</span>
-				<span class="pg-readout" data-testid="last-change-source">{lastChangeSource}</span></span
+				><span class="qm-label">lane</span>
+				<span class="qm-readout" data-testid="last-change-source">{lastChangeSource}</span></span
 			>
 			<span class="stat"
-				><span class="pg-label">error</span>
-				<span class="pg-readout" data-testid="last-error">{lastError}</span></span
+				><span class="qm-label">error</span>
+				<span class="qm-readout" data-testid="last-error">{lastError}</span></span
 			>
 			<span class="strip-actions">
 				<button
-					class="pg-btn"
+					class="qm-control"
 					type="button"
 					data-testid="inject-diagnostics"
 					onclick={injectDiagnostics}>Inject diagnostics</button
 				>
 				<button
-					class="pg-btn"
+					class="qm-control"
 					type="button"
 					data-testid="toggle-source"
 					aria-pressed={showSource}
@@ -357,6 +357,7 @@
 			<section class="pg-frame editor-pane" aria-label="Visual editor">
 				{#if VisualEditor && docHandle && quillHandle}
 					<VisualEditor
+						class="qm-pane"
 						bind:this={editorRef}
 						doc={docHandle}
 						quill={quillHandle}
@@ -396,7 +397,7 @@
 
 		{#if showSource && docHandle}
 			<section class="pg-frame drawer" aria-label="Debug source view" data-testid="source-drawer">
-				<p class="pg-label drawer-label">Canonical markdown — read only</p>
+				<p class="qm-label drawer-label">Canonical markdown — read only</p>
 				<div class="source-host">
 					<SourceView bind:this={sourceRef} doc={docHandle} />
 				</div>
@@ -414,32 +415,32 @@
 	.page {
 		display: flex;
 		flex-direction: column;
-		gap: var(--pg-space-4);
+		gap: var(--qmh-space-4);
 		min-height: 0;
-		padding-bottom: var(--pg-space-4);
+		padding-bottom: var(--qmh-space-4);
 	}
 
 	.strip {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: baseline;
-		gap: var(--pg-space-2) var(--pg-space-6);
+		gap: var(--qmh-space-2) var(--pg-space-6);
 	}
 
 	.stat {
 		display: flex;
 		align-items: baseline;
-		gap: var(--pg-space-2);
+		gap: var(--qmh-space-2);
 		min-width: 0;
 	}
 
-	.stat .pg-readout {
-		color: var(--pg-ink-meta);
+	.stat .qm-readout {
+		color: var(--qmh-ink-meta);
 	}
 
 	.strip-actions {
 		display: flex;
-		gap: var(--pg-space);
+		gap: var(--qmh-space);
 		margin-inline-start: auto;
 	}
 
@@ -454,27 +455,18 @@
 		min-height: 0;
 	}
 
-	/* Both panes are the shell's frame; what each states here is the mounting site
-	   THEMING §"What is behind the column is yours" leaves to the host: the gutter,
-	   the scroll container, the page tone, the tail. This one puts plain `--qm-bg`
-	   behind the column, the supported bare case, and its end padding is the tail. A
-	   gesture past its last row stops there rather than scrolling the column behind
-	   it. */
+	/* Both panes are the shell's frame, and what each owes its surface is room: the
+	   gutter, the scroll container, the tone and the tail are the surface's own
+	   (THEMING §"Drop it in"), so the editor takes `.qm-pane` in the markup and the
+	   two rules here are what is left: a track that may shrink below its content. */
 	.editor-pane {
 		min-width: 0;
 		min-height: 0;
-		overflow: auto;
-		overscroll-behavior: contain;
-		padding: var(--pg-space-2) var(--pg-space-2) var(--pg-tail);
-		background: var(--pg-page);
 	}
 
-	/* The other half of the demonstration: a page tone of the host's own, with the
-	   painted sheet inset on it. The frame carries the rest. */
 	.preview-pane {
 		min-width: 0;
 		min-height: 0;
-		padding: var(--pg-space-2);
 	}
 
 	/* Reference resizer: a hairline in an 11px hit track, thickening on
@@ -494,17 +486,17 @@
 		width: var(--pg-rule);
 		height: 100%;
 		border-radius: var(--pg-radius-pill);
-		background: var(--pg-border);
+		background: var(--qmh-border);
 		transition:
-			width var(--pg-duration) var(--pg-ease-reverse),
-			background-color var(--pg-duration) var(--pg-ease-reverse);
+			width var(--qmh-duration) var(--qmh-ease-reverse),
+			background-color var(--qmh-duration) var(--qmh-ease-reverse);
 	}
 
 	.resizer:hover::before,
 	.resizer:focus-visible::before,
 	.resizer.dragging::before {
 		width: var(--pg-rule-strong);
-		background: var(--pg-border-strong);
+		background: var(--qmh-border-strong);
 	}
 
 	.resizer:focus-visible {
@@ -513,14 +505,14 @@
 
 	.grip {
 		position: absolute;
-		font-size: var(--pg-text-label);
+		font-size: var(--qmh-text-label);
 		line-height: 1;
-		color: var(--pg-ghost);
-		background: var(--pg-page);
-		padding-block: var(--pg-space-half);
+		color: var(--qmh-ghost);
+		background: var(--qmh-page);
+		padding-block: var(--qmh-space-half);
 		border-radius: var(--pg-radius-pill);
 		opacity: 0;
-		transition: opacity var(--pg-duration) var(--pg-ease-reverse);
+		transition: opacity var(--qmh-duration) var(--qmh-ease-reverse);
 		pointer-events: none;
 	}
 
@@ -540,14 +532,14 @@
 	}
 
 	.drawer-label {
-		padding: var(--pg-space-2) var(--pg-space-3);
-		border-bottom: var(--pg-border-width) solid var(--pg-border);
+		padding: var(--qmh-space-2) var(--qmh-space-3);
+		border-bottom: var(--qmh-border-width) solid var(--qmh-border);
 	}
 
 	.source-host {
 		flex: 1 1 0;
 		min-height: 0;
-		background: var(--pg-page);
+		background: var(--qmh-page);
 	}
 
 	/* Below the width that fits two panes side by side, the split stops being one: the
@@ -562,7 +554,7 @@
 		.shell {
 			grid-template-columns: minmax(0, 1fr);
 			grid-template-rows: none;
-			gap: var(--pg-space-4);
+			gap: var(--qmh-space-4);
 			flex: 0 0 auto;
 		}
 
@@ -573,7 +565,7 @@
 		.editor-pane,
 		.preview-pane,
 		.source-host {
-			height: var(--pg-mount);
+			height: var(--pg-pane);
 		}
 
 		.drawer {

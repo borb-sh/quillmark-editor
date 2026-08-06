@@ -41,13 +41,19 @@ async function loadEngine(cwd: string): Promise<Engine> {
 	// Resolve @quillmark/wasm from the collection's node_modules (best-effort).
 	// Its `Engine` renders every quill (cloning the core Quill/Document into the
 	// backend itself). A quiver.config.js may export a custom `engine`.
-	let wasm: { Engine: new () => Engine } | undefined;
+	let wasm: { Engine: new () => Engine; init: () => Promise<unknown> } | undefined;
 	try {
 		const req = createRequire(pathToFileURL(join(cwd, 'package.json')).href);
 		const wasmPath = req.resolve('@quillmark/wasm');
 		wasm = (await import(pathToFileURL(wasmPath).href)) as {
 			Engine: new () => Engine;
+			init: () => Promise<unknown>;
 		};
+		// Instantiate the core. Every `@quillmark/wasm` export throws
+		// `runtime::not_initialized` until `init()` resolves, and `new Engine()` is
+		// lazy, so without this the throw arrives at the first render and reads as a
+		// failing quill rather than an uninitialized runtime.
+		await wasm.init();
 	} catch {
 		// Not installed — a quiver.config.js may still provide an engine.
 	}

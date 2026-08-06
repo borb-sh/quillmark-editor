@@ -20,6 +20,10 @@
   lives as long as the quiver does, so the quiver is dropped rather than invalidated.
   The DOCUMENT crosses (STUDIO §"The document survives the quill"), which is what
   makes an edit to a schema an edit to the thing the author is holding.
+
+  Studio stores nothing, so a boot is a seed and a RELOAD IS THE RESEED: the carry is
+  what keeps an edited `example:` out of a running session, and F5 is what puts it back
+  (STUDIO §"The document is the blueprint's").
 -->
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
@@ -35,7 +39,7 @@
 	import Notes from './Notes.svelte';
 	import { catalogOf, openQuiver, type Catalog } from './quiver';
 	import { close, openRef, type Opened } from './session';
-	import { collect, diagnosticsOf, messageOf, type NoteSet } from './notes';
+	import { collect, diagnosticsOf, messageOf, placeOf, type NoteSet } from './notes';
 
 	/** The dev-server signal the Node half sends after a repack. */
 	const REPACKED = 'studio:quiver-repacked';
@@ -72,6 +76,18 @@
 	 *  from then on the schema producer speaks for the document's current state. */
 	let carried = $state.raw<Diagnostic[]>([]);
 	let notes = $state.raw<NoteSet>({ all: [], unrouted: 0, diagnostics: [] });
+
+	/** The first diagnostic of the throw naming a place in the quill's source. A compile
+	 *  failure carries one and nothing the schema says does, so this is the line the
+	 *  author opens whichever shape the failure took. */
+	const placed = $derived(thrown.find((d) => d.location));
+	/** A throw with a session still mounted: the document in hand does not compile, so
+	 *  the paint on screen is the last one that did and no longer answers it. A failed
+	 *  OPEN is the other shape and has no session to be stale, so the panes are gone and
+	 *  the vacant block takes the same job. */
+	const stalled = $derived(open !== undefined && thrown.length > 0);
+	/** What the strip names: the throw's place if it carried one, else its first note. */
+	const halt = $derived(stalled ? (placed ?? thrown[0]) : undefined);
 
 	function syncNotes(): void {
 		notes = collect([
@@ -189,9 +205,10 @@
 			previewRef?.refresh(open.session.update(open.doc));
 			thrown = [];
 		} catch (err) {
-			// The session is transactional, so the last good paint stays on screen. What
-			// the engine said about the attempt is the reason studio exists, so it is
-			// read out rather than logged.
+			// The session is transactional, so the last good paint stays on screen and
+			// stops answering the document, which is a state rather than a note. The
+			// strip over the preview says so and carries the place; the band lists it
+			// with everything else.
 			thrown = diagnosticsOf(err);
 		}
 		syncNotes();
@@ -272,22 +289,22 @@
 		{/if}
 		<span class="state">
 			{#if phase.kind === 'booting'}
-				<span class="st-status" data-testid="phase">Opening…</span>
+				<span class="qm-status" data-testid="phase">Opening…</span>
 			{:else if phase.kind === 'opening'}
-				<span class="st-status" data-testid="phase">Opening {phase.ref}…</span>
+				<span class="qm-status" data-testid="phase">Opening {phase.ref}…</span>
 			{:else if phase.kind === 'failed'}
 				<!-- The head says the STATE; what went wrong is a sentence, and it belongs
 				     where the panes were and in the notes band, not on one line of chrome. -->
-				<span class="st-status failed" data-testid="phase">Open failed</span>
+				<span class="qm-status qm-status-error" data-testid="phase">Open failed</span>
 				{#if held}
 					<!-- The document is not gone with the quill that would not open: it waits
 					     as text for the repack that fixes it. -->
-					<span class="st-status" data-testid="held">Document held</span>
+					<span class="qm-status" data-testid="held">Document held</span>
 				{/if}
 			{:else if open && open.carry.how !== 'seeded'}
 				<!-- An open session says so by painting the page, so the only word here is
 				     what a repack did to the document that was already in hand. -->
-				<span class="st-status" data-testid="phase"
+				<span class="qm-status" data-testid="phase"
 					>Repacked · document {open.carry.how === 'carried' ? 'carried' : 'reseeded'}</span
 				>
 			{/if}
@@ -302,6 +319,7 @@
 		<div class="panes">
 			<section class="pane edit" aria-label="Editor">
 				<VisualEditor
+					class="qm-pane"
 					bind:this={editorRef}
 					doc={open.doc}
 					quill={open.quill}
@@ -312,6 +330,19 @@
 				/>
 			</section>
 			<section class="pane paint" aria-label="Preview">
+				{#if halt}
+					<!-- A document that will not compile is a STATE of the paint, not a row
+					     under it: it takes the register the failed open has, at the surface it
+					     is about, carrying the place to open (STUDIO §"The errors"). The band
+					     below still lists it, one list being its job. -->
+					<div class="stalled" data-testid="stalled" role="status">
+						<span class="qm-status qm-status-error">Compile failed</span>
+						{#if halt.location}
+							<span class="qm-readout at">{placeOf(halt.location)}</span>
+						{/if}
+						<span class="what">{halt.message}</span>
+					</div>
+				{/if}
 				<Preview
 					bind:this={previewRef}
 					session={open.session}
@@ -326,6 +357,11 @@
 		<div class="vacant">
 			{#if phase.kind === 'failed'}
 				<p class="reason" data-testid="reason">{phase.message}</p>
+				{#if placed?.location}
+					<!-- The plate mid-fix is the state an author reloads through most often, and
+					     the line it failed at is what they do next. -->
+					<span class="qm-readout at" data-testid="reason-at">{placeOf(placed.location)}</span>
+				{/if}
 			{/if}
 		</div>
 	{/if}
@@ -348,22 +384,22 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: var(--st-space-2) var(--st-space-4);
-		padding: var(--st-space-2) var(--st-space-4);
-		border-bottom: var(--st-border-width) solid var(--st-border);
+		gap: var(--qmh-space-2) var(--qmh-space-4);
+		padding: var(--qmh-space-2) var(--qmh-space-4);
+		border-bottom: var(--qmh-border-width) solid var(--qmh-border);
 	}
 
 	.mark {
-		font-family: var(--st-font-mono);
-		font-size: var(--st-text-label);
-		font-weight: var(--st-weight-mid);
-		letter-spacing: var(--st-track-label);
+		font-family: var(--qmh-font-mono);
+		font-size: var(--qmh-text-label);
+		font-weight: var(--qmh-weight-mid);
+		letter-spacing: var(--qmh-track-label);
 		text-transform: uppercase;
-		color: var(--st-ink);
+		color: var(--qmh-ink);
 	}
 
 	.slash {
-		color: var(--st-ghost);
+		color: var(--qmh-ghost);
 	}
 
 	/* The phase reads off the end of the line, so the picker holds its position when
@@ -380,30 +416,58 @@
 	}
 
 	/* One hairline between the two, and no resizer: studio hides its instruments, and
-	   a divider that can be dragged is one. */
+	   a divider that can be dragged is one. Positioned, because the compile failure is
+	   laid over this pane. */
 	.pane.paint {
-		border-inline-start: var(--st-border-width) solid var(--st-border);
+		position: relative;
+		border-inline-start: var(--qmh-border-width) solid var(--qmh-border);
 	}
 
+	/* The failure over the paint rather than above it. The last good paint stays whole
+	   underneath: it is what the author was judging, and the only evidence of what the
+	   plate did before it stopped compiling. Overlaid rather than stacked, so the
+	   keystroke that breaks a plate and the one that fixes it do not resize the surface
+	   being judged. */
+	.stalled {
+		position: absolute;
+		inset-block-start: 0;
+		inset-inline: 0;
+		z-index: 1;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--qmh-space) var(--qmh-space-3);
+		padding: var(--qmh-space-2) var(--qmh-space-3);
+		background: var(--qmh-page);
+		border-block-end: var(--qmh-border-width) solid var(--qmh-alert);
+	}
+
+	/* The place, in the ink the addresses in the band take: it is the one part of this
+	   strip an author acts on. */
+	.at {
+		color: var(--qmh-ink);
+	}
+
+	/* One line of it. The strip is the state and the band below is the list, so a
+	   compiler's paragraph truncates here and is read in full there. */
+	.what {
+		flex: 1 1 auto;
+		min-width: 0;
+		font-size: var(--qmh-text-label);
+		line-height: var(--qmh-leading-tight);
+		color: var(--qmh-alert);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	/* A track that may shrink below its content, which is the whole of what a pane owes
+	   its surface: the gutter, the scroll container, the tone and the tail are the
+	   surface's own (THEMING §"Drop it in"), and the editor takes `.qm-pane` in the
+	   markup to say it is mounted in a fixed height rather than a page. */
 	.pane {
 		min-width: 0;
 		min-height: 0;
-		overflow: auto;
-	}
-
-	/* The mounting site, and the four properties THEMING §"What is behind the column
-	   is yours" leaves to the host: the gutter, the scroll container, the page tone,
-	   and the tail that lets the last card reach the middle of the pane. */
-	.pane.edit {
-		padding: var(--st-space-2) var(--st-space-2) var(--st-tail);
-		background: var(--st-page);
-	}
-
-	/* The painted sheet sits inset on a tone of the host's own, so it reads against
-	   the page rather than bleeding into it. */
-	.pane.paint {
-		padding: var(--st-space-2);
-		background: var(--st-surface);
 	}
 
 	/* Where the panes were. It takes the same room so the bands do not move when a
@@ -411,16 +475,18 @@
 	.vacant {
 		display: grid;
 		place-items: center;
+		align-content: center;
+		gap: var(--qmh-space-2);
 		min-height: 0;
-		padding: var(--st-space-4);
-		background: var(--st-surface);
+		padding: var(--qmh-space-4);
+		background: var(--qmh-surface);
 	}
 
 	.reason {
 		margin: 0;
-		max-width: var(--st-measure);
+		max-width: var(--qmh-measure);
 		text-align: center;
-		color: var(--st-alert);
+		color: var(--qmh-alert);
 		overflow-wrap: anywhere;
 	}
 
@@ -433,13 +499,13 @@
 
 		.panes {
 			grid-template-columns: minmax(0, 1fr);
-			grid-auto-rows: var(--st-mount);
+			grid-auto-rows: var(--st-pane);
 			overflow: auto;
 		}
 
 		.pane.paint {
 			border-inline-start: none;
-			border-block-start: var(--st-border-width) solid var(--st-border);
+			border-block-start: var(--qmh-border-width) solid var(--qmh-border);
 		}
 	}
 </style>

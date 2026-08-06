@@ -16,7 +16,7 @@
 
 import { describe, it, before } from 'node:test';
 import { fromDir, type Quiver } from './node.js';
-import type { Engine } from '@quillmark/wasm';
+import { init, type Engine } from '@quillmark/wasm';
 
 /**
  * Registers a `node:test` describe block that validates every quill
@@ -34,6 +34,11 @@ export function runQuiverTests(metaUrlOrDir: string, engine: Engine): void {
 		let quiver!: Quiver;
 
 		before(async () => {
+			// The harness instantiates the core, so a caller passes `new Engine()` at
+			// module scope and nothing else. Every `@quillmark/wasm` export throws
+			// `runtime::not_initialized` until `init()` resolves; the constructor is
+			// lazy, so the throw would otherwise arrive at the first render.
+			await init();
 			quiver = await fromDir(metaUrlOrDir);
 		});
 

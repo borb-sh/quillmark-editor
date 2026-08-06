@@ -24,6 +24,8 @@ The flat "this package never renders" claim narrows to the loaders: `/testing` s
 
 The `@quillmark/wasm` peer floor is `>=0.101.0-0`. The prose leaf reads its corpus through `reader.getContent`, which decodes a content field by its declared type: a `plaintext` field keeps the markdown characters its author typed, on a document built through either door.
 
+The author-side gate instantiates the core before it renders. Every `@quillmark/wasm` export throws `runtime::not_initialized` until `init()` resolves and `new Engine()` is lazy, so both `quiver test` and `runQuiverTests` reported an uninitialized runtime as a failing quill and gated nothing. Neither door's signature moves: the harness awaits `init()` itself, so a caller still passes `new Engine()` at module scope.
+
 `getQuill`'s returned quill is documented as **borrowed**: it is cached per canonical ref and handed to every caller for the quiver's lifetime, so `free()`ing it leaves the next caller holding a freed handle. Code that wants a quill of its own mints it from `(await quiver.getQuill(ref)).toTree()`.
 
 The `file://` refusals from `Quiver.fromBuiltUrl` and `Quiver.fromManifest` name a factory that exists: `import { fromBuiltDir } from '@quillmark/quiver/node'`, not the `Quiver.fromBuiltDir` static removed when the Node factories became free functions.

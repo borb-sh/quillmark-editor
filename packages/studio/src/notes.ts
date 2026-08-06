@@ -6,10 +6,13 @@
 //   carried  the `conform::*` set a repack stranded
 //   surface  what an editor or a preview recovered from
 //
-// Each note keeps its origin and its `path`, because a diagnostic that names no field
-// reaches no control in the editor: the surface routes on `path`, so an unrouted note
-// is visible ONLY here. Saying which are which is the job.
-import { isQuillmarkError, type Diagnostic, type Severity } from '@quillmark/wasm';
+// Each note keeps its origin and its address, and an address is written in one of TWO
+// spaces. `path` is the document's: the editor routes on it, so a note carrying one
+// reaches a control. `location` is the quill source's: a compile failure names a file,
+// a line and a column, which routes to nothing here and is what the author's other
+// editor opens at. A note with neither is UNROUTED, naming no place at all, and is the
+// one shape visible nowhere but this band.
+import { isQuillmarkError, type Diagnostic, type Location, type Severity } from '@quillmark/wasm';
 
 export type Origin = 'schema' | 'render' | 'carried' | 'surface';
 
@@ -17,8 +20,12 @@ export interface Note {
 	origin: Origin;
 	severity: Severity;
 	message: string;
-	/** The canonical `DocPath` the diagnostic names, or absent: unrouted. */
+	/** The canonical `DocPath` the diagnostic names: the document's address space, and
+	 *  what the editor routes a note to a control by. */
 	path?: string;
+	/** Where in the quill's own source the diagnostic was raised: the source's address
+	 *  space, carried by a compile failure and by nothing the schema says. */
+	location?: Location;
 	code?: string;
 	hint?: string;
 }
@@ -26,7 +33,7 @@ export interface Note {
 export interface NoteSet {
 	/** Every note, deduplicated, errors first. */
 	all: Note[];
-	/** How many reach no field, and so no control in the editor. */
+	/** How many name no place in either space: not a field, not a line. */
 	unrouted: number;
 	/** The same set, as the `diagnostics` prop the editor routes by `path`. */
 	diagnostics: Diagnostic[];
@@ -35,10 +42,15 @@ export interface NoteSet {
 /** Errors before warnings; within a severity, the producer order the caller passed. */
 const RANK: Record<Severity, number> = { error: 0, warning: 1 };
 
+/** A source address, as an author's editor spells one. */
+export const placeOf = (at: Location): string => `${at.file}:${at.line}:${at.column}`;
+
 /** What makes two notes the same note. The producers overlap by design (a must-fill
  *  field is a schema verdict and a render warning both), and one field's one problem
- *  should read as one line. */
-const key = (n: Note): string => `${n.severity} ${n.code ?? ''} ${n.path ?? ''} ${n.message}`;
+ *  should read as one line. Both address spaces are in the key: one message raised at
+ *  two lines of a plate is two problems. */
+const key = (n: Note): string =>
+	`${n.severity} ${n.code ?? ''} ${n.path ?? ''} ${n.location ? placeOf(n.location) : ''} ${n.message}`;
 
 export function collect(sources: { origin: Origin; diags: readonly Diagnostic[] }[]): NoteSet {
 	const seen = new Map<string, { note: Note; diag: Diagnostic }>();
@@ -49,6 +61,7 @@ export function collect(sources: { origin: Origin; diags: readonly Diagnostic[] 
 				severity: diag.severity,
 				message: diag.message,
 				...(diag.path !== undefined && { path: diag.path }),
+				...(diag.location !== undefined && { location: diag.location }),
 				...(diag.code !== undefined && { code: diag.code }),
 				...(diag.hint !== undefined && { hint: diag.hint })
 			};
@@ -60,7 +73,8 @@ export function collect(sources: { origin: Origin; diags: readonly Diagnostic[] 
 	const entries = [...seen.values()].sort((a, b) => RANK[a.note.severity] - RANK[b.note.severity]);
 	return {
 		all: entries.map((e) => e.note),
-		unrouted: entries.filter((e) => e.note.path === undefined).length,
+		unrouted: entries.filter((e) => e.note.path === undefined && e.note.location === undefined)
+			.length,
 		diagnostics: entries.map((e) => e.diag)
 	};
 }
