@@ -2,11 +2,10 @@
   The playground shell: the host-side stylesheets and the running head every route
   is reached from. All three are global imports, so the shared chrome reaches every
   route's markup rather than being scoped out of it. `@quillmark/svelte/preset` is
-  the endorsed look, and the same import a third-party consumer makes, which is what
-  makes "the playground looks like the endorsed version" a fact rather than a claim;
-  `playground.css` is the front door's own rungs on top of it, and `chrome.css` the
-  recipes that read both. Nothing here mounts, loads, or frees a session: the routes
-  own that.
+  the endorsed look, and the same import a third-party consumer makes, so the
+  playground draws with the endorsed version by construction; `playground.css` is
+  the front page's own rungs on top of it, and `chrome.css` the recipes that read
+  both. Nothing here mounts, loads, or frees a session: the routes own that.
 -->
 <script lang="ts">
 	import '@quillmark/svelte/preset';
@@ -29,7 +28,7 @@
 	const here = $derived(page.url.pathname.slice(base.length) || '/');
 	// The tool route is a workspace, not a page: it takes the viewport less the
 	// head and scrolls inside itself, so the shell holds the head and hands it the
-	// rest. At every width — a narrow viewport stacks the panes into a column that
+	// rest. At every width: a narrow viewport stacks the panes into a column that
 	// scrolls where it sits, and the document still has nowhere to go.
 	const fills = $derived(here === '/playground');
 </script>
@@ -61,7 +60,7 @@
 	}
 
 	/* A running head, sticky so the switch between surfaces is always one click
-	   away; one hairline, no fill; a rule on the page, not a bar over it. */
+	   away; one hairline under it, no fill. */
 	.head {
 		position: sticky;
 		top: 0;
@@ -133,9 +132,9 @@
 		overflow: hidden;
 	}
 
-	/* The last way a pinned shell still moves: a gesture that runs past the end of a
-	   pane chains out to the viewport, which bounces a document with nothing in it.
-	   Scoped to the workspace, so the quickstart keeps a page's own feel. */
+	/* A gesture past the end of a pane chains out to the viewport and bounces the
+	   empty document, which is the last way a pinned shell moves. Scoped to the
+	   workspace, so the quickstart keeps a page's own feel. */
 	:global(html:has(.app.fills)) {
 		overscroll-behavior: none;
 	}

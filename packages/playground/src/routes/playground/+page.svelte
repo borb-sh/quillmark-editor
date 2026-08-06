@@ -27,8 +27,8 @@
 
   The strip above the panes reads the bridge's outcomes back out (last-hit,
   active-addr, last-focus, last-change, the change LANE, and the last recovered
-  error), so a round-trip that lands nowhere is visible rather than silent, and a
-  failure the surfaces recovered from is visible rather than console-only. `inject-diagnostics` stands in for a live
+  error), so a round-trip that lands nowhere shows there, as does a failure the
+  surfaces recovered from. `inject-diagnostics` stands in for a live
   render-error feed: a real consumer derives external diagnostics from
   `session.warnings` (wired here, `[]` for usaf_memo) plus render errors.
 
@@ -188,8 +188,8 @@
 		lastFocus = JSON.stringify(at);
 	}
 	// Every edit, whichever lane it came down. A structure op recompiles at once:
-	// it happens once per gesture, and a card that appears half a beat after the
-	// click reads as lag rather than as debouncing.
+	// it happens once per gesture, and a card that appears after a delay reads as
+	// lag.
 	function handleChange(change: EditorChange): void {
 		lastChangeSource = change.source;
 		if (change.source === 'structure') recompileNow();
@@ -299,7 +299,7 @@
 
 	{#if status.phase === 'ready'}
 		<!-- The bridge, read back out: each hop's last outcome, so a round-trip that
-		     lands nowhere is visible rather than silent. -->
+		     lands nowhere shows here. -->
 		<div class="qm-panel strip">
 			<span class="stat"
 				><span class="qm-label">active</span>
@@ -346,7 +346,7 @@
 			</span>
 		</div>
 
-		<!-- The split rides a custom property rather than `grid-template-columns`
+		<!-- The split sets a custom property rather than `grid-template-columns`
 		     itself, so the narrow-width rule below can stack the panes: an inline
 		     track list would outrank any stylesheet. -->
 		<div
@@ -459,7 +459,7 @@
 		min-height: 0;
 	}
 
-	/* Both panes are the shell's frame, and what each owes its surface is room: the
+	/* Both panes are the shell's frame and give their surface room, nothing more: the
 	   gutter, the scroll container, the tone and the tail are the surface's own
 	   (THEMING §"Drop it in"), so the editor takes `.qm-pane` in the markup and the
 	   two rules here are what is left: a track that may shrink below its content. */

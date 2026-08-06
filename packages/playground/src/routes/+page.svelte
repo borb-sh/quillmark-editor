@@ -2,10 +2,10 @@
   The front page: the thesis, then the quickstart, each step's sample mounted
   beside the surface it describes (PLAYGROUND §"The routes").
 
-  Two documents off one quill: the preview's is the one its session paints, the
-  editor's is its own. No apply loop runs here, so a shared document would let
-  typing in the editor step desynchronize the page painted in the one above it;
-  the two wired together is `/playground`.
+  Two documents off one quill: one the preview's session paints, one the editor
+  holds. No apply loop runs here, so a shared document would let typing in the
+  editor step desynchronize the page painted in the one above it. `/playground`
+  is where the two are wired together.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -86,8 +86,8 @@
 	<section class="hero">
 		<h1 class="pg-title">Editor + live preview for Quillmark</h1>
 		<p class="lede">
-			A WYSIWYG over the document and a canvas over the compiled page, on one session: an edit
-			repaints the page, a click on the page moves the caret.
+			A visual editor for the document and a canvas preview of the compiled page, sharing one
+			session. An edit repaints the page; a click on the page moves the caret.
 		</p>
 		<div class="actions">
 			<a class="pg-cta" href="{base}/playground">Open the playground</a>
@@ -99,7 +99,7 @@
 	<section id="get-started" class="pg-rail block">
 		<h2 class="qm-label">Get started</h2>
 		<div class="intro">
-			<p>Four steps to a running editor. Every sample runs the surface beside it.</p>
+			<p>Four steps to a running editor. Each surface shown here runs the sample beside it.</p>
 			{#if status.phase === 'loading'}
 				<p data-testid="status" class="qm-status">Opening the reference quill…</p>
 			{:else if status.phase === 'error'}
@@ -112,8 +112,8 @@
 		<h3 class="qm-label">01 · Install</h3>
 		<div class="step">
 			<p>
-				<code>@quillmark/svelte</code> is the surfaces;
-				<code>@quillmark/wasm</code> is the engine they view.
+				<code>@quillmark/svelte</code> provides the surfaces;
+				<code>@quillmark/wasm</code> is the engine they read.
 			</p>
 			<pre class="qm-readout sample">{INSTALL}</pre>
 		</div>
@@ -124,7 +124,7 @@
 		<div class="step">
 			<p>
 				A quill is a template's file tree; a document is the content in it. Opening the two compiles
-				the first page and gives you the handle both surfaces read.
+				the first page and returns the session handle both surfaces read.
 			</p>
 			<pre class="qm-readout sample">{OPEN_SESSION}</pre>
 		</div>
@@ -135,7 +135,7 @@
 		<div class="step">
 			<p>
 				<code>&lt;Preview&gt;</code> paints the session's pages to canvas and resolves a click to the
-				content under it, so the compiled page is addressable rather than a picture.
+				content under it, so the compiled page is addressable and not just displayed.
 			</p>
 			<div class="pair">
 				<pre class="qm-readout sample">{PREVIEW}</pre>
@@ -160,10 +160,10 @@
 		<h3 class="qm-label">04 · Edit</h3>
 		<div class="step">
 			<p>
-				<code>&lt;VisualEditor&gt;</code> projects the quill's schema onto the document: prose where
-				the field takes prose, a control where it takes a value, a card per block.
-				<code>onChange</code> fires when an edit lands, and applying it to the session hands the preview
-				the pages to repaint.
+				<code>&lt;VisualEditor&gt;</code> builds its controls from the quill's schema: a prose
+				editor for a prose field, a control for a value field, a card per block.
+				<code>onChange</code> fires when an edit lands; applying it to the session returns the pages the
+				preview repaints.
 			</p>
 			<div class="pair">
 				<pre class="qm-readout sample">{VISUAL}</pre>
@@ -180,7 +180,7 @@
 		<h3 class="qm-label">Next</h3>
 		<div class="step">
 			<p>
-				Both surfaces on one session, the caret bridged in both directions:
+				Both surfaces on one session, with the caret bridged in both directions:
 				<a class="pg-link" href="{base}/playground">the playground</a>.
 			</p>
 		</div>
@@ -188,7 +188,7 @@
 </main>
 
 <style>
-	/* A front page opens on air, where a tool route opens on its surface. */
+	/* The front page opens on whitespace, where a tool route opens on its surface. */
 	.hero {
 		display: flex;
 		flex-direction: column;
@@ -267,7 +267,7 @@
 	}
 
 	/* A sample with no surface beside it takes the reading column's width, not the
-	   page's: a shell line in a box the width of the shell reads as a banner. */
+	   page's: a one-line shell command in a full-width box reads as a banner. */
 	.step > .sample {
 		max-width: var(--qmh-measure);
 	}
@@ -279,9 +279,9 @@
 		min-width: 0;
 	}
 
-	/* What a demo frame owes a surface is a height to sit in. The gutter, the tone and
-	   the desk are the surface's own (THEMING §"Drop it in"), so a frame that states
-	   them would be restating the package to itself. */
+	/* A demo frame states a height and nothing else. The gutter, the tone and the desk
+	   are the surface's own (THEMING §"Drop it in"), so a frame stating them would
+	   duplicate the package. */
 	.preview-frame {
 		height: var(--pg-demo);
 	}
