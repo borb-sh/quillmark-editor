@@ -61,8 +61,9 @@ jobs:
 
       - run: npm ci
 
-      # The same verbs ci.yml names as separate steps; there they buy failure
-      # attribution, here they only need to pass.
+      # ci.yml's first six verbs in one script; there they are separate steps to
+      # buy failure attribution, here they only need to pass. Its other two,
+      # `build` and `check:pack`, follow — scoped to the package being released.
       - name: Gate
         run: npm run gate
 

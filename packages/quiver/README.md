@@ -138,13 +138,13 @@ Gate the quiver in CI so a validation failure surfaces on publish rather than on
 
 The CLI needs no file. Installing the package links `quiver` into `node_modules/.bin`, which npm puts on PATH for every script:
 
+```sh
+npm install --save-dev @quillmark/quiver @quillmark/wasm
+```
+
 ```jsonc
 // package.json
 {
-	"devDependencies": {
-		"@quillmark/quiver": "^0.16.0",
-		"@quillmark/wasm": "0.102.0"
-	},
 	"scripts": { "test": "quiver test" }
 }
 ```

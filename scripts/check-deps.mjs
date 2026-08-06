@@ -1,10 +1,10 @@
-// The dependency law, enforced. In a workspace a quiver↔ui edge is one relative
+// The dependency law, enforced. In a workspace a quiver↔svelte edge is one relative
 // path away, so the separation is held by a gate rather than by distance. Zero deps;
 // run via `npm run check:deps`.
 //
 // Three rules, each stated once here and nowhere else:
 //
-//   1. THE GRAPH. `@quillmark/wasm` is external and above everything; `ui` and
+//   1. THE GRAPH. `@quillmark/wasm` is external and above everything; `svelte` and
 //      `quiver` are siblings at one tier with NO edge between them, in either
 //      direction; the composing apps are the only nodes with two inbound edges.
 //      Declared dependencies and source specifiers both, since either alone is half a
@@ -109,10 +109,16 @@ for (const { dir, json } of PACKAGES) {
 				fail(
 					`packages/${dir}/package.json: \`${WASM}\` is not a devDependency — a bundled terminal builds against the copy it ships`
 				);
-			for (const dep of Object.keys(json.dependencies ?? {}))
-				fail(
-					`packages/${dir}/package.json: \`dependencies.${dep}\` — a bundled terminal has no runtime dependencies; what it bundles is not installed beside it`
-				);
+			// Every field that puts something in a consumer's tree, not `dependencies`
+			// alone: an optional or peered one is installed beside the tarball just the
+			// same. `devDependencies` is the one that stays behind, which is where a
+			// bundled terminal's whole build lives.
+			for (const f of ['dependencies', 'optionalDependencies', 'peerDependencies'])
+				for (const dep of Object.keys(json[f] ?? {}))
+					if (dep !== WASM)
+						fail(
+							`packages/${dir}/package.json: \`${f}.${dep}\` — a bundled terminal has no runtime dependencies; what it bundles is not installed beside it`
+						);
 		}
 		continue;
 	}
@@ -192,13 +198,13 @@ for (const { at, json } of PACKAGES) {
 
 const LIB = join(ROOT, 'packages', 'svelte', 'src', 'lib');
 const SELF = '@quillmark/svelte';
-// The subpaths a viewer may reach. Every OTHER subpath ui exports is editor-side and
+// The subpaths a viewer may reach. Every OTHER subpath svelte exports is editor-side and
 // forbidden, derived rather than listed so the rule fails closed the way the graph
 // rule does: a new editing surface is forbidden the moment it is exported, instead of
 // waiting for someone to remember this line.
 const NEUTRAL = new Set(['.', './core', './preview']);
-const uiExports = PACKAGES.find((p) => p.json.name === SELF)?.json.exports ?? {};
-const editorSide = Object.keys(uiExports)
+const svelteExports = PACKAGES.find((p) => p.json.name === SELF)?.json.exports ?? {};
+const editorSide = Object.keys(svelteExports)
 	.filter((k) => !NEUTRAL.has(k))
 	.map((k) => k.replace(/^\.\//, ''));
 // ProseMirror is the weight itself; the editing subpaths are editor-side whether or
