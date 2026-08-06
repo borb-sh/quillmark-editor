@@ -43,3 +43,9 @@ The non-obvious half: **loose ranges do not prevent two installs, they permit th
 `svelte`'s `/preview` subpath reaches no ProseMirror and no editing surface, transitively. Each subpath is its own module root, so a bundler pulls only what the imported entry reaches; this rule is what makes that claim true for the one surface whose audience is not editing. A viewer, a share page, a CI screenshot imports `/preview` and pays for the paint loop alone.
 
 `check:deps` walks preview's import graph within `src/lib`, not its direct imports: one relative hop into the codec pulls all of ProseMirror, and no direct scan would see it.
+
+## The lock's platforms
+
+A native optional dependency ships one tarball per platform, and the lock resolves every platform it offers rather than the one that wrote the lock: `rollup` names 25 and each gets an entry, marked `optional` with its `os`/`cpu`, whether or not the install that resolved it could run that binary. A lock pruned to one platform installs, everywhere else, a rollup with no native binary, and it lands during `npm i` itself (the packages build in `prepare`), so what a contributor sees is an install that cannot complete. npm repairs nothing here: an install reading a lock self-consistent for its own platform adds no entry, so the fix is to delete `package-lock.json` and resolve it fresh, then commit the whole set.
+
+The lock is platform-free data, so `check:deps` reads the breach on the one platform CI runs, by requiring that every optional dependency a lock entry names has an entry of its own, rather than leaving it for the first contributor whose machine is not that platform.

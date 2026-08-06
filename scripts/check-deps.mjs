@@ -29,6 +29,13 @@
 //      direct-import scan is not enough: one relative hop into the codec pulls all of
 //      ProseMirror and no direct scan sees it, so this walks preview's import graph
 //      within `src/lib` and fails on any reached module's forbidden external.
+//
+//   4. THE LOCK'S PLATFORMS. The lock resolves every platform an optional dependency
+//      offers, not the one that wrote it: a lock missing `@rollup/rollup-darwin-arm64`
+//      installs a rollup with no native binary on a Mac, and npm repairs nothing: an
+//      `npm i` reading a lock that is self-consistent for its own platform adds no
+//      entry. CI runs one platform and the lock is platform-free data, so this is the
+//      only place the breach is visible before a contributor's install fails.
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
@@ -252,8 +259,27 @@ const walk = (file) => {
 // re-export is still shipped inside the module root a bundler pulls.
 for (const file of sources(join(LIB, 'preview'))) walk(file);
 
+// ── 4. The lock's platforms ─────────────────────────────────────────────────────
+
+const lock = JSON.parse(readFileSync(join(ROOT, 'package-lock.json'), 'utf8'));
+// A dependency resolves against the entry nearest its own path, so an optional dep is
+// present if ANY entry ends in `node_modules/<name>`. Names only: which one an install
+// picks is npm's business, and this rule is about the set being whole.
+const resolved = new Set(
+	Object.keys(lock.packages ?? {}).map((path) => path.split('node_modules/').pop())
+);
+let optionals = 0;
+for (const [path, entry] of Object.entries(lock.packages ?? {}))
+	for (const name of Object.keys(entry.optionalDependencies ?? {})) {
+		optionals++;
+		if (!resolved.has(name))
+			fail(
+				`package-lock.json: \`${path || '.'}\` names optional \`${name}\` with no entry — the lock was pruned to one platform; delete it and resolve it fresh`
+			);
+	}
+
 report(
 	'Dependency law check',
 	errors,
-	`Dependency law OK — ${PACKAGES.length} packages, ${WASM} pinned at ${pin}, /preview reaches ${seen.size} modules.`
+	`Dependency law OK — ${PACKAGES.length} packages, ${WASM} pinned at ${pin}, /preview reaches ${seen.size} modules, lock resolves ${optionals} optionals.`
 );
