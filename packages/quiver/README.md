@@ -152,7 +152,7 @@ my-quiver/
 }
 ```
 
-Gate the quiver in CI so a validation failure surfaces on publish rather than on a consumer's build. It loads with `fromDir`, compiles every quill, and renders each quill's example document. Two doors, same loop.
+Gate the quiver in CI so a validation failure surfaces on publish rather than on a consumer's build. `quiver test` loads with `fromDir`, compiles every quill, and renders each quill's example document. One door, so what you run locally is what CI runs.
 
 The CLI needs no file. Installing the package links `quiver` into `node_modules/.bin`, which npm puts on PATH for every script:
 
@@ -169,14 +169,15 @@ The CLI needs no file. Installing the package links `quiver` into `node_modules/
 
 It finds the engine itself: a named `engine` export from `quiver.config.js` at the collection root, else `@quillmark/wasm` from your own `node_modules`. `quiver build [--out <dir>]` packs the same source into a servable artifact.
 
-`/testing` is the same gate as a test file, on `node:test`, so it adds no test-runner dependency:
+On vitest, jest or `node:test`, spawn the bin from a test rather than rebuilding the loop against the main API. The gate stays one implementation, and the case gates what CI gates:
 
 ```ts
-// quiver.test.ts — run with: node --test
-import { Engine } from '@quillmark/wasm';
-import { runQuiverTests } from '@quillmark/quiver/testing';
+// quiver.test.ts
+import { execFileSync } from 'node:child_process';
 
-runQuiverTests(import.meta.url, new Engine());
+it('gates the quiver', () => {
+	execFileSync('quiver', ['test'], { stdio: 'inherit' });
+});
 ```
 
 It answers _does it work_, and that is the whole of what this package offers a quill author: _what is it like to use_ is answered by working a real document through the quill live, which is an app rather than a subpath.
