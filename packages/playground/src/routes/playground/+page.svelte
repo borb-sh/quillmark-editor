@@ -3,7 +3,7 @@
   consumer-owned LiveSession drives all three surfaces over one seeded document:
     • <VisualEditor> (left): the edit surface; commits land on `doc`.
     • <Preview>      (right): a pure view of the session; never mutates it.
-    • <SourceView>   (drawer): read-only canonical markdown of `doc`.
+    • <SourceMirror> (drawer): read-only canonical markdown of `doc`, app-local.
 
   It wires the glue the primitives push outward (ARCHITECTURE §Playground), all
   through the PUBLIC API; no reach-through:
@@ -49,7 +49,7 @@
 	import type { Place, EditorError } from '@quillmark/svelte/core';
 	import type { ActiveLeaf, EditorChange } from '@quillmark/svelte/visual';
 	import { Preview } from '@quillmark/svelte/preview';
-	import { SourceView } from '@quillmark/svelte/source';
+	import SourceMirror from './SourceMirror.svelte';
 	import { loadUsafMemoTree, withMainDateDefault, withSecondCardKind } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
@@ -65,7 +65,7 @@
 	// Surface handles for the imperative bridge hops.
 	let editorRef: { setCaret(hit: ContentHit): Promise<void> } | undefined = $state();
 	let previewRef: ReturnType<typeof Preview> | undefined = $state();
-	let sourceRef: ReturnType<typeof SourceView> | undefined = $state();
+	let sourceRef: ReturnType<typeof SourceMirror> | undefined = $state();
 
 	// External diagnostics fed to the editor = live `session.warnings` + any
 	// injected render-error stand-ins (recomputed on every recompile).
@@ -399,7 +399,11 @@
 			<section class="pg-frame drawer" aria-label="Debug source view" data-testid="source-drawer">
 				<p class="qm-label drawer-label">Canonical markdown — read only</p>
 				<div class="source-host">
-					<SourceView bind:this={sourceRef} doc={docHandle} />
+					<SourceMirror
+						bind:this={sourceRef}
+						doc={docHandle}
+						onError={(message) => (lastError = `toMarkdown: ${message}`)}
+					/>
 				</div>
 			</section>
 		{/if}

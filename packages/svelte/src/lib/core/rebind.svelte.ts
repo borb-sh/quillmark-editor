@@ -1,7 +1,7 @@
-// The remount contract, enforced. `Preview` and `SourceView` bind their props ONCE,
-// in `onMount`, and observe nothing after: the vanilla cores below them own scroll
-// position, mounted slots and observer sets that a remount would discard on every
-// apply. So a prop swapped in place is reported, not dropped in silence.
+// The remount contract, enforced. `Preview` binds its props ONCE, in `onMount`, and
+// observes nothing after: the vanilla core below it owns scroll position, mounted
+// slots and observer sets that a remount would discard on every apply. So a prop
+// swapped in place is reported, not dropped in silence.
 //
 // A guard over ONE prop of a set is worse than none: a consumer who learns the
 // surface complains when it ignores a prop reads silence on the rest as reactivity.

@@ -4,20 +4,22 @@
 
 ## TL;DR
 
-What `@quillmark/svelte` is: the VisualEditor and Preview surfaces, the shared document/engine substrate beneath them, the data flow between them, and the package's public API (the minimal source editor lives here as a debug view). `src/lib/` → `svelte-package` → `dist/` is the published tarball; the app that mounts it is a sibling package.
+What `@quillmark/svelte` is: the VisualEditor and Preview surfaces, the shared document/engine substrate beneath them, the data flow between them, and the package's public API. `src/lib/` → `svelte-package` → `dist/` is the published tarball; the app that mounts it is a sibling package.
 
 ## Core vs chrome
 
 TS-first, zero `.js`. Two layers:
 
-- **Vanilla TS core**: no framework: the `@quillmark/wasm` boundary, document model, codec, ProseMirror integration, the preview paint loop, and the source mirror. Pure `.ts`; ships framework-free `.d.ts`.
+- **Vanilla TS core**: no framework: the `@quillmark/wasm` boundary, document model, codec, ProseMirror integration, and the preview paint loop. Pure `.ts`; ships framework-free `.d.ts`.
 - **Svelte + bits-ui chrome**: `.svelte` components (`<script lang="ts">`) for toolbars, the schema-driven metadata form, and the split-pane shell; `.svelte.ts` modules for shared reactive logic.
 
 The heavy machinery (ProseMirror, canvas paint) is already framework-agnostic, so the core carries the substance and the chrome stays thin. Svelte earns its place in the stateful UI; a vanilla-core consumer wraps a mount API in a few lines.
 
 ## Packaging
 
-**One package, `@quillmark/svelte`, with subpath exports**: `/core`, `/preview`, `/visual`, `/source` ship; `/form` is reserved for the metadata surface.
+**One package, `@quillmark/svelte`, with subpath exports**: `/core`, `/preview`, `/visual` ship; `/form` is reserved for the metadata surface.
+
+**A subpath is a promise, so it carries a surface a consumer builds with.** Reading a document's canonical markdown is `doc.toMarkdown()` on the public `Document` handle, so a debug view over it is a recipe rather than an entry: the playground's drawer holds one (§Playground). An entry adds an `exports` slot `publint` gates, a module root, a remount contract, and a compatibility promise, and it earns none of them by wrapping one public call.
 
 **The name is the binding, not the substance.** The headline surfaces are Svelte components, so the package says so: a host reads its framework off the specifier rather than off a README. That the vanilla-TS cores carry the substance is unchanged (§Core vs chrome), and `/core` stays framework-free under a framework-named package deliberately. The name draws the line at the door instead of leaving it implicit, which is what makes a second binding a re-export of `/core` rather than a rewrite, and what keeps the reserved `@quillmark/preview` promotion neutral: the paint loop it would carry reaches no Svelte and no editor-side code today.
 
@@ -41,7 +43,7 @@ The package ships dense behavior over a thin skin: direct manipulation, the care
 
 Style lives in four places, and the split is what keeps a value single-sourced:
 
-- **The derivation** (`core/theme.css`) is the only file that mints a value for the surfaces: the public `--qm-*` dials in, a closed private `--_qm-*` scale out, colour and geometry and type and motion in one place. It is a stylesheet, side-effect imported by the one module both `preview/` and `visual/` already pull (so a consumer has nothing to import), and applied to every element marked `data-qm-root`: the editor, the preview, the source view, and each portalled surface, none of which descend from the others. A stylesheet rather than an inline attribute is what lets the scale carry a cascade layer consumer CSS beats without `!important`, and a baseline font every root inherits.
+- **The derivation** (`core/theme.css`) is the only file that mints a value for the surfaces: the public `--qm-*` dials in, a closed private `--_qm-*` scale out, colour and geometry and type and motion in one place. It is a stylesheet, side-effect imported by the one module both `preview/` and `visual/` already pull (so a consumer has nothing to import), and applied to every element marked `data-qm-root`: the editor, the preview, and each portalled surface, none of which descend from the others. A stylesheet rather than an inline attribute is what lets the scale carry a cascade layer consumer CSS beats without `!important`, and a baseline font every root inherits.
 - **The shared recipes** (`visual/controls.css`, and `codec/prose.css` for what mounts inside a prose leaf, [CODEC.md](CODEC.md)) are the rules more than one component draws, carried as classes a component opts into. A rung fixes a value; which declarations make a control is the other half of the decision, and hand-kept copies of it agree until one is edited.
 - **The preset** (`preset/`) is the same shape one level up and the only part of it a consumer imports by name: `scale.css` derives a `--qmh-*` scale for the DOCUMENT from the same dials, `recipes.css` is the classes a host draws its own page with. Two files because one is exempt: the literals are minted in the scale, and the recipes are held to reading them. It is never side-effect imported: a stylesheet that styles the document arrives when a consumer asks for it and not with a component. The two scales are calibrated against each other (the mixes agree, so a host plate and a card on it step the same way) and cannot be one, because `--_qm-*` is declared ON each root, out of an ancestor's reach, and a host scale has to be reachable from everywhere.
 - **A component's own scoped `<style>`** is everything else.
@@ -50,7 +52,7 @@ The rule spanning all three: **a component reads a rung, it does not mint a valu
 
 Two consequences reach past CSS. Motion durations and curves are rungs like any other, so `prefers-reduced-motion` collapses the **scale** in the derivation rather than a roster of selectors, and the two scripts that animate over WAAPI read their rung off the element rather than forking the number. And a surface hidden by geometry is `inert`, not merely unpainted: clipping answers the eye alone, where the attribute takes the subtree out of the tab order, hit-testing and the accessibility tree at once.
 
-The public surface is the contract in [`THEMING.md`](../../THEMING.md): the dials, and the three mounted root classes (`.qm-editor`, `.qm-preview`, `.qm-source`) as placement handles. The interior is deliberately not contract (a class contract over it would freeze the DOM shape the surfaces re-cut), and the private rungs are declared on each root, out of reach from an ancestor.
+The public surface is the contract in [`THEMING.md`](../../THEMING.md): the dials, and the two mounted root classes (`.qm-editor`, `.qm-preview`) as placement handles. The interior is deliberately not contract (a class contract over it would freeze the DOM shape the surfaces re-cut), and the private rungs are declared on each root, out of reach from an ancestor.
 
 The one signal the surface takes from outside the dials is the **host's declared `color-scheme`**, which the poles read through `light-dark()` and the root inherits untouched, so light/dark is the mounting site's declaration, not a preference the package reads behind it. A host with a theme of its own declares the scheme alongside it; the playground does this in its `playground.css`, which is also where the reference shell derives its own chrome from the same signal.
 
