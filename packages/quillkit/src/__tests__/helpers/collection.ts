@@ -1,11 +1,11 @@
 /**
  * A consumer's collection, on disk: the reference quiver copied somewhere writable,
- * with `@quillmark/quiver` resolvable from its OWN tree.
+ * with `@quillmark/*` resolvable from its OWN tree.
  *
- * That last part is the point rather than setup noise. Studio ships no runtime
- * dependencies and resolves the packer out of the collection, so a fixture that
- * happened to sit inside this workspace would resolve through the workspace's
- * `node_modules` and prove nothing about a consumer's.
+ * That last part is the point rather than setup noise. quillkit ships no runtime
+ * dependencies and resolves the packer, the engine and the client out of the
+ * collection, so a fixture that happened to sit inside this workspace would resolve
+ * through the workspace's `node_modules` and prove nothing about a consumer's.
  */
 
 import { cp, mkdir, mkdtemp, rm, symlink } from 'node:fs/promises';
@@ -19,7 +19,7 @@ const WORKSPACE_MODULES = fileURLToPath(new URL('../../../../../node_modules', i
 export interface Scratch {
 	/** A fresh temp directory, tracked for cleanup. */
 	dir(): Promise<string>;
-	/** A copy of the reference quiver with the packer installed beside it. */
+	/** A copy of the reference quiver with the toolchain's peers installed beside it. */
 	collection(): Promise<string>;
 	/** Remove everything handed out. */
 	cleanup(): Promise<void>;

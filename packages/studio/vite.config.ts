@@ -1,25 +1,26 @@
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { build } from '@quillmark/quiver/node';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig, type Plugin } from 'vite';
-import { SETTLE_MS, createPacker, settle, type Packer } from './src/node/pack.js';
 
-// THE NODE HALF, as this repository runs it on itself. The loop is `src/node/pack.ts`,
-// the same one `quillmark-studio dev` drives, so the staged swap a client depends on
-// is written once. What is left here is the two things a dev server adds and a bin has
-// no use for: the first pack lands before the server is created, and a repack is
-// signalled over the existing socket (STUDIO §"The two halves").
+// THE PACK, as this repository serves the client over it. `quillkit studio` is the
+// loop an author runs and this is not a second copy of it: the pack is `build`, which
+// lands a generation whole, and what is left here is the two things a dev server adds
+// and a bin has no use for — the first pack before the server exists, and a repack
+// signalled over the socket the page already holds. What this buys over the bin is
+// HMR on the client's own chrome, which is what the dev server is for.
 
 /** The workspace's source quiver. A browser cannot read the source layout, so this
  *  pack is the step every browser consumer of a quiver performs. */
 const SOURCE = fileURLToPath(new URL('../../fixtures', import.meta.url));
 /** Vite's verbatim-copy tree, which is the dev server's alone: the built client
- *  carries no quiver, and `quillmark-studio site` lays one beside it. Generated, and
+ *  carries no quiver, and `quillkit site` lays one beside it. Generated, and
  *  gitignored. */
 const OUT = fileURLToPath(new URL('public/quiver', import.meta.url));
-/** Outside the served tree, so a half-written generation is never reachable. */
-const STAGE = fileURLToPath(new URL('node_modules/.studio/stage', import.meta.url));
+/** One repack per settled burst: an editor's save arrives as several watcher events. */
+const SETTLE_MS = 80;
 /** The dev-only signal that a repack landed. The client answers it by minting a
  *  fresh `Quiver`; nothing on this side knows what a quill is. */
 const REPACKED = 'studio:quiver-repacked';
@@ -34,8 +35,23 @@ const WASM_VERSION = (() => {
 	return JSON.parse(readFileSync(manifest, 'utf8')).version as string;
 })();
 
+/** Call `fn` once a burst of calls stops arriving. */
+function settle(ms: number, fn: () => void): () => void {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	return () => {
+		clearTimeout(timer);
+		timer = setTimeout(fn, ms);
+	};
+}
+
 function quiverSource(): Plugin {
-	let packer: Packer | undefined;
+	// Serialized rather than concurrent: `build` owns its output directory, so two
+	// overlapping packs would race over one tree. Both arms chain, so a pack queues onto
+	// a SETTLED promise whichever way the last one went — a rejected link would answer
+	// every later pack with the first failure instead of running it.
+	const run = (): Promise<void> => build(SOURCE, OUT);
+	let queue: Promise<void> = Promise.resolve();
+	const pack = (): Promise<void> => (queue = queue.then(run, run));
 
 	return {
 		name: 'studio:quiver-source',
@@ -47,8 +63,7 @@ function quiverSource(): Plugin {
 		// writes the author's to.
 		async configResolved(config) {
 			if (config.command !== 'serve') return;
-			packer = await createPacker({ collection: SOURCE, out: OUT, stage: STAGE });
-			await packer.pack();
+			await pack();
 		},
 		configureServer(server) {
 			// The source tree sits outside the Vite root, so the watcher is told about it
@@ -57,7 +72,7 @@ function quiverSource(): Plugin {
 			// triggers no reload, so the page survives a repack.
 			server.watcher.add(SOURCE);
 			const repack = settle(SETTLE_MS, () => {
-				void packer?.pack().then(
+				void pack().then(
 					() => server.hot.send({ type: 'custom', event: REPACKED }),
 					// A quiver mid-edit is invalid as often as not (a half-written
 					// `Quill.yaml`). A failed pack never reaches the swap, so the last
@@ -79,7 +94,7 @@ function quiverSource(): Plugin {
 export default defineConfig({
 	// Relative asset URLs, and the client resolves the quiver off `document.baseURI`
 	// for the same reason: the base is a runtime fact, so a built studio serves from
-	// wherever it is put (STUDIO §"The two halves").
+	// wherever it is put (STUDIO §"A client, and what serves it").
 	base: './',
 	plugins: [svelte(), quiverSource()],
 	// The client is the whole output and it carries no quiver, so a public directory

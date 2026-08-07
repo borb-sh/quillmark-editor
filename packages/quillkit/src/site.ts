@@ -2,19 +2,18 @@
  * Lay a servable site out: the client at the root, a built quiver beside it under
  * `quiver/`. A deploy is that arrangement and nothing else, written here once, so a
  * consumer's `scripts`, this repository's build and the reusable workflow all reach it
- * through `quillmark-studio site`.
+ * through `quillkit site`.
  *
- * The client resolves its quiver from `document.baseURI` (`src/quiver.ts`), so the tree
- * it is laid into decides what it loads. Both halves of that are asserted rather than
- * assumed: a `quiver/` inside the client would occupy the URL the built one is served
- * from, and the winner would be whichever copy landed last.
+ * The client resolves its quiver from `document.baseURI` (studio's `src/quiver.ts`), so
+ * the tree it is laid into decides what it loads. Both halves of that are asserted rather
+ * than assumed: a `quiver/` inside the client would occupy the URL the built one is
+ * served from, and the winner would be whichever copy landed last.
  */
 
 import { existsSync } from 'node:fs';
 import { cp, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { CLIENT_DIST } from './client.js';
-import { loadQuiverNode } from './collection.js';
+import { loadQuiverNode, resolveClient } from './collection.js';
 import { within } from './paths.js';
 
 export interface SiteOptions {
@@ -22,7 +21,8 @@ export interface SiteOptions {
 	collection: string;
 	/** The site root, owned outright: cleared before it is written. */
 	out: string;
-	/** Defaults to the client this package ships; a test passes a stand-in. */
+	/** Defaults to the collection's own `@quillmark/studio`; `--client` names one
+	 *  directly, which is how a deploy pins the client it serves. */
 	client?: string;
 }
 
@@ -60,9 +60,9 @@ export function assertSafeOut(collection: string, out: string): void {
  * silently: it would shadow the author's at the same URL, and which one the reader gets
  * would depend on copy order.
  */
-export function assertClient(dist: string = CLIENT_DIST): void {
+export function assertClient(dist: string): void {
 	if (!existsSync(join(dist, 'index.html')))
-		throw new Error(`No client at ${dist}: this package ships one at dist/`);
+		throw new Error(`No client at ${dist}: @quillmark/studio ships one at dist/`);
 	if (existsSync(join(dist, 'quiver')))
 		throw new Error(
 			`${dist}/quiver exists: a client carries no quiver, and it would shadow the site's`
@@ -70,19 +70,16 @@ export function assertClient(dist: string = CLIENT_DIST): void {
 }
 
 /** Returns the site root, resolved. */
-export async function laySite({
-	collection,
-	out,
-	client = CLIENT_DIST
-}: SiteOptions): Promise<string> {
-	assertClient(client);
+export async function laySite({ collection, out, client }: SiteOptions): Promise<string> {
+	const dist = client ?? resolveClient(collection);
+	assertClient(dist);
 	assertSafeOut(collection, out);
 
 	const at = resolve(out);
 	const { build } = await loadQuiverNode(collection);
 
 	await rm(at, { recursive: true, force: true });
-	await cp(client, at, { recursive: true });
+	await cp(dist, at, { recursive: true });
 	await build(collection, join(at, 'quiver'));
 
 	// What the client fetches first: its absence reads there as a quiver that is not

@@ -1,0 +1,55 @@
+{
+	"name": "quillkit",
+	"version": "0.1.0",
+	"description": "The quill author's toolchain: gate a quiver, pack it, look at it, ship it.",
+	"type": "module",
+	"license": "Apache-2.0",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/borb-sh/quillmark-js.git",
+		"directory": "packages/quillkit"
+	},
+	"bugs": {
+		"url": "https://github.com/borb-sh/quillmark-js/issues"
+	},
+	"homepage": "https://github.com/borb-sh/quillmark-js/tree/main/packages/quillkit#readme",
+	"keywords": [
+		"quillmark",
+		"quiver",
+		"typst",
+		"markdown",
+		"cli"
+	],
+	"author": "Quillmark Contributors",
+	"engines": {
+		"node": ">=22"
+	},
+	"files": [
+		"dist",
+		"NOTICE"
+	],
+	"exports": {},
+	"bin": {
+		"quillkit": "./dist/bin/quillkit.js"
+	},
+	"scripts": {
+		"build": "tsc",
+		"prepare": "npm run build",
+		"prepack": "rm -rf dist && npm run build",
+		"test": "vitest run",
+		"check": "tsc --noEmit -p tsconfig.check.json",
+		"check:pack": "publint"
+	},
+	"devDependencies": {
+		"@quillmark/quiver": "*",
+		"@quillmark/studio": "*",
+		"@quillmark/wasm": ">=0.102.0-0",
+		"@types/node": "^25.3.3",
+		"publint": "^0.3.0",
+		"typescript": "^5.9.3",
+		"vitest": "^4.0.18"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}

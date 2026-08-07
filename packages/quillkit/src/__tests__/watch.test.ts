@@ -1,0 +1,62 @@
+/**
+ * The repack trigger. The pack itself lands whole in quiver, so what is left here is
+ * what provokes one: a burst of watcher events collapsed to a single repack, a
+ * filter that keeps a pack from feeding itself, and a queue that survives a failure.
+ */
+
+import { describe, it, expect } from 'vitest';
+import { within } from '../paths.js';
+import { serialize, settle } from '../watch.js';
+
+describe('the watch filter', () => {
+	it('the output a pack writes is not a source change', () => {
+		// The default output lives under the collection's `node_modules`, so a watcher
+		// that saw its own writes would repack forever.
+		expect(within('/c/node_modules/.quillkit/quiver', '/c/node_modules/.quillkit/quiver/x')).toBe(
+			true
+		);
+		expect(within('/c/out', '/c/out')).toBe(true);
+		expect(within('/c/out', '/c/quills/memo/1.0.0/Quill.yaml')).toBe(false);
+		// A sibling whose name merely starts the same is outside it.
+		expect(within('/c/out', '/c/outside/x')).toBe(false);
+	});
+});
+
+describe('settle', () => {
+	it('fires once for a burst', async () => {
+		let calls = 0;
+		const fire = settle(10, () => calls++);
+		for (let i = 0; i < 5; i++) fire();
+		await new Promise((ok) => setTimeout(ok, 40));
+		expect(calls).toBe(1);
+	});
+});
+
+describe('serialize', () => {
+	it('runs one at a time, in order', async () => {
+		const order: number[] = [];
+		let n = 0;
+		const run = serialize(async () => {
+			const mine = ++n;
+			await new Promise((ok) => setTimeout(ok, 10 - mine));
+			order.push(mine);
+		});
+
+		await Promise.all([run(), run(), run()]);
+		expect(order).toEqual([1, 2, 3]);
+	});
+
+	it('a failure does not end the queue', async () => {
+		// The regression this pins: a queue that chains onto its own result answers
+		// every later call with the FIRST failure instead of running it, so one
+		// half-written `Quill.yaml` ends the loop until the process restarts.
+		let calls = 0;
+		const run = serialize(async () => {
+			if (++calls === 1) throw new Error('mid-edit');
+		});
+
+		await expect(run()).rejects.toThrow('mid-edit');
+		await expect(run()).resolves.toBeUndefined();
+		expect(calls).toBe(2);
+	});
+});

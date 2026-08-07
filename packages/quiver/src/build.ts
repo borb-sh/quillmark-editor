@@ -14,12 +14,21 @@ import { POINTER_FORMAT } from './format.js';
 /** Font file extensions recognised by the builder (case-insensitive). */
 const FONT_EXT = /\.(ttf|otf|woff|woff2)$/i;
 
+/** The two trees a build owns beside its output: where a generation is assembled, and
+ *  where the one it replaces waits to be deleted. Siblings of outDir, so the swap is a
+ *  rename rather than a copy across filesystems. */
+const stagesOf = (out: string): { stage: string; prev: string } => ({
+	stage: `${out}.stage`,
+	prev: `${out}.prev`
+});
+
 /**
- * The build's first act is `rm(outDir, { recursive: true })`, so an outDir that
- * is, or contains, the source quiver or the working directory deletes the
- * thing the caller was building from. `quillmark-quiver build --out .` and a
- * mistyped `--out ..` are both one keystroke away, and the failure is
- * unrecoverable, so an outDir that owns the caller is refused up front.
+ * The build deletes each of the three trees it owns, so an outDir that is, or contains,
+ * the source quiver or the working directory deletes the thing the caller was building
+ * from. `quillkit build --out .` and a mistyped `--out ..` are both one keystroke away,
+ * and the failure is unrecoverable, so an outDir that owns the caller is refused up
+ * front. The staging siblings are checked too: they are named off outDir and cleared
+ * with it, so a caller who avoids one spelling has not avoided the others.
  *
  * An outDir *inside* sourceDir stays allowed: the scan reads the source before
  * any write, and `dist/` under the quiver root is the ordinary layout.
@@ -32,12 +41,14 @@ function assertSafeOutDir(
 	outDir: string
 ): void {
 	const out = path.resolve(outDir);
+	const { stage, prev } = stagesOf(out);
 
-	/** True when `dir` is `target` or an ancestor of it. */
-	const owns = (target: string): boolean => {
-		const rel = path.relative(out, path.resolve(target));
-		return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
-	};
+	/** True when one of the owned trees is `target` or an ancestor of it. */
+	const owns = (target: string): boolean =>
+		[out, stage, prev].some((dir) => {
+			const rel = path.relative(dir, path.resolve(target));
+			return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+		});
 
 	const what = owns(sourceDir)
 		? 'the source quiver'
@@ -65,6 +76,10 @@ function assertSafeOutDir(
  *     store/
  *       <sha256>                      # dehydrated font bytes (full hash, no ext)
  *
+ * A generation is assembled beside outDir and moved in whole, so a reader
+ * fetching mid-build reads the previous one rather than a torn tree, and a
+ * build that throws leaves the previous one serving.
+ *
  * Throws:
  *   - `quiver_invalid` on source validation failures (propagated from scanner)
  *   - `transport_error` on I/O failures, and on an outDir the build would have
@@ -73,147 +88,181 @@ function assertSafeOutDir(
 export async function buildQuiver(sourceDir: string, outDir: string): Promise<void> {
 	// Dynamic imports keep this module safe to type-import from browser contexts.
 	const path = await import('node:path');
-	const { join } = path;
-	const { mkdir, rm, writeFile } = await import('node:fs/promises');
+	const { dirname, join, resolve } = path;
+	const { mkdir, rename, rm, writeFile } = await import('node:fs/promises');
+	const { existsSync } = await import('node:fs');
 	const { createHash } = await import('node:crypto');
 
 	const { scanSourceQuiver, readQuillTree } = await import('./source-loader.js');
 
-	// 0. The first write is a recursive delete of outDir; refuse the paths where
-	//    that deletes the caller instead of a previous build.
+	// 0. Three trees get cleared here; refuse the paths where that deletes the
+	//    caller instead of a previous build.
 	assertSafeOutDir(path, sourceDir, outDir);
+	const out = resolve(outDir);
+	const { stage, prev } = stagesOf(out);
 
 	// 1. Scan + validate source quiver (throws quiver_invalid on bad input).
 	const { meta, catalog } = await scanSourceQuiver(sourceDir);
 
-	// 2. Clear and recreate outDir + outDir/store/.
 	try {
-		await rm(outDir, { recursive: true, force: true });
-		await mkdir(join(outDir, 'store'), { recursive: true });
-	} catch (err) {
-		throw new QuiverError(
-			'transport_error',
-			`Failed to prepare output directory "${outDir}": ${(err as Error).message}`,
-			{ cause: err }
-		);
+		await packInto(stage);
+	} finally {
+		// A throw anywhere above leaves a partial generation staged, and outDir
+		// untouched. Neither tree outlives the call either way. Swept rather than
+		// checked: a sweep that threw would answer for the build, and what a caller
+		// needs to hear is why the build failed.
+		for (const at of [stage, prev]) await rm(at, { recursive: true, force: true }).catch(() => {});
 	}
 
-	// 3. Process each quill version.
-	const manifestQuills: Array<{
-		name: string;
-		version: string;
-		bundle: string;
-		fonts: Record<string, string>;
-	}> = [];
+	/**
+	 * Write a whole generation into `dest`, then move it to outDir.
+	 *
+	 * The move is two renames: a directory rename refuses a non-empty target, so the
+	 * outgoing generation steps aside first. That is the window, and it is two syscalls
+	 * wide against the seconds a build takes.
+	 */
+	async function packInto(dest: string): Promise<void> {
+		// 2. Clear and recreate the staged tree + its store/.
+		try {
+			await rm(dest, { recursive: true, force: true });
+			await mkdir(join(dest, 'store'), { recursive: true });
+		} catch (err) {
+			throw new QuiverError(
+				'transport_error',
+				`Failed to prepare output directory "${outDir}": ${(err as Error).message}`,
+				{ cause: err }
+			);
+		}
 
-	for (const [quillName, versions] of catalog) {
-		for (const version of versions) {
-			const quillDir = join(sourceDir, 'quills', quillName, version);
+		// 3. Process each quill version.
+		const manifestQuills: Array<{
+			name: string;
+			version: string;
+			bundle: string;
+			fonts: Record<string, string>;
+		}> = [];
 
-			// a. Read quill file tree.
-			const tree = await readQuillTree(quillDir);
+		for (const [quillName, versions] of catalog) {
+			for (const version of versions) {
+				const quillDir = join(sourceDir, 'quills', quillName, version);
 
-			// b. Partition fonts vs content.
-			const fontEntries: Array<[string, Uint8Array]> = [];
-			const contentEntries: Array<[string, Uint8Array]> = [];
+				// a. Read quill file tree.
+				const tree = await readQuillTree(quillDir);
 
-			for (const [path, bytes] of tree) {
-				if (FONT_EXT.test(path)) {
-					fontEntries.push([path, bytes]);
-				} else {
-					contentEntries.push([path, bytes]);
+				// b. Partition fonts vs content.
+				const fontEntries: Array<[string, Uint8Array]> = [];
+				const contentEntries: Array<[string, Uint8Array]> = [];
+
+				for (const [path, bytes] of tree) {
+					if (FONT_EXT.test(path)) {
+						fontEntries.push([path, bytes]);
+					} else {
+						contentEntries.push([path, bytes]);
+					}
 				}
-			}
 
-			// c. Dehydrate fonts into store/.
-			const fonts: Record<string, string> = {};
-			for (const [path, bytes] of fontEntries) {
-				// Full width: the store is keyed by hash, so two distinct fonts
-				// sharing a prefix would merge into one entry.
-				const hash = createHash('sha256').update(bytes).digest('hex');
-				const storePath = join(outDir, 'store', hash);
+				// c. Dehydrate fonts into store/.
+				const fonts: Record<string, string> = {};
+				for (const [path, bytes] of fontEntries) {
+					// Full width: the store is keyed by hash, so two distinct fonts
+					// sharing a prefix would merge into one entry.
+					const hash = createHash('sha256').update(bytes).digest('hex');
 
+					try {
+						await writeFile(join(dest, 'store', hash), bytes);
+					} catch (err) {
+						throw new QuiverError(
+							'transport_error',
+							`Failed to write font store entry "${join(outDir, 'store', hash)}": ${(err as Error).message}`,
+							{ cause: err }
+						);
+					}
+
+					fonts[path] = hash;
+				}
+
+				// d. Zip content files (deterministic: sorted paths, fixed mtime).
+				const contentRecord: Record<string, Uint8Array> = {};
+				for (const [path, bytes] of contentEntries) {
+					contentRecord[path] = bytes;
+				}
+				const zipBytes = packFiles(contentRecord);
+
+				// e–f. Compute bundle hash and name.
+				const bundleHash = createHash('sha256')
+					.update(zipBytes)
+					.digest('hex')
+					.slice(0, NAME_DIGEST_LENGTH);
+				const bundleName = `${quillName}@${version}.${bundleHash}.zip`;
+
+				// g. Write bundle zip.
 				try {
-					await writeFile(storePath, bytes);
+					await writeFile(join(dest, bundleName), zipBytes);
 				} catch (err) {
 					throw new QuiverError(
 						'transport_error',
-						`Failed to write font store entry "${storePath}": ${(err as Error).message}`,
+						`Failed to write bundle "${join(outDir, bundleName)}": ${(err as Error).message}`,
 						{ cause: err }
 					);
 				}
 
-				fonts[path] = hash;
+				// h. Record manifest entry.
+				manifestQuills.push({ name: quillName, version, bundle: bundleName, fonts });
 			}
-
-			// d. Zip content files (deterministic: sorted paths, fixed mtime).
-			const contentRecord: Record<string, Uint8Array> = {};
-			for (const [path, bytes] of contentEntries) {
-				contentRecord[path] = bytes;
-			}
-			const zipBytes = packFiles(contentRecord);
-
-			// e–f. Compute bundle hash and name.
-			const bundleHash = createHash('sha256')
-				.update(zipBytes)
-				.digest('hex')
-				.slice(0, NAME_DIGEST_LENGTH);
-			const bundleName = `${quillName}@${version}.${bundleHash}.zip`;
-
-			// g. Write bundle zip.
-			const bundlePath = join(outDir, bundleName);
-			try {
-				await writeFile(bundlePath, zipBytes);
-			} catch (err) {
-				throw new QuiverError(
-					'transport_error',
-					`Failed to write bundle "${bundlePath}": ${(err as Error).message}`,
-					{ cause: err }
-				);
-			}
-
-			// h. Record manifest entry.
-			manifestQuills.push({ name: quillName, version, bundle: bundleName, fonts });
 		}
-	}
 
-	// 4–8. Build and write hashed manifest.
-	const manifest = {
-		version: 1 as const,
-		name: meta.name,
-		quills: manifestQuills
-	};
+		// 4–8. Build and write hashed manifest.
+		const manifest = {
+			version: 1 as const,
+			name: meta.name,
+			quills: manifestQuills
+		};
 
-	const manifestJson = JSON.stringify(manifest, null, 2);
-	const manifestHash = createHash('sha256')
-		.update(manifestJson)
-		.digest('hex')
-		.slice(0, NAME_DIGEST_LENGTH);
-	const manifestFileName = `manifest.${manifestHash}.json`;
-	const manifestPath = join(outDir, manifestFileName);
+		const manifestJson = JSON.stringify(manifest, null, 2);
+		const manifestHash = createHash('sha256')
+			.update(manifestJson)
+			.digest('hex')
+			.slice(0, NAME_DIGEST_LENGTH);
+		const manifestFileName = `manifest.${manifestHash}.json`;
 
-	try {
-		await writeFile(manifestPath, manifestJson, 'utf-8');
-	} catch (err) {
-		throw new QuiverError(
-			'transport_error',
-			`Failed to write manifest "${manifestPath}": ${(err as Error).message}`,
-			{ cause: err }
-		);
-	}
+		try {
+			await writeFile(join(dest, manifestFileName), manifestJson, 'utf-8');
+		} catch (err) {
+			throw new QuiverError(
+				'transport_error',
+				`Failed to write manifest "${join(outDir, manifestFileName)}": ${(err as Error).message}`,
+				{ cause: err }
+			);
+		}
 
-	// 9–10. Write stable pointer latest.json. The format is stamped here and read first,
-	//       so a client older than the tree says so rather than misreading it.
-	const pointer = { format: POINTER_FORMAT, manifest: manifestFileName };
-	const pointerPath = join(outDir, 'latest.json');
+		// 9–10. Write stable pointer latest.json. The format is stamped here and read first,
+		//       so a client older than the tree says so rather than misreading it.
+		const pointer = { format: POINTER_FORMAT, manifest: manifestFileName };
 
-	try {
-		await writeFile(pointerPath, JSON.stringify(pointer), 'utf-8');
-	} catch (err) {
-		throw new QuiverError(
-			'transport_error',
-			`Failed to write pointer "${pointerPath}": ${(err as Error).message}`,
-			{ cause: err }
-		);
+		try {
+			await writeFile(join(dest, 'latest.json'), JSON.stringify(pointer), 'utf-8');
+		} catch (err) {
+			throw new QuiverError(
+				'transport_error',
+				`Failed to write pointer "${join(outDir, 'latest.json')}": ${(err as Error).message}`,
+				{ cause: err }
+			);
+		}
+
+		// 11. Move the generation in. `prev` is cleared first: a rename onto a
+		//     non-empty directory fails, and the tree left by an interrupted run is
+		//     one.
+		try {
+			await mkdir(dirname(out), { recursive: true });
+			await rm(prev, { recursive: true, force: true });
+			if (existsSync(out)) await rename(out, prev);
+			await rename(dest, out);
+		} catch (err) {
+			throw new QuiverError(
+				'transport_error',
+				`Failed to move the build into "${outDir}": ${(err as Error).message}`,
+				{ cause: err }
+			);
+		}
 	}
 }

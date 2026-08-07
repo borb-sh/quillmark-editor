@@ -4,7 +4,7 @@
 
 ## TL;DR
 
-A quiver is a collection of quills, addressed by ref and resolved to a `Quill`. This package loads one from wherever it lives (a source directory, a packed artifact on disk, a URL) and hands out quills. The **loaders** never render: `@quillmark/wasm` does that, and the handles pass to it untouched. The author-side gate is the one thing here that does, since proving a quill renders is what a gate for quills is.
+A quiver is a collection of quills, addressed by ref and resolved to a `Quill`. This package loads one from wherever it lives (a source directory, a packed artifact on disk, a URL), packs one for a browser, and hands out quills. The **loaders** never render: `@quillmark/wasm` does that, and the handles pass to it untouched. Nothing here renders, and nothing here is a verb an author types: this is the library a collection depends on, and [quillkit](../../../quillkit/prose/canon/QUILLKIT.md) is the tool that resolves it.
 
 ## One authored shape, three ways to consume it
 
@@ -20,13 +20,19 @@ The loaders name exactly what they read; there is no auto-detection and no branc
 
 Three rows is what a consumer chooses among, and each names a topology someone runs. Reaching a quiver installed from npm is not a fourth: `dirname(createRequire(import.meta.url).resolve('<pkg>/Quiver.yaml'))` handed to `fromDir` or `build` is one line at the call site, where the resolution base belongs to the caller and the `exports`-map subpath it lands on is visible rather than a rule this package documents and holds.
 
-**Every export names `default` beside `import`.** A tool resolving this package from a consumer's tree walks the exports map under CJS conditions whatever its own module system, so a subpath offering `import` alone is invisible to it. Studio's bin resolves this package that way, to pack with the author's own copy rather than one it carries; `@quillmark/wasm` names both, which is why the engine discovery in `test` works at all.
+**Every export names `default` beside `import`.** A tool resolving this package from a consumer's tree walks the exports map under CJS conditions whatever its own module system, so a subpath offering `import` alone is invisible to it. Every verb quillkit runs reaches this package that way, out of the collection's own tree; `@quillmark/wasm` names both, which is why its engine discovery works at all.
 
 The `/node` factories are free functions, not statics: the class stays browser-pure, the entry that reads a filesystem imports nothing onto it, and a bundler drops the verbs a consumer does not call. `fromBuiltUrl` is the only static, so `Quiver` is a class a consumer constructs one way. Construction itself is sealed: `Quiver` has a private constructor and the loader seam is reachable from no entry in `exports`. There is no public transport API (auth headers, custom fetch, `AbortSignal`) and no consumer story asking for one; a sealed seam keeps that option clean, a half-open one lets dependents grow on an unsupported surface.
 
 Browsers cannot read the source layout, so `build(src, out)` packs it at deploy time and the output is served as static assets. `fromBuiltDir` exists for the server that ships the packed artifact in its own image: it avoids the self-fetch round-trip `fromBuiltUrl` would force on a self-hosted deployment, and lets the source quiver stay a devDependency. It carries `transports/fs-built-transport.ts` and the path-escape validation reading manifest-named files off a disk needs.
 
-`build` owns `out` outright: it clears the directory before writing, so the previous generation never bleeds into the new one. An `out` that is, or contains, the source quiver or the working directory is refused rather than cleared: `--out .` and a slipped `--out ..` are one keystroke away and the deletion is unrecoverable. An `out` nested *inside* the source (`dist/` under the quiver root) is the ordinary layout and stays allowed, since the scan reads the source before the first write.
+`build` owns `out` outright: the previous generation never bleeds into the new one. An `out` that is, or contains, the source quiver or the working directory is refused rather than cleared: `--out .` and a slipped `--out ..` are one keystroke away and the deletion is unrecoverable. An `out` nested *inside* the source (`dist/` under the quiver root) is the ordinary layout and stays allowed, since the scan reads the source before the first write.
+
+## The generation lands whole
+
+A build is never observably half-written. It is assembled in `<out>.stage` and moved in, and the tree it replaces is deleted after. Packing straight into `out` would leave a window seconds wide where the pointer is missing or names a manifest whose bundles have not landed, and a client reading it there reports a broken quiver for an edit that was fine; a build that throws would leave that window open until the next one.
+
+The property belongs here rather than to whatever is serving, because the directory is this function's and no caller can close a window inside it. What remains is two renames: a directory rename refuses a non-empty target, so the outgoing generation steps aside first. The staging siblings are named off `out` and cleared with it, which is why the destructive-write refusals are checked over all three.
 
 ## The pointer
 
@@ -68,14 +74,12 @@ The canonical `Quill` / `Document` / `Engine` types are **not** re-exported here
 
 Every error is a `QuiverError` carrying a `code`, a human-readable `message`, and the offending `ref` where there is one. The codes are a closed set: `invalid_ref`, `quill_not_found`, `quiver_invalid`, `transport_error`, so a consumer branches on `code` rather than parsing text.
 
-## The author-side gate
+## Nothing here is a verb
 
-One verb exists for quiver authors rather than quiver consumers, so a validation failure surfaces on publish instead of on someone else's build.
+This package has no `bin`. Loading a quiver and packing one are library functions; the verbs a quill author types are [quillkit](../../../quillkit/prose/canon/QUILLKIT.md)'s, which resolves this package out of the collection's own `node_modules` and calls them. Two things follow, and together they are the reason for the split.
 
-**`quillmark-quiver test`** is that verb, the `bin` npm links into `node_modules/.bin`. It loads with `fromDir`, then compiles and renders every quill's example document, seeded with `quill.seedDocument()` since the blueprint carries `<must-fill>` sentinels and is not directly renderable. An author names it once in `scripts` and writes no file. It discovers the engine itself: a named `engine` export from `quiver.config.js` at the collection root, else `@quillmark/wasm` resolved from the collection's own `node_modules`. `quillmark-quiver build [--out <dir>]` is the other verb, and the two are the whole of the bin. The name is the brand's: a bin lands in a namespace it shares with every other tool a consumer installs, and `quiver` is a word too plain to hold there.
+**The copy a collection pins is the format its quiver is packed in.** `build` writes the pointer, the manifest names and the digest widths, and `fromBuiltUrl` reads them; a collection that depends on this package pins both halves at once, and a release here moves that number only when the format or the loaders move. A tool carrying a packer of its own would decide the format instead, on a cadence that answers to chrome and CLI flags.
 
-**One door, so the loop and the engine contract have one home each.** A second entry onto the same verdict copies both, and a caller-supplied engine gates nothing about the discovery the bin does, so the two answer differently under one name. An author on vitest, jest or another runner spawns the bin (`execFileSync('quillmark-quiver', ['test'])`) and gates what CI gates. The suite spawns it against the reference quiver, since nothing that imports a module proves a surface reached through a linked bin.
+**A collection is packed by one copy however it is reached.** `quillkit build` in CI, `quillkit studio` mid-edit and `quillkit site` at deploy all resolve the same install, so the bytes a local loop serves and the bytes a deploy publishes agree by construction rather than by a version range someone keeps true.
 
-**The gate instantiates the core.** Every `@quillmark/wasm` export throws `runtime::not_initialized` until `init()` resolves, and `new Engine()` is lazy, so a gate that skips it reports an uninitialized runtime as a failing quill.
-
-`build` and `test` are the whole of what this package gives a quill author. The gate is what an author is **blocked on**: it runs in their CI, against their own wasm, and installs a loader rather than an app. Looking at rendered output needs a browser, a paint loop and chrome, so it is an app on top of this package rather than a subpath inside it ([STUDIO.md](../../../studio/prose/canon/STUDIO.md)).
+The name stays the artifact's. `quiver` is the plain word that reads right inside an ambiguous sentence — the quiver is stale, the quiver has no quills — and `Quiver.yaml` at a collection's root is what an author names the thing after. A bin lands in a namespace it shares with every other tool a consumer installs, which is a place for a coined word rather than a plain one.

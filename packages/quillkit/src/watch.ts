@@ -1,0 +1,69 @@
+/**
+ * The repack trigger: what counts as a source change, and how many changes one repack
+ * answers. The pack itself is quiver's `build`, which lands a generation whole
+ * (QUIVER §"The generation lands whole"), so nothing here needs to know a client is
+ * reading the tree it writes.
+ */
+
+import { watch } from 'node:fs';
+import { resolve, sep } from 'node:path';
+import { within } from './paths.js';
+
+/** One repack per settled burst: an editor's save arrives as several watcher events. */
+export const SETTLE_MS = 80;
+
+/** Call `fn` once a burst of calls stops arriving. */
+export function settle(ms: number, fn: () => void): () => void {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	return () => {
+		clearTimeout(timer);
+		timer = setTimeout(fn, ms);
+	};
+}
+
+export interface Watcher {
+	close(): void;
+}
+
+/**
+ * Watch a collection's source and call `onChange` once each burst settles.
+ *
+ * The pack's own output is filtered out: the default output lives under the collection's
+ * `node_modules`, so a watcher seeing its own writes would repack forever. That
+ * directory and `.git` are excluded outright, a quiver's authored source being in
+ * neither.
+ */
+export function watchCollection(
+	collection: string,
+	ignored: string[],
+	onChange: () => void
+): Watcher {
+	const root = resolve(collection);
+	const excluded = ignored.map((path) => resolve(path));
+
+	const isOwnWrite = (path: string): boolean => {
+		const abs = resolve(root, path);
+		if (abs.split(sep).some((part) => part === 'node_modules' || part === '.git')) return true;
+		return excluded.some((at) => within(at, abs));
+	};
+
+	const fire = settle(SETTLE_MS, onChange);
+	const watcher = watch(root, { recursive: true }, (_event, filename) => {
+		// A null filename carries no path to filter on, so it counts as a change: missing
+		// a real edit costs an author the repack they asked for.
+		if (filename === null || !isOwnWrite(filename)) fire();
+	});
+	return { close: () => watcher.close() };
+}
+
+/**
+ * Run `job` one at a time, chaining onto a SETTLED queue whichever way the last one
+ * went. `build` owns its output directory, so two overlapping packs would race over one
+ * tree; and a rejected link left in the chain would answer every later pack with the
+ * first failure instead of running it, which a quiver mid-edit reaches on the first
+ * half-written `Quill.yaml`.
+ */
+export function serialize(job: () => Promise<void>): () => Promise<void> {
+	let queue: Promise<void> = Promise.resolve();
+	return () => (queue = queue.then(job, job));
+}

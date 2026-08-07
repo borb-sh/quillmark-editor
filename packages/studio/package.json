@@ -1,7 +1,7 @@
 {
 	"name": "@quillmark/studio",
 	"version": "0.2.0",
-	"description": "The quill author's surface, as a static client: a quiver's quills, worked live.",
+	"description": "The quill author's surface, as a static client: a quiver's quills, worked live. Served by `quillkit studio`.",
 	"license": "Apache-2.0",
 	"repository": {
 		"type": "git",
@@ -25,22 +25,18 @@
 	},
 	"files": [
 		"dist",
-		"bin",
 		"NOTICE"
 	],
-	"exports": {},
-	"bin": {
-		"quillmark-studio": "./bin/cli.js"
+	"exports": {
+		"./package.json": "./package.json"
 	},
 	"scripts": {
 		"dev": "vite",
-		"build": "vite build && npm run build:node && node bin/cli.js site --quiver ../../fixtures --out site",
-		"build:node": "tsc -p tsconfig.node.json",
+		"build": "vite build",
 		"preview": "vite preview --outDir site",
 		"check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.check.json",
-		"test": "vitest run",
 		"check:pack": "publint",
-		"prepack": "rm -rf dist site bin && npm run build"
+		"prepack": "rm -rf dist site && npm run build"
 	},
 	"devDependencies": {
 		"@quillmark/quiver": "*",
@@ -52,8 +48,7 @@
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.1.0",
 		"typescript": "^5.7.0",
-		"vite": "^6.0.0",
-		"vitest": "^4.0.18"
+		"vite": "^6.0.0"
 	},
 	"publishConfig": {
 		"access": "public"
