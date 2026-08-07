@@ -1,6 +1,6 @@
 {
 	"name": "@quillmark/studio",
-	"version": "0.0.0",
+	"version": "0.1.0",
 	"description": "The quill author's surface, as a static client: a quiver's quills, worked live.",
 	"license": "Apache-2.0",
 	"repository": {
