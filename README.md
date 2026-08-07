@@ -21,7 +21,7 @@ npm install                # one install, every package
 npm run dev                # the playground at :5173
 npm run dev:studio         # studio at :5173
 npm run build              # quiver → svelte → quillkit and the apps, in that order
-npm run site               # the fixture quiver as a deploy serves it, into packages/studio/site
+npm run site               # the fixture quiver as a deploy serves it, into ./site
 npm test                   # every package's suite
 npm run check              # types, per package
 npm run lint               # prettier, over the repo

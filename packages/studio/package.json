@@ -33,10 +33,9 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "vite build",
-		"preview": "vite preview --outDir site",
 		"check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.check.json",
 		"check:pack": "publint",
-		"prepack": "rm -rf dist site && npm run build"
+		"prepack": "rm -rf dist && npm run build"
 	},
 	"devDependencies": {
 		"@quillmark/quiver": "*",

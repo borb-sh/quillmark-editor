@@ -10,7 +10,7 @@ import { resolve, sep } from 'node:path';
 import { within } from './paths.js';
 
 /** One repack per settled burst: an editor's save arrives as several watcher events. */
-export const SETTLE_MS = 80;
+const SETTLE_MS = 80;
 
 /** Call `fn` once a burst of calls stops arriving. */
 export function settle(ms: number, fn: () => void): () => void {

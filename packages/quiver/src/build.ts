@@ -59,7 +59,7 @@ function assertSafeOutDir(
 	if (what !== undefined) {
 		throw new QuiverError(
 			'transport_error',
-			`Refusing to build into "${outDir}": the build clears its output directory, and this one holds ${what} ("${out}"). Point --out at a directory the build owns.`
+			`Refusing to build into "${outDir}": the build clears that directory and two staging siblings beside it, and this one holds ${what} ("${out}"). Point --out somewhere the build can own outright.`
 		);
 	}
 }
@@ -105,7 +105,7 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 	const { meta, catalog } = await scanSourceQuiver(sourceDir);
 
 	try {
-		await packInto(stage);
+		await packGeneration();
 	} finally {
 		// A throw anywhere above leaves a partial generation staged, and outDir
 		// untouched. Neither tree outlives the call either way. Swept rather than
@@ -115,17 +115,17 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 	}
 
 	/**
-	 * Write a whole generation into `dest`, then move it to outDir.
+	 * Write a whole generation into `stage`, then move it to outDir.
 	 *
 	 * The move is two renames: a directory rename refuses a non-empty target, so the
 	 * outgoing generation steps aside first. That is the window, and it is two syscalls
 	 * wide against the seconds a build takes.
 	 */
-	async function packInto(dest: string): Promise<void> {
+	async function packGeneration(): Promise<void> {
 		// 2. Clear and recreate the staged tree + its store/.
 		try {
-			await rm(dest, { recursive: true, force: true });
-			await mkdir(join(dest, 'store'), { recursive: true });
+			await rm(stage, { recursive: true, force: true });
+			await mkdir(join(stage, 'store'), { recursive: true });
 		} catch (err) {
 			throw new QuiverError(
 				'transport_error',
@@ -169,7 +169,7 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 					const hash = createHash('sha256').update(bytes).digest('hex');
 
 					try {
-						await writeFile(join(dest, 'store', hash), bytes);
+						await writeFile(join(stage, 'store', hash), bytes);
 					} catch (err) {
 						throw new QuiverError(
 							'transport_error',
@@ -197,7 +197,7 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 
 				// g. Write bundle zip.
 				try {
-					await writeFile(join(dest, bundleName), zipBytes);
+					await writeFile(join(stage, bundleName), zipBytes);
 				} catch (err) {
 					throw new QuiverError(
 						'transport_error',
@@ -226,7 +226,7 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 		const manifestFileName = `manifest.${manifestHash}.json`;
 
 		try {
-			await writeFile(join(dest, manifestFileName), manifestJson, 'utf-8');
+			await writeFile(join(stage, manifestFileName), manifestJson, 'utf-8');
 		} catch (err) {
 			throw new QuiverError(
 				'transport_error',
@@ -240,7 +240,7 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 		const pointer = { format: POINTER_FORMAT, manifest: manifestFileName };
 
 		try {
-			await writeFile(join(dest, 'latest.json'), JSON.stringify(pointer), 'utf-8');
+			await writeFile(join(stage, 'latest.json'), JSON.stringify(pointer), 'utf-8');
 		} catch (err) {
 			throw new QuiverError(
 				'transport_error',
@@ -256,7 +256,7 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 			await mkdir(dirname(out), { recursive: true });
 			await rm(prev, { recursive: true, force: true });
 			if (existsSync(out)) await rename(out, prev);
-			await rename(dest, out);
+			await rename(stage, out);
 		} catch (err) {
 			throw new QuiverError(
 				'transport_error',
