@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.1.0 - 2026-08-07
+
 The first published shape: a static client, not an application. The tarball carries `dist` and nothing else — no bin, no server, no watcher — with `@quillmark/svelte`, `@quillmark/quiver` and `@quillmark/wasm` bundled into it, so it has no runtime dependencies and exports no JS.
 
 The client takes its base at runtime off `document.baseURI`, so one build serves a dev server, a subpath and a deploy unchanged, and it carries no quiver: one is laid beside it at `quiver/`, which is where it looks.
