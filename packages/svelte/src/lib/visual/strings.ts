@@ -47,6 +47,12 @@ export interface VisualStrings extends TableChromeStrings, SlashStrings {
 	addCard: string;
 	/** The single-kind trigger, whose accessible name IS the kind it seeds. */
 	addCardOfKind: (kind: string) => string;
+	/** The trailing strip's VISIBLE words, which are also its accessible name; the
+	 * glyph rides the wording, as the array foot's does. A pair of their own rather
+	 * than a prefix over the two above, because a language reading the mark as one
+	 * phrase has nothing to prefix. */
+	addCardMark: (kind: string) => string;
+	addCardMarkAny: string;
 
 	// ── Array control ─────────────────────────────────────────────────────────
 	arrayAdd: string;
@@ -141,6 +147,8 @@ export const DEFAULT_VISUAL_STRINGS: VisualStrings = {
 	cardTitle: 'Card title',
 	addCard: 'Add card',
 	addCardOfKind: (kind) => `Add ${kind}`,
+	addCardMark: (kind) => `+ Add ${kind}`,
+	addCardMarkAny: '+ Add Card',
 	arrayAdd: '+ Add',
 	arrayRemove: 'Remove',
 	fieldRequired: 'required',

@@ -860,17 +860,23 @@
  decision, and two copies of it drift into a stack with a gap at one end. -->
 {#snippet addAffordance(atIndex: number)}
 	{#if kinds.length}
-		<div class="qm-add-card">
-			<!-- No mark and no word: the strip IS the gap, so the pill it fills on hover
-			 draws what a label would state, the space the new card takes. The kind is
-			 the accessible name, the one reading with no geometry to carry it. -->
+		<!-- The strip past the last card is the APPEND point, the one a reader looks for
+		 rather than finds by position, so it alone states itself in words at rest. The
+		 gaps between cards stay bare: the strip IS the gap, and the pill each fills on
+		 hover draws what a label would state, the space the new card takes. -->
+		{@const marked = atIndex === model.cards.length}
+		<div class="qm-add-card" class:qm-add-card-marked={marked}>
+			<!-- Marked, the words ARE the accessible name and no `aria-label` doubles
+			 them; bare, the kind is the whole reading, the one with no geometry to
+			 carry it. -->
 			{#if kinds.length === 1}
 				<button
 					type="button"
 					class="qm-add-btn qm-add-affordance"
-					aria-label={merged.addCardOfKind(humanize(kinds[0]))}
+					aria-label={marked ? undefined : merged.addCardOfKind(humanize(kinds[0]))}
 					onclick={() => addCard(atIndex, kinds[0])}
-				></button>
+					>{marked ? merged.addCardMark(humanize(kinds[0])) : ''}</button
+				>
 			{:else}
 				<!-- Multi-kind add: pick the kind, then seed + insert. A MENU rather than a
 			 disclosure: it floats out of the stack, so raising it moves no card, and
@@ -878,7 +884,11 @@
 			 `<details>` does. The trigger is bits-ui's `<button>`, which is why the
 			 rules below reach it through `:global`. -->
 				<DropdownMenu.Root>
-					<DropdownMenu.Trigger class="qm-add-btn qm-add-affordance" aria-label={merged.addCard} />
+					<DropdownMenu.Trigger
+						class="qm-add-btn qm-add-affordance"
+						aria-label={marked ? undefined : merged.addCard}
+						>{marked ? merged.addCardMarkAny : ''}</DropdownMenu.Trigger
+					>
 					<DropdownMenu.Portal to={rootEl}>
 						<DropdownMenu.Content sideOffset={4}>
 							<!-- Portalled out of the row but INTO the stack's root, and carrying the
@@ -985,26 +995,36 @@
 	/* Unboxed, like every button, and not dashed: a
 	 dashed edge is the PLACEHOLDER idiom ("nothing is here yet") which on a button
 	 reads as disabled or as a drop target. It stays honest in one place, the
-	 un-schemable card (`Card.svelte`), which is a state rather than a control. The
-	 trigger carries no mark and rests invisible, so the FILL is the whole of what it
-	 shows: engaged, a pill, and the pill fills the strip because the strip is what was
-	 pressed, and the strip is the gap: the fill is the card-to-be, drawn where it will
-	 land. Every gap is an equal entry point, reached by the name rather than by a
-	 mark: a card goes anywhere in the stack, not just after the last one.
+	 un-schemable card (`Card.svelte`), which is a state rather than a control. A bare
+	 trigger rests invisible, so the FILL is the whole of what it shows: the pill fills
+	 the strip because the strip is what was pressed, and the strip is the gap, so the
+	 fill is the card-to-be drawn where it will land. Every gap is an equal entry point,
+	 reached by the name rather than by a mark: a card goes anywhere in the stack, not
+	 just after the last one.
 
 	 `:global`, because the multi-kind trigger is bits-ui's own element and a `class`
 	 passed to a primitive is a plain string that never picks up the scoping hash:
 	 the same seam the enum trigger is styled through. */
 	.qm-add-card :global(.qm-add-btn) {
-		/* No inset of its own and nothing to centre: the pill and the gap are the same
-		   rectangle, and the tap floor is the whole of the height. */
+		/* No inset of its own: the pill and the gap are the same rectangle, and the tap
+		   floor is the whole of the height, which is what the marked strip's words
+		   centre in. */
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		width: 100%;
+	}
+	/* Words at rest, so the marked strip restates the rung they take: the LABEL rung,
+	   chrome's size, off the body size the family's type rule hands every button
+	   (`controls.css`), which is the size the fields above are READ at. */
+	.qm-add-card-marked :global(.qm-add-btn) {
+		font-size: var(--_qm-text-label);
 	}
 	/* The two engaged states the shared `:hover` rung does not cover, both filling the
 	   same pill it does. Keyboard focus, because the fill is the only thing that reads
-	   as the trigger; and an open menu, because it portals out of the strip, so a
-	   pointer moving onto an item has left the row whose hover was drawing the pill the
-	   menu hangs from. */
+	   as the trigger on a bare strip; and an open menu, because it portals out of the
+	   strip, so a pointer moving onto an item has left the row whose hover was drawing
+	   the pill the menu hangs from. */
 	.qm-add-card :global(.qm-add-btn:focus-visible),
 	.qm-add-card :global(.qm-add-btn[data-state='open']) {
 		background: var(--_qm-surface-hover);
