@@ -44,10 +44,8 @@
 /* ── The workspace ─────────────────────────────────────────────────────────── */
 
 /* The rules above dress the page a surface sits ON; these four are the SHELL it is
-   mounted in, a tool where `.qm-page` is a document. An app that mounts two surfaces
-   over one session is the shape both of ours take and the shape a consumer's takes, and
-   without these each one rewrites the same grid under its own class names: one design
-   that diverges at the first retune nobody carries across.
+   mounted in, a tool where `.qm-page` is a document: the screen an app that mounts two
+   surfaces over one session is, drawn once (ARCHITECTURE §Styling).
 
    PINNED to the viewport rather than sized to it: a page-height box still leaves the
    root scroller counting the overflow its panes clip, and a wheel over the chrome drags

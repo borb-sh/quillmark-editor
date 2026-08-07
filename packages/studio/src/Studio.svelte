@@ -376,14 +376,12 @@
 </div>
 
 <style>
-	/* The three bands, the pinned viewport, the split and the frame a surface is mounted
-	   in are the preset's (THEMING §"Match ours"), which is what makes studio and the
-	   playground one design rather than two. What is left here is the handful of
-	   placements a shell of this shape has to make itself.
+	/* The shell is the preset's (THEMING §"The shell"), so what is left here is the
+	   handful of placements a shell of this shape makes itself.
 
-	   Where the head's rule ENDS is one of them: studio is one screen with no maximum to
-	   hold its content to, so the band runs the width of the viewport and the gutter is
-	   the same one the panes take. */
+	   Where the head's rule ENDS is one: studio is one screen with no maximum to hold
+	   its content to, so the band runs the width of the viewport and the gutter it keeps
+	   inside itself is the one the panes stand off by. */
 	.head {
 		padding-inline: var(--qmh-space-4);
 		border-block-end: var(--qmh-border-width) solid var(--qmh-border);
@@ -402,8 +400,8 @@
 		min-width: 0;
 	}
 
-	/* The body band, either shape of it: the frames stand off the viewport by the gutter
-	   the head keeps inside itself, so the three bands line up down both edges. */
+	/* The body band, either shape of it: the frames stand off the viewport by the head's
+	   gutter, so the three bands line up down both edges. */
 	.panes,
 	.vacant {
 		margin: var(--qmh-space-4);

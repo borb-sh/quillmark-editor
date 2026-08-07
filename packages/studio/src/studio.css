@@ -12,8 +12,7 @@
 
 :root {
 	/* What the notes band takes when it is open. Not rhythm: how much of a list is worth
-	   showing before it competes with the surface it is about. A stacked pane is the
-	   other height studio needs and it is `--qmh-pane`, since every app mounting a split
-	   has one. */
+	   showing before it competes with the surface it is about. The other height studio
+	   needs is a stacked pane's, and that one is the preset's `--qmh-pane`. */
 	--st-notes: 14rem;
 }

@@ -20,7 +20,7 @@ Keeping the gate in quiver is what lets studio be an app at all. Nothing fails a
 
 Both mount the same surfaces over the same reference quill, and the distinction is **which thing is variable**. The playground holds the quill fixed and makes the *wiring* the subject, so it must show its instruments: state strips, live dumps, fixture variants, the hooks a headless pass drives. Studio holds the wiring fixed and invisible and makes the *quill* the subject, so it must hide them. The suspect when something looks wrong differs too (the library in one case, the quill in the other), and that is what decides what each surfaces.
 
-What that separates is the CONTENTS of the screen, not its drawing. Both are one session under two surfaces in a pinned shell, so both take the same shell out of the preset and differ in what stands in it: the playground's strip, dumps and query flags against studio's picker and errors band. A visitor who has seen one recognizes the other, and the thing they have to tell apart is which one they are holding, not which toolchain drew it.
+What that separates is the CONTENTS of the screen, not its drawing. Both are one session under two surfaces in a pinned shell, so both take that shell out of the preset and differ only in what stands in it.
 
 Studio also sheds the playground's front-door job. Its reader arrives already committed, so there is no quickstart to carry, and it is one screen rather than a site: no router, no reading column, no landing page.
 
@@ -40,7 +40,7 @@ A browser cannot read the source layout, so studio ends at a built artifact behi
 
 **The client ships built and runs unbuilt.** The tarball is what `vite build` produced; locally it is an ordinary Vite dev server, with HMR on its own chrome. An author who cannot run a bundler is the reason for the first, and the reason the wasm is bundled with it.
 
-**The bridge is studio's own; the shell is not.** The caret bridge and the debounced recompile are consumer-layer by design, and a shared component wiring them would contradict the reason the wiring is the consumer's. The LOOK is the other half and moves the other way: studio and the playground are one screen with one shape, so the pinned bands, the head's line, the mark, the split and the frame a surface is mounted in are the preset's classes on studio's own elements (THEMING §"The shell"). Studio writes the placements a shell of its shape makes itself (a full-bleed rule under the head, the gutter the bands line up on, the band that scrolls when the split stacks) and nothing the playground also writes.
+**The bridge is studio's own; the shell is not.** The caret bridge and the debounced recompile are consumer-layer by design, and a shared component wiring them would contradict the reason the wiring is the consumer's. The look goes the other way: the pinned bands, the head's line, the mark, the split and the frame a surface is mounted in are the preset's classes on studio's own elements (THEMING §"The shell"). Studio writes the placements a shell of its shape makes itself (a full-bleed rule under the head, the gutter the bands line up on, the band that scrolls when the split stacks) and nothing the playground also writes.
 
 **Published, not peered.** The tarball is `dist` alone: wasm and both libraries bundled in, no runtime dependencies, no exported JS — a **bundled terminal** (`check:deps`). The base URL is a runtime fact; the quiver is laid beside the client at deploy time and never baked into it.
 

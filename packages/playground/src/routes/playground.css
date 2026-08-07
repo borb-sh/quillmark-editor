@@ -33,8 +33,7 @@
 	   usaf_memo is two pages and a frame shorter than one of them makes scrolling swap
 	   which page is mounted, so the paint loop's bound can be checked by hand. The
 	   ceiling is the page itself (~1053px at the fixture's scale), so this can grow but
-	   not double. A stacked pane is a different job and the preset's `--qmh-pane`, since
-	   every app mounting a split has one. */
+	   not double. A stacked pane is a different job and the preset's `--qmh-pane`. */
 	--pg-demo: 38rem;
 
 	/* ── Type ────────────────────────────────────────────────────────────────── */

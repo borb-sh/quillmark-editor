@@ -57,11 +57,9 @@
 <style>
 	/* No box of its own on a page route: a page's bands sit in the document's flow, so
 	   the sticky head sticks to the viewport rather than to a wrapper. The tool route
-	   takes `.qm-workspace` instead, which pins the shell, guards the overscroll and
-	   makes the head and the route its first two bands, at every width and not only the
-	   ones that fit two panes: a narrow viewport is where a document scroll is easiest
-	   to reach, and the room the stacked panes want comes from a scroller inside the
-	   route. Nothing here places either band. */
+	   takes `.qm-workspace` instead, at every width and not only the ones that fit two
+	   panes: a narrow viewport is where a document scroll is easiest to reach, and the
+	   room the stacked panes want comes from a scroller inside the route. */
 	.app:not(.qm-workspace) {
 		display: contents;
 	}
@@ -76,8 +74,7 @@
 		border-bottom: var(--qmh-border-width) solid var(--qmh-border);
 	}
 
-	/* The mark's type is the preset's; where it sits is the shell's, and it holds the
-	   head's start so the nav reads off the end. */
+	/* The mark holds the head's start, so the nav reads off the end. */
 	.mark {
 		margin-inline-end: auto;
 	}

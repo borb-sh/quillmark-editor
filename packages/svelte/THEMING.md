@@ -145,15 +145,13 @@ An app that mounts an editor beside a preview over one session needs a screen to
 </div>
 ```
 
-| Class           | What it is                                                                                                                                        |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.qm-workspace` | The screen: pinned to the viewport, three bands (a head, the body, an optional foot), the body taking what is left and scrolling nowhere itself.  |
-| `.qm-bar`       | A band's line, wrapping. The rule under it and the gutter beside it stay yours, since where a band ends is your page shell's decision.            |
-| `.qm-mark`      | Your app's name at the head of it. `.qm-mark-quiet` is the part that recedes: a separator, a qualifier.                                           |
-| `.qm-split`     | Two even tracks for two surfaces, the page gap between them. Below `60rem` they stack, each at `--qmh-pane`; which element scrolls then is yours. |
-| `.qm-frame`     | The mounting site: an edge, a corner, and the clip that holds a surface to them. What is inside it is the surface's own.                          |
-
-This is the shell our own two apps are drawn with, and it is why they read as one design rather than as two that happen to agree.
+| Class           | What it is                                                                                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `.qm-workspace` | The screen: pinned to the viewport, three bands (a head, the body, an optional foot), the body taking what is left and the document scrolling nowhere. |
+| `.qm-bar`       | A band's line, wrapping. The rule under it and the gutter beside it stay yours, since where a band ends is your page shell's decision.                 |
+| `.qm-mark`      | Your app's name at the head of it. `.qm-mark-quiet` is the part that recedes: a separator, a qualifier.                                                |
+| `.qm-split`     | Two even tracks for two surfaces, the page gap between them. Below `60rem` they stack, each at `--qmh-pane`; which element scrolls then is yours.      |
+| `.qm-frame`     | The mounting site: an edge, a corner, and the clip that holds a surface to them. What is inside it is the surface's own.                               |
 
 It is **unlayered**, so your own rules beat it by ordinary precedence, exactly as they beat the surfaces. It is also opt-in and side-effect free until imported: nothing that styles your document arrives with a component.
 

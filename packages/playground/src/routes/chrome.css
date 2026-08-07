@@ -1,9 +1,7 @@
 /* The playground's own recipes: what more than one route draws that the preset does
-   not carry. The endorsed look comes from `@quillmark/svelte/preset`: the label, the
-   readout, the status line, the plate, the boxed control, the focus ring, and the whole
-   of the workspace shell (the pinned bands, the head's line, the mark, the split and the
-   frame a surface is mounted in). What is left here is the SITE around it: a width, a
-   heading, a display run, a pair of calls to action, a link in running prose.
+   not carry. The endorsed look comes from `@quillmark/svelte/preset`, the workspace
+   shell included, so what is left here is the SITE around it: a width, a heading, a
+   display run, a pair of calls to action, a link in running prose.
 
    The rungs are the preset's `--qmh-*` and the local ones in `routes/playground.css`;
    this file mints nothing (ARCHITECTURE §Styling). */

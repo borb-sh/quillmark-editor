@@ -361,11 +361,9 @@
 		margin-inline-start: auto;
 	}
 
-	/* The split's two tracks, its gap and its frames are `.qm-split`'s and `.qm-frame`'s
-	   (THEMING §"Match ours"); each pane is the frame and gives its surface room, nothing
-	   more, since the gutter, the scroll container, the tone and the tail are the
-	   surface's own. What is left here is how the split shares the page with the drawer:
-	   twice its pull on the height left after the head and the strip. */
+	/* The split's tracks, its gap and its frames are `.qm-split`'s and `.qm-frame`'s
+	   (THEMING §"The shell"). What is left here is how the split shares the page with
+	   the drawer: twice its pull on the height left after the head and the strip. */
 	.shell {
 		flex: 2 1 0;
 	}
