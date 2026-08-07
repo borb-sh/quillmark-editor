@@ -226,15 +226,18 @@
 	});
 </script>
 
+<svelte:head><title>Playground · quillmark</title></svelte:head>
+
 <main class="pg-width page">
-	<header class="pg-head">
-		<h1 class="pg-title">Playground</h1>
-		{#if status.phase === 'loading'}
-			<p data-testid="status" class="qm-status">Opening…</p>
-		{:else if status.phase === 'error'}
-			<p data-testid="status" class="qm-status qm-status-error">Error: {status.message}</p>
-		{/if}
-	</header>
+	<!-- The boundary's phase, and only while it is one: the route carries no title,
+	     since the running head names it and marks it current, and an open session says
+	     the rest by painting the page. So the band is gone at rest and the panes have
+	     the room (PLAYGROUND §"The routes"). -->
+	{#if status.phase === 'loading'}
+		<p data-testid="status" class="qm-status phase">Opening…</p>
+	{:else if status.phase === 'error'}
+		<p data-testid="status" class="qm-status qm-status-error phase">Error: {status.message}</p>
+	{/if}
 
 	{#if status.phase === 'ready'}
 		<!-- The bridge, read back out: each hop's last outcome, so a round-trip that
@@ -266,7 +269,11 @@
 			>
 			<span class="stat"
 				><span class="qm-label">error</span>
-				<span class="qm-readout" data-testid="last-error">{lastError}</span></span
+				<!-- The one reading on the strip that is a failure rather than a fact, so it
+				     is the one that takes colour when it holds one. -->
+				<span class="qm-readout" class:alert={lastError !== 'none'} data-testid="last-error"
+					>{lastError}</span
+				></span
 			>
 			<span class="strip-actions">
 				<button
@@ -334,7 +341,15 @@
 		flex-direction: column;
 		gap: var(--qmh-space-4);
 		min-height: 0;
-		padding-bottom: var(--qmh-space-4);
+		/* The block gutter is the rung the bands are separated by: what stands between
+		   the head's rule and the strip is what stands between the strip and the panes. */
+		padding-block: var(--qmh-space-4);
+	}
+
+	/* A `<p>` in the column, so it takes the page's gap and nothing else; and it is here
+	   only while the boundary is not open, so at rest the panes start under the head. */
+	.phase {
+		margin: 0;
 	}
 
 	.strip {
@@ -353,6 +368,10 @@
 
 	.stat .qm-readout {
 		color: var(--qmh-ink-meta);
+	}
+
+	.stat .qm-readout.alert {
+		color: var(--qmh-alert);
 	}
 
 	.strip-actions {

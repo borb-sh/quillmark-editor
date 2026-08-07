@@ -1,7 +1,8 @@
 /* The playground's own recipes: what more than one route draws that the preset does
    not carry. The endorsed look comes from `@quillmark/svelte/preset`, the workspace
-   shell included, so what is left here is the SITE around it: a width, a heading, a
-   display run, a pair of calls to action, a link in running prose.
+   shell included, so what is left here is the SITE around it: a width, a pair of calls
+   to action, a link in running prose. A run only the front page draws — its display
+   thesis — stays in the route, since a recipe with one caller is that route's own.
 
    The rungs are the preset's `--qmh-*` and the local ones in `routes/playground.css`;
    this file mints nothing (ARCHITECTURE §Styling). */
@@ -17,37 +18,6 @@
 	max-width: var(--pg-max);
 	margin-inline: auto;
 	padding-inline: var(--pg-space-6);
-}
-
-/* ── The head ──────────────────────────────────────────────────────────────── */
-/* A tool route's whole heading on one line: which surface this is, and the boundary's
-   phase while it is not open. No description above it: the surface below shows what it
-   does. */
-.pg-head {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: baseline;
-	gap: var(--qmh-space-2) var(--qmh-space-4);
-	padding-block: var(--pg-space-8) var(--qmh-space-4);
-}
-
-/* The phase reads off the end of the line, so the title holds its position when it
-   clears. */
-.pg-head .qm-status {
-	margin-inline-start: auto;
-}
-
-/* ── Type ──────────────────────────────────────────────────────────────────── */
-
-/* A page's one display run: the landing thesis, a tool route's title. The type is the
-   recipe; margins are layout and stay the route's own (a route sets its measure and the
-   layout inside it, nothing more). */
-.pg-title {
-	margin: 0;
-	font-size: var(--pg-text-display);
-	font-weight: var(--qmh-weight-strong);
-	line-height: var(--qmh-leading-tight);
-	letter-spacing: var(--pg-track-display);
 }
 
 /* ── Calls to action ───────────────────────────────────────────────────────── */
