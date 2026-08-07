@@ -82,11 +82,13 @@
 	});
 </script>
 
+<svelte:head><title>quillmark — editor and live preview</title></svelte:head>
+
 <main class="pg-width landing">
 	<div class="split">
 		<div class="col">
 			<div class="hero">
-				<h1 class="pg-title">Editor + live preview for Quillmark</h1>
+				<h1>Editor + live preview for Quillmark</h1>
 				<p class="lede">
 					A visual editor for the document and a canvas preview of the compiled page, sharing one
 					session. An edit repaints the page; a click on the page moves the caret.
@@ -130,7 +132,7 @@
 
 		<figure class="art">
 			<figcaption class="art-head">
-				<span class="qm-label">&lt;Preview&gt;</span>
+				<span class="art-name">&lt;Preview&gt;</span>
 				{#if status.phase === 'loading'}
 					<span data-testid="status" class="qm-status">Opening the reference quill…</span>
 				{:else if status.phase === 'error'}
@@ -168,7 +170,7 @@
 
 		<figure class="art">
 			<figcaption class="art-head">
-				<span class="qm-label">&lt;VisualEditor&gt;</span>
+				<span class="art-name">&lt;VisualEditor&gt;</span>
 			</figcaption>
 			<div class="qm-frame demo-frame">
 				{#if VisualEditor && editDoc && quillHandle}
@@ -205,7 +207,15 @@
 		gap: var(--qmh-space-4);
 	}
 
+	/* The site's one display run, and the only route that draws one: the thesis a
+	   stranger lands on. Fluid, off the rung minted in `playground.css`, because it is
+	   the one size on the page big enough for the viewport to matter to it. */
 	h1 {
+		margin: 0;
+		font-size: var(--pg-text-display);
+		font-weight: var(--qmh-weight-strong);
+		line-height: var(--qmh-leading-tight);
+		letter-spacing: var(--pg-track-display);
 		text-wrap: balance;
 	}
 
@@ -287,13 +297,30 @@
 	}
 
 	/* A mounted surface and the name over it; `figure`'s margins go, since the column
-	   places it. */
+	   places it.
+
+	   STICKY inside its band, because the steps beside it outrun it: the reading column
+	   is half again the surface's height, so a step describing the preview would be read
+	   with the preview already scrolled off. The offset clears the running head, which
+	   is what `#get-started` above already measures itself against. */
 	.art {
+		position: sticky;
+		top: var(--pg-space-16);
 		display: flex;
 		flex-direction: column;
 		gap: var(--qmh-space-2);
 		margin: 0;
 		min-width: 0;
+	}
+
+	/* The mounted component's NAME, and it is an identifier: the same run the reading
+	   column beside it sets `<Preview>` in, so one component is spelled one way on the
+	   page. The label recipe is for a category word and would uppercase it. */
+	.art-name {
+		font-family: var(--qmh-font-mono);
+		font-size: var(--qmh-text-label);
+		line-height: var(--qmh-leading-tight);
+		color: var(--qmh-ink-meta);
 	}
 
 	/* The surface's name, and the boundary's phase off the end of the line while it is
@@ -336,6 +363,12 @@
 		.split {
 			grid-template-columns: minmax(0, 1fr);
 			row-gap: var(--pg-space-8);
+		}
+
+		/* Stacked, the surface already follows the steps that mount it, so there is
+		   nothing for it to keep up with. */
+		.art {
+			position: static;
 		}
 	}
 </style>

@@ -410,8 +410,14 @@
 	}
 
 	/* The phase reads off the end of the line, so the picker holds its position when
-	   it clears. */
+	   it clears. The band's own row treatment, because this end of it carries two
+	   independent readings at once (the open failed, the document is held) and at a
+	   word-space they read as one sentence. */
 	.state {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--qmh-space) var(--qmh-space-4);
 		margin-inline-start: auto;
 		min-width: 0;
 	}
@@ -479,11 +485,17 @@
 	}
 
 	/* Where the panes were. It takes the same room so the bands do not move when a quill
-	   stops opening, and it holds the one sentence that says why. */
+	   stops opening, and it holds the one sentence that says why.
+
+	   At the TOP of that room rather than centred in it: the sentence lands where the
+	   editor's first card was, which is where the author was already looking, and it
+	   stands on one edge with the head that says the state and the band that lists it.
+	   Centred, it floated in most of a viewport of empty surface, which is a site's error
+	   page and not a workroom mid-fix. */
 	.vacant {
 		display: grid;
-		place-items: center;
-		align-content: center;
+		justify-items: start;
+		align-content: start;
 		gap: var(--qmh-space-2);
 		min-height: 0;
 		padding: var(--qmh-space-4);
@@ -493,7 +505,6 @@
 	.reason {
 		margin: 0;
 		max-width: var(--qmh-measure);
-		text-align: center;
 		color: var(--qmh-alert);
 		overflow-wrap: anywhere;
 	}

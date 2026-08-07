@@ -57,7 +57,7 @@
 					</span>
 					<span class="message">
 						{note.message}
-						{#if note.code}<span class="qm-label code">{note.code}</span>{/if}
+						{#if note.code}<span class="qm-readout code">{note.code}</span>{/if}
 						{#if note.hint}<span class="hint">{note.hint}</span>{/if}
 					</span>
 				</li>
@@ -145,7 +145,12 @@
 		color: var(--qmh-alert);
 	}
 
+	/* The engine's own string for what went wrong, so it is a READOUT and not a label:
+	   an author matches it against a backend's source, and the label recipe would
+	   uppercase it into something no search finds. It reads at the meta rung anyway,
+	   being the quietest thing in the row it trails. */
 	.code {
+		font-size: var(--qmh-text-meta);
 		color: var(--qmh-ghost);
 		margin-inline-start: var(--qmh-space);
 	}
