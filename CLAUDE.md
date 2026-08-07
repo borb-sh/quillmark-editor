@@ -10,7 +10,7 @@ Comments and docs are dense, present-tense, unsold: state what is, not how it go
 
 ## Commands
 
-Every command is the root's; a package script is reached with `-w packages/<name>`. CI (`.github/workflows/ci.yml`) gates `lint`, `check`, `check:canon`, `check:style`, `check:deps`, `test`, `build`, and `check:pack`. A verb name means one thing across the workspace; the implementations differ per package.
+Every command is the root's; a package script is reached with `-w packages/<name>`. CI (`.github/workflows/ci.yml`) gates `lint`, `check`, `check:canon`, `check:style`, `check:deps`, `build`, `test`, and `check:pack`, in that order: the suite reads what `build` writes. `gate` is that sequence through the suite as one verb, which the release run calls. A verb name means one thing across the workspace; the implementations differ per package.
 
 ## Boundaries
 
