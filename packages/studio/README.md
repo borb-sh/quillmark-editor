@@ -2,7 +2,17 @@
 
 The quill author's surface, as a static client: pick a quill, edit, watch it paint, read the errors. `quiver test` answers _does it work_; studio answers _what is it like to use_.
 
-The package is a **static client rather than an application**. It carries `dist` and nothing else — no bin, no server, no watcher — with `@quillmark/svelte`, `@quillmark/quiver` and `@quillmark/wasm` bundled in. It has no runtime dependencies and exports no JS, so it is served rather than imported.
+The package is a **static client and the two verbs that serve it**. `dist` is the client, with `@quillmark/svelte`, `@quillmark/quiver` and `@quillmark/wasm` bundled in; `bin` is the local loop and the site layout. It has no runtime dependencies and no importable entry, so it is run and served rather than imported.
+
+## The local loop
+
+```json
+{ "scripts": { "dev": "studio dev", "site": "studio site --out site" } }
+```
+
+`studio dev` packs your collection, serves the client over it and repacks when you save; reload the page to pick up a repack. `studio site --out <dir>` lays out the same arrangement a deploy serves. Both take `--quiver <dir>` for a collection that is not the working directory, and `dev` takes `--port` and `--host`.
+
+The packer is **yours**: both verbs resolve `@quillmark/quiver` from your own `node_modules`, so what they pack is what your `quiver test` gates and your CI publishes. Neither instantiates an engine; nothing renders on the server.
 
 ## Deploying a quiver to GitHub Pages
 
@@ -35,13 +45,13 @@ jobs:
 
 Inputs, all optional: `quiver-dir` (default `.`), `studio-package` (default `@quillmark/studio@latest`), `node-version` (default `22`), and `upload` (default `true`), which this repository's own CI sets false to assemble and assert the site without minting an artifact.
 
-Nothing else is configured. `quiver build` packs files and instantiates nothing, so the deploy installs no wasm; when your repository already has `@quillmark/quiver` installed, the workflow uses that copy rather than fetching one.
+Nothing else is configured. The workflow runs `studio site`, which packs files and instantiates nothing, so the deploy installs no wasm; when your repository already has `@quillmark/quiver` installed, that copy is the one it packs with.
 
 ## Serving it anywhere else
 
-The client resolves its quiver against `document.baseURI` and its assets relatively, so any static host works and no rebuild is needed per URL. Two rules:
+The client resolves its quiver against `document.baseURI` and its assets relatively, so any static host works and no rebuild is needed per URL. `studio site --out <dir>` produces the arrangement and asserts it; the arrangement itself is two rules:
 
-- Serve the client's files at some base, and a built quiver at `quiver/` under that same base — `quiver build --out <site>/quiver`.
+- The client's files at some base, and a built quiver at `quiver/` under that same base.
 - The client carries no quiver of its own. One packed inside it would occupy the URL the built one is served from.
 
 ## What it is not

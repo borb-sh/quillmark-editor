@@ -1,0 +1,13 @@
+// The Node half's type check, which reaches what its build deliberately does not.
+// `tsconfig.node.json` emits from `src/node` alone; the Vite config beside it drives
+// the same packing loop and would otherwise be checked by nothing.
+{
+	"extends": "./tsconfig.node.json",
+	"compilerOptions": {
+		"noEmit": true,
+		// Nothing is emitted, so the build's `src/node` root does not apply and the
+		// config files beside it come into the program.
+		"rootDir": "."
+	},
+	"include": ["src/node", "src/__tests__", "vite.config.ts", "vitest.config.ts"]
+}

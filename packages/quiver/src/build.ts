@@ -9,6 +9,7 @@
 import { QuiverError } from './errors.js';
 import { packFiles } from './bundle.js';
 import { NAME_DIGEST_LENGTH } from './digest.js';
+import { POINTER_FORMAT } from './format.js';
 
 /** Font file extensions recognised by the builder (case-insensitive). */
 const FONT_EXT = /\.(ttf|otf|woff|woff2)$/i;
@@ -58,7 +59,7 @@ function assertSafeOutDir(
  * Output layout. Every name but the pointer carries the SHA-256 of what it
  * names, which is what the loader checks on fetch:
  *   outDir/
- *     latest.json                     # stable pointer to the current manifest
+ *     latest.json                     # the format, and a stable pointer to the manifest
  *     manifest.<sha256:12>.json       # hashed manifest
  *     <name>@<version>.<sha256:12>.zip  # one bundle per quill
  *     store/
@@ -201,8 +202,9 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 		);
 	}
 
-	// 9–10. Write stable pointer latest.json.
-	const pointer = { manifest: manifestFileName };
+	// 9–10. Write stable pointer latest.json. The format is stamped here and read first,
+	//       so a client older than the tree says so rather than misreading it.
+	const pointer = { format: POINTER_FORMAT, manifest: manifestFileName };
 	const pointerPath = join(outDir, 'latest.json');
 
 	try {

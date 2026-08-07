@@ -2,11 +2,11 @@
 # to call. Build and upload only: the deploy stays in the caller's workflow, so nothing
 # outside their repository ever holds `pages: write`.
 #
-# The whole of the layout is that the client is served at some base with a built quiver
-# at `quiver/` under it, which is where the client looks (`document.baseURI`). Both
-# halves of that are asserted rather than assumed: a client carrying a quiver of its own
-# occupies the URL the built one is served from, and the winner would be whichever copy
-# landed last.
+# The layout itself is `studio site`, and this calls it rather than restating it: the
+# client at some base with a built quiver at `quiver/` under it, which is where the
+# client looks (`document.baseURI`). The assertions travel with the verb, so a caller
+# running it locally gates the same shape this does: a client carrying a quiver of its
+# own would occupy the URL the built one is served from.
 name: Studio Pages
 
 on:
@@ -48,20 +48,21 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
 
-      # `quiver build` packs files and instantiates nothing, so no wasm is installed
-      # here. A repository that already carries the CLI builds through its own copy,
-      # which is the one its `quiver test` gates with; one that does not gets a copy
-      # fetched by name, never by bare bin (`quiver` on the registry is not this).
-      - name: Resolve the quiver CLI
+      # The packer is the caller's own: `studio site` resolves `@quillmark/quiver` from
+      # the collection's `node_modules`, so the pack this deploys is the one their
+      # `quiver test` gates with. It packs files and instantiates nothing, so no wasm is
+      # installed here. A repository that does not carry the CLI gets a copy fetched by
+      # name, never by bare bin (`quiver` on the registry is not this).
+      - name: Resolve the quiver packer
         run: |
           if [ -f package-lock.json ]; then npm ci
           elif [ -f package.json ]; then npm install --no-audit --no-fund
           fi
-          if [ ! -x node_modules/.bin/quiver ]; then
+          if [ ! -d node_modules/@quillmark/quiver ]; then
             npm install --no-save --no-audit --no-fund @quillmark/quiver
           fi
-          test -x node_modules/.bin/quiver \
-            || { echo "::error::no quiver CLI resolved in $GITHUB_WORKSPACE"; exit 1; }
+          test -d node_modules/@quillmark/quiver \
+            || { echo "::error::no @quillmark/quiver resolved in $GITHUB_WORKSPACE"; exit 1; }
 
       # `npm pack` takes a registry spec or a directory; a directory is built through
       # its own `prepack` first, which is how this repository rehearses the layout
@@ -75,21 +76,19 @@ jobs:
           TGZ=$(find "$RUNNER_TEMP/pack" -maxdepth 1 -name '*.tgz' | head -1)
           test -n "$TGZ" || { echo "::error::npm pack $STUDIO_PACKAGE produced no tarball"; exit 1; }
           tar -xzf "$TGZ" -C "$RUNNER_TEMP/client" --strip-components=1
-          test -f "$RUNNER_TEMP/client/dist/index.html" \
-            || { echo "::error::$STUDIO_PACKAGE carries no client at dist/"; exit 1; }
-          test ! -e "$RUNNER_TEMP/client/dist/quiver" \
-            || { echo "::error::$STUDIO_PACKAGE carries a quiver; it would shadow this site's"; exit 1; }
+          test -f "$RUNNER_TEMP/client/bin/cli.js" \
+            || { echo "::error::$STUDIO_PACKAGE carries no bin at bin/cli.js"; exit 1; }
 
+      # One verb, and it owns the whole arrangement: the client it ships laid at the
+      # root, the caller's collection packed beneath it, and both halves of the layout
+      # asserted. Run from the workspace, so `--quiver` is read the way the input is
+      # written, relative to the repository.
       - name: Lay the site out
         run: |
-          SITE="$RUNNER_TEMP/studio-site"
-          rm -rf "$SITE"
-          mkdir -p "$SITE"
-          cp -R "$RUNNER_TEMP/client/dist/." "$SITE/"
-          ( cd "$QUIVER_DIR" && "$GITHUB_WORKSPACE/node_modules/.bin/quiver" build --out "$SITE/quiver" )
-          test -f "$SITE/quiver/latest.json" \
-            || { echo "::error::$QUIVER_DIR built no pointer at quiver/latest.json"; exit 1; }
-          echo "Site: $(find "$SITE" -type f | wc -l) files"
+          node "$RUNNER_TEMP/client/bin/cli.js" site \
+            --quiver "$QUIVER_DIR" \
+            --out "$RUNNER_TEMP/studio-site"
+          echo "Site: $(find "$RUNNER_TEMP/studio-site" -type f | wc -l) files"
 
       - if: inputs.upload
         uses: actions/upload-pages-artifact@v3

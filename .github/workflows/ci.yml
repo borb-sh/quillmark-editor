@@ -50,11 +50,14 @@ jobs:
       - name: Dependency law
         run: npm run check:deps
 
-      - name: Test (vitest)
-        run: npm test
-
+      # Before the suite: studio's Node half is reached through the bin an author runs,
+      # and the client it serves is `vite build`'s output, so both are built artifacts
+      # the suite spawns rather than modules it imports.
       - name: Build
         run: npm run build
+
+      - name: Test (vitest)
+        run: npm test
 
       # After the build, because publint reads the `dist` the manifest points at.
       - name: Package (publint)

@@ -14,3 +14,6 @@ fixtures/
 **/dist/
 **/build/
 **/.svelte-kit/
+
+# Studio's compiled Node half.
+packages/studio/bin/

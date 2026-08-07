@@ -10,6 +10,7 @@ import { QuiverError } from './errors.js';
 import { unpackFiles } from './bundle.js';
 import { isCanonicalSemver, compareSemver } from './semver.js';
 import { NAME_DIGEST_LENGTH, sha256Hex } from './digest.js';
+import { POINTER_FORMAT } from './format.js';
 import type { Quiver, QuiverLoader } from './quiver.js';
 import { createQuiver } from './quiver.js';
 
@@ -185,7 +186,25 @@ function parsePointer(raw: string): string {
 	}
 
 	const obj = parsed as Record<string, unknown>;
-	assertNoUnknownKeys(obj, ['manifest'], 'latest.json');
+
+	// The format, read before anything is believed about the rest. An unknown key is NOT
+	// a failure here: this is the document a newer format announces itself on, and a
+	// reader rejecting what it does not recognise refuses the announcement too. Absent
+	// means a build from before the marker (`format.ts`).
+	const format = obj['format'] ?? POINTER_FORMAT;
+	if (typeof format !== 'number' || !Number.isInteger(format) || format < 1) {
+		throw new QuiverError(
+			'quiver_invalid',
+			`latest.json: "format" must be a positive integer, got ${JSON.stringify(obj['format'])}`
+		);
+	}
+	if (format > POINTER_FORMAT) {
+		throw new QuiverError(
+			'quiver_invalid',
+			`This quiver is built in format ${format} and this loader reads ${POINTER_FORMAT}. ` +
+				`Upgrade @quillmark/quiver, or for a served client the client itself, which carries the copy that reads this.`
+		);
+	}
 
 	if (typeof obj['manifest'] !== 'string' || obj['manifest'].length === 0) {
 		throw new QuiverError(
