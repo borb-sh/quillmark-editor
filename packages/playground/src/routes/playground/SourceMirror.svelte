@@ -9,8 +9,8 @@
   equal `Document`, so this is exactly that form and never a pretty-print.
 
   A `<pre>` carrying text, not an editor: a mirror needs selectable monospace and
-  nothing more, and syntax highlighting is worth less here than a route that pulls
-  no editor library for a surface with no caret.
+  nothing more, and syntax highlighting is not worth pulling an editor library into
+  the route for a surface with no caret.
 -->
 <script lang="ts">
 	import { tick } from 'svelte';

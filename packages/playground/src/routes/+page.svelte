@@ -2,10 +2,10 @@
   The front page, in two columns: the thesis and the steps down the reading
   column, the surfaces they reach standing beside them (PLAYGROUND §"The routes").
 
-  Two documents off one quill: the preview's is the one its session paints, the
-  editor's is its own. No apply loop runs here, so a shared document would let
-  typing in the editor desynchronize the page the band above it paints; the two
-  wired together is `/playground`.
+  Two documents off one quill: one the preview's session paints, one the editor
+  holds. No apply loop runs here, so a shared document would let typing in the
+  editor desynchronize the page the band above it paints. `/playground` is where
+  the two are wired together.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -88,8 +88,8 @@
 			<div class="hero">
 				<h1 class="pg-title">Editor + live preview for Quillmark</h1>
 				<p class="lede">
-					A WYSIWYG over the document and a canvas over the compiled page, on one session: an edit
-					repaints the page, a click on the page moves the caret.
+					A visual editor for the document and a canvas preview of the compiled page, sharing one
+					session. An edit repaints the page; a click on the page moves the caret.
 				</p>
 				<div class="actions">
 					<a class="pg-cta" href="{base}/playground">Open the playground</a>
@@ -103,8 +103,8 @@
 			<article class="step">
 				<h3 class="qm-label">01 · Install</h3>
 				<p>
-					<code>@quillmark/svelte</code> is the surfaces;
-					<code>@quillmark/wasm</code> is the engine they view.
+					<code>@quillmark/svelte</code> provides the surfaces;
+					<code>@quillmark/wasm</code> is the engine they read.
 				</p>
 				<pre class="qm-readout sample">{INSTALL}</pre>
 			</article>
@@ -113,7 +113,7 @@
 				<h3 class="qm-label">02 · Session</h3>
 				<p>
 					A quill is a template's file tree; a document is the content in it. Opening the two
-					compiles the first page and gives you the handle both surfaces read.
+					compiles the first page and returns the session handle both surfaces read.
 				</p>
 				<pre class="qm-readout sample">{OPEN_SESSION}</pre>
 			</article>
@@ -122,7 +122,7 @@
 				<h3 class="qm-label">03 · Preview</h3>
 				<p>
 					<code>&lt;Preview&gt;</code> paints the session's pages to canvas and resolves a click to the
-					content under it, so the compiled page is addressable rather than a picture.
+					content under it, so the compiled page is addressable and not just displayed.
 				</p>
 				<pre class="qm-readout sample">{PREVIEW}</pre>
 			</article>
@@ -157,10 +157,10 @@
 			<article class="step">
 				<h3 class="qm-label">04 · Edit</h3>
 				<p>
-					<code>&lt;VisualEditor&gt;</code> projects the quill's schema onto the document: prose
-					where the field takes prose, a control where it takes a value, a card per block.
-					<code>onChange</code> fires when an edit lands, and applying it to the session hands the preview
-					the pages to repaint.
+					<code>&lt;VisualEditor&gt;</code> builds its controls from the quill's schema: a prose
+					editor for a prose field, a control for a value field, a card per block.
+					<code>onChange</code> fires when an edit lands; applying it to the session returns the pages
+					the preview repaints.
 				</p>
 				<pre class="qm-readout sample">{VISUAL}</pre>
 			</article>
@@ -181,7 +181,7 @@
 	<article class="step closing band">
 		<h3 class="qm-label">Next</h3>
 		<p>
-			Both surfaces on one session, the caret bridged in both directions:
+			Both surfaces on one session, with the caret bridged in both directions:
 			<a class="pg-link" href="{base}/playground">the playground</a>.
 		</p>
 	</article>
@@ -189,9 +189,9 @@
 
 <style>
 	/* Two bands down the page, each a reading column and the surface its steps mount.
-	   The thesis opens that column rather than taking a band of its own: what a stranger
-	   lands on is then a sentence and the painted page beside it, and the width a
-	   full-page hero leaves empty is the width the surface takes. */
+	   The thesis opens that column rather than taking a band of its own, so a stranger
+	   lands on a sentence with the painted page beside it, and the surface takes the
+	   width a full-page hero would leave empty. */
 	.landing {
 		display: flex;
 		flex-direction: column;
@@ -232,8 +232,8 @@
 	/* The two columns: the reading column at its measure, and what is left of the page
 	   for the surface those steps mount. What stands beside a surface is every step that
 	   reaches it (install, session and preview in one band, edit in the next), so the
-	   split runs per band rather than per step, and no step spends half a page proving
-	   it has no output. */
+	   split runs per band rather than per step, and a step with no output of its own
+	   spends no width on one. */
 	.split {
 		display: grid;
 		grid-template-columns: minmax(0, var(--qmh-measure)) minmax(0, 1fr);
@@ -241,17 +241,16 @@
 		align-items: start;
 	}
 
-	/* A rule over a band, not around it: a hairline marks where one surface gives way to
-	   the next, and the page ends at the last band rather than under a closing rule. */
+	/* A hairline over each band marks where one surface gives way to the next; nothing
+	   under the last, so the page ends at the final band rather than at a closing rule. */
 	.band {
 		border-top: var(--qmh-border-width) solid var(--qmh-border);
 		padding-top: var(--pg-space-8);
 	}
 
 	/* The step that mounts nothing: it closes the page under both columns rather than
-	   trailing off the foot of one, which is also where a stacked split wants it. The
-	   rule runs the page's width like the bands' above; the passage wraps at the
-	   measure. */
+	   under one, which is also where a stacked split puts it. The rule runs the page's
+	   width like the bands' above; the passage wraps at the measure. */
 	.closing > p {
 		max-width: var(--qmh-measure);
 	}
@@ -298,7 +297,7 @@
 	}
 
 	/* The surface's name, and the boundary's phase off the end of the line while it is
-	   not open: the one place on the page a session says anything in words. */
+	   not open: the only place on the page a session is described in words. */
 	.art-head {
 		display: flex;
 		flex-wrap: wrap;
@@ -310,9 +309,9 @@
 		margin-inline-start: auto;
 	}
 
-	/* What a demo frame owes a surface is a height to sit in. The gutter, the tone and
-	   the desk are the surface's own (THEMING §"Drop it in"), so a frame that states
-	   them would be restating the package to itself. */
+	/* A demo frame states a height and nothing else. The gutter, the tone and the desk
+	   are the surface's own (THEMING §"Drop it in"), so a frame stating them would
+	   duplicate the package. */
 	.demo-frame {
 		height: var(--pg-demo);
 		min-width: 0;

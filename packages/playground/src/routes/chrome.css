@@ -1,8 +1,8 @@
-/* The front door's own recipes: what more than one route draws that the preset does
+/* The playground's own recipes: what more than one route draws that the preset does
    not carry. The endorsed look (the label, the readout, the status line, the plate,
    the boxed control, the focus ring) comes from `@quillmark/svelte/preset`, so what is
-   left here is the shape of a front door: a width, a heading, a display run, a pair of
-   calls to action, a link in running prose.
+   left here is the page shell: a width, a heading, a display run, a pair of calls to
+   action, a link in running prose.
 
    The rungs are the preset's `--qmh-*` and the local ones in `routes/playground.css`;
    this file mints nothing (PLAYGROUND §"Preventing drift"). */
@@ -22,8 +22,8 @@
 
 /* ── The head ──────────────────────────────────────────────────────────────── */
 /* A tool route's whole heading on one line: which surface this is, and the boundary's
-   phase while it is not open. What the surface does is the surface below, not a passage
-   above it. */
+   phase while it is not open. No description above it: the surface below shows what it
+   does. */
 .pg-head {
 	display: flex;
 	flex-wrap: wrap;
@@ -53,10 +53,10 @@
 
 /* ── Surfaces ──────────────────────────────────────────────────────────────── */
 
-/* The mounting site, which a surface painting its own column reduces to an edge, a
-   corner, and the clip that holds the surface to them. No tone and no
-   gutter: those are the surface's own (THEMING §"Drop it in"). `border-box`, so a
-   stated height is the height it draws.
+/* The mounting site: an edge, a corner, and the clip holding the surface to them,
+   which is all a surface painting its own column needs. No tone and no gutter: those
+   are the surface's own (THEMING §"Drop it in"). `border-box`, so a stated height is
+   the height it draws.
 
    Positioned, because a clip reaches only what it is the containing block for: a
    surface's out-of-flow parts (a parked description, an overlay) resolve against the
@@ -73,9 +73,9 @@
 
 /* ── Calls to action ───────────────────────────────────────────────────────── */
 
-/* The one filled element in the playground. It is the front page's first action (open
-   the surface the visitor came to see), and it is ink on page rather than a hue, so it
-   inverts with the scheme like everything else. */
+/* The one filled element in the playground: the front page's first action, opening the
+   surface the visitor came to see. Ink on page rather than a hue, so it inverts with
+   the scheme like everything else. */
 .pg-cta {
 	display: inline-block;
 	background: var(--qmh-ink);
@@ -98,8 +98,8 @@
 }
 
 /* The action beside it: the same shape, unfilled, so the pair reads as one choice and
-   the page still spends its one fill once. Boxed like the preset's controls, since a
-   bare link beside a solid button reads as a footnote. */
+   the page keeps a single fill. Boxed like the preset's controls, since a bare link
+   beside a solid button reads as a footnote. */
 .pg-cta-quiet {
 	display: inline-block;
 	background: var(--qmh-page);

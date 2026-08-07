@@ -1,9 +1,9 @@
 /* What the playground adds ON TOP of the preset, and nothing the preset already
    carries: `@quillmark/svelte/preset` is the endorsed page scale, imported in
-   `+layout.svelte`, and the front door reads `--qmh-*` throughout. What survives here
-   is the front door's own (a page maximum, a display run, two container heights),
-   which no consumer mounting a surface has and no preset should
-   ship (PLAYGROUND.md is the language; the recipes are `routes/chrome.css`).
+   `+layout.svelte`, and the app reads `--qmh-*` throughout. What survives here is the
+   app's own (a page maximum, a display run, two container heights), which no consumer
+   mounting a surface has and no preset should ship (PLAYGROUND.md is the language; the
+   recipes are `routes/chrome.css`).
 
    Literals live here and nowhere else under `src/routes`: `check:style` runs its axes
    over this scope too, with this file exempt as the place these defaults are minted,
@@ -13,7 +13,7 @@
 	/* ── Rhythm ──────────────────────────────────────────────────────────────── */
 	/* The preset's ramp WIDENED at the top, derived from its base rather than a second
 	   base beside it: a page separates SECTIONS where a card separates fields, so the
-	   ramp runs to 6rem. An in-between value is the drift this prevents. */
+	   ramp runs to 6rem. Derived, so no in-between value drifts in. */
 	--pg-space-6: calc(var(--qmh-space) * 6);
 	--pg-space-8: calc(var(--qmh-space) * 8);
 	--pg-space-12: calc(var(--qmh-space) * 12);
@@ -30,20 +30,20 @@
 	/* ── Containers ──────────────────────────────────────────────────────────── */
 	/* The height of a front-page DEMO frame, and the one number here staked to the
 	   fixture rather than to the layout: it sits under a painted page by design, since
-	   usaf_memo is two pages and a frame shorter than one of them is what makes
-	   scrolling swap which page is mounted, which is what keeps the paint loop's bound
-	   falsifiable by hand. The ceiling is the page itself (~1053px at the fixture's
-	   scale), so this has room to grow and none to double. */
+	   usaf_memo is two pages and a frame shorter than one of them makes scrolling swap
+	   which page is mounted, so the paint loop's bound can be checked by hand. The
+	   ceiling is the page itself (~1053px at the fixture's scale), so this can grow but
+	   not double. */
 	--pg-demo: 38rem;
 	/* What a pane takes once the split has stacked: a viewport's worth of mount, and a
-	   decision the frame above does not share, which is why they are two rungs. Studio's
-	   is the same job, and `check:style` holds the two to one value. */
+	   separate decision from the frame above, so they are two rungs. Studio's is the
+	   same job, and `check:style` holds the two to one value. */
 	--pg-pane: 34rem;
 
 	/* ── Type ────────────────────────────────────────────────────────────────── */
-	/* The one run of type a front door has and a mounted surface does not: a landing
-	   thesis, a route's title. Fluid, because it is the only size on the page big
-	   enough for the viewport to matter to it. */
+	/* The one run of type the app has and a mounted surface does not: a landing thesis,
+	   a route's title. Fluid, because it is the only size on the page big enough for the
+	   viewport to matter to it. */
 	--pg-text-display: clamp(1.9rem, 1.3rem + 1.9vw, 2.6rem);
 	--pg-track-display: -0.02em;
 }
