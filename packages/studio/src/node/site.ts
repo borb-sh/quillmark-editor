@@ -2,7 +2,7 @@
  * Lay a servable site out: the client at the root, a built quiver beside it under
  * `quiver/`. A deploy is that arrangement and nothing else, written here once, so a
  * consumer's `scripts`, this repository's build and the reusable workflow all reach it
- * through `studio site`.
+ * through `quillmark-studio site`.
  *
  * The client resolves its quiver from `document.baseURI` (`src/quiver.ts`), so the tree
  * it is laid into decides what it loads. Both halves of that are asserted rather than

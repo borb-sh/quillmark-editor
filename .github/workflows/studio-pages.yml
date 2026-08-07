@@ -2,7 +2,7 @@
 # to call. Build and upload only: the deploy stays in the caller's workflow, so nothing
 # outside their repository ever holds `pages: write`.
 #
-# The layout itself is `studio site`, and this calls it rather than restating it: the
+# The layout itself is `quillmark-studio site`, and this calls it rather than restating it: the
 # client at some base with a built quiver at `quiver/` under it, which is where the
 # client looks (`document.baseURI`). The assertions travel with the verb, so a caller
 # running it locally gates the same shape this does: a client carrying a quiver of its
@@ -38,7 +38,7 @@ jobs:
     env:
       # `inputs` reaches a job's env and `runner` does not, so the site is spelled
       # from `$RUNNER_TEMP` in the steps that use it. Outside the workspace either
-      # way: the author's checkout is theirs, and `quiver build` owns what it writes.
+      # way: the author's checkout is theirs, and `quillmark-quiver build` owns what it writes.
       QUIVER_DIR: ${{ inputs.quiver-dir }}
       STUDIO_PACKAGE: ${{ inputs.studio-package }}
     steps:
@@ -48,9 +48,9 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
 
-      # The packer is the caller's own: `studio site` resolves `@quillmark/quiver` from
+      # The packer is the caller's own: `quillmark-studio site` resolves `@quillmark/quiver` from
       # the collection's `node_modules`, so the pack this deploys is the one their
-      # `quiver test` gates with. It packs files and instantiates nothing, so no wasm is
+      # `quillmark-quiver test` gates with. It packs files and instantiates nothing, so no wasm is
       # installed here. A repository that does not carry the CLI gets a copy fetched by
       # name, never by bare bin (`quiver` on the registry is not this).
       - name: Resolve the quiver packer

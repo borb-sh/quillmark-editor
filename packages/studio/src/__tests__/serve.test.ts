@@ -26,7 +26,7 @@ afterEach(async () => {
 	for (const at of temps.splice(0)) await rm(at, { recursive: true, force: true });
 });
 
-/** A client root and a quiver root, mounted the way `studio dev` mounts them. */
+/** A client root and a quiver root, mounted the way `quillmark-studio dev` mounts them. */
 async function serveFixture(): Promise<{ base: string; client: string; quiver: string }> {
 	const client = await temp();
 	const quiver = await temp();

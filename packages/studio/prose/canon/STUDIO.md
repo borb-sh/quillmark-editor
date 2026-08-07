@@ -1,10 +1,10 @@
 # Studio
 
-> **Implementation**: `src/` (the browser half) · `src/node/` (the Node half, reached through the `studio` bin)
+> **Implementation**: `src/` (the browser half) · `src/node/` (the Node half, reached through the `quillmark-studio` bin)
 
 ## TL;DR
 
-The surface a quill author looks at their quiver through: pick a quill, edit, watch it paint, read the errors. `quiver test` answers *does it work*; studio answers *what is it like to use*, which is where most of what makes a quill good or bad lives. This doc is its shape: two halves, the repack loop the document survives, and the endorsed look it is drawn with.
+The surface a quill author looks at their quiver through: pick a quill, edit, watch it paint, read the errors. `quillmark-quiver test` answers *does it work*; studio answers *what is it like to use*, which is where most of what makes a quill good or bad lives. This doc is its shape: two halves, the repack loop the document survives, and the endorsed look it is drawn with.
 
 Two readers, one client. The author works mid-edit, locally, against files on disk, and the loop below is theirs. A deployed quiver is frozen at a commit, so the reader who arrives at a URL — a reviewer following a branch, someone evaluating a quiver — gets the picker, the surfaces and the errors over one built quiver, with the watch half inert and nothing to repack. One client rather than two: the carry costs nothing where there is nothing to carry, and it is the same client an `npx` over a working tree serves.
 
@@ -12,7 +12,7 @@ Two readers, one client. The author works mid-edit, locally, against files on di
 
 `build` and `test` are what quiver gives a quill author, and they are the whole of it. The boundary is **looked at** against **blocked on**: `test` runs in the author's CI, against the author's own wasm through the CLI's engine discovery, and installs a loader rather than an app. Studio is reached for when someone wants to see the thing.
 
-The two share one artifact, and it is the **blueprint**: `quiver test` seeds with `quill.seedDocument()` and so does studio, so the document the gate renders is the document the author judges, and it is the only document either one can name.
+The two share one artifact, and it is the **blueprint**: `quillmark-quiver test` seeds with `quill.seedDocument()` and so does studio, so the document the gate renders is the document the author judges, and it is the only document either one can name.
 
 Keeping the gate in quiver is what lets studio be an app at all. Nothing fails a build on studio's verdict, so studio's chrome, its weight and its wasm are its own problem.
 
@@ -28,11 +28,13 @@ Studio also sheds the playground's front-door job. Its reader arrives already co
 
 A browser cannot read the source layout, so studio ends at a built artifact behind a base URL, consumed with `Quiver.fromBuiltUrl`.
 
-**The Node half** packs, watches and serves, and does nothing else: `build()` into a directory, watch the source tree, repack, hand the client and the pack to a browser. It is the `studio` bin, which is how a consumer reaches it; this repository drives the same loop from a Vite plugin, where the two things a dev server adds live: the first pack lands before the server is created, and a repack signals over the socket the page already holds.
+**The Node half** packs, watches and serves, and does nothing else: `build()` into a directory, watch the source tree, repack, hand the client and the pack to a browser. It is the `quillmark-studio` bin, which is how a consumer reaches it; this repository drives the same loop from a Vite plugin, where the two things a dev server adds live: the first pack lands before the server is created, and a repack signals over the socket the page already holds.
 
-**The bin is not an export.** An importable entry puts studio's wasm in an importer's process, which is the thing the artifact's single-copy rule exists to prevent; an executable is a process of its own and hands a handle to nobody. `studio dev` holds no wasm at all, the packer instantiating nothing, and the copy bundled into the client runs in a browser tab. One wasm per process is the invariant, and this shape never has two in one (`check:deps`).
+**The bin is not an export.** An importable entry puts studio's wasm in an importer's process, which is the thing the artifact's single-copy rule exists to prevent; an executable is a process of its own and hands a handle to nobody. `quillmark-studio dev` holds no wasm at all, the packer instantiating nothing, and the copy bundled into the client runs in a browser tab. One wasm per process is the invariant, and this shape never has two in one (`check:deps`).
 
-**The packer is the author's own**, resolved from the collection's `node_modules` rather than carried. Studio ships no runtime dependencies, so the `build` behind both verbs cannot be one; resolving it there also makes the pack a local loop serves and the pack the author's CI publishes the same bytes, through the copy their `quiver test` gates with.
+**The bin carries the brand.** A bin is the one name this package writes into a namespace it shares: a consumer's `node_modules/.bin`, and their PATH when it is installed globally. `studio` is a name several tools want and one an IDE launcher already answers to, so the bin is `quillmark-studio` and the package's own verbs stay short behind it. The name is the executable's alone; the app, the package and this doc are studio.
+
+**The packer is the author's own**, resolved from the collection's `node_modules` rather than carried. Studio ships no runtime dependencies, so the `build` behind both verbs cannot be one; resolving it there also makes the pack a local loop serves and the pack the author's CI publishes the same bytes, through the copy their `quillmark-quiver test` gates with.
 
 **A generation is never observably half-written.** `build` clears its output before writing it, so a pack is assembled outside the served tree and moved in with one rename. Without that, a client reading the pointer mid-pack reports a broken quiver for an edit that was fine.
 
@@ -40,7 +42,7 @@ A browser cannot read the source layout, so studio ends at a built artifact behi
 
 **Nothing renders on the server.** The WASM boundary and the paint loop are browser concerns, which is what keeps the Node half a packer and a file watcher.
 
-**One wasm, and the head says which.** The root `overrides` pin is the workspace's only copy, so studio and `quiver test` render through one instance and cannot disagree. The version is stated anyway: a client bundles the copy it was built with, a gate runs whatever its own tree holds, and nothing at runtime reconciles them, so the reader who cannot run `npm ls` is told what painted the page.
+**One wasm, and the head says which.** The root `overrides` pin is the workspace's only copy, so studio and `quillmark-quiver test` render through one instance and cannot disagree. The version is stated anyway: a client bundles the copy it was built with, a gate runs whatever its own tree holds, and nothing at runtime reconciles them, so the reader who cannot run `npm ls` is told what painted the page.
 
 **The client ships built and runs unbuilt.** The tarball is what `vite build` produced; locally it is an ordinary Vite dev server, with HMR on its own chrome. An author who cannot run a bundler is the reason for the first, and the reason the wasm is bundled with it.
 
@@ -48,7 +50,7 @@ A browser cannot read the source layout, so studio ends at a built artifact behi
 
 **Published, not peered.** The tarball is `dist` and `bin`, a **bundled terminal** (`check:deps`): wasm and both libraries bundled into the client, no runtime dependencies, no importable entry. The base URL is a runtime fact; the quiver is laid beside the client at deploy time and never baked into it.
 
-**The layout is written once.** `studio site --out <dir>` lays the client at a root with a built quiver at `quiver/` beneath it, which is where the client looks, and asserts both halves: a client carrying a quiver of its own would occupy that URL, and the winner would be whichever copy landed last. The reusable workflow calls the verb rather than restating it, so a consumer running it locally gates the shape their deploy will have. It clears what it writes, so an `--out` holding the collection or the working directory is refused the way `build` refuses one holding its source. The tree is studio's, one level above the one quiver is handed, so the refusal does not travel with the packer.
+**The layout is written once.** `quillmark-studio site --out <dir>` lays the client at a root with a built quiver at `quiver/` beneath it, which is where the client looks, and asserts both halves: a client carrying a quiver of its own would occupy that URL, and the winner would be whichever copy landed last. The reusable workflow calls the verb rather than restating it, so a consumer running it locally gates the shape their deploy will have. It clears what it writes, so an `--out` holding the collection or the working directory is refused the way `build` refuses one holding its source. The tree is studio's, one level above the one quiver is handed, so the refusal does not travel with the packer.
 
 Studio draws with `@quillmark/svelte/preset`, the same import a third-party consumer makes; `studio.css` adds one height beyond the endorsed look, the depth the notes band opens to.
 
@@ -58,7 +60,7 @@ Studio holds one document and it is the schema's own: `seedDocument()` over the 
 
 **Reload is the reseed.** A boot seeds, and the carry keeps a running session on the document in hand, so an `example:` edited mid-session does not appear until the page reloads. F5 is the whole of that verb, and it costs a keystroke rather than a control.
 
-**What that costs.** The failures that only a long list, a wrapping value or an empty optional reveal are invisible here, and to `quiver test` with it: neither renders a document the schema did not write. The corpus *is* the `example:` block, so an author buys that coverage by writing examples that are uncomfortable rather than tidy.
+**What that costs.** The failures that only a long list, a wrapping value or an empty optional reveal are invisible here, and to `quillmark-quiver test` with it: neither renders a document the schema did not write. The corpus *is* the `example:` block, so an author buys that coverage by writing examples that are uncomfortable rather than tidy.
 
 ## The document survives the quill
 
@@ -99,7 +101,7 @@ The band is under the panes rather than over them: it is consulted, not watched,
 
 ## Not
 
-A Typst IDE: studio shows a quill, it does not edit the plate or the schema. Not a CMS: no auth, no persistence, no multi-doc management, matching the playground's own limit. Not a gate: `quiver test` is blocked on, studio is looked at, and `studio dev` gates nothing. Studio carries its own verbs and **absorbs none**: `build` and `test` stay quiver's, and nothing here renders on a server.
+A Typst IDE: studio shows a quill, it does not edit the plate or the schema. Not a CMS: no auth, no persistence, no multi-doc management, matching the playground's own limit. Not a gate: `quillmark-quiver test` is blocked on, studio is looked at, and `quillmark-studio dev` gates nothing. Studio carries its own verbs and **absorbs none**: `build` and `test` stay quiver's, and nothing here renders on a server.
 
 ## The door rule, for what comes next
 

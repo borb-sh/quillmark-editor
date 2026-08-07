@@ -54,7 +54,7 @@
 		"vitest": "^4.0.18"
 	},
 	"bin": {
-		"quiver": "./dist/bin/quiver.js"
+		"quillmark-quiver": "./dist/bin/quiver.js"
 	},
 	"scripts": {
 		"build": "tsc",

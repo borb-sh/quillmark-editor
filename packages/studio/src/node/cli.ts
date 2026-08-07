@@ -25,7 +25,7 @@ function flag(name: string): string | undefined {
 	return i !== -1 && i + 1 < argv.length ? argv[i + 1] : undefined;
 }
 
-/** The collection, defaulting to the working directory as `quiver build` does. */
+/** The collection, defaulting to the working directory as `quillmark-quiver build` does. */
 const collection = (): string => resolve(flag('--quiver') ?? '.');
 
 // ---------------------------------------------------------------------------
@@ -70,7 +70,7 @@ async function dev(): Promise<void> {
 			process.exit(0);
 		});
 
-	console.log(`studio dev: http://${host}:${bound}/`);
+	console.log(`quillmark-studio dev: http://${host}:${bound}/`);
 	console.log(`  quiver:   ${source}`);
 	console.log('  reload the page to pick up a repack.');
 }
@@ -82,7 +82,7 @@ async function dev(): Promise<void> {
 async function site(): Promise<void> {
 	const source = collection();
 	const at = await laySite({ collection: source, out: flag('--out') ?? 'site' });
-	console.log(`studio site: ${at}`);
+	console.log(`quillmark-studio site: ${at}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -95,8 +95,8 @@ function usage(): void {
 	console.error(
 		[
 			'Usage:',
-			'  studio dev  [--quiver <dir>] [--out <dir>] [--port <n>] [--host <addr>]',
-			'  studio site [--quiver <dir>] [--out <dir>]'
+			'  quillmark-studio dev  [--quiver <dir>] [--out <dir>] [--port <n>] [--host <addr>]',
+			'  quillmark-studio site [--quiver <dir>] [--out <dir>]'
 		].join('\n')
 	);
 }

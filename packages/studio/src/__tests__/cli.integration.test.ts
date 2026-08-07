@@ -35,13 +35,13 @@ beforeAll(() => {
 	);
 });
 
-describe('studio site', () => {
+describe('quillmark-studio site', () => {
 	it('lays a site out of a collection it was pointed at', async () => {
 		const source = await temp.collection();
 		const out = join(await temp.dir(), 'site');
 		const { stdout } = await run(process.execPath, [BIN, 'site', '--quiver', source, '--out', out]);
 
-		expect(stdout).toContain('studio site:');
+		expect(stdout).toContain('quillmark-studio site:');
 		expect(existsSync(join(out, 'index.html'))).toBe(true);
 		expect(existsSync(join(out, 'quiver', 'latest.json'))).toBe(true);
 	}, 60_000);
@@ -70,7 +70,7 @@ describe('studio site', () => {
 	});
 });
 
-describe('studio dev', () => {
+describe('quillmark-studio dev', () => {
 	it('packs, serves the client at the root and the quiver beneath it', async () => {
 		const source = await temp.collection();
 		const child = spawn(process.execPath, [BIN, 'dev', '--quiver', source, '--port', '0'], {
@@ -113,11 +113,11 @@ describe('the bin without a verb', () => {
 
 describe('what the Node half loads', () => {
 	it('never names the wasm artifact', async () => {
-		// `studio dev` instantiates no engine: the WASM boundary and the paint loop are
-		// browser concerns, and the one wasm in this picture is the copy inside the
-		// client, in a tab, in a process this one never shares. A SPECIFIER is the whole
-		// of how the artifact could get into this process, so the compiled half is read
-		// for one. Prose naming it is not one.
+		// `quillmark-studio dev` instantiates no engine: the WASM boundary and the paint
+		// loop are browser concerns, and the one wasm in this picture is the copy inside
+		// the client, in a tab, in a process this one never shares. A SPECIFIER is the
+		// whole of how the artifact could get into this process, so the compiled half is
+		// read for one. Prose naming it is not one.
 		const SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*)['"]([^'"]+)['"]/g;
 		const sources = (await readdir(BIN_DIR)).filter((f) => f.endsWith('.js'));
 		expect(sources.length).toBeGreaterThan(0);

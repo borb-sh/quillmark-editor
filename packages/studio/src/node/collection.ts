@@ -3,7 +3,7 @@
  *
  * Studio is a bundled terminal: it ships no runtime dependencies, so the `build` behind
  * `dev` and `site` cannot be one of its own. It comes out of the collection's
- * `node_modules`, the copy the author's `quiver test` and `quiver build` run through, so
+ * `node_modules`, the copy the author's own `quillmark-quiver` verbs run through, so
  * the pack a local loop serves and the pack their CI publishes are the same bytes.
  * `@quillmark/quiver`'s own bin reaches the engine this way for the same reason.
  */
@@ -36,7 +36,7 @@ export async function loadQuiverNode(collection: string): Promise<QuiverNode> {
 		throw new Error(
 			`Cannot find @quillmark/quiver in "${collection}".\n` +
 				'  Install it:  npm install --save-dev @quillmark/quiver\n' +
-				'  It packs what this serves, and it is the copy `quiver test` gates with.'
+				'  It packs what this serves, and it is the copy `quillmark-quiver test` gates with.'
 		);
 	}
 	return (await import(pathToFileURL(resolved).href)) as QuiverNode;
