@@ -16,12 +16,8 @@ on:
         description: The collection root, relative to the repository. `Quiver.yaml` lives here.
         type: string
         default: .
-      studio-package:
-        description: The client to serve — an npm spec, or a path to a package in the caller's checkout.
-        type: string
-        default: '@quillmark/studio@latest'
       quillkit-package:
-        description: The tool that lays the site out — an npm spec, or a path to a package in the caller's checkout.
+        description: The tool that lays the site out, client included — an npm spec, or a path to a package in the caller's checkout.
         type: string
         default: quillkit@latest
       node-version:
@@ -44,7 +40,6 @@ jobs:
       # from `$RUNNER_TEMP` in the steps that use it. Outside the workspace either
       # way: the author's checkout is theirs, and `quillkit build` owns what it writes.
       QUIVER_DIR: ${{ inputs.quiver-dir }}
-      STUDIO_PACKAGE: ${{ inputs.studio-package }}
       QUILLKIT_PACKAGE: ${{ inputs.quillkit-package }}
     steps:
       - uses: actions/checkout@v4
@@ -68,28 +63,24 @@ jobs:
           test -d node_modules/@quillmark/quiver \
             || { echo "::error::no @quillmark/quiver resolved in $GITHUB_WORKSPACE"; exit 1; }
 
-      # `npm pack` takes a registry spec or a directory; a directory is built through
-      # its own `prepack` first, which is how this repository rehearses the layout
-      # against a tool and a client that are not published yet. Both are unpacked
-      # rather than installed: the client is handed to the verb by path, so neither
-      # lands in the caller's tree beside the copies they pinned.
-      - name: Fetch the tool and the client
+      # One tarball, both halves: the tool carries the client it serves, so nothing here
+      # names a client. `npm pack` takes a registry spec or a directory; a directory is
+      # built through its own `prepack` first, which is how this repository rehearses the
+      # layout against a tool that is not published yet. It is unpacked rather than
+      # installed, so it lands nowhere near the copies the caller pinned.
+      - name: Fetch the tool
         run: |
           # Globbed from a directory of its own rather than read off stdout: a local
           # path is built through `prepack` first, whose output is on stdout too.
-          fetch() {
-            mkdir -p "$RUNNER_TEMP/pack-$2" "$RUNNER_TEMP/$2"
-            npm pack "$1" --pack-destination "$RUNNER_TEMP/pack-$2" >/dev/null
-            TGZ=$(find "$RUNNER_TEMP/pack-$2" -maxdepth 1 -name '*.tgz' | head -1)
-            test -n "$TGZ" || { echo "::error::npm pack $1 produced no tarball"; exit 1; }
-            tar -xzf "$TGZ" -C "$RUNNER_TEMP/$2" --strip-components=1
-          }
-          fetch "$QUILLKIT_PACKAGE" tool
-          fetch "$STUDIO_PACKAGE" client
+          mkdir -p "$RUNNER_TEMP/pack" "$RUNNER_TEMP/tool"
+          npm pack "$QUILLKIT_PACKAGE" --pack-destination "$RUNNER_TEMP/pack" >/dev/null
+          TGZ=$(find "$RUNNER_TEMP/pack" -maxdepth 1 -name '*.tgz' | head -1)
+          test -n "$TGZ" || { echo "::error::npm pack $QUILLKIT_PACKAGE produced no tarball"; exit 1; }
+          tar -xzf "$TGZ" -C "$RUNNER_TEMP/tool" --strip-components=1
           test -f "$RUNNER_TEMP/tool/dist/bin/quillkit.js" \
             || { echo "::error::$QUILLKIT_PACKAGE carries no bin at dist/bin/quillkit.js"; exit 1; }
-          test -f "$RUNNER_TEMP/client/dist/index.html" \
-            || { echo "::error::$STUDIO_PACKAGE carries no client at dist/index.html"; exit 1; }
+          test -f "$RUNNER_TEMP/tool/dist/client/index.html" \
+            || { echo "::error::$QUILLKIT_PACKAGE carries no client at dist/client/index.html"; exit 1; }
 
       # One verb, and it owns the whole arrangement: the client laid at the root, the
       # caller's collection packed beneath it, and both halves of the layout asserted.
@@ -99,7 +90,6 @@ jobs:
         run: |
           node "$RUNNER_TEMP/tool/dist/bin/quillkit.js" site \
             --quiver "$QUIVER_DIR" \
-            --client "$RUNNER_TEMP/client/dist" \
             --out "$RUNNER_TEMP/studio-site"
           echo "Site: $(find "$RUNNER_TEMP/studio-site" -type f | wc -l) files"
 

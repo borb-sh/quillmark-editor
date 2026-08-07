@@ -8,7 +8,8 @@
  */
 
 import { join, resolve } from 'node:path';
-import { loadEngine, loadQuiverNode, resolveClient } from '../collection.js';
+import { loadEngine, loadQuiverNode } from '../collection.js';
+import { CLIENT } from '../paths.js';
 import { createStaticServer, listen, type Mount } from '../serve.js';
 import { laySite } from '../site.js';
 import { serialize, watchCollection } from '../watch.js';
@@ -105,7 +106,7 @@ async function studio(): Promise<void> {
 	// Under the collection's `node_modules` by default, which is both out of the way
 	// and already excluded from the watch.
 	const out = resolve(flag('--out') ?? join(source, 'node_modules', '.quillkit', 'quiver'));
-	const client = flag('--client') ?? resolveClient(source);
+	const client = flag('--client') ?? CLIENT;
 	const port = Number(flag('--port') ?? 5174);
 	const host = flag('--host') ?? 'localhost';
 

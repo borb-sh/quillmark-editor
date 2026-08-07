@@ -93,9 +93,11 @@ const SCOPES = [
 		host: true
 	},
 	{
-		dir: 'packages/studio/src',
+		dir: 'packages/quillkit/client',
+		// The dev server's packed quiver, which is generated and gitignored.
+		exclude: ['packages/quillkit/client/public'],
 		prefix: '--st-',
-		derivation: 'packages/studio/src/studio.css',
+		derivation: 'packages/quillkit/client/studio.css',
 		doc: 'ARCHITECTURE §Styling',
 		census: false,
 		host: true

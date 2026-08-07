@@ -1,19 +1,21 @@
 /**
- * The collection's own copies of everything a verb needs: the loader that packs, the
- * engine that renders, the client that draws. quillkit carries none of the three, so a
- * collection pins each (QUILLKIT §"quillkit carries nothing it can resolve").
+ * The collection's own copies of what a verb runs on: the loader that packs and the
+ * engine that renders. quillkit carries neither, so a collection pins both
+ * (QUILLKIT §"quillkit carries nothing it can resolve"). The client is the other half of
+ * a verb's needs and it is carried rather than resolved, so it is a path constant
+ * (`paths.ts`) rather than anything here.
  *
  * `createRequire().resolve` walks an exports map under CJS conditions (`require`,
  * `node`, `default`) whatever the caller's own module system, so a subpath offering
- * `import` alone is invisible to it: `@quillmark/quiver`, `@quillmark/wasm` and
- * `@quillmark/studio` all name `default` beside it.
+ * `import` alone is invisible to it: `@quillmark/quiver` and `@quillmark/wasm` both name
+ * `default` beside it.
  *
  * Absence is the ordinary first-run failure, so each of these names the install rather
  * than surfacing a resolver's own words.
  */
 
 import { createRequire } from 'node:module';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Engine } from '@quillmark/wasm';
 
@@ -81,25 +83,4 @@ export async function loadEngine(collection: string): Promise<Engine> {
 		);
 	}
 	return new wasm.Engine();
-}
-
-/**
- * The client `studio` serves and `site` lays out: `@quillmark/studio`'s `dist`,
- * out of the collection's own tree.
- *
- * The client is bytes rather than a module: nothing imports it, so the wasm it carries
- * stays in a browser tab and out of this process. What resolves is its manifest, the one
- * specifier a package with no importable entry still answers to; the `dist` beside it is
- * what gets served.
- */
-export function resolveClient(collection: string): string {
-	try {
-		return join(dirname(requireFrom(collection).resolve('@quillmark/studio/package.json')), 'dist');
-	} catch {
-		throw new Error(
-			`Cannot find @quillmark/studio in "${collection}".\n` +
-				'  Install it:  npm install --save-dev @quillmark/studio\n' +
-				'  It is the client this serves; --client points at one directly.'
-		);
-	}
 }

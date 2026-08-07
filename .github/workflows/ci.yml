@@ -64,13 +64,12 @@ jobs:
         run: npm run check:pack
 
   # The workspace's own quiver through the author's path: `npm pack` builds the local
-  # tool and the local client, so this gates both and the layout together, against the
+  # tool, client included, so this gates both and the layout together, against the
   # fixture the rest of the suite runs on. No artifact is minted — a rehearsal is not a
   # deploy, and this repository's Pages holds the playground.
   studio-pages:
     uses: ./.github/workflows/studio-pages.yml
     with:
       quiver-dir: fixtures
-      studio-package: ./packages/studio
       quillkit-package: ./packages/quillkit
       upload: false

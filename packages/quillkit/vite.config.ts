@@ -5,6 +5,10 @@ import { build } from '@quillmark/quiver/node';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig, type Plugin } from 'vite';
 
+// The client half of this package, built. `client/` is the browser's tree and `src/` is
+// the bin's; the two share a manifest and a `dist`, and meet nowhere else — the tool
+// serves these bytes to a tab and imports none of them.
+//
 // THE PACK, as this repository serves the client over it. `quillkit studio` is the
 // loop an author runs and this is not a second copy of it: the pack is `build`, which
 // lands a generation whole, and what is left here is the two things a dev server adds
@@ -12,13 +16,19 @@ import { defineConfig, type Plugin } from 'vite';
 // signalled over the socket the page already holds. What this buys over the bin is
 // HMR on the client's own chrome, which is what the dev server is for.
 
+/** The browser tree: `index.html` and the module graph under it. Vite's root, so the
+ *  Node half beside it is never in the client's program. */
+const ROOT = fileURLToPath(new URL('client', import.meta.url));
+/** Where the client lands, beside the compiled bin under the one `dist` the tarball
+ *  carries. Outside Vite's root, so emptying it is stated rather than assumed. */
+const DIST = fileURLToPath(new URL('dist/client', import.meta.url));
 /** The workspace's source quiver. A browser cannot read the source layout, so this
  *  pack is the step every browser consumer of a quiver performs. */
 const SOURCE = fileURLToPath(new URL('../../fixtures', import.meta.url));
 /** Vite's verbatim-copy tree, which is the dev server's alone: the built client
  *  carries no quiver, and `quillkit site` lays one beside it. Generated, and
  *  gitignored. */
-const OUT = fileURLToPath(new URL('public/quiver', import.meta.url));
+const OUT = fileURLToPath(new URL('client/public/quiver', import.meta.url));
 /** One repack per settled burst: an editor's save arrives as several watcher events. */
 const SETTLE_MS = 80;
 /** The dev-only signal that a repack landed. The client answers it by minting a
@@ -92,14 +102,17 @@ function quiverSource(): Plugin {
 }
 
 export default defineConfig({
+	root: ROOT,
 	// Relative asset URLs, and the client resolves the quiver off `document.baseURI`
 	// for the same reason: the base is a runtime fact, so a built studio serves from
 	// wherever it is put (STUDIO §"A client, and what serves it").
 	base: './',
 	plugins: [svelte(), quiverSource()],
-	// The client is the whole output and it carries no quiver, so a public directory
-	// left behind by a dev run cannot ride into it.
-	build: { copyPublicDir: false },
+	// The client is the whole of what lands in `dist/client` and it carries no quiver,
+	// so a public directory left behind by a dev run cannot ride into it. `emptyOutDir`
+	// is explicit because the target sits outside the root, and it clears the client's
+	// own directory rather than the `dist` it shares with the bin.
+	build: { outDir: DIST, emptyOutDir: true, copyPublicDir: false },
 	define: { __WASM_VERSION__: JSON.stringify(WASM_VERSION) },
 	// @quillmark/wasm ships wasm-bindgen's web target: no `.wasm` import and no
 	// top-level await, so a static import is safe and Vite resolves it unaided.
