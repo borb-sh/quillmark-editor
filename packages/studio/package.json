@@ -30,7 +30,7 @@
 	],
 	"exports": {},
 	"bin": {
-		"studio": "./bin/cli.js"
+		"quillmark-studio": "./bin/cli.js"
 	},
 	"scripts": {
 		"dev": "vite",

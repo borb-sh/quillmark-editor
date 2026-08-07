@@ -6,16 +6,16 @@ import { defineConfig, type Plugin } from 'vite';
 import { SETTLE_MS, createPacker, settle, type Packer } from './src/node/pack.js';
 
 // THE NODE HALF, as this repository runs it on itself. The loop is `src/node/pack.ts`,
-// the same one `studio dev` drives, so the staged swap a client depends on is written
-// once. What is left here is the two things a dev server adds and a bin has no use
-// for: the first pack lands before the server is created, and a repack is signalled
-// over the existing socket (STUDIO §"The two halves").
+// the same one `quillmark-studio dev` drives, so the staged swap a client depends on
+// is written once. What is left here is the two things a dev server adds and a bin has
+// no use for: the first pack lands before the server is created, and a repack is
+// signalled over the existing socket (STUDIO §"The two halves").
 
 /** The workspace's source quiver. A browser cannot read the source layout, so this
  *  pack is the step every browser consumer of a quiver performs. */
 const SOURCE = fileURLToPath(new URL('../../fixtures', import.meta.url));
 /** Vite's verbatim-copy tree, which is the dev server's alone: the built client
- *  carries no quiver, and `studio site` lays one beside it. Generated, and
+ *  carries no quiver, and `quillmark-studio site` lays one beside it. Generated, and
  *  gitignored. */
 const OUT = fileURLToPath(new URL('public/quiver', import.meta.url));
 /** Outside the served tree, so a half-written generation is never reachable. */

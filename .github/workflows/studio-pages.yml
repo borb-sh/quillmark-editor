@@ -2,7 +2,7 @@
 # to call. Build and upload only: the deploy stays in the caller's workflow, so nothing
 # outside their repository ever holds `pages: write`.
 #
-# The layout itself is `studio site`, and this calls it rather than restating it: the
+# The layout itself is `quillmark-studio site`, and this calls it rather than restating it: the
 # client at some base with a built quiver at `quiver/` under it, which is where the
 # client looks (`document.baseURI`). The assertions travel with the verb, so a caller
 # running it locally gates the same shape this does: a client carrying a quiver of its
@@ -48,7 +48,7 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
 
-      # The packer is the caller's own: `studio site` resolves `@quillmark/quiver` from
+      # The packer is the caller's own: `quillmark-studio site` resolves `@quillmark/quiver` from
       # the collection's `node_modules`, so the pack this deploys is the one their
       # `quiver test` gates with. It packs files and instantiates nothing, so no wasm is
       # installed here. A repository that does not carry the CLI gets a copy fetched by

@@ -1,6 +1,6 @@
 # Studio
 
-> **Implementation**: `src/` (the browser half) · `src/node/` (the Node half, reached through the `studio` bin)
+> **Implementation**: `src/` (the browser half) · `src/node/` (the Node half, reached through the `quillmark-studio` bin)
 
 ## TL;DR
 
@@ -28,9 +28,11 @@ Studio also sheds the playground's front-door job. Its reader arrives already co
 
 A browser cannot read the source layout, so studio ends at a built artifact behind a base URL, consumed with `Quiver.fromBuiltUrl`.
 
-**The Node half** packs, watches and serves, and does nothing else: `build()` into a directory, watch the source tree, repack, hand the client and the pack to a browser. It is the `studio` bin, which is how a consumer reaches it; this repository drives the same loop from a Vite plugin, where the two things a dev server adds live: the first pack lands before the server is created, and a repack signals over the socket the page already holds.
+**The Node half** packs, watches and serves, and does nothing else: `build()` into a directory, watch the source tree, repack, hand the client and the pack to a browser. It is the `quillmark-studio` bin, which is how a consumer reaches it; this repository drives the same loop from a Vite plugin, where the two things a dev server adds live: the first pack lands before the server is created, and a repack signals over the socket the page already holds.
 
-**The bin is not an export.** An importable entry puts studio's wasm in an importer's process, which is the thing the artifact's single-copy rule exists to prevent; an executable is a process of its own and hands a handle to nobody. `studio dev` holds no wasm at all, the packer instantiating nothing, and the copy bundled into the client runs in a browser tab. One wasm per process is the invariant, and this shape never has two in one (`check:deps`).
+**The bin is not an export.** An importable entry puts studio's wasm in an importer's process, which is the thing the artifact's single-copy rule exists to prevent; an executable is a process of its own and hands a handle to nobody. `quillmark-studio dev` holds no wasm at all, the packer instantiating nothing, and the copy bundled into the client runs in a browser tab. One wasm per process is the invariant, and this shape never has two in one (`check:deps`).
+
+**The bin carries the brand.** A bin is the one name this package writes into a namespace it shares: a consumer's `node_modules/.bin`, and their PATH when it is installed globally. `studio` is a name several tools want and one an IDE launcher already answers to, so the bin is `quillmark-studio` and the package's own verbs stay short behind it. The name is the executable's alone; the app, the package and this doc are studio.
 
 **The packer is the author's own**, resolved from the collection's `node_modules` rather than carried. Studio ships no runtime dependencies, so the `build` behind both verbs cannot be one; resolving it there also makes the pack a local loop serves and the pack the author's CI publishes the same bytes, through the copy their `quiver test` gates with.
 
@@ -48,7 +50,7 @@ A browser cannot read the source layout, so studio ends at a built artifact behi
 
 **Published, not peered.** The tarball is `dist` and `bin`, a **bundled terminal** (`check:deps`): wasm and both libraries bundled into the client, no runtime dependencies, no importable entry. The base URL is a runtime fact; the quiver is laid beside the client at deploy time and never baked into it.
 
-**The layout is written once.** `studio site --out <dir>` lays the client at a root with a built quiver at `quiver/` beneath it, which is where the client looks, and asserts both halves: a client carrying a quiver of its own would occupy that URL, and the winner would be whichever copy landed last. The reusable workflow calls the verb rather than restating it, so a consumer running it locally gates the shape their deploy will have. It clears what it writes, so an `--out` holding the collection or the working directory is refused the way `build` refuses one holding its source. The tree is studio's, one level above the one quiver is handed, so the refusal does not travel with the packer.
+**The layout is written once.** `quillmark-studio site --out <dir>` lays the client at a root with a built quiver at `quiver/` beneath it, which is where the client looks, and asserts both halves: a client carrying a quiver of its own would occupy that URL, and the winner would be whichever copy landed last. The reusable workflow calls the verb rather than restating it, so a consumer running it locally gates the shape their deploy will have. It clears what it writes, so an `--out` holding the collection or the working directory is refused the way `build` refuses one holding its source. The tree is studio's, one level above the one quiver is handed, so the refusal does not travel with the packer.
 
 Studio draws with `@quillmark/svelte/preset`, the same import a third-party consumer makes; `studio.css` adds one height beyond the endorsed look, the depth the notes band opens to.
 
@@ -99,7 +101,7 @@ The band is under the panes rather than over them: it is consulted, not watched,
 
 ## Not
 
-A Typst IDE: studio shows a quill, it does not edit the plate or the schema. Not a CMS: no auth, no persistence, no multi-doc management, matching the playground's own limit. Not a gate: `quiver test` is blocked on, studio is looked at, and `studio dev` gates nothing. Studio carries its own verbs and **absorbs none**: `build` and `test` stay quiver's, and nothing here renders on a server.
+A Typst IDE: studio shows a quill, it does not edit the plate or the schema. Not a CMS: no auth, no persistence, no multi-doc management, matching the playground's own limit. Not a gate: `quiver test` is blocked on, studio is looked at, and `quillmark-studio dev` gates nothing. Studio carries its own verbs and **absorbs none**: `build` and `test` stay quiver's, and nothing here renders on a server.
 
 ## The door rule, for what comes next
 
