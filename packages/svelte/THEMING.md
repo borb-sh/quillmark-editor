@@ -129,6 +129,32 @@ It carries a `--qmh-*` scale for the page, derived from the same ten dials and c
 | `.qm-control` | A boxed button or select, which is what a host's controls are and the package's are not.                                             |
 | `.qm-measure` | A reading column at the width a passage wants.                                                                                       |
 
+### The shell, if you are building a tool
+
+An app that mounts an editor beside a preview over one session needs a screen to put them in, and it is the same screen every time. Five more classes are that screen, so what you write is the wiring rather than the grid:
+
+```html
+<div class="qm-workspace">
+	<header class="qm-bar">
+		<span class="qm-mark">acme<span class="qm-mark-quiet">/</span>studio</span>
+	</header>
+	<div class="qm-split">
+		<section class="qm-frame"><!-- <VisualEditor class="qm-pane" /> --></section>
+		<section class="qm-frame"><!-- <Preview /> --></section>
+	</div>
+</div>
+```
+
+| Class           | What it is                                                                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.qm-workspace` | The screen: pinned to the viewport, three bands (a head, the body, an optional foot), the body taking what is left and scrolling nowhere itself.  |
+| `.qm-bar`       | A band's line, wrapping. The rule under it and the gutter beside it stay yours, since where a band ends is your page shell's decision.            |
+| `.qm-mark`      | Your app's name at the head of it. `.qm-mark-quiet` is the part that recedes: a separator, a qualifier.                                           |
+| `.qm-split`     | Two even tracks for two surfaces, the page gap between them. Below `60rem` they stack, each at `--qmh-pane`; which element scrolls then is yours. |
+| `.qm-frame`     | The mounting site: an edge, a corner, and the clip that holds a surface to them. What is inside it is the surface's own.                          |
+
+This is the shell our own two apps are drawn with, and it is why they read as one design rather than as two that happen to agree.
+
 It is **unlayered**, so your own rules beat it by ordinary precedence, exactly as they beat the surfaces. It is also opt-in and side-effect free until imported: nothing that styles your document arrives with a component.
 
 One rule in it earns its place regardless of whether you take the rest, and you want it if you draw a focus ring of your own:

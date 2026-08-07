@@ -58,6 +58,11 @@
 	   so it does not derive from the spacing dial. */
 	--qmh-measure: 34rem;
 
+	/* What one mount takes once a split has stacked. Reading geometry too, and about
+	   the surface rather than the text: how much of a document is worth showing when it
+	   cannot stand beside the thing it answers to. */
+	--qmh-pane: 34rem;
+
 	/* ── Type ────────────────────────────────────────────────────────────────── */
 	/* Two faces with a job each: prose is sans, chrome is mono. Both are system stacks,
 	   so the preset costs no network request. The sans face reads the same dial the

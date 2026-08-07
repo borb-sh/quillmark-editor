@@ -138,7 +138,7 @@
 					>
 				{/if}
 			</figcaption>
-			<div class="pg-frame demo-frame">
+			<div class="qm-frame demo-frame">
 				{#if session}
 					<Preview {session} margin={0} onCaretPick={(hit) => (lastHit = hit)} />
 				{/if}
@@ -170,7 +170,7 @@
 			<figcaption class="art-head">
 				<span class="qm-label">&lt;VisualEditor&gt;</span>
 			</figcaption>
-			<div class="pg-frame demo-frame">
+			<div class="qm-frame demo-frame">
 				{#if VisualEditor && editDoc && quillHandle}
 					<VisualEditor class="qm-pane" doc={editDoc} quill={quillHandle} />
 				{/if}

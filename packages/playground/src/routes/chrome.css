@@ -1,8 +1,9 @@
 /* The playground's own recipes: what more than one route draws that the preset does
-   not carry. The endorsed look (the label, the readout, the status line, the plate,
-   the boxed control, the focus ring) comes from `@quillmark/svelte/preset`, so what is
-   left here is the page shell: a width, a heading, a display run, a pair of calls to
-   action, a link in running prose.
+   not carry. The endorsed look comes from `@quillmark/svelte/preset`: the label, the
+   readout, the status line, the plate, the boxed control, the focus ring, and the whole
+   of the workspace shell (the pinned bands, the head's line, the mark, the split and the
+   frame a surface is mounted in). What is left here is the SITE around it: a width, a
+   heading, a display run, a pair of calls to action, a link in running prose.
 
    The rungs are the preset's `--qmh-*` and the local ones in `routes/playground.css`;
    this file mints nothing (ARCHITECTURE §Styling). */
@@ -49,26 +50,6 @@
 	font-weight: var(--qmh-weight-strong);
 	line-height: var(--qmh-leading-tight);
 	letter-spacing: var(--pg-track-display);
-}
-
-/* ── Surfaces ──────────────────────────────────────────────────────────────── */
-
-/* The mounting site: an edge, a corner, and the clip holding the surface to them,
-   which is all a surface painting its own column needs. No tone and no gutter: those
-   are the surface's own (THEMING §"Drop it in"). `border-box`, so a stated height is
-   the height it draws.
-
-   Positioned, because a clip reaches only what it is the containing block for: a
-   surface's out-of-flow parts (a parked description, an overlay) resolve against the
-   nearest positioned ancestor, and with none between them and the document they land
-   at their static position UNCLIPPED, leaving the page to scroll past its own foot by
-   however far a frame's contents run over. */
-.pg-frame {
-	box-sizing: border-box;
-	position: relative;
-	border: var(--qmh-border-width) solid var(--qmh-border);
-	border-radius: var(--qmh-radius);
-	overflow: hidden;
 }
 
 /* ── Calls to action ───────────────────────────────────────────────────────── */

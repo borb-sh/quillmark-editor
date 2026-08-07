@@ -285,8 +285,8 @@
 			</span>
 		</div>
 
-		<div class="shell">
-			<section class="pg-frame editor-pane" aria-label="Visual editor">
+		<div class="qm-split shell">
+			<section class="qm-frame" aria-label="Visual editor">
 				{#if VisualEditor && docHandle && quillHandle}
 					<VisualEditor
 						class="qm-pane"
@@ -301,7 +301,7 @@
 					/>
 				{/if}
 			</section>
-			<section class="pg-frame preview-pane" aria-label="Live preview">
+			<section class="qm-frame" aria-label="Live preview">
 				{#if session}
 					<Preview bind:this={previewRef} {session} onCaretPick={handleCaretPick} />
 				{/if}
@@ -309,7 +309,7 @@
 		</div>
 
 		{#if showSource && docHandle}
-			<section class="pg-frame drawer" aria-label="Debug source view" data-testid="source-drawer">
+			<section class="qm-frame drawer" aria-label="Debug source view" data-testid="source-drawer">
 				<p class="qm-label drawer-label">Canonical markdown — read only</p>
 				<div class="source-host">
 					<SourceMirror
@@ -361,30 +361,13 @@
 		margin-inline-start: auto;
 	}
 
-	/* Two even tracks, one row, taking the height the page has left after the head and
-	   the strip, and the drawer when it is open. The panes carry their own borders, so
-	   the page gap is the whole of what sits between them. */
+	/* The split's two tracks, its gap and its frames are `.qm-split`'s and `.qm-frame`'s
+	   (THEMING §"Match ours"); each pane is the frame and gives its surface room, nothing
+	   more, since the gutter, the scroll container, the tone and the tail are the
+	   surface's own. What is left here is how the split shares the page with the drawer:
+	   twice its pull on the height left after the head and the strip. */
 	.shell {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-		grid-template-rows: minmax(0, 1fr);
-		gap: var(--qmh-space-4);
 		flex: 2 1 0;
-		min-height: 0;
-	}
-
-	/* Both panes are the shell's frame and give their surface room, nothing more: the
-	   gutter, the scroll container, the tone and the tail are the surface's own
-	   (THEMING §"Drop it in"), so the editor takes `.qm-pane` in the markup and the
-	   two rules here are what is left: a track that may shrink below its content. */
-	.editor-pane {
-		min-width: 0;
-		min-height: 0;
-	}
-
-	.preview-pane {
-		min-width: 0;
-		min-height: 0;
 	}
 
 	/* Open, the drawer takes a third of what the panes had rather than a height of
@@ -407,29 +390,23 @@
 		background: var(--qmh-page);
 	}
 
-	/* Below the width that fits two panes side by side, the tracks stack and each pane
-	   takes the short mount. Nothing flexes, so the column outgrows the shell and
-	   scrolls inside it: both panes are reachable and the document is still not a
-	   scroller. */
+	/* Below the width that fits two panes side by side the split stacks itself, and what
+	   is left for the route is WHERE THE ROOM COMES FROM: nothing flexes, so the column
+	   outgrows the shell and scrolls inside it, and both panes are reachable with the
+	   document still not a scroller. The drawer is not in the split, so its mount takes
+	   the pane rung directly. */
 	@media (width < 60rem) {
 		.page {
 			overflow: auto;
 		}
 
-		.shell {
-			grid-template-columns: minmax(0, 1fr);
-			grid-template-rows: none;
-			flex: 0 0 auto;
-		}
-
-		.editor-pane,
-		.preview-pane,
-		.source-host {
-			height: var(--pg-pane);
-		}
-
+		.shell,
 		.drawer {
 			flex: 0 0 auto;
+		}
+
+		.source-host {
+			height: var(--qmh-pane);
 		}
 	}
 </style>

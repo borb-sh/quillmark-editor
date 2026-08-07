@@ -281,15 +281,15 @@
 	});
 </script>
 
-<div class="app">
-	<header class="head">
-		<span class="mark">quillmark<span class="slash">/</span>studio</span>
+<div class="qm-workspace">
+	<header class="qm-bar head">
+		<span class="qm-mark">quillmark<span class="qm-mark-quiet">/</span>studio</span>
 		<!-- The engine that painted what is on screen. A client renders through the wasm
 		     it was built with while the author's gate runs whatever they installed, and
 		     nothing at runtime reconciles the two, so the version is stated rather than
 		     left to `npm ls` — which the reader of a client served from elsewhere cannot
 		     run. -->
-		<span class="engine" data-testid="engine">wasm {__WASM_VERSION__}</span>
+		<span class="qm-readout engine" data-testid="engine">wasm {__WASM_VERSION__}</span>
 		{#if catalog}
 			<Picker {catalog} {picked} disabled={busy} onPick={pick} />
 		{/if}
@@ -322,8 +322,8 @@
 		     and waits a tick before freeing anything, so a new session arrives as a
 		     remount of this block rather than as a prop swap the preview would
 		     refuse to rebind. -->
-		<div class="panes">
-			<section class="pane edit" aria-label="Editor">
+		<div class="qm-split panes">
+			<section class="qm-frame" aria-label="Editor">
 				<VisualEditor
 					class="qm-pane"
 					bind:this={editorRef}
@@ -335,7 +335,7 @@
 					onError={handleSurfaceError}
 				/>
 			</section>
-			<section class="pane paint" aria-label="Preview">
+			<section class="qm-frame" aria-label="Preview">
 				{#if halt}
 					<!-- A document that will not compile is a STATE of the paint, not a row
 					     under it: it takes the register the failed open has, at the surface it
@@ -360,7 +360,7 @@
 	{:else}
 		<!-- Nothing is mounted, so the room the panes had says why: the message where
 		     the paint would be, and the notes band below it with the code and the hint. -->
-		<div class="vacant">
+		<div class="qm-frame vacant">
 			{#if phase.kind === 'failed'}
 				<p class="reason" data-testid="reason">{phase.message}</p>
 				{#if placed?.location}
@@ -376,43 +376,22 @@
 </div>
 
 <style>
-	/* The whole viewport, three bands: the head, the panes, the errors. Studio is a
-	   workspace rather than a page: it scrolls nowhere, and the panes below own their
-	   overflow, so a surface holds still while its contents move. */
-	.app {
-		display: grid;
-		grid-template-rows: auto minmax(0, 1fr) auto;
-		height: 100dvh;
-	}
+	/* The three bands, the pinned viewport, the split and the frame a surface is mounted
+	   in are the preset's (THEMING §"Match ours"), which is what makes studio and the
+	   playground one design rather than two. What is left here is the handful of
+	   placements a shell of this shape has to make itself.
 
-	/* One line: whose surface this is, which quill, and the boundary's phase. */
+	   Where the head's rule ENDS is one of them: studio is one screen with no maximum to
+	   hold its content to, so the band runs the width of the viewport and the gutter is
+	   the same one the panes take. */
 	.head {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--qmh-space-2) var(--qmh-space-4);
-		padding: var(--qmh-space-2) var(--qmh-space-4);
-		border-bottom: var(--qmh-border-width) solid var(--qmh-border);
-	}
-
-	.mark {
-		font-family: var(--qmh-font-mono);
-		font-size: var(--qmh-text-label);
-		font-weight: var(--qmh-weight-mid);
-		letter-spacing: var(--qmh-track-label);
-		text-transform: uppercase;
-		color: var(--qmh-ink);
-	}
-
-	.slash {
-		color: var(--qmh-ghost);
+		padding-inline: var(--qmh-space-4);
+		border-block-end: var(--qmh-border-width) solid var(--qmh-border);
 	}
 
 	/* Beside the mark, in the ghost the mark's own slash takes: a fact about the build,
 	   read once and not watched. */
 	.engine {
-		font-family: var(--qmh-font-mono);
-		font-size: var(--qmh-text-label);
 		color: var(--qmh-ghost);
 	}
 
@@ -423,18 +402,11 @@
 		min-width: 0;
 	}
 
-	.panes {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-		min-height: 0;
-	}
-
-	/* One hairline between the two, and no resizer: studio hides its instruments, and
-	   a divider that can be dragged is one. Positioned, because the compile failure is
-	   laid over this pane. */
-	.pane.paint {
-		position: relative;
-		border-inline-start: var(--qmh-border-width) solid var(--qmh-border);
+	/* The body band, either shape of it: the frames stand off the viewport by the gutter
+	   the head keeps inside itself, so the three bands line up down both edges. */
+	.panes,
+	.vacant {
+		margin: var(--qmh-space-4);
 	}
 
 	/* The failure over the paint rather than above it. The last good paint stays whole
@@ -475,17 +447,10 @@
 		text-overflow: ellipsis;
 	}
 
-	/* A track that may shrink below its content, which is the whole of what a pane owes
-	   its surface: the gutter, the scroll container, the tone and the tail are the
-	   surface's own (THEMING §"Drop it in"), and the editor takes `.qm-pane` in the
-	   markup to say it is mounted in a fixed height rather than a page. */
-	.pane {
-		min-width: 0;
-		min-height: 0;
-	}
-
-	/* Where the panes were. It takes the same room so the bands do not move when a
-	   quill stops opening, and it holds the one sentence that says why. */
+	/* Where the panes were. It takes the same room so the bands do not move when a quill
+	   stops opening, and it holds the one sentence that says why. A frame like the ones
+	   it replaces, on the raised plane, so the band reads as occupied rather than as a
+	   hole the shell left. */
 	.vacant {
 		display: grid;
 		place-items: center;
@@ -504,22 +469,12 @@
 		overflow-wrap: anywhere;
 	}
 
-	/* Below the width that fits two panes, the split stops being one: the panes stack
-	   and the band scrolls, since two full-height mounts do not fit a phone. */
+	/* The split stacks itself below the width that fits two mounts abreast; what is left
+	   for studio is WHERE THE ROOM COMES FROM, and it is the band, so the head and the
+	   errors hold their edges while the two mounts scroll between them. */
 	@media (width < 60rem) {
-		.app {
-			grid-template-rows: auto minmax(0, 1fr) auto;
-		}
-
 		.panes {
-			grid-template-columns: minmax(0, 1fr);
-			grid-auto-rows: var(--st-pane);
 			overflow: auto;
-		}
-
-		.pane.paint {
-			border-inline-start: none;
-			border-block-start: var(--qmh-border-width) solid var(--qmh-border);
 		}
 	}
 </style>

@@ -1,8 +1,8 @@
-/* THE ENDORSED LOOK: the rules a host draws around a mounted surface, as classes it
-   puts on its own elements. The rungs beside this in `scale.css` are the invisible
-   half (a scale alone still leaves a consumer writing every declaration before
-   anything on the page looks like anything), so the recipes are what the preset is
-   for. This file mints nothing; `check:style` runs its axes here.
+/* THE ENDORSED LOOK: the rules a host draws around a mounted surface AND the shell it
+   mounts one in, as classes it puts on its own elements. The rungs beside this in
+   `scale.css` are the invisible half (a scale alone still leaves a consumer writing
+   every declaration before anything on the page looks like anything), so the recipes
+   are what the preset is for. This file mints nothing; `check:style` runs its axes here.
 
    These are HOST classes. They land on the consumer's DOM, never on a mounted root, so
    they freeze nothing about the surfaces' interior: the reason the package withholds
@@ -41,6 +41,93 @@
 	max-width: var(--qmh-measure);
 }
 
+/* ── The workspace ─────────────────────────────────────────────────────────── */
+
+/* The rules above dress the page a surface sits ON; these four are the SHELL it is
+   mounted in, a tool where `.qm-page` is a document. An app that mounts two surfaces
+   over one session is the shape both of ours take and the shape a consumer's takes, and
+   without these each one rewrites the same grid under its own class names: one design
+   that diverges at the first retune nobody carries across.
+
+   PINNED to the viewport rather than sized to it: a page-height box still leaves the
+   root scroller counting the overflow its panes clip, and a wheel over the chrome drags
+   the whole app off the top. Three bands (a head, the body, an optional foot), and the
+   body takes what is left and may shrink below its content, so the panes in it own
+   their overflow and hold still while their contents move. */
+.qm-workspace {
+	position: fixed;
+	inset: 0;
+	display: grid;
+	grid-template-rows: auto minmax(0, 1fr) auto;
+	overflow: hidden;
+}
+
+/* A gesture past the end of a pane chains out to the viewport and bounces the empty
+   document, which is the last way a pinned shell moves. Conditioned on the workspace, so
+   a host's other routes keep a page's own feel. */
+html:has(.qm-workspace) {
+	overscroll-behavior: none;
+}
+
+/* A band's LINE: the head of a workspace, on one row that wraps. The rule under it and
+   the gutter beside it are the host's, because where a band ends is a page-shell
+   decision: a site holding its content to a maximum runs the rule past it, and a
+   one-screen tool has no maximum to hold to. */
+.qm-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--qmh-space-2) var(--qmh-space-4);
+	padding-block: var(--qmh-space-2);
+}
+
+/* TWO EVEN TRACKS for two surfaces, with the page gap and their own frames between them
+   and nothing else: no resizer, since a divider that can be dragged is a control
+   competing with what it divides. Each track may shrink below its content, which is what
+   lets the frame in it clip rather than grow.
+
+   Below the width that fits two mounts abreast the split stops being one: the tracks
+   stack and each takes a pane's height. WHICH element scrolls then is the host's, since
+   it is the host that knows where the room comes from. */
+.qm-split {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	grid-template-rows: minmax(0, 1fr);
+	gap: var(--qmh-space-4);
+	min-height: 0;
+}
+
+.qm-split > * {
+	min-width: 0;
+	min-height: 0;
+}
+
+@media (width < 60rem) {
+	.qm-split {
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: none;
+		grid-auto-rows: var(--qmh-pane);
+	}
+}
+
+/* THE MOUNTING SITE: an edge, a corner, and the clip that holds a surface to them, which
+   is all a surface painting its own column needs. No tone and no gutter: those are the
+   surface's own (THEMING §"Drop it in"). `border-box`, so a stated height is the height
+   it draws.
+
+   POSITIONED, because a clip reaches only what it is the containing block for: a
+   surface's out-of-flow parts (a parked description, an overlay) resolve against the
+   nearest positioned ancestor, and with none between them and the document they land at
+   their static position UNCLIPPED, leaving the page to scroll past its own foot by
+   however far the frame's contents run over. */
+.qm-frame {
+	box-sizing: border-box;
+	position: relative;
+	border: var(--qmh-border-width) solid var(--qmh-border);
+	border-radius: var(--qmh-radius);
+	overflow: hidden;
+}
+
 /* ── Type ──────────────────────────────────────────────────────────────────── */
 
 /* A run of chrome type: a section's label, a panel's caption, the name over a readout.
@@ -54,6 +141,23 @@
 	text-transform: uppercase;
 	color: var(--qmh-ghost);
 	margin: 0;
+}
+
+/* The app's own name, at the head of the bar: what the reader is looking at, said once
+   in the chrome face so it takes no more room than the readouts beside it. The words are
+   the host's and so is where the mark sits; `.qm-mark-quiet` is the part of them that
+   recedes: a separator, a qualifier, the half that is the same on every page. */
+.qm-mark {
+	font-family: var(--qmh-font-mono);
+	font-size: var(--qmh-text-label);
+	font-weight: var(--qmh-weight-mid);
+	line-height: var(--qmh-leading-tight);
+	color: var(--qmh-ink);
+	text-decoration: none;
+}
+
+.qm-mark-quiet {
+	color: var(--qmh-ghost);
 }
 
 /* A value read back out of the running session: an address, a page index, a count.
