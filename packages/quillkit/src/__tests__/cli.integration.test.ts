@@ -3,10 +3,9 @@
  *
  * Every other test in this package imports `src/`, which is what makes this one worth
  * its seconds: what an author reaches is a linked bin, and nothing that imports a module
- * proves one works. It pins the two resolutions the tool is built on — the packer and
- * the engine, each out of the collection's own tree — the client it carries instead, and
- * a real render of every quill's seeded example, that last being what a gate for quills
- * is.
+ * proves one works. It pins the two resolutions the tool is built on (the packer and the
+ * engine, each out of the collection's own tree), the client it carries instead, and a
+ * real render of every quill's seeded example, that last being what a gate for quills is.
  *
  * It runs against `dist/`, so it needs the package built: both halves, since the verbs
  * that serve reach for the client. The root `npm run build` does that in an order `tsc`
@@ -164,8 +163,8 @@ describe('what the tool loads', () => {
 		// Prose naming it is not one.
 		//
 		// The tool's half of `dist` alone. The client beside it bundles the artifact on
-		// purpose — that copy runs in a browser tab, in a process this one never shares
-		// — so scanning it would answer about the wrong process.
+		// purpose, that copy running in a browser tab in a process this one never
+		// shares, so scanning it would answer about the wrong process.
 		const SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*)['"]([^'"]+)['"]/g;
 		const files = (await readdir(DIST, { recursive: true })).filter(
 			(f) => f.endsWith('.js') && !f.startsWith(CLIENT)

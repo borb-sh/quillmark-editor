@@ -8,8 +8,8 @@
 //      `quiver` are siblings at one tier with NO edge between them, in either
 //      direction; and a node reaching BOTH is composing them, which is the only way
 //      the two meet. Three do: the two apps, and `quillkit`, which carries the client
-//      it serves and so composes them the same way an app does — inside a build of its
-//      own, at a tier above the pair. Declared dependencies and source specifiers
+//      it serves and so composes them the way an app does, inside a build of its own at
+//      a tier above the pair. Declared dependencies and source specifiers
 //      both, since either alone is half a check: an undeclared import resolves fine in
 //      a workspace, and a declared dependency nothing imports is still a promise.
 //
@@ -28,8 +28,8 @@
 //      contains it. A `bin` is not an importable entry, being a process of its own that
 //      hands a handle to nobody, and neither is a `./package.json` export, a manifest
 //      being a location rather than a module. So one terminal may carry both halves at
-//      once — a compiled Node program a consumer runs, and a bundled browser program it
-//      serves — each holding its copy in a process the other never enters. A terminal
+//      once (a compiled Node program a consumer runs, and a bundled browser program it
+//      serves), each holding its copy in a process the other never enters. A terminal
 //      that bundles nothing at all answers the same way: it names the artifact for
 //      types, ships no runtime dependencies, and holds at most the one copy it resolves.
 //

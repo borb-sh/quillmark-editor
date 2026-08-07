@@ -6,7 +6,7 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig, type Plugin } from 'vite';
 
 // The client half of this package, built. `client/` is the browser's tree and `src/` is
-// the bin's; the two share a manifest and a `dist`, and meet nowhere else — the tool
+// the bin's; the two share a manifest and a `dist`, and meet nowhere else: the tool
 // serves these bytes to a tab and imports none of them.
 //
 // THE PACK, as this repository serves the client over it. `quillkit studio` is the

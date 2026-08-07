@@ -117,7 +117,7 @@ describe('the client this package carries', () => {
 		).toBe(true);
 
 		// BUILT, not the tree it is built from. The constant is spelled once for two
-		// trees — this suite reads `src/paths.ts`, the bin runs `dist/paths.js` — and a
+		// trees (this suite reads `src/paths.ts`, the bin runs `dist/paths.js`), and a
 		// spelling that lands on `client/` from both resolves to a source directory
 		// carrying an `index.html` of its own. What separates them is the entry: source
 		// names `/main.ts`, and a build rewrites it to the emitted bundle.
