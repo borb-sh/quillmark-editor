@@ -7,8 +7,8 @@
  * engine and the client, each out of the collection's own tree — and a real render of
  * every quill's seeded example, that last being what a gate for quills is.
  *
- * It runs against `dist/`, so it needs the package built. `npm ci` builds it through
- * `prepare`, which is what CI does before it tests.
+ * It runs against `dist/`, so it needs the package built. The root `npm run build` does
+ * that in an order `tsc` here depends on, which is what CI runs before it tests.
  */
 
 import { describe, it, expect, afterEach, beforeAll } from 'vitest';

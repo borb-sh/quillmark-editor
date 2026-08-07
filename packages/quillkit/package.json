@@ -34,7 +34,6 @@
 	},
 	"scripts": {
 		"build": "tsc",
-		"prepare": "npm run build",
 		"prepack": "rm -rf dist && npm run build",
 		"test": "vitest run",
 		"check": "tsc --noEmit -p tsconfig.check.json",
