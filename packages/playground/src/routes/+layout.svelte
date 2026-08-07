@@ -35,10 +35,8 @@
 
 <div class="app" class:qm-workspace={fills}>
 	<header class="head">
-		<div class="pg-width qm-bar">
-			<a class="qm-mark mark" href="{base}/"
-				>quillmark<span class="qm-mark-quiet">/</span>playground</a
-			>
+		<div class="pg-width qm-bar head-row">
+			<a class="mark" href="{base}/">quillmark<span class="slash">/</span>playground</a>
 			<nav class="nav" aria-label="Playground">
 				{#each ROUTES as route (route.path)}
 					<a
@@ -74,9 +72,27 @@
 		border-bottom: var(--qmh-border-width) solid var(--qmh-border);
 	}
 
-	/* The mark holds the head's start, so the nav reads off the end. */
+	/* How DEEP the band stands is the site's, not the shell's: this is a page's running
+	   head above a reading column, so it takes the page's rhythm rather than a tool's. */
+	.head-row {
+		padding-block: var(--qmh-space-3);
+	}
+
+	/* The site's name, in the chrome face so it takes no more room than the nav beside
+	   it, and holding the head's start so the nav reads off the end. Lowercase: it is a
+	   link into a site, and the run reads as the path it is. */
 	.mark {
+		font-family: var(--qmh-font-mono);
+		font-size: var(--qmh-text-label);
+		font-weight: var(--qmh-weight-mid);
+		line-height: var(--qmh-leading-tight);
+		color: var(--qmh-ink);
+		text-decoration: none;
 		margin-inline-end: auto;
+	}
+
+	.slash {
+		color: var(--qmh-ghost);
 	}
 
 	.nav {
