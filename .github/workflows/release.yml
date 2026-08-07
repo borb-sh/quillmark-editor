@@ -61,15 +61,17 @@ jobs:
 
       - run: npm ci
 
-      # ci.yml's first six verbs in one script; there they are separate steps to
-      # buy failure attribution, here they only need to pass. Its other two,
-      # `build` and `check:pack`, follow — scoped to the package being released.
+      # ci.yml's verbs through the suite, in one script and in its order; there they
+      # are separate steps to buy failure attribution, here they only need to pass.
+      # `build` is among them because the suite reads what it writes, and it stays
+      # workspace-wide: the suite is the whole workspace's whichever package is being
+      # released, so a scoped build leaves studio's client and its compiled Node half
+      # missing.
       - name: Gate
         run: npm run gate
 
-      - name: Build
-        run: npm run build -w packages/${{ steps.release.outputs.pkg }}
-
+      # ci.yml's last verb, scoped: publint reads the `dist` the released package's
+      # manifest points at.
       - name: Package (publint)
         run: npm run check:pack -w packages/${{ steps.release.outputs.pkg }}
 

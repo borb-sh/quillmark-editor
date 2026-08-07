@@ -109,7 +109,7 @@ describe('the client assertion', () => {
 
 describe('the shipped client', () => {
 	// The one place the real `dist/` is the subject. It is built by `npm run build`,
-	// which CI runs before the suite.
+	// which the gate runs before the suite.
 	it('is present, and carries no quiver', () => {
 		expect(
 			existsSync(join(CLIENT_DIST, 'index.html')),

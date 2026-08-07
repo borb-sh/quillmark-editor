@@ -7,7 +7,7 @@
  * tree, the layout, and the loop coming up and serving.
  *
  * It runs against `bin/`, so it needs the Node half built. `npm run build` does that,
- * and CI builds before it tests.
+ * and the gate builds before it tests.
  */
 
 import { describe, it, expect, afterEach, beforeAll } from 'vitest';
