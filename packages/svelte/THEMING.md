@@ -131,12 +131,12 @@ It carries a `--qmh-*` scale for the page, derived from the same ten dials and c
 
 ### The shell, if you are building a tool
 
-An app that mounts an editor beside a preview over one session needs a screen to put them in, and it is the same screen every time. Five more classes are that screen, so what you write is the wiring rather than the grid:
+An app that mounts an editor beside a preview over one session needs a screen to put them in, and the SHAPE of that screen is the same every time. Four more classes are that shape, so what you write is the wiring rather than the grid:
 
 ```html
 <div class="qm-workspace">
-	<header class="qm-bar">
-		<span class="qm-mark">acme<span class="qm-mark-quiet">/</span>studio</span>
+	<header class="qm-bar site-head">
+		<span class="site-mark">acme<span class="site-slash">/</span>studio</span>
 	</header>
 	<div class="qm-split">
 		<section class="qm-frame"><!-- <VisualEditor class="qm-pane" /> --></section>
@@ -148,10 +148,11 @@ An app that mounts an editor beside a preview over one session needs a screen to
 | Class           | What it is                                                                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `.qm-workspace` | The screen: pinned to the viewport, three bands (a head, the body, an optional foot), the body taking what is left and the document scrolling nowhere. |
-| `.qm-bar`       | A band's line, wrapping. The rule under it and the gutter beside it stay yours, since where a band ends is your page shell's decision.                 |
-| `.qm-mark`      | Your app's name at the head of it. `.qm-mark-quiet` is the part that recedes: a separator, a qualifier.                                                |
+| `.qm-bar`       | The row a band puts its parts on, wrapping and centred. The rule under it, the gutter beside it and its depth stay yours: that is your page shell.     |
 | `.qm-split`     | Two even tracks for two surfaces, the page gap between them. Below `60rem` they stack, each at `--qmh-pane`; which element scrolls then is yours.      |
 | `.qm-frame`     | The mounting site: an edge, a corner, and the clip that holds a surface to them. What is inside it is the surface's own.                               |
+
+The shape is shared; the LOOK of a band is not. Your wordmark, your nav and the depth of your head are the most app-specific things on the screen, and a preset that drew them would hand every tool built on this the same face, so they read `--qmh-*` like everything else and you write the rules. `.qm-split`'s gap is a default rather than a fact about splitting: close it to `0` and carry a hairline on one pane if you want the two mounts to meet instead of stand apart.
 
 It is **unlayered**, so your own rules beat it by ordinary precedence, exactly as they beat the surfaces. It is also opt-in and side-effect free until imported: nothing that styles your document arrives with a component.
 

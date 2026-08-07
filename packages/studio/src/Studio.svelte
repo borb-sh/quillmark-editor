@@ -283,7 +283,7 @@
 
 <div class="qm-workspace">
 	<header class="qm-bar head">
-		<span class="qm-mark">quillmark<span class="qm-mark-quiet">/</span>studio</span>
+		<span class="mark">quillmark<span class="slash">/</span>studio</span>
 		<!-- The engine that painted what is on screen. A client renders through the wasm
 		     it was built with while the author's gate runs whatever they installed, and
 		     nothing at runtime reconciles the two, so the version is stated rather than
@@ -323,7 +323,7 @@
 		     remount of this block rather than as a prop swap the preview would
 		     refuse to rebind. -->
 		<div class="qm-split panes">
-			<section class="qm-frame" aria-label="Editor">
+			<section class="pane" aria-label="Editor">
 				<VisualEditor
 					class="qm-pane"
 					bind:this={editorRef}
@@ -335,7 +335,7 @@
 					onError={handleSurfaceError}
 				/>
 			</section>
-			<section class="qm-frame" aria-label="Preview">
+			<section class="pane paint" aria-label="Preview">
 				{#if halt}
 					<!-- A document that will not compile is a STATE of the paint, not a row
 					     under it: it takes the register the failed open has, at the surface it
@@ -360,7 +360,7 @@
 	{:else}
 		<!-- Nothing is mounted, so the room the panes had says why: the message where
 		     the paint would be, and the notes band below it with the code and the hint. -->
-		<div class="qm-frame vacant">
+		<div class="vacant">
 			{#if phase.kind === 'failed'}
 				<p class="reason" data-testid="reason">{phase.message}</p>
 				{#if placed?.location}
@@ -376,15 +376,31 @@
 </div>
 
 <style>
-	/* The shell is the preset's (THEMING §"The shell"), so what is left here is the
-	   handful of placements a shell of this shape makes itself.
-
-	   Where the head's rule ENDS is one: studio is one screen with no maximum to hold
-	   its content to, so the band runs the width of the viewport and the gutter it keeps
-	   inside itself is the one the panes stand off by. */
+	/* The shell's SHAPE is the preset's: the pinned bands, the row a band puts its parts
+	   on, the split's tracks (THEMING §"The shell"). What each band is made of is studio's,
+	   and it is made like a tool: no maximum to hold its content to, so the head's rule
+	   runs the width of the viewport and the gutter it keeps inside itself is the one the
+	   panes stand off by; and shallow, because a band this dense is chrome the author
+	   reads past. */
 	.head {
-		padding-inline: var(--qmh-space-4);
+		padding: var(--qmh-space-2) var(--qmh-space-4);
 		border-block-end: var(--qmh-border-width) solid var(--qmh-border);
+	}
+
+	/* Whose surface this is, said once. UPPERCASE and tracked, the treatment the labels
+	   under it take: studio is a workroom rather than a site, and the mark is a plate on
+	   the wall of it, not a link back to anywhere. */
+	.mark {
+		font-family: var(--qmh-font-mono);
+		font-size: var(--qmh-text-label);
+		font-weight: var(--qmh-weight-mid);
+		letter-spacing: var(--qmh-track-label);
+		text-transform: uppercase;
+		color: var(--qmh-ink);
+	}
+
+	.slash {
+		color: var(--qmh-ghost);
 	}
 
 	/* Beside the mark, in the ghost the mark's own slash takes: a fact about the build,
@@ -400,11 +416,28 @@
 		min-width: 0;
 	}
 
-	/* The body band, either shape of it: the frames stand off the viewport by the head's
-	   gutter, so the three bands line up down both edges. */
-	.panes,
-	.vacant {
-		margin: var(--qmh-space-4);
+	/* The split's tracks are the preset's; its GAP is not. Studio hides its instruments
+	   and spends the screen on the two mounts, so the panes meet at a hairline and run to
+	   the viewport's edges: a gap and a frame apiece would draw two cards on a page, which
+	   is the playground's job and the opposite of this one. */
+	.panes {
+		gap: 0;
+	}
+
+	/* A track that may shrink below its content, which is the whole of what a pane owes
+	   its surface: the gutter, the scroll container, the tone and the tail are the
+	   surface's own (THEMING §"Drop it in"), and the editor takes `.qm-pane` in the markup
+	   to say it is mounted in a fixed height rather than a page. */
+	.pane {
+		min-width: 0;
+		min-height: 0;
+	}
+
+	/* The seam, and no resizer: a divider that can be dragged is an instrument. Positioned,
+	   because the compile failure is laid over this pane. */
+	.pane.paint {
+		position: relative;
+		border-inline-start: var(--qmh-border-width) solid var(--qmh-border);
 	}
 
 	/* The failure over the paint rather than above it. The last good paint stays whole
@@ -446,9 +479,7 @@
 	}
 
 	/* Where the panes were. It takes the same room so the bands do not move when a quill
-	   stops opening, and it holds the one sentence that says why. A frame like the ones
-	   it replaces, on the raised plane, so the band reads as occupied rather than as a
-	   hole the shell left. */
+	   stops opening, and it holds the one sentence that says why. */
 	.vacant {
 		display: grid;
 		place-items: center;
@@ -469,10 +500,16 @@
 
 	/* The split stacks itself below the width that fits two mounts abreast; what is left
 	   for studio is WHERE THE ROOM COMES FROM, and it is the band, so the head and the
-	   errors hold their edges while the two mounts scroll between them. */
+	   errors hold their edges while the two mounts scroll between them. The seam turns
+	   with the tracks. */
 	@media (width < 60rem) {
 		.panes {
 			overflow: auto;
+		}
+
+		.pane.paint {
+			border-inline-start: none;
+			border-block-start: var(--qmh-border-width) solid var(--qmh-border);
 		}
 	}
 </style>
