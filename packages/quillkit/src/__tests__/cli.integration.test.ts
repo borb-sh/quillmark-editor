@@ -147,6 +147,22 @@ describe('quillkit studio', () => {
 			child.kill('SIGTERM');
 		}
 	}, 60_000);
+
+	it('refuses a client that is not there, before it binds', async () => {
+		// Both serving verbs check it, and for the same reason: a missing client is a
+		// mount that answers 404 to everything, which reads as a broken tool rather than
+		// an `--client` pointed at the wrong directory.
+		await expect(
+			run(process.execPath, [
+				BIN,
+				'studio',
+				'--quiver',
+				await temp.collection(),
+				'--client',
+				join(await temp.dir(), 'absent')
+			])
+		).rejects.toThrow(/No client at/);
+	}, 30_000);
 });
 
 describe('the bin without a verb', () => {

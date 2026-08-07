@@ -3,9 +3,9 @@
  * with `@quillmark/*` resolvable from its OWN tree.
  *
  * That last part is the point rather than setup noise. quillkit ships no runtime
- * dependencies and resolves the packer, the engine and the client out of the
- * collection, so a fixture that happened to sit inside this workspace would resolve
- * through the workspace's `node_modules` and prove nothing about a consumer's.
+ * dependencies and resolves the packer and the engine out of the collection, so a
+ * fixture that happened to sit inside this workspace would resolve through the
+ * workspace's `node_modules` and prove nothing about a consumer's.
  */
 
 import { cp, mkdir, mkdtemp, rm, symlink } from 'node:fs/promises';

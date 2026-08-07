@@ -11,7 +11,7 @@ import { join, resolve } from 'node:path';
 import { loadEngine, loadQuiverNode } from '../collection.js';
 import { CLIENT } from '../paths.js';
 import { createStaticServer, listen, type Mount } from '../serve.js';
-import { laySite } from '../site.js';
+import { assertClient, laySite } from '../site.js';
 import { serialize, watchCollection } from '../watch.js';
 
 const argv = process.argv.slice(2);
@@ -107,6 +107,10 @@ async function studio(): Promise<void> {
 	// and already excluded from the watch.
 	const out = resolve(flag('--out') ?? join(source, 'node_modules', '.quillkit', 'quiver'));
 	const client = flag('--client') ?? CLIENT;
+	// Checked here as `site` checks it, and for the same reason: a missing client is a
+	// mount that answers 404 to every request, which reads as a broken tool rather than
+	// an unbuilt tree or an `--client` pointed at the wrong directory.
+	assertClient(client);
 	const port = Number(flag('--port') ?? 5174);
 	const host = flag('--host') ?? 'localhost';
 
