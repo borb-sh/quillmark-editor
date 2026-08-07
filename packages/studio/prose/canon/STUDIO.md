@@ -6,7 +6,7 @@
 
 The surface a quill author looks at their quiver through: pick a quill, edit, watch it paint, read the errors. `quillkit test` answers *does it work*; studio answers *what is it like to use*, which is where most of what makes a quill good or bad lives. This doc is its shape: what it is a client of, the repack loop the document survives, and the endorsed look it is drawn with.
 
-Two readers, one client. The author works mid-edit, locally, against files on disk, and the loop below is theirs. A deployed quiver is frozen at a commit, so the reader who arrives at a URL — a reviewer following a branch, someone evaluating a quiver — gets the picker, the surfaces and the errors over one built quiver, with nothing to repack. One client rather than two: the carry costs nothing where there is nothing to carry, and it is the same client an `npx quillkit studio` over a working tree serves.
+Two readers, one client. The author works mid-edit, locally, against files on disk, and the loop below is theirs. A deployed quiver is frozen at a commit, so the reader who arrives at a URL (a reviewer following a branch, someone evaluating a quiver) gets the picker, the surfaces and the errors over one built quiver, with nothing to repack. One client rather than two: the carry costs nothing where there is nothing to carry, and it is the same client an `npx quillkit studio` over a working tree serves.
 
 **Studio is the noun, not the verb.** The package is a client and the tool that serves it is [quillkit](../../../quillkit/prose/canon/QUILLKIT.md); there is no bin here, and `quillkit studio` is how the surface is reached. The name still has a job the tool's cannot do: the deployed thing a reviewer arrives at is a studio, and "the collection's site" names a directory rather than a surface.
 
@@ -30,7 +30,7 @@ Studio also sheds the playground's front-door job. Its reader arrives already co
 
 A browser cannot read the source layout, so studio ends at a built artifact behind a base URL, consumed with `Quiver.fromBuiltUrl`. Packing, watching and serving are `quillkit studio`'s, and none of it is here: what this package ships is the client those verbs lay over a pack.
 
-**No importable entry, and no bin either.** An importable entry puts studio's wasm in an importer's process, which is the thing the artifact's single-copy rule exists to prevent, so the `exports` map publishes one specifier and it is `./package.json` — a location rather than a module, which is how a tool finds a client it serves without being able to import it (`check:deps`). The one wasm here runs in a browser tab, in a process nothing else shares.
+**No importable entry, and no bin either.** An importable entry puts studio's wasm in an importer's process, which is the thing the artifact's single-copy rule exists to prevent, so the `exports` map publishes one specifier and it is `./package.json`: a location rather than a module, which is how a tool finds a client it serves without being able to import it (`check:deps`). The one wasm here runs in a browser tab, in a process nothing else shares.
 
 **A pack is never the client's.** It is laid beside the client at deploy time and never baked into it, so a built studio serves from wherever it is put. `vite build` runs with `copyPublicDir: false` precisely so a dev run's packed tree cannot ride into the tarball.
 

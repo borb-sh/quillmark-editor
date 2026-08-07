@@ -1,6 +1,6 @@
 # quillkit
 
-The quill author's toolchain: one command over the whole loop — gate a quiver, pack it, look at it, ship it.
+The quill author's toolchain: one command over the whole loop. Gate a quiver, pack it, look at it, ship it.
 
 ## Install
 
@@ -8,7 +8,7 @@ The quill author's toolchain: one command over the whole loop — gate a quiver,
 npm install --save-dev quillkit @quillmark/quiver @quillmark/wasm
 ```
 
-quillkit carries none of those three. It resolves them out of your collection's own `node_modules`, so the version you pin is the format your quiver is packed in, the wasm your gate renders through, and the client your reviewers read. That is also why installing it costs kilobytes rather than the client's tens of megabytes.
+quillkit carries neither of the other two, nor the client `studio` and `site` serve. It resolves all three out of your collection's own `node_modules`, so the versions you pin are the format your quiver is packed in, the wasm your gate renders through, and the client your reviewers read. That is also why installing the tool costs kilobytes: the client's tens of megabytes of wasm arrive with `@quillmark/studio`, when you ask for it.
 
 ## The verbs
 
@@ -57,7 +57,7 @@ The document it holds is the blueprint's own, so what the gate renders is what y
 
 ## Shipping it
 
-`site` writes the arrangement a deploy serves — the client at the root, a built quiver at `quiver/` beneath it, which is where the client looks — and asserts both halves of it.
+`site` writes the arrangement a deploy serves (the client at the root, a built quiver at `quiver/` beneath it, which is where the client looks) and asserts both halves of it.
 
 ```sh
 npx quillkit site --out ./site

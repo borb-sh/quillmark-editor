@@ -11,7 +11,7 @@ npm install --save-dev quillkit @quillmark/studio @quillmark/quiver @quillmark/w
 npx quillkit studio
 ```
 
-`quillkit studio` packs your collection, serves this client over it and repacks when you save; reload the page to pick up a repack. `quillkit site --out <dir>` lays out the same arrangement a deploy serves. Both resolve this package out of your own `node_modules` — `--client <dir>` names one directly — and neither instantiates an engine; nothing renders on the server.
+`quillkit studio` packs your collection, serves this client over it and repacks when you save; reload the page to pick up a repack. `quillkit site --out <dir>` lays out the same arrangement a deploy serves. Both resolve this package out of your own `node_modules`, or take `--client <dir>` naming one directly. Neither instantiates an engine; nothing renders on the server.
 
 ## Deploying a quiver to GitHub Pages
 

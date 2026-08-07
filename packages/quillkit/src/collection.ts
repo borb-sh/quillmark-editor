@@ -1,20 +1,15 @@
 /**
- * The collection's own copies, resolved rather than carried.
- *
- * quillkit ships no runtime dependencies. The loader that packs, the engine that
- * renders and the client that draws all come out of the collection's `node_modules`,
- * resolved from its `package.json`, so a collection pins the format its quiver is
- * written in, the wasm its gate renders through, and the client a reviewer reads.
- * A tool carrying any of the three would decide it instead, on a cadence that
- * answers to CLI flags.
+ * The collection's own copies of everything a verb needs: the loader that packs, the
+ * engine that renders, the client that draws. quillkit carries none of the three, so a
+ * collection pins each (QUILLKIT §"quillkit carries nothing it can resolve").
  *
  * `createRequire().resolve` walks an exports map under CJS conditions (`require`,
  * `node`, `default`) whatever the caller's own module system, so a subpath offering
  * `import` alone is invisible to it: `@quillmark/quiver`, `@quillmark/wasm` and
  * `@quillmark/studio` all name `default` beside it.
  *
- * Absence is the ordinary first-run failure, so each of these names the install
- * rather than surfacing a resolver's own words.
+ * Absence is the ordinary first-run failure, so each of these names the install rather
+ * than surfacing a resolver's own words.
  */
 
 import { createRequire } from 'node:module';
@@ -68,14 +63,14 @@ export async function loadEngine(collection: string): Promise<Engine> {
 		wasm = (await import(pathToFileURL(resolved).href)) as Wasm;
 		await wasm.init();
 	} catch {
-		// Not installed — a quillkit.config.js may still provide an engine.
+		// Not installed: a quillkit.config.js may still provide an engine.
 	}
 
 	try {
 		const config = await import(pathToFileURL(join(collection, 'quillkit.config.js')).href);
 		if (config.engine != null) return config.engine as Engine;
 	} catch {
-		// File absent or incomplete — fall through to auto-discovery.
+		// File absent or incomplete: fall through to auto-discovery.
 	}
 
 	if (wasm == null) {
@@ -92,10 +87,10 @@ export async function loadEngine(collection: string): Promise<Engine> {
  * The client `studio` serves and `site` lays out: `@quillmark/studio`'s `dist`,
  * out of the collection's own tree.
  *
- * The client is bytes rather than a module — nothing here imports it, and the one
- * wasm it carries runs in a browser tab, in a process this one never shares. So what
- * is resolved is its manifest, the one specifier a package with no importable entry
- * still answers to, and the `dist` beside it is the directory that gets served.
+ * The client is bytes rather than a module: nothing imports it, so the wasm it carries
+ * stays in a browser tab and out of this process. What resolves is its manifest, the one
+ * specifier a package with no importable entry still answers to; the `dist` beside it is
+ * what gets served.
  */
 export function resolveClient(collection: string): string {
 	try {

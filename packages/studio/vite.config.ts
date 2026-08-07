@@ -8,7 +8,7 @@ import { defineConfig, type Plugin } from 'vite';
 // THE PACK, as this repository serves the client over it. `quillkit studio` is the
 // loop an author runs and this is not a second copy of it: the pack is `build`, which
 // lands a generation whole, and what is left here is the two things a dev server adds
-// and a bin has no use for — the first pack before the server exists, and a repack
+// and a bin has no use for: the first pack before the server exists, and a repack
 // signalled over the socket the page already holds. What this buys over the bin is
 // HMR on the client's own chrome, which is what the dev server is for.
 
@@ -47,7 +47,7 @@ function settle(ms: number, fn: () => void): () => void {
 function quiverSource(): Plugin {
 	// Serialized rather than concurrent: `build` owns its output directory, so two
 	// overlapping packs would race over one tree. Both arms chain, so a pack queues onto
-	// a SETTLED promise whichever way the last one went — a rejected link would answer
+	// a SETTLED promise whichever way the last one went; a rejected link would answer
 	// every later pack with the first failure instead of running it.
 	const run = (): Promise<void> => build(SOURCE, OUT);
 	let queue: Promise<void> = Promise.resolve();

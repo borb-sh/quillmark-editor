@@ -4,6 +4,10 @@
 
 ## Unreleased
 
+**The client alone.** The `quillmark-studio` bin is gone and the Node half with it: `quillmark-studio dev` and `quillmark-studio site` are `quillkit studio` and `quillkit site`, which resolve this package out of a collection's own `node_modules` and lay it over a pack. The tarball is `dist` and nothing else.
+
+`exports` publishes one specifier, `./package.json`, so a tool can find the client without importing it. Nothing here is importable, and the wasm in `dist` still meets no other copy.
+
 ## v0.2.0 - 2026-08-07
 
 ## v0.1.0 - 2026-08-07

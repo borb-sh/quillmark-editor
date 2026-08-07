@@ -136,7 +136,7 @@ A consumer reaches an installed quiver by resolving `<specifier>/Quiver.yaml`, w
 
 ## Authoring is [quillkit](../quillkit#readme)'s
 
-This package is a library: it loads a quiver and packs one, and it has no CLI. The verbs a quill author runs — gate, pack, look at, deploy — are `quillkit`, which resolves this package out of the collection's own `node_modules`. Depend on it here and the version you pin is the format your quiver is packed in:
+This package is a library: it loads a quiver and packs one, and it has no CLI. The verbs a quill author runs (gate, pack, look at, deploy) are `quillkit`'s, and it resolves this package out of the collection's own `node_modules`. Depend on it here and the version you pin is the format your quiver is packed in:
 
 ```sh
 npm install --save-dev @quillmark/quiver @quillmark/wasm quillkit

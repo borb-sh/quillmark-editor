@@ -1,16 +1,7 @@
 #!/usr/bin/env node
 /**
- * The quill author's toolchain, one bin over the whole loop. `usage()` below is the
- * spelling of every verb.
- *
- *   quillkit test                     the gate: every quill's example renders
- *   quillkit build [--out <dir>]      pack the source into a servable artifact
- *   quillkit studio                   the local loop: pack, serve, repack on save
- *   quillkit site   [--out <dir>]     the deploy layout: the client over a built quiver
- *
- * `test` is what an author is **blocked on** and `studio` is what they **look at**;
- * nothing fails a build on studio's verdict, which is what keeps its chrome, its weight
- * and its wasm its own problem.
+ * The quill author's toolchain, one bin over the whole loop: gate, pack, look at, ship.
+ * `usage()` below is the spelling of every verb and its flags.
  *
  * One wasm at most lives in this process, and only `test` puts it there: the packer
  * instantiates nothing, and the client is static bytes served to a browser tab.
@@ -41,13 +32,13 @@ const message = (err: unknown): string => (err instanceof Error ? err.message : 
 // ---------------------------------------------------------------------------
 
 /**
- * The gate: load with `fromDir`, then compile and render every quill's example
- * document, seeded with `quill.seedDocument()` since the blueprint carries
- * `<must-fill>` sentinels and is not directly renderable.
+ * The gate. Seeded rather than read from a file: the blueprint carries `<must-fill>`
+ * sentinels and is not directly renderable, and `seedDocument()` is the one document
+ * this and the client can both name.
  *
- * One door, so the loop and the engine contract have one home each. An author on
- * vitest, jest or another runner spawns this (`execFileSync('quillkit', ['test'])`)
- * and gates what CI gates.
+ * The only door onto the verdict, so an author on vitest, jest or another runner spawns
+ * it (`execFileSync('quillkit', ['test'])`) rather than rebuilding the loop
+ * (QUILLKIT §"Blocked on, looked at").
  */
 async function test(): Promise<void> {
 	const source = collection();

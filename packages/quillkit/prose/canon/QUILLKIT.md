@@ -4,11 +4,11 @@
 
 ## TL;DR
 
-The verbs a quill author types, one bin over the whole loop: `test` gates, `build` packs, `studio` shows, `site` lays a deploy out. It is the only name in the toolchain an author runs, and it is the audit surface a production tree does not carry — a collection depends on [`@quillmark/quiver`](../../../quiver/prose/canon/QUIVER.md) for the loaders and on this only in `devDependencies`.
+The verbs a quill author types, one bin over the whole loop: `test` gates, `build` packs, `studio` shows, `site` lays a deploy out. It is the only name in the toolchain an author runs, and the audit surface a production tree does not carry: a collection depends on [`@quillmark/quiver`](../../../quiver/prose/canon/QUIVER.md) for the loaders, and on this only in `devDependencies`.
 
 ## quillkit carries nothing it can resolve
 
-Three things every verb needs — the loader that packs, the engine that renders, the client that draws — come out of the **collection's** `node_modules`, resolved from its `package.json` (`collection.ts`). None is a dependency of this package, which therefore ships no runtime dependencies at all.
+Three things every verb needs (the loader that packs, the engine that renders, the client that draws) come out of the **collection's** `node_modules`, resolved from its `package.json` (`collection.ts`). None is a dependency of this package, which ships no runtime dependencies at all.
 
 That is one rule paying three ways:
 
@@ -28,17 +28,17 @@ The cost is a name in `devDependencies` per thing resolved, and each absence nam
 
 **One door, so the loop and the engine contract have one home each.** A second entry onto the same verdict copies both, and a caller-supplied engine gates nothing about the discovery this does, so the two answer differently under one name. An author on vitest, jest or another runner spawns the bin (`execFileSync('quillkit', ['test'])`) and gates what CI gates. The suite spawns it against the reference quiver, since nothing that imports a module proves a surface reached through a linked bin.
 
-The two share one artifact, and it is the **blueprint**: `test` seeds with `seedDocument()` and so does the client, so the document the gate renders is the document the author judges, and it is the only document either one can name.
+The blueprint is what the two share: the client seeds the same way, so the document the gate renders is the document the author judges, and it is the only document either one can name.
 
 ## One wasm per process, and mostly none
 
-`test` is the only verb that puts a wasm in this process, and it is the collection's own. The packer instantiates nothing, and the client is static bytes handed to a browser tab — a process this one never shares. So the tool holds at most one copy and hands a handle to nobody, which is what lets it be a bin with no importable entry (`check:deps`).
+`test` is the only verb that puts a wasm in this process, and it is the collection's own. The packer instantiates nothing, and the client is static bytes handed to a browser tab, a process this one never shares. So the tool holds at most one copy and hands a handle to nobody, which is what lets it be a bin with no importable entry (`check:deps`).
 
 ## The local loop
 
 `studio` packs the source into a served tree, serves the client at the root with the pack mounted at `/quiver`, and repacks when the source changes. Three parts, and only the first is subtle:
 
-**The pack lands whole, and that is quiver's** (QUIVER §"The generation lands whole"). Nothing here stages or swaps: the directory belongs to `build`, and a caller cannot close a window inside it. What is left here is the trigger — a burst of watcher events collapsed to one repack, the pack's own output filtered out of the watch (the default output is under the collection's `node_modules`, so a watcher seeing its own writes would repack forever), and a queue that serializes packs without ending on the first failure, a quiver mid-edit being invalid as often as not.
+**The pack lands whole, and that is quiver's** (QUIVER §"The generation lands whole"). Nothing here stages or swaps: the directory belongs to `build`, and a caller cannot close a window inside it. What is left here is the trigger: a burst of watcher events collapsed to one repack, the pack's own output filtered out of the watch (the default output is under the collection's `node_modules`, so a watcher seeing its own writes would repack forever), and a queue that serializes packs without ending on the first failure, a quiver mid-edit being invalid as often as not.
 
 **The server is written rather than borrowed.** Two things a general-purpose static server gets wrong for this: `.wasm` must be served as `application/wasm`, since wasm-bindgen's web target instantiates by streaming and `WebAssembly.instantiateStreaming` refuses any other type; and a path escaping its root must be refused, checked on the resolved path so `%2e%2e`, a doubled separator and a plain `..` collapse into one answer. Nothing is cached: this is a loop an author repacks under, and a cache would answer about the last generation.
 
@@ -54,7 +54,7 @@ Both halves are asserted rather than assumed: a client carrying a `quiver/` of i
 
 ## Not
 
-Not a scaffolder yet: there is no `new`, and a collection is laid out by hand. Not a renderer: every render is `@quillmark/wasm`'s, through the collection's copy. Not a library — no importable entry, and the loaders stay quiver's, where a browser consumer can reach them.
+Not a scaffolder: there is no `new`, and a collection is laid out by hand. Not a renderer: every render is `@quillmark/wasm`'s, through the collection's copy. Not a library: no importable entry, and the loaders stay quiver's, where a browser consumer can reach them.
 
 ## Links
 

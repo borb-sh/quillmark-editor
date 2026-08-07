@@ -4,7 +4,7 @@
 
 ## TL;DR
 
-A quiver is a collection of quills, addressed by ref and resolved to a `Quill`. This package loads one from wherever it lives (a source directory, a packed artifact on disk, a URL), packs one for a browser, and hands out quills. The **loaders** never render: `@quillmark/wasm` does that, and the handles pass to it untouched. Nothing here renders, and nothing here is a verb an author types: this is the library a collection depends on, and [quillkit](../../../quillkit/prose/canon/QUILLKIT.md) is the tool that resolves it.
+A quiver is a collection of quills, addressed by ref and resolved to a `Quill`. This package loads one from wherever it lives (a source directory, a packed artifact on disk, a URL), packs one for a browser, and hands out quills. The **loaders** never render: `@quillmark/wasm` does that, and the handles pass to it untouched. Nothing here is a verb an author types either: this is the library a collection depends on, and [quillkit](../../../quillkit/prose/canon/QUILLKIT.md) is the tool that resolves it.
 
 ## One authored shape, three ways to consume it
 
@@ -76,10 +76,8 @@ Every error is a `QuiverError` carrying a `code`, a human-readable `message`, an
 
 ## Nothing here is a verb
 
-This package has no `bin`. Loading a quiver and packing one are library functions; the verbs a quill author types are [quillkit](../../../quillkit/prose/canon/QUILLKIT.md)'s, which resolves this package out of the collection's own `node_modules` and calls them. Two things follow, and together they are the reason for the split.
+This package has no `bin`. Loading a quiver and packing one are library functions; the verbs a quill author types are [quillkit](../../../quillkit/prose/canon/QUILLKIT.md)'s, which resolves this package out of the collection's own `node_modules` and calls them.
 
-**The copy a collection pins is the format its quiver is packed in.** `build` writes the pointer, the manifest names and the digest widths, and `fromBuiltUrl` reads them; a collection that depends on this package pins both halves at once, and a release here moves that number only when the format or the loaders move. A tool carrying a packer of its own would decide the format instead, on a cadence that answers to chrome and CLI flags.
+**What that buys is stated there; what it costs is stated here.** This version number is a format number. `build` writes the pointer, the manifest names and the digest widths, and `fromBuiltUrl` reads them, so a collection depending on this package pins both halves at once, and a release here is a release of the format. A verb added to a CLI must not move it.
 
-**A collection is packed by one copy however it is reached.** `quillkit build` in CI, `quillkit studio` mid-edit and `quillkit site` at deploy all resolve the same install, so the bytes a local loop serves and the bytes a deploy publishes agree by construction rather than by a version range someone keeps true.
-
-The name stays the artifact's. `quiver` is the plain word that reads right inside an ambiguous sentence — the quiver is stale, the quiver has no quills — and `Quiver.yaml` at a collection's root is what an author names the thing after. A bin lands in a namespace it shares with every other tool a consumer installs, which is a place for a coined word rather than a plain one.
+The name stays the artifact's. `quiver` is the plain word that reads right inside an ambiguous sentence (the quiver is stale, the quiver has no quills), and `Quiver.yaml` at a collection's root is what an author names the thing after. A bin lands in a namespace it shares with every other tool a consumer installs, which is a place for a coined word rather than a plain one.
