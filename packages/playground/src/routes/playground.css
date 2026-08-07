@@ -1,7 +1,7 @@
 /* What the playground adds ON TOP of the preset, and nothing the preset already
    carries: `@quillmark/svelte/preset` is the endorsed page scale, imported in
    `+layout.svelte`, and the app reads `--qmh-*` throughout. What survives here is the
-   app's own (a page maximum, a display run, two container heights), which no consumer
+   app's own (a page maximum, a display run, a demo frame's height), which no consumer
    mounting a surface has and no preset should ship (PLAYGROUND.md is the language; the
    recipes are `routes/chrome.css`).
 
@@ -33,12 +33,8 @@
 	   usaf_memo is two pages and a frame shorter than one of them makes scrolling swap
 	   which page is mounted, so the paint loop's bound can be checked by hand. The
 	   ceiling is the page itself (~1053px at the fixture's scale), so this can grow but
-	   not double. */
+	   not double. A stacked pane is a different job and the preset's `--qmh-pane`. */
 	--pg-demo: 38rem;
-	/* What a pane takes once the split has stacked: a viewport's worth of mount, and a
-	   separate decision from the frame above, so they are two rungs. Studio's is the
-	   same job, and `check:style` holds the two to one value. */
-	--pg-pane: 34rem;
 
 	/* ── Type ────────────────────────────────────────────────────────────────── */
 	/* The one run of type the app has and a mounted surface does not: a landing thesis,

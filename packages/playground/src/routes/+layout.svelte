@@ -33,10 +33,12 @@
 	const fills = $derived(here === '/playground');
 </script>
 
-<div class="app" class:fills>
+<div class="app" class:qm-workspace={fills}>
 	<header class="head">
-		<div class="pg-width head-row">
-			<a class="mark" href="{base}/">quillmark<span class="slash">/</span>playground</a>
+		<div class="pg-width qm-bar">
+			<a class="qm-mark mark" href="{base}/"
+				>quillmark<span class="qm-mark-quiet">/</span>playground</a
+			>
 			<nav class="nav" aria-label="Playground">
 				{#each ROUTES as route (route.path)}
 					<a
@@ -53,9 +55,12 @@
 </div>
 
 <style>
-	/* No box of its own: a page's bands sit in the document's flow, so the sticky
-	   head sticks to the viewport rather than to a wrapper. */
-	.app {
+	/* No box of its own on a page route: a page's bands sit in the document's flow, so
+	   the sticky head sticks to the viewport rather than to a wrapper. The tool route
+	   takes `.qm-workspace` instead, at every width and not only the ones that fit two
+	   panes: a narrow viewport is where a document scroll is easiest to reach, and the
+	   room the stacked panes want comes from a scroller inside the route. */
+	.app:not(.qm-workspace) {
 		display: contents;
 	}
 
@@ -69,26 +74,9 @@
 		border-bottom: var(--qmh-border-width) solid var(--qmh-border);
 	}
 
-	.head-row {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--qmh-space-2) var(--pg-space-6);
-		padding-block: var(--qmh-space-3);
-	}
-
+	/* The mark holds the head's start, so the nav reads off the end. */
 	.mark {
-		font-family: var(--qmh-font-mono);
-		font-size: var(--qmh-text-label);
-		font-weight: var(--qmh-weight-mid);
-		line-height: var(--qmh-leading-tight);
-		color: var(--qmh-ink);
-		text-decoration: none;
 		margin-inline-end: auto;
-	}
-
-	.slash {
-		color: var(--qmh-ghost);
 	}
 
 	.nav {
@@ -115,27 +103,5 @@
 	.nav-link[aria-current='page'] {
 		color: var(--qmh-ink);
 		border-bottom-color: var(--qmh-ink);
-	}
-
-	/* The filled shell: two rows, the second whatever is left. Pinned to the
-	   viewport rather than sized to it, so the document keeps no scrollable region
-	   at all: a page-height box still leaves the root scroller counting the overflow
-	   its panes clip, and a wheel over the chrome drags the whole app off the top.
-	   At every width, not the ones that fit two panes: a narrow viewport is where a
-	   document scroll is easiest to reach, and the room the stacked panes want comes
-	   from a scroller inside the route. */
-	.app.fills {
-		position: fixed;
-		inset: 0;
-		display: grid;
-		grid-template-rows: auto minmax(0, 1fr);
-		overflow: hidden;
-	}
-
-	/* A gesture past the end of a pane chains out to the viewport and bounces the
-	   empty document, which is the last way a pinned shell moves. Scoped to the
-	   workspace, so the quickstart keeps a page's own feel. */
-	:global(html:has(.app.fills)) {
-		overscroll-behavior: none;
 	}
 </style>
