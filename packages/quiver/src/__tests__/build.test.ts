@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { buildQuiver } from '../build.js';
 import { unpackFiles } from '../bundle.js';
 import { NAME_DIGEST_LENGTH, sha256Hex } from '../digest.js';
+import { POINTER_FORMAT } from '../format.js';
 import { build } from '../node.js';
 
 // Absolute path to the committed fixture
@@ -69,6 +70,19 @@ describe('buildQuiver — happy path (sample-quiver fixture)', () => {
 		expect(pointer.manifest).toMatch(
 			new RegExp(`^manifest\\.[0-9a-f]{${NAME_DIGEST_LENGTH}}\\.json$`)
 		);
+	});
+
+	it('stamps the format the tree is written in', async () => {
+		// The one thing a client of any age reads first, so a tree from a newer builder
+		// is refused by name rather than misread field by field.
+		const out = tempDir();
+		tmpDirs.push(out);
+		await buildQuiver(SAMPLE_FIXTURE, out);
+
+		const pointer = JSON.parse(await readFile(join(out, 'latest.json'), 'utf-8')) as {
+			format: number;
+		};
+		expect(pointer.format).toBe(POINTER_FORMAT);
 	});
 
 	it("manifest has version 1 and name 'sample'", async () => {

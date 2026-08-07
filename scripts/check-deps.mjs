@@ -11,17 +11,22 @@
 //      check: an undeclared import resolves fine in a workspace, and a declared
 //      dependency nothing imports is still a promise.
 //
-//   2. THE WASM SINGLETON. A handle minted by one copy of the linear memory and
-//      handed to another is foreign. So a package whose JS a consumer imports PEERS
-//      the artifact and never depends on it, the range is a single `>=` comparator
-//      (loose, until 1.0 makes a narrow one honest), and root `overrides` pins the
-//      developed-against version to exactly one. Loose ranges permit two installs
-//      rather than preventing them, which is why the pin is the half that works.
-//      A package that exports no JS is a BUNDLED TERMINAL: nothing imports it, so no
-//      handle crosses out of it and there is no second copy to be foreign to. It
-//      depends on the artifact like any consumer, at build time, and ships no runtime
-//      dependencies at all — what it bundles, a consumer must not install a second
-//      time beside a tarball that already contains it.
+//   2. ONE WASM PER PROCESS. A handle minted by one copy of the linear memory and
+//      handed to another is foreign, so the count that matters is how many copies meet
+//      inside one process. A package with an IMPORTABLE ENTRY puts its copy in the
+//      importer's process, so it PEERS the artifact and never depends on it, the range
+//      is a single `>=` comparator (loose, until 1.0 makes a narrow one honest), and
+//      root `overrides` pins the developed-against version to exactly one. Loose
+//      ranges permit two installs rather than preventing them, which is why the pin is
+//      the half that works.
+//      A package with no importable entry is a BUNDLED TERMINAL: nothing imports it,
+//      so the copy it bundles meets no other. It depends on the artifact like any
+//      consumer, at build time, and ships no runtime dependencies at all — what it
+//      bundles, a consumer must not install a second time beside a tarball that
+//      already contains it. A `bin` is not an importable entry: it is a process of its
+//      own, and hands a handle to nobody. A terminal whose bin serves the client it
+//      bundles holds two copies that cannot meet — the bundled one in a browser tab,
+//      the peered one in the CLI's own Node process.
 //
 //   3. THE `/preview` BUNDLE WEIGHT. A preview consumer does not pull ProseMirror,
 //      which is what makes the subpath claim ("a bundler pulls only what the imported
@@ -99,16 +104,19 @@ const below = (a, b) => {
 	return false;
 };
 
-/** What a consumer can import: an entry, a subpath map, or an executable. A package
- *  with none is a bundled terminal — served, never imported, so no handle leaves it. */
-const exportsJs = (json) =>
-	json.exports !== undefined || json.main !== undefined || json.bin !== undefined;
+/** What a consumer can import: a legacy entry, or an exports map with a subpath in it.
+ *  An empty map is the seal rather than an omission — it forbids every deep path a
+ *  missing map would have left open — so it counts as no entry at all. A `bin` counts
+ *  as none either: an executable is a process, and a process hands out no handles. A
+ *  package with no importable entry is a bundled terminal. */
+const importableEntry = (json) =>
+	json.main !== undefined || Object.keys(json.exports ?? {}).length > 0;
 
 for (const { dir, json } of PACKAGES) {
-	if (json.private || !exportsJs(json)) {
+	if (json.private || !importableEntry(json)) {
 		// Neither is a published claim on the artifact: the app installs it like any
 		// consumer, and the bundled terminal contains it.
-		const what = json.private ? 'a private package' : 'a package that exports no JS';
+		const what = json.private ? 'a private package' : 'a package with no importable entry';
 		if (json.peerDependencies?.[WASM])
 			fail(`packages/${dir}/package.json: \`${WASM}\` is a peer of ${what} — depend on it`);
 		if (!json.private) {

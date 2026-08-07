@@ -1,0 +1,125 @@
+/**
+ * The site layout, and the refusals around it.
+ *
+ * The layout is the invariant that used to be written three times — a script here, a
+ * shell step in the reusable workflow, and a copy in every consumer's repository — and
+ * getting it subtly wrong is silent: a client laid over the wrong tree loads the wrong
+ * quiver, or none, and says so only in a browser.
+ *
+ * The client is a stand-in throughout except where the shipped one is the subject: the
+ * layout is indifferent to what the client contains, and a suite that waited on a Vite
+ * build to prove that would be paying seconds for nothing.
+ */
+
+import { describe, it, expect, afterEach } from 'vitest';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { CLIENT_DIST } from '../node/client.js';
+import { assertClient, assertSafeOut, laySite } from '../node/site.js';
+import { scratch } from './helpers/collection.js';
+
+const temp = scratch('studio-site-');
+afterEach(() => temp.cleanup());
+
+/** A client of the shape `vite build` produces: an `index.html` and its assets. */
+async function stubClient(): Promise<string> {
+	const at = await temp.dir();
+	await writeFile(join(at, 'index.html'), '<!doctype html><div id="studio"></div>');
+	await mkdir(join(at, 'assets'), { recursive: true });
+	await writeFile(join(at, 'assets', 'index.js'), '// the client');
+	return at;
+}
+
+describe('laying a site out', () => {
+	it('puts the client at the root and the quiver beneath it', async () => {
+		const out = join(await temp.dir(), 'site');
+		await laySite({ collection: await temp.collection(), out, client: await stubClient() });
+
+		expect(existsSync(join(out, 'index.html'))).toBe(true);
+		expect(existsSync(join(out, 'assets', 'index.js'))).toBe(true);
+		// Where the client looks: `new URL('quiver/', document.baseURI)`.
+		expect(existsSync(join(out, 'quiver', 'latest.json'))).toBe(true);
+
+		const pointer = JSON.parse(await readFile(join(out, 'quiver', 'latest.json'), 'utf8')) as {
+			manifest: string;
+		};
+		expect(existsSync(join(out, 'quiver', pointer.manifest))).toBe(true);
+	});
+
+	it('owns its output: a previous generation does not bleed through', async () => {
+		const out = join(await temp.dir(), 'site');
+		await mkdir(out, { recursive: true });
+		await writeFile(join(out, 'stale.txt'), 'from a previous layout');
+		await laySite({ collection: await temp.collection(), out, client: await stubClient() });
+
+		expect(existsSync(join(out, 'stale.txt'))).toBe(false);
+	});
+
+	it('refuses before it deletes', async () => {
+		// The refusals are checked ahead of the clear, so a rejected command leaves the
+		// directory it was pointed at whole.
+		const out = await temp.dir();
+		await writeFile(join(out, 'keep.txt'), 'still here');
+		const client = await stubClient();
+		await rm(join(client, 'index.html'));
+
+		await expect(laySite({ collection: await temp.collection(), out, client })).rejects.toThrow(
+			/No client/
+		);
+		expect(existsSync(join(out, 'keep.txt'))).toBe(true);
+	});
+});
+
+describe('the out refusals', () => {
+	// The layout clears its output first, so these two spellings delete the thing being
+	// laid out. Both are one keystroke from a correct command.
+	it('refuses an out that holds the collection', () => {
+		expect(() => assertSafeOut('/work/quiver', '/work')).toThrow(/the collection/);
+		expect(() => assertSafeOut('/work/quiver', '/work/quiver')).toThrow(/the collection/);
+	});
+
+	it('refuses an out that holds the working directory', () => {
+		expect(() => assertSafeOut('/elsewhere', process.cwd())).toThrow(/the working directory/);
+		expect(() => assertSafeOut('/elsewhere', join(process.cwd(), '..'))).toThrow(
+			/the working directory/
+		);
+	});
+
+	it('allows an out nested inside the collection', () => {
+		// `site/` under the quiver root is the ordinary layout, and nothing of the
+		// source is read after the clear.
+		expect(() => assertSafeOut('/work/quiver', '/work/quiver/site')).not.toThrow();
+	});
+});
+
+describe('the client assertion', () => {
+	it('refuses a client carrying a quiver of its own', async () => {
+		// It would occupy the URL the author's is served from, and the winner would be
+		// whichever copy landed last.
+		const dist = await stubClient();
+		await mkdir(join(dist, 'quiver'), { recursive: true });
+
+		expect(() => assertClient(dist)).toThrow(/shadow/);
+	});
+
+	it('refuses a directory holding no client', async () => {
+		const empty = await temp.dir();
+		expect(() => assertClient(empty)).toThrow(/No client/);
+	});
+});
+
+describe('the shipped client', () => {
+	// The one place the real `dist/` is the subject. It is built by `npm run build`,
+	// which CI runs before the suite.
+	it('is present, and carries no quiver', () => {
+		expect(
+			existsSync(join(CLIENT_DIST, 'index.html')),
+			`no client at ${CLIENT_DIST} — run \`npm run build -w packages/studio\``
+		).toBe(true);
+		// `vite build` runs with `copyPublicDir: false` precisely so a dev run's packed
+		// tree cannot ride into the tarball.
+		expect(existsSync(join(CLIENT_DIST, 'quiver'))).toBe(false);
+		expect(() => assertClient()).not.toThrow();
+	});
+});

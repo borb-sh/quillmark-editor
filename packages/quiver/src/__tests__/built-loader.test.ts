@@ -13,6 +13,7 @@ import { loadBuiltQuiver } from '../built-loader.js';
 import { packFiles } from '../bundle.js';
 import { NAME_DIGEST_LENGTH, sha256Hex } from '../digest.js';
 import { QuiverError } from '../errors.js';
+import { POINTER_FORMAT } from '../format.js';
 import type { BuiltTransport, FetchOptions } from '../built-loader.js';
 import { mockQuillFromTree } from './helpers/mock-engine.js';
 
@@ -345,11 +346,48 @@ describe('loadBuiltQuiver — invalid pointer', () => {
 		);
 	});
 
-	it('latest.json with extra unknown field → quiver_invalid', async () => {
-		const transport = new MemTransport({
-			'latest.json': enc.encode(JSON.stringify({ manifest: 'manifest.abc.json', extra: true }))
-		});
-		await expect(loadBuiltQuiver(transport)).rejects.toThrow(
+	// The pointer is where a newer format announces itself, so it is the one document
+	// here that reads past what it knows. A reader that rejected unknown keys could
+	// never be told the format moved — it would fail on the telling.
+	it('latest.json with an unknown field loads', async () => {
+		const artifact = await buildMinimalArtifact();
+		artifact.transport.set(
+			'latest.json',
+			enc.encode(JSON.stringify({ manifest: artifact.manifestFileName, aFieldFromLater: true }))
+		);
+		const quiver = await loadBuiltQuiver(artifact.transport);
+		expect(quiver.quillNames()).toContain('memo');
+	});
+
+	it('a pointer with no format is this format', async () => {
+		// What every build before the marker wrote, and what `makePointer` still writes.
+		const quiver = await loadBuiltQuiver((await buildMinimalArtifact()).transport);
+		expect(quiver.quillNames()).toContain('memo');
+	});
+
+	it('a format above this loader → quiver_invalid naming the upgrade', async () => {
+		const artifact = await buildMinimalArtifact();
+		artifact.transport.set(
+			'latest.json',
+			enc.encode(
+				JSON.stringify({ format: POINTER_FORMAT + 1, manifest: artifact.manifestFileName })
+			)
+		);
+		await expect(loadBuiltQuiver(artifact.transport)).rejects.toThrow(
+			expect.objectContaining({
+				code: 'quiver_invalid',
+				message: expect.stringContaining('Upgrade @quillmark/quiver')
+			})
+		);
+	});
+
+	it('a non-integer format → quiver_invalid', async () => {
+		const artifact = await buildMinimalArtifact();
+		artifact.transport.set(
+			'latest.json',
+			enc.encode(JSON.stringify({ format: '1', manifest: artifact.manifestFileName }))
+		);
+		await expect(loadBuiltQuiver(artifact.transport)).rejects.toThrow(
 			expect.objectContaining({ code: 'quiver_invalid' })
 		);
 	});

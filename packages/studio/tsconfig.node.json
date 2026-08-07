@@ -1,0 +1,19 @@
+// The Node half's build: `src/node` → `bin/`, which is what `bin` in the manifest
+// points at. Separate from the client's config because the two compile for different
+// places — NodeNext resolution and `node:` builtins here, a bundler and the DOM there —
+// and a program holding both would have to weaken to the union.
+{
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"outDir": "bin",
+		"rootDir": "src/node",
+		"declaration": false,
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"types": ["node"]
+	},
+	"include": ["src/node"]
+}

@@ -148,3 +148,6 @@ packages/studio/site/
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Studio's Node half, compiled from `src/node/`.
+packages/studio/bin/
