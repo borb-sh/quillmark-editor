@@ -33,7 +33,6 @@
 <script lang="ts">
 	import { onDestroy, tick } from 'svelte';
 	import { DropdownMenu } from 'bits-ui';
-	import Icon from './icons/Icon.svelte';
 	import { isQuillmarkError, MAIN_CARD_ADDR } from '@quillmark/wasm';
 	import { cardPath, fieldPathForAddr, type DocPath } from '../core/address.js';
 	import { errorMessage, reportError } from '../core/errors.js';
@@ -145,9 +144,6 @@
 	}
 
 	const kinds = $derived(Object.keys(quill.schema.card_kinds ?? {}));
-
-	/** Control-glyph size: the shared rule, as CardControls. */
-	const GLYPH = 14;
 
 	/**
 	 * Re-derive the card tree and report the edit. Called for the two lanes that go
@@ -865,26 +861,24 @@
 {#snippet addAffordance(atIndex: number)}
 	{#if kinds.length}
 		<div class="qm-add-card">
-			<!-- A glyph and no word: the strip IS the gap, so the pill it fills on hover
-			 shows what a label would state: the space the new card takes. The kind is
+			<!-- No mark and no word: the strip IS the gap, so the pill it fills on hover
+			 draws what a label would state, the space the new card takes. The kind is
 			 the accessible name, the one reading with no geometry to carry it. -->
 			{#if kinds.length === 1}
 				<button
 					type="button"
 					class="qm-add-btn qm-add-affordance"
 					aria-label={merged.addCardOfKind(humanize(kinds[0]))}
-					onclick={() => addCard(atIndex, kinds[0])}><Icon name="plus" size={GLYPH} /></button
-				>
+					onclick={() => addCard(atIndex, kinds[0])}
+				></button>
 			{:else}
 				<!-- Multi-kind add: pick the kind, then seed + insert. A MENU rather than a
 			 disclosure: it floats out of the stack, so raising it moves no card, and
 			 it dismisses on pick, on Escape and on a click outside, none of which a
 			 `<details>` does. The trigger is bits-ui's `<button>`, which is why the
-			 recede ladder below reaches it through `:global`. -->
+			 rules below reach it through `:global`. -->
 				<DropdownMenu.Root>
-					<DropdownMenu.Trigger class="qm-add-btn qm-add-affordance" aria-label={merged.addCard}
-						><Icon name="plus" size={GLYPH} /></DropdownMenu.Trigger
-					>
+					<DropdownMenu.Trigger class="qm-add-btn qm-add-affordance" aria-label={merged.addCard} />
 					<DropdownMenu.Portal to={rootEl}>
 						<DropdownMenu.Content sideOffset={4}>
 							<!-- Portalled out of the row but INTO the stack's root, and carrying the
@@ -991,42 +985,28 @@
 	/* Unboxed, like every button, and not dashed: a
 	 dashed edge is the PLACEHOLDER idiom ("nothing is here yet") which on a button
 	 reads as disabled or as a drop target. It stays honest in one place, the
-	 un-schemable card (`Card.svelte`), which is a state rather than a control. Hover
-	 fills a pill: the trigger rests dim and unfilled, so a hover that only shifted its
-	 ink would have little to shift. The pill fills the strip because the strip is what
-	 was pressed, and the strip is the gap: the fill is the card-to-be, drawn where it
-	 will land.
+	 un-schemable card (`Card.svelte`), which is a state rather than a control. The
+	 trigger carries no mark and rests invisible, so the FILL is the whole of what it
+	 shows: engaged, a pill, and the pill fills the strip because the strip is what was
+	 pressed, and the strip is the gap: the fill is the card-to-be, drawn where it will
+	 land. Every gap is an equal entry point, reached by the name rather than by a
+	 mark: a card goes anywhere in the stack, not just after the last one.
 
 	 `:global`, because the multi-kind trigger is bits-ui's own element and a `class`
 	 passed to a primitive is a plain string that never picks up the scoping hash:
 	 the same seam the enum trigger is styled through. */
-	/* The recede ladder, in source order: every rung after the first ties on
-	   specificity with the one before it, so the later rule wins and no state needs
-	   restating per gap. Rest, then engaged. */
 	.qm-add-card :global(.qm-add-btn) {
-		/* No inset of its own: the pill and the gap are the same rectangle, and the tap
-		   floor is what gives the glyph the height it centres in. */
-		display: flex;
-		align-items: center;
-		justify-content: center;
+		/* No inset of its own and nothing to centre: the pill and the gap are the same
+		   rectangle, and the tap floor is the whole of the height. */
 		width: 100%;
-		/* Recede until engaged: the glyph rests on the idle
-		 rung and comes to full ink on hover or keyboard focus, so the stack reads as
-		 content rather than a toolbar per gap. Dim, not absent: an insert point that
-		 surfaces under the pointer is reachable only by a reader who already knows it
-		 is there, and every gap is an equal entry point: a card goes anywhere in the
-		 stack, not just after the last one. This rung is also what a touch pointer
-		 gets, which never hovers. */
-		opacity: var(--_qm-opacity-idle);
 	}
-	.qm-add-card:hover :global(.qm-add-btn),
-	.qm-add-card :global(.qm-add-btn:focus-visible) {
-		opacity: 1;
-	}
-	/* An open menu keeps its trigger lit, and this rule comes last so it outranks the
-	   two above it: the menu portals out of the strip, so a pointer moving onto an item
-	   has left the row that was revealing the trigger the menu hangs from. */
+	/* The two engaged states the shared `:hover` rung does not cover, both filling the
+	   same pill it does. Keyboard focus, because the fill is the only thing that reads
+	   as the trigger; and an open menu, because it portals out of the strip, so a
+	   pointer moving onto an item has left the row whose hover was drawing the pill the
+	   menu hangs from. */
+	.qm-add-card :global(.qm-add-btn:focus-visible),
 	.qm-add-card :global(.qm-add-btn[data-state='open']) {
-		opacity: 1;
+		background: var(--_qm-surface-hover);
 	}
 </style>
