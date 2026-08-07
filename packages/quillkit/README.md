@@ -8,7 +8,7 @@ The quill author's toolchain: one command over the whole loop. Gate a quiver, pa
 npm install --save-dev quillkit @quillmark/quiver @quillmark/wasm
 ```
 
-quillkit carries neither of the other two, nor the client `studio` and `site` serve. It resolves all three out of your collection's own `node_modules`, so the versions you pin are the format your quiver is packed in, the wasm your gate renders through, and the client your reviewers read. That is also why installing the tool costs kilobytes: the client's tens of megabytes of wasm arrive with `@quillmark/studio`, when you ask for it.
+quillkit carries neither of the other two. It resolves both out of your collection's own `node_modules`, so the versions you pin are the format your quiver is packed in and the wasm your gate renders through. The studio client is the one thing it does carry: `studio` and `site` serve it out of the tool's own `dist/client`, so there is nothing to install for it and nothing to keep in step.
 
 ## The verbs
 
@@ -19,7 +19,7 @@ quillkit carries neither of the other two, nor the client `studio` and `site` se
 | `quillkit studio` | the local loop: pack, serve, repack on save                        |
 | `quillkit site`   | the deploy layout: the client at a root, a built quiver beneath it |
 
-Every verb takes `--quiver <dir>`, the collection root where `Quiver.yaml` lives, defaulting to the working directory. `build`, `studio` and `site` take `--out <dir>`; `studio` and `site` take `--client <dir>` to serve a client other than the one your collection installs.
+Every verb takes `--quiver <dir>`, the collection root where `Quiver.yaml` lives, defaulting to the working directory. `build`, `studio` and `site` take `--out <dir>`; `studio` and `site` take `--client <dir>` to serve a client other than the one this package ships.
 
 ## Gating
 
@@ -46,14 +46,17 @@ it('gates the quiver', () => {
 
 ## Looking at it
 
-`studio` is what you **look at**: it packs your source, serves [`@quillmark/studio`](../studio#readme) over it, and repacks whenever you save. Nothing fails a build on its verdict.
+`studio` is what you **look at**: it packs your source, serves the studio client over it, and repacks whenever you save. Nothing fails a build on its verdict.
 
 ```sh
-npm install --save-dev @quillmark/studio
 npx quillkit studio
 ```
 
-The document it holds is the blueprint's own, so what the gate renders is what you judge. Reload the page to pick up a repack.
+Pick a quill, edit, watch it paint, read the errors. `quillkit test` answers _does it work_; studio answers _what is it like to use_. The document it holds is the blueprint's own, so what the gate renders is what you judge. Reload the page to pick up a repack.
+
+It shows a quill rather than editing one: no plate editing, no schema editing, no auth, and nothing it holds outlives the tab.
+
+The client renders through the `@quillmark/wasm` it was built against, and the head names it; your `quillkit test` runs whatever your own tree holds, and nothing at runtime reconciles the two. The gate is authoritative, studio is advisory.
 
 ## Shipping it
 
@@ -63,15 +66,40 @@ The document it holds is the blueprint's own, so what the gate renders is what y
 npx quillkit site --out ./site
 ```
 
-For GitHub Pages, call the reusable workflow rather than restating the layout:
+The client resolves its quiver against `document.baseURI` and its assets relatively, so any static host works and no rebuild is needed per URL. The arrangement itself is two rules: the client's files at some base with a built quiver at `quiver/` under that same base, and no quiver inside the client, since one packed there would occupy the URL the built one is served from.
+
+For GitHub Pages, call the reusable workflow rather than restating the layout. It builds your quiver, lays the client over it and uploads the Pages artifact; the deploy stays yours, so nothing outside your repository holds `pages: write`.
 
 ```yaml
+# .github/workflows/studio.yml
+name: Studio
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: read
 jobs:
   build:
     uses: borb-sh/quillmark-js/.github/workflows/studio-pages.yml@main
     with:
       quiver-dir: .
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
 ```
+
+Inputs, all optional: `quiver-dir` (default `.`), `quillkit-package` (default `quillkit@latest`), `node-version` (default `22`), and `upload` (default `true`), which this repository's own CI sets false to assemble and assert the site without minting an artifact. Nothing else is configured. The workflow runs `quillkit site`, which packs files and instantiates nothing, so the deploy installs no wasm; when your repository already has `@quillmark/quiver` installed, that copy is the one it packs with.
+
+A deployed quiver is frozen at a commit, so the repack loop is the local one, over a working tree.
 
 ## Refusals
 

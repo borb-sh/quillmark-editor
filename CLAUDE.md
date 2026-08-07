@@ -1,6 +1,6 @@
 # quillmark-js
 
-The JS tier downstream of the `@quillmark/wasm` artifact: `packages/svelte` (the Svelte binding: surfaces over a session), `packages/quiver` (a collection of quill templates, loaded and packed), `packages/quillkit` (the author's toolchain: the one bin, resolving the collection's own copies of everything), and two apps `quiver` and `svelte` compose into: `packages/playground` (private frontend) and `packages/studio` (published as the static client `quillkit studio` serves, for an author working on a quill template). One npm workspace, one install, one gate.
+The JS tier downstream of the `@quillmark/wasm` artifact: `packages/svelte` (the Svelte binding: surfaces over a session), `packages/quiver` (a collection of quill templates, loaded and packed), `packages/quillkit` (the author's toolchain: the one bin in `src/`, resolving the collection's own packer and engine, plus the studio client in `client/`, the surface `quillkit studio` puts in front of an author working on a quill template), and `packages/playground` (private frontend, a developer's read on the library). One npm workspace, one install, one gate.
 
 Start at each package's `prose/canon/INDEX.md` for settled design; work that is not settled lives in GitHub issues. Canon is **malleable** (no consumers, no compatibility promise): a doc that contradicts the design in hand gets rewritten in the same commit as the code.
 
@@ -14,9 +14,9 @@ Every command is the root's; a package script is reached with `-w packages/<name
 
 ## Boundaries
 
-- `svelte ↛ quiver` and `quiver ↛ svelte`, both directions; only the composing apps have edges to both. `check:deps` holds it.
-- **One wasm per process.** A package with an importable entry peers `@quillmark/wasm` and never depends on it; a bundled terminal (no importable entry, so the copy it bundles meets no other) depends on it and ships no runtime dependencies. Neither a `bin` nor a `./package.json` export is an importable entry (a process hands out no handles, and a manifest is a location rather than a module), so a terminal may carry both. Root `overrides` pins the developed-against version. The sibling `quillmark` checkout is reference only: read it, never build against it.
-- **quillkit carries nothing it can resolve.** The loader, the engine and the client come out of the collection's own `node_modules`, so a collection pins the format it is packed in and a gate install stays the tool alone.
+- `svelte ↛ quiver` and `quiver ↛ svelte`, both directions; a node reaching both composes them, which the playground does as an app and quillkit does inside the client it bundles. `check:deps` holds it.
+- **One wasm per process.** A package with an importable entry peers `@quillmark/wasm` and never depends on it; a bundled terminal (no importable entry, so the copy it bundles meets no other) depends on it and ships no runtime dependencies. Neither a `bin` nor a `./package.json` export is an importable entry (a process hands out no handles, and a manifest is a location rather than a module), so one terminal may carry a compiled Node program and a bundled browser program at once, as quillkit does. Root `overrides` pins the developed-against version. The sibling `quillmark` checkout is reference only: read it, never build against it.
+- **quillkit carries nothing it can resolve.** The loader and the engine come out of the collection's own `node_modules`, so a collection pins the format it is packed in and the wasm its gate renders through. The client is the converse and ships in the tarball: it reads no format and writes no quiver, so pinning it buys nothing.
 - The apps use only the public subpath API; a needed internal is an API gap to fix, not a reach-in.
 - `/preview` imports no editor-side code, transitively: a preview consumer does not pull ProseMirror.
 

@@ -1,6 +1,6 @@
 # Quillkit
 
-> **Implementation**: `src/` · `src/bin/`
+> **Implementation**: `src/` · `src/bin/` · `client/`
 
 ## TL;DR
 
@@ -8,17 +8,18 @@ The verbs a quill author types, one bin over the whole loop: `test` gates, `buil
 
 ## quillkit carries nothing it can resolve
 
-Three things every verb needs (the loader that packs, the engine that renders, the client that draws) come out of the **collection's** `node_modules`, resolved from its `package.json` (`collection.ts`). None is a dependency of this package, which ships no runtime dependencies at all.
+Two things every verb runs on (the loader that packs, the engine that renders) come out of the **collection's** `node_modules`, resolved from its `package.json` (`collection.ts`). Neither is a dependency of this package, which ships no runtime dependencies at all.
 
-That is one rule paying three ways:
+That is one rule paying two ways, and both are about a version someone else pins:
 
 - **The collection pins its own format.** `@quillmark/quiver` writes the pointer and reads it back, so the copy a collection depends on decides the bytes its quiver is packed in. A tool carrying a packer would decide that instead, on a cadence answering to CLI flags and chrome.
 - **One copy packs, however the pack is reached.** `build` in CI, `studio` mid-edit and `site` at deploy all resolve the same install, so the bytes a local loop serves and the bytes a deploy publishes agree by construction rather than by a version range someone keeps true.
-- **A gate install is the tool alone.** The client is tens of megabytes of browser-targeted wasm across three backends, none of which a gate executes: `test` renders through the collection's own copy. Carrying the client would put all of it in every collection's CI install, beside the copy that does the work.
 
-The cost is a name in `devDependencies` per thing resolved, and each absence names its install rather than surfacing a resolver's own words. `--client <dir>` is the one override, for a deploy pinning the client it serves.
+The cost is a name in `devDependencies` per thing resolved, and each absence names its install rather than surfacing a resolver's own words.
 
-**Every specifier resolves under CJS conditions.** `createRequire().resolve` walks an exports map as `require`, `node`, `default` whatever the caller's own module system, so a subpath offering `import` alone is invisible to it. Quiver names `default` beside `import` on every entry for this; the client is reached at `<pkg>/package.json`, the one specifier a package with no importable entry still answers to, and its `dist` is the directory served.
+**The client is carried, and the same rule says why.** Resolution buys a collection the version it pins; the client answers to no version of theirs, writing no quiver and reading no format, so there is nothing for a pin to decide. It ships in this tarball at `dist/client` (`paths.ts`) and costs tens of megabytes of browser-targeted wasm in the tool's own install, downloaded once and npm-cached, in a package nothing depends on outside `devDependencies`. `--client <dir>` is the one override, for a deploy pinning the client it serves.
+
+**Every specifier resolves under CJS conditions.** `createRequire().resolve` walks an exports map as `require`, `node`, `default` whatever the caller's own module system, so a subpath offering `import` alone is invisible to it. Quiver names `default` beside `import` on every entry for this.
 
 ## Blocked on, looked at
 
@@ -32,7 +33,9 @@ The blueprint is what the two share: the client seeds the same way, so the docum
 
 ## One wasm per process, and mostly none
 
-`test` is the only verb that puts a wasm in this process, and it is the collection's own. The packer instantiates nothing, and the client is static bytes handed to a browser tab, a process this one never shares. So the tool holds at most one copy and hands a handle to nobody, which is what lets it be a bin with no importable entry (`check:deps`).
+`test` is the only verb that puts a wasm in this process, and it is the collection's own. The packer instantiates nothing, and the client is static bytes handed to a browser tab, a process this one never shares. So the tool holds at most one copy and hands a handle to nobody.
+
+The tarball holds two, and they never meet: the client bundles the copy it was built against, and the bin resolves the collection's when `test` runs. Neither half is importable, a `bin` being a process of its own and the client being bytes, so no handle minted by one can reach the other. That is what lets a compiled Node program and a bundled browser program share one manifest as a single bundled terminal (`check:deps`).
 
 ## The local loop
 
@@ -58,4 +61,4 @@ Not a scaffolder: there is no `new`, and a collection is laid out by hand. Not a
 
 ## Links
 
-[QUIVER.md](../../../quiver/prose/canon/QUIVER.md) · [STUDIO.md](../../../studio/prose/canon/STUDIO.md)
+[STUDIO.md](STUDIO.md) · [QUIVER.md](../../../quiver/prose/canon/QUIVER.md)
