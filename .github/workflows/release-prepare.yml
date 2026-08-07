@@ -1,7 +1,13 @@
 # Cut a release for one package: bump its version, promote its curated
-# `## Unreleased` section to the version's own, and open the release PR. Merging
-# that PR is what tags and publishes (release.yml). Versions are independent, so a
-# release names its package and leaves the other's alone.
+# `## Unreleased` section to the version's own, and push the release branch.
+# Opening the PR is the human's half — the run ends with the link and the body to
+# paste. Merging that PR is what tags and publishes (release.yml). Versions are
+# independent, so a release names its package and leaves the other's alone.
+#
+# The split is not a workaround for a permission to go asking for. A PR opened by
+# `GITHUB_TOKEN` gets no `pull_request` workflow runs, so the release PR — the one
+# change that must not merge unchecked — would arrive with an empty checks list.
+# A human opening it is what runs ci.yml on it.
 name: Prepare release
 
 on:
@@ -29,7 +35,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -87,9 +92,7 @@ jobs:
             '!done && $0 == "## Unreleased" { print; print ""; print hdr; done=1; next } { print }' \
             "$FILE" > CHANGELOG.new && mv CHANGELOG.new "$FILE"
 
-      - name: Push branch and open PR
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push the release branch
         run: |
           PKG="${{ inputs.package }}"
           VERSION="${{ steps.version.outputs.next }}"
@@ -126,8 +129,18 @@ jobs:
           git commit -m "chore(release): @quillmark/${PKG} v${VERSION}"
           git push -u origin "$BRANCH"
 
-          gh pr create \
-            --title "chore(release): @quillmark/${PKG} v${VERSION}" \
-            --body-file pr-body.md \
-            --base main \
-            --head "$BRANCH"
+          # The run's own summary is the handoff: the compare link with the title
+          # already filled, and the body in one copyable block.
+          TITLE=$(printf 'chore(release): @quillmark/%s v%s' "$PKG" "$VERSION" | jq -sRr @uri)
+          COMPARE="${{ github.server_url }}/${{ github.repository }}/compare/main...${BRANCH}?expand=1&title=${TITLE}"
+          {
+            echo "## Open the release PR"
+            echo
+            echo "[Compare and open \`${BRANCH}\` →](${COMPARE})"
+            echo
+            echo "Paste this as the body:"
+            echo
+            echo '````markdown'
+            cat pr-body.md
+            echo '````'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,4 +1,4 @@
-# Publish one package, on the merge of the release PR release-prepare.yml opened.
+# Publish one package, on the merge of the PR for the branch release-prepare.yml pushed.
 # The branch name carries what is being released; package.json is what proves it.
 # Everything that can fail freely runs before the tag, because the tag is the last
 # point at which a failure costs nothing: a dangling tag is deleted, a published
