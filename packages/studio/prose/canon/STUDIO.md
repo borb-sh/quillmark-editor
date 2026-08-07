@@ -28,9 +28,9 @@ Studio also sheds the playground's front-door job. Its reader arrives already co
 
 A browser cannot read the source layout, so studio ends at a built artifact behind a base URL, consumed with `Quiver.fromBuiltUrl`.
 
-**The Node half** packs, watches and serves, and does nothing else: `build()` into a directory, watch the source tree, repack, hand the client and the pack to a browser. It is the `studio` bin, which is how a consumer reaches it; this repository drives the same loop from a Vite plugin, where the two things a dev server adds live — the first pack lands before the server is created, and a repack signals over the socket the page already holds.
+**The Node half** packs, watches and serves, and does nothing else: `build()` into a directory, watch the source tree, repack, hand the client and the pack to a browser. It is the `studio` bin, which is how a consumer reaches it; this repository drives the same loop from a Vite plugin, where the two things a dev server adds live: the first pack lands before the server is created, and a repack signals over the socket the page already holds.
 
-**The bin is not an export.** An importable entry puts studio's wasm in an importer's process, which is the thing the artifact's single-copy rule exists to prevent; an executable is a process of its own and hands a handle to nobody. `studio dev` holds no wasm at all — the packer instantiates nothing — and the copy bundled into the client runs in a browser tab. One wasm per process is the invariant, and this shape never has two in one (`check:deps`).
+**The bin is not an export.** An importable entry puts studio's wasm in an importer's process, which is the thing the artifact's single-copy rule exists to prevent; an executable is a process of its own and hands a handle to nobody. `studio dev` holds no wasm at all, the packer instantiating nothing, and the copy bundled into the client runs in a browser tab. One wasm per process is the invariant, and this shape never has two in one (`check:deps`).
 
 **The packer is the author's own**, resolved from the collection's `node_modules` rather than carried. Studio ships no runtime dependencies, so the `build` behind both verbs cannot be one; resolving it there also makes the pack a local loop serves and the pack the author's CI publishes the same bytes, through the copy their `quiver test` gates with.
 
@@ -46,9 +46,9 @@ A browser cannot read the source layout, so studio ends at a built artifact behi
 
 **The bridge is studio's own; the shell is not.** The caret bridge and the debounced recompile are consumer-layer by design, and a shared component wiring them would contradict the reason the wiring is the consumer's. The look goes the other way: the pinned bands, the head's line, the mark, the split and the frame a surface is mounted in are the preset's classes on studio's own elements (THEMING §"The shell"). Studio writes the placements a shell of its shape makes itself (a full-bleed rule under the head, the gutter the bands line up on, the band that scrolls when the split stacks) and nothing the playground also writes.
 
-**Published, not peered.** The tarball is `dist` and `bin`: wasm and both libraries bundled into the client, no runtime dependencies, no importable entry — a **bundled terminal** (`check:deps`). The base URL is a runtime fact; the quiver is laid beside the client at deploy time and never baked into it.
+**Published, not peered.** The tarball is `dist` and `bin`, a **bundled terminal** (`check:deps`): wasm and both libraries bundled into the client, no runtime dependencies, no importable entry. The base URL is a runtime fact; the quiver is laid beside the client at deploy time and never baked into it.
 
-**The layout is written once.** `studio site --out <dir>` lays the client at a root with a built quiver at `quiver/` beneath it, which is where the client looks, and asserts both halves: a client carrying a quiver of its own would occupy that URL, and the winner would be whichever copy landed last. The reusable workflow calls the verb rather than restating it, so a consumer running it locally gates the shape their deploy will have. It clears what it writes, so an `--out` holding the collection or the working directory is refused the way `build` refuses one holding its source — the tree is studio's, one level above the one quiver is handed, so the refusal does not travel with the packer.
+**The layout is written once.** `studio site --out <dir>` lays the client at a root with a built quiver at `quiver/` beneath it, which is where the client looks, and asserts both halves: a client carrying a quiver of its own would occupy that URL, and the winner would be whichever copy landed last. The reusable workflow calls the verb rather than restating it, so a consumer running it locally gates the shape their deploy will have. It clears what it writes, so an `--out` holding the collection or the working directory is refused the way `build` refuses one holding its source. The tree is studio's, one level above the one quiver is handed, so the refusal does not travel with the packer.
 
 Studio draws with `@quillmark/svelte/preset`, the same import a third-party consumer makes; `studio.css` adds one height beyond the endorsed look, the depth the notes band opens to.
 
@@ -103,9 +103,9 @@ A Typst IDE: studio shows a quill, it does not edit the plate or the schema. Not
 
 ## The door rule, for what comes next
 
-Studio is headed for features that write quill source — a schema editor, a form quill-ifier — and today every arrow points one way: disk → HTTP → browser. Those need an arrow back, and it is the first thing between the halves that is not a static file.
+Studio is headed for features that write quill source (a schema editor, a form quill-ifier), and today every arrow points one way: disk → HTTP → browser. Those need an arrow back, and it is the first thing between the halves that is not a static file.
 
-The rule that keeps it from leaking: **quiver owns the authored source layout and every door onto it; a door moves bytes into the layout and does not know what the bytes mean.** A door that must parse a `Quill.yaml` to do its job is studio's, not quiver's. Quiver already owns the safety the layout implies — the path-escape rejection reading manifest-named files off a disk, the destructive-write refusals in `build` — which is the concrete reason a client cannot reimplement it correctly.
+The rule that keeps it from leaking: **quiver owns the authored source layout and every door onto it; a door moves bytes into the layout and does not know what the bytes mean.** A door that must parse a `Quill.yaml` to do its job is studio's, not quiver's. Quiver already owns the safety the layout implies (the path-escape rejection reading manifest-named files off a disk, the destructive-write refusals in `build`), which is the concrete reason a client cannot reimplement it correctly.
 
 No write door yet. Designing a protocol before there is an editor to shape it is how the wrong protocol gets built; the rule is what makes the right one land when it arrives.
 

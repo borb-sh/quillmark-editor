@@ -2,7 +2,7 @@
  * The bin, as an author reaches it: `bin/cli.js` spawned in a collection.
  *
  * Every other test in this package imports `src/node`, which is what makes this one
- * worth its seconds — what a consumer runs is a linked bin, and nothing that imports a
+ * worth its seconds: what a consumer runs is a linked bin, and nothing that imports a
  * module proves one works. It pins the packer resolved out of the collection's own
  * tree, the layout, and the loop coming up and serving.
  *
@@ -117,7 +117,7 @@ describe('what the Node half loads', () => {
 		// browser concerns, and the one wasm in this picture is the copy inside the
 		// client, in a tab, in a process this one never shares. A SPECIFIER is the whole
 		// of how the artifact could get into this process, so the compiled half is read
-		// for one — prose about it is not one.
+		// for one. Prose naming it is not one.
 		const SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*)['"]([^'"]+)['"]/g;
 		const sources = (await readdir(BIN_DIR)).filter((f) => f.endsWith('.js'));
 		expect(sources.length).toBeGreaterThan(0);

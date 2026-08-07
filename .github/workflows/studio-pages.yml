@@ -4,9 +4,9 @@
 #
 # The layout itself is `studio site`, and this calls it rather than restating it: the
 # client at some base with a built quiver at `quiver/` under it, which is where the
-# client looks (`document.baseURI`). The assertions that go with it — a client that
-# carries a quiver of its own would occupy the URL the built one is served from — travel
-# with the verb, so a caller running it locally gates the same shape this does.
+# client looks (`document.baseURI`). The assertions travel with the verb, so a caller
+# running it locally gates the same shape this does: a client carrying a quiver of its
+# own would occupy the URL the built one is served from.
 name: Studio Pages
 
 on:
@@ -82,7 +82,7 @@ jobs:
       # One verb, and it owns the whole arrangement: the client it ships laid at the
       # root, the caller's collection packed beneath it, and both halves of the layout
       # asserted. Run from the workspace, so `--quiver` is read the way the input is
-      # written — relative to the repository.
+      # written, relative to the repository.
       - name: Lay the site out
         run: |
           node "$RUNNER_TEMP/client/bin/cli.js" site \

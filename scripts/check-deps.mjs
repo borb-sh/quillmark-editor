@@ -2,7 +2,7 @@
 // path away, so the separation is held by a gate rather than by distance. Zero deps;
 // run via `npm run check:deps`.
 //
-// Three rules, each stated once here and nowhere else:
+// Four rules, each stated once here and nowhere else:
 //
 //   1. THE GRAPH. `@quillmark/wasm` is external and above everything; `svelte` and
 //      `quiver` are siblings at one tier with NO edge between them, in either
@@ -21,12 +21,12 @@
 //      the half that works.
 //      A package with no importable entry is a BUNDLED TERMINAL: nothing imports it,
 //      so the copy it bundles meets no other. It depends on the artifact like any
-//      consumer, at build time, and ships no runtime dependencies at all — what it
-//      bundles, a consumer must not install a second time beside a tarball that
-//      already contains it. A `bin` is not an importable entry: it is a process of its
-//      own, and hands a handle to nobody. A terminal whose bin serves the client it
-//      bundles holds two copies that cannot meet — the bundled one in a browser tab,
-//      the peered one in the CLI's own Node process.
+//      consumer, at build time, and ships no runtime dependencies at all: what it
+//      bundles, a consumer must not install a second time beside a tarball that already
+//      contains it. A `bin` is not an importable entry, being a process of its own that
+//      hands a handle to nobody. A terminal whose bin serves the client it bundles holds
+//      two copies that cannot meet: the bundled one in a browser tab, the peered one in
+//      the CLI's own Node process.
 //
 //   3. THE `/preview` BUNDLE WEIGHT. A preview consumer does not pull ProseMirror,
 //      which is what makes the subpath claim ("a bundler pulls only what the imported
@@ -82,7 +82,7 @@ for (const { dir, json } of PACKAGES) {
 				);
 }
 
-// ── 2. The wasm singleton ───────────────────────────────────────────────────────
+// ── 2. One wasm per process ─────────────────────────────────────────────────────
 
 const pin = root.overrides?.[WASM];
 if (!pin)
@@ -104,11 +104,11 @@ const below = (a, b) => {
 	return false;
 };
 
-/** What a consumer can import: a legacy entry, or an exports map with a subpath in it.
- *  An empty map is the seal rather than an omission — it forbids every deep path a
- *  missing map would have left open — so it counts as no entry at all. A `bin` counts
- *  as none either: an executable is a process, and a process hands out no handles. A
- *  package with no importable entry is a bundled terminal. */
+/** What a consumer can import: a bare `main`, or an exports map with a subpath in it.
+ *  An empty map is the seal rather than an omission (it forbids every deep path a
+ *  missing map leaves open), so it counts as no entry at all. A `bin` counts as none
+ *  either: an executable is a process, and a process hands out no handles. A package
+ *  with no importable entry is a bundled terminal. */
 const importableEntry = (json) =>
 	json.main !== undefined || Object.keys(json.exports ?? {}).length > 0;
 

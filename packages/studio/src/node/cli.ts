@@ -1,17 +1,13 @@
 #!/usr/bin/env node
 /**
- * Studio CLI — the quill author's local loop and the site their deploy serves. Two
- * verbs, and they are the whole of it: `quiver test` and `quiver build` stay where they
- * are, and this absorbs neither.
- *
- * Commands:
- *   studio dev  [--quiver <dir>] [--out <dir>] [--port <n>] [--host <addr>]
- *   studio site [--quiver <dir>] [--out <dir>]
+ * Studio CLI: the quill author's local loop, and the site their deploy serves. Two
+ * verbs are the whole of it, and it absorbs none of quiver's: `build` and `test` stay
+ * where they are. `usage()` below is the spelling of both.
  *
  * Nothing here instantiates an engine. The packer is the collection's own
- * (`collection.ts`), the client is a static asset (`client.ts`), and the one wasm in
- * this picture is the copy bundled into the client, in a browser tab, in a process this
- * one never shares.
+ * (`collection.ts`) and the client is a static asset (`client.ts`), so the only wasm in
+ * this picture is the copy bundled into the client, running in a browser tab, in a
+ * process this one never shares.
  */
 
 import { join, resolve } from 'node:path';

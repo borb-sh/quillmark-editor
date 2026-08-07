@@ -1,8 +1,8 @@
 /**
  * Lay a servable site out: the client at the root, a built quiver beside it under
- * `quiver/`. That arrangement is the whole of what a deploy is, and it is written here
- * once — a consumer's workflow, this repository's own build, and the reusable workflow
- * all reach it through `studio site` rather than restating it in three shells.
+ * `quiver/`. A deploy is that arrangement and nothing else, written here once, so a
+ * consumer's `scripts`, this repository's build and the reusable workflow all reach it
+ * through `studio site`.
  *
  * The client resolves its quiver from `document.baseURI` (`src/quiver.ts`), so the tree
  * it is laid into decides what it loads. Both halves of that are asserted rather than
@@ -15,14 +15,14 @@ import { cp, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { CLIENT_DIST } from './client.js';
 import { loadQuiverNode } from './collection.js';
-import { within } from './pack.js';
+import { within } from './paths.js';
 
 export interface SiteOptions {
 	/** The source quiver: `Quiver.yaml` at its root. */
 	collection: string;
-	/** The site root. Owned outright — cleared before it is written. */
+	/** The site root, owned outright: cleared before it is written. */
 	out: string;
-	/** The client to lay down. The one this package ships, unless a test says otherwise. */
+	/** Defaults to the client this package ships; a test passes a stand-in. */
 	client?: string;
 }
 
@@ -31,12 +31,12 @@ export interface SiteOptions {
  * collection or the working directory deletes the thing being laid out. `--out .` and a
  * slipped `--out ..` are one keystroke away and the deletion is unrecoverable.
  *
- * Quiver refuses the same shape for the tree its own `build` owns. That refusal does
- * not travel with the packer: this clears a directory quiver never sees, one level
- * above the one it is handed.
+ * Quiver refuses the same shape for the tree its own `build` owns, and that refusal does
+ * not travel with the packer: this clears a directory quiver never sees, one level above
+ * the one it is handed.
  *
- * An out NESTED inside the collection stays allowed — `site/` under the quiver root is
- * the ordinary layout, and nothing of the source is read after it is cleared.
+ * An out NESTED inside the collection stays allowed: `site/` under the quiver root is
+ * the ordinary layout, and nothing of the source is read after the clear.
  */
 export function assertSafeOut(collection: string, out: string): void {
 	const at = resolve(out);
@@ -56,18 +56,20 @@ export function assertSafeOut(collection: string, out: string): void {
 /**
  * The client half of the layout, checked before anything is deleted.
  *
- * A client carrying a `quiver/` of its own is the one failure this cannot recover
- * from silently: it would shadow the author's at the same URL, and which one the
- * reader gets would depend on copy order.
+ * A client carrying a `quiver/` of its own is the one failure this cannot recover from
+ * silently: it would shadow the author's at the same URL, and which one the reader gets
+ * would depend on copy order.
  */
 export function assertClient(dist: string = CLIENT_DIST): void {
 	if (!existsSync(join(dist, 'index.html')))
-		throw new Error(`No client at ${dist} — this package ships one at dist/`);
+		throw new Error(`No client at ${dist}: this package ships one at dist/`);
 	if (existsSync(join(dist, 'quiver')))
-		throw new Error(`${dist}/quiver — the client carries no quiver; it would shadow the site's`);
+		throw new Error(
+			`${dist}/quiver exists: a client carries no quiver, and it would shadow the site's`
+		);
 }
 
-/** Lay the site out. Returns the site root. */
+/** Returns the site root, resolved. */
 export async function laySite({
 	collection,
 	out,
@@ -83,10 +85,10 @@ export async function laySite({
 	await cp(client, at, { recursive: true });
 	await build(collection, join(at, 'quiver'));
 
-	// What the client fetches first, and the one absence that reads to it as a quiver
-	// which is not there rather than a layout which is wrong.
+	// What the client fetches first: its absence reads there as a quiver that is not
+	// present rather than a layout that is wrong.
 	if (!existsSync(join(at, 'quiver', 'latest.json')))
-		throw new Error(`${at}/quiver holds no pointer — "${collection}" built nothing`);
+		throw new Error(`${at}/quiver holds no pointer: "${collection}" built nothing`);
 
 	return at;
 }

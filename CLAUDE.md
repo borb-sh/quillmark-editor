@@ -15,7 +15,7 @@ Every command is the root's; a package script is reached with `-w packages/<name
 ## Boundaries
 
 - `svelte ↛ quiver` and `quiver ↛ svelte`, both directions; only the composing apps have edges to both. `check:deps` holds it.
-- **One wasm per process.** A package with an importable entry peers `@quillmark/wasm` and never depends on it; a bundled terminal (no importable entry, so the copy it bundles meets no other) depends on it and ships no runtime dependencies. A `bin` is not an importable entry — it is a process of its own, and hands out no handles — so a terminal may carry one. Root `overrides` pins the developed-against version. The sibling `quillmark` checkout is reference only: read it, never build against it.
+- **One wasm per process.** A package with an importable entry peers `@quillmark/wasm` and never depends on it; a bundled terminal (no importable entry, so the copy it bundles meets no other) depends on it and ships no runtime dependencies. A `bin` is not an importable entry, being a process of its own that hands out no handles, so a terminal may carry one. Root `overrides` pins the developed-against version. The sibling `quillmark` checkout is reference only: read it, never build against it.
 - The apps use only the public subpath API; a needed internal is an API gap to fix, not a reach-in.
 - `/preview` imports no editor-side code, transitively: a preview consumer does not pull ProseMirror.
 

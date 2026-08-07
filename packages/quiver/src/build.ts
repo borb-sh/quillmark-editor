@@ -202,9 +202,8 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 		);
 	}
 
-	// 9–10. Write stable pointer latest.json. The format is stamped here and read
-	//       first, so a client older than the tree says so instead of misreading it
-	//       (`format.ts`).
+	// 9–10. Write stable pointer latest.json. The format is stamped here and read first,
+	//       so a client older than the tree says so rather than misreading it.
 	const pointer = { format: POINTER_FORMAT, manifest: manifestFileName };
 	const pointerPath = join(outDir, 'latest.json');
 

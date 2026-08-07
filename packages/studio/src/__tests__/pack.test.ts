@@ -11,7 +11,8 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { createPacker, settle, within } from '../node/pack.js';
+import { createPacker, settle } from '../node/pack.js';
+import { within } from '../node/paths.js';
 import { scratch } from './helpers/collection.js';
 
 const temp = scratch('studio-pack-');

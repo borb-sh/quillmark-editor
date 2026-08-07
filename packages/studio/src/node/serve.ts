@@ -4,17 +4,22 @@
  * the tree the packer swaps. A repack replaces a directory the server reads per
  * request, so nothing here is told a pack happened.
  *
- * Two things a general-purpose static server gets wrong for this, and they are the
- * reason a consumer had to write their own: `.wasm` must be served as
- * `application/wasm`, and a path that escapes its root must be refused.
+ * Two things a general-purpose static server gets wrong for this, which is the reason a
+ * consumer writes their own: `.wasm` must be served as `application/wasm`, and a path
+ * escaping its root must be refused.
  */
 
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { extname, resolve } from 'node:path';
-import { within } from './pack.js';
+import { within } from './paths.js';
 
 /**
+ * What the two roots hold: the client `vite build` emits, and a packed quiver's pointer,
+ * manifests and bundles. Fonts carry no type because they carry no extension either,
+ * being dehydrated into `store/<sha256>`; anything unlisted falls back to
+ * `application/octet-stream`, which is right for opaque bytes.
+ *
  * `.wasm` is the one that is not a nicety: `@quillmark/wasm` ships wasm-bindgen's web
  * target, which instantiates by streaming, and `WebAssembly.instantiateStreaming`
  * refuses a response of any other type.
@@ -25,26 +30,19 @@ const TYPES: Record<string, string> = {
 	'.ico': 'image/x-icon',
 	'.js': 'text/javascript; charset=utf-8',
 	'.json': 'application/json; charset=utf-8',
-	'.map': 'application/json; charset=utf-8',
-	'.otf': 'font/otf',
 	'.png': 'image/png',
 	'.svg': 'image/svg+xml',
-	'.ttf': 'font/ttf',
-	'.txt': 'text/plain; charset=utf-8',
 	'.wasm': 'application/wasm',
-	'.woff': 'font/woff',
-	'.woff2': 'font/woff2',
 	'.zip': 'application/zip'
 };
 
 export interface Mount {
 	/** URL prefix, leading slash and no trailing one. `''` is the root mount. */
 	prefix: string;
-	/** The directory it is served from. */
 	root: string;
 }
 
-/** The file a request names, or null when it names none it is allowed to. */
+/** The file a request names, or null when it names none it may have. */
 export function fileFor(mounts: Mount[], url: string): string | null {
 	let path: string;
 	try {
@@ -67,9 +65,9 @@ export function fileFor(mounts: Mount[], url: string): string | null {
 	// falls back to it, so a missing asset is a 404 rather than a page.
 	const at = resolve(root, rest === '' ? 'index.html' : rest);
 
-	// The escape refusal, and it is checked on the RESOLVED path: `%2e%2e`, a doubled
-	// separator and a symlink-free `..` all collapse into the same answer here, where
-	// a check against the request text would have to anticipate each spelling.
+	// The escape refusal, checked on the RESOLVED path: `%2e%2e`, a doubled separator and
+	// a plain `..` all collapse into one answer here, where a check against the request
+	// text would have to anticipate each spelling.
 	if (!within(root, at)) return null;
 	if (!existsSync(at) || !statSync(at).isFile()) return null;
 	return at;

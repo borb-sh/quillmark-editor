@@ -187,11 +187,10 @@ function parsePointer(raw: string): string {
 
 	const obj = parsed as Record<string, unknown>;
 
-	// The format, read before anything is believed about the rest. An unknown key is
-	// NOT a failure here: the pointer is where a newer format announces itself, and a
-	// reader that rejects what it does not recognise refuses the announcement along
-	// with everything else. Absent means a build from before the marker, which is this
-	// format (`format.ts`).
+	// The format, read before anything is believed about the rest. An unknown key is NOT
+	// a failure here: this is the document a newer format announces itself on, and a
+	// reader rejecting what it does not recognise refuses the announcement too. Absent
+	// means a build from before the marker (`format.ts`).
 	const format = obj['format'] ?? POINTER_FORMAT;
 	if (typeof format !== 'number' || !Number.isInteger(format) || format < 1) {
 		throw new QuiverError(
@@ -203,7 +202,7 @@ function parsePointer(raw: string): string {
 		throw new QuiverError(
 			'quiver_invalid',
 			`This quiver is built in format ${format} and this loader reads ${POINTER_FORMAT}. ` +
-				`Upgrade @quillmark/quiver — for a served client, the client itself, which carries the copy that reads this.`
+				`Upgrade @quillmark/quiver, or for a served client the client itself, which carries the copy that reads this.`
 		);
 	}
 

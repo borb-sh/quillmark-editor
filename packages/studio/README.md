@@ -12,7 +12,7 @@ The package is a **static client and the two verbs that serve it**. `dist` is th
 
 `studio dev` packs your collection, serves the client over it and repacks when you save; reload the page to pick up a repack. `studio site --out <dir>` lays out the same arrangement a deploy serves. Both take `--quiver <dir>` for a collection that is not the working directory, and `dev` takes `--port` and `--host`.
 
-The packer is **yours**: both verbs resolve `@quillmark/quiver` from your own `node_modules`, so what they pack is what your `quiver test` gates and your CI publishes. Neither instantiates an engine — nothing renders on the server.
+The packer is **yours**: both verbs resolve `@quillmark/quiver` from your own `node_modules`, so what they pack is what your `quiver test` gates and your CI publishes. Neither instantiates an engine; nothing renders on the server.
 
 ## Deploying a quiver to GitHub Pages
 

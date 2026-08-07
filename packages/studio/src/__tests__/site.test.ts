@@ -1,13 +1,11 @@
 /**
  * The site layout, and the refusals around it.
  *
- * The layout is the invariant that used to be written three times — a script here, a
- * shell step in the reusable workflow, and a copy in every consumer's repository — and
- * getting it subtly wrong is silent: a client laid over the wrong tree loads the wrong
- * quiver, or none, and says so only in a browser.
+ * Getting the layout subtly wrong is silent: a client laid over the wrong tree loads the
+ * wrong quiver, or none, and says so only in a browser.
  *
- * The client is a stand-in throughout except where the shipped one is the subject: the
- * layout is indifferent to what the client contains, and a suite that waited on a Vite
+ * The client is a stand-in throughout except where the shipped one is the subject. The
+ * layout is indifferent to what the client contains, so a suite that waited on a Vite
  * build to prove that would be paying seconds for nothing.
  */
 
@@ -115,7 +113,7 @@ describe('the shipped client', () => {
 	it('is present, and carries no quiver', () => {
 		expect(
 			existsSync(join(CLIENT_DIST, 'index.html')),
-			`no client at ${CLIENT_DIST} — run \`npm run build -w packages/studio\``
+			`no client at ${CLIENT_DIST}: run \`npm run build -w packages/studio\``
 		).toBe(true);
 		// `vite build` runs with `copyPublicDir: false` precisely so a dev run's packed
 		// tree cannot ride into the tarball.
