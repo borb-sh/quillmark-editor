@@ -59,7 +59,7 @@ The session/paint surface (`Engine.open`, `LiveSession`, `PaintOptions` / `Paint
 
 The substrate is quillmark's; two thin slices at the seam are the editor's, and they live in their surface docs, not here:
 
-- **Handle lifecycle**: WASM `init` (sync; the shipped artifact has no async `initSync` split), who holds the `Quill` and `Document` handles across a session, and when they are freed, under the one-copy-per-process rule the runtime enforces ([DEPENDENCIES.md](../../../../prose/canon/DEPENDENCIES.md) §The wasm singleton). The vanilla-TS core owns this ([ARCHITECTURE.md](ARCHITECTURE.md) §Core vs chrome).
+- **Handle lifecycle**: WASM `init` (sync; the shipped artifact has no async `initSync` split), who holds the `Quill` and `Document` handles across a session, and when they are freed, under the one-copy-per-process rule the runtime enforces (`check:deps`). The vanilla-TS core owns this ([ARCHITECTURE.md](ARCHITECTURE.md) §Core vs chrome).
 - **Diagnostics routing**: three producers (`quill.validate`, `LiveSession.warnings`, render errors via `FieldRegion.field`) merged, keyed to field addresses (canonical `DocPath` → the editor's stable-id keying, via `parseDocPath`), and de-duplicated with a settled precedence. Policy lives in [VISUAL_EDITOR.md](VISUAL_EDITOR.md) §Diagnostics; this ledger only names the producers it draws from.
 
 ## Not owned here

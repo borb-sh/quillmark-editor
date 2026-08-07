@@ -12,4 +12,4 @@ A thin overview, the two headline surfaces, and the supporting docs for the shar
 
 Work that is not settled lives in GitHub issues.
 The `--qm-*` theming baseline is catalogued in the package's [`THEMING.md`](../../THEMING.md).
-The app that mounts these surfaces is [`packages/playground`](../../../playground/prose/canon/PLAYGROUND.md); the rules spanning the packages are the [workspace's](../../../../prose/canon/INDEX.md).
+The app that mounts these surfaces is [`packages/playground`](../../../playground/prose/canon/PLAYGROUND.md).

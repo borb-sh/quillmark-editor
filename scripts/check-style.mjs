@@ -1,7 +1,7 @@
-// The style gate — one rule over two scopes: a stylesheet reads a rung, it does not
-// mint a value (ARCHITECTURE §Styling; PLAYGROUND §"Preventing drift"). The
-// axes share that rule and differ only in which properties they own and which value
-// betrays a mint, so they are a table, not three scripts.
+// The style gate — one rule over every scope: a stylesheet reads a rung, it does not
+// mint a value (ARCHITECTURE §Styling). The axes share that rule and differ only in
+// which properties they own and which value betrays a mint, so they are a table, not
+// a script apiece.
 //
 //   rhythm   padding / margin / gap / radius, every
 //            physical, logical and corner spelling    a px|rem length
@@ -88,7 +88,7 @@ const SCOPES = [
 		dir: 'packages/playground/src/routes',
 		prefix: '--pg-',
 		derivation: 'packages/playground/src/routes/playground.css',
-		doc: 'PLAYGROUND §"Preventing drift"',
+		doc: 'ARCHITECTURE §Styling',
 		census: false,
 		host: true
 	},
@@ -96,7 +96,7 @@ const SCOPES = [
 		dir: 'packages/studio/src',
 		prefix: '--st-',
 		derivation: 'packages/studio/src/studio.css',
-		doc: 'STUDIO §"Preventing drift"',
+		doc: 'ARCHITECTURE §Styling',
 		census: false,
 		host: true
 	}

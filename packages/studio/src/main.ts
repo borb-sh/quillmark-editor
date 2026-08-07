@@ -4,7 +4,7 @@
 // with, and the same import a third-party consumer makes, which is what makes "studio
 // looks like the endorsed version" a fact rather than a claim. `studio.css` is the two
 // heights it adds on top. Both are global imports, so the chrome reaches every
-// component's markup rather than being scoped out of it (STUDIO §"Preventing drift").
+// component's markup rather than being scoped out of it (ARCHITECTURE §Styling).
 import { mount } from 'svelte';
 import '@quillmark/svelte/preset';
 import './studio.css';

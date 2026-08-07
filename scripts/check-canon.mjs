@@ -1,6 +1,6 @@
 // Canon spine lint — enforces the ratified shape of every `prose/canon/*.md`, in
-// every tier that has one (the root's, and each package's). The spine is stated here
-// and nowhere else, so the rule and its enforcement cannot drift apart. A doc that
+// every package that carries one. The spine is stated here and nowhere else, so the
+// rule and its enforcement cannot drift apart. A doc that
 // leaves it fails CI here instead of being caught by eye. Zero deps; run via
 // `npm run check:canon`.
 //

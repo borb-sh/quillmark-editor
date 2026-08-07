@@ -9,7 +9,7 @@ The JavaScript tier downstream of the [`@quillmark/wasm`](https://github.com/bor
 | [`playground`](packages/playground)    | The app that composes them, for a developer reading the library; deployed as the Pages site. |
 | [`@quillmark/studio`](packages/studio) | The app that composes them, for an author working on a quill; published as a static client.  |
 
-A package whose JS a consumer imports peers `@quillmark/wasm` and never depends on it, so the consumer supplies the one copy whose linear memory the handles index into; a bundled terminal, imported by nobody, contains it instead. `check:deps` holds that and the rest of the graph ([DEPENDENCIES.md](prose/canon/DEPENDENCIES.md)).
+A package whose JS a consumer imports peers `@quillmark/wasm` and never depends on it, so the consumer supplies the one copy whose linear memory the handles index into; a bundled terminal, imported by nobody, contains it instead. `check:deps` holds that and the rest of the graph (`scripts/check-deps.mjs`).
 
 ## Development
 
@@ -30,4 +30,4 @@ Everything runs against the one reference quill, [`fixtures/quills/usaf_memo/0.2
 
 ## Canon
 
-The settled systems, per tier: the [workspace's](prose/canon/INDEX.md) (dependencies, release), [`svelte`'s](packages/svelte/prose/canon/INDEX.md), [`quiver`'s](packages/quiver/prose/canon/INDEX.md), [the playground's](packages/playground/prose/canon/INDEX.md), [studio's](packages/studio/prose/canon/INDEX.md). Work that is not settled lives in GitHub issues.
+The settled systems, per tier: [`svelte`'s](packages/svelte/prose/canon/INDEX.md), [`quiver`'s](packages/quiver/prose/canon/INDEX.md), [the playground's](packages/playground/prose/canon/INDEX.md), [studio's](packages/studio/prose/canon/INDEX.md). Work that is not settled lives in GitHub issues.

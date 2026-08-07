@@ -40,6 +40,10 @@ A browser cannot read the source layout, so studio ends at a built artifact behi
 
 **The bridge is studio's own.** The caret bridge and the debounced recompile are consumer-layer by design, and studio's chrome diverges from the playground's anyway. A shared shell promoted into the package would contradict the reason the shell is the consumer's.
 
+**Published, not peered.** The tarball is `dist` alone: wasm and both libraries bundled in, no runtime dependencies, no exported JS — a **bundled terminal** (`check:deps`). The base URL is a runtime fact; the quiver is laid beside the client at deploy time and never baked into it.
+
+Studio draws with `@quillmark/svelte/preset`, the same import a third-party consumer makes; `studio.css` adds only the two heights one screen needs beyond the endorsed look.
+
 ## The document is the blueprint's
 
 Studio holds one document and it is the schema's own: `seedDocument()` over the `example:` values in `Quill.yaml`. There is no door in and no door out: no file it is read from, none it is written to, and nothing of studio's own that outlives the tab.
@@ -84,22 +88,6 @@ Every note keeps its **address**, and that is the load-bearing column. An addres
 The band is under the panes rather than over them: it is consulted, not watched, and a surface that appears and disappears would reflow the thing being judged every time a keystroke fixed a field.
 
 **A document that will not compile is a state of the paint, not a row under it.** The session is transactional, so the last good paint stays on screen and stops answering the document. That is what a failed open reports one pane over, so it takes the same register: the failure at the surface it is about, carrying the place to open. The paint stays whole underneath, being the only evidence of what the plate did before it stopped compiling, and the strip is laid over rather than stacked above, so breaking a plate and fixing it do not resize what is being judged. The band still lists the diagnostics, one list being its job.
-
-## Published as a client
-
-The tarball is `dist` and nothing else: no bin, no server, no watcher. `@quillmark/svelte`, `@quillmark/quiver` and the wasm are bundled into it at build time, so it has no runtime dependencies and exports no JS — a **bundled terminal**, which is why it depends on the artifact rather than peering it ([DEPENDENCIES.md](../../../../prose/canon/DEPENDENCIES.md)).
-
-The base is a **runtime** fact, off the document's own, and nothing workspace-relative is imported, so one build serves a dev server, a subpath and a deploy unchanged. The source path and the output directory are the Node half's alone, which is what makes that true rather than aspirational.
-
-`studio-pages.yml` is the author's whole addition: a reusable workflow that builds their quiver, lays the client over it and uploads the Pages artifact. The deploy stays in their file, so nothing outside their repository holds `pages: write`. `build` packs files and instantiates nothing, so they install no wasm, write no code and configure nothing but the reference.
-
-**The built client carries no quiver.** A quiver is what the client is laid *over*, at the `quiver/` its base resolves to, so one packed inside it occupies that URL and the winner is whichever copy lands last — the workspace's fixture, on a site that meant to serve its own. `scripts/site.mjs` is the arrangement stated once: assert the client is quiverless, lay it out, build a quiver beside it, assert the pointer is reachable. `vite preview` serves what it assembles, so the shape a deploy makes is the shape looked at locally.
-
-## Preventing drift
-
-Studio's chrome is `@quillmark/svelte/preset`, the same import a third-party consumer makes, and the reason "studio looks like the endorsed version" is a fact about the build rather than a claim in a doc. It has no recipes of its own: every rule a host draws its chrome with is the endorsed look, and studio adds none beside them.
-
-What `studio.css` still mints is two heights, which is the whole of what one screen adds to the endorsed look. `check:style` runs its axes over this scope, so a component that mints a grey, a size, a radius or a duration fails CI rather than review, and its conformance rule fails a rung that restates one of the preset's, or that names the same concept as the playground's at a different value. The pane height is exactly that case: it is the playground's `--pg-pane` job, and the two are held to one number.
 
 ## Not
 
