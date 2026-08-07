@@ -1,7 +1,7 @@
 {
 	"name": "@quillmark/quiver",
 	"version": "0.18.1",
-	"description": "Quiver registry and build tooling for Quillmark",
+	"description": "A quiver of Quillmark quills: load one, pack one, hand out quills.",
 	"type": "module",
 	"license": "Apache-2.0",
 	"repository": {
@@ -52,9 +52,6 @@
 		"publint": "^0.3.0",
 		"typescript": "^5.9.3",
 		"vitest": "^4.0.18"
-	},
-	"bin": {
-		"quillmark-quiver": "./dist/bin/quiver.js"
 	},
 	"scripts": {
 		"build": "tsc",

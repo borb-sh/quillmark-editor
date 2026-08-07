@@ -21,6 +21,7 @@ on:
           - svelte
           - quiver
           - studio
+          - quillkit
       bump:
         description: Version bump
         required: true
@@ -65,6 +66,10 @@ jobs:
           # than trusting npm version's partial rewrite.
           npm install --package-lock-only --no-audit --no-fund
 
+          # The registry name, read rather than spelled from the directory: not every
+          # package here is scoped, and a hardcoded `@quillmark/` would name a package
+          # that does not exist for the ones that are not.
+          echo "name=$(node -p "require('./packages/$PKG/package.json').name")" >> "$GITHUB_OUTPUT"
           echo "next=$NEXT" >> "$GITHUB_OUTPUT"
           echo "Bumping $PKG $CURRENT → $NEXT"
 
@@ -95,6 +100,7 @@ jobs:
       - name: Push the release branch
         run: |
           PKG="${{ inputs.package }}"
+          NAME="${{ steps.version.outputs.name }}"
           VERSION="${{ steps.version.outputs.next }}"
           BRANCH="release/${PKG}-v${VERSION}"
 
@@ -109,11 +115,11 @@ jobs:
             -- "packages/$PKG" > commits.md
 
           {
-            echo "Automated version bump: \`@quillmark/${PKG}\` → \`v${VERSION}\`."
+            echo "Automated version bump: \`${NAME}\` → \`v${VERSION}\`."
             echo
             echo "**Before merging:** read the \`## v${VERSION}\` section of \`packages/${PKG}/CHANGELOG.md\` on this branch. It is the curated \`## Unreleased\` body, promoted, and it becomes the GitHub Release notes verbatim."
             echo
-            echo "Merging tags \`${PKG}-v${VERSION}\` and publishes \`@quillmark/${PKG}\`."
+            echo "Merging tags \`${PKG}-v${VERSION}\` and publishes \`${NAME}\`."
             echo
             echo "<details><summary>Commits touching <code>packages/${PKG}</code> since ${LAST:-the first commit}</summary>"
             echo
@@ -126,12 +132,12 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
           git add "packages/$PKG/package.json" "packages/$PKG/CHANGELOG.md" package-lock.json
-          git commit -m "chore(release): @quillmark/${PKG} v${VERSION}"
+          git commit -m "chore(release): ${NAME} v${VERSION}"
           git push -u origin "$BRANCH"
 
           # The run's own summary is the handoff: the compare link with the title
           # already filled, and the body in one copyable block.
-          TITLE=$(printf 'chore(release): @quillmark/%s v%s' "$PKG" "$VERSION" | jq -sRr @uri)
+          TITLE=$(printf 'chore(release): %s v%s' "$NAME" "$VERSION" | jq -sRr @uri)
           COMPARE="${{ github.server_url }}/${{ github.repository }}/compare/main...${BRANCH}?expand=1&title=${TITLE}"
           {
             echo "## Open the release PR"

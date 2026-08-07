@@ -62,7 +62,7 @@ import { build } from '@quillmark/quiver/node';
 await build('./node_modules/@org/my-quiver', './public/quivers/my-quiver');
 ```
 
-`build` clears its output directory before writing, so it owns that path outright. An `outDir` that is, or contains, the source quiver or the working directory is refused with a `transport_error` rather than deleted.
+`build` owns its output path outright: it assembles a generation in `<outDir>.stage`, moves it in whole, and deletes the one it replaced. A reader fetching mid-build sees the previous generation rather than a torn tree, and a build that throws leaves it serving. An `outDir` that is, or contains, the source quiver or the working directory is refused with a `transport_error` rather than deleted.
 
 ```ts
 // browser runtime
@@ -134,32 +134,17 @@ A consumer reaches an installed quiver by resolving `<specifier>/Quiver.yaml`, w
 }
 ```
 
-Gate the quiver in CI so a validation failure surfaces on publish rather than on a consumer's build. `quillmark-quiver test` loads with `fromDir`, compiles every quill, and renders each quill's example document. One door, so what you run locally is what CI runs.
+## Authoring is [quillkit](../quillkit#readme)'s
 
-The CLI needs no file. Installing the package links `quillmark-quiver` into `node_modules/.bin`, which npm puts on PATH for every script:
+This package is a library: it loads a quiver and packs one, and it has no CLI. The verbs a quill author runs (gate, pack, look at, deploy) are `quillkit`'s, and it resolves this package out of the collection's own `node_modules`. Depend on it here and the version you pin is the format your quiver is packed in:
 
 ```sh
-npm install --save-dev @quillmark/quiver @quillmark/wasm
+npm install --save-dev @quillmark/quiver @quillmark/wasm quillkit
 ```
 
 ```jsonc
 // package.json
 {
-	"scripts": { "test": "quillmark-quiver test" }
+	"scripts": { "test": "quillkit test" }
 }
 ```
-
-It finds the engine itself: a named `engine` export from `quiver.config.js` at the collection root, else `@quillmark/wasm` from your own `node_modules`. `quillmark-quiver build [--out <dir>]` packs the same source into a servable artifact.
-
-On vitest, jest or `node:test`, spawn the bin from a test rather than rebuilding the loop against the main API. The gate stays one implementation, and the case gates what CI gates:
-
-```ts
-// quiver.test.ts
-import { execFileSync } from 'node:child_process';
-
-it('gates the quiver', () => {
-	execFileSync('quillmark-quiver', ['test'], { stdio: 'inherit' });
-});
-```
-
-It answers _does it work_, and that is the whole of what this package offers a quill author: _what is it like to use_ is answered by working a real document through the quill live, which is an app rather than a subpath.

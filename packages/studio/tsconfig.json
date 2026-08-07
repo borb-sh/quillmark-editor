@@ -14,8 +14,7 @@
 		"noEmit": true,
 		"isolatedModules": true
 	},
-	// The browser half alone. The Node half compiles for somewhere else and answers to
-	// `tsconfig.node.json`; the Vite config drives it, so it is checked there too.
-	"include": ["src/**/*.ts", "src/**/*.svelte"],
-	"exclude": ["src/node", "src/__tests__"]
+	// The client, which is the whole package. The Vite config that builds it runs in
+	// Node rather than a browser and answers to `tsconfig.check.json`.
+	"include": ["src/**/*.ts", "src/**/*.svelte"]
 }

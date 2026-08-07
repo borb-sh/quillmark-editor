@@ -50,9 +50,9 @@ jobs:
       - name: Dependency law
         run: npm run check:deps
 
-      # Before the suite: studio's Node half is reached through the bin an author runs,
-      # and the client it serves is `vite build`'s output, so both are built artifacts
-      # the suite spawns rather than modules it imports.
+      # Before the suite: quillkit is reached through the bin an author runs, and the
+      # client it serves is `vite build`'s output, so both are built artifacts the
+      # suite spawns and reads rather than modules it imports.
       - name: Build
         run: npm run build
 
@@ -64,12 +64,13 @@ jobs:
         run: npm run check:pack
 
   # The workspace's own quiver through the author's path: `npm pack` builds the local
-  # client, so this gates the client and the layout together, against the fixture the
-  # rest of the suite runs on. No artifact is minted — a rehearsal is not a deploy, and
-  # this repository's Pages holds the playground.
+  # tool and the local client, so this gates both and the layout together, against the
+  # fixture the rest of the suite runs on. No artifact is minted — a rehearsal is not a
+  # deploy, and this repository's Pages holds the playground.
   studio-pages:
     uses: ./.github/workflows/studio-pages.yml
     with:
       quiver-dir: fixtures
       studio-package: ./packages/studio
+      quillkit-package: ./packages/quillkit
       upload: false

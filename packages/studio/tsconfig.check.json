@@ -1,13 +1,16 @@
-// The Node half's type check, which reaches what its build deliberately does not.
-// `tsconfig.node.json` emits from `src/node` alone; the Vite config beside it drives
-// the same packing loop and would otherwise be checked by nothing.
+// The Vite config's type check. The client answers to `tsconfig.json` under
+// `svelte-check`; the config that builds it runs in Node, reaches the packer, and is
+// checked by nothing else.
 {
-	"extends": "./tsconfig.node.json",
 	"compilerOptions": {
-		"noEmit": true,
-		// Nothing is emitted, so the build's `src/node` root does not apply and the
-		// config files beside it come into the program.
-		"rootDir": "."
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"types": ["node"],
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"noEmit": true
 	},
-	"include": ["src/node", "src/__tests__", "vite.config.ts", "vitest.config.ts"]
+	"include": ["vite.config.ts"]
 }

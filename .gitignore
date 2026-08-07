@@ -105,8 +105,8 @@ packages/*/build/
 packages/playground/static/quiver/
 packages/studio/public/quiver/
 
-# Studio's built client laid out beside a built quiver, the way a deploy serves it.
-packages/studio/site/
+# The client laid out beside a built quiver, the way a deploy serves it (`npm run site`).
+/site/
 
 # vitepress build output
 **/.vitepress/dist
@@ -148,6 +148,3 @@ packages/studio/site/
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
-
-# Studio's Node half, compiled from `src/node/`.
-packages/studio/bin/

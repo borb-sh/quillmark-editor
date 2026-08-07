@@ -4,7 +4,7 @@
  * Getting the layout subtly wrong is silent: a client laid over the wrong tree loads the
  * wrong quiver, or none, and says so only in a browser.
  *
- * The client is a stand-in throughout except where the shipped one is the subject. The
+ * The client is a stand-in throughout except where the resolved one is the subject. The
  * layout is indifferent to what the client contains, so a suite that waited on a Vite
  * build to prove that would be paying seconds for nothing.
  */
@@ -13,11 +13,11 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { CLIENT_DIST } from '../node/client.js';
-import { assertClient, assertSafeOut, laySite } from '../node/site.js';
+import { resolveClient } from '../collection.js';
+import { assertClient, assertSafeOut, laySite } from '../site.js';
 import { scratch } from './helpers/collection.js';
 
-const temp = scratch('studio-site-');
+const temp = scratch('quillkit-site-');
 afterEach(() => temp.cleanup());
 
 /** A client of the shape `vite build` produces: an `index.html` and its assets. */
@@ -107,17 +107,24 @@ describe('the client assertion', () => {
 	});
 });
 
-describe('the shipped client', () => {
-	// The one place the real `dist/` is the subject. It is built by `npm run build`,
-	// which the gate runs before the suite.
-	it('is present, and carries no quiver', () => {
+describe('the resolved client', () => {
+	// The one place the real `@quillmark/studio` is the subject, reached the way a verb
+	// reaches it: by name, out of a collection's tree. Its `dist/` is built by
+	// `npm run build`, which the gate runs before the suite.
+	it('is found by name, and carries no quiver', async () => {
+		const dist = resolveClient(await temp.collection());
 		expect(
-			existsSync(join(CLIENT_DIST, 'index.html')),
-			`no client at ${CLIENT_DIST}: run \`npm run build -w packages/studio\``
+			existsSync(join(dist, 'index.html')),
+			`no client at ${dist}: run \`npm run build -w packages/studio\``
 		).toBe(true);
 		// `vite build` runs with `copyPublicDir: false` precisely so a dev run's packed
 		// tree cannot ride into the tarball.
-		expect(existsSync(join(CLIENT_DIST, 'quiver'))).toBe(false);
-		expect(() => assertClient()).not.toThrow();
+		expect(existsSync(join(dist, 'quiver'))).toBe(false);
+		expect(() => assertClient(dist)).not.toThrow();
+	});
+
+	it('names the install when the collection carries no client', async () => {
+		const bare = await temp.dir();
+		expect(() => resolveClient(bare)).toThrow(/npm install --save-dev @quillmark\/studio/);
 	});
 });

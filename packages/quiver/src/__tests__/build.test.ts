@@ -403,6 +403,73 @@ describe('buildQuiver — I/O error', () => {
 	});
 });
 
+describe('buildQuiver — the generation lands whole', () => {
+	// What a repack loop and a deploy both read under. A build takes seconds, so a
+	// window inside one is a window a client lands in.
+	const tmpDirs: string[] = [];
+
+	afterEach(async () => {
+		for (const d of tmpDirs.splice(0)) {
+			await rm(d, { recursive: true, force: true });
+		}
+	});
+
+	/** The pointer's manifest name, which moves whenever the packed content does. */
+	async function pointerOf(out: string): Promise<string> {
+		const raw = await readFile(join(out, 'latest.json'), 'utf-8');
+		return (JSON.parse(raw) as { manifest: string }).manifest;
+	}
+
+	it('leaves no staging tree behind', async () => {
+		// The two siblings hold a generation mid-assembly and the one it replaced.
+		// Both are gone by the time a build resolves, so a repack loop does not grow
+		// a disk.
+		const out = join(tempDir(), 'quiver');
+		tmpDirs.push(out, `${out}.stage`, `${out}.prev`);
+		await buildQuiver(SAMPLE_FIXTURE, out);
+		await buildQuiver(SAMPLE_FIXTURE, out);
+
+		await expect(access(`${out}.stage`)).rejects.toThrow();
+		await expect(access(`${out}.prev`)).rejects.toThrow();
+	});
+
+	it('replaces the previous generation rather than merging with it', async () => {
+		const out = tempDir();
+		tmpDirs.push(out);
+		await buildQuiver(SAMPLE_FIXTURE, out);
+		await writeFile(join(out, 'stale.txt'), 'from a previous build');
+		await buildQuiver(SAMPLE_FIXTURE, out);
+
+		await expect(access(join(out, 'stale.txt'))).rejects.toThrow();
+		// Every name the pointer reaches has landed: a whole tree moves in, so a
+		// client never reads a manifest whose bundles are not there yet.
+		const manifest = JSON.parse(await readFile(join(out, await pointerOf(out)), 'utf-8')) as {
+			quills: Array<{ bundle: string }>;
+		};
+		expect(manifest.quills.length).toBeGreaterThan(0);
+		for (const quill of manifest.quills) await access(join(out, quill.bundle));
+	});
+
+	it('a failed build leaves the last good generation serving', async () => {
+		// A quiver mid-edit is invalid as often as not, and the loop that repacks on
+		// every save is exactly where that lands.
+		const src = tempDir();
+		const out = tempDir();
+		tmpDirs.push(src, out);
+		await seedSourceQuiver(src, { quills: [{ name: 'memo', version: '1.0.0' }] });
+		await buildQuiver(src, out);
+		const good = await pointerOf(out);
+
+		await writeFile(join(src, 'Quiver.yaml'), 'name: [unclosed');
+		await expect(buildQuiver(src, out)).rejects.toThrow();
+		expect(await pointerOf(out)).toBe(good);
+
+		await writeFile(join(src, 'Quiver.yaml'), 'name: recovered\n');
+		await buildQuiver(src, out);
+		expect(await pointerOf(out)).not.toBe(good);
+	});
+});
+
 describe('buildQuiver — outDir guard', () => {
 	// The build clears outDir first, so these are the paths where a typo would
 	// delete the caller. Each asserts the source survives: the guard has to fire

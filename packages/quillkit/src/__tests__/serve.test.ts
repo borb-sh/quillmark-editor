@@ -10,13 +10,13 @@ import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import type { Server } from 'node:http';
-import { createStaticServer, fileFor, listen, type Mount } from '../node/serve.js';
+import { createStaticServer, fileFor, listen, type Mount } from '../serve.js';
 
 const temps: string[] = [];
 const servers: Server[] = [];
 
 async function temp(): Promise<string> {
-	const at = await mkdtemp(join(tmpdir(), 'studio-serve-'));
+	const at = await mkdtemp(join(tmpdir(), 'quillkit-serve-'));
 	temps.push(at);
 	return at;
 }
@@ -26,7 +26,7 @@ afterEach(async () => {
 	for (const at of temps.splice(0)) await rm(at, { recursive: true, force: true });
 });
 
-/** A client root and a quiver root, mounted the way `quillmark-studio dev` mounts them. */
+/** A client root and a quiver root, mounted the way `quillkit studio` mounts them. */
 async function serveFixture(): Promise<{ base: string; client: string; quiver: string }> {
 	const client = await temp();
 	const quiver = await temp();

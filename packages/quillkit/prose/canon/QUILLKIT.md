@@ -1,0 +1,61 @@
+# Quillkit
+
+> **Implementation**: `src/` · `src/bin/`
+
+## TL;DR
+
+The verbs a quill author types, one bin over the whole loop: `test` gates, `build` packs, `studio` shows, `site` lays a deploy out. It is the only name in the toolchain an author runs, and the audit surface a production tree does not carry: a collection depends on [`@quillmark/quiver`](../../../quiver/prose/canon/QUIVER.md) for the loaders, and on this only in `devDependencies`.
+
+## quillkit carries nothing it can resolve
+
+Three things every verb needs (the loader that packs, the engine that renders, the client that draws) come out of the **collection's** `node_modules`, resolved from its `package.json` (`collection.ts`). None is a dependency of this package, which ships no runtime dependencies at all.
+
+That is one rule paying three ways:
+
+- **The collection pins its own format.** `@quillmark/quiver` writes the pointer and reads it back, so the copy a collection depends on decides the bytes its quiver is packed in. A tool carrying a packer would decide that instead, on a cadence answering to CLI flags and chrome.
+- **One copy packs, however the pack is reached.** `build` in CI, `studio` mid-edit and `site` at deploy all resolve the same install, so the bytes a local loop serves and the bytes a deploy publishes agree by construction rather than by a version range someone keeps true.
+- **A gate install is the tool alone.** The client is tens of megabytes of browser-targeted wasm across three backends, none of which a gate executes: `test` renders through the collection's own copy. Carrying the client would put all of it in every collection's CI install, beside the copy that does the work.
+
+The cost is a name in `devDependencies` per thing resolved, and each absence names its install rather than surfacing a resolver's own words. `--client <dir>` is the one override, for a deploy pinning the client it serves.
+
+**Every specifier resolves under CJS conditions.** `createRequire().resolve` walks an exports map as `require`, `node`, `default` whatever the caller's own module system, so a subpath offering `import` alone is invisible to it. Quiver names `default` beside `import` on every entry for this; the client is reached at `<pkg>/package.json`, the one specifier a package with no importable entry still answers to, and its `dist` is the directory served.
+
+## Blocked on, looked at
+
+`test` is what an author is **blocked on**: it runs in their CI, against their own wasm, and installs a loader rather than an app. `studio` is what they **look at**, and nothing fails a build on its verdict, which is what keeps the client's chrome, its weight and its wasm its own problem.
+
+**The gate loads and renders.** `fromDir`, then compile and render every quill's example document, seeded with `quill.seedDocument()` since the blueprint carries `<must-fill>` sentinels and is not directly renderable. The engine is a named `engine` export from `quillkit.config.js` at the collection root, else `@quillmark/wasm` resolved from the collection's tree. The core is instantiated before either: every `@quillmark/wasm` export throws `runtime::not_initialized` until `init()` resolves, and `new Engine()` is lazy, so a gate that skips it reports an uninitialized runtime as a failing quill.
+
+**One door, so the loop and the engine contract have one home each.** A second entry onto the same verdict copies both, and a caller-supplied engine gates nothing about the discovery this does, so the two answer differently under one name. An author on vitest, jest or another runner spawns the bin (`execFileSync('quillkit', ['test'])`) and gates what CI gates. The suite spawns it against the reference quiver, since nothing that imports a module proves a surface reached through a linked bin.
+
+The blueprint is what the two share: the client seeds the same way, so the document the gate renders is the document the author judges, and it is the only document either one can name.
+
+## One wasm per process, and mostly none
+
+`test` is the only verb that puts a wasm in this process, and it is the collection's own. The packer instantiates nothing, and the client is static bytes handed to a browser tab, a process this one never shares. So the tool holds at most one copy and hands a handle to nobody, which is what lets it be a bin with no importable entry (`check:deps`).
+
+## The local loop
+
+`studio` packs the source into a served tree, serves the client at the root with the pack mounted at `/quiver`, and repacks when the source changes. Three parts, and only the first is subtle:
+
+**The pack lands whole, and that is quiver's** (QUIVER §"The generation lands whole"). Nothing here stages or swaps: the directory belongs to `build`, and a caller cannot close a window inside it. What is left here is the trigger: a burst of watcher events collapsed to one repack, the pack's own output filtered out of the watch (the default output is under the collection's `node_modules`, so a watcher seeing its own writes would repack forever), and a queue that serializes packs without ending on the first failure, a quiver mid-edit being invalid as often as not.
+
+**The server is written rather than borrowed.** Two things a general-purpose static server gets wrong for this: `.wasm` must be served as `application/wasm`, since wasm-bindgen's web target instantiates by streaming and `WebAssembly.instantiateStreaming` refuses any other type; and a path escaping its root must be refused, checked on the resolved path so `%2e%2e`, a doubled separator and a plain `..` collapse into one answer. Nothing is cached: this is a loop an author repacks under, and a cache would answer about the last generation.
+
+**Nothing renders on the server.** The WASM boundary and the paint loop are browser concerns, which is what keeps this half a packer and a file watcher.
+
+## The deploy layout
+
+`site` writes the arrangement a deploy serves and nothing else: the client at a root, a built quiver at `quiver/` beneath it, which is where the client looks (`document.baseURI`). It is written once here, so a consumer's `scripts`, this repository's build and the reusable workflow all reach it through the verb rather than restating it, and a consumer running it locally gates the shape their deploy will have.
+
+Both halves are asserted rather than assumed: a client carrying a `quiver/` of its own would occupy the URL the built one is served from, and the winner would be whichever copy landed last.
+
+**It clears what it writes**, so an `--out` holding the collection or the working directory is refused the way `build` refuses one holding its source. The tree is this verb's, one level above the one quiver is handed, so the refusal does not travel with the packer.
+
+## Not
+
+Not a scaffolder: there is no `new`, and a collection is laid out by hand. Not a renderer: every render is `@quillmark/wasm`'s, through the collection's copy. Not a library: no importable entry, and the loaders stay quiver's, where a browser consumer can reach them.
+
+## Links
+
+[QUIVER.md](../../../quiver/prose/canon/QUIVER.md) · [STUDIO.md](../../../studio/prose/canon/STUDIO.md)
