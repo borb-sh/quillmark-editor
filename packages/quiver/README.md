@@ -134,9 +134,9 @@ A consumer reaches an installed quiver by resolving `<specifier>/Quiver.yaml`, w
 }
 ```
 
-Gate the quiver in CI so a validation failure surfaces on publish rather than on a consumer's build. `quiver test` loads with `fromDir`, compiles every quill, and renders each quill's example document. One door, so what you run locally is what CI runs.
+Gate the quiver in CI so a validation failure surfaces on publish rather than on a consumer's build. `quillmark-quiver test` loads with `fromDir`, compiles every quill, and renders each quill's example document. One door, so what you run locally is what CI runs.
 
-The CLI needs no file. Installing the package links `quiver` into `node_modules/.bin`, which npm puts on PATH for every script:
+The CLI needs no file. Installing the package links `quillmark-quiver` into `node_modules/.bin`, which npm puts on PATH for every script:
 
 ```sh
 npm install --save-dev @quillmark/quiver @quillmark/wasm
@@ -145,11 +145,11 @@ npm install --save-dev @quillmark/quiver @quillmark/wasm
 ```jsonc
 // package.json
 {
-	"scripts": { "test": "quiver test" }
+	"scripts": { "test": "quillmark-quiver test" }
 }
 ```
 
-It finds the engine itself: a named `engine` export from `quiver.config.js` at the collection root, else `@quillmark/wasm` from your own `node_modules`. `quiver build [--out <dir>]` packs the same source into a servable artifact.
+It finds the engine itself: a named `engine` export from `quiver.config.js` at the collection root, else `@quillmark/wasm` from your own `node_modules`. `quillmark-quiver build [--out <dir>]` packs the same source into a servable artifact.
 
 On vitest, jest or `node:test`, spawn the bin from a test rather than rebuilding the loop against the main API. The gate stays one implementation, and the case gates what CI gates:
 
@@ -158,7 +158,7 @@ On vitest, jest or `node:test`, spawn the bin from a test rather than rebuilding
 import { execFileSync } from 'node:child_process';
 
 it('gates the quiver', () => {
-	execFileSync('quiver', ['test'], { stdio: 'inherit' });
+	execFileSync('quillmark-quiver', ['test'], { stdio: 'inherit' });
 });
 ```
 

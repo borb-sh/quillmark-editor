@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+The bin is `quillmark-quiver`. A bin is the one name this package writes into a namespace it shares — a consumer's `node_modules/.bin`, and their PATH when it is installed globally — and `quiver` is too plain a word to hold there. The verbs are untouched, so a `scripts` entry becomes `quillmark-quiver test` and a runner spawning the gate names the bin it links (`execFileSync('quillmark-quiver', ['test'])`).
+
 ## v0.17.0 - 2026-08-07
 
 `Quiver.warm()` is removed. It prefetched every quill's tree so a later `getQuill` would be microseconds, and it was the only reason the quiver held a tree cache beside its quill cache; call `getQuill` for the refs you want ahead of time instead. The quill cache is untouched — one instance per canonical ref, concurrent calls coalescing — and a retry after a `Quill.fromTree` throw now refetches rather than reusing the retained tree.

@@ -25,7 +25,7 @@ function flag(name: string): string | undefined {
 	return i !== -1 && i + 1 < argv.length ? argv[i + 1] : undefined;
 }
 
-/** The collection, defaulting to the working directory as `quiver build` does. */
+/** The collection, defaulting to the working directory as `quillmark-quiver build` does. */
 const collection = (): string => resolve(flag('--quiver') ?? '.');
 
 // ---------------------------------------------------------------------------

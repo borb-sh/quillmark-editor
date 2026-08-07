@@ -5,8 +5,8 @@
  * Looking at rendered output is studio's, an app rather than a verb.
  *
  * Commands:
- *   quiver build [--out <dir>]
- *   quiver test
+ *   quillmark-quiver build [--out <dir>]
+ *   quillmark-quiver test
  *
  * Engine discovery (for `test`):
  *   1. Named export `engine` from `quiver.config.js` at the collection root,
@@ -86,7 +86,7 @@ async function loadEngine(cwd: string): Promise<Engine> {
 async function build(): Promise<void> {
 	const cwd = process.cwd();
 	const outDir = flag('--out') ?? 'dist';
-	console.log(`quiver build: ${cwd} → ${outDir}`);
+	console.log(`quillmark-quiver build: ${cwd} → ${outDir}`);
 	await buildQuiver(cwd, outDir);
 	console.log('done.');
 }
@@ -139,7 +139,9 @@ async function test(): Promise<void> {
 // ---------------------------------------------------------------------------
 
 function usage(): void {
-	console.error(['Usage:', '  quiver build [--out <dir>]', '  quiver test'].join('\n'));
+	console.error(
+		['Usage:', '  quillmark-quiver build [--out <dir>]', '  quillmark-quiver test'].join('\n')
+	);
 }
 
 function die(err: unknown): never {

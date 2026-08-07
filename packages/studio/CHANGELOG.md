@@ -4,7 +4,7 @@
 
 ## Unreleased
 
-The first published shape: a static client, not an application. The tarball carries `dist` and nothing else — no bin, no server, no watcher — with `@quillmark/svelte`, `@quillmark/quiver` and `@quillmark/wasm` bundled into it, so it has no runtime dependencies and exports no JS.
+The first published shape: a static client and the two verbs that serve it. The tarball carries `dist`, the client, with `@quillmark/svelte`, `@quillmark/quiver` and `@quillmark/wasm` bundled into it, and `bin`, the local loop and the site layout, reached through `quillmark-studio dev` and `quillmark-studio site`. It has no runtime dependencies and no importable entry, so it is run and served rather than imported, and nothing renders on a server.
 
 The client takes its base at runtime off `document.baseURI`, so one build serves a dev server, a subpath and a deploy unchanged, and it carries no quiver: one is laid beside it at `quiver/`, which is where it looks.
 
