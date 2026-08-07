@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.18.0 - 2026-08-07
+
 The bin is `quillmark-quiver`. A bin is the one name this package writes into a namespace it shares — a consumer's `node_modules/.bin`, and their PATH when it is installed globally — and `quiver` is too plain a word to hold there. The verbs are untouched, so a `scripts` entry becomes `quillmark-quiver test` and a runner spawning the gate names the bin it links (`execFileSync('quillmark-quiver', ['test'])`).
 
 ## v0.17.0 - 2026-08-07
