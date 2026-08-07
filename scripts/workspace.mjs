@@ -18,11 +18,10 @@ export function packages() {
 		});
 }
 
-/** Every `prose/canon/` in the workspace: the root's, then each package's, sorted. Canon
- *  is per-tier, the root's holding the rules that span packages. */
+/** Every package's `prose/canon/`, sorted. */
 export function canonRoots() {
-	return [ROOT, ...packages().map((p) => p.at)]
-		.map((d) => join(d, 'prose', 'canon'))
+	return packages()
+		.map((p) => join(p.at, 'prose', 'canon'))
 		.filter(existsSync);
 }
 

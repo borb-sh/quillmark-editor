@@ -4,4 +4,4 @@ Canonical documentation for `@quillmark/studio`, the app a quill author looks at
 
 - [STUDIO.md](STUDIO.md): its two halves, the repack loop the document survives, and the preset its chrome is drawn with.
 
-The surfaces it mounts are [`@quillmark/svelte`'s canon](../../../svelte/prose/canon/INDEX.md); the loader it consumes is [`@quillmark/quiver`'s](../../../quiver/prose/canon/INDEX.md); the rules spanning the packages are the [workspace's](../../../../prose/canon/INDEX.md).
+The surfaces it mounts are [`@quillmark/svelte`'s canon](../../../svelte/prose/canon/INDEX.md); the loader it consumes is [`@quillmark/quiver`'s](../../../quiver/prose/canon/INDEX.md).

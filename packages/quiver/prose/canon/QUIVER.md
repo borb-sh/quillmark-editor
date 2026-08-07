@@ -56,7 +56,7 @@ The quill cache is the only one. A fetched tree lives for the length of the mate
 
 This package produces quills; `@quillmark/wasm` renders them. A quill from `getQuill` is engine-free portable data (schema inspection, validation, blueprint access, seeding) and passes straight to `engine.render(quill, doc)`, which routes on `quill.backendId`, lazily loads that backend, clones both handles into its memory, renders, and frees the clones. There is no boundary-crossing step to perform.
 
-The canonical `Quill` / `Document` / `Engine` types are **not** re-exported here. They come from the `@quillmark/wasm` peer, which is their single source of truth and, per the [workspace's dependency law](../../../../prose/canon/DEPENDENCIES.md), the one installed copy whose linear memory every handle indexes into.
+The canonical `Quill` / `Document` / `Engine` types are **not** re-exported here. They come from the `@quillmark/wasm` peer, which is their single source of truth: the one installed copy whose linear memory every handle indexes into (`check:deps`).
 
 `Engine.render`, `open`, `supportedFormats` and `supportsCanvas` are async.
 

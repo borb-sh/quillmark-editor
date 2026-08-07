@@ -18,7 +18,7 @@ So the front page **mounts what it describes**. It is a quickstart, and every su
 
 The playground draws with `@quillmark/svelte/preset`, the same import a third-party consumer makes, so it looks like the endorsed version by construction. The preset carries the `--qmh-*` scale and the recipes; `playground.css` carries what the app adds on top and nothing the preset already has: a page maximum, a display size, two container heights, and the ramp's upper steps derived from the preset's base. The column the front page reads against is the preset's measure, so the width prose wraps at and the width a code sample is cut to are one number.
 
-A drift the preset cannot see is the app minting its own copy of a rung the preset carries, so `check:style` fails that outright: an app scale may not restate a name the preset defines, and two app scales may not mint one concept at two values.
+An app scale may not restate a name the preset defines, and two app scales may not mint one concept at two values ([ARCHITECTURE.md](../../../svelte/prose/canon/ARCHITECTURE.md) §Styling).
 
 A mounting site states only what the surface cannot: each pane states a track that may shrink below its content, the editor carries `.qm-pane` because it is mounted in a fixed height rather than a page, and the gutter, the tone, the desk and the tail are the surface's own (THEMING §"Drop it in"). A frame states a height and the clip that holds a surface to it, and it is positioned so the clip reaches the surface's out-of-flow parts: one that resolves past the frame lands unclipped and extends the page's scroll past its own foot.
 
@@ -39,19 +39,11 @@ Two guardrails hold across both: the playground consumes only the public subpath
 
 The reference quill on disk reaches some branches and not others: it declares one card kind, a blank date default, no guidance channel, and no card whose kind the schema cannot project. The variants that reach them are **query flags on `/playground`**, read once at mount: `?kinds2`, `?dateDefault=YYYY-MM-DD` (schema, patched into the tree before the quill is built), `?tips`, `?foreign` (seeds, applied to the document after). They carry no chrome, because the only reader is a hand driving the harness, and a switch for one would be a control on the landing page for everyone else.
 
-## Where the quills come from
+## Quiver, not bundler
 
-Every route opens its session over the reference quill, and gets it from a **quiver**, not from the bundler. `scripts/build-quiver.mjs` packs the workspace's `fixtures/` tree into `static/quiver/` before dev and before build, and the app reads it back with `Quiver.fromBuiltUrl`: pointer, manifest, one content-addressed bundle, fonts dehydrated into a store. That is the browser consumer path in full, which is the path a harness has to exercise. The quill is not a bundler input either way, so no Typst source or font bytes are inlined into the JS.
+Every route opens its session over the reference quill from a **quiver**, not from the bundler: no Typst source or font bytes in the JS bundle. This is the workspace's one edge to `@quillmark/quiver`; the library has none, so the app is where the two tiers meet.
 
-This is the workspace's one edge to `@quillmark/quiver`. The library has none ([DEPENDENCIES.md](../../../../prose/canon/DEPENDENCIES.md)), so the app is where the two tiers meet, and this route set demonstrates that they compose without an edge between them.
-
-One `Quiver` serves the page. Its quill cache is per canonical ref and lives as long as the quiver does, so a client-side navigation between routes reuses one materialization rather than paying for its own. Routes mint and free their own `Quill` from the tree: the schema variants rewrite bytes a materialized quill has no seam for, so the loader hands back `getQuill(ref).toTree()` and the caller owns what it builds from it. The discarded materialization is the cost of that seam.
-
-## Preventing drift
-
-The derivation and the recipes are **two stylesheets**, the split the package and the preset both make and for the same reason ([ARCHITECTURE.md](../../../svelte/prose/canon/ARCHITECTURE.md) §Styling): a rung fixes a value, a recipe fixes which declarations make a thing, and only the second can be checked against the first. The derivation is exempt from the literal rules, so a recipe beside it would inherit the exemption.
-
-Literals live in the derivation and nowhere else under `src/routes`: `check:style` runs its axes over this scope too, so a route that mints a grey, a size, a radius or a duration fails CI rather than review. A route reads two scales (the preset's for most of what it draws, the local one for what the app adds) and the axes accept either. What stays the package's alone is the **dial census**: that the consumed `--qm-*` set equals THEMING.md's is a claim about the package's contract.
+One `Quiver` serves the page. Its quill cache is per canonical ref and lives as long as the quiver does, so a client-side navigation between routes reuses one materialization rather than paying for its own. Routes mint and free their own `Quill` from the tree when schema variants rewrite bytes a materialized quill has no seam for.
 
 ## Links
 

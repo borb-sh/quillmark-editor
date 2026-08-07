@@ -105,7 +105,7 @@ function quiverSource(): Plugin {
 export default defineConfig({
 	// Relative asset URLs, and the client resolves the quiver off `document.baseURI`
 	// for the same reason: the base is a runtime fact, so a built studio serves from
-	// wherever it is put (STUDIO §"Published as a client").
+	// wherever it is put (STUDIO §"The two halves").
 	base: './',
 	plugins: [svelte(), quiverSource()],
 	// The client is the whole output and it carries no quiver, so a public directory
