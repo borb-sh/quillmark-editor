@@ -67,11 +67,12 @@
 	// landing between a swap and the incoming mount is a no-op rather than a throw,
 	// which is what lets a host hold ONE `bind:this` across two documents.
 
-	/** Place the caret at a preview hit. */
+	/** Place the caret at a preview hit; a form control takes the focus and no caret. */
 	export async function setCaret(hit: ContentHit): Promise<void> {
 		await inner?.setCaret(hit);
 	}
-	/** Reveal and focus the leaf at `field`, without placing a caret inside it. */
+	/** Reveal and focus the field at `field` — any mounted one — without placing a
+	 *  caret inside it. */
 	export async function focusField(field: DocPath): Promise<void> {
 		await inner?.focusField(field);
 	}

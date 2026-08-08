@@ -80,9 +80,13 @@ Reconciliation is field-scoped. The editor holds its optimistic PM state and re-
 
 ## Focus and the preview bridge
 
-**One active leaf holds the caret.** The VisualEditor owns the active address; because leaves are keyed by stable identity, this is plain state, not a value hoisted to a parent to survive remounts. It reports it as an `ActiveLeaf` — the leaf's `DocPath` and its card's session key — which is the pair `getActiveLeaf` reaches the controller by. Both directions ([PREVIEW.md](PREVIEW.md) §Click bridge):
+**One active field holds the focus.** The VisualEditor owns the active address; because leaves are keyed by stable identity, this is plain state, not a value hoisted to a parent to survive remounts. It reports it as an `ActiveLeaf` — the field's `DocPath` and its card's session key — for a form control as for a prose leaf: a prose leaf reports through its controller (the source that drives its caret signals too), a control through its wrapper's bubbling `focusin`, which covers an array's N elements and a subform's properties with one handler. `getActiveLeaf` reaches the CONTROLLER by that pair and answers `undefined` for a control, which holds no marks for the formatting popover to toggle.
 
-- **preview → editor**: `visualEditor.setCaret(hit)` resolves `hit.field` to a leaf, which runs `codec.usvToPM(hit.pos)` and sets its PM caret; a `'segment'` hit just focuses the leaf (`hit.pos` is a segment start, not a cluster-exact caret). A landing REVEALS itself first and waits for the reveal, so it is the one async entry point: a caret placed into a collapsed group's `inert` panel fails silently, and `inert` clears on the render rather than on the ask.
+**Every mounted field is a landing target, and the registry is why** (`leaves.ts`). A landing needs a focus and a box to bloom; a prose leaf additionally answers a caret at a USV offset. So the registry holds two lanes behind one lookup: a control lane every field registers into, and a prose lane carrying the codec seam. A form control's focus is its own — a date field lands on its first segment, an array on its first element or on the add affordance that is all an empty one has — and it is the same function a click on the field's label calls, so a label and `focusField` cannot land in different places. On a memo the scalar fields ARE the front matter and the preview reports regions for them (`session.regions()` names `main.signature_block` beside `main.body`), so content-only would cover the smaller half of the bridge.
+
+Both directions ([PREVIEW.md](PREVIEW.md) §Click bridge):
+
+- **preview → editor**: `visualEditor.setCaret(hit)` resolves `hit.field` to a field, which runs `codec.usvToPM(hit.pos)` and sets its PM caret; a `'segment'` hit just focuses the leaf (`hit.pos` is a segment start, not a cluster-exact caret). A FORM CONTROL takes the focus and no caret: the offset is a position in rendered content and a control has no coordinate to spend it in (a numeric input refuses a selection outright, an array's own is an element index the grammar cannot name), so reveal-and-focus is the whole of what a click on plate-placed ink can mean. A landing REVEALS itself first and waits for the reveal, so it is the one async entry point: a caret placed into a collapsed group's `inert` panel fails silently, and `inert` clears on the render rather than on the ask.
 - **editor → preview**: a caret move in the active leaf emits `onCaretMove(at)` with a `Place` (`/core`): the canonical `DocPath` field address and the USV caret, which is `preview.focusPosition`'s own argument, so the hop is `onCaretMove={preview.focusPosition}` and translates nothing. The editor mints the path off its DERIVED card tree, which already holds every kind, so following the caret costs no `doc.cards` read per keystroke (`doc.cards` serializes every card on each read). The USV `pos` is the shared coordinate: no codec hop.
 
 **A hop between the panes is an event, so each side marks it and lets it decay** ([PREVIEW.md](PREVIEW.md) §Overlay): resting ink would outlive the hop that caused it. The two directions differ in what their inputs are. Editor → preview is a CONTINUOUS signal (`onCaretMove` fires per keystroke), so the preview marks only a change of address; the recompile already repaints the text being typed. Preview → editor is a DISCRETE act, so every landing marks, unguarded: its commonest target is the leaf already focused, where placing a caret changes nothing on screen.
@@ -182,7 +186,7 @@ The instance surface, reached by that `bind:this`:
 
 ```ts
 setCaret(hit: ContentHit): Promise<void>;      // preview → editor
-focusField(field: DocPath): Promise<void>;     // reveal + focus, no caret placed
+focusField(field: DocPath): Promise<void>;     // any mounted field: reveal + focus, no caret
 insertCard(kind: string, at?: number): CardId | undefined;  // the new card's key
 removeCard(cardId: CardId): void;
 moveCard(cardId: CardId, dir: -1 | 1): void;   // one slot; a no-op at either edge
@@ -191,7 +195,7 @@ setKind(cardId: CardId, kind: string): void;
 
 **The verbs are the card header's own, and the door is the point.** A host toolbar, command palette or shortcut wants what the chrome has, and every call reports through `onChange` exactly as the click does, so a host that recompiles off the hook needs no second path for its own gestures. They speak the public vocabulary — a `CardId` for a card, a `DocPath` for a place — so a host drives them with what the hooks handed it, and a `bind:this` held across a document swap keeps working: the door delegates to the live mount, so a call landing between a swap and the incoming mount is a no-op.
 
-A target the surface does not hold — a `cardId` from a previous session or an already-removed card, a path naming no mounted leaf — is a no-op reporting `target-unknown` at `dev`. The chrome cannot mint a bad one, so it only ever fires on a host.
+A target the surface does not hold — a `cardId` from a previous session or an already-removed card, a path naming no declared field, or one at a granularity no field is mounted at — is a no-op reporting `target-unknown` at `dev`. `setCaret` reports it too, being the verb a preview click drives: a landing that resolved nothing is otherwise indistinguishable from one that landed, and a consumer wiring the bridge reads the difference off nothing else. The remaining granularity gap is the array ELEMENT (`main.references.0`): the preview reports a region for one, `Addr.field` is a flat name, and the element controls are therefore focusable but unaddressable.
 
 ## Not owned
 

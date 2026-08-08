@@ -16,7 +16,7 @@
 <script lang="ts">
 	import type { Document, Quill, Addr, Diagnostic, ResolvedField } from '@quillmark/wasm';
 	import type { EditorErrorHandler } from '../core/errors.js';
-	import type { FieldController } from '../core/codec/index.js';
+	import type { LeafRegistry } from './leaves.js';
 	import type { FieldModel, FieldSpan } from './structure.js';
 	import { enumValues, ghostDefault, stringifyGhost } from './structure.js';
 	import type { FieldDomIds } from './domid.js';
@@ -42,8 +42,9 @@
 		doc: Document;
 		/** The schema a prose leaf reads its content through (`ProseField`). */
 		quill: Quill;
-		/** LIVE prose address (getter-`card`); used only when control === 'prose'. */
-		proseAddr: Addr;
+		/** This field's LIVE address (getter-`card`, so a card reorder re-targets in
+		 *  place): the prose leaf commits to it, and a focus reports it. */
+		addr: Addr;
 		leafKey: string;
 		/** This field's three DOM names, derived from `leafKey` (see `domid.ts`): how
 		 * the label and the control find each other. */
@@ -56,8 +57,9 @@
 		onCaretMove?: (addr: Addr, pos: number) => void;
 		onChange?: (addr: Addr) => void;
 		onError?: EditorErrorHandler;
-		register?: (key: string, controller: FieldController) => void;
-		unregister?: (key: string) => void;
+		/** The editor's leaf registry (`leaves.ts`): a form control registers its
+		 *  landing handle here, a prose leaf its controller from inside `ProseField`. */
+		leaves?: LeafRegistry;
 		diagnostics?: Diagnostic[];
 	}
 	let {
@@ -67,7 +69,7 @@
 		provenance,
 		doc,
 		quill,
-		proseAddr,
+		addr,
 		leafKey,
 		domIds,
 		onCommitScalar,
@@ -76,8 +78,7 @@
 		onCaretMove,
 		onChange,
 		onError,
-		register,
-		unregister,
+		leaves,
 		diagnostics
 	}: Props = $props();
 
@@ -103,18 +104,54 @@
 	// nothing, and silently.
 	const describedBy = $derived(field.description ? domIds.description : undefined);
 
-	// Focus handoff for the two controls a label click cannot reach natively. Both
-	// expose their own `focus()` because "focusing" differs: a PM view restores a
-	// selection, a date field lands on its first segment.
+	// ── Focus: one answer, two callers (`leaves.ts`) ─────────────────────────────
+	// A label click and the editor's `focusField`/`setCaret` ask the same question, so
+	// they read the same function and cannot land in different places. The four
+	// labelable controls are reached through the DOM id `for` already points at; the
+	// rest own what focusing means and expose `focus()`, because it differs: a PM view
+	// restores a selection, a date field lands on its first segment, an array lands on
+	// its first element or on the add affordance that is all an empty one has, an
+	// object on its first property.
 	let proseEl = $state<{ focus: () => void } | undefined>();
 	let dateEl = $state<{ focus: () => void } | undefined>();
-	const onActivate = $derived(
-		field.control === 'prose'
-			? () => proseEl?.focus()
-			: field.control === 'date'
-				? () => dateEl?.focus()
-				: undefined
-	);
+	let arrayEl = $state<{ focus: () => void } | undefined>();
+	let objectEl = $state<{ focus: () => void } | undefined>();
+	function focusControl(): void {
+		const owner = proseEl ?? dateEl ?? arrayEl ?? objectEl;
+		if (owner) return owner.focus();
+		document.getElementById(domIds.control)?.focus();
+	}
+	// Only where `for` cannot reach; the labelable four are the browser's own, and a
+	// second handler over them would be a focus the label already placed.
+	const onActivate = $derived(labelable ? undefined : focusControl);
+
+	/**
+	 * This field's landing handle. The wrapper is the bloom host rather than the
+	 * control: `bloomInside` appends an inset child and an `<input>` holds none.
+	 *
+	 * A prose leaf is absent here — it registers its own controller from inside
+	 * `ProseField`, carrying the codec seam this handle has no half of — and reactive
+	 * rather than mount-once, because a retype can swap the control under a leaf key
+	 * that does not remount.
+	 */
+	let controlEl = $state<HTMLElement | undefined>();
+	$effect(() => {
+		if (field.control === 'prose' || !controlEl || !leaves) return;
+		const key = leafKey;
+		const registry = leaves;
+		registry.registerControl(key, { focus: focusControl, el: controlEl });
+		return () => registry.unregisterControl(key);
+	});
+
+	/**
+	 * A form control has no controller to report its focus through, so the WRAPPER
+	 * reports: `focusin` bubbles, so one handler covers a plain input, an array's N
+	 * elements and an object's properties alike, and the active leaf names a scalar
+	 * field the way it names a prose one. A prose leaf reports through its own
+	 * controller — the source that drives its caret signals too — and is excluded here
+	 * rather than counted twice.
+	 */
+	const reportFocus = $derived(field.control === 'prose' ? undefined : () => onFocus?.(addr));
 </script>
 
 <div class="qm-field" class:cell={span === 'cell'} class:lone={span === 'lone'}>
@@ -129,13 +166,13 @@
 			description={field.description}
 		/>
 	{/if}
-	<div class="qm-field-control">
+	<div class="qm-field-control" bind:this={controlEl} onfocusin={reportFocus}>
 		{#if field.control === 'prose'}
 			<ProseField
 				{quill}
 				bind:this={proseEl}
 				{doc}
-				addr={proseAddr}
+				{addr}
 				inline={field.inline}
 				plaintext={field.plaintext}
 				labelledBy={domIds.label}
@@ -145,8 +182,7 @@
 				{onCaretMove}
 				{onChange}
 				{onError}
-				{register}
-				{unregister}
+				{leaves}
 			/>
 		{:else if field.control === 'enum'}
 			<EnumField
@@ -186,6 +222,7 @@
 			/>
 		{:else if field.control === 'array'}
 			<ArrayField
+				bind:this={arrayEl}
 				value={value as unknown[] | undefined}
 				items={field.schema.items}
 				label={field.label}
@@ -194,10 +231,10 @@
 				labelId={domIds.label}
 				descriptionId={domIds.description}
 				onCommit={onCommitScalar}
-				onFocusEl={() => onFocus?.(proseAddr)}
 			/>
 		{:else if field.control === 'object'}
 			<ObjectField
+				bind:this={objectEl}
 				value={value as Record<string, unknown> | undefined}
 				properties={field.schema.properties}
 				label={field.label}
@@ -261,6 +298,15 @@
 	}
 	.qm-field.cell {
 		grid-column: span 1;
+	}
+	/* Positioned for the arrival wash a landing inserts (`core/bloom.ts`), the way
+	   `.qm-prose` is: an inset child over the control, since an `<input>` takes none.
+	   The radius is the control's own, so the wash's corners are the box's rather than
+	   square over a rounded one; on an array or a subform it bounds a group, where
+	   there is no single box for it to disagree with. */
+	.qm-field-control {
+		position: relative;
+		border-radius: var(--_qm-radius-inner);
 	}
 	/* A run of one takes half the capacity from column 1: `--cols-half` is the section's
 	 capacity halved, so the edge lands on a track boundary at every capacity. */

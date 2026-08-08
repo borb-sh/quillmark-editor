@@ -8,7 +8,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync, tick } from 'svelte';
 import { Quill, type Document } from '@quillmark/wasm';
 import type { EditorError } from '$lib/core';
-import type { CardId, EditorChange } from '$lib/visual';
+import type { ActiveLeaf, CardId, EditorChange } from '$lib/visual';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
 import { quill } from '../helpers/fixtures.js';
 
@@ -20,6 +20,7 @@ Element.prototype.getAnimations ??= () => [];
 /** The instance surface a host binds to. */
 interface EditorRef {
 	focusField(field: string): Promise<void>;
+	setCaret(hit: { field: string; pos: number; granularity?: string }): Promise<void>;
 	insertCard(kind: string, at?: number): CardId | undefined;
 	removeCard(cardId: CardId): void;
 	moveCard(cardId: CardId, dir: -1 | 1): void;
@@ -37,13 +38,15 @@ function mountEditor(q: Quill, doc: Document) {
 	document.body.appendChild(target);
 	const changes: EditorChange[] = [];
 	const errors: EditorError[] = [];
+	const active: ActiveLeaf[] = [];
 	const app = mount(VisualEditor, {
 		target,
 		props: {
 			doc,
 			quill: q,
 			onChange: (c: EditorChange) => changes.push(c),
-			onError: (e: EditorError) => errors.push(e)
+			onError: (e: EditorError) => errors.push(e),
+			onActiveLeafChange: (a: ActiveLeaf) => active.push(a)
 		}
 	}) as unknown as EditorRef;
 	flushSync();
@@ -51,7 +54,7 @@ function mountEditor(q: Quill, doc: Document) {
 		void unmount(app);
 		target.remove();
 	};
-	return { target, editor: app, changes, errors };
+	return { target, editor: app, changes, errors, active };
 }
 
 const slots = (target: HTMLElement) => [...target.querySelectorAll<HTMLElement>('.qm-card-slot')];
@@ -124,6 +127,81 @@ describe('the card verbs', () => {
 	});
 });
 
+// A memo's scalar fields ARE its front matter, and the preview reports a region for
+// them (`session.regions()` names `main.signature_block` beside `main.body`), so a
+// landing that reached content leaves only covered the smaller half of the bridge.
+describe('the landing verbs over a form control', () => {
+	it('focuses a string field, revealing the collapsed group holding it', async () => {
+		const q = quill();
+		const { target, editor, errors } = mountEditor(q, q.seedDocument());
+
+		// `letterhead` is not the initially-expanded group, so the control starts inside
+		// an `inert` panel: the reveal is half of the landing, not a nicety.
+		const header = [...target.querySelectorAll<HTMLElement>('.qm-group-header')].find((h) =>
+			h.textContent?.includes('Letterhead')
+		);
+		expect(header?.getAttribute('aria-expanded')).toBe('false');
+
+		await editor.focusField('main.letterhead_title');
+		await tick();
+
+		expect(header?.getAttribute('aria-expanded')).toBe('true');
+		// The input the field's own `<label for>` names, inside the panel the reveal
+		// opened: the same place a click on that label lands, which is the point of the
+		// two reading one function.
+		const focused = document.activeElement as HTMLElement;
+		expect(focused.tagName).toBe('INPUT');
+		const panel = document.getElementById(header!.getAttribute('aria-controls')!);
+		expect(panel?.contains(focused)).toBe(true);
+		expect(panel?.querySelector(`label[for="${focused.id}"]`)).not.toBeNull();
+		expect(errors).toHaveLength(0);
+	});
+
+	it('focuses an array field at its first element, and a date field at its first segment', async () => {
+		const q = quill();
+		const { editor, errors } = mountEditor(q, q.seedDocument());
+
+		// The array's own answer to "focus this field", the one its label click takes.
+		await editor.focusField('main.memo_for');
+		await tick();
+		expect(document.activeElement?.closest('.qm-array-row')).not.toBeNull();
+
+		await editor.focusField('main.date');
+		await tick();
+		expect(document.activeElement?.getAttribute('data-segment')).toBeTruthy();
+
+		expect(errors).toHaveLength(0);
+	});
+
+	it('reports the focused control as the active leaf, as a prose leaf reports', async () => {
+		const q = quill();
+		const { editor, active } = mountEditor(q, q.seedDocument());
+
+		await editor.focusField('main.letterhead_title');
+		await tick();
+		expect(active.at(-1)).toEqual({ field: 'main.letterhead_title', cardId: 'main' });
+
+		// An array of `richtext`: the element is a PM view with no controller of its own,
+		// and the report is the wrapper's bubbling `focusin` like every other control's.
+		await editor.focusField('main.references');
+		await tick();
+		expect(active.at(-1)).toEqual({ field: 'main.references', cardId: 'main' });
+	});
+
+	it('lands a preview hit on a control by focusing it, placing no caret', async () => {
+		const q = quill();
+		const { editor, errors } = mountEditor(q, q.seedDocument());
+
+		// A `pos` a control has no coordinate to spend: the field is revealed and
+		// focused, which is the whole of what a click on plate-placed ink can mean.
+		await editor.setCaret({ field: 'main.letterhead_title', pos: 3 });
+		await tick();
+
+		expect(document.activeElement?.tagName).toBe('INPUT');
+		expect(errors).toHaveLength(0);
+	});
+});
+
 describe('a verb handed a target the surface does not hold', () => {
 	it('no-ops and reports target-unknown at dev, for a card and for a path', async () => {
 		const q = quill();
@@ -141,5 +219,21 @@ describe('a verb handed a target the surface does not hold', () => {
 		expect(errors.map((e) => e.code)).toEqual(Array(4).fill('target-unknown'));
 		expect(errors.every((e) => e.severity === 'dev')).toBe(true);
 		expect(errors.at(-1)?.path).toBe('main.no_such_field');
+	});
+
+	it('reports a landing at a granularity no field is mounted at, through either verb', async () => {
+		const q = quill();
+		const { editor, errors } = mountEditor(q, q.seedDocument());
+
+		// `main.references.0` is an array ELEMENT: the preview reports a region for one
+		// and `Addr` cannot name it, so the path parses and resolves to no field. A
+		// preview click driving `setCaret` reads success from nothing else, which is why
+		// the landing reports rather than returning quietly.
+		await editor.focusField('main.references.0');
+		await editor.setCaret({ field: 'main.references.0', pos: 0 });
+		flushSync();
+
+		expect(errors.map((e) => e.code)).toEqual(['target-unknown', 'target-unknown']);
+		expect(errors.every((e) => e.severity === 'dev' && e.path === 'main.references.0')).toBe(true);
 	});
 });

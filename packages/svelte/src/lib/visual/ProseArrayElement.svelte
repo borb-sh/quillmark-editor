@@ -27,9 +27,8 @@
 		 * array repeater's Enter/Backspace (`ArrayField`). Fires BEFORE the view's own
 		 * keymap, so the state it reads is the one this keystroke has yet to change. */
 		onKey?: (e: KeyboardEvent) => void;
-		onFocusEl?: () => void;
 	}
-	let { value, plaintext, label, onChange, onKey, onFocusEl }: Props = $props();
+	let { value, plaintext, label, onChange, onKey }: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let view: EditorView | undefined;
@@ -62,10 +61,6 @@
 				if (tr.docChanged) onChange(pmToContent(next.doc));
 			},
 			handleDOMEvents: {
-				focus: () => {
-					onFocusEl?.();
-					return false;
-				},
 				keydown: (_v, e) => {
 					onKey?.(e);
 					return false;

@@ -37,6 +37,19 @@
 	const entries = $derived(Object.entries(properties ?? {}));
 	const obj = $derived((value ?? {}) as Record<string, unknown>);
 
+	/** Take the caret: the FIRST property's control, a subform having no single control
+	 * of its own to land on. Resolved off the DOM rather than a ref per property: every
+	 * property is a scalar control the DOM already knows how to focus (the date field's
+	 * segments carry `tabindex`, the `literal` separators between them do not), so a
+	 * handle each would be five refs restating document order. An empty or wholly
+	 * unsupported subform lands nothing. */
+	let rootEl = $state<HTMLElement | undefined>();
+	export function focus(): void {
+		rootEl
+			?.querySelector<HTMLElement>('input, select, button, [tabindex]:not([tabindex="-1"])')
+			?.focus();
+	}
+
 	function commitProp(key: string, v: unknown): void {
 		if (v === undefined) {
 			// A nested control cleared (the unset rung): drop the key so the property
@@ -51,7 +64,13 @@
 	}
 </script>
 
-<div class="qm-object" role="group" aria-labelledby={labelledBy} aria-describedby={describedBy}>
+<div
+	bind:this={rootEl}
+	class="qm-object"
+	role="group"
+	aria-labelledby={labelledBy}
+	aria-describedby={describedBy}
+>
 	{#each entries as [key, sub] (key)}
 		{@const kind = controlKind(sub)}
 		{@const propLabel = `${label != null ? `${label} ` : ''}${sub.ui?.title ?? humanize(key)}`}
