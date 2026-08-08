@@ -24,18 +24,19 @@ export interface PdfPoint {
 }
 
 /**
- * An address's boxes: `fieldBoxes`'s union where the compile has one, and every
- * `regions()` rect AT or UNDER the address where it has none. The one rule the
- * overlay and the scroll both read, so an address `regions()` names never draws
- * nothing.
+ * An address's boxes: `fieldBoxes`'s union, else its own `regions()` rects, else
+ * the rects of everything UNDER it. The one rule the overlay and the scroll both
+ * read, so an address `regions()` names never draws nothing.
  *
  * `fieldBoxes` is span-bearing-content-only — it answers `[]` for a scalar
  * reference the plate places without tracking its content, and for a `richtext[]`
  * ELEMENT — and runtime.d.ts says what such a field's box is: a single `regions()`
- * rect. Under the address is the other half of the same sentence: an array's own
+ * rect. The third rung is the same sentence one granularity down: an array's own
  * ink is its elements' (`main.references` is named by no region, only its
  * `main.references.0` / `.1` are), so a host holding the field's declared path
- * reaches the rows it prints.
+ * reaches the rows it prints. It is the LAST rung rather than a union with the
+ * second, so an address that has rects of its own never also draws its children's
+ * over them.
  *
  * The `.` guard is what keeps the prefix a path boundary rather than a string one:
  * `main.references` matches `main.references.0` and not `main.references_note`.
@@ -46,7 +47,8 @@ export function boxesForField(
 	regions: readonly FieldRegion[]
 ): readonly FieldRegion[] {
 	if (boxes.length) return boxes;
-	return regions.filter((r) => r.field === field || r.field.startsWith(`${field}.`));
+	const own = regions.filter((r) => r.field === field);
+	return own.length ? own : regions.filter((r) => r.field.startsWith(`${field}.`));
 }
 
 /**

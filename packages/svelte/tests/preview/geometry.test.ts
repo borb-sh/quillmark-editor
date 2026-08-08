@@ -9,7 +9,7 @@
 // only re-exports the public `createPreview`/`Preview` surface per PREVIEW.md;
 // the transform is an internal correctness seam, not part of that surface).
 import { describe, it, expect } from 'vitest';
-import { Engine, Quill, type PageSize } from '@quillmark/wasm';
+import { Engine, Quill, type FieldRegion, type PageSize } from '@quillmark/wasm';
 import { boxesForField, rectToPercent, clickToPdfPt } from '$lib/preview/geometry.js';
 import { loadFixtureTree } from '../helpers/fixtures.js';
 
@@ -167,6 +167,24 @@ describe('geometry: against a real compiled session (usaf_memo)', () => {
 // The two facts the click ladder and the box fallback stand on, asserted against the
 // compile rather than assumed from the boundary's prose. Both are cheap to lose
 // upstream and neither is visible in a mocked test.
+describe('boxesForField', () => {
+	const region = (field: string, x: number): FieldRegion =>
+		({ field, page: 0, rect: [x, 10, x + 100, 30] }) as FieldRegion;
+
+	it("takes an address's own rects over the ones under it", () => {
+		// The descendant rung is a FALLBACK, not a union: an address with rects of its
+		// own never also draws its children's over them.
+		const regions = [region('main.author', 0), region('main.author.0', 200)];
+		expect(boxesForField('main.author', [], regions)).toEqual([regions[0]]);
+		expect(boxesForField('main.author.0', [], regions)).toEqual([regions[1]]);
+	});
+
+	it('prefers the union the compile did make', () => {
+		const boxes = [region('main.body', 0)];
+		expect(boxesForField('main.body', boxes, [region('main.body.9', 200)])).toBe(boxes);
+	});
+});
+
 describe('geometry: the addresses a compile serves (usaf_memo)', () => {
 	it('gives every regions() address a box, and a declared array one off its elements', async () => {
 		const quill = Quill.fromTree(loadFixtureTree());
