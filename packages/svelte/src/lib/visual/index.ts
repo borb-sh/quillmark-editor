@@ -8,6 +8,13 @@
 // The barrel carries what a consumer story wants, and nothing else: a symbol
 // earns its line when a caller outside the package needs it, and grows one when
 // that caller arrives, not before.
+
+// `/core`'s ENTRY, for the derivation it side-effect imports (THEMING.md), for the
+// reason `/preview` states: the surface reaches modules inside `core/` and never
+// the entry, so a consumer importing this subpath alone mounts against an
+// undefined `--_qm-*` scale.
+import '../core/index.js';
+
 export { default as VisualEditor } from './VisualEditor.svelte';
 export type { VisualEditorProps } from './props.js';
 

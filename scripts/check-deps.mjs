@@ -2,7 +2,7 @@
 // path away, so the separation is held by a gate rather than by distance. Zero deps;
 // run via `npm run check:deps`.
 //
-// Four rules, each stated once here and nowhere else:
+// Five rules, each stated once here and nowhere else:
 //
 //   1. THE GRAPH. `@quillmark/wasm` is external and above everything; `svelte` and
 //      `quiver` are siblings at one tier with NO edge between them, in either
@@ -40,7 +40,19 @@
 //      ProseMirror and no direct scan sees it, so this walks preview's import graph
 //      within `src/lib` and fails on any reached module's forbidden external.
 //
-//   4. THE LOCK'S PLATFORMS. The lock resolves every platform an optional dependency
+//   4. THE DERIVATION REACHES EVERY MOUNT. A surface reads every value it draws from
+//      the `--_qm-*` scale `core/theme.css` mints, and a stylesheet arrives only by
+//      being imported: so each subpath that MOUNTS a `data-qm-root` element must reach
+//      that sheet from its own barrel, which is the module a consumer importing the
+//      subpath gets. Reaching modules INSIDE `core/` is not reaching it: the sheet
+//      hangs off `core/index.ts` alone, so a surface importing `../core/address.js`
+//      and nothing else mounts against an undefined scale — every `var()` invalid at
+//      computed-value time, boxless controls under chrome that still reads as intact.
+//      `check:bundle` cannot see it, because it reads bundles built from this
+//      workspace's apps and both of them import `/core` for `init`, which pulls the
+//      sheet for reasons that have nothing to do with the surfaces.
+//
+//   5. THE LOCK'S PLATFORMS. The lock resolves every platform an optional dependency
 //      offers, not the one that wrote it: a lock missing `@rollup/rollup-darwin-arm64`
 //      installs a rollup with no native binary on a Mac, and npm repairs nothing: an
 //      `npm i` reading a lock that is self-consistent for its own platform adds no
@@ -274,7 +286,46 @@ const walk = (file) => {
 // re-export is still shipped inside the module root a bundler pulls.
 for (const file of sources(join(LIB, 'preview'))) walk(file);
 
-// ── 4. The lock's platforms ─────────────────────────────────────────────────────
+// ── 4. The derivation reaches every mount ───────────────────────────────────────
+
+// The sheet, and the subpaths whose barrels must reach it: the ones that mount a
+// surface. `/core` is where it hangs, so it is not a case to check.
+const THEME = join(LIB, 'core', 'theme.css');
+const MOUNTS = ['preview', 'visual'];
+
+/** Whether `entry`'s import graph, within `src/lib`, reaches `target`. Barrel-rooted
+ *  rather than directory-wide (rule 3's walk): what a consumer gets by importing the
+ *  subpath is the barrel, and a sibling module reaching the sheet does nothing for a
+ *  bundler that never pulls that sibling. */
+function reaches(entry, target) {
+	const visited = new Set();
+	const stack = [entry];
+	while (stack.length) {
+		const file = stack.pop();
+		if (visited.has(file)) continue;
+		visited.add(file);
+		if (file === target) return true;
+		for (const spec of specifiersOf(file)) {
+			const next = resolveInLib(spec, file);
+			if (next) stack.push(next);
+		}
+	}
+	return false;
+}
+
+for (const mount of MOUNTS) {
+	const barrel = join(LIB, mount, 'index.ts');
+	if (!existsSync(barrel)) {
+		fail(`packages/svelte/src/lib/${mount}/index.ts: missing — a mounting subpath has no barrel`);
+		continue;
+	}
+	if (!reaches(barrel, THEME))
+		fail(
+			`packages/svelte/src/lib/${mount}/index.ts: does not reach core/theme.css — a consumer importing @quillmark/svelte/${mount} alone mounts against an undefined --_qm-* scale; import '../core/index.js' from the barrel`
+		);
+}
+
+// ── 5. The lock's platforms ─────────────────────────────────────────────────────
 
 const lock = JSON.parse(readFileSync(join(ROOT, 'package-lock.json'), 'utf8'));
 // A dependency resolves against the entry nearest its own path, so an optional dep is
