@@ -6,7 +6,7 @@
 
 The surface a quill author looks at their quiver through: pick a quill, edit, watch it paint, read the errors. `quillkit test` answers *does it work*; studio answers *what is it like to use*, which is where most of what makes a quill good or bad lives. This doc is its shape: what it is a client of, the repack loop the document survives, and the endorsed look it is drawn with.
 
-Two readers, one client. The author works mid-edit, locally, against files on disk, and the loop below is theirs. A deployed quiver is frozen at a commit, so the reader who arrives at a URL (a reviewer following a branch, someone evaluating a quiver) gets the picker, the surfaces and the errors over one built quiver, with nothing to repack. One client rather than two: the carry costs nothing where there is nothing to carry, and it is the same client an `npx quillkit studio` over a working tree serves.
+Two readers, one client. The author works mid-edit, locally, against files on disk, and the loop below is theirs. A deployed quiver is frozen at a commit, so the reader who arrives at a URL (a reviewer following a branch, someone evaluating a quiver) gets the picker, the surfaces and the errors over one built quiver, with nothing to repack. One client rather than two: it is the same client an `npx quillkit studio` over a working tree serves.
 
 **Studio is the noun, not the verb.** It is a client rather than a package: `client/` beside the bin's `src/` under one manifest, no verb of its own, and `quillkit studio` is how the surface is reached ([QUILLKIT.md](QUILLKIT.md)). The name still has a job the tool's cannot do: the deployed thing a reviewer arrives at is a studio, and "the collection's site" names a directory rather than a surface.
 
@@ -20,7 +20,7 @@ Both mount the same surfaces over the same reference quill, and the distinction 
 
 That separation reaches the DRAWING, not only the contents. Both are one session under two surfaces in a pinned shell, so the shape of the screen is one thing taken out of the preset; what fills it is not. A page showing its instruments stands its mounts apart, framed, so each reads as one of several things on it. Studio spends the whole screen on the two mounts: they run to the viewport's edges and meet at a hairline, because the surface is the subject and every pixel of chrome around it is a pixel not spent on the quill.
 
-Studio also sheds the playground's front-door job. Its reader arrives already committed, so there is no quickstart to carry, and it is one screen rather than a site: no router, no reading column, no landing page.
+Studio also sheds the playground's front-door job: one screen rather than a site, with no router, no reading column and no landing page. The author arrives having typed the verb, so there is no quickstart to carry.
 
 ## A client, and what serves it
 
@@ -34,7 +34,7 @@ A browser cannot read the source layout, so studio ends at a built artifact behi
 
 **The client** is an ordinary quiver consumer: `fromBuiltUrl(base)`, a picker over `quillNames()` and `versionsOf()` (both sync, so it needs no loading state), `getQuill(ref)`, then the surfaces over one `LiveSession`. The picker offers only what varies: an axis holding one value is printed rather than selected, since a working tree is usually one quill at one version and a control that cannot be used is chrome competing with the surface. The fact stays either way, an author having to know what they are looking at. The quill it holds is **borrowed** (cached per canonical ref for the quiver's lifetime and handed to every caller), so studio frees the session and the document and nothing else. It rewrites no quill bytes, so it needs no quill of its own.
 
-**One wasm, and the head says which.** The root `overrides` pin is the workspace's only copy, so studio and `quillkit test` render through one instance and cannot disagree. The version is stated anyway: a client bundles the copy it was built with, a gate runs whatever its own tree holds, and nothing at runtime reconciles them, so the reader who cannot run `npm ls` is told what painted the page.
+**One wasm, and the head says which.** Inside this workspace the root `overrides` pin is the only copy, so studio and `quillkit test` render through one instance. Over a collection they are two: the client bundles the copy it was built with, a gate runs whatever the collection's own tree holds, and nothing at runtime reconciles them. The version is stated so the reader who cannot run `npm ls` is told what painted the page.
 
 **The client ships built and runs unbuilt.** The tarball carries what `vite build` produced; locally it is an ordinary Vite dev server, with HMR on its own chrome. That is the whole of what the dev server buys over `quillkit studio`, and the pack it serves is the same `build` the tool calls, so the loop is not written twice. An author who cannot run a bundler is the reason for the first, and the reason the wasm is bundled with it.
 
