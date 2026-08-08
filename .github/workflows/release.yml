@@ -10,8 +10,14 @@ on:
     types: [closed]
     branches: [main]
 
+# One release at a time per RELEASE BRANCH. A group holds one pending run, so a group
+# shared across packages lets a third merge displace the second before its first step,
+# and `cancel-in-progress: false` protects the running job rather than the queued one. A
+# cancelled run is not a failed one, so an evicted release publishes nothing and notifies
+# nobody. Per branch, a re-run of one release supersedes its own predecessor and releases
+# of different packages do not queue against each other.
 concurrency:
-  group: release
+  group: release-${{ github.event.pull_request.head.ref }}
   cancel-in-progress: false
 
 jobs:
