@@ -12,7 +12,7 @@
 
 :root {
 	/* What the notes band takes when it is open. Not rhythm: how much of a list is worth
-	   showing before it competes with the surface it is about. The other height studio
-	   needs is a stacked pane's, and that one is the preset's `--qmh-pane`. */
+	   showing before it competes with the surface it is about. The one height studio
+	   states, the panes taking whatever the bands leave. */
 	--st-notes: 14rem;
 }
