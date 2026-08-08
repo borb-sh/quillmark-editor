@@ -1,12 +1,12 @@
 # quillmark-js
 
-The JS tier downstream of the `@quillmark/wasm` artifact: `packages/svelte` (the Svelte binding: surfaces over a session), `packages/quiver` (a collection of quill templates, loaded and packed), `packages/quillkit` (the author's toolchain: the one bin in `src/`, resolving the collection's own packer and engine, plus the studio client in `client/`, the surface `quillkit studio` puts in front of an author working on a quill template), and `packages/playground` (private frontend, a developer's read on the library). One npm workspace, one install, one gate.
+The JS tier downstream of the `@quillmark/wasm` artifact: `packages/svelte`, `packages/quiver`, `packages/quillkit`, and `packages/playground`, the one private package. One npm workspace, one install, one gate.
 
-Start at each package's `prose/canon/INDEX.md` for settled design; work that is not settled lives in GitHub issues. Canon is **malleable** (no consumers, no compatibility promise): a doc that contradicts the design in hand gets rewritten in the same commit as the code.
+Start at each package's `prose/canon/INDEX.md` for what the package is and its settled design; work that is not settled lives in GitHub issues. Canon is **malleable** (no consumers, no compatibility promise): a doc that contradicts the design in hand gets rewritten in the same commit as the code.
 
 ## Prose
 
-Comments and docs are dense, present-tense, unsold: state what is, not how it got here or what was considered. A markdown paragraph is one line, never hard-wrapped. No GitHub issue numbers in comments or docs. The `dense-prose` skill is the full rule set, run as an explicit pass, not assumed reading.
+Comments and docs are dense, present-tense, unsold: state what is, not how it got here or what was considered. A claim is verified against the code or left unsaid: wrong is worse than missing, and a hand-kept list is a claim. A markdown paragraph is one line, never hard-wrapped. No GitHub issue numbers in comments or docs. The `dense-prose` skill is the full rule set, run as an explicit pass, not assumed reading.
 
 ## Commands
 
