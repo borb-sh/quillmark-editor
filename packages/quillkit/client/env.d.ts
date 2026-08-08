@@ -1,4 +1,5 @@
-/** The `@quillmark/wasm` the bundle takes, substituted at build time by the Vite
- *  config. A version, not a range: it names the copy that paints, which is what the
- *  head reports. */
-declare const __WASM_VERSION__: string;
+/** What this bundle carries, keyed by registry name, substituted at build time by the Vite
+ *  config. Versions rather than ranges: they name the copies that are here, which is what
+ *  the head reports and what a bug report needs. `dist/client/carried.json` beside the
+ *  bundle holds the same three. */
+declare const __CARRIED__: Readonly<Record<string, string>>;

@@ -1,0 +1,31 @@
+# A version on `main` the registry does not have is a release that did not happen. Eviction
+# from the release queue is one cause and never the only one: a publish that 403s, a bump
+# merged by hand, a run cancelled for any reason. A cancelled run is not a failed one, so
+# nothing notifies; this is what does.
+#
+# On a schedule rather than on push. `main` carries the bump for the minutes a release run
+# takes to gate and publish, so a check on every push fails on every release, and a check
+# that fails routinely is one nobody reads. Drift that survives to the next morning is not
+# a release in flight. A schedule runs on the default branch, the branch this is about.
+name: Registry
+
+on:
+  schedule:
+    - cron: '17 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      # No install: the check reads the manifests off the tree and asks the registry.
+      - run: npm run check:registry

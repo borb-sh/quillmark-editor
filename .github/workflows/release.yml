@@ -10,8 +10,14 @@ on:
     types: [closed]
     branches: [main]
 
+# One release at a time per RELEASE BRANCH. A group holds one pending run, so a group
+# shared across packages lets a third merge displace the second before its first step,
+# and `cancel-in-progress: false` protects the running job rather than the queued one. A
+# cancelled run is not a failed one, so an evicted release publishes nothing and notifies
+# nobody. Per branch, a re-run of one release supersedes its own predecessor and releases
+# of different packages do not queue against each other.
 concurrency:
-  group: release
+  group: release-${{ github.event.pull_request.head.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -27,8 +33,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # Tags, and the history back to them: the client's build stamps each
+          # compiled-in sibling against its own release tag, and the tarball published
+          # here is the one that carries the answer.
           fetch-depth: 0
-          ref: main
+          # The merge commit this event names rather than `main`, which is whatever
+          # landed while this run queued. One commit gates, is tagged, is built and is
+          # published, so the tag names the bytes.
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
 
       - uses: actions/setup-node@v4
         with:

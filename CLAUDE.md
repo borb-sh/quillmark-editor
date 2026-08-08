@@ -12,6 +12,8 @@ Comments and docs are dense, present-tense, unsold: state what is, not how it go
 
 Every command is the root's; a package script is reached with `-w packages/<name>`. `gate` is the whole gate in one verb, and with `check:pack` is what CI (`.github/workflows/ci.yml`) holds. A verb name means one thing across the workspace; the implementations differ per package.
 
+`check:registry` sits outside both: it asks the registry whether each published version is there, and a release branch is ahead of the registry by design. It runs on its own schedule (`.github/workflows/registry.yml`), against `main`, where being ahead is a fault.
+
 ## Boundaries
 
 - `svelte ↛ quiver` and `quiver ↛ svelte`, both directions; a node reaching both composes them, which the playground does as an app and quillkit does inside the client it bundles. `check:deps` holds it.
