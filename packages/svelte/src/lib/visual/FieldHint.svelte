@@ -45,6 +45,39 @@
 	/** The root to portal INTO: `document.body` would escape the consumer's dials
 	 * along with the editor's subtree. `undefined` falls back to bits-ui's default. */
 	const portalTarget = $derived(triggerEl?.closest<HTMLElement>('[data-qm-root]') ?? undefined);
+
+	/** Placement, re-measured on each opening: the surface rides the label rung beside
+	 * the glyph, or stands over the field. */
+	let beside = $state(false);
+
+	/** Whether this description sets one line. Off a probe rather than the surface
+	 * itself, since the side is a prop the surface is positioned FROM, and a side chosen
+	 * after the fact moves a surface the reader is already looking at. The probe wears
+	 * the surface's own class inside the portal target, so it wraps to the same measure
+	 * under the same dials; `width: max-content` keeps that measure the class's rather
+	 * than the containing block's. Line boxes are counted off a range over the text
+	 * rather than derived from a height, which would need the line rung and the inset
+	 * restated here as numbers. A DOM with no layout yields none, which stands the
+	 * surface over the field. */
+	function ridesTheRung(): boolean {
+		const host = portalTarget ?? document.body;
+		const probe = document.createElement('div');
+		probe.className = 'qm-hint-popover';
+		probe.style.cssText =
+			'position:absolute;width:max-content;visibility:hidden;pointer-events:none';
+		probe.textContent = description;
+		host.appendChild(probe);
+		const range = document.createRange();
+		range.selectNodeContents(probe);
+		const lines = range.getClientRects().length;
+		probe.remove();
+		return lines === 1;
+	}
+
+	function raise(): void {
+		beside = ridesTheRung();
+		open = true;
+	}
 </script>
 
 <!-- The trigger is OURS, not `Popover.Trigger`, and the surface anchors to it:
@@ -60,7 +93,7 @@
 	aria-expanded={open}
 	aria-describedby={describedBy}
 	onpointerenter={(e) => {
-		if (e.pointerType !== 'touch') open = true;
+		if (e.pointerType !== 'touch') raise();
 	}}
 	onpointerleave={(e) => {
 		if (e.pointerType !== 'touch') open = false;
@@ -69,13 +102,16 @@
 		// Touch only, and a TOGGLE: the one modality with no hover to leave and no
 		// blur on the way out. A mouse press falls through to hover, which already
 		// has it open and will close it on the way off.
-		if (e.pointerType === 'touch') open = !open;
+		if (e.pointerType === 'touch') {
+			if (open) open = false;
+			else raise();
+		}
 	}}
 	onfocus={(e) => {
 		// Keyboard arrival only. A pointer press focuses the button too, and opening
 		// on that would re-open what the tap just toggled shut; `:focus-visible` is
 		// the UA's own answer to which arrival this was.
-		if (e.currentTarget.matches(':focus-visible')) open = true;
+		if (e.currentTarget.matches(':focus-visible')) raise();
 	}}
 	onblur={() => (open = false)}
 	onkeydown={(e) => {
@@ -88,12 +124,21 @@
 	}}><Icon name="info" size={13} /></button
 >
 
+<!-- PLACEMENT IS THE DESCRIPTION'S HEIGHT. One line rides the label rung beside its own
+ glyph, where the overhang past the rung's line box falls in the label-to-control gaps.
+ Anything taller stands over the field: beside the glyph it would hang onto THE CONTROL
+ IT DESCRIBES, the one overlap a reader cannot clear by reaching for what is hidden,
+ since a pointer leaving the trigger closes the surface. Over the field it covers a
+ neighbour's control instead, which reaching for it dismisses. -->
+<!-- `align="center"` for the rung, `"start"` over the field: centred, a surface taller
+ than the glyph's line box would hang half its height onto the field's own control. -->
+
 <Popover.Root bind:open>
 	<Popover.Portal to={portalTarget}>
 		<Popover.Content
 			customAnchor={triggerEl ?? null}
-			side="top"
-			align="start"
+			side={beside ? 'right' : 'top'}
+			align={beside ? 'center' : 'start'}
 			sideOffset={6}
 			trapFocus={false}
 			onOpenAutoFocus={(e: Event) => e.preventDefault()}
@@ -174,8 +219,12 @@
 	 `.qm-popover-surface` (controls.css). This surface's own is a MEASURE: guidance
 	 is prose, and prose past ~40 characters a line stops being scannable; plus the
 	 inset and the meta type rung that keep it a note about a field rather than a
-	 second field. */
-	.qm-hint-popover {
+	 second field.
+
+	 Unscoped, because the placement probe wears this class on a node Svelte never
+	 compiled: a scoped rule would leave the probe wrapping to a different measure
+	 than the surface it stands in for, which is the one thing the probe must not do. */
+	:global(.qm-hint-popover) {
 		max-width: 22rem;
 		padding: var(--_qm-space) var(--_qm-space-2);
 		font-size: var(--_qm-text-meta);
