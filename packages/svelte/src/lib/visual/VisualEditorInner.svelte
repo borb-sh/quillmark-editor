@@ -34,24 +34,24 @@
 	import { onDestroy, tick } from 'svelte';
 	import { DropdownMenu } from 'bits-ui';
 	import { isQuillmarkError, MAIN_CARD_ADDR } from '@quillmark/wasm';
-	import { cardPath, fieldPathForAddr, type DocPath } from '../core/address.js';
+	import {
+		cardPath,
+		elementAddrForFieldPath,
+		fieldPathForAddr,
+		type DocPath,
+		type Landing
+	} from '../core/address.js';
 	import { errorMessage, reportError } from '../core/errors.js';
 	import { bloomInside } from '../core/bloom.js';
 	import { createLifespan } from '../core/teardown.js';
-	import type {
-		Addr,
-		CardAddr,
-		ContentHit,
-		Diagnostic,
-		Resolved,
-		ResolvedField
-	} from '@quillmark/wasm';
+	import type { Addr, CardAddr, Diagnostic, Resolved, ResolvedField } from '@quillmark/wasm';
 	import type { VisualEditorProps } from './props.js';
 	import { mergeStrings, setWording } from './strings.js';
 	import type { CardId, ChangeSource } from './signals.js';
 	import type { FieldController } from '../core/codec/index.js';
 	import {
 		IdSeq,
+		controlKind,
 		fieldModels,
 		groupOrder,
 		groupSections,
@@ -668,36 +668,29 @@
 
 	// ── Public entry points ─────────────────────────────────────────────────────
 	/**
-	 * Resolve a preview `ContentHit` to a mounted leaf and place its caret.
+	 * Resolve a preview {@link Landing} to a mounted leaf and land in it.
 	 *
 	 * Async because the reveal has to RENDER before the landing: a collapsed group
 	 * is `inert`, which swallows a focus silently, so a caret placed in the same
 	 * tick as the reveal would go nowhere and report nothing. The consumer's
-	 * `onCaretPick` ignores the promise: awaiting it is for a caller that wants to
+	 * `onPick` ignores the promise: awaiting it is for a caller that wants to
 	 * observe where the caret went.
 	 *
 	 * A destroy lands INSIDE this one: `leaf` is looked up before the flush and
 	 * dispatched into after it, and a PM view destroyed in that window throws on the
-	 * dispatch. A consumer's `onCaretPick` outlives the surface it points at too, so
-	 * the span is asked on the way in as well as after the await.
+	 * dispatch. A consumer's `onPick` outlives the surface it points at too, so the
+	 * span is asked on the way in as well as after the await.
 	 */
-	export async function setCaret(hit: ContentHit): Promise<void> {
-		const found = await revealLeaf(hit.field);
-		if (!found) return missed(`no mounted field at ${hit.field}`, hit.field);
-		// A form control takes the focus and no caret: the offset is a USV position in
-		// rendered content, and a control has no coordinate to spend it in (an
-		// `<input type="number">` refuses a selection outright, an array's own is an
-		// element index the grammar cannot name). The field is revealed and focused,
-		// which is the whole of what a click on a plate-placed field can mean.
-		//
+	export async function setCaret(at: Landing): Promise<void> {
+		const found = await revealLeaf(at.field);
+		if (!found) return missed(`no mounted field at ${at.field}`, at.field);
 		// A `'segment'` hit landed on origin-less ink (list markers, a code fence's
 		// interior): `pos` is the segment START, not a cluster-exact caret
-		// (HitGranularity), so just focus the leaf rather than snap the caret to a
-		// spot the click did not resolve. `'cluster'` (and an absent granularity:
-		// the backend did not report it, treat as exact) places the caret.
-		const prose = hit.granularity === 'segment' ? undefined : leaves.prose(found.key);
-		if (prose) prose.setCaret(hit.pos);
-		else found.control.focus();
+		// (HitGranularity), so it is dropped rather than snapped to a spot the click
+		// did not resolve. `'cluster'` (and an absent granularity: the backend did not
+		// report it, treat as exact) places the caret. An absent `pos` is the PLACEMENT
+		// rung and reaches the same floor.
+		land(found, at.granularity === 'segment' ? undefined : at.pos);
 		// The arrival cue. Unconditional, unlike the preview side's change-guarded
 		// bloom: a preview click is one discrete act, and its commonest target is the
 		// leaf ALREADY focused (where landing a caret changes nothing on screen) or
@@ -714,32 +707,55 @@
 	}
 
 	/**
-	 * Reveal the field at `field` and hand back its landing handle plus the leaf key it
+	 * Reveal the field at `field` and hand back its landing handle plus the target it
 	 * resolved to, once the reveal has RENDERED. The shared half of the two landing
 	 * verbs: a collapsed group is clipped to zero height and sits inside an `inert`
 	 * panel, which swallows a focus silently, so a caret placed in the same tick as the
 	 * reveal goes nowhere and reports nothing. Exactly one card holds the key; the rest
 	 * do nothing.
 	 *
-	 * The key comes back with the handle because the caller needs it to ask for the
-	 * codec lane (`leaves.prose`), and minting it twice would be two parses of one path.
+	 * The target comes back with the handle because the caller needs its key to ask for
+	 * the codec lane (`leaves.prose`), and minting it twice would be two parses of one
+	 * path. The reveal itself is the KEY's: a group holds the field, and an element
+	 * address opens the same group its array sits in.
 	 *
 	 * A destroy lands INSIDE this: the field is looked up before the flush and
 	 * dispatched into after it, and a PM view destroyed in that window throws on the
 	 * dispatch. A consumer's call outlives the surface it points at too, so the span is
 	 * asked on the way in as well as after the await.
 	 */
-	async function revealLeaf(
-		field: DocPath
-	): Promise<{ key: string; control: FieldControl } | undefined> {
+	async function revealLeaf(field: DocPath): Promise<Landed | undefined> {
 		if (!span.alive) return undefined;
-		const key = leafKeyForHit(field);
-		const control = key == null ? undefined : leaves.control(key);
-		if (key == null || !control) return undefined;
-		mainCard?.revealLeaf(key);
-		for (const card of cardRefs) card?.revealLeaf(key);
+		const target = leafTargetFor(field);
+		const control = target && leaves.control(target.key);
+		if (!target || !control) return undefined;
+		mainCard?.revealLeaf(target.key);
+		for (const card of cardRefs) card?.revealLeaf(target.key);
 		if (!(await span.resumes(tick()))) return undefined;
-		return { key, control };
+		return { ...target, control };
+	}
+
+	/**
+	 * Put the caret in a revealed target, at the finest grain it can take.
+	 *
+	 * - An ELEMENT address focuses that row. The registry is parent-keyed, so the row
+	 *   rides the call (`leaves.ts`); no caret goes inside it, an array element being
+	 *   no `createField` leaf and its handle a bare focus.
+	 * - A prose leaf with a `pos` takes the caret at that USV offset.
+	 * - Everything else takes the focus and no caret: the offset is a position in
+	 *   RENDERED content and a form control has no coordinate to spend it in (an
+	 *   `<input type="number">` refuses a selection outright), which is also the whole
+	 *   of what a click on plate-placed ink can mean.
+	 */
+	function land(found: Landed, pos: number | undefined): void {
+		if (found.element != null && found.control.focusElement) {
+			return found.control.focusElement(found.element);
+		}
+		if (pos != null) {
+			const prose = leaves.prose(found.key);
+			if (prose) return prose.setCaret(pos);
+		}
+		found.control.focus();
 	}
 
 	// ── The verbs, as instance exports ──────────────────────────────────────────
@@ -750,22 +766,23 @@
 	// card — so a host drives them with what the hooks handed it.
 	//
 	// A target the surface does not hold is a NO-OP that reports `target-unknown` at
-	// `dev`: a key from a previous session or a card already removed, a path naming no
-	// declared field, or one at a granularity no field is mounted at (an array ELEMENT,
-	// `main.references.0`, which the preview reports a region for and `Addr` cannot
-	// name). `setCaret` reports it too, being the verb a preview click drives: a
+	// `dev`: a key from a previous session or a card already removed, or a path naming
+	// no declared field — including an ELEMENT path (`main.references.0`) whose array
+	// is undeclared or unmounted, that being the one thing left that an element address
+	// can miss on. `setCaret` reports it too, being the verb a preview click drives: a
 	// landing that resolved nothing is indistinguishable from one that landed, and a
 	// consumer wiring the bridge reads the difference off nothing else.
 
 	/**
 	 * Reveal and focus the field at `field`, without placing a caret inside it. Any
 	 * mounted field: a prose leaf takes its view's focus, a form control takes the same
-	 * handoff a click on its label does (`Field`, `leaves.ts`).
+	 * handoff a click on its label does (`Field`, `leaves.ts`), and an element address
+	 * takes its own row.
 	 */
 	export async function focusField(field: DocPath): Promise<void> {
 		const found = await revealLeaf(field);
 		if (!found) return missed(`no mounted field at ${field}`, field);
-		found.control.focus();
+		land(found, undefined);
 		bloomInside(found.control.el);
 	}
 	/** Seed a card of `kind` and insert it at `at` (default: the end). Returns the new
@@ -797,14 +814,53 @@
 		reportError(onError, { code: 'target-unknown', severity: 'dev', message, path });
 	}
 
-	/** Map a `ContentHit.field` (a canonical `DocPath`) to a mounted leaf key: the
-	 * same `addrForFieldPath` route the diagnostics take, the absolute card index
-	 * resolved to its live stable id, then the shared `fieldKeyToString` form. */
-	function leafKeyForHit(field: string): string | undefined {
-		const key = parsePath(field);
-		if (!key) return undefined;
-		const resolved = resolveCardKey(key, cardIds);
-		return resolved ? fieldKeyToString(resolved) : undefined;
+	/** What a `DocPath` resolves to in the mounted tree: a leaf key, and the array
+	 *  ELEMENT within it when the address names one. */
+	interface LeafTarget {
+		key: string;
+		element?: number;
+	}
+	/** A resolved target with the handle the registry holds for it. */
+	type Landed = LeafTarget & { control: FieldControl };
+
+	/**
+	 * Map a landing's `field` (a canonical `DocPath`) to a mounted target: the same
+	 * `addrForFieldPath` route the diagnostics take, the absolute card index resolved
+	 * to its live stable id, then the shared `fieldKeyToString` form.
+	 *
+	 * TWO RUNGS, because the boundary mints addresses at a finer granularity than
+	 * `Addr` can name: a `richtext[]` element surfaces as `main.references.0`, which
+	 * the grammar reads as a field literally named `"0"`. The second rung reads that
+	 * trailing segment as an INDEX — but only under a field the schema declares an
+	 * array, which is why the ladder is the editor's and not the preview's: the
+	 * preview carries no schema, so it could only guess. Truncating there would be
+	 * worse than guessing, since `pos` is an offset into the ELEMENT's own content
+	 * (`main.references.0` spans from 0), so rewriting the field to `main.references`
+	 * yields a payload that typechecks and mis-addresses.
+	 */
+	function leafTargetFor(field: DocPath): LeafTarget | undefined {
+		const direct = parsePath(field);
+		if (direct) {
+			const resolved = resolveCardKey(direct, cardIds);
+			return resolved ? { key: fieldKeyToString(resolved) } : undefined;
+		}
+		const element = elementAddrForFieldPath(field);
+		if (!element || !isArrayField(element.field)) return undefined;
+		const resolved = resolveCardKey(element.field, cardIds);
+		return resolved ? { key: fieldKeyToString(resolved), element: element.index } : undefined;
+	}
+
+	/** Whether `addr` names a field this document renders as an array repeater: the
+	 *  guard the element rung stands on. Asked of `controlKind` rather than of the raw
+	 *  type, so what the ladder tests is what the tree mounted — the control that holds
+	 *  a `focusElement` — and not a second reading of the schema beside it. */
+	function isArrayField(addr: Addr): boolean {
+		if (addr.field == null) return false;
+		const kind = addr.card == null ? undefined : model.cards[addr.card]?.kind;
+		const schema = quill.schema;
+		const card = addr.card == null ? schema.main : kind ? schema.card_kinds?.[kind] : undefined;
+		const declared = card?.fields?.[addr.field];
+		return !!declared && controlKind(declared) === 'array';
 	}
 </script>
 

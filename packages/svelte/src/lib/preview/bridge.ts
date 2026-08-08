@@ -1,6 +1,6 @@
 // The click bridge: a click on a page slot resolves pixel -> PDF-pt (the EXACT
-// inverse of overlay.ts's forward transform, both from geometry.ts) -> a content
-// hit via `session.positionAt`, surfaced through `onCaretPick`. Also the
+// inverse of overlay.ts's forward transform, both from geometry.ts) -> an address,
+// surfaced through `onPick`. Also the
 // editor->preview scroll commands (`scrollToField`/`focusPosition`), which
 // place an ephemeral marker at the target's % position and measure it, reading
 // the SAME percent geometry the overlay draws, so zoom and resize need no
@@ -12,13 +12,21 @@
 // whole page dragged to the preview by a keystroke in the editor. The preview
 // moves its own scrollport and nothing else, instantly: no `scroll-behavior` on
 // the container means no motion for a reduced-motion term to cancel.
-import type { LiveSession, ContentHit } from '@quillmark/wasm';
+import type { LiveSession } from '@quillmark/wasm';
+import type { Landing } from '../core/address.js';
 import type { PageSlot } from './paint.js';
-import { rectToPercent, clickToPdfPt, applyPercentRect, type PercentRect } from './geometry.js';
+import {
+	boxesForField,
+	rectToPercent,
+	clickToPdfPt,
+	applyPercentRect,
+	type PercentRect
+} from './geometry.js';
 
 export interface BridgeController {
-	/** Scroll `field`'s first content box to centre (a no-op if it has none). */
-	scrollToField(field: string): void;
+	/** Scroll `field`'s first box to centre; `false` when this compile places none
+	 *  for that address, which is the whole of what the preview can say about it. */
+	scrollToField(field: string): boolean;
 	/**
 	 * Bring the caret rect at `field`/`pos` into view (a no-op off-content, and a
 	 * no-op when it is already clear of the fold).
@@ -31,12 +39,25 @@ export function createBridge(
 	session: LiveSession,
 	container: HTMLElement,
 	slots: readonly PageSlot[],
-	onCaretPick: ((hit: ContentHit) => void) | undefined
+	onPick: ((at: Landing) => void) | undefined
 ): BridgeController {
 	const unlisten: Array<() => void> = [];
 
-	if (onCaretPick) {
+	if (onPick) {
 		for (const { page, el } of slots) {
+			// TWO RUNGS, and the second is the plate's. `positionAt` answers over
+			// span-tracked content; `fieldAt` answers over every placement the compile
+			// tracks, which is a strict superset — measured against the reference quill,
+			// a whole-page sweep finds no point where `positionAt` answers and `fieldAt`
+			// does not, and none where the two name different fields. So the second rung
+			// fires exactly where a field is placed without its content being tracked
+			// (`main.signature_block`, a card's), and the pick carries NO `pos` there: a
+			// fabricated `0` would be an invented offset wearing a real one's type.
+			//
+			// There is no third rung hit-testing `regions()` by hand. Its rects are
+			// bounding boxes over ink the field does not fill, so a click in the gap
+			// between two body lines would land on the body by geometry the compile
+			// never claimed; the two queries above are the compile's own answer.
 			const handleClick = (ev: MouseEvent): void => {
 				// Re-read through the live array: a same-count `refresh` swaps the
 				// slot objects to re-cache `size`, and the click math must use the
@@ -48,7 +69,9 @@ export function createBridge(
 				const py = ev.clientY - box.top;
 				const pt = clickToPdfPt(px, py, box.width, box.height, slot.size);
 				const hit = session.positionAt(slot.page, pt.x, pt.y);
-				if (hit) onCaretPick(hit);
+				if (hit) return void onPick(hit);
+				const field = session.fieldAt(slot.page, pt.x, pt.y);
+				if (field) onPick({ field });
 			};
 			el.addEventListener('click', handleClick);
 			unlisten.push(() => el.removeEventListener('click', handleClick));
@@ -88,13 +111,14 @@ export function createBridge(
 
 	return {
 		scrollToField(field) {
-			const box = session.fieldBoxes(field)[0];
-			if (!box) return;
+			const box = boxesForField(field, session.fieldBoxes(field), session.regions())[0];
+			if (!box) return false;
 			const slot = slots[box.page];
-			if (!slot) return;
+			if (!slot) return false;
 			// A discrete act ("show me this field"), so it centres every time: the
 			// asymmetry the bloom draws between a continuous signal and a one-shot one.
 			centre(measure(slot, rectToPercent(box.rect, slot.size)));
+			return true;
 		},
 		focusPosition(field, pos) {
 			const region = session.locate(field, pos);

@@ -23,7 +23,7 @@ export const PREVIEW = `<script lang="ts">
 
 <Preview
   {session}
-  onCaretPick={(hit) => console.log(hit.field, hit.pos)}
+  onPick={(at) => console.log(at.field, at.pos)}
 />`;
 
 export const VISUAL = `<script lang="ts">

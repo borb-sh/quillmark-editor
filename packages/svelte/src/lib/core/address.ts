@@ -9,7 +9,13 @@
 // this module are the hop between the two. `fieldPathForAddr` and `addrForFieldPath`
 // are public, because a host given a path by a hook and holding a verb that takes an
 // `Addr` needs them; `cardPath` is the editor's own.
-import { formatDocPath, parseDocPath, type Addr, type DocPathSeg } from '@quillmark/wasm';
+import {
+	formatDocPath,
+	parseDocPath,
+	type Addr,
+	type DocPathSeg,
+	type HitGranularity
+} from '@quillmark/wasm';
 
 /**
  * A canonical field address: `main.<field>` / `main.body` /
@@ -35,6 +41,24 @@ export interface Place {
 	field: DocPath;
 	/** The caret in USV. */
 	pos: number;
+}
+
+/**
+ * Where a preview click landed: a field, and the caret in it where the click
+ * resolved one. What the preview surfaces and what the editor's `setCaret` takes.
+ *
+ * **An absent `pos` is the PLACEMENT rung**, not a caret at zero: the click resolved
+ * a field the plate places without tracking its content (`session.fieldAt` answers,
+ * `positionAt` does not), so there is no offset and the landing is a focus. A `Place`
+ * is a landing whose caret is present, and a `ContentHit` is one too.
+ */
+export interface Landing {
+	field: DocPath;
+	/** The caret in USV, absent on the placement rung. */
+	pos?: number;
+	/** Whether `pos` is cluster-exact or floored to a segment start; the boundary's
+	 *  own marker, carried through untouched. */
+	granularity?: HitGranularity;
 }
 
 // ── Addr ↔ DocPath ──────────────────────────────────────────────────────────
@@ -78,20 +102,66 @@ export function cardPath(index: number, kinds: readonly string[]): DocPath | und
 /**
  * The inverse: a canonical `DocPath` back to the `Addr` the document verbs take, or
  * `undefined` for a path that names no single commit address — a nested or
- * array-element path (`main.references.0`), a field-rooted one, or a malformed one
- * (which `parseDocPath` throws on). A bare card and a `.body` terminal both land on
- * the field-less `{card: i}` the body leaf answers to.
+ * array-element path (`main.references.0`, which {@link elementAddrForFieldPath}
+ * takes instead), a field-rooted one, or a malformed one. A bare card and a `.body`
+ * terminal both land on the field-less `{card: i}` the body leaf answers to.
  *
  * Needs no `kinds`: the path carries the absolute index, and the kind in it is
  * decoration the `Addr` has no room for.
  */
 export function addrForFieldPath(path: DocPath): Addr | undefined {
-	let segs: DocPathSeg[];
+	const segs = segsOf(path);
+	return segs && addrForSegs(segs);
+}
+
+/**
+ * An ARRAY ELEMENT's address, split: the array field's `Addr` and the element's
+ * index. `main.references.0` and `main.references[0]` both land here; anything a
+ * single {@link addrForFieldPath} can name, and anything whose trailing segment is
+ * not an index, does not.
+ *
+ * Both spellings, because the boundary emits neither one consistently:
+ * `session.regions()` and `positionAt` mint `main.references.0`, which
+ * `parseDocPath` reads as a field literally named `"0"`, while `formatDocPath`
+ * spells the index segment `main.references[0]`. A trailing all-digits field name
+ * is therefore an index that lost its brackets — but only under a field the SCHEMA
+ * declares an array, which is the caller's guard to apply: this module holds the
+ * grammar and no schema.
+ */
+export function elementAddrForFieldPath(path: DocPath): ElementAddr | undefined {
+	const segs = segsOf(path);
+	if (!segs) return undefined;
+	const last = segs[segs.length - 1];
+	const index =
+		last?.seg === 'index'
+			? last.index
+			: last?.seg === 'field' && /^\d+$/.test(last.name)
+				? Number(last.name)
+				: undefined;
+	if (index == null) return undefined;
+	const field = addrForSegs(segs.slice(0, -1));
+	// A body has no elements: the parent must name a FIELD.
+	return field?.field != null ? { field, index } : undefined;
+}
+
+/** An array element's address: the array field, and which element. */
+export interface ElementAddr {
+	field: Addr;
+	index: number;
+}
+
+/** `parseDocPath`, with a malformed path as `undefined` rather than a throw. */
+function segsOf(path: DocPath): DocPathSeg[] | undefined {
 	try {
-		segs = parseDocPath(path);
+		return parseDocPath(path);
 	} catch {
 		return undefined;
 	}
+}
+
+/** {@link addrForFieldPath} over already-parsed segments, which is what lets the
+ *  element walk reuse it for the head of a path rather than re-serializing one. */
+function addrForSegs(segs: DocPathSeg[]): Addr | undefined {
 	const [head, ...rest] = segs;
 	if (!head) return undefined;
 	let addr: Addr;

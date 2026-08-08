@@ -46,15 +46,17 @@ export type EditorErrorCode =
 	| 'rebind-ignored'
 	/**
 	 * A landing named a card or a field the surface does not hold: a `cardId` from a
-	 * previous session or an already-removed card, a `DocPath` naming no declared
-	 * field, or one at a granularity no field is mounted at (an array ELEMENT, which
-	 * the preview reports a region for and `Addr` cannot name). The call is a no-op and
-	 * the document is untouched.
+	 * previous session or an already-removed card, or a `DocPath` naming no declared
+	 * field — an array ELEMENT path included, where the array itself is undeclared or
+	 * unmounted. The call is a no-op and the document is untouched.
 	 *
 	 * `dev`, because the fix is at the call site: a host driving the instance verbs
-	 * from outside, or a preview hit the editor has no field to route to. Every MOUNTED
-	 * field is a target, prose leaf and form control alike, so this is not how a
-	 * scalar reports.
+	 * from outside, or a preview pick the editor has no field to route to. Every
+	 * MOUNTED field is a target, prose leaf and form control alike, and an array's
+	 * elements are targets through it, so this is not how a scalar or an element
+	 * reports. Nor is it how the PREVIEW reports a field it places nothing for: that
+	 * is a compile answering honestly (`scrollToField` returns `false`), not a
+	 * contract violated.
 	 */
 	| 'target-unknown';
 

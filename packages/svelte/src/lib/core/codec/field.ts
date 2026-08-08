@@ -120,7 +120,7 @@ export interface FieldController {
 	/** The mounted `container`: the leaf's element, for a caller that has to reach the
 	 *  DOM the view sits in (the arrival wash, `core/bloom.ts`) rather than re-find it. */
 	readonly el: HTMLElement;
-	/** Place the caret at USV `pos` (preview onCaretPick → usvToPM → here). */
+	/** Place the caret at USV `pos` (preview onPick → usvToPM → here). */
 	setCaret(pos: number): void;
 	/** External content change → re-hydrate this leaf (gated by reconcile). */
 	applyExternal(): void;

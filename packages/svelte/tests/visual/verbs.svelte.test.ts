@@ -200,6 +200,63 @@ describe('the landing verbs over a form control', () => {
 		expect(document.activeElement?.tagName).toBe('INPUT');
 		expect(errors).toHaveLength(0);
 	});
+
+	it('lands a pick that carries no caret, the rung a plate-placed field answers on', async () => {
+		const q = quill();
+		const { editor, errors } = mountEditor(q, q.seedDocument());
+
+		// `main.signature_block` is placed with its content untracked: the preview's
+		// second rung names the field and has no offset to hand over.
+		await editor.setCaret({ field: 'main.signature_block' });
+		await tick();
+
+		expect(document.activeElement?.closest('.qm-array-row')).not.toBeNull();
+		expect(errors).toHaveLength(0);
+	});
+});
+
+// An array ELEMENT address (`main.references.0`) is a granularity `Addr` cannot name
+// and the registry is not keyed at: the ladder reads the trailing segment as an index
+// under a field the SCHEMA declares an array, reveals the parent, and takes the row.
+describe('a landing on an array element', () => {
+	it('takes the row the address names rather than the first', async () => {
+		const q = quill();
+		const { editor, errors } = mountEditor(q, q.seedDocument());
+
+		await editor.setCaret({ field: 'main.references.1', pos: 4 });
+		await tick();
+
+		// The element's own accessible name is `label` + its 1-based index, so this
+		// distinguishes the row from the one a bare `focusField` would land on.
+		expect(document.activeElement?.getAttribute('aria-label')).toBe('References 2');
+		expect(errors).toHaveLength(0);
+	});
+
+	it('reads both spellings of the index the boundary emits', async () => {
+		const q = quill();
+		const { editor, errors } = mountEditor(q, q.seedDocument());
+
+		// `regions()` and `positionAt` mint `main.references.0`; `formatDocPath` spells
+		// the same address `main.references[0]`. Both are the same row.
+		await editor.focusField('main.references[1]');
+		await tick();
+
+		expect(document.activeElement?.getAttribute('aria-label')).toBe('References 2');
+		expect(errors).toHaveLength(0);
+	});
+
+	it('falls back to the field for a row this document no longer has', async () => {
+		const q = quill();
+		const { editor, errors } = mountEditor(q, q.seedDocument());
+
+		// A landing off a compile the document has moved past: the field is right and
+		// the row is gone, so the array's own focus answer stands.
+		await editor.focusField('main.references.9');
+		await tick();
+
+		expect(document.activeElement?.getAttribute('aria-label')).toBe('References 1');
+		expect(errors).toHaveLength(0);
+	});
 });
 
 describe('a verb handed a target the surface does not hold', () => {
@@ -221,19 +278,20 @@ describe('a verb handed a target the surface does not hold', () => {
 		expect(errors.at(-1)?.path).toBe('main.no_such_field');
 	});
 
-	it('reports a landing at a granularity no field is mounted at, through either verb', async () => {
+	it('reports an element path whose array is not one, through either verb', async () => {
 		const q = quill();
 		const { editor, errors } = mountEditor(q, q.seedDocument());
 
-		// `main.references.0` is an array ELEMENT: the preview reports a region for one
-		// and `Addr` cannot name it, so the path parses and resolves to no field. A
-		// preview click driving `setCaret` reads success from nothing else, which is why
-		// the landing reports rather than returning quietly.
-		await editor.focusField('main.references.0');
-		await editor.setCaret({ field: 'main.references.0', pos: 0 });
+		// The element rung is SCHEMA-GUARDED: a trailing index under a field that is no
+		// array is a nested address the tree mounts nothing at, and reading it as a row
+		// would land the caret in a field the path does not name. `letterhead_title` is
+		// a string; `no_such_field` is nothing at all.
+		await editor.focusField('main.letterhead_title.0');
+		await editor.setCaret({ field: 'main.no_such_field.0', pos: 0 });
 		flushSync();
 
 		expect(errors.map((e) => e.code)).toEqual(['target-unknown', 'target-unknown']);
-		expect(errors.every((e) => e.severity === 'dev' && e.path === 'main.references.0')).toBe(true);
+		expect(errors.every((e) => e.severity === 'dev')).toBe(true);
+		expect(errors.at(-1)?.path).toBe('main.no_such_field.0');
 	});
 });

@@ -11,7 +11,8 @@
 	import { onMount } from 'svelte';
 	import { base } from '$app/paths';
 	import { Preview } from '@quillmark/svelte/preview';
-	import type { ContentHit, Document, LiveSession, Quill } from '@quillmark/wasm';
+	import type { Document, LiveSession, Quill } from '@quillmark/wasm';
+	import type { Landing } from '@quillmark/svelte/core';
 	import { loadUsafMemoTree } from './fixture';
 	import { INSTALL, OPEN_SESSION, PREVIEW, VISUAL } from './samples';
 
@@ -23,7 +24,7 @@
 	let session = $state<LiveSession | undefined>();
 	let quillHandle = $state<Quill | undefined>();
 	let editDoc = $state<Document | undefined>();
-	let lastHit = $state<ContentHit | undefined>();
+	let lastHit = $state<Landing | undefined>();
 	let toFree: Array<{ free(): void }> = [];
 
 	onMount(() => {
@@ -142,13 +143,15 @@
 			</figcaption>
 			<div class="qm-frame demo-frame">
 				{#if session}
-					<Preview {session} margin={0} onCaretPick={(hit) => (lastHit = hit)} />
+					<Preview {session} margin={0} onPick={(at) => (lastHit = at)} />
 				{/if}
 			</div>
 			<p class="caption">
-				<span class="qm-label">Caret pick</span>
+				<span class="qm-label">Pick</span>
 				<span class="qm-readout" data-testid="demo-hit">
-					{lastHit ? `${lastHit.field} @ ${lastHit.pos}` : 'click any text on the page'}
+					{lastHit
+						? `${lastHit.field}${lastHit.pos == null ? '' : ` @ ${lastHit.pos}`}`
+						: 'click anywhere on the page'}
 				</span>
 			</p>
 		</figure>

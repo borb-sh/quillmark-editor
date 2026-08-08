@@ -81,14 +81,14 @@ describe('Preview', () => {
 		['session', () => mockSession()],
 		['margin', () => 48],
 		['overlays', () => false],
-		['onCaretPick', () => () => {}],
+		['onPick', () => () => {}],
 		['strings', () => ({ noPages: 'Rien à afficher' })]
 	])('reports %s swapped in place, once, at dev severity', (prop, next) => {
 		const { props, errors } = mountSurface(Preview, {
 			session: mockSession(),
 			margin: 16,
 			overlays: true,
-			onCaretPick: () => {},
+			onPick: () => {},
 			strings: { noPages: 'Nothing to show' }
 		});
 
