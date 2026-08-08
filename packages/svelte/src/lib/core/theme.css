@@ -12,6 +12,13 @@
    on the root rule (`font-family`) that every root then inherits, and a free
    `style` attribute for the consumer.
 
+   That import carries no binding, so it survives a consumer's bundler only because
+   the package claims `sideEffects: true`. Pruned, every rung below is undefined,
+   every `var()` reading one is invalid at computed-value time, and the declaration
+   holding it drops: a control with no border, no background and no padding, under
+   chrome that still reads as intact. `check:bundle` holds both ends, the claim and
+   the built bytes.
+
    Every value stays a `var()` reference, so the dials resolve against the CASCADE
    at each root: a consumer's `[data-theme="dark"]` ancestor rule flows in
    unchanged, the light/dark default follows the `color-scheme` the host declares
