@@ -8,6 +8,15 @@
 // The barrel carries what a consumer story wants, and nothing else: a symbol
 // earns its line when a caller outside the package needs it, and grows one when
 // that caller arrives, not before.
+
+// The theme derivation, which every control on this surface reads through `var()`.
+// Imported at the BARREL because a subpath is what a consumer gets: this surface
+// reaches modules inside `core/` and never its entry, so a sheet hanging off that
+// entry arrives only for a consumer importing `/core` for some other reason. The
+// sheet rather than the entry, because the barrel needs the derivation and not
+// `init`. `check:deps` (rule 4) walks this file's own graph and holds the reach.
+import '../core/theme.css';
+
 export { default as VisualEditor } from './VisualEditor.svelte';
 export type { VisualEditorProps } from './props.js';
 
