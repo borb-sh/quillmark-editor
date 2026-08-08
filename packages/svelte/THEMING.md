@@ -131,26 +131,39 @@ It carries a `--qmh-*` scale for the page, derived from the same ten dials and c
 
 ### The shell, if you are building a tool
 
-An app that mounts an editor beside a preview over one session needs a screen to put them in, and the SHAPE of that screen is the same every time. Four more classes are that shape, so what you write is the wiring rather than the grid:
+An app that mounts an editor beside a preview over one session needs a screen to put them in, and the SHAPE of that screen is the same every time. Five more classes are that shape, so what you write is the wiring rather than the grid:
 
 ```html
 <div class="qm-workspace">
 	<header class="qm-bar site-head">
 		<span class="site-mark">acme<span class="site-slash">/</span>studio</span>
 	</header>
-	<div class="qm-split">
-		<section class="qm-frame"><!-- <VisualEditor class="qm-pane" /> --></section>
-		<section class="qm-frame"><!-- <Preview /> --></section>
+	<div class="site-body">
+		<div class="qm-switch" role="group" aria-label="Visible pane">
+			<button class="qm-control" aria-pressed="{shown" ="" ="" ="1}" onclick="{()" ="">
+				(shown = 1)}>Editor
+			</button>
+			<button class="qm-control" aria-pressed="{shown" ="" ="" ="2}" onclick="{()" ="">
+				(shown = 2)}>Preview
+			</button>
+		</div>
+		<div class="qm-split" data-qm-show="{shown}">
+			<section class="qm-frame"><!-- <VisualEditor class="qm-pane" /> --></section>
+			<section class="qm-frame"><!-- <Preview /> --></section>
+		</div>
 	</div>
 </div>
 ```
 
-| Class           | What it is                                                                                                                                             |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `.qm-workspace` | The screen: pinned to the viewport, three bands (a head, the body, an optional foot), the body taking what is left and the document scrolling nowhere. |
-| `.qm-bar`       | The row a band puts its parts on, wrapping and centred. The rule under it, the gutter beside it and its depth stay yours: that is your page shell.     |
-| `.qm-split`     | Two even tracks for two surfaces, the page gap between them. Below `60rem` they stack, each at `--qmh-pane`; which element scrolls then is yours.      |
-| `.qm-frame`     | The mounting site: an edge, a corner, and the clip that holds a surface to them. What is inside it is the surface's own.                               |
+| Class           | What it is                                                                                                                                                |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.qm-workspace` | The screen: pinned to the viewport, three bands (a head, the body, an optional foot), the body taking what is left and the document scrolling nowhere.    |
+| `.qm-bar`       | The row a band puts its parts on, wrapping and centred. The rule under it, the gutter beside it and its depth stay yours: that is your page shell.        |
+| `.qm-split`     | Two even tracks for two surfaces, the page gap between them. Under `50rem` wide or `30rem` tall, one track at a time; `data-qm-show="1"\|"2"` says which. |
+| `.qm-switch`    | The band that says which track is showing, and nothing at the widths where both are. A pair of `.qm-control`s in it read as even halves.                  |
+| `.qm-frame`     | The mounting site: an edge, a corner, and the clip that holds a surface to them. What is inside it is the surface's own.                                  |
+
+The narrow shape is one mount at a time, not two of them stacked: half a narrow viewport is under the width either surface reads at. The track you are not showing is `display: none`, so it leaves the tab order, hit-testing and the accessibility tree together: you need no `inert` on it, and no breakpoint in your JS, since the only state you hold is which of the two you last asked for. Keep both MOUNTED: the hidden pane keeps its pixels, its caret and its scroll, and repaints itself when it comes back. A click that lands in the hidden pane is the one thing the shape adds to your wiring, so send the caret and reveal the track together, or the hit goes somewhere the reader cannot see.
 
 The shape is shared; the LOOK of a band is not. Your wordmark, your nav and the depth of your head are the most app-specific things on the screen, and a preset that drew them would hand every tool built on this the same face, so they read `--qmh-*` like everything else and you write the rules. `.qm-split`'s gap is a default rather than a fact about splitting: close it to `0` and carry a hairline on one pane if you want the two mounts to meet instead of stand apart.
 

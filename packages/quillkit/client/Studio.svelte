@@ -13,6 +13,7 @@
     edit ─► (debounced) session.update(doc) ─► preview.refresh(change)
                                             └► notes = every producer, merged
     preview click ─► onCaretPick(hit) ─► editor.setCaret(hit)
+                                      └► shown = 1   (reveal, under the threshold)
     editor caret  ─► onCaretMove(at)  ─► preview.focusPosition(at)
 
   A repack of the source quiver arrives as one dev-server signal and is answered by
@@ -102,6 +103,12 @@
 	// Surface handles for the two imperative bridge hops.
 	let editorRef: { setCaret(hit: ContentHit): Promise<void> } | undefined = $state.raw();
 	let previewRef: ReturnType<typeof Preview> | undefined = $state.raw();
+
+	/** Which of the split's two tracks is showing. Read only under the preset's threshold,
+	 *  where one shows at a time; above it the attribute is inert and the switch band is
+	 *  not drawn, so studio holds one number rather than a viewport in JS beside the one
+	 *  the stylesheet already has. */
+	let shown = $state.raw<1 | 2>(1);
 
 	// ── Opening ─────────────────────────────────────────────────────────────────
 	/** Whether an open is in flight: the picker is inert while one is. */
@@ -224,7 +231,16 @@
 		else scheduleRecompile();
 	}
 
+	/** The caret and the reveal together: under the threshold the editor is the track that
+	 *  is not showing, and a caret placed in it is a round-trip the author cannot see
+	 *  land. Above it the write is a no-op the stylesheet ignores.
+	 *
+	 *  The reveal needs no flush of its own, which is what makes the tab hop ordinary:
+	 *  `setCaret` already waits one out before it lands (a collapsed group is `inert` and
+	 *  swallows a focus, the same way a hidden track would), and the track's `display`
+	 *  moves in that same flush. */
 	function handleCaretPick(hit: ContentHit): void {
+		shown = 1;
 		editorRef?.setCaret(hit);
 	}
 
@@ -322,40 +338,62 @@
 		     and waits a tick before freeing anything, so a new session arrives as a
 		     remount of this block rather than as a prop swap the preview would
 		     refuse to rebind. -->
-		<div class="qm-split panes">
-			<section class="pane" aria-label="Editor">
-				<VisualEditor
-					class="qm-pane"
-					bind:this={editorRef}
-					doc={open.doc}
-					quill={open.quill}
-					diagnostics={notes.diagnostics}
-					onCaretMove={handleCaretMove}
-					onChange={handleChange}
-					onError={handleSurfaceError}
-				/>
-			</section>
-			<section class="pane paint" aria-label="Preview">
-				{#if halt}
-					<!-- A document that will not compile is a STATE of the paint, not a row
-					     under it: it takes the register the failed open has, at the surface it
-					     is about, carrying the place to open (STUDIO §"The errors"). The band
-					     below still lists it, one list being its job. -->
-					<div class="stalled" data-testid="stalled" role="status">
-						<span class="qm-status qm-status-error">Compile failed</span>
-						{#if halt.location}
-							<span class="qm-readout at">{placeOf(halt.location)}</span>
-						{/if}
-						<span class="what">{halt.message}</span>
-					</div>
-				{/if}
-				<Preview
-					bind:this={previewRef}
-					session={open.session}
-					onCaretPick={handleCaretPick}
-					onError={handleSurfaceError}
-				/>
-			</section>
+		<div class="body">
+			<!-- Drawn only under the preset's threshold, where the split shows one track.
+			     Full-bleed and shallow like the head, since it is chrome between two bands
+			     rather than a plate on a page. -->
+			<div class="qm-switch switch" role="group" aria-label="Visible pane">
+				<button
+					class="qm-control"
+					type="button"
+					data-testid="show-editor"
+					aria-pressed={shown === 1}
+					onclick={() => (shown = 1)}>Editor</button
+				>
+				<button
+					class="qm-control"
+					type="button"
+					data-testid="show-preview"
+					aria-pressed={shown === 2}
+					onclick={() => (shown = 2)}>Preview</button
+				>
+			</div>
+
+			<div class="qm-split panes" data-qm-show={shown}>
+				<section class="pane" aria-label="Editor">
+					<VisualEditor
+						class="qm-pane"
+						bind:this={editorRef}
+						doc={open.doc}
+						quill={open.quill}
+						diagnostics={notes.diagnostics}
+						onCaretMove={handleCaretMove}
+						onChange={handleChange}
+						onError={handleSurfaceError}
+					/>
+				</section>
+				<section class="pane paint" aria-label="Preview">
+					{#if halt}
+						<!-- A document that will not compile is a STATE of the paint, not a row
+						     under it: it takes the register the failed open has, at the surface it
+						     is about, carrying the place to open (STUDIO §"The errors"). The band
+						     below still lists it, one list being its job. -->
+						<div class="stalled" data-testid="stalled" role="status">
+							<span class="qm-status qm-status-error">Compile failed</span>
+							{#if halt.location}
+								<span class="qm-readout at">{placeOf(halt.location)}</span>
+							{/if}
+							<span class="what">{halt.message}</span>
+						</div>
+					{/if}
+					<Preview
+						bind:this={previewRef}
+						session={open.session}
+						onCaretPick={handleCaretPick}
+						onError={handleSurfaceError}
+					/>
+				</section>
+			</div>
 		</div>
 	{:else}
 		<!-- Nothing is mounted, so the room the panes had says why: the message where
@@ -422,12 +460,39 @@
 		min-width: 0;
 	}
 
+	/* The workspace's body band, and the two things in it: the switch that is drawn only
+	   under the threshold, and the split that takes everything left either way. A column
+	   rather than a fourth row on the workspace, since three bands is what a workspace is
+	   and the switch belongs to the mounts rather than beside them. */
+	.body {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+	}
+
+	/* The band's LOOK, where the preset carries whether it is drawn at all: full-bleed and
+	   shallow like the head, so the two rules above the panes read as one edge and the
+	   controls sit in the head's own gutter. */
+	.switch {
+		padding: var(--qmh-space-2) var(--qmh-space-4);
+		border-block-end: var(--qmh-border-width) solid var(--qmh-border);
+	}
+
 	/* The split's tracks are the preset's; its GAP is not. Studio hides its instruments
 	   and spends the screen on the two mounts, so the panes meet at a hairline and run to
 	   the viewport's edges: a gap and a frame apiece would draw two cards on a page, which
-	   is the playground's job and the opposite of this one. */
+	   is the playground's job and the opposite of this one.
+
+	   The hairline IS the gap, closed to a stroke with the border showing through it,
+	   rather than an edge on one of the two panes. A seam drawn on a pane outlives the
+	   pane beside it: under the threshold one track shows, and the border that was between
+	   the mounts is left against the viewport. A gap has nothing to leave behind, so the
+	   seam appears and goes with the second track and studio states no threshold of its
+	   own. */
 	.panes {
-		gap: 0;
+		gap: var(--qmh-border-width);
+		background: var(--qmh-border);
+		flex: 1 1 0;
 	}
 
 	/* A track that may shrink below its content, which is the whole of what a pane owes
@@ -439,11 +504,11 @@
 		min-height: 0;
 	}
 
-	/* The seam, and no resizer: a divider that can be dragged is an instrument. Positioned,
-	   because the compile failure is laid over this pane. */
+	/* Positioned, because the compile failure is laid over this pane. The seam between the
+	   two is the split's gap; there is no resizer, a divider that can be dragged being an
+	   instrument. */
 	.pane.paint {
 		position: relative;
-		border-inline-start: var(--qmh-border-width) solid var(--qmh-border);
 	}
 
 	/* The failure over the paint rather than above it. The last good paint stays whole
@@ -507,20 +572,5 @@
 		max-width: var(--qmh-measure);
 		color: var(--qmh-alert);
 		overflow-wrap: anywhere;
-	}
-
-	/* The split stacks itself below the width that fits two mounts abreast; what is left
-	   for studio is WHERE THE ROOM COMES FROM, and it is the band, so the head and the
-	   errors hold their edges while the two mounts scroll between them. The seam turns
-	   with the tracks. */
-	@media (width < 60rem) {
-		.panes {
-			overflow: auto;
-		}
-
-		.pane.paint {
-			border-inline-start: none;
-			border-block-start: var(--qmh-border-width) solid var(--qmh-border);
-		}
 	}
 </style>

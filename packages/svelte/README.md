@@ -223,7 +223,7 @@ This is not the diagnostics channel. A `Diagnostic` is about the **document** an
 el.textContent = doc.toMarkdown();
 ```
 
-The playground's debug drawer is the worked version, holding scroll across the swap and showing a throw in place: `packages/playground/src/routes/playground/SourceMirror.svelte`.
+A worked one holds the scroll across the swap and shows a throw in place; the call under it is still the one line above.
 
 ## Theming
 

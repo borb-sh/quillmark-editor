@@ -86,11 +86,7 @@ html:has(.qm-workspace) {
    The GAP is the endorsed default and not a fact about splitting: two surfaces standing
    apart on a page read as two things, which is what a host showing its instruments wants.
    A host that spends the whole screen on the mounts closes it to nothing and carries a
-   hairline on one pane instead: one property, and the tracks are untouched.
-
-   Below the width that fits two mounts abreast the split stops being one: the tracks
-   stack and each takes a pane's height. WHICH element scrolls then is the host's, since
-   it is the host that knows where the room comes from. */
+   hairline on one pane instead: one property, and the tracks are untouched. */
 .qm-split {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -99,11 +95,57 @@ html:has(.qm-workspace) {
 	min-height: 0;
 }
 
-@media (width < 60rem) {
+/* THE BAND THAT SWITCHES THEM, and nothing at the widths where both tracks are showing
+   and there is nothing to switch. Where it stands is the host's, like any other band; what
+   goes in it is a pair of `.qm-control`s, which already carry the on-state a pressed
+   control takes. Its visibility is the PRESET's because the threshold is: a host hiding
+   its own tab row writes this file's number a second time, which is the one thing the
+   single source is for. */
+.qm-switch {
+	display: none;
+}
+
+/* ONE MOUNT AT A TIME under the threshold, rather than two of them abreast. Half a narrow
+   viewport is under the width either surface reads at, so the split stops being one and
+   the tracks become views of the same room: the host says which with `data-qm-show`, and
+   the attribute names the TRACK rather than what is in it, so nothing here knows an editor
+   from a preview. No attribute is the first track.
+
+   The other track is `display: none` and not a clip, which is the whole of the hiding: it
+   leaves the tab order, hit-testing and the accessibility tree in one property, so the
+   pane needs no `inert` and the host needs no breakpoint in JS. Both stay MOUNTED (a
+   preview binds its handle once, an editor holds a caret, a history and a scroll), so
+   the switch is presentational, never conditional. A pane hidden this way keeps the
+   pixels it had (the paint loop's band sweep no-ops on an empty visible set) and repaints
+   from its live box when it comes back, which its resize observer sees as a width moving
+   off zero.
+
+   HEIGHT is the second clause because a landscape phone passes the first one: it clears
+   the width with room for two tracks and has no body left to put them in. A desktop window
+   that short wants one mount for the same reason. */
+@media (width < 50rem), (height < 30rem) {
+	.qm-switch {
+		display: flex;
+		gap: var(--qmh-space);
+	}
+
+	/* Even halves of the band, whatever they are; centred only if they are the controls
+	   the recipe expects, since `.qm-control` reads left for the menus it also dresses. */
+	.qm-switch > * {
+		flex: 1 1 0;
+	}
+
+	.qm-switch > .qm-control {
+		text-align: center;
+	}
+
 	.qm-split {
 		grid-template-columns: minmax(0, 1fr);
-		grid-template-rows: none;
-		grid-auto-rows: var(--qmh-pane);
+	}
+
+	.qm-split:not([data-qm-show='2']) > :nth-child(2),
+	.qm-split[data-qm-show='2'] > :nth-child(1) {
+		display: none;
 	}
 }
 

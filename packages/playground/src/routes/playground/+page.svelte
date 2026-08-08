@@ -1,17 +1,16 @@
 <!--
   The reference SPLIT-PANE SHELL, and the page the site is named for. One
-  consumer-owned LiveSession drives all three surfaces over one seeded document:
+  consumer-owned LiveSession drives both surfaces over one seeded document:
     • <VisualEditor> (left): the edit surface; commits land on `doc`.
     • <Preview>      (right): a pure view of the session; never mutates it.
-    • <SourceMirror> (drawer): read-only canonical markdown of `doc`, app-local.
 
   It wires the glue the primitives push outward (ARCHITECTURE §Playground), all
   through the PUBLIC API; no reach-through:
 
     edit ─► (debounced) session.update(doc) ─► preview.refresh(change)
-                                            └► sourceView.refresh()
                                             └► diagnostics = session.warnings
     preview click ─► onCaretPick(hit) ─► editor.setCaret(hit)     (preview→editor)
+                                      └► shown = 1                (reveal, narrow)
     editor caret  ─► onCaretMove(at)  ─► preview.focusPosition(at) (editor→preview)
 
   The bridge is consumer-layer and one-way-independent: the editor is unaware of
@@ -24,6 +23,12 @@
   they arrive per keystroke. `onCaretMove` drives the preview's caret and nothing
   else: it fires on a bare arrow key, so a recompile hung off it would recompile
   on every one.
+
+  Under the preset's threshold the split shows ONE track and the switch band says
+  which, so the bridge's preview→editor hop reveals the editor as well as placing
+  the caret in it: a hit that lands in a hidden pane lands nowhere a reader can see.
+  Both panes stay mounted either way: the switch is CSS over a state, never an
+  `{#if}` that would take the editor's history with it.
 
   The strip above the panes reads the bridge's outcomes back out (last-hit,
   active-addr, last-focus, last-change, the change LANE, and the last recovered
@@ -49,7 +54,6 @@
 	import type { Place, EditorError } from '@quillmark/svelte/core';
 	import type { ActiveLeaf, EditorChange } from '@quillmark/svelte/visual';
 	import { Preview } from '@quillmark/svelte/preview';
-	import SourceMirror from './SourceMirror.svelte';
 	import { loadUsafMemoTree, withMainDateDefault, withSecondCardKind } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
@@ -65,7 +69,12 @@
 	// Surface handles for the imperative bridge hops.
 	let editorRef: { setCaret(hit: ContentHit): Promise<void> } | undefined = $state();
 	let previewRef: ReturnType<typeof Preview> | undefined = $state();
-	let sourceRef: ReturnType<typeof SourceMirror> | undefined = $state();
+
+	// Which of the split's two tracks is showing. It is read only under the preset's
+	// threshold, where one shows at a time; above it the attribute is inert and the
+	// switch band is not drawn, so the route holds one number at every width rather
+	// than a viewport in JS beside the one the stylesheet already has.
+	let shown = $state<1 | 2>(1);
 
 	// External diagnostics fed to the editor = live `session.warnings` + any
 	// injected render-error stand-ins (recomputed on every recompile).
@@ -82,7 +91,6 @@
 	let lastChange = $state<ChangeSet | undefined>();
 	let lastChangeSource = $state('none');
 	let lastError = $state('none');
-	let showSource = $state(false);
 
 	let toFree: Array<{ free(): void }> = [];
 
@@ -101,7 +109,6 @@
 			const change = session.update(docHandle);
 			lastChange = change;
 			previewRef?.refresh(change);
-			sourceRef?.refresh();
 			syncDiagnostics(); // re-read live warnings each compile, merged with the stand-ins
 		} catch (e) {
 			// A failed recompile keeps the last-good preview (the session is
@@ -111,8 +118,17 @@
 	}
 
 	// ── Bridge: preview → editor ────────────────────────────────────────────────
+	// The caret and the reveal together: under the threshold the editor is the track
+	// that is not showing, and a caret placed in it is a round-trip the reader cannot
+	// see land. Above it the write is a no-op the stylesheet ignores.
+	//
+	// The reveal needs no flush of its own, which is what makes the tab hop ordinary:
+	// `setCaret` already waits one out before it lands (a collapsed group is `inert` and
+	// swallows a focus, the same way a hidden track would), and the track's `display`
+	// moves in that same flush.
 	function handleCaretPick(hit: ContentHit): void {
 		lastHit = hit;
+		shown = 1;
 		editorRef?.setCaret(hit);
 	}
 
@@ -282,17 +298,30 @@
 					data-testid="inject-diagnostics"
 					onclick={injectDiagnostics}>Inject diagnostics</button
 				>
-				<button
-					class="qm-control"
-					type="button"
-					data-testid="toggle-source"
-					aria-pressed={showSource}
-					onclick={() => (showSource = !showSource)}>Source</button
-				>
 			</span>
 		</div>
 
-		<div class="qm-split shell">
+		<!-- Drawn only under the preset's threshold, where the split shows one track.
+		     The pair reads as one choice, so the pressed state is the whole of what
+		     says which: `.qm-control` already carries it. -->
+		<div class="qm-switch" role="group" aria-label="Visible pane">
+			<button
+				class="qm-control"
+				type="button"
+				data-testid="show-editor"
+				aria-pressed={shown === 1}
+				onclick={() => (shown = 1)}>Editor</button
+			>
+			<button
+				class="qm-control"
+				type="button"
+				data-testid="show-preview"
+				aria-pressed={shown === 2}
+				onclick={() => (shown = 2)}>Preview</button
+			>
+		</div>
+
+		<div class="qm-split shell" data-qm-show={shown}>
 			<section class="qm-frame" aria-label="Visual editor">
 				{#if VisualEditor && docHandle && quillHandle}
 					<VisualEditor
@@ -314,28 +343,13 @@
 				{/if}
 			</section>
 		</div>
-
-		{#if showSource && docHandle}
-			<section class="qm-frame drawer" aria-label="Debug source view" data-testid="source-drawer">
-				<p class="qm-label drawer-label">Canonical markdown — read only</p>
-				<div class="source-host">
-					<SourceMirror
-						bind:this={sourceRef}
-						doc={docHandle}
-						onError={(message) => (lastError = `toMarkdown: ${message}`)}
-					/>
-				</div>
-			</section>
-		{/if}
 	{/if}
 </main>
 
 <style>
-	/* The page takes what the shell hands it and never scrolls itself: the panes
-	   below own their overflow, so the surfaces stay put while their contents move.
-	   Below the split's threshold the stacked panes outgrow it and this column takes
-	   the scroll: the shell is pinned to the viewport at every width, so this is the
-	   one place on the route a scroll can land. */
+	/* The page takes what the shell hands it and never scrolls itself, at every width:
+	   the panes below own their overflow, so the surfaces stay put while their contents
+	   move, and under the threshold the one showing takes the room the two had. */
 	.page {
 		display: flex;
 		flex-direction: column;
@@ -380,50 +394,10 @@
 		margin-inline-start: auto;
 	}
 
-	/* The split's tracks, its gap and its frames are `.qm-split`'s and `.qm-frame`'s
-	   (THEMING §"The shell"). What is left here is how the split shares the page with
-	   the drawer: twice its pull on the height left after the head and the strip. */
+	/* The split's tracks, its gap, its frames and the width it shows one track at are
+	   `.qm-split`'s and `.qm-frame`'s (THEMING §"The shell"). What is left here is the
+	   split's pull on the height under the head and the strip, which is all of it. */
 	.shell {
-		flex: 2 1 0;
-	}
-
-	/* Open, the drawer takes a third of what the panes had rather than a height of
-	   its own: the page cannot grow, so the room comes from the split. */
-	.drawer {
-		display: flex;
-		flex-direction: column;
 		flex: 1 1 0;
-		min-height: 0;
-	}
-
-	.drawer-label {
-		padding: var(--qmh-space-2) var(--qmh-space-3);
-		border-bottom: var(--qmh-border-width) solid var(--qmh-border);
-	}
-
-	.source-host {
-		flex: 1 1 0;
-		min-height: 0;
-		background: var(--qmh-page);
-	}
-
-	/* Below the width that fits two panes side by side the split stacks itself, and what
-	   is left for the route is WHERE THE ROOM COMES FROM: nothing flexes, so the column
-	   outgrows the shell and scrolls inside it, and both panes are reachable with the
-	   document still not a scroller. The drawer is not in the split, so its mount takes
-	   the pane rung directly. */
-	@media (width < 60rem) {
-		.page {
-			overflow: auto;
-		}
-
-		.shell,
-		.drawer {
-			flex: 0 0 auto;
-		}
-
-		.source-host {
-			height: var(--qmh-pane);
-		}
 	}
 </style>
