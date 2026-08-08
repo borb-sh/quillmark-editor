@@ -88,6 +88,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - run: npm test
       - run: npx quillkit site --out site
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -115,7 +116,7 @@ Keep the deploy in your own repository, as above: nothing outside it then holds 
 - run: npx quillkit site --out site
 ```
 
-That takes whatever `@quillmark/quiver` is current, where a `package.json` would pin the format your quiver is packed in. `site` packs files and instantiates nothing, so either way the deploy installs no wasm.
+That takes whatever `@quillmark/quiver` is current, where a `package.json` would pin the format your quiver is packed in. `site` packs files and instantiates nothing, so the pack needs no wasm either way.
 
 A deployed quiver is frozen at a commit, so the repack loop is the local one, over a working tree.
 
