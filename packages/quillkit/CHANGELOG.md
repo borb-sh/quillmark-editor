@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.1.1 - 2026-08-08
+
 The studio client carries the scale it draws with. The `@quillmark/svelte` it bundles declared itself prunable, so `vite build` dropped `core/theme.css` and the codec's three stylesheets out of the client: `studio` and `site` both served an editor whose controls had no border, no background, no padding and no tap floor, under chrome that read as intact. The tool ships its own client, so the fix arrives with this version rather than with a consumer's install.
 
 ## v0.1.0 - 2026-08-08
