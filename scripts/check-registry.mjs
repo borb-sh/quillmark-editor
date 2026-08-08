@@ -1,17 +1,17 @@
 // Every published package's version against the registry's copy of it. A version this
 // branch carries that the registry does not have is a release that did not happen: a run
 // evicted from the concurrency queue, a publish that failed, a bump merged by hand. The
-// number is spent whichever it was, since the next `release-prepare` bumps from it, so the
-// drift is named rather than waited out. Zero deps; run via `npm run check:registry`.
+// version number is spent either way, since the next `release-prepare` bumps from it, so
+// the drift is named rather than waited out. Zero deps; run via `npm run check:registry`.
 //
-// Not part of `gate`, and the reason is the release PR: it carries a bump the registry
-// cannot have yet, and on that branch the drift IS the change. On `main` the same fact is
-// a fault, so this runs on its own schedule (`registry.yml`) rather than on every push,
-// which also keeps it clear of the release run it would otherwise race.
+// Not part of `gate`: the release PR carries a bump the registry cannot have yet, and on
+// that branch the drift IS the change. On `main` the same fact is a fault, so this runs on
+// its own schedule (`registry.yml`), which also keeps it clear of the release run a
+// push-triggered check would race.
 //
 // The exact version rather than `latest`: a package releasing a patch on an older line
-// serves a `latest` that is legitimately not what this branch holds, and asking for one
-// version answers the only question here, which is whether this one is published.
+// serves a `latest` that is legitimately not what this branch holds, and whether this
+// version is published is the whole question.
 
 import { execFileSync } from 'node:child_process';
 import { packages, report } from './workspace.mjs';

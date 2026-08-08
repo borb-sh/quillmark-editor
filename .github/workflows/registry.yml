@@ -5,8 +5,8 @@
 #
 # On a schedule rather than on push. `main` carries the bump for the minutes a release run
 # takes to gate and publish, so a check on every push fails on every release, and a check
-# that fails routinely is one nobody reads. Drift that survives to the next morning is the
-# fault. A schedule runs on the default branch, which is the branch the question is about.
+# that fails routinely is one nobody reads. Drift that survives to the next morning is not
+# a release in flight. A schedule runs on the default branch, the branch this is about.
 name: Registry
 
 on:

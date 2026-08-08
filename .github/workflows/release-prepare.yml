@@ -97,9 +97,8 @@ jobs:
           VERSION="${{ steps.version.outputs.next }}"
           FILE="packages/$PKG/CHANGELOG.md"
 
-          # What the tarball compiles in, stated in the section that becomes the Release
-          # notes: a browser resolves nothing, so a consumer holding the bundle has no
-          # other way to name the copies inside it.
+          # What the tarball compiles in, written into the section `release.yml` lifts
+          # into the Release notes verbatim.
           CARRIED=""
           if [ "$PKG" = quillkit ]; then
             CARRIED=$(node scripts/carried.mjs --line)

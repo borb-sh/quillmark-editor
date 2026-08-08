@@ -1,5 +1,6 @@
-/** What a client built out of `root` compiles in, keyed by registry name. */
-export function carried(root?: string): Record<string, string>;
+// Hand-written typings for `carried.mjs`, which quillkit's `vite.config.ts` imports from
+// TypeScript. Signatures only: the prose is the script's, and a second copy of it here
+// would drift against the one a reader of the implementation sees.
 
-/** The same versions as one sentence, for a release's notes. */
+export function carried(root?: string): Record<string, string>;
 export function line(what?: Record<string, string>): string;

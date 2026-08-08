@@ -35,9 +35,7 @@ const SETTLE_MS = 80;
 const REPACKED = 'studio:quiver-repacked';
 
 /** What this build compiles in: the two siblings and the engine, read off the copies the
- *  bundle takes rather than off declared ranges. A browser resolves nothing, so a
- *  consumer holding the tarball can name its contents only if the build says so
- *  (`scripts/carried.mjs`). */
+ *  bundle takes rather than off declared ranges (`scripts/carried.mjs`). */
 const CARRIED = carried();
 
 /** Call `fn` once a burst of calls stops arriving. */
