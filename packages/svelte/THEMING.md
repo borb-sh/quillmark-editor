@@ -155,13 +155,13 @@ An app that mounts an editor beside a preview over one session needs a screen to
 </div>
 ```
 
-| Class           | What it is                                                                                                                                                |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.qm-workspace` | The screen: pinned to the viewport, three bands (a head, the body, an optional foot), the body taking what is left and the document scrolling nowhere.    |
-| `.qm-bar`       | The row a band puts its parts on, wrapping and centred. The rule under it, the gutter beside it and its depth stay yours: that is your page shell.        |
-| `.qm-split`     | Two even tracks for two surfaces, the page gap between them. Under `50rem` wide or `30rem` tall, one track at a time; `data-qm-show="1"\|"2"` says which. |
-| `.qm-switch`    | The band that says which track is showing, and nothing at the widths where both are. A pair of `.qm-control`s in it read as even halves.                  |
-| `.qm-frame`     | The mounting site: an edge, a corner, and the clip that holds a surface to them. What is inside it is the surface's own.                                  |
+| Class           | What it is                                                                                                                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.qm-workspace` | The screen: pinned to the viewport, three bands (a head, the body, an optional foot), the body taking what is left and the document scrolling nowhere.                                            |
+| `.qm-bar`       | The row a band puts its parts on, wrapping and centred. The rule under it, the gutter beside it and its depth stay yours: that is your page shell.                                                |
+| `.qm-split`     | Two even tracks for two surfaces, the page gap between them. Under `50rem` wide or `30rem` tall, one track at a time; `data-qm-show="1"\|"2"` says which.                                         |
+| `.qm-switch`    | The band that says which track is showing, and nothing at the widths where both are. Its controls read as even halves and stand at the touch floor (`--qmh-tap`, 44px); depth past that is yours. |
+| `.qm-frame`     | The mounting site: an edge, a corner, and the clip that holds a surface to them. What is inside it is the surface's own.                                                                          |
 
 The narrow shape is one mount at a time, not two of them stacked: half a narrow viewport is under the width either surface reads at. The track you are not showing is `display: none`, so it leaves the tab order, hit-testing and the accessibility tree together: you need no `inert` on it, and no breakpoint in your JS, since the only state you hold is which of the two you last asked for. Keep both MOUNTED: the hidden pane keeps its pixels, its caret and its scroll, and repaints itself when it comes back. A click that lands in the hidden pane is the one thing the shape adds to your wiring, so send the caret and reveal the track together, or the hit goes somewhere the reader cannot see.
 

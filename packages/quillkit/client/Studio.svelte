@@ -470,11 +470,13 @@
 		min-height: 0;
 	}
 
-	/* The band's LOOK, where the preset carries whether it is drawn at all: full-bleed and
-	   shallow like the head, so the two rules above the panes read as one edge and the
-	   controls sit in the head's own gutter. */
+	/* The band's LOOK, where the preset carries whether it is drawn at all: full-bleed, and
+	   the head's own gutter beside the controls so the two rules above the panes read as
+	   one edge. The DEPTH is the controls', which stand at the touch floor: a band padded
+	   past them would be chrome standing deeper than the head, on the viewports with the
+	   least of it to spend. */
 	.switch {
-		padding: var(--qmh-space-2) var(--qmh-space-4);
+		padding-inline: var(--qmh-space-4);
 		border-block-end: var(--qmh-border-width) solid var(--qmh-border);
 	}
 

@@ -129,12 +129,17 @@ html:has(.qm-workspace) {
 		gap: var(--qmh-space);
 	}
 
-	/* Even halves of the band, whatever they are; centred only if they are the controls
-	   the recipe expects, since `.qm-control` reads left for the menus it also dresses. */
+	/* Even halves of the band, at the height a THUMB needs. The floor is the recipe's and
+	   not the host's, because the band exists only at the sizes where the pointer is a
+	   finger: a host is free to stand the band deeper, and has nothing to gain from
+	   standing it shallower than the thing it is tapping. */
 	.qm-switch > * {
 		flex: 1 1 0;
+		min-height: var(--qmh-tap);
 	}
 
+	/* Centred, which is what a control filling half a band reads as; `.qm-control` itself
+	   reads left, for the menus it also dresses. */
 	.qm-switch > .qm-control {
 		text-align: center;
 	}

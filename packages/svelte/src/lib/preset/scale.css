@@ -58,6 +58,12 @@
 	   so it does not derive from the spacing dial. */
 	--qmh-measure: 34rem;
 
+	/* The floor under a control a THUMB lands on. Hand geometry rather than rhythm, which
+	   is why it does not derive from the spacing dial either: 44px is where both platform
+	   guidelines and WCAG put a touch target, and a control padded to a pointer's size is
+	   under it whatever rung the padding reads. */
+	--qmh-tap: 2.75rem;
+
 	/* ── Type ────────────────────────────────────────────────────────────────── */
 	/* Two faces with a job each: prose is sans, chrome is mono. Both are system stacks,
 	   so the preset costs no network request. The sans face reads the same dial the
