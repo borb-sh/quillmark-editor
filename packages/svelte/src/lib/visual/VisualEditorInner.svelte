@@ -16,7 +16,7 @@
  • commit routing: prose leaves lower to `applyChange` (in the codec); scalars/
  arrays/objects go through the typed `writer`; structure through the mutators;
  • focus + the bridge outputs (`onActiveLeafChange`, `onCaretMove`) and the
- `setCaret(hit)` entry wired to the preview;
+ `setCaret(at)` entry wired to the preview;
  • the ONE formatting popover (`FormatPopover`, mounted once, observing the
  active leaf via `getActiveLeaf`) and diagnostics routing (`diagnostics.ts`:
  quill.validate + local commit errors + the external `diagnostics` prop,
@@ -35,6 +35,7 @@
 	import { DropdownMenu } from 'bits-ui';
 	import { isQuillmarkError, MAIN_CARD_ADDR } from '@quillmark/wasm';
 	import {
+		addrForFieldPath,
 		cardPath,
 		elementAddrForFieldPath,
 		fieldPathForAddr,
@@ -71,7 +72,6 @@
 	} from './structure.js';
 	import {
 		fieldKeyToString,
-		parsePath,
 		resolveCardKey,
 		routeAndResolve,
 		mergeDiagnostics,
@@ -738,12 +738,11 @@
 	/**
 	 * Put the caret in a revealed target, at the finest grain it can take.
 	 *
-	 * - An ELEMENT address focuses that row. The registry is parent-keyed, so the row
-	 *   rides the call (`leaves.ts`); no caret goes inside it, an array element being
-	 *   no `createField` leaf and its handle a bare focus.
+	 * - An ELEMENT address focuses that row, with no caret inside it: an array element
+	 *   is no `createField` leaf and its handle is a bare focus.
 	 * - A prose leaf with a `pos` takes the caret at that USV offset.
-	 * - Everything else takes the focus and no caret: the offset is a position in
-	 *   RENDERED content and a form control has no coordinate to spend it in (an
+	 * - Everything else takes the focus alone: the offset is a position in RENDERED
+	 *   content and a form control has no coordinate to spend it in (an
 	 *   `<input type="number">` refuses a selection outright), which is also the whole
 	 *   of what a click on plate-placed ink can mean.
 	 */
@@ -767,11 +766,11 @@
 	//
 	// A target the surface does not hold is a NO-OP that reports `target-unknown` at
 	// `dev`: a key from a previous session or a card already removed, or a path naming
-	// no declared field — including an ELEMENT path (`main.references.0`) whose array
-	// is undeclared or unmounted, that being the one thing left that an element address
-	// can miss on. `setCaret` reports it too, being the verb a preview click drives: a
-	// landing that resolved nothing is indistinguishable from one that landed, and a
-	// consumer wiring the bridge reads the difference off nothing else.
+	// no declared field — an ELEMENT path (`main.references.0`) whose array is
+	// undeclared or unmounted included, that being the only way one misses. `setCaret`
+	// reports it too, being the verb a preview click drives: a landing that resolved
+	// nothing is indistinguishable from one that landed, and a consumer wiring the
+	// bridge reads the difference off nothing else.
 
 	/**
 	 * Reveal and focus the field at `field`, without placing a caret inside it. Any
@@ -824,22 +823,20 @@
 	type Landed = LeafTarget & { control: FieldControl };
 
 	/**
-	 * Map a landing's `field` (a canonical `DocPath`) to a mounted target: the same
+	 * Map a landing's `field` (a canonical `DocPath`) to a mounted target: the
 	 * `addrForFieldPath` route the diagnostics take, the absolute card index resolved
 	 * to its live stable id, then the shared `fieldKeyToString` form.
 	 *
 	 * TWO RUNGS, because the boundary mints addresses at a finer granularity than
 	 * `Addr` can name: a `richtext[]` element surfaces as `main.references.0`, which
 	 * the grammar reads as a field literally named `"0"`. The second rung reads that
-	 * trailing segment as an INDEX — but only under a field the schema declares an
-	 * array, which is why the ladder is the editor's and not the preview's: the
-	 * preview carries no schema, so it could only guess. Truncating there would be
-	 * worse than guessing, since `pos` is an offset into the ELEMENT's own content
-	 * (`main.references.0` spans from 0), so rewriting the field to `main.references`
-	 * yields a payload that typechecks and mis-addresses.
+	 * trailing segment as an INDEX, under a field the schema declares an array — which
+	 * is why the ladder is the editor's (VISUAL_EDITOR.md §Surface): the preview
+	 * carries no schema, and truncating the address there is worse than guessing, since
+	 * `pos` is an offset into the ELEMENT's own content.
 	 */
 	function leafTargetFor(field: DocPath): LeafTarget | undefined {
-		const direct = parsePath(field);
+		const direct = addrForFieldPath(field);
 		if (direct) {
 			const resolved = resolveCardKey(direct, cardIds);
 			return resolved ? { key: fieldKeyToString(resolved) } : undefined;
@@ -851,9 +848,9 @@
 	}
 
 	/** Whether `addr` names a field this document renders as an array repeater: the
-	 *  guard the element rung stands on. Asked of `controlKind` rather than of the raw
-	 *  type, so what the ladder tests is what the tree mounted — the control that holds
-	 *  a `focusElement` — and not a second reading of the schema beside it. */
+	 *  guard the element rung stands on. Asked of `controlKind`, so what the ladder
+	 *  tests is the control the tree mounted — the one holding a `focusElement` — and
+	 *  not a second reading of the schema beside it. */
 	function isArrayField(addr: Addr): boolean {
 		if (addr.field == null) return false;
 		const kind = addr.card == null ? undefined : model.cards[addr.card]?.kind;

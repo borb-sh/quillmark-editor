@@ -1,11 +1,10 @@
-// Field-box overlay: absolutely-positioned % divs per page, one per box
-// `geometry.ts`'s `boxesForField` gives an address, grouped by `field` via a
-// `data-qm-field` attribute (a field can surface several boxes:
-// header/continuation/repeat, see PREVIEW.md). Reads geometry off the session;
-// never mutates it. Each
-// page's layer sits over its canvas with `pointer-events:none` so clicks fall
-// through to bridge.ts's listener on the slot beneath; the overlay is
-// decoration, never an independent click target.
+// Field-box overlay: absolutely-positioned % divs per page, one per box an address
+// has (`geometry.ts`, `boxesForField`), grouped by `field` via a `data-qm-field`
+// attribute (a field can surface several boxes: header/continuation/repeat, see
+// PREVIEW.md). Reads geometry off the session; never mutates it. Each page's layer
+// sits over its canvas with `pointer-events:none` so clicks fall through to
+// bridge.ts's listener on the slot beneath; the overlay is decoration, never an
+// independent click target.
 //
 // The boxes carry NO resting ink. They exist for their geometry (bridge.ts reads
 // their rects) and to be bloomed: the preview is the rendered output, so
@@ -48,12 +47,11 @@ export function createOverlay(session: LiveSession, slots: readonly PageSlot[]):
 	/** field → its boxes, rebuilt with them. The bloom's only lookup. */
 	let byField = new Map<string, HTMLElement[]>();
 
-	// The boxes a flash covers: the address's own, plus every one UNDER it. The
-	// granularities the two ends speak differ and neither is wrong — the boxes are
-	// keyed as `regions()` names them (`main.references.0`), while an editor-side
-	// signal names the declared field (`main.references`) — so the lookup spans them
-	// rather than either side translating. Resolved per apply, not at `flashField`,
-	// so a rebuild picks up boxes the recompile moved or added.
+	// The boxes a flash covers: the address's own, plus every one UNDER it, since the
+	// boxes are keyed as `regions()` names them (`main.references.0`) and an
+	// editor-side signal names the declared field (`main.references`). Resolved per
+	// apply rather than at `flashField`, so a rebuild picks up boxes the recompile
+	// moved or added.
 	function flashed(field: string): HTMLElement[] {
 		const els: HTMLElement[] = [];
 		for (const [key, group] of byField) {
@@ -74,11 +72,9 @@ export function createOverlay(session: LiveSession, slots: readonly PageSlot[]):
 		for (const el of els) bloom(el, elapsed, timing);
 	}
 
-	// Field names come from `regions()` (the only session query that enumerates
-	// them; Preview carries no schema); the rects come from `boxesForField`, which
-	// falls back to the region's own rect where `fieldBoxes` has no union to give —
-	// a scalar the plate places without tracking its content, and a `richtext[]`
-	// element. So every address `regions()` names draws.
+	// Field names come from `regions()` (the only session query that enumerates them;
+	// Preview carries no schema); the rects from `boxesForField`, whose fallback is
+	// what makes every address `regions()` names draw.
 	function build(): void {
 		for (const layer of layers) layer.replaceChildren();
 		byField = new Map();

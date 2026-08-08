@@ -44,13 +44,13 @@ export interface Place {
 }
 
 /**
- * Where a preview click landed: a field, and the caret in it where the click
- * resolved one. What the preview surfaces and what the editor's `setCaret` takes.
+ * Where a preview click landed. What the preview surfaces and what the editor's
+ * `setCaret` takes.
  *
  * **An absent `pos` is the PLACEMENT rung**, not a caret at zero: the click resolved
- * a field the plate places without tracking its content (`session.fieldAt` answers,
+ * a field the plate places without tracking its content (`fieldAt` answers,
  * `positionAt` does not), so there is no offset and the landing is a focus. A `Place`
- * is a landing whose caret is present, and a `ContentHit` is one too.
+ * is a landing carrying its caret, and a `ContentHit` is one too.
  */
 export interface Landing {
 	field: DocPath;
@@ -115,18 +115,16 @@ export function addrForFieldPath(path: DocPath): Addr | undefined {
 }
 
 /**
- * An ARRAY ELEMENT's address, split: the array field's `Addr` and the element's
- * index. `main.references.0` and `main.references[0]` both land here; anything a
- * single {@link addrForFieldPath} can name, and anything whose trailing segment is
- * not an index, does not.
+ * An ARRAY ELEMENT's address, split. `main.references.0` and `main.references[0]`
+ * both land here; anything {@link addrForFieldPath} can name, and anything whose
+ * trailing segment is not an index, does not.
  *
- * Both spellings, because the boundary emits neither one consistently:
- * `session.regions()` and `positionAt` mint `main.references.0`, which
- * `parseDocPath` reads as a field literally named `"0"`, while `formatDocPath`
- * spells the index segment `main.references[0]`. A trailing all-digits field name
- * is therefore an index that lost its brackets — but only under a field the SCHEMA
- * declares an array, which is the caller's guard to apply: this module holds the
- * grammar and no schema.
+ * Both spellings, because the boundary mints one and formats the other: `regions()`
+ * and `positionAt` emit `main.references.0`, which `parseDocPath` reads as a field
+ * literally named `"0"`, while `formatDocPath` spells the index segment
+ * `main.references[0]`. A trailing all-digits field name is therefore an index that
+ * lost its brackets — but only under a field the SCHEMA declares an array, the
+ * caller's guard to apply: this module holds the grammar and no schema.
  */
 export function elementAddrForFieldPath(path: DocPath): ElementAddr | undefined {
 	const segs = segsOf(path);
@@ -144,7 +142,7 @@ export function elementAddrForFieldPath(path: DocPath): ElementAddr | undefined 
 	return field?.field != null ? { field, index } : undefined;
 }
 
-/** An array element's address: the array field, and which element. */
+/** An array element's address: the ARRAY's `Addr`, and which element of it. */
 export interface ElementAddr {
 	field: Addr;
 	index: number;
@@ -159,8 +157,8 @@ function segsOf(path: DocPath): DocPathSeg[] | undefined {
 	}
 }
 
-/** {@link addrForFieldPath} over already-parsed segments, which is what lets the
- *  element walk reuse it for the head of a path rather than re-serializing one. */
+/** {@link addrForFieldPath} over already-parsed segments, so the element walk reuses
+ *  it for the head of a path rather than re-serializing one. */
 function addrForSegs(segs: DocPathSeg[]): Addr | undefined {
 	const [head, ...rest] = segs;
 	if (!head) return undefined;

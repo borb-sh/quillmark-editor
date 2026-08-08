@@ -63,11 +63,16 @@ describe('addrForFieldPath', () => {
 		expect(addrForFieldPath('cards.indorsement[2].body')).toEqual({ card: 2 });
 	});
 
+	it('reads the unknown-kind card form', () => {
+		expect(addrForFieldPath('cards[1].from')).toEqual({ card: 1, field: 'from' });
+	});
+
 	it('rejects a path that names no single commit address', () => {
 		// A nested / array-element path, a field-rooted one, and a malformed one.
 		expect(addrForFieldPath('main.references.0')).toBeUndefined();
 		expect(addrForFieldPath('recipients[0].name')).toBeUndefined();
 		expect(addrForFieldPath('')).toBeUndefined();
+		expect(addrForFieldPath('cards.indorsement[x].from')).toBeUndefined();
 		expect(addrForFieldPath('cards.indorsement[-1].from')).toBeUndefined();
 	});
 

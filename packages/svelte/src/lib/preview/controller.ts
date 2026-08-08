@@ -36,11 +36,9 @@ export interface PreviewController {
 	refresh(change: ChangeSet): void;
 	/**
 	 * Scroll `field`'s first box into view and bloom it. `false` when this compile
-	 * places nothing at that address, which is a legitimate answer rather than a
-	 * failure: the plate places plenty it does not track, and the preview carries no
-	 * schema, so it cannot tell that case from a field the host misnamed. The editor's
-	 * `focusField` is what distinguishes them — it holds the mounted tree and reports
-	 * `target-unknown` for a name it has no field for.
+	 * places nothing at that address — an answer, not a failure: the plate places
+	 * plenty it does not track, and the preview carries no schema to tell that from a
+	 * field the host misnamed. The editor's `focusField` is what distinguishes them.
 	 */
 	scrollToField(field: DocPath): boolean;
 	/**

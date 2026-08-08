@@ -160,10 +160,10 @@
 		rootEl?.querySelector<HTMLTextAreaElement>('.qm-array-row textarea')?.focus();
 	}
 	/** Take the caret to element `k`: what a landing on an element ADDRESS resolves to
-	 * (`leaves.ts`). The index is resolved to the element's session id here, at the
-	 * call, never carried as one — an index is stale the moment anything above it
-	 * splices. An index past the live list falls back to {@link focus}: the field is
-	 * right and the row is gone, which is a compile the document has moved past. */
+	 * (`leaves.ts`). The index resolves to the element's session id here, at the call,
+	 * never carried as one — an index is stale the moment anything above it splices.
+	 * Past the live list it falls back to {@link focus}: the field is right and the row
+	 * is gone, which is a landing off a compile the document has moved past. */
 	export function focusElement(k: number): void {
 		const el = els[ids[k]];
 		if (el) el.focus();

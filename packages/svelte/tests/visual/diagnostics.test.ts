@@ -1,10 +1,10 @@
 // diagnostics.ts routing/merge/precedence; pure logic, no Document. VisualEditor's
-// `$derived.by` glue is the thin part; the math it feeds on is here.
+// `$derived.by` glue is the thin part; the math it feeds on is here. The path→key
+// walk itself is `/core`'s `addrForFieldPath` and is tested there.
 import { describe, it, expect } from 'vitest';
 import type { Diagnostic } from '@quillmark/wasm';
 import {
 	fieldKeyToString,
-	parsePath,
 	resolveCardKey,
 	routeAndResolve,
 	mergeDiagnostics,
@@ -27,36 +27,6 @@ describe('fieldKeyToString', () => {
 		expect(fieldKeyToString({ card: 'c0', field: 'from' })).toBe('c0:from');
 		expect(fieldKeyToString({ card: 0, field: 'from' })).toBe('0:from');
 		expect(fieldKeyToString({ card: 'c0' })).toBe('c0:$body');
-	});
-});
-
-describe('parsePath', () => {
-	it('maps main.body to the main body', () => {
-		expect(parsePath('main.body')).toEqual({});
-	});
-	it('maps a main.<field> path to a main field', () => {
-		expect(parsePath('main.subject')).toEqual({ field: 'subject' });
-		expect(parsePath('main.font_size')).toEqual({ field: 'font_size' });
-	});
-	it('maps cards.<kind>[<i>].<field> to a card field by ABSOLUTE document index', () => {
-		expect(parsePath('cards.indorsement[0].from')).toEqual({ card: 0, field: 'from' });
-		expect(parsePath('cards.indorsement[2].date')).toEqual({ card: 2, field: 'date' });
-	});
-	it('maps a card body (a `.body` terminal, or a bare card) to a field-less card key', () => {
-		expect(parsePath('cards.indorsement[1].body')).toEqual({ card: 1 });
-		expect(parsePath('cards.indorsement[1]')).toEqual({ card: 1 });
-	});
-	it('routes an unknown-kind card path (cards[<i>].<field>)', () => {
-		expect(parsePath('cards[1].from')).toEqual({ card: 1, field: 'from' });
-	});
-	it('rejects an array-element / nested path (no single-field commit address)', () => {
-		expect(parsePath('main.references.0')).toBeUndefined();
-		expect(parsePath('recipients[0].name')).toBeUndefined();
-	});
-	it('rejects a malformed path (empty, non-numeric or negative index)', () => {
-		expect(parsePath('')).toBeUndefined();
-		expect(parsePath('cards.indorsement[x].from')).toBeUndefined();
-		expect(parsePath('cards.indorsement[-1].from')).toBeUndefined();
 	});
 });
 

@@ -230,10 +230,9 @@
 				     not a persistent box. `data-value` falls back to the
 				     placeholder so an empty title still reserves its resolved-title width. -->
 					<span class="qm-card-title-sizer" data-value={localTitle || card.titlePlaceholder}>
-						<!-- `qm-focus-ring` is what the box used to do: it was this control's ONLY
-					     focus indicator, and the ink step that replaced it cannot be one, since
-					     hover already takes that step. `:focus-visible`, so a press enters the
-					     edit unringed while a tab into it draws one. -->
+						<!-- `qm-focus-ring` is this control's ONLY focus indicator: the ink step
+					     cannot be one, since hover already takes that step. `:focus-visible`, so
+					     a press enters the edit unringed while a tab into it draws one. -->
 						<input
 							class="qm-card-title qm-focus-ring"
 							value={localTitle}
@@ -635,9 +634,8 @@
 	 The ACTION COLUMN is minted here and spent one level down, on the field
 	 (`Field.svelte` holds why it is the field's inset and not this container's). It
 	 is declared on the query container because both of its consumers hang off one:
-	 the fields inside, and the capacity ramp below, which has to carry the column in
-	 its own arithmetic now that the query no longer reads a content box the
-	 reservation already narrowed. */
+	 the fields inside, and the capacity ramp below, which carries the column in its
+	 own arithmetic because the query reads a box the reservation has not narrowed. */
 	.qm-section,
 	.qm-group-panel-inner {
 		--action-col: calc(var(--_qm-tap-min) + var(--_qm-space-2));

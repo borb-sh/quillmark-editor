@@ -43,21 +43,14 @@ export function createBridge(
 ): BridgeController {
 	const unlisten: Array<() => void> = [];
 
+	// TWO RUNGS: `positionAt` over span-tracked content, `fieldAt` over every placement
+	// the compile tracks, a strict superset of it (PREVIEW.md §"Click bridge" carries
+	// the measurement). The second fires where a field is placed without its content
+	// being tracked, and the pick carries NO `pos` there: a fabricated `0` would be an
+	// invented offset wearing a real one's type. No third rung hit-tests `regions()`,
+	// whose rects bound ink the field does not fill.
 	if (onPick) {
 		for (const { page, el } of slots) {
-			// TWO RUNGS, and the second is the plate's. `positionAt` answers over
-			// span-tracked content; `fieldAt` answers over every placement the compile
-			// tracks, which is a strict superset — measured against the reference quill,
-			// a whole-page sweep finds no point where `positionAt` answers and `fieldAt`
-			// does not, and none where the two name different fields. So the second rung
-			// fires exactly where a field is placed without its content being tracked
-			// (`main.signature_block`, a card's), and the pick carries NO `pos` there: a
-			// fabricated `0` would be an invented offset wearing a real one's type.
-			//
-			// There is no third rung hit-testing `regions()` by hand. Its rects are
-			// bounding boxes over ink the field does not fill, so a click in the gap
-			// between two body lines would land on the body by geometry the compile
-			// never claimed; the two queries above are the compile's own answer.
 			const handleClick = (ev: MouseEvent): void => {
 				// Re-read through the live array: a same-count `refresh` swaps the
 				// slot objects to re-cache `size`, and the click math must use the

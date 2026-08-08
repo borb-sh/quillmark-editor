@@ -54,9 +54,8 @@ export type EditorErrorCode =
 	 * from outside, or a preview pick the editor has no field to route to. Every
 	 * MOUNTED field is a target, prose leaf and form control alike, and an array's
 	 * elements are targets through it, so this is not how a scalar or an element
-	 * reports. Nor is it how the PREVIEW reports a field it places nothing for: that
-	 * is a compile answering honestly (`scrollToField` returns `false`), not a
-	 * contract violated.
+	 * reports. The preview never reports it at all: a field it places nothing for is
+	 * `scrollToField` returning `false`.
 	 */
 	| 'target-unknown';
 
