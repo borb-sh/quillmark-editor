@@ -38,6 +38,7 @@
 	"sideEffects": false,
 	"files": [
 		"dist",
+		"MIGRATION.md",
 		"NOTICE"
 	],
 	"peerDependencies": {

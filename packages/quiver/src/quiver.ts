@@ -4,9 +4,9 @@
  * Polymorphism via composition: internally stores a pluggable loader
  * (either source-backed or build-output-backed).
  *
- * This module is browser-safe: only `fromBuiltUrl` and the instance API live
- * here. The filesystem factories are free functions in `./node.js`; the class
- * is the same either way.
+ * This module is browser-safe: only `fromBuiltUrl`, `fromBuiltFiles` and the
+ * instance API live here. The filesystem factories are free functions in
+ * `./node.js`; the class is the same either way.
  */
 
 import { QuiverError } from './errors.js';
@@ -42,8 +42,8 @@ export class Quiver {
 
 	/**
 	 * Private constructor. A Quiver comes from a factory (`Quiver.fromBuiltUrl`,
-	 * or `fromDir` / `fromBuiltDir` from `@quillmark/quiver/node`), which is what
-	 * names the thing being read.
+	 * `Quiver.fromBuiltFiles`, or `fromDir` / `fromBuiltDir` from
+	 * `@quillmark/quiver/node`), which is what names the thing being read.
 	 */
 	private constructor(name: string, catalog: Map<string, string[]>, loader: QuiverLoader) {
 		this.name = name;
@@ -62,10 +62,19 @@ export class Quiver {
 	 * environments. `file://` URLs are rejected — to load build output from
 	 * disk in Node, use `fromBuiltDir(path)` from `@quillmark/quiver/node`.
 	 *
+	 * `seed` answers for the artifact bytes the caller already holds, keyed by
+	 * artifact-relative path; the URL serves the rest. Seeding `latest.json`
+	 * settles which catalog this process reads at deploy time rather than at
+	 * cache-revalidation time. Seeded bytes are digest-checked as fetched ones
+	 * are.
+	 *
 	 * Throws `transport_error` on network/HTTP failure, `quiver_invalid`
 	 * on format errors.
 	 */
-	static async fromBuiltUrl(url: string): Promise<Quiver> {
+	static async fromBuiltUrl(
+		url: string,
+		opts?: { seed?: ReadonlyMap<string, Uint8Array> }
+	): Promise<Quiver> {
 		if (url.startsWith('file://')) {
 			throw new QuiverError(
 				'transport_error',
@@ -74,8 +83,36 @@ export class Quiver {
 		}
 		const { HttpTransport } = await import('./transports/http-transport.js');
 		const { loadBuiltQuiver } = await import('./built-loader.js');
-		const transport = new HttpTransport(url);
-		return loadBuiltQuiver(transport);
+		const http = new HttpTransport(url);
+
+		if (opts?.seed === undefined) return loadBuiltQuiver(http);
+
+		const { MemoryTransport } = await import('./transports/memory-transport.js');
+		return loadBuiltQuiver(new MemoryTransport(opts.seed, http));
+	}
+
+	/**
+	 * Browser-safe factory. Loads build output from the bytes themselves, keyed
+	 * by artifact-relative path (`latest.json`, `manifest.<digest>.json`,
+	 * `<name>@<x.y.z>.<digest>.zip`, `store/<hash>`) — the shape `build` writes
+	 * and `fromBuiltDir` reads back.
+	 *
+	 * Nothing is fetched, so a runtime whose artifact is not on a path it can
+	 * read (a serverless function, a bundler that inlines it, a test) reaches
+	 * one without fetching its own static output back over its own load
+	 * balancer.
+	 *
+	 * The map must carry the whole artifact; a missing path is a
+	 * `transport_error` naming it. To hold part and fetch the rest, pass the map
+	 * as `fromBuiltUrl`'s `seed`.
+	 *
+	 * Throws `quiver_invalid` on format errors, `transport_error` on a path the
+	 * map does not carry.
+	 */
+	static async fromBuiltFiles(files: ReadonlyMap<string, Uint8Array>): Promise<Quiver> {
+		const { MemoryTransport } = await import('./transports/memory-transport.js');
+		const { loadBuiltQuiver } = await import('./built-loader.js');
+		return loadBuiltQuiver(new MemoryTransport(files));
 	}
 
 	/** Returns all known quill names, sorted lexicographically. */
