@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.19.0 - 2026-08-08
+
 **The bin is gone.** `quillmark-quiver test` and `quillmark-quiver build` are `quillkit test` and `quillkit build`, in a package of its own. This is a library: it loads a quiver and packs one, and a collection that depends on it pins the format its quiver is written in rather than a version tooling releases move. `quiver.config.js` is `quillkit.config.js`.
 
 **`build` lands a generation whole.** It assembles in `<out>.stage` and moves the tree in, so a reader fetching mid-build gets the previous generation rather than a missing pointer or a manifest whose bundles have not landed, and a build that throws leaves the previous one serving. The destructive-write refusals now cover the staging siblings, which are named off `out` and cleared with it.
