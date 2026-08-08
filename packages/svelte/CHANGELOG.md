@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.1.1 - 2026-08-08
+
 The package claims `sideEffects: true`, so a consumer's bundler keeps the stylesheets its modules import for effect. Under the previous `["**/*.css"]` every module the globs missed was prunable, and Rollup dropped all four sheet-carrying edges. With `core/theme.css` gone every `--_qm-*` rung was undefined, so every declaration reading one was invalid at computed-value time and dropped: controls with no border, no background and no padding, under chrome that read as intact. `codec/prose.css` and ProseMirror's own two sheets went the same way, taking the prose reset and the structural rules a view needs to render. A bundled consumer now takes the surfaces whole; an unbundled one was never affected.
 
 ## v0.1.0 - 2026-08-08
