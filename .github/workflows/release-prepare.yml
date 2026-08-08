@@ -1,13 +1,12 @@
 # Cut a release for one package: bump its version, promote its curated
-# `## Unreleased` section to the version's own, and push the release branch.
-# Opening the PR is the human's half — the run ends with the link and the body to
-# paste. Merging that PR is what tags and publishes (release.yml). Versions are
+# `## Unreleased` section to the version's own, push the release branch, and open the
+# PR. Merging that PR is what tags and publishes (release.yml). Versions are
 # independent, so a release names its package and leaves the other's alone.
 #
-# The split is not a workaround for a permission to go asking for. A PR opened by
-# `GITHUB_TOKEN` gets no `pull_request` workflow runs, so the release PR — the one
-# change that must not merge unchecked — would arrive with an empty checks list.
-# A human opening it is what runs ci.yml on it.
+# Opening it needs Settings → Actions → "Allow GitHub Actions to create and approve
+# pull requests", which no `permissions:` block grants. A PR opened by `GITHUB_TOKEN`
+# gets no `pull_request` run, so the same step dispatches ci.yml at the branch: the
+# release PR is the one change that must not merge unchecked.
 name: Prepare release
 
 on:
@@ -35,6 +34,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
+      # The ci.yml dispatch.
+      actions: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -96,7 +98,9 @@ jobs:
             '!done && $0 == "## Unreleased" { print; print ""; print hdr; done=1; next } { print }' \
             "$FILE" > CHANGELOG.new && mv CHANGELOG.new "$FILE"
 
-      - name: Push the release branch
+      - name: Push the branch and open the PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           PKG="${{ inputs.package }}"
           NAME="${{ steps.version.outputs.name }}"
@@ -120,6 +124,8 @@ jobs:
             echo
             echo "Merging tags \`${PKG}-v${VERSION}\` and publishes \`${NAME}\`."
             echo
+            echo "The checks here come from a dispatched \`CI\` run at the branch head: a PR opened by \`GITHUB_TOKEN\` gets no \`pull_request\` run."
+            echo
             echo "<details><summary>Commits touching <code>packages/${PKG}</code> since ${LAST:-the first commit}</summary>"
             echo
             cat commits.md
@@ -134,18 +140,18 @@ jobs:
           git commit -m "chore(release): ${NAME} v${VERSION}"
           git push -u origin "$BRANCH"
 
-          # The run's own summary is the handoff: the compare link with the title
-          # already filled, and the body in one copyable block.
-          TITLE=$(printf 'chore(release): %s v%s' "$NAME" "$VERSION" | jq -sRr @uri)
-          COMPARE="${{ github.server_url }}/${{ github.repository }}/compare/main...${BRANCH}?expand=1&title=${TITLE}"
+          PR=$(gh pr create \
+            --title "chore(release): ${NAME} v${VERSION}" \
+            --body-file pr-body.md \
+            --base main \
+            --head "$BRANCH")
+
+          # The checks, dispatched rather than triggered. Only this first commit needs
+          # it; a later push to the branch is a human's and fires `synchronize`.
+          gh workflow run ci.yml --ref "$BRANCH"
+
           {
-            echo "## Open the release PR"
+            echo "## Release PR"
             echo
-            echo "[Compare and open \`${BRANCH}\` →](${COMPARE})"
-            echo
-            echo "Paste this as the body:"
-            echo
-            echo '````markdown'
-            cat pr-body.md
-            echo '````'
+            echo "[chore(release): ${NAME} v${VERSION}](${PR})"
           } >> "$GITHUB_STEP_SUMMARY"
