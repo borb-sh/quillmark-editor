@@ -33,8 +33,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # Tags, and the history back to them: the client's build stamps each
+          # compiled-in sibling against its own release tag, and the tarball published
+          # here is the one that carries the answer.
           fetch-depth: 0
-          ref: main
+          # The merge commit this event names rather than `main`, which is whatever
+          # landed while this run queued. One commit gates, is tagged, is built and is
+          # published, so the tag names the bytes.
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
 
       - uses: actions/setup-node@v4
         with:

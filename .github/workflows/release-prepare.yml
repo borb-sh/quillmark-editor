@@ -82,11 +82,28 @@ jobs:
             exit 1
           fi
 
+      # quillkit alone compiles siblings into what it ships, so it is the only package
+      # whose notes name what they carry, and the only one that needs a tree to read it
+      # off: `carried.mjs` resolves `@quillmark/wasm` out of `node_modules`, which the
+      # lock-only bump above does not materialize. After the refusal, so a release
+      # already in flight costs nothing.
+      - name: Install, for the carried stamp
+        if: inputs.package == 'quillkit'
+        run: npm ci
+
       - name: Promote the curated section
         run: |
           PKG="${{ inputs.package }}"
           VERSION="${{ steps.version.outputs.next }}"
           FILE="packages/$PKG/CHANGELOG.md"
+
+          # What the tarball compiles in, stated in the section that becomes the Release
+          # notes: a browser resolves nothing, so a consumer holding the bundle has no
+          # other way to name the copies inside it.
+          CARRIED=""
+          if [ "$PKG" = quillkit ]; then
+            CARRIED=$(node scripts/carried.mjs --line)
+          fi
 
           # `## Unreleased` is a permanent fixture at the top of the file: an
           # entry is written into it by the change that earns it, and a release
@@ -94,8 +111,8 @@ jobs:
           # the fixture is the whole promotion — the entries do not move, and the
           # heading stays for the next cycle. Only the first fixture is read; a
           # later one is stray data and passes through untouched.
-          awk -v hdr="## v${VERSION} - $(date +%Y-%m-%d)" \
-            '!done && $0 == "## Unreleased" { print; print ""; print hdr; done=1; next } { print }' \
+          awk -v hdr="## v${VERSION} - $(date +%Y-%m-%d)" -v carried="$CARRIED" \
+            '!done && $0 == "## Unreleased" { print; print ""; print hdr; if (carried != "") { print ""; print carried }; done=1; next } { print }' \
             "$FILE" > CHANGELOG.new && mv CHANGELOG.new "$FILE"
 
       - name: Push the branch and open the PR

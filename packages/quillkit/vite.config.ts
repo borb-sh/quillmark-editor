@@ -1,9 +1,8 @@
-import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import { build } from '@quillmark/quiver/node';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig, type Plugin } from 'vite';
+import { carried } from '../../scripts/carried.mjs';
 
 // The client half of this package, built. `client/` is the browser's tree and `src/` is
 // the bin's; the two share a manifest and a `dist`, and meet nowhere else: the tool
@@ -35,15 +34,11 @@ const SETTLE_MS = 80;
  *  fresh `Quiver`; nothing on this side knows what a quill is. */
 const REPACKED = 'studio:quiver-repacked';
 
-/** The resolved `@quillmark/wasm`, read off the copy the bundle takes rather than off a
- *  declared range: the head names the engine that painted the page, and a client built
- *  for elsewhere carries that copy with it. The package exports only `.`, so the
- *  manifest is reached beside the entry rather than as a subpath. */
-const WASM_VERSION = (() => {
-	const entry = createRequire(import.meta.url).resolve('@quillmark/wasm');
-	const manifest = new URL('../package.json', pathToFileURL(entry));
-	return JSON.parse(readFileSync(manifest, 'utf8')).version as string;
-})();
+/** What this build compiles in: the two siblings and the engine, read off the copies the
+ *  bundle takes rather than off declared ranges. A browser resolves nothing, so a
+ *  consumer holding the tarball can name its contents only if the build says so
+ *  (`scripts/carried.mjs`). */
+const CARRIED = carried();
 
 /** Call `fn` once a burst of calls stops arriving. */
 function settle(ms: number, fn: () => void): () => void {
@@ -101,19 +96,34 @@ function quiverSource(): Plugin {
 	};
 }
 
+/** The stamp as a file beside the bundle, for a consumer reading the tarball without
+ *  running it. `generateBundle` runs on build alone, so a dev server writes nothing. */
+function carriedFile(): Plugin {
+	return {
+		name: 'studio:carried',
+		generateBundle() {
+			this.emitFile({
+				type: 'asset',
+				fileName: 'carried.json',
+				source: `${JSON.stringify(CARRIED, null, '\t')}\n`
+			});
+		}
+	};
+}
+
 export default defineConfig({
 	root: ROOT,
 	// Relative asset URLs, and the client resolves the quiver off `document.baseURI`
 	// for the same reason: the base is a runtime fact, so a built studio serves from
 	// wherever it is put (STUDIO §"A client, and what serves it").
 	base: './',
-	plugins: [svelte(), quiverSource()],
+	plugins: [svelte(), quiverSource(), carriedFile()],
 	// The client is the whole of what lands in `dist/client` and it carries no quiver,
 	// so a public directory left behind by a dev run cannot ride into it. `emptyOutDir`
 	// is explicit because the target sits outside the root, and it clears the client's
 	// own directory rather than the `dist` it shares with the bin.
 	build: { outDir: DIST, emptyOutDir: true, copyPublicDir: false },
-	define: { __WASM_VERSION__: JSON.stringify(WASM_VERSION) },
+	define: { __CARRIED__: JSON.stringify(CARRIED) },
 	// @quillmark/wasm ships wasm-bindgen's web target: no `.wasm` import and no
 	// top-level await, so a static import is safe and Vite resolves it unaided.
 	// Dev-server pre-bundling is the one exception: it relocates the package away

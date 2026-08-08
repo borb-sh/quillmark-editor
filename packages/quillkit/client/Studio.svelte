@@ -45,6 +45,8 @@
 	const REPACKED = 'studio:quiver-repacked';
 	/** One apply per settled burst of keystrokes. A structure op skips it. */
 	const RECOMPILE_MS = 120;
+	/** The engine compiled into this bundle, one of the three the build stamps. */
+	const WASM = __CARRIED__['@quillmark/wasm'];
 
 	type Phase =
 		| { kind: 'booting' }
@@ -289,7 +291,7 @@
 		     nothing at runtime reconciles the two, so the version is stated rather than
 		     left to `npm ls` — which the reader of a client served from elsewhere cannot
 		     run. -->
-		<span class="qm-readout engine" data-testid="engine">wasm {__WASM_VERSION__}</span>
+		<span class="qm-readout engine" data-testid="engine">wasm {WASM}</span>
 		{#if catalog}
 			<Picker {catalog} {picked} disabled={busy} onPick={pick} />
 		{/if}
