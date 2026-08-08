@@ -9,12 +9,7 @@
 import { QuiverError } from '../errors.js';
 import type { BuiltTransport, FetchOptions } from '../built-loader.js';
 
-/**
- * Keys are artifact-relative, as `build` writes them and the loader asks for
- * them: `latest.json`, `manifest.<digest>.json`, `<name>@<x.y.z>.<digest>.zip`,
- * `store/<hash>`. A leading `./` or `/` is stripped, so a map assembled from a
- * directory walk needs no reshaping.
- */
+/** Keys are artifact-relative, as the loader asks for them; a leading `./` or `/` is stripped. */
 function normalizeKeys(files: ReadonlyMap<string, Uint8Array>): Map<string, Uint8Array> {
 	const out = new Map<string, Uint8Array>();
 	for (const [key, bytes] of files) {
@@ -33,11 +28,7 @@ export class MemoryTransport implements BuiltTransport {
 		this.files = normalizeKeys(files);
 	}
 
-	/**
-	 * The map answers first. `FetchOptions` reaches only the fallback: a held
-	 * byte has no cache above it to revalidate against, which is the whole point
-	 * of holding it.
-	 */
+	/** The map answers first. `FetchOptions` reaches only the fallback: a held byte has no cache to revalidate against. */
 	async fetchBytes(relativePath: string, opts?: FetchOptions): Promise<Uint8Array> {
 		const bytes = this.files.get(relativePath);
 		if (bytes !== undefined) return bytes;
@@ -45,7 +36,7 @@ export class MemoryTransport implements BuiltTransport {
 		if (this.fallback === undefined) {
 			throw new QuiverError(
 				'transport_error',
-				`No bytes held for "${relativePath}". A quiver loaded from files alone carries the whole artifact: the pointer, the manifest, every bundle, and every store entry. To hold part of it and fetch the rest, pass the map as the \`seed\` option to Quiver.fromBuiltUrl.`
+				`No bytes held for "${relativePath}". Quiver.fromBuiltFiles needs the whole artifact; to hold part and fetch the rest, pass the map as Quiver.fromBuiltUrl's \`seed\`.`
 			);
 		}
 

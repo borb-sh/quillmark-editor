@@ -33,9 +33,8 @@ async function nameDigest(bytes: Uint8Array): Promise<string> {
 }
 
 /**
- * A packed artifact as a path → bytes map: the shape `build` writes to disk and
- * the shape a caller holding it in memory has. One quill, one font in the
- * store, so every kind of name the loader asks for is present.
+ * A packed artifact as a path → bytes map. One quill, one font in the store, so
+ * every kind of name the loader asks for is present.
  */
 async function makeArtifactFiles(): Promise<{
 	files: Map<string, Uint8Array>;
@@ -167,8 +166,8 @@ describe('Quiver.fromBuiltUrl with seed', () => {
 		const { paths } = stubFetch(files);
 		treeStub = mockQuillFromTree();
 
-		// The two small documents ship with the deployment; the heavy bytes stay
-		// on the host. This is the serverless shape.
+		// The serverless shape: the two small documents ship with the deployment,
+		// the heavy bytes stay on the host.
 		const seed = new Map([
 			['latest.json', files.get('latest.json')!],
 			[manifestName, files.get(manifestName)!]
@@ -188,7 +187,7 @@ describe('Quiver.fromBuiltUrl with seed', () => {
 		const seed = new Map([['latest.json', files.get('latest.json')!]]);
 		await Quiver.fromBuiltUrl('/quivers/sample/', { seed });
 
-		// The manifest is fetched, the pointer never is — so no revalidation
+		// The manifest is fetched, the pointer never is: no revalidation
 		// round-trip decides which catalog this process reads.
 		expect(paths).toEqual([manifestName]);
 	});

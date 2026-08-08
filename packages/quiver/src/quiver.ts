@@ -63,11 +63,10 @@ export class Quiver {
 	 * disk in Node, use `fromBuiltDir(path)` from `@quillmark/quiver/node`.
 	 *
 	 * `seed` answers for the artifact bytes the caller already holds, keyed by
-	 * artifact-relative path; the URL serves the rest. A runtime that carries
-	 * the manifest in its deployment and the heavy bundles on a CDN seeds the
-	 * two small documents and fetches the rest, and one that seeds `latest.json`
-	 * moves the guarantee against a stale pointer from the cache to the
-	 * deployment. Seeded bytes are digest-checked exactly as fetched ones are.
+	 * artifact-relative path; the URL serves the rest. Seeding `latest.json`
+	 * settles which catalog this process reads at deploy time rather than at
+	 * cache-revalidation time. Seeded bytes are digest-checked as fetched ones
+	 * are.
 	 *
 	 * Throws `transport_error` on network/HTTP failure, `quiver_invalid`
 	 * on format errors.
@@ -98,11 +97,10 @@ export class Quiver {
 	 * `<name>@<x.y.z>.<digest>.zip`, `store/<hash>`) — the shape `build` writes
 	 * and `fromBuiltDir` reads back.
 	 *
-	 * This is the loader for a runtime holding the artifact and no filesystem: a
-	 * serverless function whose deployment bundle carries it, a bundler that
-	 * inlines it, a test. Nothing is fetched, so nothing self-fetches over the
-	 * caller's own load balancer, which is the property `fromBuiltDir` buys a
-	 * deployment that does have a disk.
+	 * Nothing is fetched, so a runtime whose artifact is not on a path it can
+	 * read (a serverless function, a bundler that inlines it, a test) reaches
+	 * one without fetching its own static output back over its own load
+	 * balancer.
 	 *
 	 * The map must carry the whole artifact; a missing path is a
 	 * `transport_error` naming it. To hold part and fetch the rest, pass the map

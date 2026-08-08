@@ -95,7 +95,7 @@ const quiver = await fromBuiltDir('./static/quills/my-quiver');
 
 ## Server-side runtime (no filesystem)
 
-A serverless function does not have the packed artifact on a disk it can read, so `fromBuiltDir` cannot see it. Hand over the bytes instead, keyed by artifact-relative path (`latest.json`, `manifest.<digest>.json`, `<name>@<x.y.z>.<digest>.zip`, `store/<hash>`) — the layout `build` writes:
+A serverless function's packed artifact is not on a path the invocation can read, so `fromBuiltDir` cannot see it. Hand over the bytes instead, keyed by artifact-relative path as `build` writes them (`latest.json`, `manifest.<digest>.json`, `<name>@<x.y.z>.<digest>.zip`, `store/<hash>`):
 
 ```ts
 import { Quiver } from '@quillmark/quiver';

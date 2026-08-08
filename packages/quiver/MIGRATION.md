@@ -4,7 +4,7 @@ Upgrade notes per range. The [CHANGELOG](CHANGELOG.md) is the full record; this 
 
 ## 0.16 → 0.19
 
-### What the type checker will not tell you
+### Runtime, not build time
 
 Four removals leave valid JavaScript. A consumer on plain JS, or on TypeScript reaching these through an `any`, learns about them from a `TypeError` at runtime naming neither the version nor the replacement.
 
@@ -54,7 +54,7 @@ const quiver = await Quiver.fromBuiltUrl('/quills/my-quiver/', {
 });
 ```
 
-Keys are artifact-relative, as `build` writes them. `fromManifest` took manifest bytes and always fetched the pointer's siblings; the seed takes any subset, including `latest.json`, which `fromManifest` could not skip.
+Keys are artifact-relative, as `build` writes them. `fromManifest` took manifest bytes and skipped the pointer; the seed takes any subset of the artifact, so it covers that and the case where the bundles are in hand too.
 
 **`quiver.resolve(ref)` is sync.** `await` on it still works, so this breaks only a call site that used the promise as one: `.then()`, `Promise.all([...])`, or a `.catch()` that now has a throw to catch instead of a rejection.
 
