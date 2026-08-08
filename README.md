@@ -27,6 +27,7 @@ npm run lint               # prettier, over the repo
 npm run check:canon        # the canon spine, every tier
 npm run check:style        # the closed `--_qm-*` / `--pg-*` / `--st-*` scales
 npm run check:deps         # the dependency law
+npm run check:bundle       # the shipped scales, in a built consumer
 ```
 
 Everything runs against the one reference quill, [`fixtures/quills/usaf_memo/0.2.0`](fixtures/quills/usaf_memo), a dev fixture at the workspace root, never published.

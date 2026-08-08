@@ -55,9 +55,7 @@
 		"THEMING.md",
 		"NOTICE"
 	],
-	"sideEffects": [
-		"**/*.css"
-	],
+	"sideEffects": true,
 	"scripts": {
 		"build": "svelte-package",
 		"prepare": "npm run build",

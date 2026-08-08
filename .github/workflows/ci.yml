@@ -56,6 +56,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      # After the build, because the claim is about built bytes: a stylesheet a module
+      # side-effect imports is a bundler's to prune, and nothing before the build can
+      # see whether it survived.
+      - name: Bundled scales
+        run: npm run check:bundle
+
       - name: Test (vitest)
         run: npm test
 
@@ -67,8 +73,9 @@ jobs:
       # thing nothing above reaches: the suite lays a site out of `dist/`, and a `files`
       # field that stopped shipping the client passes every check up to here and fails in
       # a consumer's deploy. `npm pack` on a directory runs its `prepack`, so this is the
-      # published artifact. No upload: a rehearsal is not a deploy, and this repository's
-      # Pages holds the playground.
+      # published artifact, and `check:bundle` reads the laid client rather than inferring
+      # it from the build path. No upload: a rehearsal is not a deploy, and this
+      # repository's Pages holds the playground.
       - name: Deploy layout, from the tarball
         run: |
           mkdir -p "$RUNNER_TEMP/pack" "$RUNNER_TEMP/tool"
@@ -79,3 +86,4 @@ jobs:
             || { echo "::error::the tarball laid no client at the site root"; exit 1; }
           test -f "$RUNNER_TEMP/site/quiver/latest.json" \
             || { echo "::error::the tarball laid no quiver under the site"; exit 1; }
+          node scripts/check-bundle.mjs "$RUNNER_TEMP/site"
