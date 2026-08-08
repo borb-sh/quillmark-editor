@@ -102,7 +102,14 @@
 	// Every path that drops an id deletes its entry: `bind:this` teardown nulls the
 	// VALUE on unmount and leaves the key, so a card that outlives its elements
 	// accumulates one dead key per element ever created.
-	const els: Record<string, { focus: () => void } | undefined> = {};
+	//
+	// `$state` for the BINDING's sake, not this component's: nothing here reads `els`
+	// reactively (every read is inside an event handler or a post-flush focus hop), but
+	// `bind:this` into a property of a plain object is a write Svelte cannot track, and
+	// it says so once per element per render. Thirteen lines on one memo's first paint,
+	// in the console a consumer is reading to find its own defects. Same shape
+	// {@link Card} keeps its header/panel refs in.
+	const els: Record<string, { focus: () => void } | undefined> = $state({});
 	let addEl: HTMLButtonElement | undefined = $state();
 	let rootEl: HTMLElement | undefined = $state();
 

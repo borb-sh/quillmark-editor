@@ -174,6 +174,34 @@ describe('preview controller supportsCanvas gating', () => {
 	});
 });
 
+describe('the page slot names its index', () => {
+	let container: HTMLDivElement;
+	beforeEach(() => {
+		container = document.createElement('div');
+		document.body.appendChild(container);
+	});
+
+	// A consumer drawing its own overlay reads the page number off the slot. Without
+	// `data-page` the only handle is position among siblings, which is right today and
+	// is not a contract; asserted here so it becomes one.
+	it('every slot carries its page number, in DOM order, across a count change', () => {
+		const preview = createPreview(mockSession(3), { container });
+		const numbers = () =>
+			[...container.querySelectorAll<HTMLElement>('.qm-page')].map((el) => el.dataset.page);
+		expect(numbers()).toEqual(['0', '1', '2']);
+
+		// The slots a grow REUSES keep the number they were built with, and the ones it
+		// appends continue the run: an index written once at build is only right if the
+		// reconcile never permutes.
+		preview.refresh(change(5));
+		expect(numbers()).toEqual(['0', '1', '2', '3', '4']);
+
+		preview.refresh(change(2));
+		expect(numbers()).toEqual(['0', '1']);
+		preview.destroy();
+	});
+});
+
 // A `session.paint` that throws must not abort the band sweep: it is
 // caught per-slot and surfaced as an error state instead of an unhandled throw
 // inside the IntersectionObserver callback.

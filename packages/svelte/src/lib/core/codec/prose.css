@@ -128,13 +128,25 @@ li.ProseMirror-selectednode::after {
 }
 
 /* The UA's 40px list indent is the one box the reset above does not take (it is
-   padding, not margin), and it is a length nothing chose. A rung replaces it. The
-   MARKERS stay the UA's: `disc` and `decimal` are already right, and restating them
-   buys nothing. Per-item spacing is untouched, which is the point of putting this on
-   the list rather than the item: the sibling-gap rule deliberately omits `ul`/`ol`,
-   and padding on the container cannot reintroduce what it withholds. */
+   padding, not margin), and it is a length nothing chose. A rung replaces it.
+   Per-item spacing is untouched, which is the point of putting this on the list
+   rather than the item: the sibling-gap rule deliberately omits `ul`/`ol`, and
+   padding on the container cannot reintroduce what it withholds.
+
+   The MARKERS are the UA's, RECLAIMED rather than inherited. `disc` and `decimal`
+   are right and this restates neither: a host reset (Tailwind's preflight sets
+   `list-style: none` on `ol, ul, menu`) is the common case, and against one an
+   unstated default is no default at all — bullets and numbers vanish from the leaf
+   while the preview beside it still draws them, which is an editor/paper
+   divergence on the plainest formatting there is. `revert` over a named type
+   because the UA's markers step by DEPTH (disc, circle, square) and the schema
+   nests (`lists.ts`: Tab sinks an item); naming `disc` would flatten that ramp to
+   hold the first level. Same reclaim for `strong`/`em`/`u`/`s` above if a reset
+   that takes those ever turns up: the positive half states what it leaves to the
+   UA, and what a reset takes is what has to be asked back. */
 .ProseMirror :is(ul, ol) {
 	padding-left: var(--_qm-space-4);
+	list-style: revert;
 }
 
 /* Six levels, one weight, no size step. The quill reads no level at all, so a size

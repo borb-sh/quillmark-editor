@@ -78,6 +78,10 @@ export function createPaintLoop(
 		// the paper.
 		const el = document.createElement('div');
 		el.className = 'qm-page';
+		// The page's index, in the DOM. `pageByEl` is this module's and a consumer
+		// drawing an overlay of its own needs the number: position among siblings is
+		// the only handle without it, which is right today and is not a contract.
+		el.dataset.page = String(page);
 		Object.assign(el.style, {
 			position: 'relative',
 			boxSizing: 'border-box',
