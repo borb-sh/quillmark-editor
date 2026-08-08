@@ -7,6 +7,10 @@ on:
   pull_request:
   push:
     branches: [main]
+  # release-prepare.yml opens the release PR as `GITHUB_TOKEN`, whose events fire no
+  # workflow runs; `workflow_dispatch` is the exception, so that job dispatches this
+  # workflow at the release branch and the checks land on the PR's head commit.
+  workflow_dispatch:
 
 # One run per ref: a new push cancels the in-flight run for the same PR/branch.
 concurrency:
