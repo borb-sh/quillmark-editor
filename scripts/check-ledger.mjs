@@ -9,7 +9,7 @@
 //   1. THE TABLE NAMES LIVE VERBS. Every API-shaped name in the "Verbs / types" column of
 //      the surface table resolves in the installed artifact's types. ONE DIRECTION only:
 //      the ledger names the subset V1 consumes, so a verb the artifact has and the table
-//      omits is a choice, while a verb the table has and the artifact lost is rot.
+//      omits is a choice, while a verb the table names and the artifact lacks is rot.
 //
 //   2. THE STATED PIN IS THE INSTALLED PIN. A version written next to `@quillmark/wasm`
 //      in the ledger equals the version resolved in `node_modules`. The ledger is the one
@@ -31,10 +31,10 @@
 // Resolution is a word match over the whole type text, declarations and comments alike,
 // which makes this a FLOOR rather than a proof: a verb whose name is also an ordinary word
 // in the artifact's own prose (`view`) resolves against the prose and survives its own
-// removal. Tightening to a declaration shape was measured and is worse — it catches no
-// additional retired name and false-fails on three live ones (`DocPath`, `editor`,
-// `wasm`), and a gate that cries wolf gets switched off. Against the nineteen spellings
-// the 0.92 → 0.102 range retired, the floor catches eighteen.
+// removal. A declaration-shaped matcher is worse — it catches no additional retired name
+// and false-fails on three live ones (`DocPath`, `editor`, `wasm`), and a gate that cries
+// wolf gets switched off. Against the nineteen spellings the 0.92 → 0.102 range retired,
+// the floor catches eighteen.
 
 import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
