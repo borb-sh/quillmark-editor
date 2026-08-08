@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.1.0 - 2026-08-08
+
 First published version. The surfaces over a `@quillmark/wasm` session ship under three subpaths: `/core` (the `DocPath`/`Place` address vocabulary, the `EditorError` channel, `init`), `/preview` (`createPreview` + `<Preview>`), `/visual` (`<VisualEditor>` and the codec's `createField` leaf). `svelte@^5` and `@quillmark/wasm` are peers: the consumer owns the session and the handles cross untouched. Pre-1.0, so a minor is where a break lands.
 
 Reading a document's canonical markdown is `doc.toMarkdown()` on the `@quillmark/wasm` handle, so no subpath wraps it: a read-only mirror is that call in a `<pre>`, which the README shows and the playground's debug drawer works out in full.
