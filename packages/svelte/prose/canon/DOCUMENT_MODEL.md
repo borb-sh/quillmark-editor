@@ -14,11 +14,15 @@
 
 Content types (`Content` and its parts) and their ProseMirror mapping are the editor's own work: [CODEC.md](CODEC.md), not here.
 
+**Moving the pin reads upstream.** The break record for a version step is quillmark `docs/migrations/`, one guide per step; a jump across several reads the span guide `0.92-to-0.102.md`, which leads with the breaks a type checker does not report. A floating `init()` is never reported — a floating promise is a lint rule, not a `tsc` diagnostic — and the `insertCard(card, at?)` reorder only where the call site is typed. Both throw on first use rather than corrupting a document. The wasm pin is not the whole of an upgrade: `@quillmark/quiver` versions independently and keeps its own changelog.
+
 Cross-repo references read `quillmark prose/canon/X.md` (a different repo; links do not resolve).
 
 ## The surface V1 consumes
 
 Every verb below is on the WASM `Document` / `Quill` / `LiveSession` today (`impl Document`, `impl LiveSession` in `crates/bindings/wasm/src/engine.rs`) unless the Stability column says otherwise.
+
+`check:ledger` gates that: every name this table gives resolves in the installed artifact's types, and the pin stated above equals the version on disk. The gate runs one direction and is a floor rather than a proof; `scripts/check-ledger.mjs` states both rules and their limits.
 
 | Concern | Verbs / types | Canon | Stability |
 | --- | --- | --- | --- |
