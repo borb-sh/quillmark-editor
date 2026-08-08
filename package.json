@@ -23,8 +23,9 @@
 		"check:canon": "node scripts/check-canon.mjs",
 		"check:style": "node scripts/check-style.mjs",
 		"check:deps": "node scripts/check-deps.mjs",
+		"check:bundle": "node scripts/check-bundle.mjs",
 		"check:pack": "npm run check:pack --workspaces --if-present",
-		"gate": "npm run lint && npm run check && npm run check:canon && npm run check:style && npm run check:deps && npm run build && npm test"
+		"gate": "npm run lint && npm run check && npm run check:canon && npm run check:style && npm run check:deps && npm run build && npm run check:bundle && npm test"
 	},
 	"overrides": {
 		"@quillmark/wasm": "0.102.0"
