@@ -6,25 +6,32 @@
 
 A quiver is a collection of quills, addressed by ref and resolved to a `Quill`. This package loads one from wherever it lives (a source directory, a packed artifact on disk, a URL), packs one for a browser, and hands out quills. The **loaders** never render: `@quillmark/wasm` does that, and the handles pass to it untouched. Nothing here is a verb an author types either: this is the library a collection depends on, and [quillkit](../../../quillkit/prose/canon/QUILLKIT.md) is the tool that resolves it.
 
-## One authored shape, three ways to consume it
+## One authored shape, four deployments
 
 Authors write **one** layout: `Quiver.yaml` at the package root, quills under `quills/<name>/<x.y.z>/`, published as an npm package or a git tag. The deployment-topology decision belongs to the consumer, not the author, so the author flow stays one command and the loaders fan out below it.
 
 The loaders name exactly what they read; there is no auto-detection and no branching on artifact shape.
 
-| Loader | Reads | Where |
-| --- | --- | --- |
-| `fromDir(path)` | the source layout | `/node` |
-| `fromBuiltDir(path)` | build output | `/node` |
-| `Quiver.fromBuiltUrl(url)` | build output | anywhere |
+| Deployment | Holds | Loader | Where |
+| --- | --- | --- | --- |
+| Author machine, CI | the source layout | `fromDir(path)` | `/node` |
+| Browser | nothing | `Quiver.fromBuiltUrl(url)` | anywhere |
+| Server with a filesystem | build output in its image | `fromBuiltDir(path)` | `/node` |
+| Server without one | build output in memory | `Quiver.fromBuiltFiles(files)` | anywhere |
 
-Three rows is what a consumer chooses among, and each names a topology someone runs. Reaching a quiver installed from npm is not a fourth: `dirname(createRequire(import.meta.url).resolve('<pkg>/Quiver.yaml'))` handed to `fromDir` or `build` is one line at the call site, where the resolution base belongs to the caller and the `exports`-map subpath it lands on is visible rather than a rule this package documents and holds.
+A consumer holding part of an artifact rather than all of it passes it as `fromBuiltUrl`'s `seed` instead, which is the fourth row with the heavy bytes left on the host.
+
+Reaching a quiver installed from npm is not a fifth: `dirname(createRequire(import.meta.url).resolve('<pkg>/Quiver.yaml'))` handed to `fromDir` or `build` is one line at the call site, where the resolution base belongs to the caller and the `exports`-map subpath it lands on is visible rather than a rule this package documents and holds.
+
+**The table is the removal test.** This package is published, so its callers are mostly outside this workspace, and "nothing here calls it" is measured on a sample that excludes them: the playground is a browser and quillkit is a tool, so rows three and four have no node in this repository that runs them. Surface comes out when no row needs it. A loader with no in-workspace caller is the normal state of the two that serve a server.
 
 **Every export names `default` beside `import`.** A tool resolving this package from a consumer's tree walks the exports map under CJS conditions whatever its own module system, so a subpath offering `import` alone is invisible to it. Every verb quillkit runs reaches this package that way, out of the collection's own tree; `@quillmark/wasm` names both, which is why its engine discovery works at all.
 
-The `/node` factories are free functions, not statics: the class stays browser-pure, the entry that reads a filesystem imports nothing onto it, and a bundler drops the verbs a consumer does not call. `fromBuiltUrl` is the only static, so `Quiver` is a class a consumer constructs one way. Construction itself is sealed: `Quiver` has a private constructor and the loader seam is reachable from no entry in `exports`. There is no public transport API (auth headers, custom fetch, `AbortSignal`) and no consumer story asking for one; a sealed seam keeps that option clean, a half-open one lets dependents grow on an unsupported surface.
+The `/node` factories are free functions, not statics: the class stays browser-pure, the entry that reads a filesystem imports nothing onto it, and a bundler drops the verbs a consumer does not call. The statics are the two that reach no filesystem, so what is on the class is what runs anywhere. Construction itself is sealed: `Quiver` has a private constructor and the loader seam is reachable from no entry in `exports`. There is no public transport API (auth headers, custom fetch, `AbortSignal`) and no consumer story asking for one; a sealed seam keeps that option clean, a half-open one lets dependents grow on an unsupported surface.
 
 Browsers cannot read the source layout, so `build(src, out)` packs it at deploy time and the output is served as static assets. `fromBuiltDir` exists for the server that ships the packed artifact in its own image: it avoids the self-fetch round-trip `fromBuiltUrl` would force on a self-hosted deployment, and lets the source quiver stay a devDependency. It carries `transports/fs-built-transport.ts` and the path-escape validation reading manifest-named files off a disk needs.
+
+`fromBuiltFiles` buys the same property for the runtime that has the artifact and no disk to read it from, which is what a serverless function is: the packed tree is not inside the invocation's filesystem, so the round trip `fromBuiltDir` spares a self-hosted deployment is the only thing left unless the bytes themselves can be handed over. It carries `transports/memory-transport.ts`, which needs no path validation: a map is not a directory and has nothing to escape into.
 
 `build` owns `out` outright: the previous generation never bleeds into the new one. An `out` that is, or contains, the source quiver or the working directory is refused rather than cleared: `--out .` and a slipped `--out ..` are one keystroke away and the deletion is unrecoverable. An `out` nested *inside* the source (`dist/` under the quiver root) is the ordinary layout and stays allowed, since the scan reads the source before the first write.
 
@@ -40,7 +47,9 @@ The property belongs here rather than to whatever is serving, because the direct
 
 **The pointer states the format, and is the one document here that reads past what it knows.** Skew is the ordinary case rather than the broken one: a collection is packed by whatever copy of this package the author's CI installs, and read by the copy frozen inside whichever client is laid over it. `latest.json` is what a reader of any age fetches first, so it is where a format change announces itself. That works only if unknown keys pass through, since a pointer parsed strictly refuses the announcement along with everything else. A `format` above the reader's is named as such, with the upgrade named too; absent means a build from before the marker, which is format 1. The manifest behind it stays closed, carrying its own `version` and rejecting fields it does not know: it is reached only once the format is agreed.
 
-The fetch is unconditional: there is no door that seeds the catalog from manifest bytes a consumer already holds. It would close one layer above the one `no-cache` closes, for an SSR consumer that does not exist, and the shape is recoverable from `fromBuiltUrl` when one does.
+The fetch is skippable by holding the answer. `fromBuiltUrl(url, { seed })` reads the map before the network, so a consumer whose deployment carries `latest.json` closes the layer above the one `no-cache` closes: which catalog the process reads is settled by what shipped rather than by what a cache returns. `fromBuiltFiles` is the same door with nothing behind it.
+
+Seeded bytes are checked exactly as fetched bytes are, because the check reads the digest in the name and a name arrives the same way whoever holds it. A deployment that ships one generation's pointer beside another's manifest fails on the digest rather than serving a catalog nobody packed.
 
 ## Content addressing is checked, not asserted
 

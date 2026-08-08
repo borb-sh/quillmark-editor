@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+**A runtime holding the packed artifact and no filesystem has a loader.** `Quiver.fromBuiltFiles(files)` reads build output from a `Map` of artifact-relative path to bytes, fetching nothing: a serverless function whose deployment bundle carries the artifact, a bundler that inlines it, a test. It buys the runtime with no disk what `fromBuiltDir` buys the one with a disk, which is not self-fetching over its own load balancer.
+
+`Quiver.fromBuiltUrl(url, { seed })` is the partial case: the map answers first, the URL serves what it does not carry. A deployment that ships `latest.json` settles which catalog the process reads at deploy time rather than at cache-revalidation time. Seeded bytes are checked against the digest in their name exactly as fetched bytes are.
+
+[`MIGRATION.md`](MIGRATION.md) covers 0.16 → 0.19, leading with the removals whose only signal is a runtime `TypeError`: `buildPackage`, `fromPackage`, `warm`, `fromManifest`, and `resolve` becoming sync.
+
 ## v0.19.0 - 2026-08-08
 
 **The bin is gone.** `quillmark-quiver test` and `quillmark-quiver build` are `quillkit test` and `quillkit build`, in a package of its own. This is a library: it loads a quiver and packs one, and a collection that depends on it pins the format its quiver is written in rather than a version tooling releases move. `quiver.config.js` is `quillkit.config.js`.

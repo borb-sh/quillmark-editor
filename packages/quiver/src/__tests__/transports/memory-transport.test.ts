@@ -204,9 +204,7 @@ describe('Quiver.fromBuiltUrl with seed', () => {
 			[manifestName, enc.encode(JSON.stringify({ version: 1, name: 'tampered', quills: [] }))]
 		]);
 
-		const err = await Quiver.fromBuiltUrl('/quivers/sample/', { seed }).catch(
-			(e: unknown) => e
-		);
+		const err = await Quiver.fromBuiltUrl('/quivers/sample/', { seed }).catch((e: unknown) => e);
 
 		expect(err).toBeInstanceOf(QuiverError);
 		expect((err as QuiverError).code).toBe('transport_error');

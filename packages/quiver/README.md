@@ -8,17 +8,20 @@ Load and build collections of quills for rendering with `@quillmark/wasm`.
 npm install @quillmark/quiver @quillmark/wasm
 ```
 
+Upgrading from an earlier version: [`MIGRATION.md`](MIGRATION.md).
+
 ## Loading a quiver
 
 A quiver has one authored shape, the **source layout** (`Quiver.yaml` at the package root, quills under `quills/<name>/<x.y.z>/`), published as an npm package. Browsers cannot read that layout, so `build(src, out)` packs it at deploy time and the output is served as static assets. Each loader names exactly what it reads; there is no auto-detection.
 
-| Loader                     | Reads                   | Import                   |
-| -------------------------- | ----------------------- | ------------------------ |
-| `fromDir(path)`            | the source layout       | `@quillmark/quiver/node` |
-| `fromBuiltDir(path)`       | build output, off disk  | `@quillmark/quiver/node` |
-| `Quiver.fromBuiltUrl(url)` | build output, over HTTP | `@quillmark/quiver`      |
+| Loader                         | Reads                     | Import                   |
+| ------------------------------ | ------------------------- | ------------------------ |
+| `fromDir(path)`                | the source layout         | `@quillmark/quiver/node` |
+| `fromBuiltDir(path)`           | build output, off disk    | `@quillmark/quiver/node` |
+| `Quiver.fromBuiltUrl(url)`     | build output, over HTTP   | `@quillmark/quiver`      |
+| `Quiver.fromBuiltFiles(files)` | build output, from memory | `@quillmark/quiver`      |
 
-The filesystem factories are free functions from `/node`; the one that reaches across HTTP is a static on `Quiver`. Importing `/node` adds nothing to the class, so a bundler drops the verbs you do not call.
+The filesystem factories are free functions from `/node`; the two that reach no filesystem are statics on `Quiver`. Importing `/node` adds nothing to the class, so a bundler drops the verbs you do not call.
 
 ## Consuming a quiver (Node)
 
@@ -89,6 +92,31 @@ import { fromBuiltDir } from '@quillmark/quiver/node';
 // Packed at build time, e.g. into ./static/quills/my-quiver
 const quiver = await fromBuiltDir('./static/quills/my-quiver');
 ```
+
+## Server-side runtime (no filesystem)
+
+A serverless function does not have the packed artifact on a disk it can read, so `fromBuiltDir` cannot see it. Hand over the bytes instead, keyed by artifact-relative path (`latest.json`, `manifest.<digest>.json`, `<name>@<x.y.z>.<digest>.zip`, `store/<hash>`) — the layout `build` writes:
+
+```ts
+import { Quiver } from '@quillmark/quiver';
+
+const quiver = await Quiver.fromBuiltFiles(artifactFiles); // Map<string, Uint8Array>
+```
+
+Nothing is fetched, so nothing self-fetches over your own load balancer. The map must carry the whole artifact; a path it lacks is a `transport_error` naming that path.
+
+Where inlining the bundles and fonts is not practical, hold the two small documents and let the host serve the rest:
+
+```ts
+const quiver = await Quiver.fromBuiltUrl('/quills/my-quiver/', {
+	seed: new Map([
+		['latest.json', pointerBytes],
+		[manifestName, manifestBytes]
+	])
+});
+```
+
+The seed answers first and the URL serves what it does not carry. Seeding `latest.json` also settles which catalog the process reads at deploy time rather than at cache-revalidation time. Seeded bytes are checked against the digest in their name exactly as fetched bytes are.
 
 ## The `latest.json` pointer
 
