@@ -106,9 +106,7 @@ describe('quillkit site', () => {
 				'--quiver',
 				bare,
 				'--out',
-				join(await temp.dir(), 'site'),
-				'--client',
-				await stubClient()
+				join(await temp.dir(), 'site')
 			])
 		).rejects.toThrow(/npm install --save-dev @quillmark\/quiver/);
 	});
@@ -147,22 +145,6 @@ describe('quillkit studio', () => {
 			child.kill('SIGTERM');
 		}
 	}, 60_000);
-
-	it('refuses a client that is not there, before it binds', async () => {
-		// Both serving verbs check it, and for the same reason: a missing client is a
-		// mount that answers 404 to everything, which reads as a broken tool rather than
-		// an `--client` pointed at the wrong directory.
-		await expect(
-			run(process.execPath, [
-				BIN,
-				'studio',
-				'--quiver',
-				await temp.collection(),
-				'--client',
-				join(await temp.dir(), 'absent')
-			])
-		).rejects.toThrow(/No client at/);
-	}, 30_000);
 });
 
 describe('the bin without a verb', () => {
@@ -195,18 +177,9 @@ describe('what the tool loads', () => {
 	});
 
 	it('ships the client beside the tool', async () => {
-		// One tarball, two halves: what `--client` overrides is a default that is always
-		// present, rather than a resolution that can be missing.
+		// One tarball, two halves, and the serving verbs take no override: the client is
+		// always this one, so its absence is the only way they can fail to find it.
 		const files = await readdir(DIST, { recursive: true });
 		expect(files).toContain(`${CLIENT}index.html`);
 	});
 });
-
-/** A client of the shape `vite build` produces, for the cases the client is not the
- *  subject: an `index.html` is the whole of what the layout asserts. */
-async function stubClient(): Promise<string> {
-	const at = await temp.dir();
-	const { writeFile } = await import('node:fs/promises');
-	await writeFile(join(at, 'index.html'), '<!doctype html><div id="studio"></div>');
-	return at;
-}

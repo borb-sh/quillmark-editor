@@ -1,8 +1,8 @@
 /**
  * Lay a servable site out: the client at the root, a built quiver beside it under
  * `quiver/`. A deploy is that arrangement and nothing else, written here once, so a
- * consumer's `scripts`, this repository's build and the reusable workflow all reach it
- * through `quillkit site`.
+ * consumer's `scripts`, this repository's CI and a Pages job all reach it by running
+ * `quillkit site`.
  *
  * The client resolves its quiver from `document.baseURI` (`client/quiver.ts`), so
  * the tree it is laid into decides what it loads. Both halves of that are asserted rather
@@ -21,8 +21,10 @@ export interface SiteOptions {
 	collection: string;
 	/** The site root, owned outright: cleared before it is written. */
 	out: string;
-	/** Defaults to the client this package ships; `--client` names one directly, which
-	 *  is how a deploy pins the client it serves. */
+	/** Defaults to the client this package ships, which is the only one a verb serves:
+	 *  the tool and its client version together, so there is nothing to point elsewhere.
+	 *  What this is for is the suite, which asserts the layout over a stub rather than
+	 *  waiting on a Vite build to prove a copy. */
 	client?: string;
 }
 

@@ -19,7 +19,7 @@ quillkit carries neither of the other two. It resolves both out of your collecti
 | `quillkit studio` | the local loop: pack, serve, repack on save                        |
 | `quillkit site`   | the deploy layout: the client at a root, a built quiver beneath it |
 
-Every verb takes `--quiver <dir>`, the collection root where `Quiver.yaml` lives, defaulting to the working directory. `build`, `studio` and `site` take `--out <dir>`; `studio` and `site` take `--client <dir>` to serve a client other than the one this package ships.
+Every verb takes `--quiver <dir>`, the collection root where `Quiver.yaml` lives, defaulting to the working directory. `build`, `studio` and `site` take `--out <dir>`, and `studio` takes `--port <n>` and `--host <addr>`.
 
 ## Gating
 
@@ -68,7 +68,7 @@ npx quillkit site --out ./site
 
 The client resolves its quiver against `document.baseURI` and its assets relatively, so any static host works and no rebuild is needed per URL. The arrangement itself is two rules: the client's files at some base with a built quiver at `quiver/` under that same base, and no quiver inside the client, since one packed there would occupy the URL the built one is served from.
 
-For GitHub Pages, call the reusable workflow rather than restating the layout. It builds your quiver, lays the client over it and uploads the Pages artifact; the deploy stays yours, so nothing outside your repository holds `pages: write`.
+For GitHub Pages, the build is `quillkit site` and an artifact upload:
 
 ```yaml
 # .github/workflows/studio.yml
@@ -80,9 +80,18 @@ permissions:
   contents: read
 jobs:
   build:
-    uses: borb-sh/quillmark-js/.github/workflows/studio-pages.yml@main
-    with:
-      quiver-dir: .
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx quillkit site --out site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -97,7 +106,16 @@ jobs:
         uses: actions/deploy-pages@v4
 ```
 
-Inputs, all optional: `quiver-dir` (default `.`), `quillkit-package` (default `quillkit@latest`), `node-version` (default `22`), and `upload` (default `true`), which this repository's own CI sets false to assemble and assert the site without minting an artifact. Nothing else is configured. The workflow runs `quillkit site`, which packs files and instantiates nothing, so the deploy installs no wasm; when your repository already has `@quillmark/quiver` installed, that copy is the one it packs with.
+Keep the deploy in your own repository, as above: nothing outside it then holds `pages: write`.
+
+**If your quiver is not an npm project** (a `Quiver.yaml` and `quills/` with no `package.json`), there is no tree for the packer to be resolved from, so install it for the run and drop the `npm ci`:
+
+```yaml
+- run: npm install --no-save @quillmark/quiver quillkit
+- run: npx quillkit site --out site
+```
+
+That takes whatever `@quillmark/quiver` is current, where a `package.json` would pin the format your quiver is packed in. `site` packs files and instantiates nothing, so either way the deploy installs no wasm.
 
 A deployed quiver is frozen at a commit, so the repack loop is the local one, over a working tree.
 

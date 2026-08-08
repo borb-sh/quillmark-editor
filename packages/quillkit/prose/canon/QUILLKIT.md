@@ -17,7 +17,9 @@ That is one rule paying two ways, and both are about a version someone else pins
 
 The cost is a name in `devDependencies` per thing resolved, and each absence names its install rather than surfacing a resolver's own words.
 
-**The client is carried, and the same rule says why.** Resolution buys a collection the version it pins; the client answers to no version of theirs, writing no quiver and reading no format, so there is nothing for a pin to decide. It ships in this tarball at `dist/client` (`paths.ts`) and costs tens of megabytes of browser-targeted wasm in the tool's own install, downloaded once and npm-cached, in a package nothing depends on outside `devDependencies`. `--client <dir>` is the one override, for a deploy pinning the client it serves.
+**The client is carried, and the same rule says why.** Resolution buys a collection the version it pins; the client answers to no version of theirs, writing no quiver and reading no format, so there is nothing for a pin to decide. It ships in this tarball at `dist/client` (`paths.ts`) and costs tens of megabytes of browser-targeted wasm in the tool's own install, downloaded once and npm-cached, in a package nothing depends on outside `devDependencies`.
+
+**And it takes no override.** A flag naming another client would be a second answer to a question the tarball already settles: the bin and the client are built together and ship together, so the one on disk beside the bin is the one that matches it. `laySite` keeps a `client` option for the suite, which asserts the layout over a stub rather than waiting on a Vite build to prove a copy.
 
 **Every specifier resolves under CJS conditions.** `createRequire().resolve` walks an exports map as `require`, `node`, `default` whatever the caller's own module system, so a subpath offering `import` alone is invisible to it. Quiver names `default` beside `import` on every entry for this.
 
@@ -49,7 +51,7 @@ The tarball holds two, and they never meet: the client bundles the copy it was b
 
 ## The deploy layout
 
-`site` writes the arrangement a deploy serves and nothing else: the client at a root, a built quiver at `quiver/` beneath it, which is where the client looks (`document.baseURI`). It is written once here, so a consumer's `scripts`, this repository's build and the reusable workflow all reach it through the verb rather than restating it, and a consumer running it locally gates the shape their deploy will have.
+`site` writes the arrangement a deploy serves and nothing else: the client at a root, a built quiver at `quiver/` beneath it, which is where the client looks (`document.baseURI`). The verb is the whole encapsulation, which is why there is no workflow beside it: a consumer's `scripts`, this repository's CI and a Pages job all reach the layout by running it, and a consumer running it locally gates the shape their deploy will have. What a reusable workflow would add over `npx quillkit site` is a checkout and an upload, at the price of an input contract this repository would then have to version.
 
 Both halves are asserted rather than assumed: a client carrying a `quiver/` of its own would occupy the URL the built one is served from, and the winner would be whichever copy landed last.
 

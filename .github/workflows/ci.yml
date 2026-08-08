@@ -1,10 +1,6 @@
-# The whole gate, over the whole workspace. The verbs are one job: every package runs
-# each its own way, and a verb name means one thing. Nothing here needs a browser, and
-# nothing runs elsewhere.
-#
-# The second job is the deploy rehearsal, and it runs the reusable workflow a quiver
-# author calls rather than a copy of it: a layout that only this repository exercises
-# would break for them first.
+# The whole gate, over the whole workspace, in one job: every package runs each verb its
+# own way, and a verb name means one thing. Nothing here needs a browser, and nothing
+# runs elsewhere.
 name: CI
 
 on:
@@ -63,13 +59,19 @@ jobs:
       - name: Package (publint)
         run: npm run check:pack
 
-  # The workspace's own quiver through the author's path: `npm pack` builds the local
-  # tool, client included, so this gates both and the layout together, against the
-  # fixture the rest of the suite runs on. No artifact is minted — a rehearsal is not a
-  # deploy, and this repository's Pages holds the playground.
-  studio-pages:
-    uses: ./.github/workflows/studio-pages.yml
-    with:
-      quiver-dir: fixtures
-      quillkit-package: ./packages/quillkit
-      upload: false
+      # The deploy, rehearsed from the TARBALL rather than the worktree, which is the one
+      # thing nothing above reaches: the suite lays a site out of `dist/`, and a `files`
+      # field that stopped shipping the client passes every check up to here and fails in
+      # a consumer's deploy. `npm pack` on a directory runs its `prepack`, so this is the
+      # published artifact. No upload: a rehearsal is not a deploy, and this repository's
+      # Pages holds the playground.
+      - name: Deploy layout, from the tarball
+        run: |
+          mkdir -p "$RUNNER_TEMP/pack" "$RUNNER_TEMP/tool"
+          npm pack ./packages/quillkit --pack-destination "$RUNNER_TEMP/pack" >/dev/null
+          tar -xzf "$RUNNER_TEMP"/pack/*.tgz -C "$RUNNER_TEMP/tool" --strip-components=1
+          node "$RUNNER_TEMP/tool/dist/bin/quillkit.js" site --quiver fixtures --out "$RUNNER_TEMP/site"
+          test -f "$RUNNER_TEMP/site/index.html" \
+            || { echo "::error::the tarball laid no client at the site root"; exit 1; }
+          test -f "$RUNNER_TEMP/site/quiver/latest.json" \
+            || { echo "::error::the tarball laid no quiver under the site"; exit 1; }
