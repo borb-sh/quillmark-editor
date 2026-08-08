@@ -67,8 +67,8 @@ import { createPreview } from '@quillmark/svelte/preview';
 
 const preview = createPreview(session, {
 	container: document.querySelector('#preview')!,
-	onCaretPick: (hit) => {
-		/* a click resolved to a content position; see the bridge below */
+	onPick: (at) => {
+		/* a click resolved to an address, with a caret where the compile has one */
 	},
 	onError: (err) => {
 		/* a page paint the backend refused; the preview shows its error state either way */
@@ -79,9 +79,9 @@ const preview = createPreview(session, {
 preview.refresh(session.update(doc)); // repaint dirtyPages ∩ visible
 ```
 
-In Svelte, `<Preview {session} onCaretPick={…} />` exposes the same verbs (`refresh`, `scrollToField`, `focusPosition`, `setZoom`) via `bind:this`.
+In Svelte, `<Preview {session} onPick={…} />` exposes the same verbs (`refresh`, `scrollToField`, `focusPosition`, `setZoom`) via `bind:this`.
 
-`<Preview>` binds **once**, at mount: swapping `session`, `margin`, `overlays`, `onCaretPick`, `onError` or `strings` in place changes nothing on screen and reports `rebind-ignored` through `onError` at `dev` severity, naming the prop. Swap by remounting (`{#key session}`); drive in-place edits through `refresh(change)`. `class` and `style` are the exceptions, landing on the root element and staying live.
+`<Preview>` binds **once**, at mount: swapping `session`, `margin`, `overlays`, `onPick`, `onError` or `strings` in place changes nothing on screen and reports `rebind-ignored` through `onError` at `dev` severity, naming the prop. Swap by remounting (`{#key session}`); drive in-place edits through `refresh(change)`. `class` and `style` are the exceptions, landing on the root element and staying live.
 
 ## Visual editor
 
@@ -191,12 +191,14 @@ This shell layer is deliberately yours: the debounce value, what applies at once
 The bridge lives at the **consumer** layer and is opt-in; the editor is unaware of the preview, the preview unaware of the editor. Both hops are pass-throughs: the two surfaces already speak one address grammar, the canonical `DocPath`.
 
 ```ts
-// preview → editor: a click resolved to a content position places the caret.
-onCaretPick: (hit) => visualEditor.setCaret(hit);
+// preview → editor: a click resolved to an address lands in the field it names.
+onPick: (at) => visualEditor.setCaret(at);
 
 // editor → preview: a caret move scrolls the preview to follow it.
 onCaretMove: preview.focusPosition;
 ```
+
+A pick carries a caret where the compile tracks the content under the point, and the field alone where it tracks only the placement — a scalar the plate prints without tracking. `setCaret` takes both: an absent `pos` reveals and focuses the field, which is the whole of what a click on plate-placed ink can mean. The address may name an array ELEMENT (`main.references.0`), which lands on that row.
 
 A consumer holding an `Addr` of its own maps it with `fieldPathForAddr` (from `@quillmark/svelte/core`). The playground app's split-pane route is the full reference shell: one session, both bridge directions, the preview following edits, and diagnostics routed inline.
 

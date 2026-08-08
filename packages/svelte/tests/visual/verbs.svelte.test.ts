@@ -20,7 +20,7 @@ Element.prototype.getAnimations ??= () => [];
 /** The instance surface a host binds to. */
 interface EditorRef {
 	focusField(field: string): Promise<void>;
-	setCaret(hit: { field: string; pos: number; granularity?: string }): Promise<void>;
+	setCaret(at: { field: string; pos?: number; granularity?: string }): Promise<void>;
 	insertCard(kind: string, at?: number): CardId | undefined;
 	removeCard(cardId: CardId): void;
 	moveCard(cardId: CardId, dir: -1 | 1): void;

@@ -10,7 +10,7 @@
 // the transform is an internal correctness seam, not part of that surface).
 import { describe, it, expect } from 'vitest';
 import { Engine, Quill, type PageSize } from '@quillmark/wasm';
-import { rectToPercent, clickToPdfPt } from '$lib/preview/geometry.js';
+import { boxesForField, rectToPercent, clickToPdfPt } from '$lib/preview/geometry.js';
 import { loadFixtureTree } from '../helpers/fixtures.js';
 
 describe('geometry: synthetic round-trip', () => {
@@ -156,6 +156,74 @@ describe('geometry: against a real compiled session (usaf_memo)', () => {
 				}
 			}
 			expect(checked).toBeGreaterThan(0);
+		} finally {
+			session.free();
+			doc.free();
+			quill.free();
+		}
+	});
+});
+
+// The two facts the click ladder and the box fallback stand on, asserted against the
+// compile rather than assumed from the boundary's prose. Both are cheap to lose
+// upstream and neither is visible in a mocked test.
+describe('geometry: the addresses a compile serves (usaf_memo)', () => {
+	it('gives every regions() address a box, and a declared array one off its elements', async () => {
+		const quill = Quill.fromTree(loadFixtureTree());
+		const doc = quill.seedDocument();
+		const engine = new Engine();
+		const session = await engine.open(quill, doc);
+		try {
+			const regions = session.regions();
+			const fields = [...new Set(regions.map((r) => r.field))];
+			// The fixture has to reach both fallback shapes for this to mean anything: a
+			// span-less scalar reference, and a `richtext[]` element.
+			expect(fields).toContain('main.signature_block');
+			expect(fields).toContain('main.references.0');
+
+			for (const field of fields) {
+				const boxes = boxesForField(field, session.fieldBoxes(field), regions);
+				expect(boxes.length, `no box for ${field}`).toBeGreaterThan(0);
+			}
+			// `main.references` is named by no region: the compile tracks its ELEMENTS.
+			// A host holding the declared path still reaches the rows it prints.
+			expect(fields).not.toContain('main.references');
+			expect(
+				boxesForField('main.references', session.fieldBoxes('main.references'), regions).length
+			).toBe(2);
+		} finally {
+			session.free();
+			doc.free();
+			quill.free();
+		}
+	});
+
+	it('answers fieldAt wherever positionAt answers, and never with another field', async () => {
+		// The ladder's premise: `positionAt` over span-tracked content, `fieldAt` over
+		// every placement, the second a superset of the first. If it ever stopped being
+		// one, a click on content would fall through to a rung that named nothing.
+		const quill = Quill.fromTree(loadFixtureTree());
+		const doc = quill.seedDocument();
+		const engine = new Engine();
+		const session = await engine.open(quill, doc);
+		try {
+			let placementOnly = 0;
+			for (const region of session.regions()) {
+				const [x0, y0, x1, y1] = region.rect;
+				for (let i = 0; i <= 10; i++) {
+					for (let j = 0; j <= 10; j++) {
+						const x = x0 + ((x1 - x0) * i) / 10;
+						const y = y0 + ((y1 - y0) * j) / 10;
+						const hit = session.positionAt(region.page, x, y);
+						const field = session.fieldAt(region.page, x, y);
+						if (hit) expect(field).toBe(hit.field);
+						else if (field) placementOnly++;
+					}
+				}
+			}
+			// …and the second rung is not dead weight: the span-less addresses answer it
+			// and nothing else, which is the half of the compile a click used to lose.
+			expect(placementOnly).toBeGreaterThan(0);
 		} finally {
 			session.free();
 			doc.free();

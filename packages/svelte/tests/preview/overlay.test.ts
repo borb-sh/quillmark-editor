@@ -57,9 +57,19 @@ const BOXES: Record<string, { page: number; rect: [number, number, number, numbe
 	'main.body': [{ page: 0, rect: [10, 80, 110, 280] }]
 };
 
+/** The addresses `regions()` names, and what `fieldBoxes` answers for each. The two
+ *  sets differ, which is the whole subject of the fallback below: a span-less scalar
+ *  and a `richtext[]` element are named by `regions()` and unioned by neither. */
+const REGIONS = [
+	...Object.entries(BOXES).flatMap(([field, boxes]) => boxes.map((b) => ({ field, ...b }))),
+	{ field: 'main.signature_block', page: 0, rect: [10, 300, 110, 320] },
+	{ field: 'main.references.0', page: 0, rect: [10, 340, 110, 355] },
+	{ field: 'main.references.1', page: 0, rect: [10, 360, 110, 375] }
+];
+
 function mockSession(): LiveSession {
 	return {
-		regions: () => Object.keys(BOXES).map((field) => ({ field })),
+		regions: () => REGIONS,
 		fieldBoxes: (field: string) => BOXES[field] ?? []
 	} as unknown as LiveSession;
 }
@@ -76,11 +86,54 @@ describe('overlay: resting ink', () => {
 		const overlay = createOverlay(mockSession(), slots);
 		const boxes = Array.from(slots[0].el.querySelectorAll<HTMLElement>('[data-qm-field]'));
 
-		expect(boxes).toHaveLength(3);
+		expect(boxes).toHaveLength(6);
 		for (const el of boxes) {
 			expect(el.style.border).toBe('');
 			expect(el.style.opacity).toBe('0');
 		}
+		overlay.destroy();
+	});
+});
+
+describe('overlay: what draws', () => {
+	const drawn = (slot: PageSlot): string[] =>
+		Array.from(slot.el.querySelectorAll<HTMLElement>('[data-qm-field]'), (el) =>
+			el.getAttribute('data-qm-field')
+		).filter((f): f is string => f != null);
+
+	// `fieldBoxes` is span-bearing-content-only, so enumerating `regions()` and asking
+	// it for the rects drew boxes for the content half of the compile and nothing for
+	// the rest. The fallback is runtime.d.ts's own sentence: such a field's box is a
+	// single `regions()` rect.
+	it('draws every address regions() names, unioned or raw', () => {
+		const slots = mockSlots();
+		const overlay = createOverlay(mockSession(), slots);
+
+		expect(new Set(drawn(slots[0]))).toEqual(
+			new Set([
+				'main.subject',
+				'main.body',
+				'main.signature_block',
+				'main.references.0',
+				'main.references.1'
+			])
+		);
+		overlay.destroy();
+	});
+
+	it('blooms an address and everything under it', () => {
+		const overlay = createOverlay(mockSession(), mockSlots());
+
+		// The two ends speak different granularities and neither is wrong: the boxes are
+		// keyed as `regions()` names them, an editor-side signal names the declared field.
+		overlay.flashField('main.references');
+		expect(calls.map((c) => c.field)).toEqual(['main.references.0', 'main.references.1']);
+
+		// The element address alone is still its own address.
+		calls = [];
+		overlay.flashField('main.references.0');
+		expect(calls.map((c) => c.field)).toEqual(['main.references.0']);
+
 		overlay.destroy();
 	});
 });
