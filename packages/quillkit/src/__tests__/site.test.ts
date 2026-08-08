@@ -4,7 +4,7 @@
  * Getting the layout subtly wrong is silent: a client laid over the wrong tree loads the
  * wrong quiver, or none, and says so only in a browser.
  *
- * The client is a stand-in throughout except where the resolved one is the subject. The
+ * The client is a stand-in throughout except where the shipped one is the subject. The
  * layout is indifferent to what the client contains, so a suite that waited on a Vite
  * build to prove that would be paying seconds for nothing.
  */
@@ -13,7 +13,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { resolveClient } from '../collection.js';
+import { CLIENT } from '../paths.js';
 import { assertClient, assertSafeOut, laySite } from '../site.js';
 import { scratch } from './helpers/collection.js';
 
@@ -107,24 +107,26 @@ describe('the client assertion', () => {
 	});
 });
 
-describe('the resolved client', () => {
-	// The one place the real `@quillmark/studio` is the subject, reached the way a verb
-	// reaches it: by name, out of a collection's tree. Its `dist/` is built by
-	// `npm run build`, which the gate runs before the suite.
-	it('is found by name, and carries no quiver', async () => {
-		const dist = resolveClient(await temp.collection());
+describe('the client this package carries', () => {
+	// The one place the real client is the subject. `vite build` writes it beside the
+	// compiled bin, which `npm run build` does and the gate runs before the suite.
+	it('is the built client, and carries no quiver', async () => {
 		expect(
-			existsSync(join(dist, 'index.html')),
-			`no client at ${dist}: run \`npm run build -w packages/studio\``
+			existsSync(join(CLIENT, 'index.html')),
+			`no client at ${CLIENT}: run \`npm run build -w packages/quillkit\``
 		).toBe(true);
+
+		// BUILT, not the tree it is built from. The constant is spelled once for two
+		// trees (this suite reads `src/paths.ts`, the bin runs `dist/paths.js`), and a
+		// spelling that lands on `client/` from both resolves to a source directory
+		// carrying an `index.html` of its own. What separates them is the entry: source
+		// names `/main.ts`, and a build rewrites it to the emitted bundle.
+		const html = await readFile(join(CLIENT, 'index.html'), 'utf8');
+		expect(html).not.toContain('/main.ts');
+
 		// `vite build` runs with `copyPublicDir: false` precisely so a dev run's packed
 		// tree cannot ride into the tarball.
-		expect(existsSync(join(dist, 'quiver'))).toBe(false);
-		expect(() => assertClient(dist)).not.toThrow();
-	});
-
-	it('names the install when the collection carries no client', async () => {
-		const bare = await temp.dir();
-		expect(() => resolveClient(bare)).toThrow(/npm install --save-dev @quillmark\/studio/);
+		expect(existsSync(join(CLIENT, 'quiver'))).toBe(false);
+		expect(() => assertClient(CLIENT)).not.toThrow();
 	});
 });

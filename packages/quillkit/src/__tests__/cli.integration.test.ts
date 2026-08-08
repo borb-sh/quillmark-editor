@@ -3,19 +3,20 @@
  *
  * Every other test in this package imports `src/`, which is what makes this one worth
  * its seconds: what an author reaches is a linked bin, and nothing that imports a module
- * proves one works. It pins the three resolutions the tool is built on — the packer, the
- * engine and the client, each out of the collection's own tree — and a real render of
- * every quill's seeded example, that last being what a gate for quills is.
+ * proves one works. It pins the two resolutions the tool is built on (the packer and the
+ * engine, each out of the collection's own tree), the client it carries instead, and a
+ * real render of every quill's seeded example, that last being what a gate for quills is.
  *
- * It runs against `dist/`, so it needs the package built. The root `npm run build` does
- * that in an order `tsc` here depends on, which is what CI runs before it tests.
+ * It runs against `dist/`, so it needs the package built: both halves, since the verbs
+ * that serve reach for the client. The root `npm run build` does that in an order `tsc`
+ * here depends on, which is what CI runs before it tests.
  */
 
 import { describe, it, expect, afterEach, beforeAll } from 'vitest';
 import { execFile, spawn } from 'node:child_process';
 import { readFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { scratch } from './helpers/collection.js';
@@ -24,8 +25,10 @@ const run = promisify(execFile);
 
 /** The bin as npm links it, not the TypeScript behind it. */
 const BIN = fileURLToPath(new URL('../../dist/bin/quillkit.js', import.meta.url));
-/** The compiled tool, whole: what the tarball carries. */
+/** The tarball's `dist`, both halves: the compiled tool and the built client. */
 const DIST = fileURLToPath(new URL('../../dist/', import.meta.url));
+/** The client's half of it, which is a browser program. */
+const CLIENT = `client${sep}`;
 
 /** A real Typst backend load and one page compiled. */
 const RENDER_MS = 120_000;
@@ -103,9 +106,7 @@ describe('quillkit site', () => {
 				'--quiver',
 				bare,
 				'--out',
-				join(await temp.dir(), 'site'),
-				'--client',
-				await stubClient()
+				join(await temp.dir(), 'site')
 			])
 		).rejects.toThrow(/npm install --save-dev @quillmark\/quiver/);
 	});
@@ -158,8 +159,14 @@ describe('what the tool loads', () => {
 		// artifact is in this process only when `test` puts it there. A static SPECIFIER
 		// would put it in every verb's, which is what the single-copy rule forbids.
 		// Prose naming it is not one.
+		//
+		// The tool's half of `dist` alone. The client beside it bundles the artifact on
+		// purpose, that copy running in a browser tab in a process this one never
+		// shares, so scanning it would answer about the wrong process.
 		const SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(\s*|\brequire\s*\(\s*)['"]([^'"]+)['"]/g;
-		const files = (await readdir(DIST, { recursive: true })).filter((f) => f.endsWith('.js'));
+		const files = (await readdir(DIST, { recursive: true })).filter(
+			(f) => f.endsWith('.js') && !f.startsWith(CLIENT)
+		);
 		expect(files.length).toBeGreaterThan(0);
 
 		for (const file of files) {
@@ -168,13 +175,11 @@ describe('what the tool loads', () => {
 			expect(specifiers, `${file} reaches the wasm artifact`).not.toContain('@quillmark/wasm');
 		}
 	});
-});
 
-/** A client of the shape `vite build` produces, for the cases the client is not the
- *  subject: an `index.html` is the whole of what the layout asserts. */
-async function stubClient(): Promise<string> {
-	const at = await temp.dir();
-	const { writeFile } = await import('node:fs/promises');
-	await writeFile(join(at, 'index.html'), '<!doctype html><div id="studio"></div>');
-	return at;
-}
+	it('ships the client beside the tool', async () => {
+		// One tarball, two halves, and the serving verbs take no override: the client is
+		// always this one, so its absence is the only way they can fail to find it.
+		const files = await readdir(DIST, { recursive: true });
+		expect(files).toContain(`${CLIENT}index.html`);
+	});
+});

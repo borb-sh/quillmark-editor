@@ -20,7 +20,6 @@ on:
         options:
           - svelte
           - quiver
-          - studio
           - quillkit
       bump:
         description: Version bump

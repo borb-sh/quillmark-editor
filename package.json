@@ -13,9 +13,9 @@
 	],
 	"scripts": {
 		"dev": "npm run dev -w packages/playground",
-		"dev:studio": "npm run dev -w packages/studio",
-		"build": "npm run build -w packages/quiver -w packages/svelte && npm run build -w packages/quillkit -w packages/playground -w packages/studio",
-		"site": "node packages/quillkit/dist/bin/quillkit.js site --quiver fixtures --out site --client packages/studio/dist",
+		"dev:studio": "npm run dev -w packages/quillkit",
+		"build": "npm run build -w packages/quiver -w packages/svelte && npm run build -w packages/quillkit -w packages/playground",
+		"site": "node packages/quillkit/dist/bin/quillkit.js site --quiver fixtures --out site",
 		"check": "npm run check --workspaces --if-present",
 		"test": "npm run test --workspaces --if-present",
 		"lint": "prettier --check .",

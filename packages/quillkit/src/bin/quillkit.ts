@@ -8,9 +8,10 @@
  */
 
 import { join, resolve } from 'node:path';
-import { loadEngine, loadQuiverNode, resolveClient } from '../collection.js';
+import { loadEngine, loadQuiverNode } from '../collection.js';
+import { CLIENT } from '../paths.js';
 import { createStaticServer, listen, type Mount } from '../serve.js';
-import { laySite } from '../site.js';
+import { assertClient, laySite } from '../site.js';
 import { serialize, watchCollection } from '../watch.js';
 
 const argv = process.argv.slice(2);
@@ -105,7 +106,10 @@ async function studio(): Promise<void> {
 	// Under the collection's `node_modules` by default, which is both out of the way
 	// and already excluded from the watch.
 	const out = resolve(flag('--out') ?? join(source, 'node_modules', '.quillkit', 'quiver'));
-	const client = flag('--client') ?? resolveClient(source);
+	// Checked as `site` checks it, and for the same reason: a missing client is a mount
+	// that answers 404 to every request, which reads as a broken tool rather than as a
+	// tree with the bin compiled and the client not.
+	assertClient(CLIENT);
 	const port = Number(flag('--port') ?? 5174);
 	const host = flag('--host') ?? 'localhost';
 
@@ -120,7 +124,7 @@ async function studio(): Promise<void> {
 
 	const mounts: Mount[] = [
 		{ prefix: '/quiver', root: out },
-		{ prefix: '', root: client }
+		{ prefix: '', root: CLIENT }
 	];
 	const bound = await listen(createStaticServer(mounts), port, host);
 
@@ -149,11 +153,7 @@ async function studio(): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function site(): Promise<void> {
-	const at = await laySite({
-		collection: collection(),
-		out: flag('--out') ?? 'site',
-		client: flag('--client')
-	});
+	const at = await laySite({ collection: collection(), out: flag('--out') ?? 'site' });
 	console.log(`quillkit site: ${at}`);
 }
 
@@ -167,8 +167,8 @@ function usage(): void {
 			'Usage:',
 			'  quillkit test   [--quiver <dir>]',
 			'  quillkit build  [--quiver <dir>] [--out <dir>]',
-			'  quillkit studio [--quiver <dir>] [--out <dir>] [--client <dir>] [--port <n>] [--host <addr>]',
-			'  quillkit site   [--quiver <dir>] [--out <dir>] [--client <dir>]'
+			'  quillkit studio [--quiver <dir>] [--out <dir>] [--port <n>] [--host <addr>]',
+			'  quillkit site   [--quiver <dir>] [--out <dir>]'
 		].join('\n')
 	);
 }

@@ -1,3 +1,6 @@
+// The bin, compiled. `src` alone: the client beside it is a browser program Vite
+// builds, and a `client/` in this root would emit a second `dist/client` over the one
+// `vite build` writes.
 {
 	"compilerOptions": {
 		"target": "ES2022",

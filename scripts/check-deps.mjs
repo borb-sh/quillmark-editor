@@ -6,11 +6,12 @@
 //
 //   1. THE GRAPH. `@quillmark/wasm` is external and above everything; `svelte` and
 //      `quiver` are siblings at one tier with NO edge between them, in either
-//      direction; the composing apps are the only nodes with two inbound edges; and
-//      `quillkit` sits above the client it serves, never below it. Declared
-//      dependencies and source specifiers both, since either alone is half a check: an
-//      undeclared import resolves fine in a workspace, and a declared dependency
-//      nothing imports is still a promise.
+//      direction; and a node reaching BOTH is composing them, which is the only way
+//      the two meet. Three do: the two apps, and `quillkit`, which carries the client
+//      it serves and so composes them the way an app does, inside a build of its own at
+//      a tier above the pair. Declared dependencies and source specifiers
+//      both, since either alone is half a check: an undeclared import resolves fine in
+//      a workspace, and a declared dependency nothing imports is still a promise.
 //
 //   2. ONE WASM PER PROCESS. A handle minted by one copy of the linear memory and
 //      handed to another is foreign, so the count that matters is how many copies meet
@@ -25,11 +26,12 @@
 //      consumer, at build time, and ships no runtime dependencies at all: what it
 //      bundles, a consumer must not install a second time beside a tarball that already
 //      contains it. A `bin` is not an importable entry, being a process of its own that
-//      hands a handle to nobody, and neither is a `./package.json` export: a tool that
-//      serves a client resolves its location without importing it, which is what keeps
-//      the client's wasm out of the tool's process. A terminal that bundles nothing at
-//      all answers here the same way — it names the artifact for types, ships no runtime
-//      dependencies, and holds at most the one copy it resolves.
+//      hands a handle to nobody, and neither is a `./package.json` export, a manifest
+//      being a location rather than a module. So one terminal may carry both halves at
+//      once (a compiled Node program a consumer runs, and a bundled browser program it
+//      serves), each holding its copy in a process the other never enters. A terminal
+//      that bundles nothing at all answers the same way: it names the artifact for
+//      types, ships no runtime dependencies, and holds at most the one copy it resolves.
 //
 //   3. THE `/preview` BUNDLE WEIGHT. A preview consumer does not pull ProseMirror,
 //      which is what makes the subpath claim ("a bundler pulls only what the imported
@@ -52,8 +54,7 @@ import { ROOT, packages, report } from './workspace.mjs';
 /** The graph. An edge absent from this table is a violation; an edge in it is optional. */
 const ALLOWED = {
 	playground: ['@quillmark/svelte', '@quillmark/quiver'],
-	quillkit: ['@quillmark/quiver', '@quillmark/studio'],
-	'@quillmark/studio': ['@quillmark/svelte', '@quillmark/quiver'],
+	quillkit: ['@quillmark/svelte', '@quillmark/quiver'],
 	'@quillmark/svelte': [],
 	'@quillmark/quiver': []
 };
@@ -111,9 +112,8 @@ const below = (a, b) => {
 /** What a consumer can import: a bare `main`, or an exports map with a MODULE subpath in
  *  it. An empty map is the seal rather than an omission (it forbids every deep path a
  *  missing map leaves open), so it counts as no entry at all. `./package.json` counts as
- *  none either: it publishes a location rather than a module, which is how a tool
- *  resolves a client it serves without an import that would put the client's wasm in its
- *  process. Neither is a `bin`: an executable is a process, and a process hands out no
+ *  none either: it publishes a location rather than a module, so nothing imports through
+ *  it. Neither is a `bin`: an executable is a process, and a process hands out no
  *  handles. A package with no importable entry is a bundled terminal. */
 const importableEntry = (json) =>
 	json.main !== undefined ||

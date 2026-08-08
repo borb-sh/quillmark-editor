@@ -1,6 +1,6 @@
 # Studio
 
-> **Implementation**: `src/`
+> **Implementation**: `client/`
 
 ## TL;DR
 
@@ -8,7 +8,7 @@ The surface a quill author looks at their quiver through: pick a quill, edit, wa
 
 Two readers, one client. The author works mid-edit, locally, against files on disk, and the loop below is theirs. A deployed quiver is frozen at a commit, so the reader who arrives at a URL (a reviewer following a branch, someone evaluating a quiver) gets the picker, the surfaces and the errors over one built quiver, with nothing to repack. One client rather than two: the carry costs nothing where there is nothing to carry, and it is the same client an `npx quillkit studio` over a working tree serves.
 
-**Studio is the noun, not the verb.** The package is a client and the tool that serves it is [quillkit](../../../quillkit/prose/canon/QUILLKIT.md); there is no bin here, and `quillkit studio` is how the surface is reached. The name still has a job the tool's cannot do: the deployed thing a reviewer arrives at is a studio, and "the collection's site" names a directory rather than a surface.
+**Studio is the noun, not the verb.** It is a client rather than a package: `client/` beside the bin's `src/` under one manifest, no verb of its own, and `quillkit studio` is how the surface is reached ([QUILLKIT.md](QUILLKIT.md)). The name still has a job the tool's cannot do: the deployed thing a reviewer arrives at is a studio, and "the collection's site" names a directory rather than a surface.
 
 ## Looked at, not blocked on
 
@@ -24,17 +24,19 @@ Studio also sheds the playground's front-door job. Its reader arrives already co
 
 ## A client, and what serves it
 
-A browser cannot read the source layout, so studio ends at a built artifact behind a base URL, consumed with `Quiver.fromBuiltUrl`. Packing, watching and serving are `quillkit studio`'s, and none of it is here: what this package ships is the client those verbs lay over a pack.
+A browser cannot read the source layout, so studio ends at a built artifact behind a base URL, consumed with `Quiver.fromBuiltUrl`. Packing, watching and serving are `quillkit studio`'s, and none of it is here: `client/` is the client those verbs lay over a pack, and that is the whole of it.
 
-**Published, not peered: the tarball is `dist`, and nothing in it is importable.** It is a **bundled terminal** (`check:deps`), with wasm and both libraries bundled into the client and no runtime dependencies. An importable entry would put studio's wasm in an importer's process, which is the thing the artifact's single-copy rule exists to prevent, so the `exports` map publishes one specifier and it is `./package.json`: a location rather than a module, which is how a tool finds a client it serves without importing it. The one wasm here runs in a browser tab, in a process nothing else shares.
+**Shipped inside the tool, and nothing in it is importable.** `vite build` lands the client at `dist/client`, beside the compiled bin under the one `dist` the tarball carries, with wasm and both libraries bundled in. quillkit is a **bundled terminal** (`check:deps`): no importable entry, no runtime dependencies, so what the client bundles is never installed a second time beside it. An importable entry would put studio's wasm in an importer's process, which is the thing the artifact's single-copy rule exists to prevent; the one wasm here runs in a browser tab, in a process nothing else shares.
 
-**A pack is never the client's.** The base URL is a runtime fact, so a quiver is laid beside the client at deploy time and never baked into it, and a built studio serves from wherever it is put. The layout is `quillkit site`'s to write ([QUILLKIT §The deploy layout](../../../quillkit/prose/canon/QUILLKIT.md)); this package asserts nothing about it, and `vite build` runs with `copyPublicDir: false` so a dev run's packed tree cannot ride into the tarball.
+**Two toolchains under one manifest**, which is what carrying the client costs: `tsc` compiles the bin from `src/`, `vite build` compiles the client from `client/`, `prepack` runs both, and svelte, vite and svelte-check sit in the tool's `devDependencies`. The trees share a `dist` and meet nowhere else, which is what keeps the cost to the manifest: three programs, and no file is in two of them (`tsconfig.json`, `tsconfig.client.json`, `tsconfig.check.json`).
+
+**A pack is never the client's.** The base URL is a runtime fact, so a quiver is laid beside the client at deploy time and never baked into it, and a built studio serves from wherever it is put. The layout is `quillkit site`'s to write ([QUILLKIT §The deploy layout](QUILLKIT.md)); the client asserts nothing about it, and `vite build` runs with `copyPublicDir: false` so a dev run's packed tree cannot ride into the tarball.
 
 **The client** is an ordinary quiver consumer: `fromBuiltUrl(base)`, a picker over `quillNames()` and `versionsOf()` (both sync, so it needs no loading state), `getQuill(ref)`, then the surfaces over one `LiveSession`. The picker offers only what varies: an axis holding one value is printed rather than selected, since a working tree is usually one quill at one version and a control that cannot be used is chrome competing with the surface. The fact stays either way, an author having to know what they are looking at. The quill it holds is **borrowed** (cached per canonical ref for the quiver's lifetime and handed to every caller), so studio frees the session and the document and nothing else. It rewrites no quill bytes, so it needs no quill of its own.
 
 **One wasm, and the head says which.** The root `overrides` pin is the workspace's only copy, so studio and `quillkit test` render through one instance and cannot disagree. The version is stated anyway: a client bundles the copy it was built with, a gate runs whatever its own tree holds, and nothing at runtime reconciles them, so the reader who cannot run `npm ls` is told what painted the page.
 
-**The client ships built and runs unbuilt.** The tarball is what `vite build` produced; locally it is an ordinary Vite dev server, with HMR on its own chrome. That is the whole of what the dev server buys over `quillkit studio`, and the pack it serves is the same `build` the tool calls, so the loop is not written twice. An author who cannot run a bundler is the reason for the first, and the reason the wasm is bundled with it.
+**The client ships built and runs unbuilt.** The tarball carries what `vite build` produced; locally it is an ordinary Vite dev server, with HMR on its own chrome. That is the whole of what the dev server buys over `quillkit studio`, and the pack it serves is the same `build` the tool calls, so the loop is not written twice. An author who cannot run a bundler is the reason for the first, and the reason the wasm is bundled with it.
 
 **The bridge is studio's own; the shell's shape is not.** The caret bridge and the debounced recompile are consumer-layer by design, and a shared component wiring them would contradict the reason the wiring is the consumer's. The shape of the screen goes the other way: the pinned bands, the row a band puts its parts on, and the split's tracks and its breakpoint are the preset's classes on studio's own elements (THEMING §"The shell"). What studio writes is what a band is MADE of, which is where the look diverges: the mark's treatment, the head's depth and full-bleed rule, the closed gap and the seam between the mounts, the band that scrolls once the split stacks. A rule studio writes because the preset picked the playground's answer is the promotion coming apart, not a divergence.
 
@@ -87,7 +89,7 @@ The band is under the panes rather than over them: it is consulted, not watched,
 
 ## Not
 
-A Typst IDE: studio shows a quill, it does not edit the plate or the schema. Not a CMS: no auth, no persistence, no multi-doc management, matching the playground's own limit. Not a gate: `quillkit test` is blocked on, studio is looked at, and `quillkit studio` gates nothing. Not a tool: this package carries no verb of its own, so nothing it wants can be reached without the tool serving it.
+A Typst IDE: studio shows a quill, it does not edit the plate or the schema. Not a CMS: no auth, no persistence, no multi-doc management, matching the playground's own limit. Not a gate: `quillkit test` is blocked on, studio is looked at, and `quillkit studio` gates nothing. Not a tool: the client carries no verb, so every door onto it is one the bin beside it opens.
 
 ## The door rule, for what comes next
 
@@ -99,4 +101,4 @@ No write door yet. Designing a protocol before there is an editor to shape it is
 
 ## Links
 
-[QUILLKIT.md](../../../quillkit/prose/canon/QUILLKIT.md) · [QUIVER.md](../../../quiver/prose/canon/QUIVER.md) · [PLAYGROUND.md](../../../playground/prose/canon/PLAYGROUND.md) · [`THEMING.md`](../../../svelte/THEMING.md)
+[QUILLKIT.md](QUILLKIT.md) · [QUIVER.md](../../../quiver/prose/canon/QUIVER.md) · [PLAYGROUND.md](../../../playground/prose/canon/PLAYGROUND.md) · [`THEMING.md`](../../../svelte/THEMING.md)

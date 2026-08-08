@@ -6,11 +6,10 @@ The JavaScript tier downstream of the [`@quillmark/wasm`](https://github.com/bor
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | [`@quillmark/svelte`](packages/svelte) | Editing, live-preview and source surfaces over a session.                                              |
 | [`@quillmark/quiver`](packages/quiver) | Collections of quills, resolved and loaded.                                                            |
-| [`quillkit`](packages/quillkit)        | The quill author's toolchain: one bin over gate, pack, look at, ship.                                  |
+| [`quillkit`](packages/quillkit)        | The quill author's toolchain: one bin over gate, pack, look at, ship, and the studio client it serves. |
 | [`playground`](packages/playground)    | The app that composes them, for a developer reading the library; deployed as the Pages site.           |
-| [`@quillmark/studio`](packages/studio) | The surface for an author working on a quill; published as the static client `quillkit studio` serves. |
 
-A quill author types one name, `quillkit`, and pins the rest: the tool resolves the loader, the engine and the client out of the collection's own `node_modules`, so the versions a collection depends on decide what packs it, renders it and draws it.
+A quill author types one name, `quillkit`, and pins two: the tool resolves the loader and the engine out of the collection's own `node_modules`, so the versions a collection depends on decide what packs it and what renders it. The client it draws with is the tool's own, carried rather than resolved, since no version an author pins makes a client more theirs.
 
 A package whose JS a consumer imports peers `@quillmark/wasm` and never depends on it, so the consumer supplies the one copy whose linear memory the handles index into; a bundled terminal, imported by nobody, contains it instead. `check:deps` holds that and the rest of the graph (`scripts/check-deps.mjs`).
 
@@ -19,8 +18,8 @@ A package whose JS a consumer imports peers `@quillmark/wasm` and never depends 
 ```sh
 npm install                # one install, every package
 npm run dev                # the playground at :5173
-npm run dev:studio         # studio at :5173
-npm run build              # quiver → svelte → quillkit and the apps, in that order
+npm run dev:studio         # the studio client at :5173
+npm run build              # quiver → svelte → quillkit and the playground, in that order
 npm run site               # the fixture quiver as a deploy serves it, into ./site
 npm test                   # every package's suite
 npm run check              # types, per package
@@ -34,4 +33,4 @@ Everything runs against the one reference quill, [`fixtures/quills/usaf_memo/0.2
 
 ## Canon
 
-The settled systems, per tier: [`svelte`'s](packages/svelte/prose/canon/INDEX.md), [`quiver`'s](packages/quiver/prose/canon/INDEX.md), [`quillkit`'s](packages/quillkit/prose/canon/INDEX.md), [the playground's](packages/playground/prose/canon/INDEX.md), [studio's](packages/studio/prose/canon/INDEX.md). Work that is not settled lives in GitHub issues.
+The settled systems, per tier: [`svelte`'s](packages/svelte/prose/canon/INDEX.md), [`quiver`'s](packages/quiver/prose/canon/INDEX.md), [`quillkit`'s](packages/quillkit/prose/canon/INDEX.md) (the tool and the studio client both), [the playground's](packages/playground/prose/canon/INDEX.md). Work that is not settled lives in GitHub issues.
