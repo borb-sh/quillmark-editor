@@ -55,20 +55,9 @@
 		/** Where the description parks, for the group's `aria-describedby`. */
 		descriptionId?: string;
 		onCommit: (arr: unknown[]) => void;
-		/** A prose element gained focus: joins the field in the focus federation. */
-		onFocusEl?: () => void;
 	}
-	let {
-		value,
-		items,
-		label,
-		required,
-		description,
-		labelId,
-		descriptionId,
-		onCommit,
-		onFocusEl
-	}: Props = $props();
+	let { value, items, label, required, description, labelId, descriptionId, onCommit }: Props =
+		$props();
 
 	// The ELEMENT control is the item schema's own; an array declaring no `items`
 	// has text elements.
@@ -158,10 +147,11 @@
 		// key does: the button under the pointer is part of what it destroys.
 		focusAfterFlush(next[Math.max(k - 1, 0)]);
 	}
-	/** A label click on an array, resolved rather than left to dangle: the FIRST
-	 * element, or the add affordance when the list is empty; which is then the only
-	 * thing there is to land on, and the next thing the user wants anyway. */
-	function activate(): void {
+	/** Take the caret: the FIRST element, or the add affordance when the list is empty;
+	 * which is then the only thing there is to land on, and the next thing the user
+	 * wants anyway. Reached by a label click and by the editor's landing verbs, which
+	 * ask one function so they cannot disagree (`Field`, `leaves.ts`). */
+	export function focus(): void {
 		if (ids.length === 0) return void addEl?.focus();
 		const first = els[ids[0]];
 		if (first) return first.focus();
@@ -223,7 +213,7 @@
 				{label}
 				id={labelId}
 				{descriptionId}
-				onActivate={activate}
+				onActivate={focus}
 				{required}
 				{description}
 			/>
@@ -244,7 +234,6 @@
 					label={label != null ? `${label} ${k + 1}` : undefined}
 					onChange={(rt) => commitElement(k, rt)}
 					onKey={(e) => onElementKey(e, k)}
-					{onFocusEl}
 				/>
 			{:else if control === 'object'}
 				<textarea

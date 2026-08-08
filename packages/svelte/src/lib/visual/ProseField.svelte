@@ -10,6 +10,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createField, type FieldController, type SlashState } from '../core/codec/index.js';
+	import type { LeafRegistry } from './leaves.js';
 	import SlashMenu from './SlashMenu.svelte';
 	import { wording } from './strings.js';
 	import './controls.css';
@@ -54,8 +55,10 @@
 		/** A commit landed on this leaf: the prose change lane. */
 		onChange?: (addr: Addr) => void;
 		onError?: EditorErrorHandler;
-		register?: (key: string, controller: FieldController) => void;
-		unregister?: (key: string) => void;
+		/** The editor's leaf registry (`leaves.ts`). A prose leaf registers its
+		 *  CONTROLLER: the landing handle plus the codec seam a form control has no half
+		 *  of, which is what makes this leaf a caret target and not merely a focus one. */
+		leaves?: LeafRegistry;
 	}
 
 	let {
@@ -74,8 +77,7 @@
 		onCaretMove,
 		onChange,
 		onError,
-		register,
-		unregister
+		leaves
 	}: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
@@ -134,9 +136,9 @@
 			onChange,
 			onError
 		});
-		register?.(leafKey, controller);
+		leaves?.registerProse(leafKey, controller);
 		return () => {
-			unregister?.(leafKey);
+			leaves?.unregisterProse(leafKey);
 			controller?.destroy();
 			controller = undefined;
 		};

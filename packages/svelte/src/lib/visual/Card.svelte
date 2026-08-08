@@ -16,7 +16,7 @@
 	import Icon from './icons/Icon.svelte';
 	import type { Document, Quill, Addr, Diagnostic } from '@quillmark/wasm';
 	import type { EditorErrorHandler } from '../core/errors.js';
-	import type { FieldController } from '../core/codec/index.js';
+	import type { LeafRegistry } from './leaves.js';
 	import type { CardModel, FieldModel } from './structure.js';
 	import { placeFields, humanize, initialExpandedGroup } from './structure.js';
 	import type { FieldDomIds } from './domid.js';
@@ -55,8 +55,10 @@
 		onCaretMove?: (addr: Addr, pos: number) => void;
 		onChange?: (addr: Addr) => void;
 		onError?: EditorErrorHandler;
-		register?: (key: string, controller: FieldController) => void;
-		unregister?: (key: string) => void;
+		/** The editor's leaf registry (`leaves.ts`): every field in this card registers
+		 *  its landing handle, which is what the editor's `focusField`/`setCaret`
+		 *  resolve a `DocPath` to. */
+		leaves?: LeafRegistry;
 	}
 	let {
 		card,
@@ -71,8 +73,7 @@
 		onCaretMove,
 		onChange,
 		onError,
-		register,
-		unregister
+		leaves
 	}: Props = $props();
 
 	// Local title reconcile (external change only), like the scalar controls.
@@ -361,8 +362,7 @@
 						{onCaretMove}
 						{onChange}
 						{onError}
-						{register}
-						{unregister}
+						{leaves}
 					/>
 					<DiagnosticList diagnostics={ops.diagFor(undefined)} />
 				</div>
@@ -385,7 +385,7 @@
 				provenance={card.provenance[f.name]}
 				{doc}
 				{quill}
-				proseAddr={ops.makeAddr(f.name)}
+				addr={ops.makeAddr(f.name)}
 				leafKey={ops.leafKey(f.name)}
 				domIds={ops.domIds(f.name)}
 				onCommitScalar={(v) => ops.commit(f.name, v)}
@@ -394,8 +394,7 @@
 				{onCaretMove}
 				{onChange}
 				{onError}
-				{register}
-				{unregister}
+				{leaves}
 				diagnostics={ops.diagFor(f.name)}
 			/>
 		{/each}

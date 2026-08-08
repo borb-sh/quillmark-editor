@@ -79,6 +79,7 @@
 		type RoutedDiagnostic
 	} from './diagnostics.js';
 	import { fieldDomIds, groupPanelId } from './domid.js';
+	import { createLeafRegistry, type FieldControl } from './leaves.js';
 	import { reorder } from './motion.js';
 	import { tipsChannel } from './tips.js';
 	import { patchEditorExt } from './ext.js';
@@ -187,8 +188,11 @@
 	const span = createLifespan();
 	onDestroy(() => span.end());
 
-	// ── Leaf registry (setCaret target lookup + the active-leaf seam) ───────────
-	const leaves = new Map<string, FieldController>();
+	// ── Leaf registry (landing target lookup + the active-leaf seam) ────────────
+	// Every mounted field is in it, prose leaf and form control alike (`leaves.ts`):
+	// a landing needs a focus and a box to bloom, which every control has, and the
+	// codec lane is asked for only where there is an offset to place.
+	const leaves = createLeafRegistry();
 	// Each leaf unregisters itself on its own teardown; this covers the surface
 	// going away as a whole, where a leaf's cleanup order relative to the parent's
 	// is Svelte's business and not something to depend on.
@@ -204,12 +208,6 @@
 	/** The stack's own element: it carries `data-qm-root`, so it is what the kind
 	 * menu portals INTO, the way each leaf's surface resolves its nearest root. */
 	let rootEl = $state<HTMLElement | undefined>(undefined);
-	function register(key: string, controller: FieldController): void {
-		leaves.set(key, controller);
-	}
-	function unregister(key: string): void {
-		leaves.delete(key);
-	}
 
 	// ── Focus + bridge outputs ──────────────────────────────────────────────────
 	// `activeCardId` is the id-keyed half of `activeAddr` (whose `card` is positional),
@@ -684,50 +682,64 @@
 	 * the span is asked on the way in as well as after the await.
 	 */
 	export async function setCaret(hit: ContentHit): Promise<void> {
-		const leaf = await revealLeaf(hit.field);
-		if (!leaf) return;
+		const found = await revealLeaf(hit.field);
+		if (!found) return missed(`no mounted field at ${hit.field}`, hit.field);
+		// A form control takes the focus and no caret: the offset is a USV position in
+		// rendered content, and a control has no coordinate to spend it in (an
+		// `<input type="number">` refuses a selection outright, an array's own is an
+		// element index the grammar cannot name). The field is revealed and focused,
+		// which is the whole of what a click on a plate-placed field can mean.
+		//
 		// A `'segment'` hit landed on origin-less ink (list markers, a code fence's
 		// interior): `pos` is the segment START, not a cluster-exact caret
 		// (HitGranularity), so just focus the leaf rather than snap the caret to a
 		// spot the click did not resolve. `'cluster'` (and an absent granularity:
 		// the backend did not report it, treat as exact) places the caret.
-		if (hit.granularity === 'segment') leaf.focus();
-		else leaf.setCaret(hit.pos);
+		const prose = hit.granularity === 'segment' ? undefined : leaves.prose(found.key);
+		if (prose) prose.setCaret(hit.pos);
+		else found.control.focus();
 		// The arrival cue. Unconditional, unlike the preview side's change-guarded
 		// bloom: a preview click is one discrete act, and its commonest target is the
 		// leaf ALREADY focused (where landing a caret changes nothing on screen) or
 		// one off-screen, where the browser's focus-scroll moves the page and leaves
 		// the caret to be hunted for in a long form.
-		bloomInside(leaf.el);
+		bloomInside(found.control.el);
 	}
-	/** The active leaf's controller: the formatting popover's observation seam. */
+	/** The active leaf's controller: the formatting popover's observation seam.
+	 *  `undefined` for a focused form control, which holds no marks to toggle. */
 	export function getActiveLeaf(): FieldController | undefined {
 		if (!activeAddr) return undefined;
 		const card = activeAddr.card != null ? activeCardId : undefined;
-		return leaves.get(fieldKeyToString({ card, field: activeAddr.field }));
+		return leaves.prose(fieldKeyToString({ card, field: activeAddr.field }));
 	}
 
 	/**
-	 * Reveal the leaf at `field` and hand back its controller, once the reveal has
-	 * RENDERED. The shared half of the two landing verbs: a collapsed group is clipped
-	 * to zero height and sits inside an `inert` panel, which swallows a focus silently,
-	 * so a caret placed in the same tick as the reveal goes nowhere and reports
-	 * nothing. Exactly one card holds the key; the rest do nothing.
+	 * Reveal the field at `field` and hand back its landing handle plus the leaf key it
+	 * resolved to, once the reveal has RENDERED. The shared half of the two landing
+	 * verbs: a collapsed group is clipped to zero height and sits inside an `inert`
+	 * panel, which swallows a focus silently, so a caret placed in the same tick as the
+	 * reveal goes nowhere and reports nothing. Exactly one card holds the key; the rest
+	 * do nothing.
 	 *
-	 * A destroy lands INSIDE this: the leaf is looked up before the flush and
+	 * The key comes back with the handle because the caller needs it to ask for the
+	 * codec lane (`leaves.prose`), and minting it twice would be two parses of one path.
+	 *
+	 * A destroy lands INSIDE this: the field is looked up before the flush and
 	 * dispatched into after it, and a PM view destroyed in that window throws on the
 	 * dispatch. A consumer's call outlives the surface it points at too, so the span is
 	 * asked on the way in as well as after the await.
 	 */
-	async function revealLeaf(field: DocPath): Promise<FieldController | undefined> {
+	async function revealLeaf(
+		field: DocPath
+	): Promise<{ key: string; control: FieldControl } | undefined> {
 		if (!span.alive) return undefined;
 		const key = leafKeyForHit(field);
-		const leaf = key == null ? undefined : leaves.get(key);
-		if (!leaf) return undefined;
-		mainCard?.revealLeaf(key!);
-		for (const card of cardRefs) card?.revealLeaf(key!);
+		const control = key == null ? undefined : leaves.control(key);
+		if (key == null || !control) return undefined;
+		mainCard?.revealLeaf(key);
+		for (const card of cardRefs) card?.revealLeaf(key);
 		if (!(await span.resumes(tick()))) return undefined;
-		return leaf;
+		return { key, control };
 	}
 
 	// ── The verbs, as instance exports ──────────────────────────────────────────
@@ -738,15 +750,23 @@
 	// card — so a host drives them with what the hooks handed it.
 	//
 	// A target the surface does not hold is a NO-OP that reports `target-unknown` at
-	// `dev`: the chrome cannot mint a bad one, so it only ever fires on a host holding
-	// a key from a previous session or a card already removed.
+	// `dev`: a key from a previous session or a card already removed, a path naming no
+	// declared field, or one at a granularity no field is mounted at (an array ELEMENT,
+	// `main.references.0`, which the preview reports a region for and `Addr` cannot
+	// name). `setCaret` reports it too, being the verb a preview click drives: a
+	// landing that resolved nothing is indistinguishable from one that landed, and a
+	// consumer wiring the bridge reads the difference off nothing else.
 
-	/** Reveal and focus the leaf at `field`, without placing a caret inside it. */
+	/**
+	 * Reveal and focus the field at `field`, without placing a caret inside it. Any
+	 * mounted field: a prose leaf takes its view's focus, a form control takes the same
+	 * handoff a click on its label does (`Field`, `leaves.ts`).
+	 */
 	export async function focusField(field: DocPath): Promise<void> {
-		const leaf = await revealLeaf(field);
-		if (!leaf) return missed(`no mounted leaf at ${field}`, field);
-		leaf.focus();
-		bloomInside(leaf.el);
+		const found = await revealLeaf(field);
+		if (!found) return missed(`no mounted field at ${field}`, field);
+		found.control.focus();
+		bloomInside(found.control.el);
 	}
 	/** Seed a card of `kind` and insert it at `at` (default: the end). Returns the new
 	 *  card's session key, or `undefined` when the quill seeds no card of that kind. */
@@ -807,8 +827,7 @@
 			onCaretMove={handleCaret}
 			onChange={proseChanged}
 			{onError}
-			{register}
-			{unregister}
+			{leaves}
 		/>
 
 		<!-- The tips card: a fixed slot after `main`, ahead of the cards, so
@@ -841,8 +860,7 @@
 				onCaretMove={handleCaret}
 				onChange={proseChanged}
 				{onError}
-				{register}
-				{unregister}
+				{leaves}
 			/>
 			{@render addAffordance(i + 1)}
 		</div>

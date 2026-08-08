@@ -45,11 +45,16 @@ export type EditorErrorCode =
 	 */
 	| 'rebind-ignored'
 	/**
-	 * An instance verb named a card or a field the surface does not hold: a `cardId`
-	 * from a previous session or an already-removed card, a `DocPath` naming no
-	 * mounted leaf. The call is a no-op and the document is untouched. `dev`: the
-	 * editor's own chrome cannot mint a bad target, so this only ever reports a host
-	 * driving the verbs from outside.
+	 * A landing named a card or a field the surface does not hold: a `cardId` from a
+	 * previous session or an already-removed card, a `DocPath` naming no declared
+	 * field, or one at a granularity no field is mounted at (an array ELEMENT, which
+	 * the preview reports a region for and `Addr` cannot name). The call is a no-op and
+	 * the document is untouched.
+	 *
+	 * `dev`, because the fix is at the call site: a host driving the instance verbs
+	 * from outside, or a preview hit the editor has no field to route to. Every MOUNTED
+	 * field is a target, prose leaf and form control alike, so this is not how a
+	 * scalar reports.
 	 */
 	| 'target-unknown';
 

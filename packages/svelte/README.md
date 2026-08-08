@@ -135,7 +135,7 @@ Hand it a different `doc` and the editor **re-keys itself**: every leaf remounts
 <button onclick={() => editor?.focusField('main.subject')}>Jump to subject</button>
 ```
 
-`insertCard` hands back the new card's `cardId`; `removeCard`, `moveCard` and `setKind` take one. A card key or a path the surface does not hold is a no-op that reports `target-unknown` through `onError` at `dev` severity.
+`insertCard` hands back the new card's `cardId`; `removeCard`, `moveCard` and `setKind` take one. `focusField` reaches any mounted field: a prose leaf takes its view's focus, a form control the same handoff a click on its label takes, and either way the group holding it is revealed first. A card key or a path the surface does not hold is a no-op that reports `target-unknown` through `onError` at `dev` severity.
 
 ### Wording
 
