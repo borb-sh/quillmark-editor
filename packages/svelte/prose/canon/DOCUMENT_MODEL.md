@@ -22,6 +22,8 @@ Cross-repo references read `quillmark prose/canon/X.md` (a different repo; links
 
 Every verb below is on the WASM `Document` / `Quill` / `LiveSession` today (`impl Document`, `impl LiveSession` in `crates/bindings/wasm/src/engine.rs`) unless the Stability column says otherwise.
 
+`check:ledger` holds that claim rather than trusting it: every name this table gives resolves in the installed artifact's types, and the pin stated above equals the version on disk. One direction only — the table is the subset V1 consumes, so a verb the artifact gains and the table omits is a choice, while a verb the table keeps and the artifact drops is rot. It is a floor, not a proof: a name that is also an ordinary word in the artifact's own prose resolves against the prose.
+
 | Concern | Verbs / types | Canon | Stability |
 | --- | --- | --- | --- |
 | **Lifecycle** | `init(source?)` → `Promise<void>`, awaited once before any verb below; every export throws `runtime::not_initialized` until it resolves. The artifact ships wasm-bindgen's web target, so a static import carries no `.wasm` edge and no top-level await: it is safe on any route's graph, SSR included, and the package needs no bundler plugin. Vite's dev server pre-bundling relocates the package away from the binary, so consumers exclude it from `optimizeDeps` | quillmark `BINDINGS.md` | stable |
