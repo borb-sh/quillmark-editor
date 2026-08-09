@@ -317,9 +317,9 @@ li.ProseMirror-selectednode::after {
 	color: var(--_qm-ink-label);
 	cursor: pointer;
 }
-/* The bar every one of them draws: a pill the length of what it acts on, one third of
-   the target's thickness, with the family's glyph centred in it. Stated once, so a
-   grip and an add bar cannot drift into two shapes. */
+/* The bar every one of them draws: a pill the length of what it acts on, a rhythm rung
+   thick where the target is the tap floor, with the family's glyph centred in it.
+   Stated once, so a grip and an add bar cannot drift into two shapes. */
 :is(.qm-table-grip-bar, .qm-table-add-bar) {
 	display: flex;
 	align-items: center;
@@ -358,11 +358,9 @@ li.ProseMirror-selectednode::after {
    dragged.
 
    The TARGET is the band and the BAR is drawn inside it: a grip spans its line on one
-   axis and the tap minimum on the other, with the bar at a third of that. A grip sized
-   to the bar would be a 12px target on a control the pointer has to find.
-
-   The axis rules are backwards from the bar's: a COLUMN's grip runs along the top band,
-   so it is as wide as its column and as tall as the target. */
+   axis and the tap floor on the other, and the bar is drawn thinner inside that. A grip
+   sized to its own bar would be a target the thickness of the mark on it, on a control
+   the pointer has to find. */
 .qm-table-grip {
 	/* The pointer owns this gesture, not the page's scroll: a grip drags. */
 	touch-action: none;
@@ -393,8 +391,8 @@ li.ProseMirror-selectednode::after {
    at the end of the band, because what it appends to is the AXIS and not a line — there
    is no line out past the last one to sit against, and the whole edge is the easiest
    target on the island to hit. They are the grips' mirror in every way but the glyph
-   and the edge, which is what makes a `+` on the far side read as "one more of these"
-   rather than as a fifth kind of control. */
+   and the edge, which is what makes a `+` out there read as one more of these rather
+   than as a control of its own. */
 .qm-table-add[data-axis='column'] {
 	inset-block: 0;
 	left: 100%;

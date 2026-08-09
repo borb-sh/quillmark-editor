@@ -120,8 +120,8 @@
 		/* The accent HELD: what a selected line of a table is tinted with, and what its
 		   grip is filled with, so the two ends of one gesture are one colour. A second
 		   name rather than the wash reused, because the two answer different questions
-		   and the numbers follow: a peak is seen for 200ms over paper and can be strong,
-		   where a tint sits under body text indefinitely and cannot. Translucent, so it
+		   and the numbers follow: a peak passes over paper and can be strong, where a
+		   tint is held under body text and cannot. Translucent, so it
 		   stacks over whichever surface rung the cell already draws instead of replacing
 		   it. */
 		--_qm-accent-tint: color-mix(in oklab, var(--_qm-accent) 12%, transparent);

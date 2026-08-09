@@ -659,20 +659,12 @@ class TableIslandView implements NodeView {
 	}
 
 	/**
-	 * What Backspace means over the selection, decided by its EXTENT. Every selected
-	 * cell goes ONE of two ways, and there is no third: it is removed with its whole
-	 * rank, or it is emptied where it stands. A cell is never removed on its own — a
-	 * rectangle with a hole in it is not a table.
-	 *
-	 * A rectangle spanning every row covers whole COLUMNS and deletes them; one spanning
-	 * every column covers whole ROWS and deletes those; anything else covers no rank at
-	 * all and is CLEARED. The rectangle spanning BOTH is the whole table, which is not a
-	 * rank deletion at all — a rank deletion leaves a table with fewer ranks — so it
-	 * clears too, and deleting the table itself stays the island selection's.
-	 *
-	 * A rank the model REFUSES falls back to the clear, never to nothing: the header is
-	 * in `header` rather than in `rows`, so a wide selection reaching row 0 deletes the
-	 * body rows under it and empties the header's own cells.
+	 * What Backspace means over the selection, decided by its EXTENT rather than by the
+	 * gesture that drew it (CODEC §"The table island"): a rectangle spanning every row
+	 * covers whole COLUMNS and deletes them, one spanning every column covers whole
+	 * ROWS, and anything else covers no rank at all and is CLEARED. The rectangle
+	 * spanning BOTH is the whole table, which is no rank deletion — one leaves a table
+	 * with fewer ranks — so it clears with the rest.
 	 */
 	private deleteSelection(): void {
 		const held = this.selected;
