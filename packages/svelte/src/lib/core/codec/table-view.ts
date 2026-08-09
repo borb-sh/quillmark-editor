@@ -14,13 +14,16 @@
 // field's, so one undo stack covers the leaf), no anchor plugin (an anchor in a cell
 // is preserved, never minted), and no placeholder.
 //
-// THE CHROME OCCUPIES NO LAYOUT: every control is absolutely positioned inside a real
-// data cell, so a column's handle lives in its own `th` and a row's in that row's
-// first `td`, and a handle lines up with its line by being inside it. What that buys
-// and what the band costs are `codec/prose.css`'s, which draws them.
+// THE CHROME IS A BAND AND A MENU. Every band control occupies no layout: a grip is
+// absolutely positioned inside a real data cell, so it lines up with the line it names
+// by being INSIDE it, and the three corner controls hang off the grid's frame. The menu
+// is the one surface that leaves the band, and it does not TRACK what it opened
+// against, it DISMISSES: a scroll, a resize or a press outside closes it, so no
+// measured rect is held across the thing it was measured from moving. What the band
+// costs is `codec/prose.css`'s, which draws it.
 //
-// A POINTER PRESS RESOLVES TO A CARET, always, except on a handle, which selects a
-// LINE (CODEC §"The table island").
+// A POINTER PRESS RESOLVES TO A CARET, always, except on a band control, which acts on
+// a LINE (CODEC §"The table island").
 import { baseKeymap, toggleMark } from 'prosemirror-commands';
 import { redo, undo } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
@@ -61,9 +64,10 @@ import {
 	type TableAlign
 } from './table.js';
 
-/** Everything the island's chrome says. Accessible names, not decoration: a handle
- *  is a bar and a seam is a glyph, so an untranslated one reads the wrong language
- *  rather than merely inconsistent (VISUAL_EDITOR §"What the surface says"). */
+/** Everything the island's chrome says. Accessible names and menu labels, not
+ *  decoration: a grip is a bar and a menu row is the only place an op is spelled out,
+ *  so an untranslated one reads the wrong language rather than merely inconsistent
+ *  (VISUAL_EDITOR §"What the surface says"). */
 export interface TableChromeStrings {
 	/** The island's own name, on the wrapper. */
 	tableLabel: string;
@@ -73,16 +77,35 @@ export interface TableChromeStrings {
 	tableColumn: (index: number) => string;
 	/** A cell's accessible name: nothing else names a nested leaf. */
 	tableCell: (row: string, column: string) => string;
-	/** A handle's name. It SELECTS its line, and the verbs are then the selection's
-	 *  (Backspace, Alt+arrows), so the name is the gesture and not a menu's. */
+	/** A grip's name. Its FIRST press selects the line, and the verbs are then the
+	 *  selection's (Backspace, Alt+arrows) or the menu's, so the name is that press. */
 	tableSelectRow: (index: number) => string;
 	tableSelectColumn: (index: number) => string;
 	/** The corner's, whose line is the whole table. */
 	tableSelectTable: string;
-	/** A seam's, named by the line it would open rather than by a neighbour and a
-	 *  side: "insert row 3" is one fact where "insert below row 2" is two. */
-	tableInsertRow: (index: number) => string;
-	tableInsertColumn: (index: number) => string;
+	/** The two band caps, each of which grows the table at its own end. */
+	tableAddRow: string;
+	tableAddColumn: string;
+	/** The menu's accessible name, built over whichever subject raised it: a row, a
+	 *  column, or the cell a press landed in. One key, so a translator orders the word
+	 *  around a subject the three name-builders above already spell. */
+	tableMenu: (subject: string) => string;
+	tableInsertRowAbove: string;
+	tableInsertRowBelow: string;
+	tableMoveRowUp: string;
+	tableMoveRowDown: string;
+	tableDeleteRow: string;
+	tableInsertColumnLeft: string;
+	tableInsertColumnRight: string;
+	tableMoveColumnLeft: string;
+	tableMoveColumnRight: string;
+	tableDeleteColumn: string;
+	/** What the delete row says at the LAST column, where the model keeps the line and
+	 *  the gesture empties it instead. */
+	tableClearColumn: string;
+	/** The alignment group's name. Its four rows name a VALUE rather than a verb, the
+	 *  group's own word carrying the instruction for all of them. */
+	tableAlign: string;
 	tableAlignDefault: string;
 	tableAlignLeft: string;
 	tableAlignCenter: string;
@@ -105,12 +128,25 @@ export const DEFAULT_TABLE_STRINGS: TableChromeStrings = {
 	tableSelectRow: (index) => `Select row ${index}`,
 	tableSelectColumn: (index) => `Select column ${index}`,
 	tableSelectTable: 'Select table',
-	tableInsertRow: (index) => `Insert row ${index}`,
-	tableInsertColumn: (index) => `Insert column ${index}`,
-	tableAlignDefault: 'Align: default',
-	tableAlignLeft: 'Align left',
-	tableAlignCenter: 'Align center',
-	tableAlignRight: 'Align right'
+	tableAddRow: 'Add row',
+	tableAddColumn: 'Add column',
+	tableMenu: (subject) => `${subject} actions`,
+	tableInsertRowAbove: 'Insert row above',
+	tableInsertRowBelow: 'Insert row below',
+	tableMoveRowUp: 'Move row up',
+	tableMoveRowDown: 'Move row down',
+	tableDeleteRow: 'Delete row',
+	tableInsertColumnLeft: 'Insert column left',
+	tableInsertColumnRight: 'Insert column right',
+	tableMoveColumnLeft: 'Move column left',
+	tableMoveColumnRight: 'Move column right',
+	tableDeleteColumn: 'Delete column',
+	tableClearColumn: 'Clear column',
+	tableAlign: 'Align',
+	tableAlignDefault: 'Default',
+	tableAlignLeft: 'Left',
+	tableAlignCenter: 'Center',
+	tableAlignRight: 'Right'
 };
 
 /** What the field hands each island view: its wording (read live, so a locale swap
@@ -129,21 +165,23 @@ export interface TableViewDeps {
  *  rather than `visual/icons/nodes.ts`, this being the one place chrome is built
  *  without Svelte, and `/core` reaching no surface module. Same 24×24 frame and the
  *  same origin, off an earlier release than the thirteen there; `NOTICE` carries the
- *  notices for both. */
+ *  notices for both. A grip's dots are zero-length strokes under a round cap, which is
+ *  how that set draws a dot everywhere it has one. */
 const PLUS = ['M5 12h14', 'M12 5v14'];
-const ALIGN_PATHS: Record<TableAlign, string[]> = {
-	none: ['M21 6H3', 'M21 12H3', 'M21 18H3'],
-	left: ['M21 6H3', 'M15 12H3', 'M17 18H3'],
-	center: ['M21 6H3', 'M17 12H7', 'M19 18H5'],
-	right: ['M21 6H3', 'M21 12H9', 'M21 18H7']
+const CHECK = ['M20 6 9 17l-5-5'];
+const GRIP: Record<Axis, string[]> = {
+	column: ['M5 9h.01', 'M12 9h.01', 'M19 9h.01', 'M5 15h.01', 'M12 15h.01', 'M19 15h.01'],
+	row: ['M9 5h.01', 'M9 12h.01', 'M9 19h.01', 'M15 5h.01', 'M15 12h.01', 'M15 19h.01']
 };
 
-function svg(paths: string[]): SVGElement {
+/** A glyph. `weight` is the stroke, heavier for the grip: its marks are dots, and a
+ *  dot drawn at the line weight of a stroke disappears at the size the bar renders. */
+function svg(paths: string[], weight = 2): SVGElement {
 	const el = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 	el.setAttribute('viewBox', '0 0 24 24');
 	el.setAttribute('fill', 'none');
 	el.setAttribute('stroke', 'currentColor');
-	el.setAttribute('stroke-width', '2');
+	el.setAttribute('stroke-width', String(weight));
 	el.setAttribute('stroke-linecap', 'round');
 	el.setAttribute('stroke-linejoin', 'round');
 	el.setAttribute('aria-hidden', 'true');
@@ -164,9 +202,9 @@ function el<K extends keyof HTMLElementTagNameMap>(
 	return node;
 }
 
-/** A chrome button. It swallows its own `mousedown` (prosemirror-menu's trick, and
+/** A band button. It swallows its own `mousedown` (prosemirror-menu's trick, and
  *  the format popover's): without it the browser focuses the button, blurring the
- *  cell whose caret the op is about to be measured against. A handle wants that focus
+ *  cell whose caret the op is about to be measured against. A grip wants that focus
  *  and takes it explicitly, which is why this does not hand it out. */
 function chromeButton(className: string, label: string, run: () => void): HTMLButtonElement {
 	const btn = el('button', className);
@@ -190,17 +228,18 @@ function cellPlugins(keys: Record<string, Command>) {
 /** What the nested views and the controls answer for themselves. `stopEvent` reads
  *  it to hand PM everything else, and the pointer guard reads it to leave those
  *  presses alone: one list, so the two cannot disagree about what a cell owns. */
-const OWNED = '.qm-table-cell-host, .qm-table-handle, .qm-table-seam, .qm-table-align';
+const OWNED =
+	'.qm-table-cell-host, .qm-table-grip, .qm-table-corner, .qm-table-add, .qm-table-menu';
 
 /** How far a press travels before it is a drag rather than a click. Under it, a press
  *  that jitters is still the selection gesture it was aimed as. */
 const DEAD_ZONE = 3;
 
-/** A line's key in the handle registry, spelled once. */
+/** A line's key in the grip registry, spelled once. */
 const lineKey = (line: Line): string => `${line.axis}:${line.index}`;
 
 /** A viewport point: where a press landed, which is the only thing the two bands are
- *  told apart by. */
+ *  told apart by, and where a menu opens. */
 interface Point {
 	x: number;
 	y: number;
@@ -235,13 +274,34 @@ interface MountedCell {
  *  header), `column` in the column space. */
 type Axis = 'row' | 'column';
 
-/** The selected line: what Backspace deletes and Alt+arrow moves. NodeView-local
- *  state rather than a PM `Selection`, because nothing outside this island can name
- *  it: a row index inside one leaf is not a position in the document's coordinate
- *  space, and a custom `Selection` would have to be one to be dispatched. */
+/** The selected line: what Backspace deletes, Alt+arrow moves, and the menu is about.
+ *  NodeView-local state rather than a PM `Selection`, because nothing outside this
+ *  island can name it: a row index inside one leaf is not a position in the document's
+ *  coordinate space, and a custom `Selection` would have to be one to be dispatched. */
 interface Line {
 	axis: Axis;
 	index: number;
+}
+
+/** One row of a menu: a complete instruction, or one value of the alignment SET, which
+ *  is what `align` marks. An item that would act on nothing is `disabled` rather than
+ *  withheld: a menu whose rows move is a menu that has to be re-read every time. */
+interface MenuItem {
+	label: string;
+	run: () => void;
+	disabled?: boolean;
+	align?: TableAlign;
+}
+
+/** A run of items. `label` heads a mutually exclusive set and names the instruction its
+ *  rows drop; a section of complete instructions carries none, and the separator
+ *  between sections is the whole of what divides them. `value` is that set's live
+ *  member, carried by the SECTION because the mark is a property of the set: an item
+ *  cannot know whether it is the chosen one without being told what was chosen. */
+interface MenuSection {
+	label?: string;
+	value?: TableAlign;
+	items: MenuItem[];
 }
 
 /** A drag in flight: the line lifted, where the press started, and whether it has
@@ -260,8 +320,8 @@ interface Drag {
 	/** The last drop index PAINTED, so a move inside the same line draws nothing. */
 	painted: number;
 	pointerId: number;
-	handle: HTMLButtonElement;
-	/** Each line's extent along the drag's axis, by index, plus the scroller's origin. */
+	grip: HTMLButtonElement;
+	/** Each line's extent along the drag's axis, by index, plus the frame's origin. */
 	lines: { index: number; start: number; end: number; cross: number; span: number }[];
 	origin0: { left: number; top: number };
 }
@@ -274,16 +334,18 @@ class TableIslandView implements NodeView {
 	private rendered: TableProps | undefined;
 	private selected: Line | undefined;
 	private drag: Drag | undefined;
-	/** The handles, by the line each acts on: what selection paint, the hover reveal
-	 *  and a drag all reach for without a query. The typed twin of `cells`. */
-	private handles = new Map<string, HTMLButtonElement>();
-	/** The line the pointer is over, memoized: a field rather than DOM-only state, so
-	 *  a rebuild re-applies it the way `paintLine` re-applies the selection. */
-	private hot: { r: number; c: number } = { r: -1, c: -1 };
-	private scroller: HTMLElement | undefined;
+	/** The grips, by the line each acts on: what selection paint and a drag reach for
+	 *  without a query. The typed twin of `cells`. */
+	private grips = new Map<string, HTMLButtonElement>();
+	/** The grid's own box, and the containing block every out-of-flow control is placed
+	 *  against. Not the scroller: an absolute inside a scroll container is placed
+	 *  against a padding box the scroll then slides out from under, so a control at the
+	 *  grid's far end would drift into the middle of it. */
+	private frame: HTMLElement | undefined;
 	private dropMark: HTMLElement | undefined;
-	/** The one alignment cluster, parked out of the tree until a column is selected. */
-	private align: HTMLElement | undefined;
+	/** The open menu, and the control to hand focus back to when it closes. */
+	private menu: HTMLElement | undefined;
+	private menuReturn: HTMLElement | undefined;
 	/** A drag's trailing `click`, which would otherwise re-select the moved line. */
 	private suppressClick = false;
 
@@ -297,8 +359,7 @@ class TableIslandView implements NodeView {
 		this.dom.setAttribute('data-island', node.attrs.islandType as string);
 		this.dom.setAttribute('data-island-id', node.attrs.id as string);
 		this.dom.addEventListener('mousedown', this.onPointerDown);
-		this.dom.addEventListener('mouseover', this.onHover);
-		this.dom.addEventListener('mouseleave', this.onLeave);
+		this.dom.addEventListener('contextmenu', this.onContextMenu);
 		this.render();
 	}
 
@@ -348,8 +409,8 @@ class TableIslandView implements NodeView {
 
 	destroy(): void {
 		this.dom.removeEventListener('mousedown', this.onPointerDown);
-		this.dom.removeEventListener('mouseover', this.onHover);
-		this.dom.removeEventListener('mouseleave', this.onLeave);
+		this.dom.removeEventListener('contextmenu', this.onContextMenu);
+		this.closeMenu();
 		this.endDrag();
 		this.teardownCells();
 	}
@@ -358,7 +419,8 @@ class TableIslandView implements NodeView {
 
 	/**
 	 * Route a press to its band (CODEC §"The table island"): inside the frame the
-	 * nearest cell's caret, outside it the document's, and a handle answers for itself.
+	 * nearest cell's caret, outside it the document's, and a band control answers for
+	 * itself.
 	 *
 	 * A `mousedown` listener, and it stops the event: PM's own mousedown is what arms
 	 * the node selection the matching mouseup then takes. `stopEvent` is the other way
@@ -367,7 +429,7 @@ class TableIslandView implements NodeView {
 	private readonly onPointerDown = (event: MouseEvent): void => {
 		// Any other island type is an atom with NO interior: a press on it is
 		// unambiguous, and PM's to answer. So is a secondary press, which types nothing
-		// and is on its way to a context menu.
+		// and is on its way to the menu below.
 		if (!this.rendered || event.button !== 0) return;
 		const target = event.target as Element | null;
 		if (target?.closest?.(OWNED)) return; // a cell or a control answers for itself
@@ -379,36 +441,42 @@ class TableIslandView implements NodeView {
 		else this.caretBeside(point);
 	};
 
-	/** Which line the pointer is over, so only that line's handle is drawn. The cell is
-	 *  the one the event landed in, matched against the mounted set: no rect is read and
-	 *  no coordinate is parsed back out of the DOM. */
-	private readonly onHover = (event: MouseEvent): void => {
-		const box = (event.target as Element | null)?.closest?.('.qm-table-cell');
-		const cell = box && this.cells.find((m) => m.box === box);
-		if (cell) this.setHot(cell.r, cell.c);
-	};
-
-	private readonly onLeave = (): void => {
-		if (!this.drag) this.setHot(-1, -1);
-	};
-
-	/** Arm one row handle and one column handle. Memoized, because `mouseover` fires
-	 *  per element crossed and the answer changes only per line crossed. */
-	private setHot(r: number, c: number): void {
-		if (r === this.hot.r && c === this.hot.c) return;
-		this.hot = { r, c };
-		this.paintHot();
-	}
-
-	private paintHot(): void {
-		for (const [key, handle] of this.handles) {
-			handle.classList.toggle(
-				'qm-hot',
-				key === lineKey({ axis: 'row', index: this.hot.r }) ||
-					key === lineKey({ axis: 'column', index: this.hot.c })
-			);
+	/**
+	 * The secondary press, and the one gesture that reaches every op from anywhere on
+	 * the island. On a GRIP it is that line's menu, the line selected first so the menu
+	 * and the wash name the same subject; in a CELL it is both lines at once, the column
+	 * the press is in and the row it is in, which is the menu a table is read from
+	 * rather than aimed at. The header carries no row section: it is a separate field
+	 * from `rows`, so it neither moves nor deletes.
+	 */
+	private readonly onContextMenu = (event: MouseEvent): void => {
+		if (!this.rendered) return;
+		const target = event.target as Element | null;
+		if (target?.closest?.('.qm-table-corner, .qm-table-add')) return;
+		const s = this.deps.strings();
+		const grip = target?.closest?.('.qm-table-grip');
+		if (grip instanceof HTMLButtonElement) {
+			const line = this.lineOf(grip);
+			if (!line) return;
+			event.preventDefault();
+			this.selectLine(line);
+			this.openLineMenu(line, grip);
+			return;
 		}
-	}
+		const box = target?.closest?.('.qm-table-cell');
+		const cell = box && this.cells.find((m) => m.box === box);
+		if (!cell) return;
+		event.preventDefault();
+		const sections = [
+			...this.columnSections(cell.c),
+			...(cell.r === 0 ? [] : this.rowSections(cell.r))
+		];
+		const name = s.tableCell(
+			cell.r === 0 ? s.tableHeaderRow : s.tableRow(cell.r),
+			s.tableColumn(cell.c + 1)
+		);
+		this.openMenu(sections, s.tableMenu(name), { x: event.clientX, y: event.clientY });
+	};
 
 	/** The cell a press inside the frame belongs to: the nearest by rect, which for a
 	 *  press on a border or a cell's own padding is the cell it is against. */
@@ -452,6 +520,7 @@ class TableIslandView implements NodeView {
 	private selectIsland(): void {
 		const pos = this.getPos();
 		if (pos == null) return;
+		this.closeMenu();
 		this.clearLine();
 		this.outer.focus();
 		this.outer.dispatch(
@@ -461,9 +530,20 @@ class TableIslandView implements NodeView {
 
 	// ── The line selection ────────────────────────────────────────────────────
 
-	/** Take the line's handle: the focus a selection's keys land on. */
-	private handleFor(line: Line): HTMLButtonElement | undefined {
-		return this.handles.get(lineKey(line));
+	/** Take the line's grip: the focus a selection's keys land on. */
+	private gripFor(line: Line): HTMLButtonElement | undefined {
+		return this.grips.get(lineKey(line));
+	}
+
+	/** The line a grip acts on, read back off the registry rather than off a `data-`
+	 *  attribute: the map is already the typed answer. */
+	private lineOf(grip: Element): Line | undefined {
+		for (const [key, held] of this.grips)
+			if (held === grip) {
+				const [axis, index] = key.split(':');
+				return { axis: axis as Axis, index: Number(index) };
+			}
+		return undefined;
 	}
 
 	/** The index space an axis allows. Stated once, because "the header is the floor"
@@ -474,7 +554,7 @@ class TableIslandView implements NodeView {
 			: { floor: 0, limit: columnCount(props) - 1 };
 	}
 
-	/** Select a line. The handle takes the FOCUS, because the selection's keys bind
+	/** Select a line. The grip takes the FOCUS, because the selection's keys bind
 	 *  there and need somewhere to land. */
 	private selectLine(line: Line): void {
 		// One subject at a time: a line selection retires an island one, or the surface
@@ -491,7 +571,7 @@ class TableIslandView implements NodeView {
 		}
 		this.selected = line;
 		this.paintLine();
-		this.handleFor(line)?.focus();
+		this.gripFor(line)?.focus();
 	}
 
 	private clearLine(): void {
@@ -500,24 +580,37 @@ class TableIslandView implements NodeView {
 		this.paintLine();
 	}
 
-	/** Wash the selected line's cells and mark its handle. Imperative rather than a
+	/** Whether `line` is the one already selected: what tells a grip's first press from
+	 *  its second, which are the two rungs one control carries. */
+	private isSelected(line: Line): boolean {
+		return this.selected?.axis === line.axis && this.selected.index === line.index;
+	}
+
+	/** Wash the selected line's cells and mark its grip. Imperative rather than a
 	 *  re-render: a rebuild destroys the nested views, and a selection is exactly the
 	 *  state that must not cost the carets in them. */
 	private paintLine(): void {
 		const line = this.selected;
 		const key = line && lineKey(line);
-		for (const [at, handle] of this.handles)
-			handle.setAttribute('aria-pressed', String(at === key));
+		for (const [at, grip] of this.grips) grip.setAttribute('aria-pressed', String(at === key));
 		for (const cell of this.cells) {
-			const on = !!line && (line.axis === 'row' ? line.index === cell.r : line.index === cell.c);
-			cell.box.classList.toggle('qm-table-line', on);
+			const on = line && (line.axis === 'row' ? line.index === cell.r : line.index === cell.c);
+			if (on) cell.box.setAttribute('data-line', line.axis);
+			else cell.box.removeAttribute('data-line');
 		}
-		this.paintAlign();
+		this.paintArmed();
+	}
+
+	/** The band stays out while there is a held subject to act on, which is what keeps
+	 *  a selection legible once the pointer has left the island and what keeps an open
+	 *  menu from pointing at a grip that faded under it. */
+	private paintArmed(): void {
+		this.dom.classList.toggle('qm-table-armed', !!this.selected || !!this.menu);
 	}
 
 	/**
-	 * A selected line's keys, bound to the line its own handle names rather than read
-	 * off `selected`: focus and selection are separate, and a Tab between handles would
+	 * A selected line's keys, bound to the line its own grip names rather than read
+	 * off `selected`: focus and selection are separate, and a Tab between grips would
 	 * otherwise aim the next key at whichever line was last pressed.
 	 *
 	 * Backspace CLEARS rather than deletes at the last column, which the model keeps
@@ -535,10 +628,16 @@ class TableIslandView implements NodeView {
 				return;
 			}
 			const along = line.axis === 'row' ? ['ArrowUp', 'ArrowDown'] : ['ArrowLeft', 'ArrowRight'];
-			const acts = along.includes(key) || ['Backspace', 'Delete', 'Enter', 'Escape'].includes(key);
+			const raises = key === ' ' || key === 'ContextMenu';
+			const acts =
+				raises || along.includes(key) || ['Backspace', 'Delete', 'Enter', 'Escape'].includes(key);
 			if (!acts) return;
 			event.preventDefault();
 			event.stopPropagation();
+			// Space rather than Enter, which already means "put the caret in this line":
+			// the two are the keyboard's whole answer to a grip, and a menu is what the
+			// second press of one does with the pointer.
+			if (raises) return this.openLineMenu(line, this.gripFor(line));
 			if (key === 'Escape') return this.selectIsland();
 			if (key === 'Enter') {
 				this.clearLine();
@@ -589,19 +688,267 @@ class TableIslandView implements NodeView {
 		this.selectLine({ axis: line.axis, index: to });
 	}
 
+	// ── The menu ──────────────────────────────────────────────────────────────
+
+	/** A column's whole vocabulary: where a column opens, where it goes, what it is
+	 *  aligned to, and what removing it means. Read off the props at RUN time, not at
+	 *  build time: a menu outlives nothing, but the props it acts on are the store's. */
+	private columnSections(c: number): MenuSection[] {
+		const s = this.deps.strings();
+		const cols = columnCount(this.props());
+		const align = (value: TableAlign, label: string): MenuItem => ({
+			label,
+			align: value,
+			run: () => {
+				this.write(setAlign(this.props(), c, value));
+				this.selectLine({ axis: 'column', index: c });
+			}
+		});
+		const labels: Record<TableAlign, string> = {
+			none: s.tableAlignDefault,
+			left: s.tableAlignLeft,
+			center: s.tableAlignCenter,
+			right: s.tableAlignRight
+		};
+		return [
+			{
+				items: [
+					{
+						label: s.tableInsertColumnLeft,
+						run: () => this.write(insertColumn(this.props(), c - 1), { r: 0, c })
+					},
+					{
+						label: s.tableInsertColumnRight,
+						run: () => this.write(insertColumn(this.props(), c), { r: 0, c: c + 1 })
+					},
+					{
+						label: s.tableMoveColumnLeft,
+						disabled: c === 0,
+						run: () => this.moveLine({ axis: 'column', index: c }, -1)
+					},
+					{
+						label: s.tableMoveColumnRight,
+						disabled: c === cols - 1,
+						run: () => this.moveLine({ axis: 'column', index: c }, 1)
+					}
+				]
+			},
+			{
+				label: s.tableAlign,
+				value: this.props().aligns[c] ?? 'none',
+				items: ALIGNS.map((value) => align(value, labels[value]))
+			},
+			{
+				items: [
+					{
+						// The last column names what it will do rather than what it is called:
+						// the model keeps the line, so "delete" would be a promise the surface
+						// cannot make (CODEC §"The table island").
+						label: cols <= 1 ? s.tableClearColumn : s.tableDeleteColumn,
+						run: () => this.deleteLine({ axis: 'column', index: c })
+					}
+				]
+			}
+		];
+	}
+
+	/** A body row's vocabulary. Shorter than a column's by the alignment group, which
+	 *  a row has no analogue of: `aligns` is per column and there is no per-row field. */
+	private rowSections(r: number): MenuSection[] {
+		const s = this.deps.strings();
+		const rows = rowCount(this.props());
+		return [
+			{
+				items: [
+					{
+						label: s.tableInsertRowAbove,
+						run: () => this.write(insertRow(this.props(), r - 1), { r, c: 0 })
+					},
+					{
+						label: s.tableInsertRowBelow,
+						run: () => this.write(insertRow(this.props(), r), { r: r + 1, c: 0 })
+					},
+					{
+						label: s.tableMoveRowUp,
+						disabled: r <= 1,
+						run: () => this.moveLine({ axis: 'row', index: r }, -1)
+					},
+					{
+						label: s.tableMoveRowDown,
+						disabled: r >= rows - 1,
+						run: () => this.moveLine({ axis: 'row', index: r }, 1)
+					}
+				]
+			},
+			{
+				items: [{ label: s.tableDeleteRow, run: () => this.deleteLine({ axis: 'row', index: r }) }]
+			}
+		];
+	}
+
+	/** One line's menu, opened against its own grip. */
+	private openLineMenu(line: Line, at: HTMLElement | undefined): void {
+		if (!at) return;
+		const s = this.deps.strings();
+		const sections =
+			line.axis === 'column' ? this.columnSections(line.index) : this.rowSections(line.index);
+		const name = line.axis === 'column' ? s.tableColumn(line.index + 1) : s.tableRow(line.index);
+		const box = at.getBoundingClientRect();
+		// Beside a row's grip and beneath a column's: each menu leaves along the axis the
+		// band does not already occupy, so it never opens over the line it is about.
+		const point =
+			line.axis === 'column' ? { x: box.left, y: box.bottom } : { x: box.right, y: box.top };
+		this.openMenu(sections, s.tableMenu(name), point, at);
+	}
+
+	/**
+	 * Raise the menu at `point`, focus its first live row, and arm its dismissals.
+	 *
+	 * It does not TRACK the control it opened against — it CLOSES on anything that
+	 * would move one. That is what keeps the surface's live-anchor rule (VISUAL_EDITOR
+	 * §Chrome) rather than breaking it: the rule forbids holding a rect across a
+	 * scroll or a reflow, and a menu that is gone by then holds none.
+	 */
+	private openMenu(sections: MenuSection[], name: string, point: Point, ret?: HTMLElement): void {
+		this.closeMenu();
+		const menu = el('div', 'qm-table-menu');
+		menu.setAttribute('role', 'menu');
+		menu.setAttribute('aria-label', name);
+		let first: HTMLButtonElement | undefined;
+		sections.forEach((section, i) => {
+			if (i) {
+				const rule = el('div', 'qm-table-menu-sep');
+				rule.setAttribute('role', 'separator');
+				menu.appendChild(rule);
+			}
+			let box = menu;
+			if (section.label) {
+				box = el('div', 'qm-table-menu-group');
+				box.setAttribute('role', 'group');
+				box.setAttribute('aria-label', section.label);
+				const heading = el('div', 'qm-table-menu-heading');
+				heading.textContent = section.label;
+				// The group's own `aria-label` already carries the word; the element is the
+				// sighted half of the same fact and would otherwise be read twice.
+				heading.setAttribute('aria-hidden', 'true');
+				box.appendChild(heading);
+				menu.appendChild(box);
+			}
+			for (const item of section.items) {
+				const row = this.menuRow(item, section.value);
+				box.appendChild(row);
+				if (!first && !item.disabled) first = row;
+			}
+		});
+		menu.addEventListener('keydown', this.onMenuKeys);
+		this.dom.appendChild(menu);
+		this.menu = menu;
+		this.menuReturn = ret;
+		this.place(menu, point);
+		document.addEventListener('pointerdown', this.onOutside, true);
+		window.addEventListener('scroll', this.onDismiss, true);
+		window.addEventListener('resize', this.onDismiss);
+		this.paintArmed();
+		first?.focus();
+	}
+
+	/** One menu row. A real `button`, so Enter and Space activate it and the disabled
+	 *  state is the UA's; what is added is the role the set it sits in wants and the
+	 *  check that marks the live value of a radio set. */
+	private menuRow(item: MenuItem, align: TableAlign | undefined): HTMLButtonElement {
+		const btn = el('button', 'qm-table-menu-item');
+		btn.type = 'button';
+		btn.setAttribute('role', item.align ? 'menuitemradio' : 'menuitem');
+		if (item.align) {
+			btn.setAttribute('data-align', item.align);
+			btn.setAttribute('aria-checked', String(item.align === align));
+			btn.appendChild(svg(CHECK));
+		}
+		btn.disabled = !!item.disabled;
+		const label = el('span');
+		label.textContent = item.label;
+		btn.appendChild(label);
+		btn.addEventListener('click', () => {
+			this.closeMenu();
+			item.run();
+		});
+		return btn;
+	}
+
+	/** Where the menu opens: at the point the gesture named, folded back inside the
+	 *  viewport where it would not fit. One measure, at open. */
+	private place(menu: HTMLElement, at: Point): void {
+		const box = menu.getBoundingClientRect();
+		const room = { w: window.innerWidth, h: window.innerHeight };
+		const left = at.x + box.width > room.w ? Math.max(0, room.w - box.width) : at.x;
+		const top = at.y + box.height > room.h ? Math.max(0, at.y - box.height) : at.y;
+		menu.style.left = `${left}px`;
+		menu.style.top = `${top}px`;
+	}
+
+	/** Move focus within the open menu. The rows are real buttons, so Enter, Space and
+	 *  the disabled state come from the UA; what is bound is the wrap-around walk a menu
+	 *  owes, and the two ways out that have to hand focus back. */
+	private readonly onMenuKeys = (event: KeyboardEvent): void => {
+		const menu = this.menu;
+		if (!menu) return;
+		if (event.key === 'Escape' || event.key === 'Tab') {
+			event.preventDefault();
+			event.stopPropagation();
+			this.closeMenu(true);
+			return;
+		}
+		const step = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
+		const end = event.key === 'Home' ? 0 : event.key === 'End' ? -1 : undefined;
+		if (!step && end === undefined) return;
+		event.preventDefault();
+		const rows = [
+			...menu.querySelectorAll<HTMLButtonElement>('.qm-table-menu-item:not(:disabled)')
+		];
+		if (!rows.length) return;
+		if (end !== undefined) return rows.at(end)!.focus();
+		const at = rows.indexOf(document.activeElement as HTMLButtonElement);
+		const from = at < 0 ? (step > 0 ? -1 : 0) : at;
+		rows[(from + step + rows.length) % rows.length]!.focus();
+	};
+
+	private readonly onOutside = (event: Event): void => {
+		if (!this.menu?.contains(event.target as Node)) this.closeMenu();
+	};
+
+	private readonly onDismiss = (): void => this.closeMenu();
+
+	/** Drop the menu. `restore` hands focus back to the control that raised it, which
+	 *  is what the two keyboard exits owe and what an activated row does not: an op
+	 *  lands the focus itself, on the line or the cell it just made. */
+	private closeMenu(restore = false): void {
+		const menu = this.menu;
+		if (!menu) return;
+		this.menu = undefined;
+		document.removeEventListener('pointerdown', this.onOutside, true);
+		window.removeEventListener('scroll', this.onDismiss, true);
+		window.removeEventListener('resize', this.onDismiss);
+		menu.remove();
+		const back = this.menuReturn;
+		this.menuReturn = undefined;
+		this.paintArmed();
+		if (restore) back?.focus();
+	}
+
 	// ── Drag to reorder ───────────────────────────────────────────────────────
 
 	/**
-	 * Press-and-drag a handle moves its line. The press still SELECTS: the dead zone is
+	 * Press-and-drag a grip moves its line. The press still SELECTS: the dead zone is
 	 * what tells the two apart, so a click that jitters is the gesture it was aimed as
 	 * and only a real travel becomes a drag.
 	 */
-	private readonly onHandleDown = (
+	private readonly onGripDown = (
 		line: Line,
-		handle: HTMLButtonElement,
+		grip: HTMLButtonElement,
 		event: PointerEvent
 	): void => {
 		if (event.button !== 0) return;
+		this.closeMenu();
 		this.drag = {
 			line,
 			origin: { x: event.clientX, y: event.clientY },
@@ -609,17 +956,17 @@ class TableIslandView implements NodeView {
 			drop: line.index,
 			painted: -1,
 			pointerId: event.pointerId,
-			handle,
+			grip,
 			lines: [],
 			origin0: { left: 0, top: 0 }
 		};
-		handle.setPointerCapture(event.pointerId);
-		handle.addEventListener('pointermove', this.onHandleMove);
-		handle.addEventListener('pointerup', this.onHandleUp);
-		handle.addEventListener('pointercancel', this.onHandleUp);
+		grip.setPointerCapture(event.pointerId);
+		grip.addEventListener('pointermove', this.onGripMove);
+		grip.addEventListener('pointerup', this.onGripUp);
+		grip.addEventListener('pointercancel', this.onGripUp);
 	};
 
-	private readonly onHandleMove = (event: PointerEvent): void => {
+	private readonly onGripMove = (event: PointerEvent): void => {
 		const drag = this.drag;
 		if (!drag) return;
 		const travel = Math.hypot(event.clientX - drag.origin.x, event.clientY - drag.origin.y);
@@ -633,12 +980,12 @@ class TableIslandView implements NodeView {
 	private engage(drag: Drag): void {
 		drag.engaged = true;
 		this.dom.classList.add('qm-table-dragging');
-		drag.handle.classList.add('qm-table-lifted');
+		drag.grip.classList.add('qm-table-lifted');
 		for (const cell of this.lineCells(drag.line)) cell.classList.add('qm-table-lifted');
-		const scroller = this.scroller;
-		if (!scroller) return;
-		const box = scroller.getBoundingClientRect();
-		drag.origin0 = { left: box.left - scroller.scrollLeft, top: box.top - scroller.scrollTop };
+		const frame = this.frame;
+		if (!frame) return;
+		const box = frame.getBoundingClientRect();
+		drag.origin0 = { left: box.left, top: box.top };
 		const { floor, limit } = this.bounds(drag.line.axis, this.props());
 		for (let i = floor; i <= limit; i++) {
 			const cells = this.lineCells({ axis: drag.line.axis, index: i });
@@ -665,7 +1012,7 @@ class TableIslandView implements NodeView {
 		}
 	}
 
-	private readonly onHandleUp = (): void => {
+	private readonly onGripUp = (): void => {
 		const drag = this.drag;
 		if (!drag) return;
 		const { line, drop, engaged } = drag;
@@ -687,11 +1034,11 @@ class TableIslandView implements NodeView {
 		this.dom.classList.remove('qm-table-dragging');
 		for (const lifted of this.dom.querySelectorAll('.qm-table-lifted'))
 			lifted.classList.remove('qm-table-lifted');
-		drag.handle.removeEventListener('pointermove', this.onHandleMove);
-		drag.handle.removeEventListener('pointerup', this.onHandleUp);
-		drag.handle.removeEventListener('pointercancel', this.onHandleUp);
-		if (drag.handle.hasPointerCapture?.(drag.pointerId))
-			drag.handle.releasePointerCapture(drag.pointerId);
+		drag.grip.removeEventListener('pointermove', this.onGripMove);
+		drag.grip.removeEventListener('pointerup', this.onGripUp);
+		drag.grip.removeEventListener('pointercancel', this.onGripUp);
+		if (drag.grip.hasPointerCapture?.(drag.pointerId))
+			drag.grip.releasePointerCapture(drag.pointerId);
 	}
 
 	/** Which line the pointer is over, along the drag's axis: the nearest by the extents
@@ -717,18 +1064,18 @@ class TableIslandView implements NodeView {
 	}
 
 	/** The drop indicator: one rule on the boundary the line would land against, drawn
-	 *  in the scroller so it spans the grid and scrolls with it. Redrawn only when the
+	 *  in the frame so it spans the grid and travels with it. Redrawn only when the
 	 *  boundary changes, which is once per line crossed rather than once per move. */
 	private paintDrop(drag: Drag): void {
 		if (drag.drop === drag.painted) return;
 		const line = drag.lines.find((l) => l.index === drag.drop);
-		const scroller = this.scroller;
-		if (!line || !scroller) return;
+		const frame = this.frame;
+		if (!line || !frame) return;
 		drag.painted = drag.drop;
 		if (!this.dropMark) {
 			this.dropMark = el('div', 'qm-table-drop');
 			this.dropMark.setAttribute('data-axis', drag.line.axis);
-			scroller.appendChild(this.dropMark);
+			frame.appendChild(this.dropMark);
 		}
 		const edge = (drag.drop > drag.line.index ? line.end : line.start) - 1;
 		const mark = this.dropMark;
@@ -755,8 +1102,9 @@ class TableIslandView implements NodeView {
 
 	private render(): void {
 		this.endDrag();
+		this.closeMenu();
 		this.teardownCells();
-		this.handles.clear();
+		this.grips.clear();
 		this.dom.textContent = '';
 		const props = tablePropsOfNode(this.node);
 		this.rendered = props;
@@ -779,20 +1127,28 @@ class TableIslandView implements NodeView {
 		for (let r = 1; r < rowCount(props); r++) body.appendChild(this.row(props, r, s));
 		table.append(head, body);
 
+		// The frame is the grid's own box, and the three band CAPS hang off its corners
+		// rather than off a cell: the corner where the two bands meet, and one `+` at
+		// each band's far end. A cell would have served for two of them and not for the
+		// third — a table with no body rows has no last row to hang the row `+` in — and
+		// a cap is about the grid rather than about a line in any case.
+		const frame = el('div', 'qm-table-frame');
+		frame.append(
+			table,
+			this.corner(s),
+			this.cap('column', s.tableAddColumn),
+			this.cap('row', s.tableAddRow)
+		);
 		const scroller = el('div', 'qm-table-scroller');
-		scroller.appendChild(table);
-		this.scroller = scroller;
-		this.align = this.alignCluster(s);
+		scroller.appendChild(frame);
+		this.frame = frame;
 		this.dom.appendChild(scroller);
-		// Both derived paints re-apply: a rebuild replaced every element they wrote on.
 		this.paintLine();
-		this.paintHot();
 	}
 
 	/** One table row: its cells, each carrying whatever chrome hangs off it. */
 	private row(props: TableProps, r: number, s: TableChromeStrings): HTMLElement {
 		const tr = el('tr', r === 0 ? 'qm-table-header-row' : undefined);
-		const cols = columnCount(props);
 		rowCells(props, r).forEach((cell, c) => {
 			const box = el(r === 0 ? 'th' : 'td', 'qm-table-cell');
 			if (r === 0) box.setAttribute('scope', 'col');
@@ -804,122 +1160,68 @@ class TableIslandView implements NodeView {
 			box.appendChild(host);
 
 			// The COLUMN band hangs off the header row; the ROW band off each body row's
-			// first cell. Both are absolutely positioned into the scroller's padding, so
-			// neither is in the grid's layout and neither is a cell of its own.
-			if (r === 0) {
-				box.appendChild(this.handle({ axis: 'column', index: c }, s.tableSelectColumn(c + 1)));
-				box.appendChild(this.seam('column', c, s.tableInsertColumn(c + 1), 'lead'));
-				// The last column carries the trailing seam too: a boundary belongs to the
-				// cell it is against, and the right edge is against no next column.
-				if (c === cols - 1)
-					box.appendChild(this.seam('column', c + 1, s.tableInsertColumn(c + 2), 'trail'));
-				// The header carries no row handle: it cannot be deleted (`header: []` is
-				// not a table) and nothing goes above it, so there is no line to select.
-				if (c === 0) box.appendChild(this.cornerHandle(s));
-			} else if (c === 0) {
-				box.appendChild(this.handle({ axis: 'row', index: r }, s.tableSelectRow(r)));
-				box.appendChild(this.seam('row', r, s.tableInsertRow(r), 'lead'));
-				if (r === rowCount(props) - 1)
-					box.appendChild(this.seam('row', r + 1, s.tableInsertRow(r + 1), 'trail'));
-			}
+			// first cell. Both are absolutely positioned into the frame's own padding, so
+			// neither is in the grid's layout and neither is a cell of its own. The header
+			// carries no row grip: it cannot be deleted (`header: []` is not a table) and
+			// nothing goes above it, so there is no line to select.
+			if (r === 0)
+				box.appendChild(this.grip({ axis: 'column', index: c }, s.tableSelectColumn(c + 1)));
+			else if (c === 0) box.appendChild(this.grip({ axis: 'row', index: r }, s.tableSelectRow(r)));
 			tr.appendChild(box);
 			this.mountCell(box, host, r, c, s);
 		});
 		return tr;
 	}
 
-	/** A line's handle, and the whole of that line's chrome: a press selects the line, a
-	 *  press that travels drags it. Both are "this line", asked once with the pointer. */
-	private handle(line: Line, label: string): HTMLButtonElement {
-		const btn = chromeButton('qm-table-handle', label, () => {
-			if (this.suppressClick) this.suppressClick = false;
-			else this.selectLine(line);
+	/** A line's grip, and the whole of that line's chrome. It carries three gestures at
+	 *  one target, ordered by how much each commits to: a press SELECTS the line, a
+	 *  press on the line already selected raises its menu, and a press that travels
+	 *  drags it. Nothing is hidden behind a mode — the first press is always the
+	 *  cheapest reading, and the drag is told from the click by the dead zone. */
+	private grip(line: Line, label: string): HTMLButtonElement {
+		const btn = chromeButton('qm-table-grip', label, () => {
+			if (this.suppressClick) {
+				this.suppressClick = false;
+				return;
+			}
+			const held = this.isSelected(line);
+			this.selectLine(line);
+			if (held) this.openLineMenu(line, btn);
 		});
 		btn.setAttribute('aria-pressed', 'false');
+		btn.setAttribute('aria-haspopup', 'menu');
 		btn.setAttribute('data-axis', line.axis);
-		btn.appendChild(el('span', 'qm-table-handle-bar'));
-		btn.addEventListener('pointerdown', (e) => this.onHandleDown(line, btn, e));
+		const bar = el('span', 'qm-table-grip-bar');
+		bar.appendChild(svg(GRIP[line.axis], 3));
+		btn.appendChild(bar);
+		btn.addEventListener('pointerdown', (e) => this.onGripDown(line, btn, e));
 		btn.addEventListener('keydown', this.lineKeys(line));
-		this.handles.set(lineKey(line), btn);
+		this.grips.set(lineKey(line), btn);
 		return btn;
 	}
 
 	/** The island's own handle, at the grid origin: the spreadsheet's select-all
-	 *  position. A press selects the island, which is the state Backspace deletes the
-	 *  whole table from. */
-	private cornerHandle(s: TableChromeStrings): HTMLButtonElement {
-		const btn = chromeButton('qm-table-handle qm-table-corner-handle', s.tableSelectTable, () =>
-			this.selectIsland()
-		);
-		btn.setAttribute('data-axis', 'island');
+	 *  position, where the two bands meet. A press selects the island, which is the
+	 *  state Backspace deletes the whole table from. */
+	private corner(s: TableChromeStrings): HTMLButtonElement {
+		const btn = chromeButton('qm-table-corner', s.tableSelectTable, () => this.selectIsland());
 		btn.appendChild(el('span', 'qm-table-corner-mark'));
 		return btn;
 	}
 
-	/** A seam: the boundary between two lines, and the whole of how a table grows. */
-	private seam(
-		axis: Axis,
-		index: number,
-		label: string,
-		side: 'lead' | 'trail'
-	): HTMLButtonElement {
-		const btn = chromeButton('qm-table-seam', label, () => {
+	/** A band's far cap: the `+` that appends a line at the end of the axis it sits on.
+	 *  Appending is the op a table wants most and the only one worth a control of its
+	 *  own; every interior insert is a row of the menu. */
+	private cap(axis: Axis, label: string): HTMLButtonElement {
+		const btn = chromeButton('qm-table-add', label, () => {
 			const props = this.props();
-			if (axis === 'row') this.write(insertRow(props, index - 1), { r: index, c: 0 });
-			else this.write(insertColumn(props, index - 1), { r: 0, c: index });
+			if (axis === 'row')
+				this.write(insertRow(props, props.rows.length), { r: rowCount(props), c: 0 });
+			else this.write(insertColumn(props, columnCount(props) - 1), { r: 0, c: columnCount(props) });
 		});
 		btn.setAttribute('data-axis', axis);
-		btn.setAttribute('data-side', side);
 		btn.appendChild(svg(PLUS));
 		return btn;
-	}
-
-	/**
-	 * A column's alignment: the one op with no gesture, so the one surface the chrome
-	 * still raises. It rides the column's SELECTION, so at most ONE is ever live, which
-	 * is why there is one cluster re-parented into the selected column rather than one
-	 * built per column and hidden.
-	 */
-	private alignCluster(s: TableChromeStrings): HTMLElement {
-		const labels: Record<TableAlign, string> = {
-			none: s.tableAlignDefault,
-			left: s.tableAlignLeft,
-			center: s.tableAlignCenter,
-			right: s.tableAlignRight
-		};
-		const box = el('div', 'qm-table-align');
-		box.setAttribute('role', 'group');
-		for (const align of ALIGNS) {
-			const btn = chromeButton('qm-table-align-item', labels[align], () => {
-				const at = this.selected;
-				if (!at || at.axis !== 'column') return;
-				this.write(setAlign(this.props(), at.index, align));
-				this.selectLine(at);
-			});
-			btn.setAttribute('data-align', align);
-			btn.appendChild(svg(ALIGN_PATHS[align]));
-			box.appendChild(btn);
-		}
-		return box;
-	}
-
-	/** Hang the cluster off the selected column's header cell and mark the alignment
-	 *  that column already has: an exclusive set, so it shows which one is live. */
-	private paintAlign(): void {
-		const cluster = this.align;
-		if (!cluster) return;
-		const line = this.selected;
-		if (!line || line.axis !== 'column') {
-			cluster.remove();
-			return;
-		}
-		const head = this.cells.find((m) => m.r === 0 && m.c === line.index);
-		if (!head) return;
-		head.box.appendChild(cluster);
-		cluster.setAttribute('aria-label', this.deps.strings().tableSelectColumn(line.index + 1));
-		const align = this.props().aligns[line.index] ?? 'none';
-		for (const btn of cluster.querySelectorAll('.qm-table-align-item'))
-			btn.setAttribute('aria-pressed', String(btn.getAttribute('data-align') === align));
 	}
 
 	private mountCell(
@@ -946,6 +1248,7 @@ class TableIslandView implements NodeView {
 			},
 			handleDOMEvents: {
 				focus: () => {
+					this.closeMenu();
 					this.clearLine();
 					this.deps.onCellFocus();
 					return false;
