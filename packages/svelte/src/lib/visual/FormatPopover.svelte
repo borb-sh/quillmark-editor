@@ -394,7 +394,7 @@
 		padding: var(--_qm-inset-control);
 		border: none;
 		border-radius: var(--_qm-radius-inner);
-		background: var(--_qm-surface-sunken);
+		background: var(--_qm-surface-well);
 		min-width: 12rem;
 	}
 </style>

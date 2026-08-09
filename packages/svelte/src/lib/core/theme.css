@@ -106,12 +106,22 @@
 		   floats on. So `sunken` mixes toward shadow and `raised` toward light, and
 		   the base plane — a card, the preview's paper — is the pole itself.
 
-		   `sunken` is the ONE rung with two arms, and one percentage cannot serve
-		   both: mixing toward black SCALES lightness, so a fixed percentage is a
-		   fixed ratio and the same number travels four times as far from white as
-		   it does from a dark card. Each arm is therefore tuned to the plane it
-		   sinks from, and they do not travel the same distance — 0.04 of oklab L in
-		   light and 0.055 in dark, because a dark surface has to give up more of
+		   TWO PLANES SINK, by what the step has to carry. `sunken` is the GROUND —
+		   the column behind the cards, the desk behind the sheets — and its whole
+		   job is to let the plane above it read as an island, which at the light
+		   pole takes very little. `well` is the hole cut INTO that plane: a field,
+		   a table's header band, the one native select. It draws no edge, so the
+		   step is the only thing saying a value is typed there, and it goes deeper
+		   than the ground for that reason. The order at the light pole is card,
+		   ground, well; at the dark pole the two land on the same figure, which is
+		   where a card that has already given up most of its light leaves them.
+
+		   Each takes TWO ARMS, and one percentage cannot serve both poles: mixing
+		   toward black SCALES lightness, so a fixed percentage is a fixed ratio and
+		   the same number travels four times as far from white as it does from a
+		   dark card. So each arm is tuned to the plane it sinks from, and the pair
+		   does not travel the same distance — the ground gives up 0.021 of oklab L
+		   in light and 0.055 in dark, because a dark surface has to spend more of
 		   what little it has before the card above it reads as lifted. Pinning a
 		   dark palette under a light `color-scheme` takes the LIGHT arm with it
 		   (THEMING §"The surface follows your colour scheme"), which is a step you
@@ -122,6 +132,10 @@
 		   its hairline in light and on the step in dark. */
 		--_qm-surface: var(--_qm-bg);
 		--_qm-surface-sunken: light-dark(
+			color-mix(in oklab, var(--_qm-bg), #000 2%),
+			color-mix(in oklab, var(--_qm-bg), #000 20%)
+		);
+		--_qm-surface-well: light-dark(
 			color-mix(in oklab, var(--_qm-bg), #000 4%),
 			color-mix(in oklab, var(--_qm-bg), #000 20%)
 		);

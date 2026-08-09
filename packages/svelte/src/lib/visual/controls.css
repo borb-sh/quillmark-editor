@@ -92,15 +92,15 @@
 		caret-color: currentColor;
 	}
 	/* THE BOX IS A FILL AND NOT AN EDGE (ARCHITECTURE §Styling), and the fill is the
-	 SUNKEN rung, the same one the column behind the cards paints with: a field is a
-	 hole in the card down to what the card sits on, rather than a plane of its
-	 own. */
+	 WELL rung: a field is a hole cut into the card rather than a plane of its own,
+	 and with no edge to carry it the step is the whole of what says so, which is why
+	 it goes deeper than the ground the card itself sits on. */
 	.qm-control-box,
 	.qm-input {
 		padding: var(--_qm-inset-control);
 		border: none;
 		border-radius: var(--_qm-radius-inner);
-		background: var(--_qm-surface-sunken);
+		background: var(--_qm-surface-well);
 	}
 	/* What a form control adds over the box: it does not fill its row on its own. */
 	.qm-input {

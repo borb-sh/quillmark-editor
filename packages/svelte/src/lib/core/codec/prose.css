@@ -257,12 +257,12 @@ li.ProseMirror-selectednode::after {
 }
 /* The header row is the ONE weight distinction the island draws: `header` is a
    separate field in the model rather than a flag on a row, so the surface says so.
-   It takes a tone with it, which is the same move a field makes: the SUNKEN rung, a
+   It takes a tone with it, which is the same move a field makes: the WELL rung, a
    band cut into the paper rather than a layer stacked on it, and a rung either way
    rather than a shadow. The rest of a table's type is paper's. */
 .qm-table-header-row .qm-table-cell {
 	font-weight: var(--_qm-weight-strong);
-	background: var(--_qm-surface-sunken);
+	background: var(--_qm-surface-well);
 	border-bottom: var(--_qm-border-width) solid var(--_qm-border);
 }
 /* A cell holds a whole nested view. Its measure floor keeps an empty table from

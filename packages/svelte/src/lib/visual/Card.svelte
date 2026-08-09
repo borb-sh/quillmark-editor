@@ -861,12 +861,12 @@
 		color: var(--_qm-ink-label);
 	}
 	/* The one native control the surface draws, and it takes the box's own recipe:
-	 a fill off the sunken rung, no edge (controls.css). */
+	 a fill off the well rung, no edge (controls.css). */
 	.qm-recovery-retype select {
 		font: inherit;
 		border: none;
 		border-radius: var(--_qm-radius-inner);
-		background: var(--_qm-surface-sunken);
+		background: var(--_qm-surface-well);
 		padding: var(--_qm-space-half) var(--_qm-space-2);
 	}
 </style>
