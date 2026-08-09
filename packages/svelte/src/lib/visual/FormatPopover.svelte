@@ -385,10 +385,12 @@
 		gap: var(--_qm-space);
 		align-items: center;
 	}
+	/* The box's recipe without `.qm-input`, which adds the `width: 100%` that would
+	   stretch this to the popover. */
 	.qm-link-input {
 		font: inherit;
 		font-size: var(--_qm-text-body);
-		padding: var(--_qm-space) var(--_qm-space-2);
+		padding: var(--_qm-inset-control);
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
 		min-width: 12rem;

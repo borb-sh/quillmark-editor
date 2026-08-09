@@ -41,7 +41,7 @@
 		gap: var(--_qm-space-half);
 	}
 	.qm-diag-line {
-		font-size: var(--_qm-text-meta);
+		font-size: var(--_qm-text-label);
 		color: var(--_qm-warning);
 	}
 	.qm-diag-line[data-severity='error'] {

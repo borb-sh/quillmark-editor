@@ -743,10 +743,10 @@
 		padding: var(--_qm-space) 0 var(--_qm-space) var(--_qm-space);
 		font: inherit;
 		font-size: var(--_qm-text-label);
-		font-weight: var(--_qm-weight-soft);
+		font-weight: var(--_qm-weight-label);
 		line-height: var(--_qm-leading-tight);
 		cursor: pointer;
-		color: var(--_qm-ink-meta);
+		color: var(--_qm-ink-label);
 		text-align: left;
 		transition: color var(--_qm-duration-fast) var(--_qm-ease-reverse);
 	}
