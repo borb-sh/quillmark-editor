@@ -33,12 +33,17 @@ export function canonDocs(dir) {
 		.map((f) => [join(dir, f), relative(ROOT, join(dir, f))]);
 }
 
-/** A gate's verdict: findings printed and a non-zero exit, or the `ok` line. */
-export function report(label, errors, ok) {
+/** A gate's verdict, in two severities. An ERROR is a fault the diff cannot show — a
+ *  pruned stylesheet, a dangling pointer, a rung that resolves to nothing — and fails the
+ *  run. A WARNING is a fault review can see for itself, printed so it stays visible and
+ *  never blocking: the shape a rule takes while the thing it is about is still moving.
+ *  Warnings print above the `ok` line, so a passing gate still says what it noticed. */
+export function report(label, errors, ok, warnings = []) {
+	for (const w of warnings) console.warn(`  ~ ${w}`);
 	if (errors.length) {
 		console.error(`${label} failed (${errors.length}):`);
 		for (const e of errors) console.error(`  ✗ ${e}`);
 		process.exit(1);
 	}
-	console.log(ok);
+	console.log(warnings.length ? `${ok} (${warnings.length} warned)` : ok);
 }

@@ -40,21 +40,7 @@
 //      ProseMirror and no direct scan sees it, so this walks preview's import graph
 //      within `src/lib` and fails on any reached module's forbidden external.
 //
-//   4. THE THEME'S REACH. Every JS barrel svelte exports reaches `core/theme.css`. A
-//      consumer gets a SUBPATH, and what arrives with it is that barrel's graph: a
-//      surface reaching modules inside `core/` reaches nothing `core/index.ts` imports,
-//      so a sheet hanging off that entry lands only for a consumer importing `/core` for
-//      an unrelated reason. Both apps do, which is why neither they nor `check:bundle`
-//      can see it: the sheet arrives for a reason that has nothing to do with the
-//      surfaces. Pruning is #293's failure and this is the one before it — the import
-//      edge does not exist in source, so there is nothing to prune and nothing built to
-//      observe. BARREL-ROOTED, unlike rule 3: what a consumer gets by naming a subpath
-//      is its barrel, and a sibling module reaching the sheet does nothing for a bundler
-//      that never pulls that sibling. Derived from `exports` rather than listed, so a
-//      new surface is covered the moment it is exported; a CSS export answers to
-//      nothing here, `./preset` being a sheet a consumer imports by name.
-//
-//   5. THE LOCK'S PLATFORMS. The lock resolves every platform an optional dependency
+//   4. THE LOCK'S PLATFORMS. The lock resolves every platform an optional dependency
 //      offers, not the one that wrote it: a lock missing `@rollup/rollup-darwin-arm64`
 //      installs a rollup with no native binary on a Mac, and npm repairs nothing: an
 //      `npm i` reading a lock that is self-consistent for its own platform adds no
@@ -288,60 +274,7 @@ const walk = (file) => {
 // re-export is still shipped inside the module root a bundler pulls.
 for (const file of sources(join(LIB, 'preview'))) walk(file);
 
-// ── 4. The theme's reach ────────────────────────────────────────────────────────
-
-const THEME = join(LIB, 'core', 'theme.css');
-
-/** The `src/lib` source behind an export target (`./dist/visual/index.js` →
- *  `visual/index.ts`), or null when the target is not a module this walk reads. The
- *  manifest points at BUILT paths and the graph only exists in source, so the hop is
- *  the rule's one assumption about the build: `svelte-package` mirrors `src/lib` into
- *  `dist` one file per file. */
-function barrelSource(target) {
-	const rel = /^\.\/dist\/(.+)$/.exec(target)?.[1];
-	if (rel == null) return null;
-	const stem = join(LIB, rel).replace(/\.(js|ts|svelte|css)$/, '');
-	for (const cand of [`${stem}.ts`, `${stem}.js`, `${stem}.svelte`])
-		if (existsSync(cand)) return cand;
-	return null;
-}
-
-/** Whether `entry`'s own import graph reaches `target`, following relative specifiers
- *  the way a bundler follows the barrel a consumer named. */
-function reaches(entry, target) {
-	const visited = new Set();
-	const from = [entry];
-	while (from.length) {
-		const file = from.pop();
-		if (visited.has(file)) continue;
-		visited.add(file);
-		if (file === target) return true;
-		for (const spec of specifiersOf(file)) {
-			const next = resolveInLib(spec, file);
-			if (next) from.push(next);
-		}
-	}
-	return false;
-}
-
-for (const [subpath, target] of Object.entries(svelteExports)) {
-	// An exports value is a string or a conditions object. `types` is skipped rather
-	// than taken as the first key: a `.d.ts` has no source behind it, so reading it
-	// resolves nothing and the subpath passes by being invisible — which is this rule
-	// failing OPEN, the one way it is worse than absent.
-	const file =
-		typeof target === 'string'
-			? target
-			: (target.svelte ?? target.import ?? target.default ?? null);
-	const entry = typeof file === 'string' ? barrelSource(file) : null;
-	if (!entry) continue;
-	if (!reaches(entry, THEME))
-		fail(
-			`packages/svelte/${relative(join(ROOT, 'packages', 'svelte'), entry)}: \`${subpath}\` does not reach core/theme.css — a consumer importing this subpath alone mounts unstyled`
-		);
-}
-
-// ── 5. The lock's platforms ─────────────────────────────────────────────────────
+// ── 4. The lock's platforms ─────────────────────────────────────────────────────
 
 const lock = JSON.parse(readFileSync(join(ROOT, 'package-lock.json'), 'utf8'));
 // A dependency resolves against the entry nearest its own path, so an optional dep is

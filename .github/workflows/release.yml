@@ -33,9 +33,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Tags, and the history back to them: the client's build stamps each
-          # compiled-in sibling against its own release tag, and the tarball published
-          # here is the one that carries the answer.
+          # The tags, for the `git tag` below: a push that would clobber an existing one
+          # fails here rather than on the remote.
           fetch-depth: 0
           # The merge commit this event names rather than `main`, which is whatever
           # landed while this run queued. One commit gates, is tagged, is built and is

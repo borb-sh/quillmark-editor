@@ -24,9 +24,12 @@ npm run site               # the fixture quiver as a deploy serves it, into ./si
 npm test                   # every package's suite
 npm run check              # types, per package
 npm run lint               # prettier, over the repo
-npm run check:canon        # the canon spine, every tier
+npm run gate:fast          # every check below, in order, without a build
+npm run gate               # gate:fast, then build, bundle and the suite
+npm run check:pointers     # every cross-doc section reference resolves
 npm run check:style        # the closed `--_qm-*` / `--pg-*` / `--st-*` scales
 npm run check:deps         # the dependency law
+npm run check:ledger       # the stated `@quillmark/wasm` pin against the installed one
 npm run check:bundle       # the shipped scales, in a built consumer
 ```
 

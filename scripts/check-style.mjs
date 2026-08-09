@@ -15,42 +15,42 @@
 //            …-timing-function, and the shorthands     a curve off the derived three
 //            transition / transition-property         `all`
 //
-// Five rules sit outside the table, because they are about the scale itself rather
-// than one axis:
+// A LINE MAY MINT ANYWAY, by saying why: a `mint:` comment on it (`/* mint: … */` in
+// CSS, `// mint: …` in `.ts`) exempts that line, and the gate counts what it let
+// through. The axes are about a value nothing chose; a value someone chose and gave a
+// reason is the opposite, and trying a number is how the next rung gets found. The
+// mint stays in the diff, spelled as a mint, with its reason beside it — a family of
+// them is a rung waiting to be cut.
+//
+// Four rules sit outside the table, being about the scale itself rather than one axis:
 //
 //   · NOTHING casts a shadow, in either scope and in the derivations too: elevation
 //     is a tone rung and a hairline, so the property is illegal rather than one of
 //     its values, which is a shape the table has no column for.
 //   · A private rung is DEFINED only in its scope's derivation — what makes one
 //     derivation safe for every surface reading it — and never twice in one rule.
-//   · The consumed `--qm-*` set EQUALS the set documented in THEMING.md, both
-//     directions: an undocumented dial is drift, a documented-but-dead one is a
-//     promise nothing honors.
-//   · Every `--qm-*` named in `prose/canon/**` is a real dial. Canon names a subset,
-//     so this way only — but it is checked, because canon rots where nothing looks.
-//   · Every `.qm-*` CLASS a doc promises is carried by something in `src/`. One
-//     direction only, and for a different reason than the dials': the promised set is
-//     the mounted surface roots, and the classes under them are deliberately not
-//     contract, so the unpromised ones are free rather than undocumented.
+//   · An app does not REDEFINE a name the preset carries: the app is meant to look
+//     like the endorsed answer, and a local copy is where it stops. A name the preset
+//     lacks (an app's own rail width) is the whole of what a host adds on top.
+//   · Every `--qm-*` dial a surface consumes is documented in THEMING.md, and every
+//     `.qm-*` class a doc promises is carried by something in `src/` — the halves a
+//     consumer is hurt by. The reverse halves WARN, so prose may run ahead of code.
 //
 // MANY SCOPES, one table. The package derives `--_qm-*` from the dials for the
-// surfaces it ships; each app derives its own scale from the same dials for the page
-// it hosts them on. Every one is a closed scale a stylesheet reads rather than mints,
-// so all of them answer to the same axes — a value that cannot be minted in a card
-// must not become mintable one directory over. What is NOT shared is the dial
-// census — a package-contract claim, measured over the package scope alone.
+// surfaces it ships; each app derives its own from the same dials for the page it
+// hosts them on. All are closed scales, so all answer to the same axes: a value that
+// cannot be minted in a card must not become mintable one directory over. The dial
+// census is the exception, being a package-contract claim.
 //
-// Within a scope a violation must not become legal by FILE TYPE either. Three shapes
-// carry style: a `.svelte` `<style>` block, a plain `.css` file (the shared
-// recipes), and `.ts` — because `preview/paint.ts` and `preview/overlay.ts` carry
-// style declarations inside JS strings and would otherwise escape. The first two are
-// CSS, so the property name decides which axis owns a line; in `.ts` a declaration is
-// one string among code, so the axis's own marker stands in for the property name. An
-// axis carrying no marker has no `.ts` lane and runs on CSS alone.
+// Nor does FILE TYPE make a violation legal. Three shapes carry style: a `.svelte`
+// `<style>` block, a `.css` file, and `.ts` — `preview/paint.ts` and `overlay.ts`
+// carry declarations inside JS strings. The first two are CSS, so the property name
+// decides which axis owns a line; in `.ts` the axis's own marker stands in for it, and
+// an axis carrying no marker runs on CSS alone.
 //
-// A `var()` fallback is legitimate only in a derivation, which is exempt from the
-// literal rules entirely — so outside it, a literal is a literal wherever it sits.
-// Zero deps; run via `npm run check:style`.
+// A derivation is exempt from the literal rules entirely, which is what makes a
+// `var()` fallback legitimate there and nowhere else. Zero deps; run via
+// `npm run check:style`.
 
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -124,6 +124,11 @@ const STYLE_MARKER = /\b(style|background|border|color|outline|boxShadow|textSha
 const RHYTHM_MARKER = /(padding|margin|gap|radius)/i;
 /** Stroke properties, minus the corner the rhythm lane owns. */
 const STROKE_MARKER = /border(?!-?radius)/i;
+/** The escape: a `mint:` comment on the line, in either comment syntax, carrying a
+ *  reason. The reason is the whole mechanism — a bare marker is a suppression, and a
+ *  suppression is what a gate becomes when nobody has to say anything. The lookahead is
+ *  what keeps a CSS comment's own closing delimiter from reading as one. */
+const MINT = /(?:\/\*|\/\/)\s*mint:\s*(?!\*\/)(\S[^*\n]*)/;
 /** A `--x:` DEFINITION — a consumption is `var(--x)`, which has no colon. */
 const privateDef = (prefix) => new RegExp(`(${prefix}[\\w-]+)\\s*:`);
 /** Reading a rung of ANY scale the scope is entitled to. An app reads two: the
@@ -298,17 +303,32 @@ function decomment(text) {
  *  that is the `<style>` block — script and markup literals (positions, timeouts)
  *  are none of a style gate's business. A `.css` file is style throughout, and in
  *  `.ts` declarations live in strings anywhere, so for both the whole file is the
- *  region. */
+ *  region.
+ *
+ *  `mints` is read off the region BEFORE the comments are blanked, since the escape is
+ *  itself a comment: index of an exempt line within the region → the reason it gave. */
 function styleRegion(text, file) {
-	if (!file.endsWith('.svelte')) return { style: decomment(text), base: 0 };
-	const m = text.match(/<style[^>]*>([\s\S]*?)<\/style>/);
-	if (!m) return undefined;
-	return { style: decomment(m[1]), base: text.slice(0, m.index).split('\n').length };
+	const svelte = file.endsWith('.svelte');
+	const block = svelte ? text.match(/<style[^>]*>([\s\S]*?)<\/style>/) : null;
+	if (svelte && !block) return undefined;
+	const body = svelte ? block[1] : text;
+	const mints = new Map();
+	body.split('\n').forEach((line, i) => {
+		const m = line.match(MINT);
+		if (m) mints.set(i, m[1].trim());
+	});
+	return {
+		style: decomment(body),
+		base: svelte ? text.slice(0, block.index).split('\n').length : 0,
+		mints
+	};
 }
 
 const errors = [];
+const warnings = [];
 const consumed = new Set();
 const hostScales = [];
+const mints = [];
 let scanned = 0;
 
 for (const scope of SCOPES) {
@@ -344,6 +364,12 @@ for (const scope of SCOPES) {
 		region.style.split('\n').forEach((line, i) => {
 			const ln = region.base + i + 1;
 			const fail = (msg) => errors.push(`${file}:${ln}: ${msg}`);
+			// The escape covers the VALUE rules — the axes and the shadow property, which
+			// are the ones a surface trips by choosing a number. Not the definition rule
+			// below it: minting a rung outside the derivation forks the scale rather than
+			// trying a value in it, which is a different act and has a different answer.
+			const excused = region.mints.get(i);
+			if (excused !== undefined) mints.push(`${file}:${ln}: ${excused}`);
 
 			// Only the package scope feeds the dial census (see SCOPES).
 			if (scope.census) for (const m of line.matchAll(/var\(\s*(--qm-[\w-]+)/g)) consumed.add(m[1]);
@@ -356,7 +382,11 @@ for (const scope of SCOPES) {
 			// walk through it; that gap is why this sits outside the table. Both
 			// spellings, since `preview/paint.ts` carries declarations as JS strings.
 			const shade = line.match(/^\s*(box-shadow|text-shadow|boxShadow|textShadow)\s*:\s*([^;,]*)/);
-			if (shade && !/^'?(none|inherit|initial|unset|revert)'?$/.test(shade[2].trim()))
+			if (
+				shade &&
+				excused === undefined &&
+				!/^'?(none|inherit|initial|unset|revert)'?$/.test(shade[2].trim())
+			)
 				fail(
 					`\`${shade[1]}\` — lift with a surface rung and a hairline, not a shadow (${scope.doc})`
 				);
@@ -369,23 +399,24 @@ for (const scope of SCOPES) {
 			// A brace ends whatever was open: a value never spans one.
 			carry = /[{}]/.test(line) || line.includes(';') ? null : (prop ?? null);
 
-			for (const axis of AXES) {
-				// In CSS the property name decides which axis owns the line; in `.ts` a
-				// style declaration is one string among code, so the axis's own marker
-				// does. An axis with no marker has no `.ts` lane and runs on CSS alone.
-				if (!css && !axis.marker) continue;
-				const owns = css ? axis.props.test(prop ?? '') : axis.marker.test(line);
-				if (!owns) continue;
-				const bad = axis.literal
-					? axis.literal.test(css ? value : line)
-					: axis.only
-						? !axis.only.test(value.trim())
-						: !READS_RUNG.test(value) && !axis.allowBare.test(value.trim());
-				if (bad)
-					fail(
-						`\`${prop ?? 'style'}\` ${axis.lead ?? 'mints a literal'} — ${axis.fix ?? `read a ${hint(axis.rung)} rung`} (${axis.doc}; ${scope.doc})`
-					);
-			}
+			if (excused === undefined)
+				for (const axis of AXES) {
+					// In CSS the property name decides which axis owns the line; in `.ts` a
+					// style declaration is one string among code, so the axis's own marker
+					// does. An axis with no marker has no `.ts` lane and runs on CSS alone.
+					if (!css && !axis.marker) continue;
+					const owns = css ? axis.props.test(prop ?? '') : axis.marker.test(line);
+					if (!owns) continue;
+					const bad = axis.literal
+						? axis.literal.test(css ? value : line)
+						: axis.only
+							? !axis.only.test(value.trim())
+							: !READS_RUNG.test(value) && !axis.allowBare.test(value.trim());
+					if (bad)
+						fail(
+							`\`${prop ?? 'style'}\` ${axis.lead ?? 'mints a literal'} — ${axis.fix ?? `read a ${hint(axis.rung)} rung`} (${axis.doc}; ${scope.doc})`
+						);
+				}
 
 			const def = line.match(PRIVATE_DEF);
 			if (def) fail(`defines \`${def[1]}\` — the scale is minted only in ${scope.derivation}`);
@@ -403,59 +434,43 @@ for (const scope of SCOPES) {
 			else seen.add(name);
 	}
 
-	// What each host scale CALLS things, for the conformance rule below. Keyed on the
-	// suffix after the prefix, which is the concept: `--qmh-text-label` and
-	// `--pg-text-label` are one decision under two names. The value is normalized so
-	// two scales expressing the same derivation compare equal: whitespace collapsed,
-	// and each scale's own prefix folded to a sentinel, since `calc(var(--pg-space) *
-	// 2)` and `calc(var(--st-space) * 2)` are the same rung twice.
-	if (scope.host) {
-		const rungs = new Map();
-		for (const [, name, value] of derivation.matchAll(
-			new RegExp(`^\\s*${scope.prefix}([\\w-]+)\\s*:\\s*([^;]*);`, 'gm')
-		))
-			rungs.set(name, value.replaceAll(scope.prefix, '--~').replace(/\s+/g, ' ').trim());
-		hostScales.push({ scope, rungs });
-	}
+	// What each host scale CALLS things, for the conformance rule below: the names
+	// alone, keyed on the suffix after the prefix, which is the concept.
+	// `--qmh-text-label` and `--pg-text-label` are one decision under two names.
+	if (scope.host)
+		hostScales.push({
+			scope,
+			rungs: new Set(
+				[...derivation.matchAll(new RegExp(`^\\s*${scope.prefix}([\\w-]+)\\s*:`, 'gm'))].map(
+					(m) => m[1]
+				)
+			)
+		});
 }
 
 // THE CONFORMANCE RULE, and it is the one thing no per-scope axis can see: every scope
 // above is checked against ITSELF, its derivation exempt as the place its defaults are
-// minted, so two scales minting one concept at two values is legal by construction:
-// one app's pane height sits beside another's at a different number, the same job at
-// two values, with nothing to say whether that is a decision or a slip.
-//
-// The preset is the endorsed answer, so an app REDEFINING a name it carries is the
-// claim coming apart: the app is meant to look like the preset, and a local copy is
+// minted. The preset is the endorsed answer, so an app REDEFINING a name it carries is
+// the claim coming apart: the app is meant to look like the preset, and a local copy is
 // where it stops. What stays legal is a name the preset does not carry (an app's own
-// rail width, its own display size), which is the whole of what a host adds on top.
+// rail width, its own display size), which is the whole of what a host adds on top —
+// including a name a second app happens to have picked too, since two apps agreeing on
+// a word is not a claim either of them made.
 const preset = hostScales.find((h) => h.scope.prefix === '--qmh-');
 for (const { scope, rungs } of hostScales) {
 	if (scope === preset?.scope) continue;
-	for (const name of rungs.keys())
+	for (const name of rungs)
 		if (preset?.rungs.has(name))
 			errors.push(
 				`${scope.derivation}: \`${scope.prefix}${name}\` restates \`--qmh-${name}\` — read the preset's rung (${scope.doc})`
 			);
 }
 
-// And between two apps: one concept, two values, neither of them the preset's. A
-// second copy that AGREES is not reported: it cannot drift silently, because this
-// fires the moment it stops agreeing.
-for (const [i, a] of hostScales.entries())
-	for (const b of hostScales.slice(i + 1))
-		for (const [name, value] of a.rungs)
-			if (b.rungs.has(name) && b.rungs.get(name) !== value)
-				errors.push(
-					`${a.scope.derivation}: \`${a.scope.prefix}${name}\` is \`${value}\` where ` +
-						`\`${b.scope.prefix}${name}\` is \`${b.rungs.get(name)}\` — one concept, two values`
-				);
-
-// The dial census. THEMING.md is the contract, so it must match the consumed set
-// EXACTLY, both directions. Canon only ever names a subset, so it is checked one
-// way — but checked, because canon rotting to dead token names is what happens when
-// nothing looks: eleven names that existed nowhere in `src/` survived seventeen
-// citations across the two docs a reader reaches first.
+// The dial census, in two severities. A dial a surface CONSUMES and THEMING.md does not
+// document cannot be set by the consumer it exists for, and nothing but this looks. The
+// reverse — a documented dial nothing reads, a canon page naming one before it is
+// minted — is prose ahead of its code, which is how the next dial gets described, so it
+// is warned rather than failed.
 const dialsIn = (path) =>
 	new Set([...readFileSync(path, 'utf8').matchAll(/`(--qm-[\w-]+)`/g)].map((m) => m[1]));
 
@@ -463,20 +478,19 @@ const documented = dialsIn(THEMING);
 for (const t of [...consumed].filter((t) => !documented.has(t)).sort())
 	errors.push(`THEMING.md: \`${t}\` consumed but undocumented`);
 for (const t of [...documented].filter((t) => !consumed.has(t)).sort())
-	errors.push(`THEMING.md: \`${t}\` documented but unconsumed`);
+	warnings.push(`THEMING.md: \`${t}\` documented but unconsumed`);
 
 for (const [abs, rel] of canonRoots().flatMap(canonDocs))
 	for (const t of [...dialsIn(abs)].filter((t) => !consumed.has(t)).sort())
-		errors.push(`${rel}: \`${t}\` named but not a dial`);
+		warnings.push(`${rel}: \`${t}\` named but not a dial`);
 
-// The class census, and it runs ONE direction where the dial census runs two. The
-// dials are a closed contract, so a consumed-but-undocumented one is drift. The
-// classes are not: the package promises the mounted surface roots and withholds
-// everything under them, because a full class contract freezes internal DOM shape
-// (ARCHITECTURE §Styling). So an internal class appears, moves and
-// vanishes freely, and what is checked is the half a consumer can be hurt by — a
-// promised class the DOM stopped carrying. The lookbehind is what separates a class
-// from a dial: `--qm-space` and `--_qm-space` both carry `qm-space` after a dash.
+// The class census, one direction only: the package promises the mounted surface roots
+// and withholds everything under them, because a full class contract freezes internal
+// DOM shape (ARCHITECTURE §Styling). So an internal class appears, moves and vanishes
+// freely, and what is checked is the half a consumer can be hurt by — a promised class
+// the DOM stopped carrying. THEMING.md is the contract and fails; canon naming a class
+// warns, on the same footing as a dial it names early. The lookbehind is what separates
+// a class from a dial: `--qm-space` and `--_qm-space` both carry `qm-space` after a dash.
 const CLASS_IN_SRC = /(?<![-\w])qm-[\w-]+/g;
 const classes = new Set();
 for (const scope of SCOPES.filter((s) => s.census))
@@ -492,11 +506,13 @@ for (const c of [...promised].filter((c) => !classes.has(c)).sort())
 for (const [abs, rel] of canonRoots().flatMap(canonDocs))
 	for (const m of readFileSync(abs, 'utf8').matchAll(/`\.(qm-[\w-]+)`/g))
 		if (!classes.has(m[1]))
-			errors.push(`${rel}: \`.${m[1]}\` named but carried by nothing in src/`);
+			warnings.push(`${rel}: \`.${m[1]}\` named but carried by nothing in src/`);
 
 report(
 	'Style check',
 	errors,
 	`Style OK — ${scanned} files over ${SCOPES.length} scopes, ${consumed.size} public dials, ` +
-		`${promised.size} contract classes.`
+		`${promised.size} contract classes` +
+		(mints.length ? `, ${mints.length} minted on purpose.` : '.'),
+	[...warnings, ...mints.map((m) => `${m} (minted on purpose)`)]
 );

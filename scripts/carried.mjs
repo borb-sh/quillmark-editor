@@ -1,16 +1,12 @@
-// The three versions a quillkit bundle carries, read off the resolved manifests and each
-// qualified against its own release tag. A browser resolves nothing, so the siblings are
-// compiled in and their coordinate is for diagnosis rather than resolution; a bare version
-// is a claim that the bytes are the released ones, and the qualified forms are what keep
-// that claim honest.
+// The three versions a quillkit bundle carries, read off the resolved manifests. A
+// browser resolves nothing, so the siblings are compiled in and their coordinate is for
+// diagnosis rather than resolution: what a consumer holding a tarball nobody can `npm ls`
+// needs in a bug report is which copies are in there.
 //
-//   0.1.0                    released, and nothing under its shipped paths has moved since
-//   0.1.0+3.a1b2c3d          three commits past its tag, at that HEAD
-//   0.0.0+untagged.a1b2c3d   no tag this checkout can measure against
-//   0.1.0+nogit              built outside a git checkout, so nothing is measurable
-//
-// Every form is valid semver build metadata. `@quillmark/wasm` is bare always: it is
-// external, root `overrides` pins it to one version, and its manifest is the authority.
+// The version as its manifest states it, for all three. Whether a checkout sits ahead of
+// the tag that version names is a question about a working tree, and a published tarball
+// is not one — `release.yml` builds from the merge commit it tags, so the manifest and the
+// bytes agree by construction.
 //
 // Two callers. quillkit's `vite.config.ts` defines `__CARRIED__` and writes
 // `dist/client/carried.json` beside the bundle: the define lets a running client name
@@ -18,7 +14,6 @@
 // anything. `release-prepare.yml` runs `--line` into the promoted changelog section, which
 // `release.yml` lifts into the Release notes verbatim.
 
-import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
@@ -26,54 +21,11 @@ import { pathToFileURL } from 'node:url';
 import { ROOT } from './workspace.mjs';
 
 /** The siblings compiled into the client, by workspace directory. `@quillmark/wasm` is not
- *  one of them: it is external, and stamped off its own manifest. */
+ *  one of them: it is external, and read off its own resolved manifest. */
 const SIBLINGS = [
 	{ dir: 'svelte', name: '@quillmark/svelte' },
 	{ dir: 'quiver', name: '@quillmark/quiver' }
 ];
-
-/** A sibling's shipped paths as a git pathspec: everything under the package minus what
- *  provably does not reach a bundle. The exclusions are named rather than the inclusions,
- *  so a build-config file outside `src` counts and a directory nobody has ruled on counts
- *  too. */
-function shipped(dir) {
-	const at = `packages/${dir}`;
-	return [
-		at,
-		...['prose', 'tests', 'README.md', 'CHANGELOG.md'].map((p) => `:(exclude)${at}/${p}`)
-	];
-}
-
-/** `git` in `root`, or `undefined` where it cannot answer. */
-function git(root, ...args) {
-	try {
-		return execFileSync('git', args, {
-			cwd: root,
-			encoding: 'utf8',
-			stdio: ['ignore', 'pipe', 'ignore']
-		}).trim();
-	} catch {
-		return undefined;
-	}
-}
-
-/** One sibling's stamp: its manifest version, qualified against `<dir>-v<x.y.z>`, the tag
- *  shape `release.yml` writes. */
-function stamp(root, dir, version) {
-	const head = git(root, 'rev-parse', '--short', 'HEAD');
-	if (head === undefined) return `${version}+nogit`;
-
-	const tags = git(root, 'tag', '-l', `${dir}-v*`, '--sort=-v:refname') ?? '';
-	const tag = tags.split('\n').find((t) => new RegExp(`^${dir}-v\\d+\\.\\d+\\.\\d+$`).test(t));
-	// The distance rather than the tag decides the stamp, so a tag this checkout holds a
-	// name for but cannot walk to reads the same as no tag: neither measures anything.
-	const ahead =
-		tag === undefined
-			? undefined
-			: git(root, 'rev-list', '--count', `${tag}..HEAD`, '--', ...shipped(dir));
-	if (ahead === undefined) return `${version}+untagged.${head}`;
-	return ahead === '0' ? version : `${version}+${ahead}.${head}`;
-}
 
 const versionAt = (manifest) => JSON.parse(readFileSync(manifest, 'utf8')).version;
 
@@ -81,7 +33,7 @@ const versionAt = (manifest) => JSON.parse(readFileSync(manifest, 'utf8')).versi
 export function carried(root = ROOT) {
 	const out = {};
 	for (const { dir, name } of SIBLINGS)
-		out[name] = stamp(root, dir, versionAt(join(root, 'packages', dir, 'package.json')));
+		out[name] = versionAt(join(root, 'packages', dir, 'package.json'));
 
 	// The resolved copy rather than a declared range: the bundle takes one. The package
 	// exports only `.`, so the manifest is reached beside the entry rather than as a
