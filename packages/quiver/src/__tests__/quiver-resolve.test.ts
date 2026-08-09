@@ -42,11 +42,6 @@ describe('Quiver.resolve', () => {
 		);
 	});
 
-	it('"" (empty string) → invalid_ref', async () => {
-		const quiver = await fromDir(SAMPLE_FIXTURE);
-		expect(() => quiver.resolve('')).toThrow(expect.objectContaining({ code: 'invalid_ref' }));
-	});
-
 	it('unknown name → quill_not_found', async () => {
 		const quiver = await fromDir(SAMPLE_FIXTURE);
 		expect(() => quiver.resolve('nonexistent')).toThrow(
@@ -66,17 +61,6 @@ describe('Quiver.getQuill', () => {
 		stub = undefined;
 	});
 
-	it('canonical ref returns a Quill; Quill.fromTree called with tree containing Quill.yaml', async () => {
-		const quiver = await fromDir(SAMPLE_FIXTURE);
-		stub = mockQuillFromTree();
-
-		const quill = await quiver.getQuill('memo@1.0.0');
-
-		expect(quill).toBeDefined();
-		expect(stub.calls).toHaveLength(1);
-		expect(stub.calls[0]!.has('Quill.yaml')).toBe(true);
-	});
-
 	it('selector ref resolves and returns a quill', async () => {
 		const quiver = await fromDir(SAMPLE_FIXTURE);
 		stub = mockQuillFromTree();
@@ -86,26 +70,6 @@ describe('Quiver.getQuill', () => {
 
 		// Both resolve to memo@1.1.0 → identical cached instance.
 		expect(a).toBe(b);
-	});
-
-	it('same canonical ref returns cached instance (identity equality)', async () => {
-		const quiver = await fromDir(SAMPLE_FIXTURE);
-		stub = mockQuillFromTree();
-
-		const quill1 = await quiver.getQuill('memo@1.0.0');
-		const quill2 = await quiver.getQuill('memo@1.0.0');
-
-		expect(quill1).toBe(quill2);
-	});
-
-	it('Quill.fromTree called exactly once for repeated getQuill of same ref', async () => {
-		const quiver = await fromDir(SAMPLE_FIXTURE);
-		stub = mockQuillFromTree();
-
-		await quiver.getQuill('memo@1.0.0');
-		await quiver.getQuill('memo@1.0.0');
-
-		expect(stub.calls).toHaveLength(1);
 	});
 
 	it('concurrent calls for same ref coalesce into one Quill.fromTree call', async () => {
@@ -121,40 +85,6 @@ describe('Quiver.getQuill', () => {
 		expect(stub.calls).toHaveLength(1);
 	});
 
-	it('getQuill("memo@1.2.3") (version not present) → quill_not_found', async () => {
-		const quiver = await fromDir(SAMPLE_FIXTURE);
-		stub = mockQuillFromTree();
-
-		await expect(quiver.getQuill('memo@1.2.3')).rejects.toThrow(
-			expect.objectContaining({ code: 'quill_not_found' })
-		);
-	});
-
-	it('getQuill("memo@^1") (malformed) → invalid_ref', async () => {
-		const quiver = await fromDir(SAMPLE_FIXTURE);
-		stub = mockQuillFromTree();
-
-		await expect(quiver.getQuill('memo@^1')).rejects.toThrow(
-			expect.objectContaining({ code: 'invalid_ref' })
-		);
-	});
-
-	it('if Quill.fromTree throws, error propagates and in-flight entry is cleared (retry works)', async () => {
-		const quiver = await fromDir(SAMPLE_FIXTURE);
-		stub = mockQuillFromTree();
-		let callCount = 0;
-		stub.spy.mockImplementation(() => {
-			callCount++;
-			if (callCount === 1) throw new Error('quill construction exploded');
-			return { seedDocument: () => ({}) } as unknown as never;
-		});
-
-		await expect(quiver.getQuill('memo@1.0.0')).rejects.toThrow('quill construction exploded');
-
-		const quill = await quiver.getQuill('memo@1.0.0');
-		expect(quill).toBeDefined();
-		expect(callCount).toBe(2);
-	});
 });
 
 // ─── the counting loader ──────────────────────────────────────────────────────

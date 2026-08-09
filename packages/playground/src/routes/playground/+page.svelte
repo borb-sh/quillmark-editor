@@ -102,7 +102,7 @@
 			const change = session.update(docHandle);
 			lastChange = change;
 			previewRef?.refresh(change);
-			syncDiagnostics(); // re-read live warnings each compile, merged with the stand-ins
+			syncDiagnostics();
 		} catch (e) {
 			// A failed recompile keeps the last-good preview (the session is
 			// transactional); surface it without crashing the shell.

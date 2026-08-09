@@ -102,9 +102,9 @@ describe('overlay: what draws', () => {
 		).filter((f): f is string => f != null);
 
 	// `fieldBoxes` is span-bearing-content-only, so enumerating `regions()` and asking
-	// it for the rects drew boxes for the content half of the compile and nothing for
-	// the rest. The fallback is runtime.d.ts's own sentence: such a field's box is a
-	// single `regions()` rect.
+	// it for the rects covers the content half of the compile and nothing else. The
+	// fallback is runtime.d.ts's own sentence: such a field's box is a single
+	// `regions()` rect.
 	it('draws every address regions() names, unioned or raw', () => {
 		const slots = mockSlots();
 		const overlay = createOverlay(mockSession(), slots);

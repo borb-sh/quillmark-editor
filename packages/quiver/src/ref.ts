@@ -3,7 +3,7 @@ import { QuiverError } from './errors.js';
 /** Internal parsed representation of a quill reference. */
 export interface ParsedQuillRef {
 	name: string;
-	/** Undefined = "highest in first-winning quiver". */
+	/** Undefined selects the highest version present. */
 	selector?: string;
 	/** Selector part count: 1 = `x`, 2 = `x.y`, 3 = `x.y.z` (exact). */
 	selectorDepth?: 1 | 2 | 3;
@@ -25,12 +25,10 @@ export function parseQuillRef(ref: string): ParsedQuillRef {
 	const atIndex = ref.indexOf('@');
 
 	if (atIndex === 0) {
-		// Starts with @, no name
 		throw new QuiverError('invalid_ref', `Invalid ref: missing name in "${ref}"`, { ref });
 	}
 
 	if (atIndex === -1) {
-		// No selector — just a name
 		const name = ref;
 		if (!NAME_RE.test(name)) {
 			throw new QuiverError(
@@ -42,7 +40,6 @@ export function parseQuillRef(ref: string): ParsedQuillRef {
 		return { name };
 	}
 
-	// Has @
 	const name = ref.slice(0, atIndex);
 	const selector = ref.slice(atIndex + 1);
 

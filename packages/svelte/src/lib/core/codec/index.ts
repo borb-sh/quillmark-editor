@@ -35,12 +35,9 @@ export { blockSchema, inlineSchema } from './schema.js';
 
 // Decode / encode / positions (tests + VisualEditor).
 //
-// THE BARREL CARRIES WHAT HAS AN OFF-BARREL CALLER, and nothing else. The mark
-// algebra, the island bridge, the schema predicate, the `diff*` helpers,
-// `scanDoc`, `codePoints`: every one of them is reached by RELATIVE import
-// within `codec/`, so none of them is here. An export nothing imports is surface
-// that still has to stay honest; a symbol earns its line when a caller outside
-// this folder wants it.
+// THE BARREL CARRIES WHAT HAS AN OFF-BARREL CALLER, and nothing else. A symbol
+// reached only by relative import within `codec/` stays off it: an export nothing
+// imports is surface that still has to stay honest.
 export { decode, renderContent, usvLength } from './decode.js';
 export { pmToContent, contentEdit, lower } from './encode.js';
 export type { ContentEdit } from './encode.js';

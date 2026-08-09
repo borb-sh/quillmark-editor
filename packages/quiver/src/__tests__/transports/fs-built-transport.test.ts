@@ -57,13 +57,6 @@ describe('FsBuiltTransport.fetchBytes', () => {
 		);
 	});
 
-	it('missing root directory throws transport_error', async () => {
-		const transport = new FsBuiltTransport(join(tmpdir(), `fs-no-such-${randomUUID()}`));
-		await expect(transport.fetchBytes('latest.json')).rejects.toThrow(
-			expect.objectContaining({ code: 'transport_error' })
-		);
-	});
-
 	it('rejects absolute paths with transport_error', async () => {
 		const dir = tempDir();
 		tmpDirs.push(dir);

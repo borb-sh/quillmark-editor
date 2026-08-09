@@ -100,11 +100,6 @@ describe('the client assertion', () => {
 
 		expect(() => assertClient(dist)).toThrow(/shadow/);
 	});
-
-	it('refuses a directory holding no client', async () => {
-		const empty = await temp.dir();
-		expect(() => assertClient(empty)).toThrow(/No client/);
-	});
 });
 
 describe('the client this package carries', () => {

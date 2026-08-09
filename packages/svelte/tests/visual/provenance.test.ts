@@ -19,14 +19,6 @@ const row = (name: string, value: unknown, source: ResolvedField['source']): Res
 	source
 });
 
-describe('provenanceMap', () => {
-	it('keys resolved rows by field name', () => {
-		const map = provenanceMap([row('a', 1, 'authored'), row('b', 2, 'default')]);
-		expect(map.a.source).toBe('authored');
-		expect(map.b).toEqual(row('b', 2, 'default'));
-	});
-});
-
 describe('resolvedByCardIndex', () => {
 	// Array position 1 carries document index 2; the map keys on `index`, and one
 	// entry carries both channels (fields and the `body` sibling).

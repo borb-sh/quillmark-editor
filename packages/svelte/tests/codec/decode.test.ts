@@ -1,5 +1,5 @@
-// Criteria 2, 4 (overlap), 5, 6; decode idempotence up to normalization,
-// overlapping-mark inline splits, island round-trip, inline/plaintext constraints.
+// Decode: idempotence up to normalization, overlapping-mark inline splits, island
+// round-trip, and the inline/plaintext constraints.
 import { describe, it, expect } from 'vitest';
 import { decode, pmToContent, blockSchema, inlineSchema } from '$lib/core/codec';
 import type { Content } from '@quillmark/wasm';

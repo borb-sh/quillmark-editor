@@ -4,9 +4,8 @@
  * from the main entry, unmodified. Importing this module installs nothing, so
  * the import path is the whole contract and a bundler drops what is not called.
  *
- * Bundler note: this entry pulls in `./source-loader.js`, `./build.js`, and
- * `./transports/fs-built-transport.js`, all of which statically import `node:*`
- * builtins. Browser bundles must never reach it. The main entry (`./index.js`)
+ * The modules behind these factories statically import `node:*` builtins, so a
+ * browser bundle must never reach this entry. The main entry (`./index.js`)
  * makes no static or dynamic reference to it.
  */
 

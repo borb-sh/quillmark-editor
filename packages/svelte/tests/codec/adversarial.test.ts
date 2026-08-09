@@ -1,9 +1,7 @@
-// Independent adversarial validation of the codec (NOT the implementing agent's
-// tests). Targets the seam CODEC.md flags as highest-risk: USV↔UTF-16 drift (an
-// astral char is 1 USV but 2 UTF-16 units) surviving a REAL Document's
-// applyChange; so a miscounted offset surfaces as wrong STORED text, not just a
-// unit-test artifact. That end-to-end route is what these add; the position map's
-// own inverse is positions.test.ts, over a strictly wider corpus.
+// USV↔UTF-16 drift (an astral char is 1 USV but 2 UTF-16 units) carried through a REAL
+// Document's `applyChange`, so a miscounted offset surfaces as wrong STORED text rather
+// than as a unit-test artifact. That end-to-end route is what these add; the position
+// map's own inverse is positions.test.ts, over a strictly wider corpus.
 import { describe, it, expect } from 'vitest';
 import { init, type Content, type ContentMark } from '@quillmark/wasm';
 import { contentEdit, lower } from '$lib/core/codec';

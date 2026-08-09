@@ -2,8 +2,8 @@
 // NumberField / DateField / BooleanField / EnumField). Each seeds a local from a
 // projection of its `value` prop and reconciles ONLY an external change back into
 // the local: own edits stay `untrack`ed, so typing never re-runs the sync and
-// resets the caret. The five controls carried a character-identical block; this
-// is the one copy (VISUAL_EDITOR §Surface).
+// resets the caret. One copy for all five, rather than a character-identical block
+// in each (VISUAL_EDITOR §Surface).
 import { untrack } from 'svelte';
 
 /** A settable local synced to an external projection. Bind `.value` in the

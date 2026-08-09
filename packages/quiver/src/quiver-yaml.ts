@@ -1,9 +1,7 @@
 /**
- * Internal parser/validator for Quiver.yaml files.
- *
- * Uses the `yaml` npm package for robust YAML parsing. Quiver.yaml has a
- * simple two-field schema (name, description), but using a proper YAML parser
- * ensures correct handling of quoting, escaping, and multi-line strings.
+ * Internal parser/validator for Quiver.yaml: two fields, `name` and
+ * `description`, strict about everything else. Parsed through the `yaml`
+ * package, so quoting, escaping and multi-line strings behave as YAML.
  */
 
 import { parse as parseYaml } from 'yaml';
@@ -51,7 +49,6 @@ export function parseQuiverYaml(raw: string | Uint8Array): QuiverMeta {
 
 	const doc = parsed as Record<string, unknown>;
 
-	// Check for unknown fields (strict mode)
 	for (const key of Object.keys(doc)) {
 		if (!KNOWN_FIELDS.has(key)) {
 			throw new QuiverError(
@@ -61,7 +58,6 @@ export function parseQuiverYaml(raw: string | Uint8Array): QuiverMeta {
 		}
 	}
 
-	// Validate `name`
 	if (!('name' in doc)) {
 		throw new QuiverError('quiver_invalid', `Quiver.yaml: required field "name" is missing`);
 	}
@@ -82,7 +78,6 @@ export function parseQuiverYaml(raw: string | Uint8Array): QuiverMeta {
 		);
 	}
 
-	// Validate optional `description`
 	if ('description' in doc && doc['description'] !== undefined) {
 		if (typeof doc['description'] !== 'string') {
 			throw new QuiverError(

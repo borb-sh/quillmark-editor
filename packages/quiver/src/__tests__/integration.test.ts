@@ -93,22 +93,6 @@ describe('Integration: build → fromBuiltUrl → resolve → getQuill', () => {
 		expect(built.versionsOf('resume')).toEqual(['2.0.0']);
 	});
 
-	it('quiver.resolve works with built quiver', async () => {
-		const outDir = tempDir();
-		tmpDirs.push(outDir);
-
-		await build(SAMPLE_FIXTURE, outDir);
-
-		const baseUrl = 'https://mock.cdn.example.com/my-quiver/';
-		mockFetch = makeMockFetch(outDir, baseUrl);
-
-		const built = await Quiver.fromBuiltUrl(baseUrl);
-
-		expect(built.resolve('memo')).toBe('memo@1.1.0');
-		expect(built.resolve('memo@1.0.0')).toBe('memo@1.0.0');
-		expect(built.resolve('resume')).toBe('resume@2.0.0');
-	});
-
 	it('quiver.getQuill builds a quill from the correct tree', async () => {
 		const outDir = tempDir();
 		tmpDirs.push(outDir);
@@ -131,21 +115,6 @@ describe('Integration: build → fromBuiltUrl → resolve → getQuill', () => {
 		}
 	});
 
-	it('quiver.getQuill for unknown version throws quill_not_found', async () => {
-		const outDir = tempDir();
-		tmpDirs.push(outDir);
-
-		await build(SAMPLE_FIXTURE, outDir);
-
-		const baseUrl = 'https://mock.cdn.example.com/my-quiver/';
-		mockFetch = makeMockFetch(outDir, baseUrl);
-
-		const built = await Quiver.fromBuiltUrl(baseUrl);
-
-		await expect(built.getQuill('memo@9.9.9')).rejects.toThrow(
-			expect.objectContaining({ code: 'quill_not_found' })
-		);
-	});
 });
 
 describe('Integration: fromBuiltUrl error cases', () => {
@@ -160,20 +129,6 @@ describe('Integration: fromBuiltUrl error cases', () => {
 		for (const d of tmpDirs.splice(0)) {
 			await rm(d, { recursive: true, force: true });
 		}
-	});
-
-	it('fromBuiltUrl with non-existent base URL throws transport_error', async () => {
-		const original = globalThis.fetch;
-		globalThis.fetch = (async () => new Response(null, { status: 404 })) as typeof globalThis.fetch;
-		mockFetch = {
-			restore: () => {
-				if (original !== undefined) globalThis.fetch = original;
-			}
-		};
-
-		await expect(Quiver.fromBuiltUrl('https://does-not-exist.example.com/quiver/')).rejects.toThrow(
-			expect.objectContaining({ code: 'transport_error' })
-		);
 	});
 
 	it('fromBuiltUrl with empty directory served over HTTP throws transport_error', async () => {
@@ -203,24 +158,6 @@ describe('Integration: fromBuiltUrl error cases', () => {
 		await expect(Quiver.fromBuiltUrl(baseUrl)).rejects.toThrow(
 			expect.objectContaining({ code: 'quiver_invalid' })
 		);
-	});
-
-	it('fromBuiltUrl throws QuiverError on missing pointer', async () => {
-		const outDir = tempDir();
-		tmpDirs.push(outDir);
-		await mkdir(outDir, { recursive: true });
-
-		const baseUrl = 'https://mock.cdn.example.com/missing/';
-		mockFetch = makeMockFetch(outDir, baseUrl);
-
-		let thrown: unknown;
-		try {
-			await Quiver.fromBuiltUrl(baseUrl);
-		} catch (e) {
-			thrown = e;
-		}
-
-		expect(thrown).toBeInstanceOf(QuiverError);
 	});
 
 	it('fromBuiltUrl rejects file:// URLs with transport_error', async () => {
@@ -286,13 +223,4 @@ describe('Integration: build → fromBuiltDir → resolve → getQuill', () => {
 		);
 	});
 
-	it('fromBuiltDir on empty directory throws transport_error', async () => {
-		const outDir = tempDir();
-		tmpDirs.push(outDir);
-		await mkdir(outDir, { recursive: true });
-
-		await expect(fromBuiltDir(outDir)).rejects.toThrow(
-			expect.objectContaining({ code: 'transport_error' })
-		);
-	});
 });

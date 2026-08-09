@@ -4,10 +4,10 @@
  and portals into the nearest `[data-qm-root]` like every
  other floating surface, so a consumer's dials still reach it.
 
- It replaces the native `title` tooltip, which reached no dial, waited ~1s, could
- not be dismissed, and (the part that made it a hole rather than a blemish)
- DOES NOT EXIST ON TOUCH. Guidance the reference quill puts on nearly every field
- was, on a tablet, reachable only through a screen reader.
+ Not the native `title` tooltip: that reaches no dial, waits ~1s, cannot be
+ dismissed, and (the part that makes it a hole rather than a blemish) DOES NOT EXIST
+ ON TOUCH, which leaves guidance the reference quill puts on nearly every field
+ reachable on a tablet only through a screen reader.
 
  Floating rather than inline under the label: the reference quill's descriptions run
  to a median of ~110 characters and past 250 at the tail: permanently in flow that
@@ -22,7 +22,7 @@
 
  Three ways in, one per input modality: hover (pointer), focus (keyboard), tap
  (touch); wired here rather than taken from `Tooltip`, whose trigger returns early
- on `pointerType === 'touch'` and closes on click (the exact gap being fixed).
+ on `pointerType === 'touch'` and closes on click.
 -->
 <script lang="ts">
 	import { Popover } from 'bits-ui';
@@ -116,8 +116,8 @@
 	onblur={() => (open = false)}
 	onkeydown={(e) => {
 		if (e.key === 'Escape' && open) {
-			// Dismissable, which the `title` tooltip never was. Stopped here so the
-			// key does not travel on to a card- or editor-level Escape.
+			// Stopped here so the key does not travel on to a card- or editor-level
+			// Escape.
 			e.stopPropagation();
 			open = false;
 		}

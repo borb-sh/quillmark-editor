@@ -4,7 +4,7 @@
   paint.ts/overlay.ts/bridge.ts/controller.ts own the behavior. Exposes the
   `PreviewController` verbs as instance methods (`bind:this`) for a consumer
   that drives `refresh`/`scrollToField`/`focusPosition`/`setZoom` imperatively
-  (e.g. after `session.apply` elsewhere); pure passthrough, no added logic.
+  (e.g. after `session.apply` elsewhere).
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';

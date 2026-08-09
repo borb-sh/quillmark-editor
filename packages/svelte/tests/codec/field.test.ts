@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
-// Criterion 8 (standalone leaf) + criterion 7 (field-level reconcile). A
-// createField over a REAL usaf_memo `subject` (inline) and body edits via
-// applyChange; the caret survives own-edits through the PM StepMap; an external
-// content change re-hydrates and the leaf's own edit does not.
+// The standalone prose leaf: a `createField` over a REAL usaf_memo `subject` (inline)
+// and body edits via applyChange; the caret survives own-edits through the PM StepMap;
+// an external content change re-hydrates and the leaf's own edit does not.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { EditorView } from 'prosemirror-view';
 import { createField, blockSchema, pmToContent } from '$lib/core/codec';
@@ -115,10 +114,10 @@ describe('field-level reconciliation', () => {
 });
 
 describe('plaintext fields mount no markdown input rules', () => {
-	// `inlineSchema` still declares the mark types, so before the fix a `**x**`
-	// input rule would fire in a plaintext field, applying a strong mark and eating
-	// the literal delimiters. The rule is triggered the way a keystroke does; via
-	// `handleTextInput` with the char that completes the pattern.
+	// `inlineSchema` still declares the mark types, so a `**x**` rule reaching a
+	// plaintext field would apply a strong mark AND eat the delimiters its author is
+	// entitled to. The rule is triggered the way a keystroke does: via `handleTextInput`
+	// with the char that completes the pattern.
 	function fireClosingStar(view: EditorView): unknown {
 		const pos = view.state.selection.head;
 		// `handleTextInput(view, from, to, text, deflt)`; the input-rules plugin

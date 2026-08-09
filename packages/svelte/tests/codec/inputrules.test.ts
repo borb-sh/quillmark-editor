@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-// Behavioral input-rule coverage, which is the only kind there is: counting the
-// mounted rules proves nothing, a rule that fires at the wrong position still being
-// one rule (edges.test.ts states the same). Typing is simulated the way the browser
-// drives it: per-char through `handleTextInput` (the inputrules plugin's entry),
-// falling back to a plain insert when no rule claims the char.
+// Behavioral input-rule coverage, which is the only kind there is: counting the mounted
+// rules proves nothing, a rule that fires at the wrong position still being one rule.
+// Typing is simulated the way the browser drives it: per-char through `handleTextInput`
+// (the inputrules plugin's entry), falling back to a plain insert when no rule claims
+// the char.
 import { describe, it, expect } from 'vitest';
 import { EditorState, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';

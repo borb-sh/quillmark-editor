@@ -31,7 +31,7 @@ describe('substrate chain', () => {
 		expect(await engine.supportsCanvas(quill)).toBe(true);
 
 		const session = await engine.open(quill, doc);
-		// The exit criteria's three reported quantities.
+		// The three quantities a session reports.
 		expect(session.pageCount).toBeGreaterThan(0);
 		expect(session.supportsCanvas).toBe(true);
 		expect(Array.isArray(session.warnings)).toBe(true);

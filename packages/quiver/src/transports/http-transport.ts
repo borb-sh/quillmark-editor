@@ -12,12 +12,10 @@ export class HttpTransport implements BuiltTransport {
 	private readonly baseUrl: string;
 
 	constructor(baseUrl: string) {
-		// Normalize: ensure exactly one trailing slash.
 		this.baseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
 	}
 
 	async fetchBytes(relativePath: string, opts?: FetchOptions): Promise<Uint8Array> {
-		// Strip any leading slash from relativePath to avoid double slashes.
 		const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
 
 		const url = `${this.baseUrl}${cleanPath}`;

@@ -7,8 +7,7 @@
  A property's ghosted `default:` is the static schema `sub.default`, not the
  resolved provenance the top-level ghosts read (FIELD_PROVENANCE): `resolve`
  carries no per-property row (an object field resolves as one row whose value is
- the whole object). Thread it through `ghostDefault` once resolve exposes
- per-property provenance.
+ the whole object).
 -->
 <script lang="ts">
 	import type { QuillFieldSchema } from '@quillmark/wasm';

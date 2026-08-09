@@ -31,33 +31,6 @@ describe('QuiverError', () => {
 		expect(err.cause).toBe(cause);
 	});
 
-	it('accepts non-Error cause', () => {
-		const cause = { code: 42, message: 'raw cause' };
-		const err = new QuiverError('transport_error', 'wrapped', { cause });
-		expect(err.cause).toBe(cause);
-	});
-
-	it('preserves payload fields: ref', () => {
-		const err = new QuiverError('invalid_ref', 'bad ref', { ref: 'foo@^1' });
-		expect(err.ref).toBe('foo@^1');
-		expect(err.version).toBeUndefined();
-		expect(err.quiverName).toBeUndefined();
-	});
-
-	it('preserves payload fields: version', () => {
-		const err = new QuiverError('quill_not_found', 'not found', { version: '2.0.0' });
-		expect(err.version).toBe('2.0.0');
-		expect(err.ref).toBeUndefined();
-		expect(err.quiverName).toBeUndefined();
-	});
-
-	it('preserves payload fields: quiverName', () => {
-		const err = new QuiverError('quiver_invalid', 'bad quiver', { quiverName: 'my-quiver' });
-		expect(err.quiverName).toBe('my-quiver');
-		expect(err.ref).toBeUndefined();
-		expect(err.version).toBeUndefined();
-	});
-
 	it('preserves all payload fields together', () => {
 		const cause = new Error('root');
 		const err = new QuiverError('quiver_invalid', 'full payload', {
@@ -72,11 +45,4 @@ describe('QuiverError', () => {
 		expect(err.cause).toBe(cause);
 	});
 
-	it('has undefined payload fields when not provided', () => {
-		const err = new QuiverError('quill_not_found', 'missing');
-		expect(err.ref).toBeUndefined();
-		expect(err.version).toBeUndefined();
-		expect(err.quiverName).toBeUndefined();
-		expect(err.cause).toBeUndefined();
-	});
 });

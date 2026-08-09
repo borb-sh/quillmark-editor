@@ -496,9 +496,7 @@
 	}
 
 	// ── Diagnostics routing (VISUAL_EDITOR §Diagnostics) ────────────────────────
-	// Producer #1: quill.validate(doc), re-run every revision (empirically always
-	// `[]` for usaf_memo (no field in the fixture carries a `!must_fill` marker)
-	// but the routing exists for the general contract, not just this fixture).
+	// Producer #1: quill.validate(doc), re-run every revision.
 	const validation = $derived.by(() => {
 		revision; // re-run on every mutation, per VISUAL_EDITOR §Diagnostics
 		try {

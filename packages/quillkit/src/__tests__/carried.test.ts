@@ -13,7 +13,7 @@ import { mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
-import { carried, line } from '../../../../scripts/carried.mjs';
+import { carried } from '../../../../scripts/carried.mjs';
 import { scratch } from './helpers/collection.js';
 
 const WORKSPACE = fileURLToPath(new URL('../../../..', import.meta.url));
@@ -59,12 +59,6 @@ describe('carried', () => {
 		);
 
 		expect(carried(at)['@quillmark/wasm']).toBe(wasm.version);
-	});
-
-	it('renders one sentence naming all three', () => {
-		expect(line({ '@quillmark/svelte': '0.1.0', '@quillmark/wasm': '0.102.0' })).toBe(
-			'Carries `@quillmark/svelte` 0.1.0, `@quillmark/wasm` 0.102.0.'
-		);
 	});
 });
 

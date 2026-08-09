@@ -29,7 +29,7 @@ interface BuiltManifest {
 	quills: BuiltQuillEntry[];
 }
 
-// ─── Public interface (internal to the package) ───────────────────────────────
+// ─── The transport seam ───────────────────────────────────────────────────────
 
 /**
  * Transport abstraction: fetch raw bytes by relative path within the packed
@@ -121,7 +121,6 @@ class BuiltLoader implements QuiverLoader {
 		// so every ref reaching here has an entry.
 		const entry = this.index.get(`${name}@${version}`)!;
 
-		// 1. Fetch + unpack bundle zip.
 		const zipBytes = await fetchVerified(
 			this.transport,
 			entry.bundle,
@@ -129,7 +128,6 @@ class BuiltLoader implements QuiverLoader {
 		);
 		const files = unpackFiles(zipBytes);
 
-		// 2. Rehydrate fonts from store (coalesced).
 		const fontEntries = Object.entries(entry.fonts);
 		await Promise.all(
 			fontEntries.map(async ([path, hash]) => {
@@ -137,7 +135,6 @@ class BuiltLoader implements QuiverLoader {
 			})
 		);
 
-		// 3. Convert to Map.
 		return new Map(Object.entries(files));
 	}
 
@@ -337,17 +334,10 @@ function catalogOf(index: Map<string, BuiltQuillEntry>): Map<string, string[]> {
 
 // ─── Main entry point ─────────────────────────────────────────────────────────
 
-/**
- * Load a build-output quiver via the given transport.
- *
- * 1. Fetches latest.json (pointer) and parses it.
- * 2. Fetches the manifest file it points to and validates it.
- * 3. Builds a catalog from manifest entries (versions sorted descending).
- * 4. Returns a Quiver instance backed by a BuiltLoader.
- */
+/** Load a build-output quiver via the given transport. */
 export async function loadBuiltQuiver(transport: BuiltTransport): Promise<Quiver> {
-	// 1. Fetch and parse pointer. It is the one name that is not
-	//    content-addressed, so it is also the one fetch that must revalidate.
+	// The pointer is the one name that is not content-addressed, so it is also the
+	// one fetch that must revalidate.
 	let pointerBytes: Uint8Array;
 	try {
 		pointerBytes = await transport.fetchBytes('latest.json', { revalidate: true });
@@ -367,7 +357,6 @@ export async function loadBuiltQuiver(transport: BuiltTransport): Promise<Quiver
 		'Pointer manifest filename'
 	);
 
-	// 2. Fetch and parse manifest.
 	let manifestBytes: Uint8Array;
 	try {
 		manifestBytes = await fetchVerified(transport, manifestFileName, manifestDigest);
@@ -380,7 +369,6 @@ export async function loadBuiltQuiver(transport: BuiltTransport): Promise<Quiver
 		);
 	}
 
-	// 3–4. Validate manifest + assemble catalog/loader.
 	const manifest = parseManifest(new TextDecoder().decode(manifestBytes));
 
 	const index = new Map<string, BuiltQuillEntry>();
