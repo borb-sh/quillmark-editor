@@ -104,7 +104,7 @@
 	   The DESK as well as the paper: a sheet is at `--_qm-surface` (paint.ts), so the
 	   tone behind it is the SUNKEN rung and the gutter is the margin the sheet floats
 	   in. Paper is the brighter plane at both poles, exactly as a card is over the
-	   editor's own column, so the two panes read as one material seen twice. Both are
+	   editor's own column, so the two panes step the same way. Both are
 	   the surface's own, so a bare `<div>` is a mounting site. The
 	   padding is safe against the paint loop: a slot is a `width: 100%` child and
 	   measures the CONTENT box, and the container's own `clientWidth` is read only as

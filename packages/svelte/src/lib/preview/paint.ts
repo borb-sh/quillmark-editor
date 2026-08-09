@@ -71,11 +71,10 @@ export function createPaintLoop(
 		// The sheet is a PLANE and the desk is the one under it: paper sits at
 		// `--_qm-surface` and the container paints `--_qm-surface-sunken`, so the
 		// edge is where two tones meet and no stroke is drawn around it
-		// (ARCHITECTURE §Styling). That holds at both poles, which is what an edge
-		// on the paper could not do at one width, and it leaves the overlay's
-		// no-ink-at-rest rule untouched, since a boundary that is not painted is
-		// not a mark on the page (PREVIEW §Overlay). `border-box` stays: the slot
-		// carries no stroke today and `clientWidth` measures the paper either way.
+		// (ARCHITECTURE §Styling). It leaves the overlay's no-ink-at-rest rule
+		// untouched, since a boundary that is not painted is not a mark on the page
+		// (PREVIEW §Overlay). `border-box` costs nothing here and keeps a slot a
+		// consumer insets from measuring wider than its paper.
 		const el = document.createElement('div');
 		el.className = 'qm-page';
 		// The page's index, in the DOM. `pageByEl` is this module's and a consumer

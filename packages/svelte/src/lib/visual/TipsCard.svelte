@@ -104,15 +104,14 @@
 	 a warmth over the card's own surface, which together say draft rather than
 	 document. Both come off the tips rungs (`core/theme.css`), which are mixes over
 	 the surface and the ink the consumer already tuned, so the card cannot end up less
-	 legible than the editor around it. Not a badge and not an accent: `--_qm-accent`
-	 means focus and the status hues mean status, and guidance is none of those.
+	 legible than the editor around it.
 
 	 The top inset takes the tuck back, so the space above the tip is the space below
 	 the foot.
 
-	 The reading rungs, size and leading both: a tip is a passage that wraps, and it is
-	 read rather than scanned, so it takes the size the fields above it are read at
-	 rather than the label rung its muted tone would suggest. */
+	 The READING rungs, size and leading both: a tip is a passage that wraps, so it
+	 takes the size a field's value is read at rather than the label rung a line of
+	 chrome would take. */
 	.qm-tips {
 		margin-top: calc(var(--_qm-radius) * -1);
 		border-radius: 0 0 var(--_qm-radius) var(--_qm-radius);

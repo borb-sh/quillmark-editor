@@ -78,9 +78,9 @@ Declared before our sheet it fixes the order outright; declared after, `qm` is a
 
 ### The surface follows your colour scheme
 
-Ink and states step `fg → bg` and `bg → fg`, mixed in **oklab**, so inverting the two poles inverts the borders, the muted inks and the hover fill together.
+Ink steps `fg → bg` and the borders and hover fills step `bg → fg`, mixed in **oklab**, so inverting the two poles inverts all of them together.
 
-**Planes are the exception**, and deliberately: the raised plane is the brighter one in both schemes, which is what makes a card read as a card rather than as a differently-tinted page. So the column under the cards sinks from `--qm-bg` toward shadow and a floating surface rises from it toward light, and neither reads the ink pole. Setting a dark palette while your `color-scheme` still says light takes the light step with it — a sunken column two percent off its cards — which is the one case §"Make it yours" tells you to pin the scheme alongside the poles.
+**Planes are the exception**, and deliberately: the raised plane is the brighter one in both schemes, which is what makes a card read as a card rather than as a differently-tinted page. So the column under the cards sinks from `--qm-bg` toward shadow and a floating surface rises from it toward light, and neither reads the ink pole. Each direction takes a step sized to the scheme it is in, which is why pinning a dark palette while your `color-scheme` still says light leaves the column barely off its cards — the one case §"Make it yours" tells you to pin the scheme alongside the poles.
 
 Which way the poles default is **your `color-scheme`**, not the operating system's. Declare the scheme your app is in and the surface lands on it, along with native chrome, which reads the same property:
 

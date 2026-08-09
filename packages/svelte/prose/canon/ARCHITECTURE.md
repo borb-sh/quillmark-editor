@@ -41,7 +41,7 @@ Its routes, and the host scale they share, are [PLAYGROUND.md](../../../playgrou
 
 The package ships dense behavior over a thin skin: direct manipulation, the caret bridge and per-field state against a deliberately plain baseline (monochrome and typographic, hierarchy from size, tone and whitespace), so a consumer's override is the design rather than a fight with a decorated one.
 
-**Weight is not one of those axes.** The chrome names everything at one weight — a card title, a section header, a field label, a nested property — so a card reads as one register and the size ramp does the ranking. The second weight is not a rung of that ramp: it is the mark a run wears where weight is the only signal it has (a heading in a prose leaf, which the quill sets at no size step; a table island's header row; the stored value in a listbox). A surface reaching for it where a size or a tone could speak is the drift the split exists to stop.
+**Weight is not one of those axes.** The chrome names everything at one weight — a card title, a section header, a field label, a nested property — so a card reads as one register and the size ramp does the ranking. The second weight is not a rung of that ramp: it is the mark a run wears where weight is the only signal it has. A heading inside a prose leaf is the clearest case, since the quill sets what the paper prints and the leaf therefore draws every level at one size. A surface reaching for that weight where a size or a tone could speak is the drift the split exists to stop.
 
 Style lives in four places, and the split is what keeps a value single-sourced:
 

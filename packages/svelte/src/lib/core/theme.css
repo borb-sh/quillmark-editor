@@ -101,19 +101,21 @@
 
 		   PLANES ARE THE HALF THAT DOES NOT READ THE INK POLE, because what makes a
 		   card read as a card is that it is the BRIGHTER plane, in both schemes
-		   alike (ARCHITECTURE §Styling). Toward the ink is the wrong direction in
-		   one of them: it darkens a card below the page it floats on in light and
-		   lifts the page above the card in dark. So `sunken` mixes toward shadow
-		   and `raised` toward light, and the base plane — a card, the preview's
-		   paper — is the pole itself.
+		   alike (ARCHITECTURE §Styling). A plane stepped toward the ink is right in
+		   dark and inverted in light, where it darkens the card below the page it
+		   floats on. So `sunken` mixes toward shadow and `raised` toward light, and
+		   the base plane — a card, the preview's paper — is the pole itself.
 
-		   `sunken` is the ONE rung with two arms, and the asymmetry is the geometry
-		   of the mix rather than a preference: mixing toward black scales
-		   lightness, so a fixed percentage is a fixed RATIO and not a fixed step.
-		   Both arms travel ~0.04 of oklab L at the poles above, which is the step
-		   these two percentages exist to hold. Pinning a dark palette under a light
-		   `color-scheme` takes the light arm with it (THEMING §"The surface follows
-		   your colour scheme"), so a host that pins declares the scheme with it.
+		   `sunken` is the ONE rung with two arms, and one percentage cannot serve
+		   both: mixing toward black SCALES lightness, so a fixed percentage is a
+		   fixed ratio and the same number travels four times as far from white as
+		   it does from a dark card. Each arm is therefore tuned to the plane it
+		   sinks from, and they do not travel the same distance — 0.04 of oklab L in
+		   light and 0.055 in dark, because a dark surface has to give up more of
+		   what little it has before the card above it reads as lifted. Pinning a
+		   dark palette under a light `color-scheme` takes the LIGHT arm with it
+		   (THEMING §"The surface follows your colour scheme"), which is a step you
+		   can barely see, so a host that pins declares the scheme with it.
 
 		   `raised` is a no-op at the light pole, where the card is already white
 		   and there is nowhere further to go, so a floating surface separates on
@@ -121,7 +123,7 @@
 		--_qm-surface: var(--_qm-bg);
 		--_qm-surface-sunken: light-dark(
 			color-mix(in oklab, var(--_qm-bg), #000 4%),
-			color-mix(in oklab, var(--_qm-bg), #000 15%)
+			color-mix(in oklab, var(--_qm-bg), #000 20%)
 		);
 		--_qm-surface-raised: color-mix(in oklab, var(--_qm-bg), #fff 8%);
 		--_qm-surface-hover: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 8%);
@@ -141,15 +143,12 @@
 		   over the preview's paper while the paper rests clean. */
 		--_qm-accent-wash: color-mix(in oklab, var(--_qm-accent) 18%, transparent);
 
-		/* THE TIPS CARD'S HUE, and the one exit from the greyscale that is not a
-		   status. Guidance is neither an error nor a warning, so it takes neither of
-		   those hues; what it is instead is an artifact from a draft, which is what
-		   the amber and the typewriter face say together (`visual/TipsCard.svelte`).
-		   A literal rather than a dial, because there is nothing for a consumer to
-		   turn: every rung under it mixes over the surface and the ink already
-		   tuned, so the card tracks a brand untold, and the card renders at all
-		   only where a consumer seeded the channel. The mixes are faint on purpose:
-		   the tint is a warmth, not a badge. */
+		/* THE TIPS CARD'S HUE: the surface's one exit from the greyscale that is not
+		   a status, and what the amber and the typewriter face say together is
+		   draft (VISUAL_EDITOR §"Card operations"). A literal rather than a dial
+		   because there is nothing left to turn: the three rungs under it mix over
+		   the surface and the ink a consumer already tuned, so the card follows a
+		   brand untold. The mixes are faint on purpose: a warmth, not a badge. */
 		--_qm-tips: #e88c0a;
 		--_qm-tips-surface: color-mix(in oklab, var(--_qm-surface), var(--_qm-tips) 4%);
 		--_qm-tips-ink: color-mix(in oklab, var(--_qm-ink), var(--_qm-tips) 24%);
@@ -281,15 +280,15 @@
 		   hierarchy stays the size ramp's, which is the axis that can carry it.
 		   500 rather than 600 because the family dial resolves to the PLATFORM UI
 		   face, whose 600 is heavier at the same number than the webfont a surface
-		   is usually drawn against: at the label rung it goes smudgy, and three
-		   sizes of it down a card read as three weights of bold.
+		   is usually drawn against: at the label rung it goes smudgy, and one
+		   number across three sizes does not read as one weight.
 
 		   `strong` is not a rung of that ramp. It is the mark a run wears where
-		   weight is the ONLY signal it has, and it appears at three: a heading
-		   inside a prose leaf, drawn at no size step of its own because the quill
-		   sets the paper's; a table island's header row; the stored value in an
-		   enum listbox. Reaching for it anywhere a size or a tone could speak is
-		   the drift the split exists to stop. */
+		   weight is the ONLY signal it has: a heading inside a prose leaf, drawn at
+		   no size step of its own because the quill sets the paper's; a table
+		   island's header row; the stored value in an enum listbox. Reaching for it
+		   where a size or a tone could speak is the drift the split exists to
+		   stop. */
 		--_qm-weight-strong: 600;
 		--_qm-weight-mid: 500;
 		/* Leading: the ramp's third axis, and it does not track the sizes one for one:

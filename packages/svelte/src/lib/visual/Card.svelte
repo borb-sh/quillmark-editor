@@ -135,9 +135,9 @@
 		}
 	}
 
-	/** The section chevron, sized to the header's own line box rather than to the
-	 * card controls' glyph: this one sits IN a run of text and the pair beside the
-	 * title stands in a row of targets, so they answer to different things. */
+	/** The section chevron, and it is not `--_qm-glyph-control`: that rung centres a
+	 * glyph in a tap target, where this one stands in a run of text at the body rung
+	 * and is sized to sit level with it. */
 	const CHEVRON = 16;
 
 	// Group accordion. Ungrouped fields (`group == null`) render above,
@@ -470,10 +470,7 @@
 <style>
 	/* AN ISLAND, and the tone is the whole of what makes it one: the card is the
 	 base plane and the column behind it is the sunken one, so the edge is where two
-	 planes meet rather than a line drawn around one (ARCHITECTURE §Styling). It
-	 holds in both schemes, which is what a hairline could not do at one width: a
-	 stroke visible against white is a scar on a dark card, and one tuned for dark
-	 is invisible in light. */
+	 planes meet rather than a line drawn around one (ARCHITECTURE §Styling). */
 	.qm-card {
 		border-radius: var(--_qm-radius);
 		/* Uniform inset on every side: a body-shown and a

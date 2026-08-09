@@ -31,7 +31,7 @@
 	--qmh-surface: var(--qm-bg, Canvas);
 	--qmh-page: light-dark(
 		color-mix(in oklab, var(--qmh-surface), #000 4%),
-		color-mix(in oklab, var(--qmh-surface), #000 15%)
+		color-mix(in oklab, var(--qmh-surface), #000 20%)
 	);
 	--qmh-ink: var(--qm-fg, CanvasText);
 	--qmh-ink-meta: color-mix(in oklab, var(--qmh-ink), var(--qmh-surface) 45%);
