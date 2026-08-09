@@ -108,10 +108,8 @@
 		   than a surface rung of its own, because it is a stroke and reads against the
 		   surface behind it, not a fill stacked on one. */
 		--_qm-border-faint: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 9%);
-		/* Three inks, by what the text IS rather than by how far it recedes: the value a
-		   consumer authored, the chrome naming it, and a string standing where no value
-		   has been authored yet. A fourth step between `label` and `ghost` is a number
-		   without a fourth kind of text under it. */
+		/* A fourth step between `label` and `ghost` is a number with no fourth kind of
+		   text under it. */
 		--_qm-ink: var(--_qm-fg);
 		--_qm-ink-label: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 35%);
 		--_qm-ink-ghost: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 60%);
@@ -144,12 +142,11 @@
 		   only up to the point where it is assembled. ONE width: focus is the only
 		   state that draws a ring anywhere, so there is no held-back tier under it. */
 		--_qm-ring-width: 2px;
-		/* The whole stroke, assembled once: every ring the surface draws is this one,
-		   whether the state under it is focus or selection. Assembled here because the
-		   parts spelled out at a use site pass every axis — each reads a rung — while
-		   drawing a ring nothing else agrees with, which is the one drift the gate is
-		   built blind to. The width stays reachable on its own: a drop indicator is the
-		   ring's thickness without being a ring. */
+		/* Every ring the surface draws, whatever the state under it: focus and selection
+		   alike, which is why the name carries neither. Assembled here because the parts
+		   spelled out at a use site pass every axis — each reads a rung — while drawing a
+		   ring nothing else agrees with. The width stays separately reachable: a drop
+		   indicator is the ring's thickness without being a ring. */
 		--_qm-ring: var(--_qm-ring-width) solid var(--_qm-accent);
 		--_qm-ring-offset: 1px;
 
@@ -163,12 +160,10 @@
 		   animates over WAAPI and reads it from here. */
 		--_qm-bloom-dwell: 1100ms;
 
-		/* ONE curve, and it is symmetric because an interruption turns these trips
-		   around: a hover leaves before it arrives, a card collapses mid-expand. A
-		   one-way pair (decelerate in, accelerate out) is the other shape a scale like
-		   this carries, and nothing here is a one-way trip — the popover's pop is the
-		   nearest, and at `fast` its curve is under the threshold where the two read
-		   apart. A second curve is minted when a trip long enough to see one arrives. */
+		/* ONE curve, symmetric because an interruption turns these trips around: a hover
+		   leaves before it arrives, a card collapses mid-expand. The one-way pair a scale
+		   like this often carries is minted when a trip long enough to read one arrives;
+		   the popover's pop is the nearest and at `fast` it is under that threshold. */
 		--_qm-ease-reverse: cubic-bezier(0.4, 0, 0.6, 1);
 
 		/* ── Geometry ──────────────────────────────────────────────────────────*/
@@ -183,8 +178,7 @@
 		--_qm-radius: var(--qm-radius, 8px);
 		/* The INTERIOR corner, and HALF is the relationship rather than the number: a
 		   corner inside a corner reads as nested only while it is visibly tighter, and
-		   halving holds that at every setting of the dial, zero included — a square brand
-		   is square through the interior instead of square outside and rounded within. */
+		   halving holds that at every setting of the dial, zero included. */
 		--_qm-radius-inner: calc(var(--_qm-radius) / 2);
 		/* A fully-rounded end cap: a shape tier, not a step on the radius ramp, so
 		   it does not derive from the dial: a pill stays a pill at any radius. */
@@ -194,13 +188,12 @@
 		--_qm-space-2: calc(var(--_qm-space) * 2);
 		--_qm-space-3: calc(var(--_qm-space) * 3);
 		--_qm-space-4: calc(var(--_qm-space) * 4);
-		/* What stands between a typed value's border and the value: `1×` down, `3×`
-		   across. A rung because the two axes are two decisions and the ladder alone
-		   cannot hold them together — `check:style`'s rhythm axis sees each box read a
-		   rung, never that they read the SAME one, which is the drift `visual/controls.css`
-		   already names for the type half. Asymmetric because they answer to different
-		   things: the vertical is what is left over once leading has taken the line box,
-		   and the horizontal is how far in the text starts, which nothing else fixes. */
+		/* A rung because the two axes are two decisions and the ladder alone cannot hold
+		   them together: `check:style`'s rhythm axis sees each box read a rung, never that
+		   they read the SAME one, which is the drift `visual/controls.css` already names
+		   for the type half. Asymmetric because the vertical is what leading leaves once
+		   it has taken the line box, and the horizontal is how far in the text starts,
+		   which nothing else fixes. */
 		--_qm-inset-control: var(--_qm-space) var(--_qm-space-3);
 		/* The scroll TAIL: dead space under the last card, so it can be read at the
 		   middle of a pane rather than at its bottom edge. A fraction of the VIEWPORT
@@ -228,24 +221,23 @@
 		   `--qm-font-size` anchors the CHROME rung; 1.125 is the ratio between adjacent
 		   rungs: a step up (title) and one down (label). The ratio and the
 		   weight are fixed conventions, not dials: no consumer tunes a typographic
-		   ratio, and a dial nobody turns is a name every reader still holds.
-		   THREE chrome rungs, because a second step below `label` lands near 11px,
-		   which is under a size any of this surface's text wants to be read at: a
-		   diagnostic, a hint and the tips foot are all supporting text, which is what
-		   `label` already is. */
+		   ratio, and a dial nobody turns is a name every reader still holds. THREE chrome
+		   rungs: a second step below `label` lands near 11px, under a size anything here
+		   wants to be read at, and the supporting text that would take it is what `label`
+		   already is. */
 		--_qm-text-body: var(--qm-font-size, 0.875rem);
 		--_qm-text-title: calc(var(--_qm-text-body) * 1.125);
 		--_qm-text-label: calc(var(--_qm-text-body) / 1.125);
-		/* PAPER: the document body, which answers to the paper in the preview where every
-		   other surface here answers to the control beside it. A rung of its own because
-		   one shared with the chrome makes a consumer asking for larger prose take larger
-		   inputs with it. 16/15 where the ramp steps at 9/8: small enough to read as a
-		   change of REGISTER rather than as a rung of hierarchy, and clear of the title
-		   rung at every dial setting, which one 9/8 step would land on exactly. */
+		/* PAPER: the document body answers to the preview's paper where every other
+		   surface here answers to the control beside it, so a rung shared with the chrome
+		   makes a consumer asking for larger prose take larger inputs with it. 16/15 where
+		   the ramp steps at 9/8: small enough to read as a change of REGISTER rather than
+		   a rung of hierarchy, and clear of the title rung, which one 9/8 step lands on
+		   exactly. */
 		--_qm-text-paper: calc(var(--_qm-text-body) * 16 / 15);
-		/* ONE weight over the surface's regular: every heading here — a field's label, a
-		   card's title, an object's — is the same kind of thing, a name over the value
-		   under it, so a second weight is a rung with no register beneath it. */
+		/* ONE weight over the regular: every heading here is a name over the value under
+		   it, so a second is a rung with no register beneath it. Hierarchy is the size
+		   ramp's. */
 		--_qm-weight-label: 600;
 		/* Leading: the ramp's third axis, and it does not track the sizes one for one:
 		   two rungs, because a wrapped label and a wrapped paragraph want different

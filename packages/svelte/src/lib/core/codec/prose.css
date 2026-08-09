@@ -96,14 +96,11 @@ li.ProseMirror-selectednode::after {
    `--_qm-surface-raised` and the only rung over it is `--_qm-surface-hover`, the
    hover lane, so a chip at rest would read as a hovered button.
 
-   The withheld properties are DECLARED at their zero rather than left off, which is
-   what makes the paragraph above true of a MOUNTED leaf. A chip on these two tags —
-   an inset, a muted fill, a corner, a step down — is an ordinary page-stylesheet rule,
-   and it reaches the leaf through the tag: left off, these are the two tags in the
-   schema the host draws rather than the surface, and the leaf renders the chip this
-   file argues against because the page around it said so. The other marks are ink,
-   weight and decoration, which the leaf sets or safely inherits, so the box is this
-   mark's alone and the zeros are not a reset.
+   The withheld properties are DECLARED at their zero, which is what makes the
+   paragraph above true of a MOUNTED leaf: a chip on these tags is an ordinary page
+   rule, so left off, these are the two tags the host draws rather than the surface.
+   The other marks are ink, weight and decoration, which the leaf sets or safely
+   inherits, so the box is this mark's alone and the zeros are not a reset.
 
    BOTH tags, where the face alone needs only one: a `code_block` renders `pre > code`
    (`schema.ts`), so every character is inside a `code` element and the face reaches it

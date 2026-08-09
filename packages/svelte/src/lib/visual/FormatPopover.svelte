@@ -385,10 +385,8 @@
 		gap: var(--_qm-space);
 		align-items: center;
 	}
-	/* A typed value on a floating surface: it draws `.qm-input`'s recipe by hand rather
-	   than carrying the class, because it takes none of the width the form control
-	   adds. The inset is the shared rung, so a URL sits as far into its box here as a
-	   subject line does in the card below. */
+	/* The box's recipe without `.qm-input`, which adds the `width: 100%` that would
+	   stretch this to the popover. */
 	.qm-link-input {
 		font: inherit;
 		font-size: var(--_qm-text-body);
