@@ -659,15 +659,20 @@ class TableIslandView implements NodeView {
 	}
 
 	/**
-	 * What Backspace means over the selection, decided by its EXTENT.
+	 * What Backspace means over the selection, decided by its EXTENT. Every selected
+	 * cell goes ONE of two ways, and there is no third: it is removed with its whole
+	 * rank, or it is emptied where it stands. A cell is never removed on its own — a
+	 * rectangle with a hole in it is not a table.
 	 *
-	 * A rectangle spanning every row is a set of COLUMNS and deletes them; one spanning
-	 * every column is a set of ROWS and deletes those. Anything else is a block of cells
-	 * and is CLEARED — including the rectangle that spans both, which is the whole
-	 * table: the model keeps a header that is not a row and floors the rectangle at one
-	 * column, so "remove every line" has no reading it can honour and emptying is the
-	 * one left. That is the rule the last column has always answered to, now falling out
-	 * of the extent instead of standing beside it.
+	 * A rectangle spanning every row covers whole COLUMNS and deletes them; one spanning
+	 * every column covers whole ROWS and deletes those; anything else covers no rank at
+	 * all and is CLEARED. The rectangle spanning BOTH is the whole table, which is not a
+	 * rank deletion at all — a rank deletion leaves a table with fewer ranks — so it
+	 * clears too, and deleting the table itself stays the island selection's.
+	 *
+	 * A rank the model REFUSES falls back to the clear, never to nothing: the header is
+	 * in `header` rather than in `rows`, so a wide selection reaching row 0 deletes the
+	 * body rows under it and empties the header's own cells.
 	 */
 	private deleteSelection(): void {
 		const held = this.selected;
@@ -682,24 +687,25 @@ class TableIslandView implements NodeView {
 	}
 
 	/** Drop the body rows the selection covers, high index first so the ones still to go
-	 *  keep their indices. One `write`, so the whole gesture is one undo step. */
+	 *  keep their indices, and empty the header's cells if the selection reached them:
+	 *  `header: []` is not a table, so that rank cannot go and its cells are cleared
+	 *  instead. One `write`, so the whole gesture is one undo step. */
 	private dropRows(held: Cells): void {
 		const from = Math.max(1, held.r0);
-		if (from > held.r1) {
-			// The header alone: `header: []` is not a table, so the gesture empties it.
-			this.write(clearCells(this.props(), 0, held.c0, 0, held.c1));
-			return this.select(held);
-		}
 		let props = this.props();
+		if (held.r0 === 0) props = clearCells(props, 0, held.c0, 0, held.c1);
 		for (let r = held.r1; r >= from; r--) props = deleteRow(props, r);
 		this.write(props);
+		// A header-only selection deleted nothing, so it still names what it named.
+		if (held.r1 < from) return this.select(held);
 		const rows = rowCount(this.props());
 		if (rows > 1) this.selectLine({ axis: 'row', index: Math.max(1, Math.min(from, rows - 1)) });
 		else this.clearSelection();
 	}
 
 	/** Drop the columns the selection covers. It never covers them all — that is the
-	 *  clear case above — so the rectangle's floor of one is never reached here. */
+	 *  clear case above — so the rectangle's floor of one is never reached here, and
+	 *  every selected cell leaves with its column. */
 	private dropColumns(held: Cells): void {
 		let props = this.props();
 		for (let c = held.c1; c >= held.c0; c--) props = deleteColumn(props, c);

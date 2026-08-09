@@ -614,6 +614,23 @@ describe('a selection is a rectangle of cells, and Backspace reads its extent', 
 		field.destroy();
 	});
 
+	it('every selected cell goes with its rank or is cleared, and never a third way', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		// The header AND the first body row, across every column: the body row's rank
+		// goes, and the header's — which is `header`, not a member of `rows` — cannot, so
+		// its cells are emptied where they stand. A cell left holding its old text would
+		// be the third outcome this rule exists to forbid.
+		sweep(field, 0, 3);
+		expect(washed(field)).toEqual(['0,0', '0,1', '1,0', '1,1']);
+		press(cellViews(field)[0], 'Backspace');
+		expect(grid(leafProps(field))).toEqual([
+			['', ''],
+			['b1', 'b2']
+		]);
+		field.destroy();
+	});
+
 	it('the header row alone CLEARS: `header: []` is not a table', () => {
 		const { field } = tableLeaf(LETTERED);
 		layout(field);
