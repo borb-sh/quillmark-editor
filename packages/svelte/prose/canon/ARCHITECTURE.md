@@ -39,7 +39,9 @@ Its routes, and the host scale they share, are [PLAYGROUND.md](../../../playgrou
 
 ## Styling
 
-The package ships dense behavior over a thin skin: direct manipulation, the caret bridge and per-field state against a deliberately plain baseline (monochrome and typographic, hierarchy from weight and whitespace), so a consumer's override is the design rather than a fight with a decorated one.
+The package ships dense behavior over a thin skin: direct manipulation, the caret bridge and per-field state against a deliberately plain baseline (monochrome and typographic, hierarchy from size, tone and whitespace), so a consumer's override is the design rather than a fight with a decorated one.
+
+**Weight is not one of those axes.** The chrome names everything at one weight — a card title, a section header, a field label, a nested property — so a card reads as one register and the size ramp does the ranking. The second weight is not a rung of that ramp: it is the mark a run wears where weight is the only signal it has. A heading inside a prose leaf is the clearest case, since the quill sets what the paper prints and the leaf therefore draws every level at one size. A surface reaching for that weight where a size or a tone could speak is the drift the split exists to stop.
 
 Style lives in four places, and the split is what keeps a value single-sourced:
 
@@ -49,6 +51,20 @@ Style lives in four places, and the split is what keeps a value single-sourced:
 - **A component's own scoped `<style>`** is everything else.
 
 The rule spanning all three: **a component reads a rung, it does not mint a value.** `scripts/check-style.mjs` holds it across spacing, stroke, type, colour, opacity and motion, over the package's scope and each app's alike. Which rung a given element reads is the stylesheet's to state, and it states it there.
+
+### A plane is a tone, not an outline
+
+**A surface in the flow is separated from what it sits on by its FILL, and never by a line drawn around it.** The card, the field well, the tips slip and the preview's sheet each read as a plane because the plane beneath them is a different tone; none of them draws an edge. Elevation is that tone plus, where the thing floats, a hairline — never a shadow, which states a light source the poles do not carry and which `check:style` forbids outright.
+
+The direction is fixed and it is the reason planes are the one axis that does not read the ink pole: **the raised plane is the brighter one, in both schemes**. Toward the ink is right in exactly one of them, so a card built that way is darker than its column in light and lighter in dark, and only one of those reads as an island. `--_qm-surface` is therefore the base plane and the `--qm-bg` pole itself — the card, the sheet — with `--_qm-surface-raised` over it and two planes under it: `--_qm-surface-sunken` is the ground a card floats on (the column, the desk), and `--_qm-surface-well` is the hole cut into it (a field, a table's header band). The well is the deeper of the two at the light pole, because the ground only has to lift the plane above it while the well has to read as a hole with no edge; at the dark pole a card has so little light left to give up that the two land within a channel of each other.
+
+Three kinds of stroke survive, and each says something a fill cannot:
+
+- **A stroke that structures**: the metadata bracket, a subform's rule, a blockquote's, a table's frame and its interior divisions, an `hr`. These draw a FIGURE — a relationship between blocks — where a fill would draw a box.
+- **A stroke on something floating**: a menu, a popover, the table island's alignment cluster. There is no plane under them to step off, since what they hang over is content they did not choose, so the edge is the whole of the separation and the raised rung is what carries it in dark.
+- **A stroke that IS a state**: the dashed edge on an un-schemable card. It reads because an ordinary card has none.
+
+The cost of a redundant line is paid per instance and lands hardest where the surface is densest: a card of ten fields drawing ten more rectangles is ten statements of a thing the tone already made, and every one of them competes with the bracket, which the card draws on purpose.
 
 Two consequences reach past CSS. Motion durations and curves are rungs like any other, so `prefers-reduced-motion` collapses the **scale** in the derivation rather than a roster of selectors, and the two scripts that animate over WAAPI read their rung off the element rather than forking the number. And a surface hidden by geometry is `inert`, not merely unpainted: clipping answers the eye alone, where the attribute takes the subtree out of the tab order, hit-testing and the accessibility tree at once.
 

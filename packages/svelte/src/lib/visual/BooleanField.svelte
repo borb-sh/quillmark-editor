@@ -61,15 +61,17 @@
 		width: 1.75rem;
 		height: 1rem;
 		padding: var(--_qm-space-half);
-		border: var(--_qm-border-width) solid var(--_qm-border);
+		border: none;
 		border-radius: var(--_qm-radius-pill);
+		/* The track is a fill and nothing else: an edge around it would be a second
+		 statement of a shape the tone already draws, and the checked state swaps that
+		 one fill for the accent (ARCHITECTURE §Styling). */
 		background: var(--_qm-surface-hover);
 		cursor: pointer;
 		transition: background var(--_qm-duration-fast) var(--_qm-ease-reverse);
 	}
 	.qm-switch-wrap :global(.qm-switch[data-state='checked']) {
 		background: var(--_qm-accent);
-		border-color: var(--_qm-accent);
 	}
 	/* The focus ring rides `.qm-focus-ring` on the switch (controls.css). */
 	/* The thumb reads on tone alone: the base surface over the track's `hover` rung

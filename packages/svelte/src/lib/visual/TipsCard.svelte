@@ -96,42 +96,55 @@
 <style>
 	/* ATTACHED to `main`, not a block beside it: a square top pulled up by the radius,
 	 so its background fills the notches `main`'s rounded bottom corners cut and `main`
-	 paints over the rest. The seam is `main`'s own bottom hairline, and the two read as
-	 one block, which is what document-level guidance is: the main card's, not a card of
-	 its own. Still in-flow, one hairline, no lift, no fill beyond the card recipe. It
-	 reads as guidance rather than as a field by TONE and TYPE: the label rung in the
-	 muted label colour; not by a badge or an accent. It mints no token of its own;
-	 every value here is an existing dial.
+	 paints over the rest. The two read as one block, which is what document-level
+	 guidance is: the main card's, not a card of its own. Still in-flow, no edge, no
+	 lift.
+
+	 A TYPEWRITTEN SLIP, and that is the whole of the treatment: the monospace face and
+	 a warmth over the card's own surface, which together say draft rather than
+	 document. Both come off the tips rungs (`core/theme.css`), which are mixes over
+	 the surface and the ink the consumer already tuned, so the card cannot end up less
+	 legible than the editor around it.
 
 	 The top inset takes the tuck back, so the space above the tip is the space below
 	 the foot.
 
-	 Leading is the reading rung, not the tight one the label SIZE would suggest: a
-	 tip is a passage that wraps, and the two axes are independent. */
+	 The READING rungs, size and leading both: a tip is a passage that wraps, so it
+	 takes the size a field's value is read at rather than the label rung a line of
+	 chrome would take. */
 	.qm-tips {
 		margin-top: calc(var(--_qm-radius) * -1);
-		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: 0 0 var(--_qm-radius) var(--_qm-radius);
 		padding: calc(var(--_qm-space-3) + var(--_qm-radius)) var(--_qm-space-3) var(--_qm-space-3);
-		background: var(--_qm-surface-raised);
+		background: var(--_qm-tips-surface);
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
-		font-size: var(--_qm-text-label);
+		font-family: var(--_qm-font-mono);
+		font-size: var(--_qm-text-body);
 		line-height: var(--_qm-leading-body);
-		color: var(--_qm-ink-label);
+		color: var(--_qm-tips-ink);
 	}
 	/* The rendered tip is injected DOM (the codec's `toDOM` output), so its element
-	 styles are `:global`: the compiler never sees these tags in the markup. Three
-	 rules restated from `core/codec/prose.css`, which is where they are argued and
-	 which cannot reach here: its selectors are scoped to `.ProseMirror` and a tip is
-	 not a view. The one deliberate divergence is the link, which takes no underline:
-	 a tip is not editable, so a hidden `href` costs its reader nothing. */
+	 styles are `:global`: the compiler never sees these tags in the markup. Restated
+	 from `core/codec/prose.css`, which is where they are argued and which cannot reach
+	 here: its selectors are scoped to `.ProseMirror` and a tip is not a view. Two
+	 deliberate divergences, and both follow from the card being READ rather than
+	 edited: the link takes no underline, since a hidden `href` costs its reader
+	 nothing; and `code` takes a CHIP where a leaf gives it a face, since the face is
+	 already the card's own and a token like `- ` has nothing else to set it apart.
+	 `pre-wrap` is what keeps the significant space inside such a token: collapsed, the
+	 chip closes on the word after it. */
 	.qm-tips-body :global(p) {
 		margin: 0;
 	}
 	.qm-tips-body :global(code) {
-		font-family: var(--_qm-font-mono);
+		font-family: inherit;
+		font-size: inherit;
+		white-space: pre-wrap;
+		padding: 0 var(--_qm-space-half);
+		border-radius: var(--_qm-radius-inner);
+		background: var(--_qm-tips-chip);
 	}
 	.qm-tips-body :global(a) {
 		color: inherit;
@@ -182,10 +195,12 @@
 		opacity: 1;
 	}
 	/* Box and disabled state come from `.qm-icon-btn` (controls.css); the foot's
-	   button carries a label and so widens its inset and takes the meta type rung. */
+	   button carries a label, so it widens its inset and stays on the card's own type
+	   and ink rather than the family's body rung and the callers' own colours. */
 	.qm-tips-action {
 		padding: var(--_qm-space-half) var(--_qm-space-2);
-		font-size: var(--_qm-text-label);
-		color: var(--_qm-ink-label);
+		font-family: inherit;
+		font-size: inherit;
+		color: inherit;
 	}
 </style>

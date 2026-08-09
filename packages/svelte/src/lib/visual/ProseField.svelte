@@ -157,6 +157,7 @@
 	bind:this={containerEl}
 	class="qm-prose"
 	class:qm-control-box={!unframed}
+	class:qm-focus-ring-within={!unframed}
 	class:qm-prose-block={block}
 	data-leaf-key={leafKey}
 ></div>
@@ -191,20 +192,15 @@
 	.qm-prose-block:not(.qm-control-box) {
 		font-size: var(--_qm-text-paper);
 	}
-	/* The caret is the prose leaf's focus indicator, not a ring: a ring around a
-	 contenteditable reads as form chrome rather than as paper. So the outline is
-	 dropped; a boxed leaf tints its wrapper border below. */
+	/* The caret is the BODY's focus indicator, not a ring: a ring around the one
+	 surface in a card that is paper reads as form chrome. So the contenteditable's
+	 own outline is dropped everywhere, and a boxed leaf takes the shared ring on
+	 its wrapper instead (`qm-focus-ring-within`, controls.css) — the same cue the
+	 input beside it draws, on the leaf that is a control in a row of controls.
+	 The body keeps nothing: it is one surface per card and the largest in it, so
+	 "which leaf am I in" is not a question it raises. */
 	.qm-prose :global(.ProseMirror) {
 		outline: none;
-	}
-	/* Active-leaf cue: tint the hairline to the focus hue, shared with the scalar
-	 ring and the preview active box: no added box (the editor↔preview address).
-	 Scoped to the leaves that HAVE a hairline: the body has none, and the caret is
-	 the whole indicator there: one surface per card, and the largest in it, so
-	 "which leaf am I in" is not a question it raises. A rule drawn to answer it
-	 would be a stroke bought back to replace the one unframing removed. */
-	.qm-prose.qm-control-box:focus-within {
-		border-color: var(--_qm-accent);
 	}
 	/* Empty-leaf ghost: the resolved `default:` as dim/italic ghost,
 	   matching the scalar ghost rung. Rendered from a node decoration's data attr so

@@ -48,13 +48,27 @@ li.ProseMirror-selectednode::after {
 
 /* One rhythm between sibling blocks, in place of the UA's collapsed pair. Scoped by
    PARENT rather than by tag, which is what keeps it true as the schema grows: the
-   four containers below are every node whose content is `block+` (`schema.ts`), so
+   containers below are every node whose content is `block+` (`schema.ts`), so
    their children are blocks by definition, whatever kinds exist. `ul`/`ol` are
    deliberately absent: a run of list items is tight, and the gap before a list is
-   the list's, not each item's. */
+   the list's, not each item's.
+
+   AN ITEM IS THE EXCEPTION TO ITS OWN CONTAINER. A list nested under an item is
+   part of the run that omission already keeps tight — `a. …` under `1. …` is the
+   next line of one list, not a new block after a paragraph — so an item's children
+   take the gap only up to the point where one of them is a list. Written as its own
+   arm rather than as a `:not()` over the shared one, because the exception is the
+   ITEM's: a list after a paragraph inside a blockquote is an ordinary sibling pair
+   and keeps the gap.
+
+   A line box is ~22px at the paper size and the body leading, so the rung is a
+   little over half a line: enough that a break reads as a break, short of the full
+   blank line that doubles the leading and makes a short document read as a list of
+   fragments. */
 .ProseMirror > * + *,
-.ProseMirror :is(blockquote, li, [data-qm-unknown-container]) > * + * {
-	margin-top: var(--_qm-space-4);
+.ProseMirror :is(blockquote, [data-qm-unknown-container]) > * + *,
+.ProseMirror li > * + :not(ul, ol) {
+	margin-top: var(--_qm-space-3);
 }
 
 /* A blockquote's UA indent was its only mark, and the reset above takes it. The rule
@@ -92,9 +106,9 @@ li.ProseMirror-selectednode::after {
 /* Code is a FACE: no chip, no fill, no inset, no size step. The blockquote above
    already argues the general form: a span reads as set apart without a fill or a
    second box, on the one surface in the card with no edge of its own. A chip has
-   nowhere to come from in any case: the card is
-   `--_qm-surface-raised` and the only rung over it is `--_qm-surface-hover`, the
-   hover lane, so a chip at rest would read as a hovered button.
+   nowhere to come from in any case: the body sits at `--_qm-surface` and the rungs
+   either side of it are the field well and the hover lane, so a chip at rest would
+   read as a hole in the paper or as a hovered button.
 
    The withheld properties are DECLARED at their zero, which is what makes the
    paragraph above true of a MOUNTED leaf: a chip on these tags is an ordinary page
@@ -169,7 +183,7 @@ li.ProseMirror-selectednode::after {
    minting five more is the drift the scale exists to prevent. */
 .ProseMirror :is(h1, h2, h3, h4, h5, h6) {
 	font-size: inherit;
-	font-weight: var(--_qm-weight-label);
+	font-weight: var(--_qm-weight-strong);
 }
 
 /* ── The table island ────────────────────────────────────────────────────────
@@ -195,8 +209,10 @@ li.ProseMirror-selectednode::after {
    `margin-top: 0` overrides the sibling-gap rule rather than going negative: the band
    ABSORBS the gap. A negative top margin would hang the band over the block above,
    and an `opacity: 0` control is still hit-tested, so it would take that block's last
-   presses. */
-.qm-table-island {
+   presses. The `.ProseMirror` qualifier is what makes the override hold wherever the
+   island lands: two of the gap rule's arms name a container, so a bare class loses to
+   them for an island inside a list item or a quote, both of which the schema admits. */
+.ProseMirror .qm-table-island {
 	margin-top: 0;
 	margin-left: calc(var(--_qm-space-3) * -1);
 }
@@ -241,11 +257,12 @@ li.ProseMirror-selectednode::after {
 }
 /* The header row is the ONE weight distinction the island draws: `header` is a
    separate field in the model rather than a flag on a row, so the surface says so.
-   It takes a tone with it, which is the same elevation move the cards make: a rung,
-   never a shadow. The rest of a table's type is paper's. */
+   It takes a tone with it, which is the same move a field makes: the WELL rung, a
+   band cut into the paper rather than a layer stacked on it, and a rung either way
+   rather than a shadow. The rest of a table's type is paper's. */
 .qm-table-header-row .qm-table-cell {
-	font-weight: var(--_qm-weight-label);
-	background: var(--_qm-surface-raised);
+	font-weight: var(--_qm-weight-strong);
+	background: var(--_qm-surface-well);
 	border-bottom: var(--_qm-border-width) solid var(--_qm-border);
 }
 /* A cell holds a whole nested view. Its measure floor keeps an empty table from

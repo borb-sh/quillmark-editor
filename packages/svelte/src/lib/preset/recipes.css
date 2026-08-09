@@ -253,10 +253,12 @@ pre.qm-readout {
 
 /* ── Surfaces ──────────────────────────────────────────────────────────────── */
 
-/* The instrument plate: what a host puts its controls and readouts on. One rung off the
-   page and a hairline, which is the same way a card steps off the base surface, so a
-   panel beside a mounted editor reads as the same material. `border-box`, so a height
-   from the caller is the height it draws. */
+/* The instrument plate: what a host puts its controls and readouts on. The same plane a
+   card is, so a panel beside a mounted editor reads as the same material. It keeps a
+   hairline where a card drops one: a card sits in a column the surface itself paints and
+   a plate sits wherever the host put it, which is the floating case's argument on a
+   block that happens to be in flow. `border-box`, so a height from the caller is the
+   height it draws. */
 .qm-panel {
 	box-sizing: border-box;
 	background: var(--qmh-surface);

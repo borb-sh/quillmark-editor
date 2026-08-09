@@ -135,6 +135,11 @@
 		}
 	}
 
+	/** The section chevron, and it is not `--_qm-glyph-control`: that rung centres a
+	 * glyph in a tap target, where this one stands in a run of text at the body rung
+	 * and is sized to sit level with it. */
+	const CHEVRON = 16;
+
 	// Group accordion. Ungrouped fields (`group == null`) render above,
 	// always visible; grouped sections collapse into a one-open-at-a-time accordion.
 	const ungrouped = $derived(card.sections.filter((s) => s.group == null));
@@ -320,7 +325,11 @@
 										aria-controls={panelId}
 										onclick={() => toggleGroup(group)}
 									>
-										<Icon name="chevron-right" class="qm-group-chevron" size={14} />{section.label}
+										<Icon
+											name="chevron-right"
+											class="qm-group-chevron"
+											size={CHEVRON}
+										/>{section.label}
 									</button>
 									<!-- `inert` is what makes closed mean CLOSED: the panel is clipped, not
 								     unmounted, so without it every field
@@ -348,8 +357,9 @@
 		 card is printed on, so a label restates it; and the accessible name
 		 survives on the leaf itself, so the region
 		 is still announced. Unframed is the point rather than a saving: the body is
-		 the ONLY surface in the card without an edge, which is what makes it read
-		 as paper instead of as one more field, and the bracket's bottom rule
+		 the ONLY surface in the card at the card's OWN tone, where every other
+		 typed value sits in a well cut into it, and that is what makes it read as
+		 paper instead of as one more field. The bracket's bottom rule
 		 already does the separating a box was doing. -->
 			{#if card.hasBody}
 				<div class="qm-body-leaf">
@@ -458,8 +468,10 @@
 {/snippet}
 
 <style>
+	/* AN ISLAND, and the tone is the whole of what makes it one: the card is the
+	 base plane and the column behind it is the sunken one, so the edge is where two
+	 planes meet rather than a line drawn around one (ARCHITECTURE §Styling). */
 	.qm-card {
-		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
 		/* Uniform inset on every side: a body-shown and a
 		 body-hidden card stay symmetric, every left edge on one gutter. The SAME rung
@@ -467,7 +479,7 @@
 		 internal rhythm are one number, so what separates the header from the fields is
 		 what separates the fields from the card's edge. */
 		padding: var(--_qm-space-3);
-		background: var(--_qm-surface-raised);
+		background: var(--_qm-surface);
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-3);
@@ -538,7 +550,7 @@
 		min-width: 0;
 		max-width: 100%;
 		font-size: var(--_qm-text-title);
-		font-weight: var(--_qm-weight-label);
+		font-weight: var(--_qm-weight-mid);
 		line-height: var(--_qm-leading-tight);
 		font-family: inherit;
 	}
@@ -556,10 +568,7 @@
 	 what says "type here", and a card title is already the one line of a card that
 	 reads as its name; the region's `cursor: text` and the caret that lands on a
 	 press say the rest. A hover-summoned box was also the inverse of the recipe every
-	 other control follows, where the box rests drawn and hover changes nothing, and
-	 it filled to `--_qm-surface` — the page rung,
-	 BELOW the card it sits on, so the one hover on this surface that receded instead
-	 of lifting.
+	 other control follows, where the box rests drawn and hover changes nothing.
 
 	 What replaces it is an ink step, the same cue the group header takes for the same
 	 reason: a wide borderless target drawing no box has no other way to answer the
@@ -722,12 +731,16 @@
 	 `--_qm-tap-min` (the padding above already clears the floor) and takes no hover
 	 fill (an ink step, below); so the type a family would have carried is declared
 	 here. `font: inherit` because a UA button inherits no face and `--qm-font` would
-	 stop at this row; then the field-label rung, at the tight leading a single line
-	 takes. Sentence case at that rung, reused rather than a fifth size minted: a
-	 section name is structurally a heading, and uppercase costs it twice: the word
-	 shape a column of them is scanned by, and apparent width, so a long label crowds
-	 sooner. Size, weight and leading all sit after `font`, which is a shorthand that
-	 carries `line-height`.
+	 stop at this row; then the BODY rung, one step over the field labels beneath it,
+	 at the tight leading a single line takes. A step, because a section names the
+	 fields under it: at the label rung the two read as one register and the accordion
+	 stops looking like structure — and it is the smallest step there is, the ramp's
+	 own 9/8, so a heading is a heading without becoming a title. It is also the size
+	 the labels are READ at, which is what makes it crisp where the rung below renders
+	 a semibold at 12px and muddies it. Sentence case, and no uppercase: uppercase
+	 costs a heading twice, the word shape a column of them is scanned by and apparent
+	 width, so a long label crowds sooner. Size, weight and leading all sit after
+	 `font`, which is a shorthand that carries `line-height`.
 
 	 On the BUTTON rather than on a span inside it: the row's type is one decision,
 	 and a wrapper that carries nothing else is indirection between the header and
@@ -742,8 +755,8 @@
 		background: transparent;
 		padding: var(--_qm-space) 0 var(--_qm-space) var(--_qm-space);
 		font: inherit;
-		font-size: var(--_qm-text-label);
-		font-weight: var(--_qm-weight-label);
+		font-size: var(--_qm-text-body);
+		font-weight: var(--_qm-weight-mid);
 		line-height: var(--_qm-leading-tight);
 		cursor: pointer;
 		color: var(--_qm-ink-label);
@@ -799,25 +812,31 @@
 		padding: 0;
 		transition: padding var(--_qm-duration-slow) var(--_qm-ease-reverse);
 	}
+	/* The widest rung on the left, so an open section's fields stand clear of the
+	 vertical rather than beside it: what the stroke encloses has to read as indented
+	 under the header, and the header's own inset is one rung because the row is a
+	 target where the panel is a block. */
 	.qm-group.qm-open .qm-group-panel-inner {
-		padding: var(--_qm-space-2) 0 0 var(--_qm-space-3);
+		padding: var(--_qm-space-2) 0 0 var(--_qm-space-4);
 	}
 	.qm-body-leaf {
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space);
 	}
-	/* Recovery shell: dashed edge marks an un-schemable card. The edge
-	 alone carries that: fill stays the card rung, content behind it intact. */
+	/* Recovery shell: a dashed edge marks an un-schemable card, and it is the one
+	 card that draws an edge at all. That is what makes it legible: an ordinary card
+	 is a plane, so a stroke around this one is a state rather than a heavier version
+	 of the same chrome. Fill stays the card rung, content behind it intact. */
 	.qm-card.qm-unschemable {
-		border-style: dashed;
+		border: var(--_qm-border-width) dashed var(--_qm-border);
 	}
 	/* One typographic role with the editable title above, so it reads the same three
 	 rungs: including the tight leading a card title takes over the root's reading
 	 rhythm. */
 	.qm-card-title-static {
 		font-size: var(--_qm-text-title);
-		font-weight: var(--_qm-weight-label);
+		font-weight: var(--_qm-weight-mid);
 		line-height: var(--_qm-leading-tight);
 		color: var(--_qm-ink-label);
 	}
@@ -841,11 +860,13 @@
 		font-size: var(--_qm-text-label);
 		color: var(--_qm-ink-label);
 	}
+	/* The one native control the surface draws, and it takes the box's own recipe:
+	 a fill off the well rung, no edge (controls.css). */
 	.qm-recovery-retype select {
 		font: inherit;
-		border: var(--_qm-border-width) solid var(--_qm-border);
+		border: none;
 		border-radius: var(--_qm-radius-inner);
-		background: var(--_qm-surface);
+		background: var(--_qm-surface-well);
 		padding: var(--_qm-space-half) var(--_qm-space-2);
 	}
 </style>

@@ -71,7 +71,7 @@
 	 green while a control renders subtly the wrong height).
 
 	 LEADING sits on the wide list rather than on the box's own, because a box's
-	 height is an inset rung plus a line box plus two hairlines: a leaf and the
+	 height is an inset rung plus a line box and nothing else: a leaf and the
 	 input beside it agree on height exactly as long as they agree on leading and on
 	 size, which is the whole of what "by construction" buys. The body leaf keeps the
 	 leading and steps off the size, which costs it nothing: it draws no box and
@@ -91,12 +91,15 @@
 		color: var(--_qm-ink);
 		caret-color: currentColor;
 	}
+	/* THE BOX IS A FILL AND NOT AN EDGE (ARCHITECTURE §Styling), and the fill is the
+	 WELL rung: a field is a hole cut into the card rather than a plane of its own,
+	 and with no edge to carry it the step is the whole of what says so. */
 	.qm-control-box,
 	.qm-input {
 		padding: var(--_qm-inset-control);
-		border: var(--_qm-border-width) solid var(--_qm-border);
+		border: none;
 		border-radius: var(--_qm-radius-inner);
-		background: var(--_qm-surface);
+		background: var(--_qm-surface-well);
 	}
 	/* What a form control adds over the box: it does not fill its row on its own. */
 	.qm-input {
@@ -200,12 +203,17 @@
 	 `[data-highlighted]` is bits-ui's mark and it is the ONLY hover lane: an item
 	 under the pointer and an item under the keyboard cursor are one state to a menu,
 	 so the primitive marks both and a `:hover` rule beside it would paint a second
-	 highlight the keyboard cannot reach. */
+	 highlight the keyboard cannot reach.
+
+	 A FLOATING surface is the one place a hairline is still load-bearing: it hangs
+	 over content the surface did not choose, so there is no plane under it for a
+	 tone to step off (ARCHITECTURE §Styling). It takes the raised rung as well, which
+	 is a real step in dark and nothing in light, where the edge is the whole of it. */
 	.qm-menu-surface {
 		padding: var(--_qm-space-half);
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
-		background: var(--_qm-surface);
+		background: var(--_qm-surface-raised);
 		font-size: var(--_qm-text-body);
 		color: var(--_qm-ink);
 	}

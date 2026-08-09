@@ -41,7 +41,9 @@ The whole contract is **ten CSS custom properties**. They are dials, not a palet
 
 ### Two of them are not branding
 
-`--qm-bg` and `--qm-fg` are the two a themed host sets before any brand decision. Their defaults are a self-consistent neutral for a bare mounting site, not a guess at your page: an app that paints its own plate and leaves them mounts one plate inside another. Two tones a few percent apart read as a fault rather than as a layer, so meet your page's tone exactly or stand far enough off it to be a layer.
+`--qm-bg` and `--qm-fg` are the two a themed host sets before any brand decision. Their defaults are a self-consistent neutral for a bare mounting site, not a guess at your page.
+
+`--qm-bg` is the **card**, not the column behind it: the plane a document is written on, which is also the sheet the preview paints. Everything else is a step off it, and the column the cards sit in is a step DOWN, so a mounted editor draws its own ground and the cards read as islands on it. Give it the tone you want a card to be — white, in most light themes — and let the column fall out. If you want the column to meet your page instead, set a `background` of your own on `.qm-editor`; your CSS is unlayered and wins.
 
 The poles take a colour, not `transparent` or `inherit`: the raised surfaces, the borders and the muted inks are each a `color-mix` against `--qm-bg`, so a transparent pole makes every one of them translucent instead of letting your page through. Hand over the value your page is painted with and the derivation steps off it.
 
@@ -49,8 +51,8 @@ The poles take a colour, not `transparent` or `inherit`: the raised surfaces, th
 
 | Token            | Default                                | What it sets                                                                                                                                                   |
 | ---------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--qm-bg`        | `#fff` / `#14171c`                     | Base surface. Cards, fields, the painted page, the popover, and the column behind them step off it.                                                            |
-| `--qm-fg`        | `#1a1a1a` / `#e8eaed`                  | Base ink. Body text, labels, and borders step off it.                                                                                                          |
+| `--qm-bg`        | `#fff` / `#272729`                     | Base surface: a card, and the preview's sheet. Fields, the popover and the column behind the cards each step off it.                                           |
+| `--qm-fg`        | `#1c1c1c` / `#d7dadc`                  | Base ink. Body text, labels, and borders step off it.                                                                                                          |
 | `--qm-accent`    | `#2563eb`                              | Focus rings, active marks, the preview's active field box.                                                                                                     |
 | `--qm-danger`    | `#c5221f`                              | Error diagnostics, the required marker, the delete glyph.                                                                                                      |
 | `--qm-warning`   | `#b25000`                              | Warning diagnostics.                                                                                                                                           |
@@ -76,7 +78,9 @@ Declared before our sheet it fixes the order outright; declared after, `qm` is a
 
 ### The surface follows your colour scheme
 
-Surfaces step `bg → fg` and ink steps `fg → bg`, mixed in **oklab**, so inverting the two poles inverts the whole scale, including borders and the popover's translucent fill.
+Ink steps `fg → bg` and the borders and hover fills step `bg → fg`, mixed in **oklab**, so inverting the two poles inverts all of them together.
+
+**Planes are the exception**, and deliberately: the raised plane is the brighter one in both schemes, which is what makes a card read as a card rather than as a differently-tinted page. So the column under the cards sinks from `--qm-bg` toward shadow and a floating surface rises from it toward light, and neither reads the ink pole. Each direction takes a step sized to the scheme it is in, which is why pinning a dark palette while your `color-scheme` still says light leaves the column barely off its cards — the one case §"Make it yours" tells you to pin the scheme alongside the poles.
 
 Which way the poles default is **your `color-scheme`**, not the operating system's. Declare the scheme your app is in and the surface lands on it, along with native chrome, which reads the same property:
 
