@@ -153,7 +153,12 @@ async function studio(): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function site(): Promise<void> {
-	const at = await laySite({ collection: collection(), out: flag('--out') ?? 'site' });
+	const source = collection();
+	// Under the collection, as `studio`'s default is: `site/` beside the quiver is the
+	// ordinary layout, and it is the same directory either way for the ordinary run from
+	// the collection's own root. A cwd-relative default parts from it exactly when
+	// `--quiver` points elsewhere, and then writes the layout wherever the shell stood.
+	const at = await laySite({ collection: source, out: flag('--out') ?? join(source, 'site') });
 	console.log(`quillkit site: ${at}`);
 }
 

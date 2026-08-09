@@ -190,43 +190,62 @@ li.ProseMirror-selectednode::after {
 
    The one construct in this file with CHROME in it. The rest of the stylesheet
    states what a block is and lets paper set its size; a table island is edited
-   through controls that do not print, so it also has a recede ladder, a target
-   floor and a reveal. Those live here rather than in `visual/controls.css` for the
-   same reason the NodeView is vanilla: the island is inside the leaf, and the leaf
-   is the codec's. What it does NOT restate is the surface's dials: every value
-   below is a `--_qm-*` rung, so the island retints with everything else.
+   through controls that do not print, so it also has a target floor and a reveal.
+   Those live here rather than in `visual/controls.css` for the same reason the
+   NodeView is vanilla: the island is inside the leaf, and the leaf is the codec's.
+   What it does NOT restate is the surface's dials: every value below is a `--_qm-*`
+   rung, so the island retints with everything else.
 
-   THE CHROME IS IN NO TRACK. Every control is absolutely positioned inside a real
-   data cell, hanging into a band the scroller carries as PADDING. So the grid holds
-   the box a paragraph would, the accessibility tree is the data's shape, and a
-   handle still lines up with its line by CONSTRUCTION rather than by a measured
-   overlay: it is inside the cell it names. */
+   THE BAND IS IN NO TRACK. Every control in it is absolutely positioned inside a real
+   data cell or against the grid's frame, hanging into a band the scroller carries as
+   PADDING. So the grid holds the box a paragraph would, the accessibility tree is the
+   data's shape, and a grip still lines up with its line by CONSTRUCTION rather than by
+   a measured overlay: it is inside the cell it names.
 
-/* The band, and the whole of what it costs. `padding` opens it; the island's
-   negative `margin` spends the card's own inset buying it back, so the grid sits one
+   EACH CONTROL COMES UP ALONE. A grip or a bar is drawn while the pointer is on THAT
+   control, while it holds the focus, or while it is the one the gesture is about — a
+   selected line, a lifted one. The target is there the whole time either way, an
+   invisible button being hit-tested like any other, so what the reveal decides is what
+   the table LOOKS like under a passing pointer, not what it answers to. */
+
+/* The band, and the whole of what it costs. `padding` opens it on all four sides,
+   because each axis begins with a grip and ends with an add bar; the island's negative
+   `margin` spends the card's own inset buying the left one back, so the grid sits one
    inset from the prose edge instead of a tap target plus one.
 
    `margin-top: 0` overrides the sibling-gap rule rather than going negative: the band
-   ABSORBS the gap. A negative top margin would hang the band over the block above,
-   and an `opacity: 0` control is still hit-tested, so it would take that block's last
-   presses. The `.ProseMirror` qualifier is what makes the override hold wherever the
-   island lands: two of the gap rule's arms name a container, so a bare class loses to
-   them for an island inside a list item or a quote, both of which the schema admits. */
+   ABSORBS the gap, at both ends. A negative margin would hang the band over the
+   neighbouring block, and an `opacity: 0` control is still hit-tested, so it would take
+   that block's presses. The `.ProseMirror` qualifier is what makes the override hold
+   wherever the island lands: two of the gap rule's arms name a container, so a bare
+   class loses to them for an island inside a list item or a quote, both of which the
+   schema admits. */
 .ProseMirror .qm-table-island {
 	margin-top: 0;
 	margin-left: calc(var(--_qm-space-3) * -1);
+}
+.ProseMirror > .qm-table-island + * {
+	margin-top: 0;
 }
 .qm-table-scroller {
 	/* The one horizontally scrolling box in a leaf: a table is as wide as its
 	   columns, and a wide one must not push the card's own layout. `overflow-y` is
 	   `hidden` rather than left alone, because a non-`visible` axis computes the other
 	   to `auto` and a table has nothing to scroll vertically. */
-	position: relative;
 	overflow-x: auto;
 	overflow-y: hidden;
-	padding: var(--_qm-tap-min) 0 0 var(--_qm-tap-min);
+	padding: var(--_qm-tap-min);
 	width: max-content;
 	max-width: 100%;
+}
+/* The containing block for everything out of flow, and the reason it exists rather
+   than the scroller serving: an absolute inside a SCROLL container is placed against a
+   padding box the scroll then slides out from under it, so a cap pinned to the grid's
+   far end would drift into the middle of a scrolled table. The frame is the grid's own
+   box and travels with it. */
+.qm-table-frame {
+	position: relative;
+	width: max-content;
 }
 .qm-table {
 	border-collapse: separate;
@@ -281,198 +300,168 @@ li.ProseMirror-selectednode::after {
 	outline: none;
 }
 /* A selected island takes the node outline every leaf block does
-   (`.ProseMirror-selectednode`, above), and that is the state the corner and Escape
-   leave a line FOR: the caret is out, the island is what is selected, and Backspace
-   deletes it. A caret inside a cell is not that state and does not paint it. */
+   (`.ProseMirror-selectednode`, above), and that is the state Escape leaves a cell or a
+   line FOR: the caret is out, the island is what is selected, and Backspace deletes it.
+   A caret inside a cell is not that state and does not paint it. */
 
-/* A SELECTED LINE, washed across its cells: what Backspace deletes and Alt+arrow
-   moves. The hover rung, because it makes a hover's claim (this line, the one the next
-   command is about) held rather than passing. */
-.qm-table-cell.qm-table-line {
-	background: var(--_qm-surface-hover);
+/* THE SELECTION, washed across the cells it covers: what Backspace acts on, and the
+   only thing on the island that says what the next command is about. The ACCENT held,
+   not the hover rung: a hover is what the pointer is passing over and a selection is
+   what the next command will act on, and two states one tone apart on the same surface
+   ladder read as the same state at a glance. Translucent, so a selected header cell
+   keeps its raised tone under the tint instead of trading it away.
+
+   One attribute for both gestures, because there is one selection: a grip draws the
+   rectangle covering its line and a sweep draws the block the pointer crossed, and the
+   wash cannot tell them apart because nothing downstream needs to. */
+.qm-table-cell[data-selected] {
+	background: var(--_qm-accent-tint);
 }
 
-/* Every control in the band is a flat centred button hung out of flow; what differs
-   is where it hangs and what it draws. */
-:is(.qm-table-handle, .qm-table-seam, .qm-table-align-item) {
+/* ── The band ────────────────────────────────────────────────────────────────
+   Two control families, one geometry: absolutely positioned out of the grid, a
+   `--_qm-tap-min` target whatever is drawn inside it, and no box of their own at rest.
+   What differs is which edge each hangs off and what it draws. The grips take the
+   LEADING edges, where a line begins; the add bars take the TRAILING ones, past where
+   the axis ends. Position is the whole of what says which is which: the grip's marks are
+   the only glyph on the island, and they say DRAGGABLE rather than which control this
+   is. */
+:is(.qm-table-grip, .qm-table-add) {
+	position: absolute;
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	padding: 0;
 	border: none;
 	background: none;
+	color: var(--_qm-ink);
 	cursor: pointer;
 }
-:is(.qm-table-seam, .qm-table-align-item) svg {
-	width: var(--_qm-glyph-control);
-	height: var(--_qm-glyph-control);
+/* The bar every one of them draws: a pill the length of what it acts on, a rhythm rung
+   thick where the target is the tap floor. Stated once, so a grip and an add bar cannot
+   drift into two shapes.
+
+   ONE tone, not a hover ladder: the control is drawn only while it is the one the
+   pointer is on or the one a gesture is about, so a resting tone under that would be a
+   rung nothing ever reaches. The selected grip's tint below is the one exception, and it
+   says which line the next command acts on rather than where the pointer is. */
+:is(.qm-table-grip-bar, .qm-table-add-bar) {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: var(--_qm-radius-pill);
+	background: var(--_qm-border);
+	transition:
+		background-color var(--_qm-duration-fast) var(--_qm-ease-reverse),
+		color var(--_qm-duration-fast) var(--_qm-ease-reverse);
+}
+/* The glyph is square and the bar is not: the marks sit in the bar's thickness and the
+   bar's length is its line's, so the frame is sized off the one axis both share. */
+.qm-table-grip-bar svg {
+	width: var(--_qm-space-3);
+	height: var(--_qm-space-3);
+}
+/* A grip runs ALONG the line it names; an add bar runs ACROSS the axis it appends to.
+   So the two families map one `data-axis` onto opposite orientations, and orientation
+   is the one thing the rule above cannot share with them: a column's grip is as wide as
+   its column, and the bar that adds a column is as tall as the table. */
+.qm-table-grip[data-axis='column'] .qm-table-grip-bar,
+.qm-table-add[data-axis='row'] .qm-table-add-bar {
+	width: 100%;
+	height: var(--_qm-space-3);
+}
+.qm-table-grip[data-axis='row'] .qm-table-grip-bar,
+.qm-table-add[data-axis='column'] .qm-table-add-bar {
+	width: var(--_qm-space-3);
+	height: 100%;
 }
 
-/* ONE control per line, and it is a bar rather than a glyph: what a handle acts on
-   is the row or column it sits against, and position says that better than an icon
-   would.
+/* ONE grip per line, and it is a BAR rather than a glyph: what a grip acts on is the
+   row or column it sits against, and spanning that line says so better than an icon
+   could. The bar carries the grip's own marks — two rows of three, the shape a thing
+   you can pick up has everywhere else — so the control reads as draggable before it is
+   dragged.
 
-   The TARGET is the band and the MARK is drawn small inside it, which is the rule
-   the tips card's dots already state: the handle spans its line on one axis and the
-   tap minimum on the other, and the bar in the middle of it is 3px. A handle sized to
-   the bar would be a 3px target on a control a pointer has to find. */
-.qm-table-handle {
-	position: absolute;
-	padding: var(--_qm-space-half);
-	/* The pointer owns this gesture, not the page's scroll: a handle drags. */
+   The TARGET is the band and the BAR is drawn inside it: a grip spans its line on one
+   axis and the tap floor on the other, and the bar is drawn thinner inside that. A grip
+   sized to its own bar would be a target the thickness of the mark on it, on a control
+   the pointer has to find. */
+.qm-table-grip {
+	/* The pointer owns this gesture, not the page's scroll: a grip drags. */
 	touch-action: none;
 }
-.qm-table-handle[data-axis='column'] {
+.qm-table-grip[data-axis='column'] {
 	inset-inline: 0;
 	bottom: 100%;
 	height: var(--_qm-tap-min);
 }
-.qm-table-handle[data-axis='row'] {
+.qm-table-grip[data-axis='row'] {
 	inset-block: 0;
 	right: 100%;
 	width: var(--_qm-tap-min);
 }
-.qm-table-handle-bar {
-	display: block;
-	border-radius: var(--_qm-radius-pill);
-	background: var(--_qm-border);
-}
-.qm-table-handle[data-axis='column'] .qm-table-handle-bar {
-	width: 100%;
-	height: 0.1875rem;
-}
-.qm-table-handle[data-axis='row'] .qm-table-handle-bar {
-	width: 0.1875rem;
-	height: 100%;
-	min-height: 0.75rem;
-}
-/* A selected handle carries the line's ink, so the bar and the wash say the same
-   thing at both ends of the gesture. */
-.qm-table-handle[aria-pressed='true'] .qm-table-handle-bar {
-	background: var(--_qm-ink-label);
-}
-
-/* The corner is the ISLAND's handle: the grid origin, where the two bands converge,
-   and the one gesture that selects the whole table. Its mark is a square because what
-   it acts on is the rectangle and not a line of it. */
-.qm-table-corner-handle {
-	right: 100%;
-	bottom: 100%;
-	width: var(--_qm-tap-min);
-	height: var(--_qm-tap-min);
-}
-.qm-table-corner-mark {
-	display: block;
-	width: 0.4375rem;
-	height: 0.4375rem;
-	border-radius: var(--_qm-radius-pill);
-	background: var(--_qm-border);
-}
-
-/* A SEAM: the boundary between two lines, and the whole of how a table grows. One per
-   boundary including the leading and trailing ones, so an append and an interior
-   insert are one gesture at different places.
-
-   It sits OVER the handles in the band, and it is narrow, so the two share the band
-   without a dead zone: the handle owns the line's length and the seam owns its ends. */
-.qm-table-seam {
-	position: absolute;
-	z-index: 1;
-	width: var(--_qm-tap-min);
-	height: var(--_qm-tap-min);
-	border-radius: var(--_qm-radius-pill);
-	color: var(--_qm-accent);
-}
-.qm-table-seam[data-axis='column'] {
-	bottom: 100%;
-	left: calc(var(--_qm-tap-min) / -2);
-}
-/* The TRAILING seams sit flush inside their edge rather than centred on it: the last
-   boundary is the grid's own edge, and a seam centred on it would hang half outside
-   the scroller, where the padding does not reach and the clip does, making the append
-   affordance the one control that could not be pressed. */
-.qm-table-seam[data-axis='column'][data-side='trail'] {
-	left: auto;
-	right: 0;
-}
-.qm-table-seam[data-axis='row'] {
-	right: 100%;
-	top: calc(var(--_qm-tap-min) / -2);
-}
-.qm-table-seam[data-axis='row'][data-side='trail'] {
-	top: auto;
-	bottom: 0;
-}
-
-/* The alignment cluster: the one op with no gesture, so the one surface the chrome
-   still raises. It rides the column's SELECTION rather than a hover, so it costs
-   nothing at rest, and it sits in the band beside the handle rather than portalled:
-   four glyphs in a row is not a list to read. */
-.qm-table-align {
-	position: absolute;
-	z-index: 2;
-	display: flex;
-	bottom: 100%;
-	left: 0;
-	height: var(--_qm-tap-min);
-	background: var(--_qm-surface-raised);
-	border: var(--_qm-border-width) solid var(--_qm-border);
-	border-radius: var(--_qm-radius-pill);
-}
-/* The LAST column anchors right instead: a cluster is wider than a narrow column, and
-   one hung off the right edge would be the only chrome the scroller could clip. */
-.qm-table-cell:last-child .qm-table-align {
-	left: auto;
-	right: 0;
-}
-.qm-table-align-item {
-	width: var(--_qm-tap-min);
-	height: 100%;
-	padding: 0;
-	border-radius: var(--_qm-radius-pill);
-	color: var(--_qm-ink-label);
-}
-.qm-table-align-item:hover {
-	background: var(--_qm-surface-hover);
-	color: var(--_qm-ink);
-}
-.qm-table-align-item[aria-pressed='true'] {
+/* A selected grip takes the line's own tint and the accent for its marks, so the bar
+   and the wash say the same thing at both ends of the gesture. */
+.qm-table-grip[aria-pressed='true'] .qm-table-grip-bar {
+	background: var(--_qm-accent-tint);
 	color: var(--_qm-accent);
 }
 
-/* Pointer OR focus, the card stack's rule unchanged: opacity rather than absence, so
-   the controls stay in the tab order, and `:focus-within` on the ISLAND, so a caret
-   in a cell holds the reveal as a focused control does.
+/* THE ADD BARS: one along each trailing edge, spanning it. A bar rather than a button
+   at the end of the band, because what it appends to is the AXIS and not a line — there
+   is no line out past the last one to sit against, and the whole edge is the easiest
+   target on the island to hit. They are the grips' mirror in every way but the edge and
+   the marks, which is what makes a bar out there read as one more of these rather than
+   as a control of its own: an empty bar past the last line is the table's own shape,
+   offered one line further on. */
+.qm-table-add[data-axis='column'] {
+	inset-block: 0;
+	left: 100%;
+	width: var(--_qm-tap-min);
+}
+.qm-table-add[data-axis='row'] {
+	inset-inline: 0;
+	top: 100%;
+	height: var(--_qm-tap-min);
+}
+/* THE REVEAL, and it is the control's own. A grip or a bar is drawn while the pointer
+   is ON it, while it holds the focus, or while it is what a gesture is about: the
+   selected line's grip, and the lifted one, which is drawn through a drag the pointer
+   has travelled off. Opacity rather than absence, so every control keeps its box and its
+   place in the tab order, and a keyboard reaches the band with no pointer at all.
 
-   The reveal is per LINE: the island's hover arms the band, and `qm-hot` (the line the
-   pointer is actually over) is what reaches the idle rung, so a hover answers about
-   one line rather than about every one at once. */
-.qm-table-handle,
-.qm-table-seam {
+   `:hover` on the CONTROL and not the island: a pointer crossing a table says nothing
+   about which line it is crossing, and a band that comes up whole answers a question
+   with six controls when the pointer has picked out none. */
+:is(.qm-table-grip, .qm-table-add) {
 	opacity: 0;
 	transition: opacity var(--_qm-duration-fast) var(--_qm-ease-reverse);
 }
-.qm-table-island:is(:hover, :focus-within)
-	:is(.qm-table-handle.qm-hot, .qm-table-corner-handle, .qm-table-seam) {
-	opacity: var(--_qm-opacity-idle);
-}
-.qm-table-handle:hover,
-.qm-table-handle:focus-visible,
-.qm-table-handle[aria-pressed='true'],
-.qm-table-seam:hover,
-.qm-table-seam:focus-visible {
+:is(.qm-table-grip, .qm-table-add):is(:hover, :focus-visible),
+.qm-table-grip:is([aria-pressed='true'], .qm-table-lifted) {
 	opacity: 1;
 }
 
-/* The ring, on the chrome and nowhere else in this file. A prose leaf's focus
-   indicator is its CARET and a cell's is too, so the outline is dropped there; a
-   handle is a button, and a button that takes focus to hold a selection has to show
-   it. Declared here rather than reached for as `.qm-focus-ring`: that recipe is the
-   visual tier's stylesheet, and the island is inside the leaf, which is the codec's. */
-.qm-table-handle:focus-visible,
-.qm-table-seam:focus-visible,
-.qm-table-align-item:focus-visible {
+/* The ring, on the chrome and nowhere else in this file. A prose leaf's focus indicator
+   is its CARET and a cell's is too, so the outline is dropped there; a control that comes
+   up out of nothing has the reveal, and a ring under a keyboard is what says the focus is
+   THERE rather than on the paper behind it. Declared here rather than reached for as
+   `.qm-focus-ring`: that recipe is the visual tier's stylesheet, and the island is inside
+   the leaf, which is the codec's.
+
+   A SELECTED grip takes none. Focus and selection arrive together there — the grip takes
+   the focus because the selection's keys bind on it — and the tint plus the wash already
+   say where the next command lands. A ring on top is a second box around the loudest
+   thing on the island, drawn on the press that made the selection: a pointer gesture
+   answering with a keyboard's indicator. Stated as `none` rather than left unset, because
+   what fills the gap is the browser's own ring, which is the same box in a colour the
+   surface does not own. */
+:is(.qm-table-grip, .qm-table-add):focus-visible {
 	outline: var(--_qm-ring);
 	outline-offset: var(--_qm-ring-offset);
+}
+.qm-table-grip[aria-pressed='true']:focus-visible {
+	outline: none;
 }
 
 /* A DRAG in flight. The lifted line reads as picked up by TONE, never a shadow:

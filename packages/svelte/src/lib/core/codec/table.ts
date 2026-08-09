@@ -34,10 +34,11 @@ export function emptyCell(): TableCell {
 }
 
 /**
- * The row index space the chrome and the ops share: **0 is the header**, 1…n the
- * body rows. A table always has a header (`header` is a separate field, and a
- * header-less table is not expressible), so the header is a row that never
- * deletes rather than a toggle.
+ * The row index space the chrome and the ops share: **0 is the header**, 1…n the body
+ * rows. The split is how a table is STORED, not a rank the ops answer to: a row op
+ * works {@link allRows} and whichever row lands at index 0 is the header afterwards,
+ * so index 0 moves and deletes like any other. The one row the model refuses is the
+ * LAST, there being no table under it.
  */
 export function rowCount(props: TableProps): number {
 	return props.rows.length + 1;
@@ -80,6 +81,24 @@ export function normalizeTable(props: TableProps): TableProps {
 	};
 }
 
+/**
+ * The rows as ONE list, header first: the space a row op works in. `header` is a
+ * separate field because a table always has one and `header: []` is not a table — a
+ * storage shape, not a rank a row op has to know about. Reading it as one list is what
+ * lets move and delete treat every row alike, and {@link fromRows} splits it back.
+ */
+export function allRows(props: TableProps): TableCell[][] {
+	return [props.header, ...props.rows];
+}
+
+/** A flat list back into the stored shape: whatever sits at index 0 is the header, by
+ *  position rather than by having been one. No caller passes an empty list — every op
+ *  that could reach one refuses the last row first. */
+function fromRows(rows: TableCell[][], aligns: TableAlign[]): TableProps {
+	const [header = [], ...rest] = rows;
+	return normalizeTable({ header, rows: rest, aligns });
+}
+
 /** A fresh table: a header plus `bodyRows` empty rows, every column unaligned.
  *  Growth is cheap (Tab at the last cell appends a row), so the default is small. */
 export function newTable(cols = 3, bodyRows = 2): TableProps {
@@ -110,11 +129,16 @@ export function insertRow(props: TableProps, r: number): TableProps {
 	});
 }
 
-/** Drop body row `r`. The header (`r === 0`) has no delete: `header: []` is not a
- *  table, so the asymmetry is the model's rather than a guard's. */
+/** Drop row `r`, the header included: the row left at index 0 is the header, which is
+ *  how a table whose first row went still has one. A no-op at the LAST row, that being
+ *  the removal of the table rather than of a row, and the island's own to answer. */
 export function deleteRow(props: TableProps, r: number): TableProps {
-	if (r === 0) return normalizeTable(props);
-	return normalizeTable({ ...props, rows: props.rows.filter((_, i) => i !== r - 1) });
+	const rows = allRows(props);
+	if (rows.length <= 1 || r < 0 || r >= rows.length) return normalizeTable(props);
+	return fromRows(
+		rows.filter((_, i) => i !== r),
+		props.aligns
+	);
 }
 
 /** A new empty column after column `c`. */
@@ -148,15 +172,15 @@ function move<T>(xs: T[], from: number, to: number): T[] {
 	return next;
 }
 
-/** Body row `r` moved by `by` places, clamped: a drag that leaves the rectangle is a
- *  no-op rather than an error, since the drop target is geometry and geometry runs
- *  past the last row. The header is refused because it has no destination: it is a
- *  separate field, not row 0 of one array. */
+/** Row `r` moved by `by` places, clamped: a drag that leaves the rectangle is a no-op
+ *  rather than an error, since the drop target is geometry and geometry runs past the
+ *  last row. The header travels like any other row, and so does the row that displaces
+ *  it: being the header is holding index 0, which a move is free to hand over. */
 export function moveRow(props: TableProps, r: number, by: number): TableProps {
-	const from = r - 1;
-	const to = Math.max(0, Math.min(from + by, props.rows.length - 1));
-	if (r === 0 || from === to || from >= props.rows.length) return normalizeTable(props);
-	return normalizeTable({ ...props, rows: move(props.rows, from, to) });
+	const rows = allRows(props);
+	const to = Math.max(0, Math.min(r + by, rows.length - 1));
+	if (r === to || r < 0 || r >= rows.length) return normalizeTable(props);
+	return fromRows(move(rows, r, to), props.aligns);
 }
 
 /** Column `c` moved by `by` places, clamped. `aligns` travels with the column: an
@@ -173,15 +197,26 @@ export function moveColumn(props: TableProps, c: number, by: number): TableProps
 	});
 }
 
-/** Column `c` with every cell emptied, alignment kept: what a delete gesture means at
- *  the LAST column, which the model keeps. There is no row analogue: the header is the
- *  only row a delete is refused for, and it carries no handle to select it from. */
-export function clearColumn(props: TableProps, c: number): TableProps {
-	const blank = (cells: TableCell[]): TableCell[] =>
-		cells.map((cell, i) => (i === c ? emptyCell() : cell));
+/**
+ * Every cell in the inclusive rectangle emptied, alignment kept: what a delete gesture
+ * means over a block of cells that covers no whole rank. A rectangle spanning one axis
+ * covers ranks and deletes them, and one spanning both is the table itself, so what
+ * reaches here is a proper sub-rectangle and the shape it leaves is the shape it found.
+ *
+ * Alignment is the COLUMN's rather than the cells', so it survives a clear that spans one.
+ */
+export function clearCells(
+	props: TableProps,
+	r0: number,
+	c0: number,
+	r1: number,
+	c1: number
+): TableProps {
+	const blank = (cells: TableCell[], r: number): TableCell[] =>
+		cells.map((cell, c) => (r >= r0 && r <= r1 && c >= c0 && c <= c1 ? emptyCell() : cell));
 	return normalizeTable({
-		header: blank(props.header),
-		rows: props.rows.map(blank),
+		header: blank(props.header, 0),
+		rows: props.rows.map((row, i) => blank(row, i + 1)),
 		aligns: props.aligns
 	});
 }

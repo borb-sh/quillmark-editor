@@ -24,6 +24,7 @@ import {
 	emptyCell,
 	insertColumn,
 	insertRow,
+	moveRow,
 	newTable,
 	normalizeTable,
 	rowCells,
@@ -82,6 +83,9 @@ describe('the rectangle survives every op', () => {
 		{ name: 'insert a row below the header', run: (p) => insertRow(p, 0) },
 		{ name: 'insert a row below the last', run: (p) => insertRow(p, rowCount(p) - 1) },
 		{ name: 'delete a body row', run: (p) => deleteRow(p, 1) },
+		{ name: 'delete the header row', run: (p) => deleteRow(p, 0) },
+		{ name: 'move the header row down', run: (p) => moveRow(p, 0, 1) },
+		{ name: 'move a body row up into the header', run: (p) => moveRow(p, 2, -2) },
 		{ name: 'insert a column left', run: (p) => insertColumn(p, -1) },
 		{ name: 'insert a column right', run: (p) => insertColumn(p, 0) },
 		{ name: 'delete a column', run: (p) => deleteColumn(p, 1) },
@@ -116,8 +120,31 @@ describe('the rectangle survives every op', () => {
 });
 
 describe('what the model already answers', () => {
-	it('the header has no delete: `header: []` is not a table', () => {
-		expect(grid(deleteRow(LETTERED, 0))).toEqual(grid(LETTERED));
+	it('the header deletes like any row: the one under it takes index 0', () => {
+		expect(grid(deleteRow(LETTERED, 0))).toEqual([
+			['a1', 'a2'],
+			['b1', 'b2']
+		]);
+	});
+
+	it('the header MOVES like any row, and being the header is holding index 0', () => {
+		// Down one: the body row it passed lands at index 0 and is the header now.
+		expect(grid(moveRow(LETTERED, 0, 1))).toEqual([
+			['a1', 'a2'],
+			['h1', 'h2'],
+			['b1', 'b2']
+		]);
+		// And the reverse trip: the last body row carried to the top becomes the header.
+		expect(grid(moveRow(LETTERED, 2, -2))).toEqual([
+			['b1', 'b2'],
+			['h1', 'h2'],
+			['a1', 'a2']
+		]);
+	});
+
+	it('the LAST row is the one the model keeps: under it there is no table', () => {
+		const one = normalizeTable({ header: [cell('h')], rows: [], aligns: ['none'] });
+		expect(grid(deleteRow(one, 0))).toEqual([['h']]);
 	});
 
 	it('a one-column table keeps its column', () => {
@@ -178,26 +205,21 @@ function tableLeaf(props?: TableProps) {
 	return { doc, field };
 }
 
-/** The row handles, in order (body rows only), and the column handles. Both read off
- *  the axis each declares, which is what leaves the corner (the island's own handle)
- *  out of either set: it names no line. */
-function handles(field: FieldController, kind: 'row' | 'column'): HTMLButtonElement[] {
+/** The row grips, in order and the header's first, and the column grips. Both read off
+ *  the axis each declares, which is what leaves the two caps out of either set: neither
+ *  names a line. So a row grip's index in this set IS its row in the chrome's space. */
+function grips(field: FieldController, kind: 'row' | 'column'): HTMLButtonElement[] {
 	return Array.from(
-		field.el.querySelectorAll<HTMLButtonElement>(
-			`.qm-table-handle[data-axis='${kind}']:not(.qm-table-corner-handle)`
-		)
+		field.el.querySelectorAll<HTMLButtonElement>(`.qm-table-grip[data-axis='${kind}']`)
 	);
 }
 
-/** The seams of one axis, in order: every boundary a line can open at, the leading
- *  and trailing ones included. */
-function seams(field: FieldController, kind: 'row' | 'column'): HTMLButtonElement[] {
-	return Array.from(
-		field.el.querySelectorAll<HTMLButtonElement>(`.qm-table-seam[data-axis='${kind}']`)
-	);
+/** A band's far cap: the bar that appends a line at the end of its own axis. */
+function cap(field: FieldController, kind: 'row' | 'column'): HTMLButtonElement {
+	return field.el.querySelector<HTMLButtonElement>(`.qm-table-add[data-axis='${kind}']`)!;
 }
 
-/** Drive a key at a focused handle, where a line selection's verbs live. */
+/** Drive a key at a focused grip, where a line selection's verbs live. */
 function key(target: Element, k: string, init: KeyboardEventInit = {}): void {
 	target.dispatchEvent(
 		new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init })
@@ -206,14 +228,41 @@ function key(target: Element, k: string, init: KeyboardEventInit = {}): void {
 
 /** Which cells the surface is washing: the selected line, read back off the DOM. */
 function washed(field: FieldController): string[] {
-	return Array.from(field.el.querySelectorAll('.qm-table-cell.qm-table-line')).map(
+	return Array.from(field.el.querySelectorAll('.qm-table-cell[data-selected]')).map(
 		(c) => `${c.getAttribute('data-r')},${c.getAttribute('data-c')}`
 	);
 }
 
-/** The corner: the island's block handle. */
-function corner(field: FieldController): HTMLButtonElement {
-	return field.el.querySelector<HTMLButtonElement>('.qm-table-corner-handle')!;
+/** Sweep a block: press in one cell and travel to another, which is the one gesture
+ *  that turns a caret into a selection. The moves are dispatched on the document, where
+ *  the view listens, and the boxes are the stubbed geometry `layout` installed. */
+function sweep(field: FieldController, from: number, to: number): void {
+	const boxes = field.el.querySelectorAll('.qm-table-cell');
+	const at = (i: number) => {
+		const r = boxes[i].getBoundingClientRect();
+		return { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 };
+	};
+	const head = at(from);
+	boxes[from].dispatchEvent(
+		new MouseEvent('mousedown', {
+			bubbles: true,
+			cancelable: true,
+			clientX: head.x,
+			clientY: head.y
+		})
+	);
+	for (const step of [from, to]) {
+		const p = at(step);
+		document.dispatchEvent(
+			new MouseEvent('mousemove', {
+				bubbles: true,
+				cancelable: true,
+				clientX: p.x + 8,
+				clientY: p.y + 8
+			})
+		);
+	}
+	document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
 }
 
 /** The leaf's own view: the document the island sits in. */
@@ -233,22 +282,26 @@ function leafProps(field: FieldController): TableProps {
 }
 
 describe('the table NodeView', () => {
-	it('draws one handle per line and one seam per boundary, and no track for either', () => {
+	it('draws one grip per line and one cap per axis, and no track for either', () => {
 		const { field } = tableLeaf(LETTERED);
 		expect(field.el.querySelectorAll('.qm-table-cell-host').length).toBe(6);
 		expect(field.el.querySelectorAll('th.qm-table-cell').length).toBe(2);
-		// One handle per COLUMN and per BODY row: the header carries no row handle,
-		// since `header: []` is not a table and nothing goes above it.
-		expect(handles(field, 'column')).toHaveLength(2);
-		expect(handles(field, 'row')).toHaveLength(2);
-		// One seam per boundary, the trailing one included: n lines, n+1 boundaries.
-		expect(seams(field, 'column')).toHaveLength(3);
-		expect(seams(field, 'row')).toHaveLength(3);
+		// One grip per column and one per ROW, the header's included: it is a row, and a
+		// row grip acts on rows.
+		expect(grips(field, 'column')).toHaveLength(2);
+		expect(grips(field, 'row')).toHaveLength(3);
+		// The header's own grip is named for the line it draws, not for an index it
+		// would share with the first body row.
+		expect(grips(field, 'row')[0].getAttribute('aria-label')).toBe('Select header row');
+		// The band's ends are two: one cap per axis, and nothing at the origin — the
+		// whole table is what a selection covering every rank says, not a control.
+		expect(field.el.querySelectorAll('.qm-table-add')).toHaveLength(2);
+		expect(field.el.querySelectorAll('.qm-table-corner')).toHaveLength(0);
 		// And the grid is the DATA's shape: the chrome is in no row and no column of
 		// it, so nothing empty reaches the accessibility tree.
-		const rows = field.el.querySelectorAll('.qm-table tr');
-		expect(rows).toHaveLength(3);
-		rows.forEach((row) => expect(row.children).toHaveLength(2));
+		const lines = field.el.querySelectorAll('.qm-table tr');
+		expect(lines).toHaveLength(3);
+		lines.forEach((line) => expect(line.children).toHaveLength(2));
 		field.destroy();
 	});
 
@@ -284,25 +337,25 @@ describe('the table NodeView', () => {
 		field.destroy();
 	});
 
-	it('a handle SELECTS its line: the wash is the whole of what a press does', () => {
+	it('a grip SELECTS its line: the wash is the whole of what the FIRST press does', () => {
 		const { field } = tableLeaf(LETTERED);
-		handles(field, 'row')[0].click();
+		grips(field, 'row')[1].click();
 		// Row 1 in the chrome's space, which is the first BODY row.
 		expect(washed(field)).toEqual(['1,0', '1,1']);
-		expect(handles(field, 'row')[0].getAttribute('aria-pressed')).toBe('true');
+		expect(grips(field, 'row')[1].getAttribute('aria-pressed')).toBe('true');
 		// Nothing was armed on the document: the island is not what got selected.
 		expect(outerView(field).state.selection instanceof NodeSelection).toBe(false);
-		handles(field, 'column')[1].click();
+		grips(field, 'column')[1].click();
 		expect(washed(field)).toEqual(['0,1', '1,1', '2,1']);
-		expect(handles(field, 'row')[0].getAttribute('aria-pressed')).toBe('false');
+		expect(grips(field, 'row')[1].getAttribute('aria-pressed')).toBe('false');
 		field.destroy();
 	});
 
 	it('Backspace over a selected row deletes it', () => {
 		const { field } = tableLeaf(LETTERED);
-		const handle = handles(field, 'row')[0];
-		handle.click();
-		key(handle, 'Backspace');
+		const grip = grips(field, 'row')[1];
+		grip.click();
+		key(grip, 'Backspace');
 		expect(grid(leafProps(field))).toEqual([
 			['h1', 'h2'],
 			['b1', 'b2']
@@ -310,11 +363,27 @@ describe('the table NodeView', () => {
 		field.destroy();
 	});
 
+	it('the HEADER row deletes the same way, and the row under it takes its place', () => {
+		const { field } = tableLeaf(LETTERED);
+		const grip = grips(field, 'row')[0];
+		grip.click();
+		expect(washed(field)).toEqual(['0,0', '0,1']);
+		key(grip, 'Backspace');
+		// A table is one row shorter and still has a header, which is the whole of what
+		// the model asked for. Alignment is the COLUMN's, so it does not travel.
+		expect(grid(leafProps(field))).toEqual([
+			['a1', 'a2'],
+			['b1', 'b2']
+		]);
+		expect(leafProps(field).aligns).toEqual(['left', 'right']);
+		field.destroy();
+	});
+
 	it('Backspace over a selected column deletes it, alignment and all', () => {
 		const { field } = tableLeaf(LETTERED);
-		const handle = handles(field, 'column')[1];
-		handle.click();
-		key(handle, 'Backspace');
+		const grip = grips(field, 'column')[1];
+		grip.click();
+		key(grip, 'Backspace');
 		expect(grid(leafProps(field))).toEqual([['h1'], ['a1'], ['b1']]);
 		expect(leafProps(field).aligns).toEqual(['left']);
 		field.destroy();
@@ -322,32 +391,36 @@ describe('the table NodeView', () => {
 
 	it('an arrow steps the selection, and stops where the axis does', () => {
 		const { field } = tableLeaf(LETTERED);
-		const handle = handles(field, 'row')[0];
-		handle.click();
-		key(handle, 'ArrowDown');
+		const grip = grips(field, 'row')[1];
+		grip.click();
+		key(grip, 'ArrowDown');
 		expect(washed(field)).toEqual(['2,0', '2,1']);
-		// Up twice from there stops at the first BODY row: the header carries no handle,
-		// so it is never the selected line.
-		key(handles(field, 'row')[1], 'ArrowUp');
-		key(handles(field, 'row')[0], 'ArrowUp');
-		expect(washed(field)).toEqual(['1,0', '1,1']);
+		// Up runs to the HEADER and stops there, the row axis floor being row 0 like
+		// every other index the chrome walks.
+		key(grips(field, 'row')[2], 'ArrowUp');
+		key(grips(field, 'row')[1], 'ArrowUp');
+		expect(washed(field)).toEqual(['0,0', '0,1']);
+		key(grips(field, 'row')[0], 'ArrowUp');
+		expect(washed(field)).toEqual(['0,0', '0,1']);
 		field.destroy();
 	});
 
-	it('where the model keeps the line, the gesture CLEARS it: the last column', () => {
-		const { field } = tableLeaf(newTable(1, 1));
-		const handle = handles(field, 'column')[0];
-		handle.click();
-		key(handle, 'Backspace');
-		expect(columnCount(leafProps(field))).toBe(1);
+	it('the one line that IS the table deletes it: a one-column table, its grip', () => {
+		const { doc, field } = tableLeaf(newTable(1, 1));
+		const grip = grips(field, 'column')[0];
+		grip.click();
+		// That rectangle spans both axes — the column is every column and it runs every
+		// row — so it is the table, and the table is what goes.
+		key(grip, 'Backspace');
+		expect(doc.main.body.islands).toHaveLength(0);
 		field.destroy();
 	});
 
 	it('Alt+arrow moves the selected line, and the selection travels with it', () => {
 		const { field } = tableLeaf(LETTERED);
-		const handle = handles(field, 'row')[0];
-		handle.click();
-		key(handle, 'ArrowDown', { altKey: true });
+		const grip = grips(field, 'row')[1];
+		grip.click();
+		key(grip, 'ArrowDown', { altKey: true });
 		expect(grid(leafProps(field))).toEqual([
 			['h1', 'h2'],
 			['b1', 'b2'],
@@ -361,9 +434,9 @@ describe('the table NodeView', () => {
 
 	it('a column moves with its alignment', () => {
 		const { field } = tableLeaf(LETTERED);
-		const handle = handles(field, 'column')[1];
-		handle.click();
-		key(handle, 'ArrowLeft', { altKey: true });
+		const grip = grips(field, 'column')[1];
+		grip.click();
+		key(grip, 'ArrowLeft', { altKey: true });
 		expect(grid(leafProps(field))).toEqual([
 			['h2', 'h1'],
 			['a2', 'a1'],
@@ -373,26 +446,27 @@ describe('the table NodeView', () => {
 		field.destroy();
 	});
 
-	it("a selected column raises the alignment cluster, marking the column's own", () => {
+	it('Alt+arrow carries the header down, and the row it passed is the header now', () => {
 		const { field } = tableLeaf(LETTERED);
-		handles(field, 'column')[1].click();
-		// ONE cluster, and it hangs off the selected column's own header cell: at most
-		// one column is ever selected, so there is nothing to build per column.
-		const open = field.el.querySelectorAll('.qm-table-align');
-		expect(open).toHaveLength(1);
-		expect(open[0].parentElement?.getAttribute('data-c')).toBe('1');
-		const marked = open[0].querySelector('[aria-pressed="true"]');
-		expect(marked?.getAttribute('data-align')).toBe('right'); // LETTERED's column 2
-		open[0].querySelector<HTMLButtonElement>('[data-align="center"]')!.click();
-		expect(leafProps(field).aligns).toEqual(['left', 'center']);
+		const grip = grips(field, 'row')[0];
+		grip.click();
+		key(grip, 'ArrowDown', { altKey: true });
+		expect(grid(leafProps(field))).toEqual([
+			['a1', 'a2'],
+			['h1', 'h2'],
+			['b1', 'b2']
+		]);
+		// The selection travels with the LINE, which is now row 1 and no longer the
+		// header: what a grip names is an index, and the move handed index 0 over.
+		expect(washed(field)).toEqual(['1,0', '1,1']);
 		field.destroy();
 	});
 
 	it('Escape leaves a line selection for the island, one rung up the ladder', () => {
 		const { field } = tableLeaf(LETTERED);
-		const handle = handles(field, 'row')[0];
-		handle.click();
-		key(handle, 'Escape');
+		const grip = grips(field, 'row')[1];
+		grip.click();
+		key(grip, 'Escape');
 		const selection = outerView(field).state.selection;
 		expect(selection instanceof NodeSelection && selection.node.type.name).toBe('island_block');
 		expect(washed(field)).toEqual([]);
@@ -401,29 +475,24 @@ describe('the table NodeView', () => {
 
 	it('a caret in a cell drops the line selection: one subject at a time', () => {
 		const { field } = tableLeaf(LETTERED);
-		handles(field, 'row')[0].click();
+		grips(field, 'row')[1].click();
 		expect(washed(field)).not.toEqual([]);
 		cellViews(field)[0].focus();
 		expect(washed(field)).toEqual([]);
 		field.destroy();
 	});
 
-	it('a seam opens a line at its own boundary, leading and trailing alike', () => {
+	it('a cap appends at the far end of its own axis', () => {
 		const { field } = tableLeaf(LETTERED);
-		// The leading seam is the off-by-one that matters: index 0 opens a column at the
-		// front rather than after the first.
-		seams(field, 'column')[0].click();
-		expect(grid(leafProps(field))[0]).toEqual(['', 'h1', 'h2']);
-		// The trailing one is the whole growth affordance on each axis. Re-queried: an
-		// op rebuilds the chrome, so the seam pressed before is not the element now.
-		const cols = seams(field, 'column');
-		cols[cols.length - 1].click();
-		expect(columnCount(leafProps(field))).toBe(4);
-		const rows = seams(field, 'row');
-		rows[rows.length - 1].click();
+		cap(field, 'column').click();
+		expect(columnCount(leafProps(field))).toBe(3);
+		expect(grid(leafProps(field))[0]).toEqual(['h1', 'h2', '']);
+		// Re-queried: an op rebuilds the chrome, so the cap pressed before is not the
+		// element now.
+		cap(field, 'row').click();
 		expect(leafProps(field).rows).toHaveLength(3);
-		// Both grew the rectangle rather than the axis they were on alone.
-		expect(grid(leafProps(field)).every((row) => row.length === 4)).toBe(true);
+		// Both grew the RECTANGLE rather than the axis they were on alone.
+		expect(grid(leafProps(field)).every((line) => line.length === 3)).toBe(true);
 		field.destroy();
 	});
 
@@ -473,8 +542,11 @@ describe('the table NodeView', () => {
 		const outer = outerView(field);
 		const selection = outer.state.selection;
 		expect(selection instanceof NodeSelection && selection.node.type.name).toBe('island_block');
+		// Delete is the SELECTION's verb, the one every island already answered to;
+		// nothing on the band names it a second time.
 		outer.dispatch(outer.state.tr.deleteSelection());
 		expect(doc.main.body.islands).toHaveLength(0);
+		expect(doc.main.body.text).toBe('para\ntail');
 		field.destroy();
 	});
 
@@ -498,14 +570,266 @@ describe('the table NodeView', () => {
 		field.destroy();
 	});
 });
+// ── The selection ───────────────────────────────────────────────────────────
+//
+// One rectangle of cells, drawn two ways — a grip names the line it covers, a press
+// that travels sweeps the block it crossed — and one verb over it. What Backspace
+// means is read off the rectangle's EXTENT, so these assert the extents rather than
+// the gestures: a row swept cell by cell has to delete exactly as the row its grip
+// named does, or there are two rules wearing one key.
+
+describe('a selection is a rectangle of cells, and Backspace reads its extent', () => {
+	it('a press that travels out of its cell sweeps a block; one that stays is a caret', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		// Cell 2 is row 1 column 1, cell 5 is row 2 column 2: the block between them.
+		sweep(field, 2, 5);
+		expect(washed(field)).toEqual(['1,0', '1,1', '2,0', '2,1']);
+		// And a press that does not travel leaves the caret alone: the cell keeps it.
+		pressAt(field.el.querySelectorAll('.qm-table-cell-host')[0], 40, 30);
+		expect(washed(field)).toEqual([]);
+		field.destroy();
+	});
+
+	it('a block of cells CLEARS on Backspace, and the rectangle stays selected', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		sweep(field, 2, 4); // rows 1–2, column 1 only: neither axis is spanned
+		expect(washed(field)).toEqual(['1,0', '2,0']);
+		press(cellViews(field)[2], 'Backspace');
+		expect(grid(leafProps(field))).toEqual([
+			['h1', 'h2'],
+			['', 'a2'],
+			['', 'b2']
+		]);
+		expect(washed(field)).toEqual(['1,0', '2,0']);
+		field.destroy();
+	});
+
+	it('a block spanning every column is a set of ROWS, and deletes them', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		sweep(field, 2, 5); // both body rows, both columns
+		press(cellViews(field)[2], 'Backspace');
+		expect(grid(leafProps(field))).toEqual([['h1', 'h2']]);
+		field.destroy();
+	});
+
+	it('a block spanning every row is a set of COLUMNS, and deletes them', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		sweep(field, 1, 5); // header through last body row, column 2 only
+		expect(washed(field)).toEqual(['0,1', '1,1', '2,1']);
+		press(cellViews(field)[1], 'Backspace');
+		expect(grid(leafProps(field))).toEqual([['h1'], ['a1'], ['b1']]);
+		expect(leafProps(field).aligns).toEqual(['left']);
+		field.destroy();
+	});
+
+	it('the whole table is the ISLAND, and Backspace deletes it', () => {
+		const { doc, field } = tableLeaf(LETTERED);
+		layout(field);
+		sweep(field, 0, 5); // every cell
+		expect(washed(field)).toHaveLength(6);
+		press(cellViews(field)[0], 'Backspace');
+		// The rule's own limit: every rank going at once leaves no table for a rank
+		// deletion to have produced, so what the selection covers is the table.
+		expect(doc.main.body.islands).toHaveLength(0);
+		expect(doc.main.body.text).toBe('para\ntail');
+		field.destroy();
+	});
+
+	it('one Mod-z brings the deleted table back whole', () => {
+		const { doc, field } = tableLeaf(LETTERED);
+		layout(field);
+		sweep(field, 0, 5);
+		press(cellViews(field)[0], 'Backspace');
+		expect(doc.main.body.islands).toHaveLength(0);
+		// The delete is an ordinary transaction on the leaf's own view, so it rides the
+		// one undo stack every other op here does and comes back in one step.
+		press(outerView(field), 'z', { ctrlKey: true });
+		expect(doc.main.body.islands).toHaveLength(1);
+		expect(grid(leafProps(field))).toEqual(grid(LETTERED));
+		field.destroy();
+	});
+
+	it("a fresh press in a cell retires the block, and Backspace is the text's again", () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		sweep(field, 2, 5);
+		expect(washed(field)).not.toEqual([]);
+		// The origin cell already holds the focus, so no `focus` event fires: the press
+		// itself is what has to drop the block.
+		pressAt(field.el.querySelectorAll('.qm-table-cell-host')[2], 40, 55);
+		expect(washed(field)).toEqual([]);
+		// The block handler DECLINES with nothing held, which is what leaves an ordinary
+		// Backspace to the text. jsdom edits no contenteditable, so what is observable is
+		// the wrong outcome: the cells emptied by a handler that should not have fired.
+		press(cellViews(field)[2], 'Backspace');
+		expect(grid(leafProps(field))).toEqual([
+			['h1', 'h2'],
+			['a1', 'a2'],
+			['b1', 'b2']
+		]);
+		field.destroy();
+	});
+
+	it('a grip draws the same rectangle its line covers', () => {
+		const { field } = tableLeaf(LETTERED);
+		grips(field, 'row')[1].click();
+		expect(washed(field)).toEqual(['1,0', '1,1']);
+		// Swept or named, one rectangle: the grip is marked exactly when the selection is
+		// its own line, which is the only thing that tells the two gestures apart.
+		expect(grips(field, 'row')[1].getAttribute('aria-pressed')).toBe('true');
+		layout(field);
+		sweep(field, 2, 3);
+		expect(washed(field)).toEqual(['1,0', '1,1']);
+		expect(grips(field, 'row')[1].getAttribute('aria-pressed')).toBe('true');
+		field.destroy();
+	});
+
+	it('every selected cell goes with its rank, header and all', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		// The header AND the first body row, across every column: two rows, and both go.
+		// The header being stored apart from `rows` buys it no exemption — the row left
+		// at index 0 is the header, so the table below is one that lost two ranks.
+		sweep(field, 0, 3);
+		expect(washed(field)).toEqual(['0,0', '0,1', '1,0', '1,1']);
+		press(cellViews(field)[0], 'Backspace');
+		expect(grid(leafProps(field))).toEqual([['b1', 'b2']]);
+		field.destroy();
+	});
+
+	it('the header row alone deletes, and the row under it is the header now', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		sweep(field, 0, 1); // the whole header, and nothing under it
+		press(cellViews(field)[0], 'Backspace');
+		expect(grid(leafProps(field))).toEqual([
+			['a1', 'a2'],
+			['b1', 'b2']
+		]);
+		// And it is the HEADER cell it landed in: the `thead` holds one row, whichever
+		// row that is.
+		expect(field.el.querySelectorAll('th.qm-table-cell')[0].textContent).toBe('a1');
+		field.destroy();
+	});
+
+	it('a sub-rectangle is the only thing left that clears', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		// One cell: it spans neither axis, so no rank covers it and no rank can go.
+		sweep(field, 0, 2);
+		expect(washed(field)).toEqual(['0,0', '1,0']);
+		press(cellViews(field)[0], 'Backspace');
+		expect(grid(leafProps(field))).toEqual([
+			['', 'h2'],
+			['', 'a2'],
+			['b1', 'b2']
+		]);
+		field.destroy();
+	});
+});
+
+// ── The grip drag ───────────────────────────────────────────────────────────
+//
+// A grip lives INSIDE the cell it names, so a press on one reaches the island's own
+// pointer router as a press in that cell. The router has to read it as the LINE's, or
+// the travel that drags a line also sweeps the cells it crosses and one press draws two
+// selections.
+
+/** Drive a grip drag: the press, the travel and the release, all on the grip, which is
+ *  where the view listens once it has the pointer. jsdom implements no pointer capture,
+ *  and the view asks for it optionally for that reason. */
+function dragGrip(grip: HTMLButtonElement, path: [number, number][]): void {
+	const at = (type: string, [x, y]: [number, number]) =>
+		grip.dispatchEvent(
+			new PointerEvent(type, {
+				bubbles: true,
+				cancelable: true,
+				pointerId: 1,
+				clientX: x,
+				clientY: y
+			})
+		);
+	at('pointerdown', path[0]);
+	for (const step of path.slice(1)) at('pointermove', step);
+	at('pointerup', path[path.length - 1]);
+}
+
+describe('a grip drag moves its line', () => {
+	it('the travel draws no block: a grip press is not a press in the cell it sits in', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		// The mousedown-then-travel that sweeps a block from a cell's own host (above),
+		// aimed at the grip inside that same cell.
+		pressAt(grips(field, 'row')[1], 35, 55);
+		for (const [x, y] of [
+			[60, 60],
+			[150, 80]
+		])
+			document.dispatchEvent(
+				new MouseEvent('mousemove', { bubbles: true, cancelable: true, clientX: x, clientY: y })
+			);
+		document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+		expect(washed(field)).toEqual([]);
+		// And no caret was planted on the way in: the press was the line's throughout.
+		expect((field as FieldController & LeafViews).focusedView()).toBe(outerView(field));
+		field.destroy();
+	});
+
+	it('the line lands where the pointer left it, and stays selected', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		// Row 1 (45–65 in the stubbed geometry) lifted and carried into row 2's extent.
+		dragGrip(grips(field, 'row')[1], [
+			[35, 55],
+			[35, 60],
+			[35, 80]
+		]);
+		expect(grid(leafProps(field))).toEqual([
+			['h1', 'h2'],
+			['b1', 'b2'],
+			['a1', 'a2']
+		]);
+		// The selection travels with the line, or the next Alt+arrow acts on whatever
+		// took the index.
+		expect(washed(field)).toEqual(['2,0', '2,1']);
+		field.destroy();
+	});
+
+	it('a body row dragged onto the header becomes the header', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		// Row 2 (70–85) lifted and carried up into row 0's extent (20–40), which the drag
+		// reaches because the row axis runs to 0 like the column one does.
+		dragGrip(grips(field, 'row')[2], [
+			[35, 78],
+			[35, 70],
+			[35, 30]
+		]);
+		expect(grid(leafProps(field))).toEqual([
+			['b1', 'b2'],
+			['h1', 'h2'],
+			['a1', 'a2']
+		]);
+		expect(washed(field)).toEqual(['0,0', '0,1']);
+		// The drop landed in `header`, not on top of it: the `thead` is one row deep
+		// however many rows have passed through index 0.
+		expect(field.el.querySelectorAll('thead tr')).toHaveLength(1);
+		expect(field.el.querySelectorAll('th.qm-table-cell')[0].textContent).toBe('b1');
+		field.destroy();
+	});
+});
 
 // ── The pointer, and what a selection is for ────────────────────────────────
 //
 // Click-to-NodeSelect belongs to an atom with no interior, and a table has cells. So
 // a press on the chrome resolves to a CARET (inside the frame the nearest cell's,
 // outside it the document's), and a printable key over a selected island writes past
-// it rather than replacing it. What selects the island is a named gesture: the
-// corner, or Escape.
+// it rather than replacing it. What selects the island is one named gesture, Escape,
+// and no pointer gesture at all.
 
 interface Box {
 	left: number;
@@ -547,6 +871,11 @@ function layout(field: FieldController, hosts: Box[] = HOSTS): void {
 	field.el
 		.querySelectorAll('.qm-table-cell-host')
 		.forEach((host, i) => hosts[i] && stub(host, hosts[i]));
+	// The `td`s take the same boxes as the hosts they hold: what a press resolves
+	// against is the host, and what a SWEEP resolves against is the box, so a test that
+	// drives either needs both. Tiling them identically is close enough for a hit test
+	// and keeps one set of numbers.
+	field.el.querySelectorAll('.qm-table-cell').forEach((box, i) => hosts[i] && stub(box, hosts[i]));
 }
 
 // jsdom implements no `Range` rects, and PM reads them to scroll a caret it just
@@ -636,22 +965,6 @@ describe('a pointer press on the island resolves to a caret', () => {
 		const event = new MouseEvent('mousedown', { cancelable: true, clientX: 5, clientY: 5 });
 		field.el.querySelector('.qm-table-island')!.dispatchEvent(event);
 		expect(event.defaultPrevented).toBe(false);
-		field.destroy();
-	});
-});
-
-describe("the corner is the island's handle", () => {
-	it('a press selects the island, which Backspace then deletes', () => {
-		const { doc, field } = tableLeaf(LETTERED);
-		corner(field).click();
-		const outer = outerView(field);
-		const selection = outer.state.selection;
-		expect(selection instanceof NodeSelection && selection.node.type.name).toBe('island_block');
-		// Delete is the SELECTION's verb, the one every island already answered to;
-		// nothing names it a second time.
-		outer.dispatch(outer.state.tr.deleteSelection());
-		expect(doc.main.body.islands).toHaveLength(0);
-		expect(doc.main.body.text).toBe('para\ntail');
 		field.destroy();
 	});
 });
