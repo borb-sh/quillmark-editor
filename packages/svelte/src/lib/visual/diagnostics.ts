@@ -33,11 +33,13 @@
 import type { Diagnostic } from '@quillmark/wasm';
 import { addrForFieldPath } from '../core/address.js';
 
-/** A field's routing address. `card` is `undefined` for the main card; a
- * composable card slot is a stable session id (the editor's own bookkeeping)
- * once resolved, or an ABSOLUTE document-array index straight off a parsed
- * `DocPath` (resolve via {@link resolveCardKey} before merging with id-keyed
- * sources). `field` `undefined` addresses the body (the field-less leaf). */
+/** A field's routing address, and `/core`'s `Addr` structurally: an `Addr` IS a
+ * positional `FieldKey`, so `addrForFieldPath` is the path→key walk and routing
+ * carries no second copy of the grammar. `card` is `undefined` for the main card; a
+ * composable card slot is a stable session id (the editor's own bookkeeping) once
+ * resolved, or an ABSOLUTE document-array index straight off a parsed `DocPath`
+ * (resolve via {@link resolveCardKey} before merging with id-keyed sources). `field`
+ * `undefined` addresses the body (the field-less leaf). */
 export interface FieldKey {
 	card?: string | number;
 	field?: string;
@@ -49,21 +51,8 @@ export function fieldKeyToString(k: FieldKey): string {
 }
 
 /**
- * Route a canonical `DocPath` (a `Diagnostic.path`, or a `ContentHit` /
- * `FieldRegion` field address; one grammar) to a `FieldKey`, `card` the ABSOLUTE
- * document-array index. `/core`'s `addrForFieldPath` IS this walk — an `Addr` is a
- * positional `FieldKey` — so routing reads the one public inverse rather than a
- * second copy of the grammar that drifts from it. `undefined` for a path naming no
- * single commit address (a nested / array-element path, a field-rooted one, a
- * malformed one).
- */
-export function parsePath(path: string): FieldKey | undefined {
-	return addrForFieldPath(path);
-}
-
-/**
  * Resolve a positional `FieldKey` (an ABSOLUTE document-array index, straight off
- * {@link parsePath}) to the editor's stable-id keying using the LIVE `cardIds`
+ * `addrForFieldPath`) to the editor's stable-id keying using the LIVE `cardIds`
  * array: re-resolved fresh on every call (never cached), the same "resolve only
  * at the point of use" discipline `cardIndexOf` applies to writes (VISUAL_EDITOR
  * §"The address is the spine"). A key already id-keyed (`card` a string) or main
@@ -84,10 +73,10 @@ export interface RoutedDiagnostic {
 
 /**
  * Route a path-keyed producer's raw `Diagnostic[]` (validate / external) to the
- * editor's stable-id keying: the ONE door producers #1/#3 take, `parsePath` and
- * `resolveCardKey` in a single pass. An entry drops rather than mis-routes when it
- * carries no `path`, when `parsePath` cannot place it (a nested / array-element
- * address), or when its absolute card index is out of the live `cardIds`.
+ * editor's stable-id keying: the ONE door producers #1/#3 take, `addrForFieldPath`
+ * and `resolveCardKey` in a single pass. An entry drops rather than mis-routes when
+ * it carries no `path`, when the path names no single commit address (a nested /
+ * array-element one), or when its absolute card index is out of the live `cardIds`.
  */
 export function routeAndResolve(
 	diagnostics: Diagnostic[] | undefined,
@@ -96,7 +85,7 @@ export function routeAndResolve(
 	const out: RoutedDiagnostic[] = [];
 	for (const d of diagnostics ?? []) {
 		if (!d.path) continue;
-		const key = parsePath(d.path);
+		const key = addrForFieldPath(d.path);
 		const resolved = key && resolveCardKey(key, cardIds);
 		if (resolved) out.push({ key: resolved, diagnostic: d });
 	}

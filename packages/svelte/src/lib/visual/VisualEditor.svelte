@@ -25,8 +25,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { reportError } from '../core/errors.js';
-	import type { ContentHit } from '@quillmark/wasm';
-	import type { DocPath } from '../core/address.js';
+	import type { DocPath, Landing } from '../core/address.js';
 	import type { CardId } from './signals.js';
 	import type { VisualEditorProps } from './props.js';
 	import VisualEditorInner from './VisualEditorInner.svelte';
@@ -67,9 +66,10 @@
 	// landing between a swap and the incoming mount is a no-op rather than a throw,
 	// which is what lets a host hold ONE `bind:this` across two documents.
 
-	/** Place the caret at a preview hit; a form control takes the focus and no caret. */
-	export async function setCaret(hit: ContentHit): Promise<void> {
-		await inner?.setCaret(hit);
+	/** Land a preview pick: a caret where the payload carries one and the leaf can
+	 *  spend it, an array element where the address names one, a focus otherwise. */
+	export async function setCaret(at: Landing): Promise<void> {
+		await inner?.setCaret(at);
 	}
 	/** Reveal and focus the field at `field` — any mounted one — without placing a
 	 *  caret inside it. */

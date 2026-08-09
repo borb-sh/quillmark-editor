@@ -28,6 +28,16 @@ import type { FieldController } from '../core/codec/index.js';
  */
 export interface FieldControl {
 	focus(): void;
+	/**
+	 * Focus element `index` of a control that HAS elements, resolving the index to the
+	 * element's session id at the call; {@link focus}'s own answer for an index past
+	 * the live list. Absent on every control without elements.
+	 *
+	 * The granularity rides the CALL because the registry stays parent-keyed: a
+	 * per-element key is positional, in a registry whose doctrine is dodging
+	 * positional churn.
+	 */
+	focusElement?(index: number): void;
 	readonly el: HTMLElement;
 }
 

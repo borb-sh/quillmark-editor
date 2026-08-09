@@ -12,7 +12,7 @@
 
     edit ─► (debounced) session.update(doc) ─► preview.refresh(change)
                                             └► notes = every producer, merged
-    preview click ─► onCaretPick(hit) ─► editor.setCaret(hit)
+    preview click ─► onPick(at) ─► editor.setCaret(at)
                                       └► shown = 1   (reveal, under the threshold)
     editor caret  ─► onCaretMove(at)  ─► preview.focusPosition(at)
 
@@ -29,10 +29,10 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import { Engine } from '@quillmark/wasm';
-	import type { ContentHit, Diagnostic } from '@quillmark/wasm';
+	import type { Diagnostic } from '@quillmark/wasm';
 	import type { Quiver } from '@quillmark/quiver';
 	import { init } from '@quillmark/svelte/core';
-	import type { EditorError, Place } from '@quillmark/svelte/core';
+	import type { EditorError, Landing, Place } from '@quillmark/svelte/core';
 	import { Preview } from '@quillmark/svelte/preview';
 	import { VisualEditor } from '@quillmark/svelte/visual';
 	import type { EditorChange } from '@quillmark/svelte/visual';
@@ -103,7 +103,7 @@
 	}
 
 	// Surface handles for the two imperative bridge hops.
-	let editorRef: { setCaret(hit: ContentHit): Promise<void> } | undefined = $state.raw();
+	let editorRef: { setCaret(at: Landing): Promise<void> } | undefined = $state.raw();
 	let previewRef: ReturnType<typeof Preview> | undefined = $state.raw();
 
 	/** Which of the split's two tracks is showing. Read only under the preset's threshold,
@@ -241,9 +241,9 @@
 	 *  `setCaret` already waits one out before it lands (a collapsed group is `inert` and
 	 *  swallows a focus, the same way a hidden track would), and the track's `display`
 	 *  moves in that same flush. */
-	function handleCaretPick(hit: ContentHit): void {
+	function handlePick(at: Landing): void {
 		shown = 1;
-		editorRef?.setCaret(hit);
+		editorRef?.setCaret(at);
 	}
 
 	/** The editor already speaks the preview's address grammar, so nothing translates. */
@@ -391,7 +391,7 @@
 					<Preview
 						bind:this={previewRef}
 						session={open.session}
-						onCaretPick={handleCaretPick}
+						onPick={handlePick}
 						onError={handleSurfaceError}
 					/>
 				</section>

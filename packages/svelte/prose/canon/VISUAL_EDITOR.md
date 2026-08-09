@@ -105,7 +105,7 @@ A document swap arrives as a destroy (leaves and card ids seed once, so a swap r
 
 `VisualEditor` is a door over `VisualEditorInner`, and the door's whole content is `{#key doc}`: a consumer hands it a different document and the editor remounts under it. The split exists because the state a swap invalidates is not one field. Composable cards key on session id and would re-mount unprompted, the main card is keyed on nothing, and each prose leaf mounts once per stable leaf key with `createField` closing over the `doc` it was handed — so an unkeyed swap leaves the main card rendering and committing to the previous document with every id and index still agreeing. Reseeding by hand means threading a generation token through every leaf key and resetting the id state, the commit-error map, the active address, the leaf registry, the card refs and any pending scroll, which is a remount written out one field at a time. The `{#key}` writes it once.
 
-`quill` is deliberately outside the key: the schema is re-read on every derive, so a quill swap re-projects correctly and keying on it would discard a card tree that needed no rebuilding. What a re-derive cannot do is re-mount the leaves, so a quill swapped without its document reports `rebind-ignored` at `dev` severity. `Preview` reports the same code, and not for `session` alone: the paint loop owns scroll position, mounted slots and an observer set that a remount would discard on every apply, so every prop `createPreview` closed over (`session`, `margin`, `overlays`, `onCaretPick`, `onError`, `strings`) is once-bound, the swap stays the consumer's `{#key session}`, and one guard over the set is what stops it being silent. A guard over one prop of a set is worse than none: a consumer who learns the surface complains when it ignores a prop reads silence on the rest as reactivity. `core/rebind.svelte.ts` is the one copy. It snapshots the mounted identities on its own first run and reports through the `onError` it bound, so the report of a swapped handler reaches the handler that was replaced.
+`quill` is deliberately outside the key: the schema is re-read on every derive, so a quill swap re-projects correctly and keying on it would discard a card tree that needed no rebuilding. What a re-derive cannot do is re-mount the leaves, so a quill swapped without its document reports `rebind-ignored` at `dev` severity. `Preview` reports the same code, and not for `session` alone: the paint loop owns scroll position, mounted slots and an observer set that a remount would discard on every apply, so every prop `createPreview` closed over (`session`, `margin`, `overlays`, `onPick`, `onError`, `strings`) is once-bound, the swap stays the consumer's `{#key session}`, and one guard over the set is what stops it being silent. A guard over one prop of a set is worse than none: a consumer who learns the surface complains when it ignores a prop reads silence on the rest as reactivity. `core/rebind.svelte.ts` is the one copy. It snapshots the mounted identities on its own first run and reports through the `onError` it bound, so the report of a swapped handler reaches the handler that was replaced.
 
 ## Chrome
 
@@ -160,7 +160,7 @@ function createField(opts: {
 }): FieldController;
 
 interface FieldController {
-  setCaret(pos: number): void; // preview onCaretPick → codec.usvToPM → here
+  setCaret(pos: number): void; // preview onPick → codec.usvToPM → here
   applyExternal(): void; // external content change → re-hydrate this leaf (gated)
   focus(): void;
   getContent(): Content; // the leaf's stored content (tests / reconcile)
@@ -179,13 +179,13 @@ interface FieldController {
   onChange={(change) => change.source === 'structure' ? recompileNow() : schedule()}
   onError={(err) => …}
 />
-<!-- bridge in: visualEditor.setCaret(hit) from preview.onCaretPick -->
+<!-- bridge in: visualEditor.setCaret(at) from preview.onPick -->
 ```
 
 The instance surface, reached by that `bind:this`:
 
 ```ts
-setCaret(hit: ContentHit): Promise<void>;      // preview → editor
+setCaret(at: Landing): Promise<void>;          // preview → editor; a caret where the pick has one
 focusField(field: DocPath): Promise<void>;     // any mounted field: reveal + focus, no caret
 insertCard(kind: string, at?: number): CardId | undefined;  // the new card's key
 removeCard(cardId: CardId): void;
@@ -195,7 +195,11 @@ setKind(cardId: CardId, kind: string): void;
 
 **The verbs are the card header's own, and the door is the point.** A host toolbar, command palette or shortcut wants what the chrome has, and every call reports through `onChange` exactly as the click does, so a host that recompiles off the hook needs no second path for its own gestures. They speak the public vocabulary — a `CardId` for a card, a `DocPath` for a place — so a host drives them with what the hooks handed it, and a `bind:this` held across a document swap keeps working: the door delegates to the live mount, so a call landing between a swap and the incoming mount is a no-op.
 
-A target the surface does not hold — a `cardId` from a previous session or an already-removed card, a path naming no declared field, or one at a granularity no field is mounted at — is a no-op reporting `target-unknown` at `dev`. `setCaret` reports it too, being the verb a preview click drives: a landing that resolved nothing is otherwise indistinguishable from one that landed, and a consumer wiring the bridge reads the difference off nothing else. The remaining granularity gap is the array ELEMENT (`main.references.0`): the preview reports a region for one, `Addr.field` is a flat name, and the element controls are therefore focusable but unaddressable.
+A target the surface does not hold — a `cardId` from a previous session or an already-removed card, or a path naming no declared field — is a no-op reporting `target-unknown` at `dev`. `setCaret` reports it too, being the verb a preview click drives: a landing that resolved nothing is otherwise indistinguishable from one that landed, and a consumer wiring the bridge reads the difference off nothing else. It is not how the PREVIEW answers for a field it places nothing for ([PREVIEW.md](PREVIEW.md) §"Follow-the-caret scroll"): that is a compile answering honestly, not a contract violated.
+
+**An array ELEMENT is a target through its field.** The boundary mints `main.references.0` — an address `Addr` cannot name and the registry is not keyed at — so the landing resolves in two rungs: the whole-path parse, then the trailing segment read as an INDEX under a field the schema declares an array. The reveal is the parent's (a group holds the field), and the row is taken by a call on the parent's control, resolved index→session id at the call, the same "resolve only at the point of use" discipline every write takes. Per-element registry keys would be positional keys in a registry whose whole doctrine is dodging positional churn, restaled by every splice above them.
+
+The GUARDED parse is the editor's because the editor holds `quill.schema`: "trailing segment `0` under a declared array" is checkable here and nowhere else, since the preview carries no schema and could only guess whether `0` is an index or a field named `0`. Truncating at the preview would be worse than guessing — `pos` is an offset into the ELEMENT's own content, so rewriting the field to `main.references` yields a payload that typechecks and mis-addresses. The remaining gap is the caret INSIDE an element: an element is not a `createField` leaf and its handle is a bare focus, so a cluster-exact caret the compile resolved is dropped at the landing.
 
 ## Not owned
 

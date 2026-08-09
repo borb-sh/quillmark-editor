@@ -9,7 +9,7 @@
 
     edit ─► (debounced) session.update(doc) ─► preview.refresh(change)
                                             └► diagnostics = session.warnings
-    preview click ─► onCaretPick(hit) ─► editor.setCaret(hit)     (preview→editor)
+    preview click ─► onPick(at) ─► editor.setCaret(at)          (preview→editor)
                                       └► shown = 1                (reveal, narrow)
     editor caret  ─► onCaretMove(at)  ─► preview.focusPosition(at) (editor→preview)
 
@@ -43,15 +43,8 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type {
-		Quill,
-		Document,
-		LiveSession,
-		ContentHit,
-		ChangeSet,
-		Diagnostic
-	} from '@quillmark/wasm';
-	import type { Place, EditorError } from '@quillmark/svelte/core';
+	import type { Quill, Document, LiveSession, ChangeSet, Diagnostic } from '@quillmark/wasm';
+	import type { Landing, Place, EditorError } from '@quillmark/svelte/core';
 	import type { ActiveLeaf, EditorChange } from '@quillmark/svelte/visual';
 	import { Preview } from '@quillmark/svelte/preview';
 	import { loadUsafMemoTree, withMainDateDefault, withSecondCardKind } from '../fixture';
@@ -67,7 +60,7 @@
 	let docHandle: Document | undefined = $state();
 
 	// Surface handles for the imperative bridge hops.
-	let editorRef: { setCaret(hit: ContentHit): Promise<void> } | undefined = $state();
+	let editorRef: { setCaret(at: Landing): Promise<void> } | undefined = $state();
 	let previewRef: ReturnType<typeof Preview> | undefined = $state();
 
 	// Which of the split's two tracks is showing. It is read only under the preset's
@@ -85,7 +78,7 @@
 	}
 
 	// Bridge observability: what the strip reads.
-	let lastHit = $state<ContentHit | undefined>();
+	let lastHit = $state<Landing | undefined>();
 	let activeAddr = $state('none');
 	let lastFocus = $state('none');
 	let lastChange = $state<ChangeSet | undefined>();
@@ -126,10 +119,10 @@
 	// `setCaret` already waits one out before it lands (a collapsed group is `inert` and
 	// swallows a focus, the same way a hidden track would), and the track's `display`
 	// moves in that same flush.
-	function handleCaretPick(hit: ContentHit): void {
-		lastHit = hit;
+	function handlePick(at: Landing): void {
+		lastHit = at;
 		shown = 1;
-		editorRef?.setCaret(hit);
+		editorRef?.setCaret(at);
 	}
 
 	// ── Bridge: editor → preview ────────────────────────────────────────────────
@@ -339,7 +332,7 @@
 			</section>
 			<section class="qm-frame" aria-label="Live preview">
 				{#if session}
-					<Preview bind:this={previewRef} {session} onCaretPick={handleCaretPick} />
+					<Preview bind:this={previewRef} {session} onPick={handlePick} />
 				{/if}
 			</section>
 		</div>

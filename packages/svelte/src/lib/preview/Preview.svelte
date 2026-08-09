@@ -11,13 +11,13 @@
 	import { createPreview, type PreviewController } from './controller.js';
 	import { guardRebind } from '../core/rebind.svelte.js';
 	import type { PreviewStringsInput } from './strings.js';
-	import type { LiveSession, ContentHit, ChangeSet } from '@quillmark/wasm';
-	import type { DocPath, Place } from '../core/address.js';
+	import type { LiveSession, ChangeSet } from '@quillmark/wasm';
+	import type { DocPath, Landing, Place } from '../core/address.js';
 	import type { EditorErrorHandler } from '../core/errors.js';
 
 	/**
 	 * REMOUNT CONTRACT. `createPreview` binds once in `onMount`; a later change to any
-	 * prop it closed over (`session`, `margin`, `overlays`, `onCaretPick`, `onError`,
+	 * prop it closed over (`session`, `margin`, `overlays`, `onPick`, `onError`,
 	 * `strings`) is NOT observed, and each reports `rebind-ignored` when swapped. Swap
 	 * the session by REMOUNTING (`{#key session}`, as the playground does); drive
 	 * in-place edits through the `refresh(change)` method, not a prop change.
@@ -36,7 +36,7 @@
 		style?: string;
 		margin?: number;
 		overlays?: boolean;
-		onCaretPick?: (hit: ContentHit) => void;
+		onPick?: (at: Landing) => void;
 		/** A page paint the backend refused; the error message state shows either way. */
 		onError?: EditorErrorHandler;
 		/** The message-state wording, keyed and partial (`PreviewStrings`). */
@@ -47,7 +47,7 @@
 		session,
 		margin,
 		overlays,
-		onCaretPick,
+		onPick,
 		onError,
 		strings,
 		class: className,
@@ -58,7 +58,7 @@
 	let controller: PreviewController | undefined;
 
 	guardRebind(
-		() => ({ session, margin, overlays, onCaretPick, onError, strings }),
+		() => ({ session, margin, overlays, onPick, onError, strings }),
 		'Remount the preview ({#key session}) to rebind.'
 	);
 
@@ -68,7 +68,7 @@
 			container: containerEl,
 			margin,
 			overlays,
-			onCaretPick,
+			onPick,
 			onError,
 			strings
 		});
@@ -81,8 +81,9 @@
 	export function refresh(change: ChangeSet): void {
 		controller?.refresh(change);
 	}
-	export function scrollToField(field: DocPath): void {
-		controller?.scrollToField(field);
+	/** `false` when this compile places nothing at `field` ({@link PreviewController}). */
+	export function scrollToField(field: DocPath): boolean {
+		return controller?.scrollToField(field) ?? false;
 	}
 	/** Takes the editor's `onCaretMove` payload: `onCaretMove={preview.focusPosition}`. */
 	export function focusPosition(at: Place): void {

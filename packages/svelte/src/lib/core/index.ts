@@ -20,11 +20,12 @@ export { init } from './lifecycle.js';
 
 // ── The address vocabulary ──────────────────────────────────────────────────
 // Every hook naming a place speaks the canonical `DocPath`; `Place` is the caret
-// payload the editor emits and the preview scrolls to. Declared here because both
-// `/preview` and `/visual` name a place in their hooks: declared in either one,
-// the other imports across a boundary the package keeps closed or declares its
-// own copy.
-export type { DocPath, Place } from './address.js';
+// payload the editor emits and the preview scrolls to, `Landing` the one the
+// preview surfaces and the editor lands, whose caret is optional. Declared here
+// because both `/preview` and `/visual` name a place in their hooks: declared in
+// either one, the other imports across a boundary the package keeps closed or
+// declares its own copy.
+export type { DocPath, Landing, Place } from './address.js';
 // The hop between that vocabulary and the `Addr` the document verbs take, both
 // directions: a host handed a path by a hook and holding a mutator needs it.
 export { fieldPathForAddr, addrForFieldPath } from './address.js';

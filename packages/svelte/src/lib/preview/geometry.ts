@@ -1,10 +1,10 @@
-// The one shared pixel<->PDF-pt transform. Both the overlay's forward direction
-// (a FieldRegion rect -> CSS % of the page box, overlay.ts) and the bridge's
-// inverse (a CSS px click -> PDF-pt for `positionAt`, bridge.ts) derive from
-// `PageSize` alone here, so they can never drift apart; the correctness seam
-// PREVIEW.md calls out. Pure: no DOM, no session; safe to unit-test against known
-// geometry (tests/preview/geometry.test.ts).
-import type { PageSize } from '@quillmark/wasm';
+// The one shared pixel<->PDF-pt transform, and the one rule for WHICH rects an
+// address has. Both the overlay's forward direction (a FieldRegion rect -> CSS % of
+// the page box, overlay.ts) and the bridge's inverse (a CSS px click -> PDF-pt for
+// `positionAt`, bridge.ts) derive from `PageSize` alone here, so they can never
+// drift apart; the correctness seam PREVIEW.md calls out. Pure: no DOM, no session;
+// safe to unit-test against known geometry (tests/preview/geometry.test.ts).
+import type { FieldRegion, PageSize } from '@quillmark/wasm';
 
 /** A page rect in PDF points, `[x0, y0, x1, y1]`, bottom-left origin (`FieldRegion.rect`'s shape). */
 export type PdfRect = readonly [number, number, number, number];
@@ -21,6 +21,30 @@ export interface PercentRect {
 export interface PdfPoint {
 	x: number;
 	y: number;
+}
+
+/**
+ * An address's boxes: `fieldBoxes`'s union, else its own `regions()` rects, else the
+ * rects of everything UNDER it. The one rule the overlay and the scroll both read, so
+ * an address `regions()` names never draws nothing (PREVIEW.md §"Three
+ * responsibilities").
+ *
+ * `fieldBoxes` answers `[]` for a scalar reference the plate places without tracking
+ * its content and for a `richtext[]` element; runtime.d.ts says what such a field's
+ * box is, a single `regions()` rect. The third rung is that sentence one granularity
+ * down — an array's ink is its elements' — and is a fallback, not a union, so an
+ * address with rects of its own never also draws its children's. The `.` keeps the
+ * prefix a path boundary: `main.references` matches `main.references.0`, not
+ * `main.references_note`.
+ */
+export function boxesForField(
+	field: string,
+	boxes: readonly FieldRegion[],
+	regions: readonly FieldRegion[]
+): readonly FieldRegion[] {
+	if (boxes.length) return boxes;
+	const own = regions.filter((r) => r.field === field);
+	return own.length ? own : regions.filter((r) => r.field.startsWith(`${field}.`));
 }
 
 /**

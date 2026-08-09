@@ -1,10 +1,10 @@
-// Field-box overlay: absolutely-positioned % divs per page, one per
-// `session.fieldBoxes(field)` entry, grouped by `field` via a `data-qm-field`
-// attribute (a field can surface several boxes: header/continuation/repeat,
-// see PREVIEW.md). Reads geometry off the session; never mutates it. Each
-// page's layer sits over its canvas with `pointer-events:none` so clicks fall
-// through to bridge.ts's listener on the slot beneath; the overlay is
-// decoration, never an independent click target.
+// Field-box overlay: absolutely-positioned % divs per page, one per box an address
+// has (`geometry.ts`, `boxesForField`), grouped by `field` via a `data-qm-field`
+// attribute (a field can surface several boxes: header/continuation/repeat, see
+// PREVIEW.md). Reads geometry off the session; never mutates it. Each page's layer
+// sits over its canvas with `pointer-events:none` so clicks fall through to
+// bridge.ts's listener on the slot beneath; the overlay is decoration, never an
+// independent click target.
 //
 // The boxes carry NO resting ink. They exist for their geometry (bridge.ts reads
 // their rects) and to be bloomed: the preview is the rendered output, so
@@ -13,12 +13,13 @@
 import type { LiveSession } from '@quillmark/wasm';
 import { bloom, bloomTiming, primeWash } from '../core/bloom.js';
 import type { PageSlot } from './paint.js';
-import { rectToPercent, applyPercentRect } from './geometry.js';
+import { boxesForField, rectToPercent, applyPercentRect } from './geometry.js';
 
 export interface OverlayController {
 	/** Re-read geometry and rebuild every box; call after a layout-affecting refresh. */
 	refresh(): void;
-	/** Bloom `field`'s boxes: transient, and a no-op when `field` is already the marked one. */
+	/** Bloom the boxes at `field` AND under it: transient, and a no-op when `field`
+	 *  is already the marked one. */
 	flashField(field: string): void;
 	destroy(): void;
 }
@@ -46,29 +47,43 @@ export function createOverlay(session: LiveSession, slots: readonly PageSlot[]):
 	/** field → its boxes, rebuilt with them. The bloom's only lookup. */
 	let byField = new Map<string, HTMLElement[]>();
 
+	// The boxes a flash covers: the address's own, plus every one UNDER it, since the
+	// boxes are keyed as `regions()` names them (`main.references.0`) and an
+	// editor-side signal names the declared field (`main.references`). Resolved per
+	// apply rather than at `flashField`, so a rebuild picks up boxes the recompile
+	// moved or added.
+	function flashed(field: string): HTMLElement[] {
+		const els: HTMLElement[] = [];
+		for (const [key, group] of byField) {
+			if (key === field || key.startsWith(`${field}.`)) els.push(...group);
+		}
+		return els;
+	}
+
 	// Start or RESUME the bloom on whatever boxes exist for it now: one path, because
 	// starting is resuming at ~0. A field surfaces several boxes and they share
 	// `startedAt`, so they bloom in step rather than shimmering unevenly.
 	function applyFlash(): void {
-		const els = flash && byField.get(flash.field);
-		if (!flash || !els?.length) return;
+		if (!flash) return;
+		const els = flashed(flash.field);
+		if (!els.length) return;
 		const elapsed = performance.now() - flash.startedAt;
 		const timing = bloomTiming(els[0]);
 		for (const el of els) bloom(el, elapsed, timing);
 	}
 
-	// Field names come from `regions()` (the only session query that enumerates
-	// them; Preview carries no schema); the boxes themselves come from
-	// `fieldBoxes(field)`, which is content-only and `[]` for a scalar-reference
-	// or widget field, so a nameless-of-content field contributes no boxes.
+	// Field names come from `regions()` (the only session query that enumerates them;
+	// Preview carries no schema); the rects from `boxesForField`, whose fallback is
+	// what makes every address `regions()` names draw.
 	function build(): void {
 		for (const layer of layers) layer.replaceChildren();
 		byField = new Map();
+		const regions = session.regions();
 		const fields = new Set<string>();
-		for (const region of session.regions()) fields.add(region.field);
+		for (const region of regions) fields.add(region.field);
 		for (const field of fields) {
 			const els: HTMLElement[] = [];
-			for (const box of session.fieldBoxes(field)) {
+			for (const box of boxesForField(field, session.fieldBoxes(field), regions)) {
 				const layer = layers[box.page];
 				const slot = slots[box.page];
 				if (!layer || !slot) continue;

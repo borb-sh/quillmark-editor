@@ -114,12 +114,17 @@
 	// object on its first property.
 	let proseEl = $state<{ focus: () => void } | undefined>();
 	let dateEl = $state<{ focus: () => void } | undefined>();
-	let arrayEl = $state<{ focus: () => void } | undefined>();
+	let arrayEl = $state<{ focus: () => void; focusElement: (k: number) => void } | undefined>();
 	let objectEl = $state<{ focus: () => void } | undefined>();
 	function focusControl(): void {
 		const owner = proseEl ?? dateEl ?? arrayEl ?? objectEl;
 		if (owner) return owner.focus();
 		document.getElementById(domIds.control)?.focus();
+	}
+	/** The array's per-ELEMENT landing, for the addresses the preview mints under an
+	 *  array field (`leaves.ts`); read at the call, so it tracks the mounted repeater. */
+	function focusElement(k: number): void {
+		arrayEl?.focusElement(k);
 	}
 	// Only where `for` cannot reach; the labelable four are the browser's own, and a
 	// second handler over them would be a focus the label already placed.
@@ -133,13 +138,20 @@
 	 * `ProseField`, carrying the codec seam this handle has no half of — and reactive
 	 * rather than mount-once, because a retype can swap the control under a leaf key
 	 * that does not remount.
+	 *
+	 * An array carries the per-element lane as well; no other control has elements for
+	 * an address to name.
 	 */
 	let controlEl = $state<HTMLElement | undefined>();
 	$effect(() => {
 		if (field.control === 'prose' || !controlEl || !leaves) return;
 		const key = leafKey;
 		const registry = leaves;
-		registry.registerControl(key, { focus: focusControl, el: controlEl });
+		registry.registerControl(key, {
+			focus: focusControl,
+			focusElement: field.control === 'array' ? focusElement : undefined,
+			el: controlEl
+		});
 		return () => registry.unregisterControl(key);
 	});
 

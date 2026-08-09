@@ -4,8 +4,8 @@
 // to those same slots. A pure view: never calls `session.apply`, never
 // mutates the session; the consumer drives edits and hands the resulting
 // `ChangeSet` to `refresh`.
-import type { LiveSession, ChangeSet, ContentHit } from '@quillmark/wasm';
-import type { DocPath, Place } from '../core/address.js';
+import type { LiveSession, ChangeSet } from '@quillmark/wasm';
+import type { DocPath, Landing, Place } from '../core/address.js';
 import { reportError, errorMessage, type EditorErrorHandler } from '../core/errors.js';
 import { createPaintLoop, type PaintLoop } from './paint.js';
 import { createOverlay, type OverlayController } from './overlay.js';
@@ -19,8 +19,10 @@ export interface PreviewOptions {
 	margin?: number;
 	/** Draw field-box overlays. Default true. */
 	overlays?: boolean;
-	/** A click resolved to a content position; the hook does not fire off-ink. */
-	onCaretPick?(hit: ContentHit): void;
+	/** A click resolved to an address ({@link Landing}): a caret where the compile
+	 *  tracks the content under the point, the field alone where it tracks only the
+	 *  placement. The hook does not fire where the compile tracks neither. */
+	onPick?(at: Landing): void;
 	/** A page paint the backend refused ({@link EditorErrorHandler}). The preview
 	 *  shows its error message state either way; this routes it to an app's sink. */
 	onError?: EditorErrorHandler;
@@ -32,8 +34,13 @@ export interface PreviewOptions {
 export interface PreviewController {
 	/** Repaint `dirtyPages ∩ visible` and re-read geometry; the only apply-driven hop. */
 	refresh(change: ChangeSet): void;
-	/** Scroll `field`'s first box into view and bloom it. */
-	scrollToField(field: DocPath): void;
+	/**
+	 * Scroll `field`'s first box into view and bloom it. `false` when this compile
+	 * places nothing at that address — an answer, not a failure: the plate places
+	 * plenty it does not track, and the preview carries no schema to tell that from a
+	 * field the host misnamed. The editor's `focusField` is what distinguishes them.
+	 */
+	scrollToField(field: DocPath): boolean;
 	/**
 	 * Bring the caret at `at` into view and bloom its field on arrival. Both halves
 	 * are change-guarded: the pane moves only when the caret has left the fold, the
@@ -109,7 +116,7 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	// swapped on reconcile, and both attach DOM/listeners per slot.
 	function attach(): void {
 		overlay = overlaysEnabled ? createOverlay(session, paintLoop.slots) : undefined;
-		bridge = createBridge(session, container, paintLoop.slots, opts.onCaretPick);
+		bridge = createBridge(session, container, paintLoop.slots, opts.onPick);
 	}
 	function detach(): void {
 		overlay?.destroy();
@@ -175,8 +182,11 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 			if (followed) bridge?.focusPosition(followed.field, followed.pos);
 		},
 		scrollToField(field) {
-			bridge?.scrollToField(field);
+			const found = bridge?.scrollToField(field) ?? false;
+			// Marked either way: a compile that gains the address later blooms it on the
+			// rebuild, since the flash carries its own start time (`core/bloom.ts`).
 			overlay?.flashField(field);
+			return found;
 		},
 		focusPosition(at) {
 			followed = at;

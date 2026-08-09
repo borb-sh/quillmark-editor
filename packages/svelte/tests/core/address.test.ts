@@ -2,6 +2,9 @@
 // verbs take, both directions. Pure address math, no document and no surface.
 import { describe, it, expect } from 'vitest';
 import { fieldPathForAddr, addrForFieldPath } from '$lib/core';
+// Not on `/core`'s entry: the element split is the editor's ladder, not a hop a host
+// needs (`core/index.ts` carries what more than one surface speaks).
+import { elementAddrForFieldPath } from '$lib/core/address.js';
 import { cardPath } from '$lib/core/address.js';
 
 describe('fieldPathForAddr', () => {
@@ -60,11 +63,16 @@ describe('addrForFieldPath', () => {
 		expect(addrForFieldPath('cards.indorsement[2].body')).toEqual({ card: 2 });
 	});
 
+	it('reads the unknown-kind card form', () => {
+		expect(addrForFieldPath('cards[1].from')).toEqual({ card: 1, field: 'from' });
+	});
+
 	it('rejects a path that names no single commit address', () => {
 		// A nested / array-element path, a field-rooted one, and a malformed one.
 		expect(addrForFieldPath('main.references.0')).toBeUndefined();
 		expect(addrForFieldPath('recipients[0].name')).toBeUndefined();
 		expect(addrForFieldPath('')).toBeUndefined();
+		expect(addrForFieldPath('cards.indorsement[x].from')).toBeUndefined();
 		expect(addrForFieldPath('cards.indorsement[-1].from')).toBeUndefined();
 	});
 
@@ -77,5 +85,36 @@ describe('addrForFieldPath', () => {
 		}
 		// And the card form, whose inverse is the field-less addr.
 		expect(addrForFieldPath(cardPath(1, kinds)!)).toEqual({ card: 1 });
+	});
+});
+
+describe('elementAddrForFieldPath', () => {
+	it('reads both spellings of the index the boundary emits', () => {
+		// `regions()` / `positionAt` mint the dotted form, which the grammar reads as a
+		// field literally named "0"; `formatDocPath` spells the index segment with
+		// brackets. One address, and this is where the two meet.
+		expect(elementAddrForFieldPath('main.references.0')).toEqual({
+			field: { field: 'references' },
+			index: 0
+		});
+		expect(elementAddrForFieldPath('main.references[0]')).toEqual({
+			field: { field: 'references' },
+			index: 0
+		});
+		expect(elementAddrForFieldPath('cards.indorsement[1].signature_block.2')).toEqual({
+			field: { card: 1, field: 'signature_block' },
+			index: 2
+		});
+	});
+
+	it('takes only a trailing index under a field', () => {
+		// A whole field, a card, and a body have no element; a deeper nesting names no
+		// single array either. Whether the FIELD is an array is the caller's guard: this
+		// module holds the grammar and no schema.
+		expect(elementAddrForFieldPath('main.references')).toBeUndefined();
+		expect(elementAddrForFieldPath('main.body')).toBeUndefined();
+		expect(elementAddrForFieldPath('cards.indorsement[1]')).toBeUndefined();
+		expect(elementAddrForFieldPath('main.author.name')).toBeUndefined();
+		expect(elementAddrForFieldPath('')).toBeUndefined();
 	});
 });
