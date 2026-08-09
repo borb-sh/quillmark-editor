@@ -114,7 +114,6 @@ describe('Integration: build → fromBuiltUrl → resolve → getQuill', () => {
 			restore();
 		}
 	});
-
 });
 
 describe('Integration: fromBuiltUrl error cases', () => {
@@ -222,5 +221,4 @@ describe('Integration: build → fromBuiltDir → resolve → getQuill', () => {
 			expect.objectContaining({ code: 'transport_error' })
 		);
 	});
-
 });

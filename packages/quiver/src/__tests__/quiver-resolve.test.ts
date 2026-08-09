@@ -84,7 +84,6 @@ describe('Quiver.getQuill', () => {
 		expect(a).toBe(b);
 		expect(stub.calls).toHaveLength(1);
 	});
-
 });
 
 // ─── the counting loader ──────────────────────────────────────────────────────

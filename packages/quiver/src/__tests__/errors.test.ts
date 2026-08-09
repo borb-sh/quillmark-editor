@@ -44,5 +44,4 @@ describe('QuiverError', () => {
 		expect(err.quiverName).toBe('usaf');
 		expect(err.cause).toBe(cause);
 	});
-
 });
