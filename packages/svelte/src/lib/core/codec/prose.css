@@ -305,8 +305,9 @@ li.ProseMirror-selectednode::after {
    `--_qm-tap-min` target whatever is drawn inside it, and no box of their own at rest.
    What differs is which edge each hangs off and what it draws. The grips take the
    LEADING edges, where a line begins; the add bars take the TRAILING ones, past where
-   the axis ends. Position is the whole of what says which is which, before a glyph is
-   read. */
+   the axis ends. Position is the whole of what says which is which: the grip's marks are
+   the only glyph on the island, and they say DRAGGABLE rather than which control this
+   is. */
 :is(.qm-table-grip, .qm-table-add) {
 	position: absolute;
 	display: flex;
@@ -319,8 +320,8 @@ li.ProseMirror-selectednode::after {
 	cursor: pointer;
 }
 /* The bar every one of them draws: a pill the length of what it acts on, a rhythm rung
-   thick where the target is the tap floor, with the family's glyph centred in it.
-   Stated once, so a grip and an add bar cannot drift into two shapes.
+   thick where the target is the tap floor. Stated once, so a grip and an add bar cannot
+   drift into two shapes.
 
    ONE tone, not a hover ladder: the control is drawn only while it is the one the
    pointer is on or the one a gesture is about, so a resting tone under that would be a
@@ -338,7 +339,7 @@ li.ProseMirror-selectednode::after {
 }
 /* The glyph is square and the bar is not: the marks sit in the bar's thickness and the
    bar's length is its line's, so the frame is sized off the one axis both share. */
-:is(.qm-table-grip-bar, .qm-table-add-bar) svg {
+.qm-table-grip-bar svg {
 	width: var(--_qm-space-3);
 	height: var(--_qm-space-3);
 }
@@ -391,9 +392,10 @@ li.ProseMirror-selectednode::after {
 /* THE ADD BARS: one along each trailing edge, spanning it. A bar rather than a button
    at the end of the band, because what it appends to is the AXIS and not a line — there
    is no line out past the last one to sit against, and the whole edge is the easiest
-   target on the island to hit. They are the grips' mirror in every way but the glyph
-   and the edge, which is what makes a `+` out there read as one more of these rather
-   than as a control of its own. */
+   target on the island to hit. They are the grips' mirror in every way but the edge and
+   the marks, which is what makes a bar out there read as one more of these rather than
+   as a control of its own: an empty bar past the last line is the table's own shape,
+   offered one line further on. */
 .qm-table-add[data-axis='column'] {
 	inset-block: 0;
 	left: 100%;
@@ -422,14 +424,26 @@ li.ProseMirror-selectednode::after {
 	opacity: 1;
 }
 
-/* The ring, on the chrome and nowhere else in this file. A prose leaf's focus
-   indicator is its CARET and a cell's is too, so the outline is dropped there; a
-   grip is a button, and a button that takes focus to hold a selection has to show
-   it. Declared here rather than reached for as `.qm-focus-ring`: that recipe is the
-   visual tier's stylesheet, and the island is inside the leaf, which is the codec's. */
+/* The ring, on the chrome and nowhere else in this file. A prose leaf's focus indicator
+   is its CARET and a cell's is too, so the outline is dropped there; a control that comes
+   up out of nothing has the reveal, and a ring under a keyboard is what says the focus is
+   THERE rather than on the paper behind it. Declared here rather than reached for as
+   `.qm-focus-ring`: that recipe is the visual tier's stylesheet, and the island is inside
+   the leaf, which is the codec's.
+
+   A SELECTED grip takes none. Focus and selection arrive together there — the grip takes
+   the focus because the selection's keys bind on it — and the tint plus the wash already
+   say where the next command lands. A ring on top is a second box around the loudest
+   thing on the island, drawn on the press that made the selection: a pointer gesture
+   answering with a keyboard's indicator. Stated as `none` rather than left unset, because
+   what fills the gap is the browser's own ring, which is the same box in a colour the
+   surface does not own. */
 :is(.qm-table-grip, .qm-table-add):focus-visible {
 	outline: var(--_qm-ring);
 	outline-offset: var(--_qm-ring-offset);
+}
+.qm-table-grip[aria-pressed='true']:focus-visible {
+	outline: none;
 }
 
 /* A DRAG in flight. The lifted line reads as picked up by TONE, never a shadow:

@@ -187,7 +187,7 @@ function grips(field: FieldController, kind: 'row' | 'column'): HTMLButtonElemen
 	);
 }
 
-/** A band's far cap: the `+` that appends a line at the end of its own axis. */
+/** A band's far cap: the bar that appends a line at the end of its own axis. */
 function cap(field: FieldController, kind: 'row' | 'column'): HTMLButtonElement {
 	return field.el.querySelector<HTMLButtonElement>(`.qm-table-add[data-axis='${kind}']`)!;
 }

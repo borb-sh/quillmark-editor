@@ -112,26 +112,25 @@ export interface TableViewDeps {
 	onCellFocus: () => void;
 }
 
-/** The two glyphs this chrome draws, as the path data a DOM node can carry — its own
- *  set rather than `visual/icons/nodes.ts`, this being the one place chrome is built
- *  without Svelte, and `/core` reaching no surface module. Same 24×24 frame and the
- *  same origin, off an earlier release than the thirteen there; `NOTICE` carries the
- *  notices for both. A grip's dots are zero-length strokes under a round cap, which is
- *  how that set draws a dot everywhere it has one. */
-const PLUS = ['M5 12h14', 'M12 5v14'];
+/** The one glyph this chrome draws, as the path data a DOM node can carry — its own set
+ *  rather than `visual/icons/nodes.ts`, this being the one place chrome is built without
+ *  Svelte, and `/core` reaching no surface module. Same 24×24 frame and the same origin,
+ *  off an earlier release than the thirteen there; `NOTICE` carries the notices for
+ *  both. The dots are zero-length strokes under a round cap, which is how that set draws
+ *  a dot everywhere it has one. */
 const GRIP: Record<Axis, string[]> = {
 	column: ['M5 9h.01', 'M12 9h.01', 'M19 9h.01', 'M5 15h.01', 'M12 15h.01', 'M19 15h.01'],
 	row: ['M9 5h.01', 'M9 12h.01', 'M9 19h.01', 'M15 5h.01', 'M15 12h.01', 'M15 19h.01']
 };
 
-/** A glyph. `weight` is the stroke, heavier for the grip: its marks are dots, and a
+/** The grip's marks. The stroke is heavy for a chrome glyph because they are DOTS, and a
  *  dot drawn at the line weight of a stroke disappears at the size the bar renders. */
-function svg(paths: string[], weight = 2): SVGElement {
+function svg(paths: string[]): SVGElement {
 	const el = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 	el.setAttribute('viewBox', '0 0 24 24');
 	el.setAttribute('fill', 'none');
 	el.setAttribute('stroke', 'currentColor');
-	el.setAttribute('stroke-width', String(weight));
+	el.setAttribute('stroke-width', '3');
 	el.setAttribute('stroke-linecap', 'round');
 	el.setAttribute('stroke-linejoin', 'round');
 	el.setAttribute('aria-hidden', 'true');
@@ -965,7 +964,7 @@ class TableIslandView implements NodeView {
 		btn.setAttribute('aria-pressed', 'false');
 		btn.setAttribute('data-axis', line.axis);
 		const bar = el('span', 'qm-table-grip-bar');
-		bar.appendChild(svg(GRIP[line.axis], 3));
+		bar.appendChild(svg(GRIP[line.axis]));
 		btn.appendChild(bar);
 		btn.addEventListener('pointerdown', (e) => this.onGripDown(line, btn, e));
 		btn.addEventListener('keydown', this.lineKeys(line));
@@ -976,7 +975,11 @@ class TableIslandView implements NodeView {
 	/** A trailing bar: the whole edge past the last line of its axis, and the one way a
 	 *  pointer grows the table. It spans the edge rather than capping it, because what
 	 *  it appends to is the AXIS and not a line — there is no line out there to sit
-	 *  against, and an edge-long target is the easiest thing on the island to hit. */
+	 *  against, and an edge-long target is the easiest thing on the island to hit.
+	 *
+	 *  It draws no glyph: a bar the length of the edge it would grow, appearing under the
+	 *  pointer out past the last line, is the claim. Its NAME still carries the verb, for
+	 *  the pointer that hovers and everything that does not use one. */
 	private addBar(axis: Axis, label: string): HTMLButtonElement {
 		const btn = chromeButton('qm-table-add', label, () => {
 			const props = this.props();
@@ -985,9 +988,7 @@ class TableIslandView implements NodeView {
 			else this.write(insertColumn(props, columnCount(props) - 1), { r: 0, c: columnCount(props) });
 		});
 		btn.setAttribute('data-axis', axis);
-		const bar = el('span', 'qm-table-add-bar');
-		bar.appendChild(svg(PLUS));
-		btn.appendChild(bar);
+		btn.appendChild(el('span', 'qm-table-add-bar'));
 		return btn;
 	}
 
