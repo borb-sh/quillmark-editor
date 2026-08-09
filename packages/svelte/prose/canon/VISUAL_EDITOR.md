@@ -140,6 +140,18 @@ The strings reach the tree through **context**, not props. They are ambient, rea
 
 `Preview` carries its own three-key set for the message states it shows when there is nothing to paint. Separate from the editor's rather than pooled: `/preview` reaches `/core` and nothing editor-side, and a shared strings module would be an edge back across the line that lets it promote to its own package.
 
+## Enum policy
+
+`enumOptionAllowed(addr, value)` marks an enum option unavailable and `enumDisallowed` says how the control draws it: `'disable'` (the default) greys it in place, `'hide'` leaves it out of the list. Both arms exist because **disabled is a promise** — this exists, you cannot use it right now, and there is a state in which you could. That fits an option a deployment withholds, and not one it does not carry at all: a classification level with no such state reads as *ask someone*, which on a compliance surface invites the request rather than closing it.
+
+**Hide-or-disable is a deployment policy, not a per-option judgment**, so it is a prop on the surface rather than a richer verdict from the hook. A listbox where one refused option is hidden and another greyed is incoherent to whoever reads it, and per-option granularity buys no coherent use while inviting that surface. A prop rather than a `strings` key or a dial because it changes what the control CONTAINS, not how it reads.
+
+**The selected value is always drawn, disabled when refused.** It is the one genuinely per-option case, and it belongs to the field as an invariant rather than to every consumer's predicate as something to remember: a listbox whose selected value has no row shows nothing for what the document says, and offers no row for the primitive to mark or type-ahead to. Under `'hide'` that row is then the only out-of-policy one in the list, which is what makes the state legible rather than merely shorter.
+
+The pair threads by prop, not through a context the way the wording does (§"What the surface says"). One leaf reads it (`EnumField`), and the predicate is bound per field on the way down regardless, so a context would carry half a feature past the two components already hand-carrying the other half.
+
+`Addr` names a field, so the hook reaches a field's own enum control and stops there. A property inside an object subform has no address to pass, and calling the predicate with the parent field's would key policy on a field+value pair that does not identify the option; those enums are offered whole. An enum-typed ARRAY element takes the text control (`ArrayField` draws a prose leaf, a JSON textarea, or a text input, and nothing else), so there is no listbox for a policy to apply to.
+
 ## Surface
 
 Two layers, per [ARCHITECTURE.md](ARCHITECTURE.md): the prose leaf is the vanilla-TS core seam, the composition is Svelte chrome.
