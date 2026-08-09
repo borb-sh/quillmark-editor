@@ -1,12 +1,12 @@
 /* THE HOST'S DERIVATION: the same public dials in, a closed `--qmh-*` scale for the
    page AROUND the surfaces out. `core/theme.css` is the same shape one level down
    (dials in, `--_qm-*` out), and the two are calibrated against each other: the mixes
-   here are the percentages there (the ground step's two arms, 8% hover, 17% border,
-   45% and 60% ink) and the dial means the same plane in both, so a host plate and a
-   card on it land on the same tone at both poles and a host page meets an editor's
-   own column exactly. The WELL under the ground has no counterpart here: a host's
-   own controls are boxed and carry a hairline, so nothing on a page needs the
-   deeper step that an edgeless field does.
+   here are the figures there (the ground step's two arms, 8% hover, 17% border, 45%
+   and 60% ink) and the dial means the same plane in both, so a host plate and a card
+   on it land on the same tone at both poles and a host page meets an editor's own
+   column exactly. The WELL under the ground has no counterpart here: a host's own
+   controls are boxed and carry a hairline, so nothing on a page needs the deeper
+   step that an edgeless field does.
 
    TWO SCALES rather than one because they answer to different roots. `--_qm-*` is
    declared ON each mounted root, out of reach from an ancestor, so a surface holds its
@@ -32,8 +32,8 @@
 	   (ARCHITECTURE §Styling); the percentages are its percentages. */
 	--qmh-surface: var(--qm-bg, Canvas);
 	--qmh-page: light-dark(
-		color-mix(in oklab, var(--qmh-surface), #000 2%),
-		color-mix(in oklab, var(--qmh-surface), #000 20%)
+		oklab(from var(--qmh-surface) calc(l - 0.0214) calc(a - 0.00065) calc(b - 0.00158)),
+		oklab(from var(--qmh-surface) calc(l - 0.0553) calc(a - 0.00048) calc(b + 0.00165))
 	);
 	--qmh-ink: var(--qm-fg, CanvasText);
 	--qmh-ink-meta: color-mix(in oklab, var(--qmh-ink), var(--qmh-surface) 45%);

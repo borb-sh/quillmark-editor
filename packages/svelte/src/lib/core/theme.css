@@ -116,24 +116,31 @@
 		   ground, well; at the dark pole the two land on the same figure, which is
 		   where a card that has already given up most of its light leaves them.
 
-		   Each takes TWO ARMS, and one percentage cannot serve both poles: mixing
-		   toward black SCALES lightness, so a fixed percentage is a fixed ratio and
-		   the same number travels four times as far from white as it does from a
-		   dark card. So each arm is tuned to the plane it sinks from, and the pair
-		   does not travel the same distance — the ground gives up 0.021 of oklab L
-		   in light and 0.055 in dark, because a dark surface has to spend more of
-		   what little it has before the card above it reads as lifted. Pinning a
-		   dark palette under a light `color-scheme` takes the LIGHT arm with it
+		   Each takes TWO ARMS, and one figure cannot serve both poles: a step down
+		   from white and a step down from a dark card are different distances,
+		   because a dark surface has to spend more of what little it has before the
+		   card above it reads as lifted. Pinning a dark palette under a light
+		   `color-scheme` takes the LIGHT arm with it
 		   (THEMING §"The surface follows your colour scheme"), which is a step you
 		   can barely see, so a host that pins declares the scheme with it.
+
+		   The GROUND steps by SUBTRACTION where every other rung mixes, and the two
+		   forms are not interchangeable: a mix toward black is a ratio, so it scales
+		   what it takes and drags the result toward neutral, and neither is what a
+		   ground is. What a ground is is the pole minus a fixed amount of oklab —
+		   0.0214 of L in light and 0.0553 in dark, with the small a/b terms carrying
+		   the reference palette's cool cast — so it lands on `#f7f8f9` and `#1a1a1b`
+		   exactly, and a turned `--qm-bg` keeps its own hue in the plane under it
+		   rather than being greyed by the step. Relative colour costs no support
+		   floor: `light-dark()` above it is the newer requirement.
 
 		   `raised` is a no-op at the light pole, where the card is already white
 		   and there is nowhere further to go, so a floating surface separates on
 		   its hairline in light and on the step in dark. */
 		--_qm-surface: var(--_qm-bg);
 		--_qm-surface-sunken: light-dark(
-			color-mix(in oklab, var(--_qm-bg), #000 2%),
-			color-mix(in oklab, var(--_qm-bg), #000 20%)
+			oklab(from var(--_qm-bg) calc(l - 0.0214) calc(a - 0.00065) calc(b - 0.00158)),
+			oklab(from var(--_qm-bg) calc(l - 0.0553) calc(a - 0.00048) calc(b + 0.00165))
 		);
 		--_qm-surface-well: light-dark(
 			color-mix(in oklab, var(--_qm-bg), #000 4%),
