@@ -297,6 +297,17 @@ describe('loadBuiltQuiver — font coalescing', () => {
 });
 
 describe('loadBuiltQuiver — invalid pointer', () => {
+	// Truncated bytes are what a partial sync of an immutable-CDN quiver leaves behind, and
+	// the raw SyntaxError would escape every QuiverError handler downstream.
+	it('latest.json that is not JSON → quiver_invalid', async () => {
+		const transport = new MemTransport({
+			'latest.json': enc.encode('{"manifest": "manifest.')
+		});
+		await expect(loadBuiltQuiver(transport)).rejects.toThrow(
+			expect.objectContaining({ code: 'quiver_invalid' })
+		);
+	});
+
 	it('latest.json missing manifest field → quiver_invalid', async () => {
 		const transport = new MemTransport({
 			'latest.json': enc.encode(JSON.stringify({ other: 'value' }))

@@ -78,8 +78,8 @@
 	/** Mark size: the shared control-glyph rule for the popover icons. */
 	const GLYPH = 15;
 	/** The six content formatting marks. `anchor` is a seventh, drawn separately below:
-	 *  a decoration toggle rather than a PM `toggleMark`. Each button is a glyph, so its
-	 *  `title` is also its accessible name. */
+	 *  a decoration toggle rather than a PM `toggleMark`. One string per mark carries both
+	 *  the tooltip and the accessible name; the anchor button spells the two separately. */
 	const MARKS: { name: string; icon: IconName; title: string }[] = $derived([
 		{ name: 'strong', icon: 'bold', title: t.strings.formatBold },
 		{ name: 'em', icon: 'italic', title: t.strings.formatEmphasis },
