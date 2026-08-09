@@ -92,8 +92,8 @@ export function allRows(props: TableProps): TableCell[][] {
 }
 
 /** A flat list back into the stored shape: whatever sits at index 0 is the header, by
- *  position rather than by having been one. Empty is not a caller a table has — every
- *  op that could reach it refuses the last row first. */
+ *  position rather than by having been one. No caller passes an empty list — every op
+ *  that could reach one refuses the last row first. */
 function fromRows(rows: TableCell[][], aligns: TableAlign[]): TableProps {
 	const [header = [], ...rest] = rows;
 	return normalizeTable({ header, rows: rest, aligns });

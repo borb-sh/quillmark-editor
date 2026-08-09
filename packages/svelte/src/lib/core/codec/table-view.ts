@@ -571,9 +571,9 @@ class TableIslandView implements NodeView {
 			: { r0: 0, c0: line.index, r1: rowCount(props) - 1, c1: line.index };
 	}
 
-	/** The index space an axis allows: the whole of it, on both. The header is row 0 and
-	 *  not a floor above it — a walk reaches it, a drag lands on it, and the row that
-	 *  lands there becomes the header (`table.ts` §{@link moveRow}). */
+	/** The index space an axis allows, which is the whole of it on both. The header is
+	 *  row 0 rather than a line above the floor: a walk reaches it, a drag lands on it,
+	 *  and the row that lands there is the header (`table.ts` §{@link moveRow}). */
 	private bounds(axis: Axis, props: TableProps): { floor: number; limit: number } {
 		return axis === 'row'
 			? { floor: 0, limit: rowCount(props) - 1 }
@@ -968,7 +968,10 @@ class TableIslandView implements NodeView {
 				box.appendChild(this.grip({ axis: 'column', index: c }, s.tableSelectColumn(c + 1)));
 			if (c === 0)
 				box.appendChild(
-					this.grip({ axis: 'row', index: r }, r === 0 ? s.tableSelectHeaderRow : s.tableSelectRow(r))
+					this.grip(
+						{ axis: 'row', index: r },
+						r === 0 ? s.tableSelectHeaderRow : s.tableSelectRow(r)
+					)
 				);
 			tr.appendChild(box);
 			this.mountCell(box, host, r, c, s);
