@@ -2,7 +2,7 @@
 
 `@quillmark/svelte` ships complex UX over a thin skin: the surfaces carry the behavior (direct manipulation, the caret bridge, per-field state) against a neutral visual baseline a consumer restyles to its brand without fighting baked-in design.
 
-There are three depths to that, and most apps stop at the first:
+There are three depths to that. An app mounting into an unstyled page stops at the first; an app with a plate of its own starts at the second:
 
 |                   | You write             | You get                                                 |
 | ----------------- | --------------------- | ------------------------------------------------------- |
@@ -38,6 +38,12 @@ The whole contract is **ten CSS custom properties**. They are dials, not a palet
 	--qm-font: 'Inter', system-ui, sans-serif;
 }
 ```
+
+### Two of them are not branding
+
+`--qm-bg` and `--qm-fg` are the two a themed host sets before any brand decision. Their defaults are a self-consistent neutral for a bare mounting site, not a guess at your page: an app that paints its own plate and leaves them mounts one plate inside another. Two tones a few percent apart read as a fault rather than as a layer, so meet your page's tone exactly or stand far enough off it to be a layer.
+
+The poles take a colour, not `transparent` or `inherit`: the raised surfaces, the borders and the muted inks are each a `color-mix` against `--qm-bg`, so a transparent pole makes every one of them translucent instead of letting your page through. Hand over the value your page is painted with and the derivation steps off it.
 
 ### The dials
 
