@@ -171,7 +171,12 @@
 		   against a token. */
 		--_qm-border-width: 1px;
 		--_qm-radius: var(--qm-radius, 8px);
-		--_qm-radius-inner: calc(var(--_qm-radius) / 2);
+		/* The INTERIOR corner, fixed rather than a step under the card's: like the tap
+		   floor beside it, what it answers to is the size of the things it rounds and not
+		   the brand gesture a card's corner carries. A step under the dial breaks at the
+		   top of the dial's range, where half of a round brand rounds a target at the tap
+		   floor into a circle. */
+		--_qm-radius-inner: 4px;
 		/* A fully-rounded end cap: a shape tier, not a step on the radius ramp, so
 		   it does not derive from the dial: a pill stays a pill at any radius. */
 		--_qm-radius-pill: 999px;
@@ -180,6 +185,14 @@
 		--_qm-space-2: calc(var(--_qm-space) * 2);
 		--_qm-space-3: calc(var(--_qm-space) * 3);
 		--_qm-space-4: calc(var(--_qm-space) * 4);
+		/* What stands between a typed value's border and the value: `1×` down, `3×`
+		   across. A rung because the two axes are two decisions and the ladder alone
+		   cannot hold them together — `check:style`'s rhythm axis sees each box read a
+		   rung, never that they read the SAME one, which is the drift `visual/controls.css`
+		   already names for the type half. Asymmetric because they answer to different
+		   things: the vertical is what is left over once leading has taken the line box,
+		   and the horizontal is how far in the text starts, which nothing else fixes. */
+		--_qm-inset-control: var(--_qm-space) var(--_qm-space-3);
 		/* The scroll TAIL: dead space under the last card, so it can be read at the
 		   middle of a pane rather than at its bottom edge. A fraction of the VIEWPORT
 		   rather than a step on the ramp, because what it answers is how far the eye
@@ -203,7 +216,7 @@
 		--_qm-glyph-control: 14px;
 
 		/* ── Type ────────────────────────────────────────────────────────────────
-		   `--qm-font-size` anchors the body rung; 1.125 is the ratio between adjacent
+		   `--qm-font-size` anchors the CHROME rung; 1.125 is the ratio between adjacent
 		   rungs: a step up (title) and two down (label, meta). The ratio and the
 		   weights are fixed conventions, not dials: no consumer tunes a typographic
 		   ratio, and a dial nobody turns is a name every reader still holds. */
@@ -211,6 +224,13 @@
 		--_qm-text-title: calc(var(--_qm-text-body) * 1.125);
 		--_qm-text-label: calc(var(--_qm-text-body) / 1.125);
 		--_qm-text-meta: calc(var(--_qm-text-label) / 1.125);
+		/* PAPER: the document body, which answers to the paper in the preview where every
+		   other surface here answers to the control beside it. A rung of its own because
+		   one shared with the chrome makes a consumer asking for larger prose take larger
+		   inputs with it. 16/15 where the ramp steps at 9/8: small enough to read as a
+		   change of REGISTER rather than as a rung of hierarchy, and clear of the title
+		   rung at every dial setting, which one 9/8 step would land on exactly. */
+		--_qm-text-paper: calc(var(--_qm-text-body) * 16 / 15);
 		--_qm-weight-label: 600;
 		--_qm-weight-soft: 500;
 		/* Leading: the ramp's third axis, and it does not track the sizes one for one:
@@ -219,10 +239,9 @@
 		   every control beside them, the tips card's guidance); `tight` is a line that is
 		   a label rather than a passage. Unitless, so a rung inherits MULTIPLICATIVELY
 		   and holds against whichever size rung the surface reads: a `rem` leading
-		   would freeze at one size and disagree with the rest of the ramp. Leading is
-		   also the WHOLE of what separates paper from chrome: the body leaf reads
-		   `--_qm-text-body`, the same size as the input beside it, and there is no fifth
-		   size rung over it. `line-height: 1` is outside the axis: it collapses the
+		   would freeze at one size and disagree with the rest of the ramp. It is the
+		   axis paper and chrome SHARE: both read `body`, and the size rung is what
+		   separates them. `line-height: 1` is outside the axis: it collapses the
 		   line box onto its content, a glyph or a button's one-line label. */
 		--_qm-leading-body: 1.5;
 		--_qm-leading-tight: 1.3;

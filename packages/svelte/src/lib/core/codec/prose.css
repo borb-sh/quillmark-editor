@@ -96,14 +96,28 @@ li.ProseMirror-selectednode::after {
    `--_qm-surface-raised` and the only rung over it is `--_qm-surface-hover`, the
    hover lane, so a chip at rest would read as a hovered button.
 
-   ONE selector for the mark and the block: a `code_block` renders `pre > code`
-   (`schema.ts`), so every character of it is inside a `code` element and the `pre`
-   needs no face of its own. `pre` takes no `overflow-x` either, because there is no
-   overflow: ProseMirror's own stylesheet sets `white-space: pre-wrap` there, so a
-   long line wraps. A scroller means overriding that to `pre` inside an editable
-   `code` textblock, which is an editing change, not a display rule. */
-.ProseMirror code {
+   The withheld properties are DECLARED at their zero rather than left off, which is
+   what makes the paragraph above true of a MOUNTED leaf. A chip on these two tags —
+   an inset, a muted fill, a corner, a step down — is an ordinary page-stylesheet rule,
+   and it reaches the leaf through the tag: left off, these are the two tags in the
+   schema the host draws rather than the surface, and the leaf renders the chip this
+   file argues against because the page around it said so. The other marks are ink,
+   weight and decoration, which the leaf sets or safely inherits, so the box is this
+   mark's alone and the zeros are not a reset.
+
+   BOTH tags, where the face alone needs only one: a `code_block` renders `pre > code`
+   (`schema.ts`), so every character is inside a `code` element and the face reaches it
+   there — but the block's BOX is the `pre`, outside that element and styled by the
+   host on its own. `pre` still takes no `overflow-x`, because there is no overflow:
+   ProseMirror's own stylesheet sets `white-space: pre-wrap` there, so a long line
+   wraps. A scroller means overriding that to `pre` inside an editable `code`
+   textblock, which is an editing change, not a display rule. */
+.ProseMirror :is(code, pre) {
 	font-family: var(--_qm-font-mono);
+	padding: 0;
+	border-radius: 0;
+	background: none;
+	font-size: inherit;
 }
 
 /* A link takes the surface's ink (the UA's blue is the `#8cf` defect again) and a
@@ -152,9 +166,9 @@ li.ProseMirror-selectednode::after {
 /* Six levels, one weight, no size step. The quill reads no level at all, so a size
    ramp here would be the editor predicting a hierarchy the paper does not set; the
    level stays in the model, which is where the codec round-trips it. It is also all
-   the ramp could carry: `--_qm-text-title` is one 1.125 step over the body, the
-   body sits on `--_qm-text-body` by decision, and leading alone is what separates
-   paper from chrome. Six levels do not fit in one step, and
+   the ramp could carry: this leaf renders at `--_qm-text-paper` and the next rung up
+   is `--_qm-text-title`, a chrome rung a heading inside a document has no business
+   reading. Six levels do not fit in the gap, and
    minting five more is the drift the scale exists to prevent. */
 .ProseMirror :is(h1, h2, h3, h4, h5, h6) {
 	font-size: inherit;

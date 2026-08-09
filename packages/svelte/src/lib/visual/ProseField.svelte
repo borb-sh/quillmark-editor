@@ -174,16 +174,27 @@
 		 own surface. */
 		position: relative;
 	}
-	/* A leaf the inline schema does NOT constrain (the body) is paper rather than a
-	 cell in a row of controls, so it opens at a few lines and grows. The floor is
+	/* A leaf the inline schema does NOT constrain is prose rather than a cell in a row
+	 of controls, so it opens at a few lines and grows. The floor is
 	 three LINE BOXES, not a length: size times leading is what one line measures, so
 	 both factors are named or the expression stops meaning the three lines it claims.
-	 It moves with the type ramp and with nothing else. Three is what an EMPTY body
+	 `1em` for the size half rather than a rung, because which rung this leaf reads is
+	 the rule below's decision and a second naming of it drifts. Three is what an EMPTY
+	 body
 	 costs, which is the only state the floor is ever the height: the ghost takes the
 	 first line, so the opening reads as an invitation with room under it rather than
 	 as a drop. */
 	.qm-prose-block {
-		min-height: calc(var(--_qm-text-body) * var(--_qm-leading-body) * 3);
+		min-height: calc(1em * var(--_qm-leading-body) * 3);
+	}
+	/* PAPER, and the box is what says so: a block leaf that withholds it is the
+	 document body, where a block leaf that draws it is a field standing in a row and
+	 owes the input beside it a height. Keyed on the box rather than on `block` alone,
+	 since `inline` is the quill's to declare: a schema that omits it on a richtext
+	 field puts a BLOCK leaf in a field row, and the paper rung there would break the
+	 agreement `controls.css` builds by construction. */
+	.qm-prose-block:not(.qm-control-box) {
+		font-size: var(--_qm-text-paper);
 	}
 	/* The caret is the prose leaf's focus indicator, not a ring: a ring around a
 	 contenteditable reads as form chrome rather than as paper. So the outline is

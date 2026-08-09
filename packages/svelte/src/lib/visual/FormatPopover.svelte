@@ -385,10 +385,14 @@
 		gap: var(--_qm-space);
 		align-items: center;
 	}
+	/* A typed value on a floating surface: it draws `.qm-input`'s recipe by hand rather
+	   than carrying the class, because it takes none of the width the form control
+	   adds. The inset is the shared rung, so a URL sits as far into its box here as a
+	   subject line does in the card below. */
 	.qm-link-input {
 		font: inherit;
 		font-size: var(--_qm-text-body);
-		padding: var(--_qm-space) var(--_qm-space-2);
+		padding: var(--_qm-inset-control);
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
 		min-width: 12rem;
