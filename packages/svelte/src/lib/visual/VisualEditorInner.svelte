@@ -992,14 +992,22 @@
 	   behind it are the surface's own, so a bare `<div>` is a mounting site and
 	   nothing is owed before the editor looks right. Consumer CSS is unlayered and
 	   beats all of it, which is how a host that wants the column back takes it.
-	   `border-box`, so a height from the caller is the height this draws. */
+	   `border-box`, so a height from the caller is the height this draws.
+
+	   The SUNKEN rung, which is what makes a card an island: the cards are the base
+	   plane and this is the one they float on, so the gutter reads as ground rather
+	   than as more card (ARCHITECTURE §Styling). The inset is a step above the gap
+	   BETWEEN cards, deliberately: a stack whose outer margin equals its internal
+	   rhythm reads as one block clipped by the pane, and a margin that says "these
+	   are separate objects on a surface" has to be wider than the one separating
+	   them from each other. */
 	.qm-editor {
 		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
-		padding: var(--_qm-space-2);
-		background: var(--_qm-surface);
+		padding: var(--_qm-space-4);
+		background: var(--_qm-surface-sunken);
 		color: var(--_qm-ink);
 	}
 	/* A fixed-height pane, which the stack is NOT by default, and the four popovers

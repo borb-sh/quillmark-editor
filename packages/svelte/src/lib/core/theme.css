@@ -79,9 +79,13 @@
 		   whatever the OS says, and one that declares nothing gets light, matching
 		   its own unstyled text. So the package owns no mode logic at all: light or
 		   dark is the mounting site's, like every other value here (THEMING.md
-		   §"The surface follows your colour scheme"). */
-		--_qm-bg: var(--qm-bg, light-dark(#fff, #14171c));
-		--_qm-fg: var(--qm-fg, light-dark(#1a1a1a, #e8eaed));
+		   §"The surface follows your colour scheme").
+
+		   `--qm-bg` is the CARD, not the column behind it: the plane content is
+		   written on, which is also the preview's paper. Everything else is a step
+		   off it, and the column is a step DOWN. */
+		--_qm-bg: var(--qm-bg, light-dark(#fff, #272729));
+		--_qm-fg: var(--qm-fg, light-dark(#1c1c1c, #d7dadc));
 		--_qm-accent: var(--qm-accent, #2563eb);
 		--_qm-danger: var(--qm-danger, #c5221f);
 		--_qm-warning: var(--qm-warning, #b25000);
@@ -89,18 +93,37 @@
 		--_qm-font-mono: var(--qm-font-mono, ui-monospace, monospace);
 
 		/* ── Colour ──────────────────────────────────────────────────────────────
-		   Surfaces step bg → fg, ink steps fg → bg, mixed in oklab; sRGB muddies
-		   the mid-tones and the label/meta/border rungs are exactly mid-tone. So
-		   inverting the poles inverts the scale. The percentages are calibrated to
-		   the light-mode literals they stand in for (17% ≈ #d4d4d4, 35% ≈ #555).
+		   Ink steps fg → bg and STATES step by light, both mixed in oklab; sRGB
+		   muddies the mid-tones and the label/meta/border rungs are exactly
+		   mid-tone. The percentages are calibrated to the light-mode literals they
+		   stand in for (17% ≈ #d4d4d4, 35% ≈ #555).
 
-		   The three surface rungs sit EVENLY 4pp apart, which is what keeps them three
-		   distinguishable steps: uneven spacing spends one rung to buy another:
-		   widening `raised` alone would leave `hover` 1pp above it. `raised` steps
-		   toward the INK pole rather than away from it, so a card is darker than the
-		   page in light and lighter in dark. */
+		   PLANES ARE THE ONE AXIS THAT DOES NOT READ THE INK POLE, because what
+		   makes a card read as a card is that it is the BRIGHTER plane, in both
+		   schemes alike (ARCHITECTURE §Styling). Toward the ink is the wrong
+		   direction in one of them: it darkens a card below the page it floats on
+		   in light and lifts the page above the card in dark. So `sunken` mixes
+		   toward shadow and `raised` toward light, and the base plane — the card,
+		   the field-less body, the preview's paper — is the pole itself.
+
+		   `sunken` is the ONE rung with two arms, and the asymmetry is the
+		   geometry of the mix rather than a preference: mixing toward black scales
+		   lightness, so a fixed percentage is a fixed RATIO and not a fixed step.
+		   Both arms are ~0.04 of oklab L at the poles above, which is the step
+		   these percentages exist to hold. Pinning a dark palette under a light
+		   `color-scheme` takes the light arm with it (THEMING §"The surface follows
+		   your colour scheme"), so a host that pins declares the scheme with it.
+
+		   `raised` is a no-op at the light pole, where the card is already white
+		   and there is nowhere further to go: a floating surface separates on its
+		   hairline there and on the step in dark, which is why the two say the
+		   same thing and only one of them is visible at a time. */
 		--_qm-surface: var(--_qm-bg);
-		--_qm-surface-raised: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 4%);
+		--_qm-surface-sunken: light-dark(
+			color-mix(in oklab, var(--_qm-bg), #000 4%),
+			color-mix(in oklab, var(--_qm-bg), #000 15%)
+		);
+		--_qm-surface-raised: color-mix(in oklab, var(--_qm-bg), #fff 8%);
 		--_qm-surface-hover: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 8%);
 		--_qm-border: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 17%);
 		/* A rule that separates without structuring: the lines BETWEEN a table's cells,
@@ -117,6 +140,23 @@
 		   wash animates from and back to zero, never held, so it reads at pane scale
 		   over the preview's paper while the paper rests clean. */
 		--_qm-accent-wash: color-mix(in oklab, var(--_qm-accent) 18%, transparent);
+
+		/* THE TIPS CARD'S HUE, and the one exit from the greyscale that is not a
+		   status. Guidance is neither an error nor a warning, so it takes neither of
+		   those hues; what it is instead is an artifact from a draft, which is what
+		   the amber and the typewriter face say together (`visual/TipsCard.svelte`).
+		   A literal rather than a dial: eleven dials to retune a card a consumer
+		   seeds and dismisses is a contract paying for a surface that is often
+		   absent, and every rung under it is a mix over the surface and the ink the
+		   consumer already tuned, so the card tracks a brand without being told.
+		   The mixes are faint on purpose — the tint is a warmth, not a badge. */
+		--_qm-tips: #e88c0a;
+		--_qm-tips-surface: color-mix(in oklab, var(--_qm-surface), var(--_qm-tips) 4%);
+		--_qm-tips-ink: color-mix(in oklab, var(--_qm-ink), var(--_qm-tips) 24%);
+		/* The chip behind a token in a tip. The card's own face is already
+		   monospace, so a `code` run needs a FILL to read as literal text rather
+		   than as the sentence around it. */
+		--_qm-tips-chip: color-mix(in oklab, var(--_qm-tips) 12%, transparent);
 
 		/* ── Ratios and effects ──────────────────────────────────────────────────
 		   No palette fixes these, so they are their own rungs. There is no shadow

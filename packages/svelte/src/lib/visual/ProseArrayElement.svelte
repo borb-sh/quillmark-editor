@@ -79,15 +79,13 @@
  an array of `string` render rows of equal height. No floor: the reset in
  `core/codec/prose.css` makes one line of prose measure one line. Width is the
  row's to give: the element fills the track it is placed in (`ArrayField`). -->
-<div bind:this={containerEl} class="qm-array-prose qm-control-box"></div>
+<div bind:this={containerEl} class="qm-array-prose qm-control-box qm-focus-ring-within"></div>
 
 <style>
-	/* Caret-primary, matching ProseField: the contenteditable outline is dropped
-	   and the active element is cued by the wrapper border tint below, not a ring. */
+	/* Caret-primary, matching ProseField: the contenteditable's own outline is
+	   dropped and the ring rides the wrapper (`qm-focus-ring-within`,
+	   controls.css), which is where the box is. */
 	.qm-array-prose :global(.ProseMirror) {
 		outline: none;
-	}
-	.qm-array-prose:focus-within {
-		border-color: var(--_qm-accent);
 	}
 </style>

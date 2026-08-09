@@ -1,9 +1,10 @@
 /* THE HOST'S DERIVATION: the same public dials in, a closed `--qmh-*` scale for the
    page AROUND the surfaces out. `core/theme.css` is the same shape one level down
    (dials in, `--_qm-*` out), and the two are calibrated against each other: the mixes
-   here are the percentages there (4pp between surface steps, 17% border, 45% and 60%
-   ink), so a host plate and a card on it agree about which way "raised" goes and land
-   on the same tone at both poles.
+   here are the percentages there (the sunken step's two arms, 8% hover, 17% border,
+   45% and 60% ink) and the dial means the same plane in both, so a host plate and a
+   card on it land on the same tone at both poles and a host page meets an editor's
+   own column exactly.
 
    TWO SCALES rather than one because they answer to different roots. `--_qm-*` is
    declared ON each mounted root, out of reach from an ancestor, so a surface holds its
@@ -15,23 +16,31 @@
    `recipes.css` beside it, with this file exempt as the place the defaults are minted.
 
    The poles fall back to the SYSTEM colours, so a host that turns no dial still lands
-   where its own unstyled text does. The dials sit in front, so `--qm-bg`/`--qm-fg` on
-   an ancestor retunes page and surface together. */
+   where its own unstyled text does — `Canvas` being the plane the UA would have
+   painted a page with, which is what a plate should be. The dials sit in front, so
+   `--qm-bg`/`--qm-fg` on an ancestor retunes page and surface together. */
 
 :root {
 	/* ── Colour ──────────────────────────────────────────────────────────────── */
-	--qmh-page: var(--qm-bg, Canvas);
+	/* The DIAL is the plate, exactly as it is the card one level down: a plate beside
+	   a mounted editor is the same plane as a card in it, so both read the pole and
+	   the page sinks from it. That is what keeps a host page and an editor's own
+	   column meeting seamlessly instead of one plane short of each other. Planes step
+	   by light and everything else by ink, which is the package's own split
+	   (ARCHITECTURE §Styling); the percentages are its percentages. */
+	--qmh-surface: var(--qm-bg, Canvas);
+	--qmh-page: light-dark(
+		color-mix(in oklab, var(--qmh-surface), #000 4%),
+		color-mix(in oklab, var(--qmh-surface), #000 15%)
+	);
 	--qmh-ink: var(--qm-fg, CanvasText);
-	--qmh-ink-meta: color-mix(in oklab, var(--qmh-ink), var(--qmh-page) 45%);
-	--qmh-ghost: color-mix(in oklab, var(--qmh-ink), var(--qmh-page) 60%);
-	/* Two planes behind content, 4pp apart exactly as the surfaces step, so a host
-	   plate and a card on it agree about which way "raised" goes in both schemes. */
-	--qmh-surface: color-mix(in oklab, var(--qmh-page), var(--qmh-ink) 4%);
-	--qmh-surface-hover: color-mix(in oklab, var(--qmh-page), var(--qmh-ink) 8%);
-	--qmh-border: color-mix(in oklab, var(--qmh-page), var(--qmh-ink) 17%);
+	--qmh-ink-meta: color-mix(in oklab, var(--qmh-ink), var(--qmh-surface) 45%);
+	--qmh-ghost: color-mix(in oklab, var(--qmh-ink), var(--qmh-surface) 60%);
+	--qmh-surface-hover: color-mix(in oklab, var(--qmh-surface), var(--qmh-ink) 8%);
+	--qmh-border: color-mix(in oklab, var(--qmh-surface), var(--qmh-ink) 17%);
 	/* The edge that says "engaged" where the hairline says "edge": a pressed switch,
 	   the underline under a link. */
-	--qmh-border-strong: color-mix(in oklab, var(--qmh-page), var(--qmh-ink) 40%);
+	--qmh-border-strong: color-mix(in oklab, var(--qmh-surface), var(--qmh-ink) 40%);
 
 	/* The two hues a host spends, and it spends them on a message. Both read the DIAL,
 	   so a page carries one colour meaning error and one meaning warning rather than a
