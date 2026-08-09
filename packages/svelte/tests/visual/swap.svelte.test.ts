@@ -92,7 +92,7 @@ describe('swapping the doc prop', () => {
 });
 
 describe('swapping the quill prop alone', () => {
-	it('reports rebind-ignored once, at dev severity', () => {
+	it('reports rebind-ignored once, at dev severity, and throws it', () => {
 		const q = quill();
 		const a = docWith(q, 'A');
 		const { props, errors } = mountEditor(q, a);
@@ -100,13 +100,24 @@ describe('swapping the quill prop alone', () => {
 		// A distinct handle over the same fixture: the pairing is what the guard
 		// watches, not the schema's contents.
 		props.quill = Object.create(q) as Quill;
-		flushSync();
+		// The guard throws after it reports, under the `DEV` this suite builds with.
+		let thrown: Error | undefined;
+		try {
+			flushSync();
+		} catch (e) {
+			thrown = e as Error;
+		}
 		props.quill = Object.create(q) as Quill;
-		flushSync();
+		try {
+			flushSync();
+		} catch {
+			/* reported once, so the second swap is silent */
+		}
 
 		const reported = errors.filter((e) => e.code === 'rebind-ignored');
 		expect(reported).toHaveLength(1);
 		expect(reported[0].severity).toBe('dev');
+		expect(thrown?.message).toContain('rebind-ignored');
 		a.free();
 	});
 });

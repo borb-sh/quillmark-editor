@@ -11,6 +11,13 @@ import type { FormatDiagnostic, VisualStringsInput } from './strings.js';
 
 export interface VisualEditorProps {
 	doc: Document;
+	/**
+	 * The schema this document is edited against. BORROWED for the surface's lifetime,
+	 * whoever handed it over: a quill from `@quillmark/quiver`'s `getQuill` is the
+	 * quiver's, shared with every other caller for that ref, and freeing it hands the
+	 * next caller a freed handle. A host wanting one of its own mints it from
+	 * `.toTree()`. The editor frees nothing it is passed.
+	 */
 	quill: Quill;
 	/**
 	 * The active leaf: its canonical `DocPath` and the session key of the card holding
@@ -36,8 +43,13 @@ export interface VisualEditorProps {
 	/**
 	 * EVERY edit that lands on the document: a prose commit, a scalar/array/object
 	 * write, a card operation. The signal a host recompiles off; `source` is what
-	 * moved, for a host that wants a structure op to recompile at once and a
-	 * keystroke to wait for the burst to settle.
+	 * moved.
+	 *
+	 * **The lane split is the default, not a tuning exercise.** `'structure'` arrives
+	 * once per gesture and recompiles at once; `'prose'` and `'field'` arrive per
+	 * keystroke and wait for the burst to settle. Recompiling structure on the debounce
+	 * makes a card insert look dropped, and recompiling prose at once compiles the
+	 * document on every character.
 	 */
 	onChange?: (change: EditorChange) => void;
 	/**
