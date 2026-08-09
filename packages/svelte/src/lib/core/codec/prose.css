@@ -191,9 +191,7 @@ li.ProseMirror-selectednode::after {
    THE BAND ARRIVES AS ONE OBJECT. Every control in it shares one reveal on one trip:
    the table is hovered, or holds the focus, or has a held subject (`.qm-table-armed`),
    and the grips, the corner and the two caps all come up together. Not a per-line
-   ladder — the point of a band is that it says "this table has lines you can take
-   hold of", which is a claim about the table, and a single grip fading in under the
-   pointer makes it one line at a time and answers a question nobody asked. */
+   ladder, for the reason CODEC §"The table island" states. */
 
 /* The band, and the whole of what it costs. `padding` opens it on all four sides,
    because both axes now end in a cap; the island's negative `margin` spends the card's
@@ -314,7 +312,7 @@ li.ProseMirror-selectednode::after {
 	padding: 0;
 	border: none;
 	background: none;
-	color: var(--_qm-ink-ghost);
+	color: var(--_qm-ink-label);
 	cursor: pointer;
 }
 
@@ -368,7 +366,7 @@ li.ProseMirror-selectednode::after {
 .qm-table-grip:hover .qm-table-grip-bar,
 .qm-table-grip:focus-visible .qm-table-grip-bar {
 	background: var(--_qm-border);
-	color: var(--_qm-ink-label);
+	color: var(--_qm-ink);
 }
 /* A selected grip takes the line's own tint and the accent for its marks, so the bar
    and the wash say the same thing at both ends of the gesture. */
@@ -414,7 +412,7 @@ li.ProseMirror-selectednode::after {
 .qm-table-add:hover,
 .qm-table-add:focus-visible {
 	background: var(--_qm-border);
-	color: var(--_qm-ink-label);
+	color: var(--_qm-ink);
 }
 .qm-table-corner-mark {
 	display: block;
@@ -455,9 +453,11 @@ li.ProseMirror-selectednode::after {
 
 /* ── The menu ────────────────────────────────────────────────────────────────
    Where every op that is not a drag, a `+` or a key lives. `fixed`, so no scroller
-   and no card clips it, and no z-index race with the band it opened out of; the
-   NodeView measures it once and CLOSES it on anything that would move it, which is
-   how a fixed surface keeps the live-anchor rule instead of breaking it.
+   clips it and it needs no offset parent; PORTALLED to the nearest `[data-qm-root]`,
+   so its `z-index` is answered against the card stack rather than inside the one card
+   the stack isolates; and measured once by the NodeView, which CLOSES it on anything
+   that would move it, which is how a fixed surface keeps the live-anchor rule instead
+   of breaking it.
 
    The surface and its rows restate `.qm-menu-surface` / `.qm-menu-item` rather than
    reaching for them, on the same terms as the ring above: those are the visual tier's
@@ -466,6 +466,10 @@ li.ProseMirror-selectednode::after {
 	position: fixed;
 	z-index: 5;
 	min-width: 11rem;
+	/* A ceiling, so a cell's menu — both of its lines at once — is scrolled rather than
+	   run off the screen, and `place` has a height it can pin against. */
+	max-height: 22rem;
+	overflow-y: auto;
 	padding: var(--_qm-space-half);
 	border: var(--_qm-border-width) solid var(--_qm-border);
 	border-radius: var(--_qm-radius);
@@ -473,9 +477,7 @@ li.ProseMirror-selectednode::after {
 	font-size: var(--_qm-text-body);
 	color: var(--_qm-ink);
 }
-/* A row is a whole instruction, and the whole row is the target. The gap before the
-   label is the check's column, held open on every row of a radio set so four labels
-   start at one edge whichever one is live. */
+/* A row is a whole instruction, and the whole row is the target. */
 .qm-table-menu-item {
 	display: flex;
 	align-items: center;
@@ -505,25 +507,56 @@ li.ProseMirror-selectednode::after {
 	opacity: var(--_qm-opacity-idle);
 	cursor: default;
 }
-.qm-table-menu-item svg {
-	flex: none;
-	width: var(--_qm-glyph-control);
-	height: var(--_qm-glyph-control);
-	color: var(--_qm-accent);
+/* THE INLINE SET: a heading and one row of glyphs, which is the alignment group and
+   the only place the menu draws a picture instead of a verb. The four alignments are a
+   picture of themselves, so the row is read at a glance where four labelled rows are
+   scrolled past — and a cell's menu carries both of its lines, which is where that
+   difference decides whether the surface fits on a screen. */
+.qm-table-menu-group {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--_qm-space-2);
+	padding-left: var(--_qm-space-2);
 }
-/* `visibility` rather than absence: the column stays, so the labels do not shift by a
-   glyph as the live value moves down the set. */
-.qm-table-menu-item[aria-checked='false'] svg {
-	visibility: hidden;
-}
-/* The heading over a mutually exclusive set, and the one place the menu names a group
-   instead of an act: the four rows under it are VALUES, and the instruction they drop
-   is here. */
+/* The one place the menu names a group instead of an act: the glyphs beside it are
+   VALUES, and the instruction they drop is here. */
 .qm-table-menu-heading {
-	padding: var(--_qm-space) var(--_qm-space-2);
 	font-size: var(--_qm-text-label);
 	font-weight: var(--_qm-weight-label);
 	color: var(--_qm-ink-label);
+}
+.qm-table-menu-set {
+	display: flex;
+}
+.qm-table-menu-glyph {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--_qm-tap-min);
+	height: var(--_qm-tap-min);
+	padding: 0;
+	border: none;
+	border-radius: var(--_qm-radius-inner);
+	background: none;
+	color: var(--_qm-ink-label);
+	cursor: pointer;
+}
+.qm-table-menu-glyph svg {
+	width: var(--_qm-glyph-control);
+	height: var(--_qm-glyph-control);
+}
+.qm-table-menu-glyph:hover,
+.qm-table-menu-glyph:focus {
+	background: var(--_qm-surface-hover);
+	color: var(--_qm-ink);
+	outline: none;
+}
+/* The live member wears the same tint a selected line does: one colour for "this is
+   the one the surface is holding", wherever it is said. */
+.qm-table-menu-glyph[aria-checked='true'] {
+	background: var(--_qm-accent-tint);
+	color: var(--_qm-accent);
 }
 .qm-table-menu-sep {
 	margin: var(--_qm-space-half) 0;

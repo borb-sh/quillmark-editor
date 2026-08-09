@@ -168,11 +168,20 @@ export interface TableViewDeps {
  *  notices for both. A grip's dots are zero-length strokes under a round cap, which is
  *  how that set draws a dot everywhere it has one. */
 const PLUS = ['M5 12h14', 'M12 5v14'];
-const CHECK = ['M20 6 9 17l-5-5'];
 const GRIP: Record<Axis, string[]> = {
 	column: ['M5 9h.01', 'M12 9h.01', 'M19 9h.01', 'M5 15h.01', 'M12 15h.01', 'M19 15h.01'],
 	row: ['M9 5h.01', 'M9 12h.01', 'M9 19h.01', 'M15 5h.01', 'M15 12h.01', 'M15 19h.01']
 };
+const ALIGN_PATHS: Record<TableAlign, string[]> = {
+	none: ['M21 6H3', 'M21 12H3', 'M21 18H3'],
+	left: ['M21 6H3', 'M15 12H3', 'M17 18H3'],
+	center: ['M21 6H3', 'M17 12H7', 'M19 18H5'],
+	right: ['M21 6H3', 'M21 12H9', 'M21 18H7']
+};
+
+/** How far a menu clears the thing that raised it. Small: the gap says the surface is
+ *  attached to that control rather than floating near it. */
+const MENU_GAP = 2;
 
 /** A glyph. `weight` is the stroke, heavier for the grip: its marks are dots, and a
  *  dot drawn at the line weight of a stroke disappears at the size the bar renders. */
@@ -225,11 +234,12 @@ function cellPlugins(keys: Record<string, Command>) {
 	return [inputRulesPlugin(inlineSchema), keymap(keys), keymap(baseKeymap)];
 }
 
-/** What the nested views and the controls answer for themselves. `stopEvent` reads
- *  it to hand PM everything else, and the pointer guard reads it to leave those
- *  presses alone: one list, so the two cannot disagree about what a cell owns. */
-const OWNED =
-	'.qm-table-cell-host, .qm-table-grip, .qm-table-corner, .qm-table-add, .qm-table-menu';
+/** What the nested views and the band answer for themselves. `stopEvent` reads it to
+ *  hand PM everything else, and the pointer guard reads it to leave those presses
+ *  alone: one list, so the two cannot disagree about what a cell owns. The MENU is not
+ *  in it and needs no entry: it is portalled out of this subtree, so no event of its
+ *  ever reaches either reader. */
+const OWNED = '.qm-table-cell-host, .qm-table-grip, .qm-table-corner, .qm-table-add';
 
 /** How far a press travels before it is a drag rather than a click. Under it, a press
  *  that jitters is still the selection gesture it was aimed as. */
@@ -297,9 +307,16 @@ interface MenuItem {
  *  rows drop; a section of complete instructions carries none, and the separator
  *  between sections is the whole of what divides them. `value` is that set's live
  *  member, carried by the SECTION because the mark is a property of the set: an item
- *  cannot know whether it is the chosen one without being told what was chosen. */
+ *  cannot know whether it is the chosen one without being told what was chosen.
+ *
+ *  `inline` lays the set out as one row of glyphs beside its heading rather than as a
+ *  stack of labelled rows. That is a legibility decision with a threshold behind it:
+ *  the four alignments as rows push a cell's menu (both of its lines) past a screen,
+ *  and four glyphs under one word are read at a glance where thirteen rows are
+ *  scrolled. */
 interface MenuSection {
 	label?: string;
+	inline?: boolean;
 	value?: TableAlign;
 	items: MenuItem[];
 }
@@ -735,6 +752,7 @@ class TableIslandView implements NodeView {
 			},
 			{
 				label: s.tableAlign,
+				inline: true,
 				value: this.props().aligns[c] ?? 'none',
 				items: ALIGNS.map((value) => align(value, labels[value]))
 			},
@@ -826,22 +844,31 @@ class TableIslandView implements NodeView {
 				box = el('div', 'qm-table-menu-group');
 				box.setAttribute('role', 'group');
 				box.setAttribute('aria-label', section.label);
-				const heading = el('div', 'qm-table-menu-heading');
+				const heading = el('span', 'qm-table-menu-heading');
 				heading.textContent = section.label;
 				// The group's own `aria-label` already carries the word; the element is the
 				// sighted half of the same fact and would otherwise be read twice.
 				heading.setAttribute('aria-hidden', 'true');
 				box.appendChild(heading);
 				menu.appendChild(box);
+				if (section.inline) box.appendChild(el('span', 'qm-table-menu-set'));
 			}
+			const into = section.inline ? (box.lastElementChild as HTMLElement) : box;
 			for (const item of section.items) {
-				const row = this.menuRow(item, section.value);
-				box.appendChild(row);
+				const row = section.inline
+					? this.menuGlyph(item, section.value)
+					: this.menuRow(item, section.value);
+				into.appendChild(row);
 				if (!first && !item.disabled) first = row;
 			}
 		});
 		menu.addEventListener('keydown', this.onMenuKeys);
-		this.dom.appendChild(menu);
+		// PORTALLED to the nearest `[data-qm-root]`, the rule every floating surface in
+		// the package keeps (VISUAL_EDITOR §Chrome). Here it is load-bearing twice over:
+		// the marker carries the consumer's dials, and the card stack isolates a stacking
+		// context around its first card, so a menu left inside the leaf carries a
+		// `z-index` scoped to that card and every later card paints through it.
+		(this.dom.closest('[data-qm-root]') ?? this.dom).appendChild(menu);
 		this.menu = menu;
 		this.menuReturn = ret;
 		this.place(menu, point);
@@ -852,22 +879,43 @@ class TableIslandView implements NodeView {
 		first?.focus();
 	}
 
-	/** One menu row. A real `button`, so Enter and Space activate it and the disabled
-	 *  state is the UA's; what is added is the role the set it sits in wants and the
-	 *  check that marks the live value of a radio set. */
+	/** One menu row: a whole instruction in words. A real `button`, so Enter, Space and
+	 *  the disabled state are the UA's; what is added is the role and the pick. */
 	private menuRow(item: MenuItem, align: TableAlign | undefined): HTMLButtonElement {
-		const btn = el('button', 'qm-table-menu-item');
+		return this.menuAct(item, align, el('button', 'qm-table-menu-item'), (btn) => {
+			const label = el('span');
+			label.textContent = item.label;
+			btn.appendChild(label);
+		});
+	}
+
+	/** One member of an inline set: the glyph alone, its label the accessible name. A
+	 *  glyph is legible here and nowhere else in the menu because the four alignments
+	 *  are a picture of themselves; every other row is a verb, which has none. */
+	private menuGlyph(item: MenuItem, align: TableAlign | undefined): HTMLButtonElement {
+		return this.menuAct(item, align, el('button', 'qm-table-menu-glyph'), (btn) => {
+			btn.title = item.label;
+			btn.setAttribute('aria-label', item.label);
+			btn.appendChild(svg(ALIGN_PATHS[item.align ?? 'none']));
+		});
+	}
+
+	/** What the two shapes share: the role its set wants, the mark of a live radio, the
+	 *  disabled state, and the pick that closes the menu before it acts. */
+	private menuAct(
+		item: MenuItem,
+		align: TableAlign | undefined,
+		btn: HTMLButtonElement,
+		draw: (btn: HTMLButtonElement) => void
+	): HTMLButtonElement {
 		btn.type = 'button';
 		btn.setAttribute('role', item.align ? 'menuitemradio' : 'menuitem');
 		if (item.align) {
 			btn.setAttribute('data-align', item.align);
 			btn.setAttribute('aria-checked', String(item.align === align));
-			btn.appendChild(svg(CHECK));
 		}
 		btn.disabled = !!item.disabled;
-		const label = el('span');
-		label.textContent = item.label;
-		btn.appendChild(label);
+		draw(btn);
 		btn.addEventListener('click', () => {
 			this.closeMenu();
 			item.run();
@@ -875,15 +923,20 @@ class TableIslandView implements NodeView {
 		return btn;
 	}
 
-	/** Where the menu opens: at the point the gesture named, folded back inside the
-	 *  viewport where it would not fit. One measure, at open. */
+	/** Where the menu opens: below the point the gesture named, flipped above it where
+	 *  it would not fit, and pinned to the viewport where NEITHER side fits, so a menu
+	 *  taller than the screen starts at the top of it rather than off it. One measure,
+	 *  at open; the surface's own `max-height` is what keeps the pinned case scrollable
+	 *  rather than clipped. */
 	private place(menu: HTMLElement, at: Point): void {
 		const box = menu.getBoundingClientRect();
 		const room = { w: window.innerWidth, h: window.innerHeight };
-		const left = at.x + box.width > room.w ? Math.max(0, room.w - box.width) : at.x;
-		const top = at.y + box.height > room.h ? Math.max(0, at.y - box.height) : at.y;
-		menu.style.left = `${left}px`;
-		menu.style.top = `${top}px`;
+		const above = at.y - MENU_GAP - box.height;
+		const below = at.y + MENU_GAP;
+		menu.style.left = `${Math.max(0, Math.min(at.x, room.w - box.width))}px`;
+		menu.style.top = `${
+			below + box.height <= room.h ? below : above >= 0 ? above : Math.max(0, room.h - box.height)
+		}px`;
 	}
 
 	/** Move focus within the open menu. The rows are real buttons, so Enter, Space and
@@ -902,9 +955,10 @@ class TableIslandView implements NodeView {
 		const end = event.key === 'Home' ? 0 : event.key === 'End' ? -1 : undefined;
 		if (!step && end === undefined) return;
 		event.preventDefault();
-		const rows = [
-			...menu.querySelectorAll<HTMLButtonElement>('.qm-table-menu-item:not(:disabled)')
-		];
+		// By ROLE, not by class: the inline set's glyphs are members of the same walk as
+		// the rows above them, so pressing down four times crosses the alignments and
+		// arrives at what follows. Two selectors here is how one of them gets forgotten.
+		const rows = [...menu.querySelectorAll<HTMLButtonElement>('[role^="menuitem"]:not(:disabled)')];
 		if (!rows.length) return;
 		if (end !== undefined) return rows.at(end)!.focus();
 		const at = rows.indexOf(document.activeElement as HTMLButtonElement);

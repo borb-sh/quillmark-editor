@@ -211,17 +211,28 @@ function corner(field: FieldController): HTMLButtonElement {
 	return field.el.querySelector<HTMLButtonElement>('.qm-table-corner')!;
 }
 
-/** The open menu, or `null`: the surface is mounted only while it is raised. */
-function menu(field: FieldController): HTMLElement | null {
-	return field.el.querySelector<HTMLElement>('.qm-table-menu');
+/** The open menu, or `null`: the surface is mounted only while it is raised, and it is
+ *  portalled OUT of the leaf, so it is looked for in the document rather than under
+ *  the field. */
+function menu(_field: FieldController): HTMLElement | null {
+	return document.querySelector<HTMLElement>('.qm-table-menu');
 }
 
 /** The open menu's rows, by their visible label: what a reader of the surface sees,
  *  and the only handle a test has on an op with no control of its own. */
-function rows(field: FieldController): Record<string, HTMLButtonElement> {
+function rows(_field: FieldController): Record<string, HTMLButtonElement> {
 	const out: Record<string, HTMLButtonElement> = {};
-	for (const row of field.el.querySelectorAll<HTMLButtonElement>('.qm-table-menu-item'))
+	for (const row of document.querySelectorAll<HTMLButtonElement>('.qm-table-menu-item'))
 		out[row.textContent ?? ''] = row;
+	return out;
+}
+
+/** The alignment set: one row of glyphs rather than four rows of words, so it is read
+ *  by the value each names rather than by a label. */
+function aligns(_field: FieldController): Record<string, HTMLButtonElement> {
+	const out: Record<string, HTMLButtonElement> = {};
+	for (const glyph of document.querySelectorAll<HTMLButtonElement>('.qm-table-menu-glyph'))
+		out[glyph.getAttribute('data-align') ?? ''] = glyph;
 	return out;
 }
 
@@ -401,12 +412,11 @@ describe('the table NodeView', () => {
 	it("a column's menu marks the alignment it already has, and sets another", () => {
 		const { field } = tableLeaf(LETTERED);
 		raise(grips(field, 'column')[1]);
-		const set = menu(field)!.querySelectorAll('[role="menuitemradio"]');
-		// One row per value the model carries, and exactly one of them live.
-		expect(set).toHaveLength(ALIGNS.length);
+		// One glyph per value the model carries, and exactly one of them live.
+		expect(Object.keys(aligns(field))).toEqual([...ALIGNS]);
 		const marked = menu(field)!.querySelector('[aria-checked="true"]');
 		expect(marked?.getAttribute('data-align')).toBe('right'); // LETTERED's column 2
-		rows(field)['Center'].click();
+		aligns(field)['center'].click();
 		expect(leafProps(field).aligns).toEqual(['left', 'center']);
 		// The pick closes the menu and leaves the column selected: a set with one live
 		// member has nothing more to say, and the next command is still about column 2.
@@ -615,8 +625,12 @@ describe('the line menu', () => {
 		expect(document.activeElement).toBe(rows(field)['Insert column right']);
 		key(document.activeElement!, 'ArrowDown');
 		expect(document.activeElement).toBe(rows(field)['Move column right']); // left is disabled
+		// And the inline set is in the SAME walk: four glyphs beside a heading are still
+		// four choices, so the keyboard crosses them rather than skipping to what follows.
+		key(document.activeElement!, 'ArrowDown');
+		expect(document.activeElement).toBe(aligns(field)['none']);
 		key(document.activeElement!, 'ArrowUp');
-		expect(document.activeElement).toBe(rows(field)['Insert column right']);
+		expect(document.activeElement).toBe(rows(field)['Move column right']);
 		field.destroy();
 	});
 
@@ -650,6 +664,23 @@ describe('the line menu', () => {
 		expect(menu(field)).toBeNull();
 		expect(washed(field)).toEqual([]);
 		field.destroy();
+	});
+
+	it('it portals to the nearest `[data-qm-root]`, out of the card that isolates', () => {
+		const root = mount();
+		root.setAttribute('data-qm-root', '');
+		const doc = quill().seedDocument();
+		doc.overwrite({}, withTable(LETTERED));
+		const field = createField({ doc, quill: quill(), addr: {}, container: root });
+		raise(grips(field, 'row')[0]);
+		// The marker, not the leaf: the marker is what carries the consumer's dials, and
+		// the card stack isolates a stacking context around its first card, so a menu
+		// left inside the leaf takes a `z-index` scoped to that one card.
+		expect(menu(field)!.parentElement).toBe(root);
+		expect(field.el.querySelector('.qm-table-island .qm-table-menu')).toBeNull();
+		// And it leaves with the leaf: nothing else would take it down.
+		field.destroy();
+		expect(document.querySelector('.qm-table-menu')).toBeNull();
 	});
 
 	it('Space raises it from the keyboard, where a second press is not a gesture', () => {
