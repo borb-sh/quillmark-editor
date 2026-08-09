@@ -8,12 +8,14 @@
  highlighted index, and what each pick does). This component draws it and nothing
  else. The keys are the leaf's keymap for the same reason: the caret stays in the
  contenteditable while the menu is open, so a focus-taking listbox would move the
- selection the insert is measured against. What is left here is the POINTER's half:
- buttons that pick, and that swallow their own mousedown so the caret stays put.
+ selection the insert is measured against. What is left here is mostly the POINTER's
+ half: buttons that pick, and that swallow their own mousedown so the caret stays put.
 
  The highlight has ONE lane: `data-highlighted` marks whichever item the codec's
  index names, and a pointer entering an item MOVES that index rather than painting a
  second highlight the keyboard cannot reach (controls.css, the shared menu recipe).
+ The keyboard's one claim here is the SCROLL: the arrows move an index, and only the
+ chrome knows the port that index has to stay inside.
 -->
 <script lang="ts">
 	import { Popover } from 'bits-ui';
@@ -46,6 +48,16 @@
 	 * `undefined` falls back to bits-ui's `document.body`. */
 	const portalTarget = $derived(leaf()?.el.closest<HTMLElement>('[data-qm-root]') ?? undefined);
 
+	let surface = $state<HTMLElement | undefined>();
+
+	/** Keep the keyboard's cursor in the port: the arrows move an INDEX rather than a
+	 *  focus, so a row the list scrolled past has nothing bringing it back. `nearest`
+	 *  scrolls the least that works, and no ancestor the row is already visible in. */
+	$effect(() => {
+		void menu?.index;
+		surface?.querySelector('[data-highlighted]')?.scrollIntoView({ block: 'nearest' });
+	});
+
 	/** Swallow the item's own mousedown: without it the browser focuses the item and
 	 *  blurs the leaf, taking the trigger run's caret with it. */
 	function keepFocus(e: MouseEvent): void {
@@ -55,12 +67,17 @@
 
 <Popover.Root bind:open>
 	<Popover.Portal to={portalTarget}>
+		<!-- Hung off the TRIGGER and flush against it: the anchor is the `/` itself
+		     (`codec/slash.ts`), so the surface's top left corner sits at the line's bottom
+		     edge under the character that opened the menu, and stays there as the query is
+		     typed. Zero offset, because a gap reads as a surface floating near the caret
+		     rather than one growing out of it. -->
 		<Popover.Content
 			customAnchor={menu?.anchor ?? null}
 			side="bottom"
 			align="start"
 			trapFocus={false}
-			sideOffset={6}
+			sideOffset={0}
 			onOpenAutoFocus={(e: Event) => e.preventDefault()}
 			onCloseAutoFocus={(e: Event) => e.preventDefault()}
 		>
@@ -74,6 +91,7 @@
 					     a thing to click, tab into, or read. -->
 					<div
 						{...props}
+						bind:this={surface}
 						class="qm-slash-menu qm-menu-surface"
 						data-qm-root
 						role="group"
@@ -104,20 +122,25 @@
 	   `.qm-menu-surface` / `.qm-menu-item` (controls.css): the same recipe the enum
 	   listbox and the card stack's kind menu draw, because all three are lists picked
 	   from. What is here is this menu's own: a measure, so a long label does not stretch
-	   the surface across the card, and a scroll for a filtered list that stays long. */
+	   the surface across the card, a scroll for a filtered list that stays long, and the
+	   FACE. Monospace, where the sibling menus are not: they offer VALUES of the document
+	   and read as the prose around them, where these are commands, and the surface
+	   already spells a literal in that face (the `code` mark, `codec/prose.css`). */
 	.qm-slash-menu {
 		min-width: 12rem;
 		max-height: 16rem;
 		overflow-y: auto;
+		font-family: var(--_qm-font-mono);
 	}
 	/* An item is a row of text, not a glyph: the whole row is the target, and the label
 	   is the accessible name with nothing beside it. A button is a button, so the UA's
-	   own box is taken back; what is left is the shared item recipe. */
+	   own box is taken back; what is left is the shared item recipe. The FILL is not
+	   taken back here: a scoped block is unlayered, so a reset would outrank the recipe's
+	   highlight; the resting transparent is the recipe's own (controls.css). */
 	.qm-slash-item {
 		display: block;
 		width: 100%;
 		border: none;
-		background: none;
 		font: inherit;
 		color: inherit;
 		text-align: left;
