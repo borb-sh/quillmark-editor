@@ -105,12 +105,15 @@
 		--_qm-border: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 17%);
 		/* A rule that separates without structuring: the lines BETWEEN a table's cells,
 		   where the frame around them is the structure. Half the border's mix rather
-		   than a fourth surface rung, because it is a stroke and reads against the
+		   than a surface rung of its own, because it is a stroke and reads against the
 		   surface behind it, not a fill stacked on one. */
 		--_qm-border-faint: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 9%);
+		/* Three inks, by what the text IS rather than by how far it recedes: the value a
+		   consumer authored, the chrome naming it, and a string standing where no value
+		   has been authored yet. A fourth step between `label` and `ghost` is a number
+		   without a fourth kind of text under it. */
 		--_qm-ink: var(--_qm-fg);
 		--_qm-ink-label: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 35%);
-		--_qm-ink-meta: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 45%);
 		--_qm-ink-ghost: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 60%);
 		/* The correlation wash (`core/bloom.ts`). Its alpha is a PEAK, not a tint: the
 		   wash animates from and back to zero, never held, so it reads at pane scale
@@ -141,7 +144,13 @@
 		   only up to the point where it is assembled. ONE width: focus is the only
 		   state that draws a ring anywhere, so there is no held-back tier under it. */
 		--_qm-ring-width: 2px;
-		--_qm-ring-focus: var(--_qm-ring-width) solid var(--_qm-accent);
+		/* The whole stroke, assembled once: every ring the surface draws is this one,
+		   whether the state under it is focus or selection. Assembled here because the
+		   parts spelled out at a use site pass every axis — each reads a rung — while
+		   drawing a ring nothing else agrees with, which is the one drift the gate is
+		   built blind to. The width stays reachable on its own: a drop indicator is the
+		   ring's thickness without being a ring. */
+		--_qm-ring: var(--_qm-ring-width) solid var(--_qm-accent);
 		--_qm-ring-offset: 1px;
 
 		/* ── Motion ──────────────────────────────────────────────────────────────
@@ -154,12 +163,13 @@
 		   animates over WAAPI and reads it from here. */
 		--_qm-bloom-dwell: 1100ms;
 
-		/* One curve per role, the role being what the trip's two endpoints ARE.
-		   `reverse` is the only one that has to be symmetric: it is the only one an
-		   interruption turns around. */
+		/* ONE curve, and it is symmetric because an interruption turns these trips
+		   around: a hover leaves before it arrives, a card collapses mid-expand. A
+		   one-way pair (decelerate in, accelerate out) is the other shape a scale like
+		   this carries, and nothing here is a one-way trip — the popover's pop is the
+		   nearest, and at `fast` its curve is under the threshold where the two read
+		   apart. A second curve is minted when a trip long enough to see one arrives. */
 		--_qm-ease-reverse: cubic-bezier(0.4, 0, 0.6, 1);
-		--_qm-ease-arrive: cubic-bezier(0, 0, 0.2, 1);
-		--_qm-ease-depart: cubic-bezier(0.4, 0, 1, 1);
 
 		/* ── Geometry ──────────────────────────────────────────────────────────*/
 		/* ONE stroke width for every edge the chrome draws: a card's, a control's,
@@ -171,12 +181,11 @@
 		   against a token. */
 		--_qm-border-width: 1px;
 		--_qm-radius: var(--qm-radius, 8px);
-		/* The INTERIOR corner, fixed rather than a step under the card's: like the tap
-		   floor beside it, what it answers to is the size of the things it rounds and not
-		   the brand gesture a card's corner carries. A step under the dial breaks at the
-		   top of the dial's range, where half of a round brand rounds a target at the tap
-		   floor into a circle. */
-		--_qm-radius-inner: 4px;
+		/* The INTERIOR corner, and HALF is the relationship rather than the number: a
+		   corner inside a corner reads as nested only while it is visibly tighter, and
+		   halving holds that at every setting of the dial, zero included — a square brand
+		   is square through the interior instead of square outside and rounded within. */
+		--_qm-radius-inner: calc(var(--_qm-radius) / 2);
 		/* A fully-rounded end cap: a shape tier, not a step on the radius ramp, so
 		   it does not derive from the dial: a pill stays a pill at any radius. */
 		--_qm-radius-pill: 999px;
@@ -217,13 +226,16 @@
 
 		/* ── Type ────────────────────────────────────────────────────────────────
 		   `--qm-font-size` anchors the CHROME rung; 1.125 is the ratio between adjacent
-		   rungs: a step up (title) and two down (label, meta). The ratio and the
-		   weights are fixed conventions, not dials: no consumer tunes a typographic
-		   ratio, and a dial nobody turns is a name every reader still holds. */
+		   rungs: a step up (title) and one down (label). The ratio and the
+		   weight are fixed conventions, not dials: no consumer tunes a typographic
+		   ratio, and a dial nobody turns is a name every reader still holds.
+		   THREE chrome rungs, because a second step below `label` lands near 11px,
+		   which is under a size any of this surface's text wants to be read at: a
+		   diagnostic, a hint and the tips foot are all supporting text, which is what
+		   `label` already is. */
 		--_qm-text-body: var(--qm-font-size, 0.875rem);
 		--_qm-text-title: calc(var(--_qm-text-body) * 1.125);
 		--_qm-text-label: calc(var(--_qm-text-body) / 1.125);
-		--_qm-text-meta: calc(var(--_qm-text-label) / 1.125);
 		/* PAPER: the document body, which answers to the paper in the preview where every
 		   other surface here answers to the control beside it. A rung of its own because
 		   one shared with the chrome makes a consumer asking for larger prose take larger
@@ -231,8 +243,10 @@
 		   change of REGISTER rather than as a rung of hierarchy, and clear of the title
 		   rung at every dial setting, which one 9/8 step would land on exactly. */
 		--_qm-text-paper: calc(var(--_qm-text-body) * 16 / 15);
+		/* ONE weight over the surface's regular: every heading here — a field's label, a
+		   card's title, an object's — is the same kind of thing, a name over the value
+		   under it, so a second weight is a rung with no register beneath it. */
 		--_qm-weight-label: 600;
-		--_qm-weight-soft: 500;
 		/* Leading: the ramp's third axis, and it does not track the sizes one for one:
 		   two rungs, because a wrapped label and a wrapped paragraph want different
 		   rhythms and nothing wants four. `body` is reading rhythm (both prose leaves,

@@ -17,7 +17,7 @@
 
 @layer qm.chrome {
 	/* The themed focus ring in place of the raw UA outline, as a
-	 RULE rather than a pair of rungs each control assembles. `--_qm-ring-focus`
+	 RULE rather than a pair of rungs each control assembles. `--_qm-ring`
 	 fixes the VALUE; which properties draw a ring, and on what state, is the other
 	 half of the decision, and `check:style` sees a minted literal but never a
 	 divergent rule. A control opts in by carrying the marker class.
@@ -28,7 +28,7 @@
 	 it. That is the only distinction, and this pair is the whole of it. */
 	.qm-focus-ring:focus-visible,
 	.qm-focus-ring-within:focus-within {
-		outline: var(--_qm-ring-focus);
+		outline: var(--_qm-ring);
 		outline-offset: var(--_qm-ring-offset);
 	}
 
@@ -140,7 +140,7 @@
 	 which is why it is here and not on one family, and it is what keeps a button off
 	 the host page's leading the way the size rung keeps it off the host page's body
 	 size. A caller whose button carries a LABEL restates the rung it wants from its
-	 own block: the tips foot takes the meta rung, which is that surface's decision,
+	 own block: the tips foot takes the label rung, which is that surface's decision,
 	 not the family's. */
 	.qm-icon-btn,
 	.qm-add-affordance {
@@ -247,10 +247,10 @@
 		-webkit-backdrop-filter: blur(var(--_qm-blur));
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
-		animation: qm-pop-in var(--_qm-duration-fast) var(--_qm-ease-arrive);
+		animation: qm-pop-in var(--_qm-duration-fast) var(--_qm-ease-reverse);
 	}
 	.qm-popover-surface[data-ending-style] {
-		animation: qm-pop-out var(--_qm-duration-fast) var(--_qm-ease-depart);
+		animation: qm-pop-out var(--_qm-duration-fast) var(--_qm-ease-reverse);
 	}
 	@keyframes qm-pop-in {
 		from {

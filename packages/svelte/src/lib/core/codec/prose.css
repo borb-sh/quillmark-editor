@@ -20,13 +20,13 @@
    re-measured here rather than in `theme.css` because a layered rule loses to that
    unlayered stylesheet: equal specificity and a later import is what wins. */
 .ProseMirror-selectednode {
-	outline: var(--_qm-ring-width) solid var(--_qm-accent);
+	outline: var(--_qm-ring);
 }
 /* Upstream's `-32px` is measured against the UA's 40px list indent, which the list
    rule below replaces with a rung. The offset moves with it, or a selected item's
    outline hangs into the margin by the difference. */
 li.ProseMirror-selectednode::after {
-	border: var(--_qm-ring-width) solid var(--_qm-accent);
+	border: var(--_qm-ring);
 	left: calc(var(--_qm-space-4) * -1);
 }
 
@@ -457,7 +457,7 @@ li.ProseMirror-selectednode::after {
 .qm-table-handle:focus-visible,
 .qm-table-seam:focus-visible,
 .qm-table-align-item:focus-visible {
-	outline: var(--_qm-ring-focus);
+	outline: var(--_qm-ring);
 	outline-offset: var(--_qm-ring-offset);
 }
 

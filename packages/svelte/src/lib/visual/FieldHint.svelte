@@ -213,7 +213,7 @@
 	}
 	.qm-field-hint:hover,
 	.qm-field-hint:focus-visible {
-		color: var(--_qm-ink-meta);
+		color: var(--_qm-ink-label);
 	}
 	/* The lift, the translucency, the blur and the scale-in come from
 	 `.qm-popover-surface` (controls.css). This surface's own is a MEASURE: guidance
@@ -227,8 +227,8 @@
 	:global(.qm-hint-popover) {
 		max-width: 22rem;
 		padding: var(--_qm-space) var(--_qm-space-2);
-		font-size: var(--_qm-text-meta);
+		font-size: var(--_qm-text-label);
 		line-height: var(--_qm-leading-body);
-		color: var(--_qm-ink-meta);
+		color: var(--_qm-ink-label);
 	}
 </style>
