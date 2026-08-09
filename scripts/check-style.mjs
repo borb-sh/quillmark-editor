@@ -126,8 +126,9 @@ const RHYTHM_MARKER = /(padding|margin|gap|radius)/i;
 const STROKE_MARKER = /border(?!-?radius)/i;
 /** The escape: a `mint:` comment on the line, in either comment syntax, carrying a
  *  reason. The reason is the whole mechanism — a bare marker is a suppression, and a
- *  suppression is what a gate becomes when nobody has to say anything. */
-const MINT = /(?:\/\*|\/\/)\s*mint:\s*(\S[^*\n]*)/;
+ *  suppression is what a gate becomes when nobody has to say anything. The lookahead is
+ *  what keeps a CSS comment's own closing delimiter from reading as one. */
+const MINT = /(?:\/\*|\/\/)\s*mint:\s*(?!\*\/)(\S[^*\n]*)/;
 /** A `--x:` DEFINITION — a consumption is `var(--x)`, which has no colon. */
 const privateDef = (prefix) => new RegExp(`(${prefix}[\\w-]+)\\s*:`);
 /** Reading a rung of ANY scale the scope is entitled to. An app reads two: the
