@@ -22,6 +22,8 @@ Cross-repo references read `quillmark prose/canon/X.md` (a different repo; links
 
 Every verb below is on the WASM `Document` / `Quill` / `LiveSession` today (`impl Document`, `impl LiveSession` in `crates/bindings/wasm/src/engine.rs`) unless the Stability column says otherwise.
 
+The last row is the odd one: no code in this package calls it. The surfaces mount over live handles, so a host that stores text owns getting one open and reading it back out, and those verbs are load-bearing for an integration while appearing in no prop and no signature here. They are gated with the rest; what a host does with them is [HOSTING.md](HOSTING.md).
+
 `check:ledger` gates that: every name this table gives resolves in the installed artifact's types, and the pin stated above equals the version on disk. The gate runs one direction and is a floor rather than a proof; `scripts/check-ledger.mjs` states both rules and their limits.
 
 | Concern | Verbs / types | Canon | Stability |
@@ -34,6 +36,7 @@ Every verb below is on the WASM `Document` / `Quill` / `LiveSession` today (`imp
 | **Positions & markdown edges** | `importMarkdown` / `exportMarkdown` / `rebase` (→ `{content, delta}`) / `mapPos` (module-level); `parseDocPath` / `formatDocPath` (+ `DocPathSeg`) for canonical field-address routing; position→geometry queries (`positionAt` / `locate`) live on `LiveSession` (row below) | `references/markdown-spec.md`, `CONVERT.md` | stable |
 | **Validation & diagnostics** | `quill.validate(doc)` → `Diagnostic[]` (`.path` a canonical `DocPath`), `Document.warnings`, `LiveSession.warnings`, `QuillmarkError` shape (mutator failures carry a `code` + `path`) | `SCHEMAS.md`, `ERROR.md` | stable |
 | **Live session & paint** (preview) | `engine.open(quill, doc)` → `LiveSession` (`update` → `ChangeSet`, `paint`, `pageSize`, `regions` / `fieldBoxes` / `fieldAt` / `positionAt` / `locate`, `supportsCanvas`, `warnings`); `PaintOptions` / `PaintResult` / `PageSize` / `ContentHit` / `FieldRegion` | quillmark `PREVIEW.md` | stable |
+| **The host's text edge** (no surface calls these) | `Document.fromMarkdown(md)` and `doc.toMarkdown()`, the round trip a text-persisting host runs the surfaces inside; `doc.equals(other)` to tell a re-parse of the host's own output from an edit that came from elsewhere; `doc.quillRef` to name the quill to resolve | `DOCUMENT_STORAGE.md`, [HOSTING.md](HOSTING.md) | stable |
 
 Consumed by: [CODEC.md](CODEC.md) (op-grained edit, positions, markdown edges), [PREVIEW.md](PREVIEW.md) (live session & paint), [VISUAL_EDITOR.md](VISUAL_EDITOR.md) (seeding, writer, structure mutators, validation).
 

@@ -65,6 +65,20 @@ function rebinds(errors: EditorError[]): EditorError[] {
 	return errors.filter((e) => e.code === 'rebind-ignored');
 }
 
+/**
+ * Flush, absorbing the dev throw the guard raises after it reports, and answer what
+ * it threw. Vitest builds with `DEV`, so every swap below throws; the surface it was
+ * raised from is unharmed, which is what the last case here asserts.
+ */
+function flushCatching(): Error | undefined {
+	try {
+		flushSync();
+	} catch (e) {
+		return e as Error;
+	}
+	return undefined;
+}
+
 describe('Preview', () => {
 	it('reports nothing when no prop is swapped', () => {
 		const { errors } = mountSurface(Preview, {
@@ -93,14 +107,18 @@ describe('Preview', () => {
 		});
 
 		(props as Record<string, unknown>)[prop] = next();
-		flushSync();
+		const thrown = flushCatching();
 		(props as Record<string, unknown>)[prop] = next();
-		flushSync();
+		flushCatching();
 
 		const reported = rebinds(errors);
 		expect(reported).toHaveLength(1);
 		expect(reported[0].severity).toBe('dev');
 		expect(reported[0].message).toContain(prop);
+		// Reported AND thrown: the throw is what reaches a consumer whose handler went
+		// stale in the same swap, and it carries the same sentence.
+		expect(thrown?.message).toContain('rebind-ignored');
+		expect(thrown?.message).toContain(prop);
 	});
 
 	it('stays quiet under an inline `strings` literal, and reports when its value moves', () => {
@@ -113,25 +131,27 @@ describe('Preview', () => {
 		expect(rebinds(errors)).toHaveLength(0);
 
 		props.label = 'Rien à afficher';
-		flushSync();
+		flushCatching();
 
 		// A language switch IS a swap: the mounted preview keeps its English.
 		expect(rebinds(errors)).toHaveLength(1);
 		expect(rebinds(errors)[0].message).toContain('strings');
 	});
 
-	it('reports a swapped onError through the handler it replaced', () => {
+	it('throws a swapped onError, whose report reaches only the handler it replaced', () => {
 		const { props, errors } = mountSurface(Preview, { session: mockSession() });
 		const replacement: EditorError[] = [];
 
 		props.onError = (e: EditorError) => replacement.push(e);
-		flushSync();
+		const thrown = flushCatching();
 
 		// `onError` is once-bound like the rest, so the report of its own swap reaches
-		// the handler that was replaced, not the one that took its place.
+		// the handler that was replaced, not the one that took its place. The throw is
+		// the half that arrives: it needs no handler.
 		expect(rebinds(errors)).toHaveLength(1);
 		expect(rebinds(errors)[0].message).toContain('onError');
 		expect(rebinds(replacement)).toHaveLength(0);
+		expect(thrown?.message).toContain('onError');
 	});
 
 	it('names every prop that went stale in the one report', () => {
@@ -143,11 +163,24 @@ describe('Preview', () => {
 
 		props.margin = 48;
 		props.overlays = false;
-		flushSync();
+		flushCatching();
 
 		const reported = rebinds(errors);
 		expect(reported).toHaveLength(1);
 		expect(reported[0].message).toContain('margin');
 		expect(reported[0].message).toContain('overlays');
+	});
+
+	it('goes on painting the session it bound, after the throw', () => {
+		const { props } = mountSurface(Preview, { session: mockSession(), margin: 16 });
+
+		props.margin = 48;
+		expect(flushCatching()).toBeDefined();
+
+		// The throw is the message escalating, not the surface failing: the tree still
+		// renders and still flushes, which is what makes throwing affordable here.
+		expect(document.querySelector('.qm-preview')).not.toBeNull();
+		props.margin = 64;
+		expect(flushCatching()).toBeUndefined();
 	});
 });

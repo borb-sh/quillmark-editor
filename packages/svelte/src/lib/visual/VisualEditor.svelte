@@ -24,7 +24,7 @@
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { reportError } from '../core/errors.js';
+	import { reportRebindIgnored } from '../core/rebind.svelte.js';
 	import type { DocPath, Landing } from '../core/address.js';
 	import type { CardId } from './signals.js';
 	import type { VisualEditorProps } from './props.js';
@@ -53,12 +53,10 @@
 			}
 			if (quill === boundQuill || reported) return;
 			reported = true;
-			reportError(props.onError, {
-				code: 'rebind-ignored',
-				severity: 'dev',
-				message:
-					'quill swapped in place; the mounted leaves still commit against the quill this doc mounted with. Swap the doc with it, or remount the editor, to rebind.'
-			});
+			reportRebindIgnored(
+				props.onError,
+				'quill swapped in place; the mounted leaves still commit against the quill this doc mounted with. Swap the doc with it, or remount the editor, to rebind.'
+			);
 		});
 	});
 
