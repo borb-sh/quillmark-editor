@@ -10,7 +10,9 @@ Comments and docs are dense, present-tense, unsold: state what is, not how it go
 
 ## Commands
 
-Every command is the root's; a package script is reached with `-w packages/<name>`. `gate` is the whole gate in one verb, and with `check:pack` is what CI (`.github/workflows/ci.yml`) holds. A verb name means one thing across the workspace; the implementations differ per package.
+Every command is the root's; a package script is reached with `-w packages/<name>`. `gate` is the whole gate in one verb, and with `check:pack` is what CI (`.github/workflows/ci.yml`) holds. `gate:fast` is its first half, everything that needs no build. A verb name means one thing across the workspace; the implementations differ per package.
+
+A gate holds what a diff cannot show — a stylesheet a bundler pruned, a rung that resolves to nothing, a pointer at a renamed heading, a lock missing a platform. What a reviewer can see for itself is review's: the gates warn there, and never fail. A value a surface mints on purpose says so on the line (`mint: <reason>`) and is counted rather than blocked.
 
 `check:registry` sits outside both: it asks the registry whether each published version is there, and a release branch is ahead of the registry by design. It runs on its own schedule (`.github/workflows/registry.yml`), against `main`, where being ahead is a fault.
 

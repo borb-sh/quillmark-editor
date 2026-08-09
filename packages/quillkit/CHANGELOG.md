@@ -4,7 +4,7 @@
 
 ## Unreleased
 
-**The bundle names what it carries.** The client compiles in `@quillmark/svelte`, `@quillmark/quiver` and `@quillmark/wasm`, and nothing in a consumer's tree records which copies: a browser resolves nothing, so there is no dependency edge to read. `dist/client/carried.json` names all three beside the bundle, the running client holds the same three in `__CARRIED__`, and each release's notes state them in one line. A sibling reads as its bare version where the released bytes are what shipped, and as `0.1.0+3.a1b2c3d`, `0.0.0+untagged.a1b2c3d` or `0.1.0+nogit` where that claim would not be true.
+**The bundle names what it carries.** The client compiles in `@quillmark/svelte`, `@quillmark/quiver` and `@quillmark/wasm`, and nothing in a consumer's tree records which copies: a browser resolves nothing, so there is no dependency edge to read. `dist/client/carried.json` names all three beside the bundle, the running client holds the same three in `__CARRIED__`, and each release's notes state them in one line. Each is the version its manifest states.
 
 ## v0.1.1 - 2026-08-08
 

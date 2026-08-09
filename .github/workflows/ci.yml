@@ -25,12 +25,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          # Tags, and the history back to them: the client's build stamps each compiled-in
-          # sibling against its own release tag, and a checkout holding neither stamps
-          # every one of them untagged. The build and the tarball rehearsal below both
-          # carry that stamp, so a shallow checkout rehearses a deploy over a false one.
-          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -47,8 +41,8 @@ jobs:
       - name: Check (types)
         run: npm run check
 
-      - name: Canon spine
-        run: npm run check:canon
+      - name: Section pointers
+        run: npm run check:pointers
 
       - name: Style scales
         run: npm run check:style
@@ -56,7 +50,7 @@ jobs:
       - name: Dependency law
         run: npm run check:deps
 
-      - name: Boundary ledger
+      - name: Boundary pin
         run: npm run check:ledger
 
       # Before the suite: quillkit is reached through the bin an author runs, and the

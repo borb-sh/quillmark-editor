@@ -22,7 +22,7 @@ Cross-repo references read `quillmark prose/canon/X.md` (a different repo; links
 
 Every verb below is on the WASM `Document` / `Quill` / `LiveSession` today (`impl Document`, `impl LiveSession` in `crates/bindings/wasm/src/engine.rs`) unless the Stability column says otherwise.
 
-`check:ledger` gates that: every name this table gives resolves in the installed artifact's types, and the pin stated above equals the version on disk. The gate runs one direction and is a floor rather than a proof; `scripts/check-ledger.mjs` states both rules and their limits.
+`check:ledger` holds the pin stated above against the version on disk. What the table names answers to `tsc`, which fails the moment package code calls a verb the artifact stopped exporting, and to review for a row that outlives its consumer.
 
 | Concern | Verbs / types | Canon | Stability |
 | --- | --- | --- | --- |

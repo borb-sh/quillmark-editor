@@ -7,7 +7,7 @@ description: Write comments and docs at high semantic density: terse, present-te
 
 Density is facts per word. Cut words that carry no fact: the sell, the echo, the history, the deliberation (rules 1–4). Pack more fact into what survives (rule 5). A comment or doc earns its bytes when it states a fact the reader cannot get faster from the code, in the fewest words that stay correct.
 
-This skill is the house voice (dense, present-tense, declarative, unsold) and owns comment and doc *content*. Canon *structure* (Title → Implementation anchor → TL;DR, one concept per page) is stated and enforced in `scripts/check-canon.mjs`.
+This skill is the house voice (dense, present-tense, declarative, unsold) and owns comment and doc *content*. Canon *structure* — a title, an `> **Implementation**:` anchor naming folders or modules, a `## TL;DR`, one concept per page — is convention the existing pages carry; nothing gates it, so a page departs from it by being written that way and defends the departure in review.
 
 ## Prime directive: wrong is worse than missing
 
@@ -82,7 +82,7 @@ A paragraph is one line: never hard-wrap prose at a column. A line break in mark
 1. **Sweep**: grep for sells; history markers (`used to`, `no longer`, `previously`, `formerly`, `as of`, `removed in`, `renamed`, `we switched`, `legacy`, `deprecated`); deliberation markers (`spike`, `deferred`, `considered`, `for now`, `eventually`, `we tried`); and status markers (`#\d+`, issue and PR links).
 2. **Triage**: each hit is a violation or a load-bearing fact in costume.
 3. **Rewrite in place**: present tense, minimal, fact preserved. A comment contradicting the code gets fixed, not deleted. Identifiers stay.
-4. **Verify**: tests pass; no test asserted the old wording; `npm run check:canon` passes. The whole gate is `npm run gate`.
+4. **Verify**: tests pass; no test asserted the old wording; `npm run check:pointers` passes, since a renamed heading strands every reference to it. The whole gate is `npm run gate`.
 
 ## Done when
 
