@@ -652,6 +652,74 @@ describe('a selection is a rectangle of cells, and Backspace reads its extent', 
 	});
 });
 
+// ── The grip drag ───────────────────────────────────────────────────────────
+//
+// A grip lives INSIDE the cell it names, so a press on one reaches the island's own
+// pointer router as a press in that cell. The router has to read it as the LINE's, or
+// the travel that drags a line also sweeps the cells it crosses and one press draws two
+// selections.
+
+/** Drive a grip drag: the press, the travel and the release, all on the grip, which is
+ *  where the view listens once it has the pointer. jsdom implements no pointer capture,
+ *  and the view asks for it optionally for that reason. */
+function dragGrip(grip: HTMLButtonElement, path: [number, number][]): void {
+	const at = (type: string, [x, y]: [number, number]) =>
+		grip.dispatchEvent(
+			new PointerEvent(type, {
+				bubbles: true,
+				cancelable: true,
+				pointerId: 1,
+				clientX: x,
+				clientY: y
+			})
+		);
+	at('pointerdown', path[0]);
+	for (const step of path.slice(1)) at('pointermove', step);
+	at('pointerup', path[path.length - 1]);
+}
+
+describe('a grip drag moves its line', () => {
+	it('the travel draws no block: a grip press is not a press in the cell it sits in', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		// The mousedown-then-travel that sweeps a block from a cell's own host (above),
+		// aimed at the grip inside that same cell.
+		pressAt(grips(field, 'row')[0], 35, 55);
+		for (const [x, y] of [
+			[60, 60],
+			[150, 80]
+		])
+			document.dispatchEvent(
+				new MouseEvent('mousemove', { bubbles: true, cancelable: true, clientX: x, clientY: y })
+			);
+		document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+		expect(washed(field)).toEqual([]);
+		// And no caret was planted on the way in: the press was the line's throughout.
+		expect((field as FieldController & LeafViews).focusedView()).toBe(outerView(field));
+		field.destroy();
+	});
+
+	it('the line lands where the pointer left it, and stays selected', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		// Row 1 (45–65 in the stubbed geometry) lifted and carried into row 2's extent.
+		dragGrip(grips(field, 'row')[0], [
+			[35, 55],
+			[35, 60],
+			[35, 80]
+		]);
+		expect(grid(leafProps(field))).toEqual([
+			['h1', 'h2'],
+			['b1', 'b2'],
+			['a1', 'a2']
+		]);
+		// The selection travels with the line, or the next Alt+arrow acts on whatever
+		// took the index.
+		expect(washed(field)).toEqual(['2,0', '2,1']);
+		field.destroy();
+	});
+});
+
 // ── The pointer, and what a selection is for ────────────────────────────────
 //
 // Click-to-NodeSelect belongs to an atom with no interior, and a table has cells. So

@@ -175,10 +175,15 @@ function cellPlugins(keys: Record<string, Command>) {
 	return [inputRulesPlugin(inlineSchema), keymap(keys), keymap(baseKeymap)];
 }
 
-/** What the nested views and the band answer for themselves. `stopEvent` reads it to
- *  hand PM everything else, and the pointer guard reads it to leave those presses
- *  alone: one list, so the two cannot disagree about what a cell owns. */
-const OWNED = '.qm-table-cell-host, .qm-table-grip, .qm-table-add';
+/** The band's controls, each of which answers for its own press. Spelled apart from
+ *  {@link OWNED} because the pointer router needs them BEFORE it needs the cells: a grip
+ *  is inside the cell it names, so the two selectors overlap on exactly the press whose
+ *  reading they disagree about. */
+const CONTROLS = '.qm-table-grip, .qm-table-add';
+
+/** What the nested views and the band answer for themselves, which is what `stopEvent`
+ *  keeps from PM. */
+const OWNED = `.qm-table-cell-host, ${CONTROLS}`;
 
 /** How far a press travels before it is a drag rather than a click. Under it, a press
  *  that jitters is still the gesture it was aimed as. */
@@ -385,9 +390,11 @@ class TableIslandView implements NodeView {
 	 *
 	 * A press IN a cell is a caret and the nested view is taking it; what is armed here
 	 * is only the promotion, since a press that travels into another cell stops being a
-	 * caret and becomes a block. That is the one gesture that has to see a press a cell
-	 * already owns, which is why it runs ahead of the `OWNED` guard rather than behind
-	 * it.
+	 * caret and becomes a block. That is the one gesture that has to see a press the
+	 * nested view already owns, which is why it runs ahead of the cell host's guard
+	 * rather than behind it. A CONTROL is the other way round: a grip is inside the cell
+	 * it names, so its guard runs ahead of the cell branch, or a grip press would plant a
+	 * caret in that cell and arm a sweep the drag then draws a block with.
 	 *
 	 * A `mousedown` listener, and it stops the event: PM's own mousedown is what arms
 	 * the node selection the matching mouseup then takes. `stopEvent` is the other way
@@ -398,6 +405,7 @@ class TableIslandView implements NodeView {
 		// unambiguous, and PM's to answer. So is a secondary press, which types nothing.
 		if (!this.rendered || event.button !== 0) return;
 		const target = event.target as Element | null;
+		if (target?.closest?.(CONTROLS)) return; // a control answers for itself
 		const point = { x: event.clientX, y: event.clientY };
 		const box = target?.closest?.('.qm-table-cell');
 		const cell = box && this.cells.find((m) => m.box === box);
@@ -416,7 +424,8 @@ class TableIslandView implements NodeView {
 			this.armSweep(cell, point);
 			return;
 		}
-		if (target?.closest?.(OWNED)) return; // a control answers for itself
+		// Past the control guard and the cell branch, the press is on the island's own
+		// space: the band's padding, or the frame beside the grid.
 		event.preventDefault();
 		event.stopPropagation();
 		const grid = this.dom.querySelector('.qm-table');
@@ -736,7 +745,9 @@ class TableIslandView implements NodeView {
 			lines: [],
 			origin0: { left: 0, top: 0 }
 		};
-		grip.setPointerCapture(event.pointerId);
+		// Optional for the reason the release is: pointer capture is the browser's, and a
+		// DOM without it still routes the move and up events the drag reads.
+		grip.setPointerCapture?.(event.pointerId);
 		grip.addEventListener('pointermove', this.onGripMove);
 		grip.addEventListener('pointerup', this.onGripUp);
 		grip.addEventListener('pointercancel', this.onGripUp);
