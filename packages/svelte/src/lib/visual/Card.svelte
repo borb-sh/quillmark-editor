@@ -357,8 +357,9 @@
 		 card is printed on, so a label restates it; and the accessible name
 		 survives on the leaf itself, so the region
 		 is still announced. Unframed is the point rather than a saving: the body is
-		 the ONLY surface in the card without an edge, which is what makes it read
-		 as paper instead of as one more field, and the bracket's bottom rule
+		 the ONLY surface in the card at the card's OWN tone, where every other
+		 typed value sits in a well cut into it, and that is what makes it read as
+		 paper instead of as one more field. The bracket's bottom rule
 		 already does the separating a box was doing. -->
 			{#if card.hasBody}
 				<div class="qm-body-leaf">
