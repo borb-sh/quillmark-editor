@@ -24,9 +24,9 @@
 	/* ── Colour ──────────────────────────────────────────────────────────────── */
 	/* The DIAL is the plate, exactly as it is the card one level down: a plate beside
 	   a mounted editor is the same plane as a card in it, so both read the pole and
-	   the page sinks from it. That is what keeps a host page and an editor's own
-	   column meeting seamlessly instead of one plane short of each other. Planes step
-	   by light and everything else by ink, which is the package's own split
+	   the page sinks from it by the same two arms. That is what puts a host page and
+	   an editor's own column on one tone rather than a plane apart. Planes step by
+	   light and everything else by ink, which is the package's own split
 	   (ARCHITECTURE §Styling); the percentages are its percentages. */
 	--qmh-surface: var(--qm-bg, Canvas);
 	--qmh-page: light-dark(

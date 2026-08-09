@@ -996,11 +996,10 @@
 
 	   The SUNKEN rung, which is what makes a card an island: the cards are the base
 	   plane and this is the one they float on, so the gutter reads as ground rather
-	   than as more card (ARCHITECTURE §Styling). The inset is a step above the gap
-	   BETWEEN cards, deliberately: a stack whose outer margin equals its internal
-	   rhythm reads as one block clipped by the pane, and a margin that says "these
-	   are separate objects on a surface" has to be wider than the one separating
-	   them from each other. */
+	   than as more card (ARCHITECTURE §Styling). The inset is the widest rung on the
+	   ramp, which is what gives the ground enough of itself to read as ground: at a
+	   narrower one the stack meets whatever frames the surface and the islands are
+	   back to being one block clipped at its edges. */
 	.qm-editor {
 		box-sizing: border-box;
 		display: flex;

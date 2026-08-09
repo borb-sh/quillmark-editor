@@ -62,7 +62,7 @@ Three kinds of stroke survive, and each says something a fill cannot:
 - **A stroke on something floating**: a menu, a popover, the table island's alignment cluster. There is no plane under them to step off, since what they hang over is content they did not choose, so the edge is the whole of the separation and the raised rung is what carries it in dark.
 - **A stroke that IS a state**: the dashed edge on an un-schemable card. It reads because an ordinary card has none.
 
-The cost of a redundant line is paid per instance and lands hardest where the surface is densest: a card of ten fields drawing ten more rectangles is ten statements of a thing the tone already made, and each of them competes with the bracket, which is the one figure in the card that a reader is meant to see.
+The cost of a redundant line is paid per instance and lands hardest where the surface is densest: a card of ten fields drawing ten more rectangles is ten statements of a thing the tone already made, and every one of them competes with the bracket, which the card draws on purpose.
 
 Two consequences reach past CSS. Motion durations and curves are rungs like any other, so `prefers-reduced-motion` collapses the **scale** in the derivation rather than a roster of selectors, and the two scripts that animate over WAAPI read their rung off the element rather than forking the number. And a surface hidden by geometry is `inert`, not merely unpainted: clipping answers the eye alone, where the attribute takes the subtree out of the tab order, hit-testing and the accessibility tree at once.
 

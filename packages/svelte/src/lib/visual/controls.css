@@ -91,12 +91,10 @@
 		color: var(--_qm-ink);
 		caret-color: currentColor;
 	}
-	/* THE BOX IS A FILL AND NOT AN EDGE (ARCHITECTURE §Styling). A control sits IN
-	 the card, so what separates it from the card is the plane it is cut into:
-	 `sunken`, the same rung the column behind the cards paints with, so a field
-	 reads as a hole in the card down to what the card sits on. A hairline here
-	 would be a second statement of a thing the tone already says, on the surface
-	 that carries the most of them: a card of ten fields is ten more rectangles. */
+	/* THE BOX IS A FILL AND NOT AN EDGE (ARCHITECTURE §Styling), and the fill is the
+	 SUNKEN rung, the same one the column behind the cards paints with: a field is a
+	 hole in the card down to what the card sits on, rather than a plane of its
+	 own. */
 	.qm-control-box,
 	.qm-input {
 		padding: var(--_qm-inset-control);

@@ -93,31 +93,31 @@
 		--_qm-font-mono: var(--qm-font-mono, ui-monospace, monospace);
 
 		/* ── Colour ──────────────────────────────────────────────────────────────
-		   Ink steps fg → bg and STATES step by light, both mixed in oklab; sRGB
-		   muddies the mid-tones and the label/meta/border rungs are exactly
-		   mid-tone. The percentages are calibrated to the light-mode literals they
-		   stand in for (17% ≈ #d4d4d4, 35% ≈ #555).
+		   Ink steps fg → bg, the border and hover rungs step bg → fg, all mixed in
+		   oklab; sRGB muddies the mid-tones and the label/meta/border rungs are
+		   exactly mid-tone. So inverting the poles inverts that half of the scale.
+		   The percentages are calibrated to the light-mode literals they stand in
+		   for (17% ≈ #d4d4d4, 35% ≈ #555).
 
-		   PLANES ARE THE ONE AXIS THAT DOES NOT READ THE INK POLE, because what
-		   makes a card read as a card is that it is the BRIGHTER plane, in both
-		   schemes alike (ARCHITECTURE §Styling). Toward the ink is the wrong
-		   direction in one of them: it darkens a card below the page it floats on
-		   in light and lifts the page above the card in dark. So `sunken` mixes
-		   toward shadow and `raised` toward light, and the base plane — the card,
-		   the field-less body, the preview's paper — is the pole itself.
+		   PLANES ARE THE HALF THAT DOES NOT READ THE INK POLE, because what makes a
+		   card read as a card is that it is the BRIGHTER plane, in both schemes
+		   alike (ARCHITECTURE §Styling). Toward the ink is the wrong direction in
+		   one of them: it darkens a card below the page it floats on in light and
+		   lifts the page above the card in dark. So `sunken` mixes toward shadow
+		   and `raised` toward light, and the base plane — a card, the preview's
+		   paper — is the pole itself.
 
-		   `sunken` is the ONE rung with two arms, and the asymmetry is the
-		   geometry of the mix rather than a preference: mixing toward black scales
+		   `sunken` is the ONE rung with two arms, and the asymmetry is the geometry
+		   of the mix rather than a preference: mixing toward black scales
 		   lightness, so a fixed percentage is a fixed RATIO and not a fixed step.
-		   Both arms are ~0.04 of oklab L at the poles above, which is the step
-		   these percentages exist to hold. Pinning a dark palette under a light
+		   Both arms travel ~0.04 of oklab L at the poles above, which is the step
+		   these two percentages exist to hold. Pinning a dark palette under a light
 		   `color-scheme` takes the light arm with it (THEMING §"The surface follows
 		   your colour scheme"), so a host that pins declares the scheme with it.
 
 		   `raised` is a no-op at the light pole, where the card is already white
-		   and there is nowhere further to go: a floating surface separates on its
-		   hairline there and on the step in dark, which is why the two say the
-		   same thing and only one of them is visible at a time. */
+		   and there is nowhere further to go, so a floating surface separates on
+		   its hairline in light and on the step in dark. */
 		--_qm-surface: var(--_qm-bg);
 		--_qm-surface-sunken: light-dark(
 			color-mix(in oklab, var(--_qm-bg), #000 4%),
@@ -145,11 +145,11 @@
 		   status. Guidance is neither an error nor a warning, so it takes neither of
 		   those hues; what it is instead is an artifact from a draft, which is what
 		   the amber and the typewriter face say together (`visual/TipsCard.svelte`).
-		   A literal rather than a dial: eleven dials to retune a card a consumer
-		   seeds and dismisses is a contract paying for a surface that is often
-		   absent, and every rung under it is a mix over the surface and the ink the
-		   consumer already tuned, so the card tracks a brand without being told.
-		   The mixes are faint on purpose — the tint is a warmth, not a badge. */
+		   A literal rather than a dial, because there is nothing for a consumer to
+		   turn: every rung under it mixes over the surface and the ink already
+		   tuned, so the card tracks a brand untold, and the card renders at all
+		   only where a consumer seeded the channel. The mixes are faint on purpose:
+		   the tint is a warmth, not a badge. */
 		--_qm-tips: #e88c0a;
 		--_qm-tips-surface: color-mix(in oklab, var(--_qm-surface), var(--_qm-tips) 4%);
 		--_qm-tips-ink: color-mix(in oklab, var(--_qm-ink), var(--_qm-tips) 24%);
