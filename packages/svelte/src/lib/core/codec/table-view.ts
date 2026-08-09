@@ -76,8 +76,6 @@ export interface TableChromeStrings {
 	 *  (Backspace, Alt+arrows) or the drag's, so the name is the gesture. */
 	tableSelectRow: (index: number) => string;
 	tableSelectColumn: (index: number) => string;
-	/** The corner's, whose line is the whole table. */
-	tableSelectTable: string;
 	/** The two trailing bars, each of which grows the table along its own axis. */
 	tableAddRow: string;
 	tableAddColumn: string;
@@ -98,7 +96,6 @@ export const DEFAULT_TABLE_STRINGS: TableChromeStrings = {
 	tableCell: (row, column) => `${row}, ${column}`,
 	tableSelectRow: (index) => `Select row ${index}`,
 	tableSelectColumn: (index) => `Select column ${index}`,
-	tableSelectTable: 'Select table',
 	tableAddRow: 'Add row',
 	tableAddColumn: 'Add column'
 };
@@ -181,7 +178,7 @@ function cellPlugins(keys: Record<string, Command>) {
 /** What the nested views and the band answer for themselves. `stopEvent` reads it to
  *  hand PM everything else, and the pointer guard reads it to leave those presses
  *  alone: one list, so the two cannot disagree about what a cell owns. */
-const OWNED = '.qm-table-cell-host, .qm-table-grip, .qm-table-corner, .qm-table-add';
+const OWNED = '.qm-table-cell-host, .qm-table-grip, .qm-table-add';
 
 /** How far a press travels before it is a drag rather than a click. Under it, a press
  *  that jitters is still the gesture it was aimed as. */
@@ -463,9 +460,9 @@ class TableIslandView implements NodeView {
 		this.outer.dispatch(this.outer.state.tr.setSelection(selection));
 	}
 
-	/** The island as the selection: the corner's gesture, and Escape's out of a cell or
-	 *  a line. Those are the whole of what selects it, and Backspace over it is what
-	 *  deletes the table (CODEC §"The table island"). */
+	/** The island as the selection: Escape out of a cell or a line, which is the whole of
+	 *  what selects it, and Backspace over it is what deletes the table
+	 *  (CODEC §"The table island"). */
 	private selectIsland(): void {
 		const pos = this.getPos();
 		if (pos == null) return;
@@ -614,9 +611,6 @@ class TableIslandView implements NodeView {
 				'data-selected',
 				!!held && cell.r >= held.r0 && cell.r <= held.r1 && cell.c >= held.c0 && cell.c <= held.c1
 			);
-		// The band stays out while there is a held subject to act on, which is what keeps
-		// a selection legible once the pointer has left the island.
-		this.dom.classList.toggle('qm-table-armed', !!held);
 	}
 
 	/**
@@ -909,18 +903,12 @@ class TableIslandView implements NodeView {
 		for (let r = 1; r < rowCount(props); r++) body.appendChild(this.row(props, r, s));
 		table.append(head, body);
 
-		// The frame is the grid's own box, and the three controls about the TABLE rather
-		// than about a line hang off its edges: the corner where the two grip bands meet,
-		// and an add bar along each trailing edge. A cell would have served for none of
-		// them — a table with no body rows has no last row to hang the row bar in, and a
-		// bar spans the whole edge rather than one line of it.
+		// The frame is the grid's own box, and the two controls about an AXIS rather than
+		// about a line hang off its edges: an add bar along each trailing edge. A cell
+		// would have served for neither — a table with no body rows has no last row to
+		// hang the row bar in, and a bar spans the whole edge rather than one line of it.
 		const frame = el('div', 'qm-table-frame');
-		frame.append(
-			table,
-			this.corner(s),
-			this.addBar('column', s.tableAddColumn),
-			this.addBar('row', s.tableAddRow)
-		);
+		frame.append(table, this.addBar('column', s.tableAddColumn), this.addBar('row', s.tableAddRow));
 		const scroller = el('div', 'qm-table-scroller');
 		scroller.appendChild(frame);
 		this.frame = frame;
@@ -971,16 +959,6 @@ class TableIslandView implements NodeView {
 		btn.addEventListener('pointerdown', (e) => this.onGripDown(line, btn, e));
 		btn.addEventListener('keydown', this.lineKeys(line));
 		this.grips.set(lineKey(line), btn);
-		return btn;
-	}
-
-	/** The island's own handle, at the grid origin: the spreadsheet's select-all
-	 *  position, where the two grip bands meet. A press selects the island, which is the
-	 *  state Backspace deletes the whole table from — the one op no cell selection
-	 *  reaches, since emptying every cell is what selecting every cell means. */
-	private corner(s: TableChromeStrings): HTMLButtonElement {
-		const btn = chromeButton('qm-table-corner', s.tableSelectTable, () => this.selectIsland());
-		btn.appendChild(el('span', 'qm-table-corner-mark'));
 		return btn;
 	}
 

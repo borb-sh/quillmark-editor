@@ -176,8 +176,8 @@ li.ProseMirror-selectednode::after {
 
    The one construct in this file with CHROME in it. The rest of the stylesheet
    states what a block is and lets paper set its size; a table island is edited
-   through controls that do not print, so it also has a target floor, a reveal and a
-   menu. Those live here rather than in `visual/controls.css` for the same reason the
+   through controls that do not print, so it also has a target floor and a reveal.
+   Those live here rather than in `visual/controls.css` for the same reason the
    NodeView is vanilla: the island is inside the leaf, and the leaf is the codec's.
    What it does NOT restate is the surface's dials: every value below is a `--_qm-*`
    rung, so the island retints with everything else.
@@ -188,15 +188,16 @@ li.ProseMirror-selectednode::after {
    data's shape, and a grip still lines up with its line by CONSTRUCTION rather than by
    a measured overlay: it is inside the cell it names.
 
-   THE BAND ARRIVES AS ONE OBJECT. Every control in it shares one reveal on one trip:
-   the table is hovered, or holds the focus, or has a held subject (`.qm-table-armed`),
-   and the grips, the corner and the two caps all come up together. Not a per-line
-   ladder, for the reason CODEC §"The table island" states. */
+   EACH CONTROL COMES UP ALONE. A grip or a bar is drawn while the pointer is on THAT
+   control, while it holds the focus, or while it is the one the gesture is about — a
+   selected line, a lifted one. The target is there the whole time either way, an
+   invisible button being hit-tested like any other, so what the reveal decides is what
+   the table LOOKS like under a passing pointer, not what it answers to. */
 
 /* The band, and the whole of what it costs. `padding` opens it on all four sides,
-   because both axes now end in a cap; the island's negative `margin` spends the card's
-   own inset buying the left one back, so the grid sits one inset from the prose edge
-   instead of a tap target plus one.
+   because each axis begins with a grip and ends with an add bar; the island's negative
+   `margin` spends the card's own inset buying the left one back, so the grid sits one
+   inset from the prose edge instead of a tap target plus one.
 
    `margin-top: 0` overrides the sibling-gap rule rather than going negative: the band
    ABSORBS the gap, at both ends. A negative margin would hang the band over the
@@ -281,9 +282,9 @@ li.ProseMirror-selectednode::after {
 	outline: none;
 }
 /* A selected island takes the node outline every leaf block does
-   (`.ProseMirror-selectednode`, above), and that is the state the corner and Escape
-   leave a line FOR: the caret is out, the island is what is selected, and Backspace
-   deletes it. A caret inside a cell is not that state and does not paint it. */
+   (`.ProseMirror-selectednode`, above), and that is the state Escape leaves a cell or a
+   line FOR: the caret is out, the island is what is selected, and Backspace deletes it.
+   A caret inside a cell is not that state and does not paint it. */
 
 /* THE SELECTION, washed across the cells it covers: what Backspace acts on, and the
    only thing on the island that says what the next command is about. The ACCENT held,
@@ -300,13 +301,13 @@ li.ProseMirror-selectednode::after {
 }
 
 /* ── The band ────────────────────────────────────────────────────────────────
-   Three control families, one geometry: absolutely positioned out of the grid, a
+   Two control families, one geometry: absolutely positioned out of the grid, a
    `--_qm-tap-min` target whatever is drawn inside it, and no box of their own at rest.
    What differs is which edge each hangs off and what it draws. The grips take the
    LEADING edges, where a line begins; the add bars take the TRAILING ones, past where
-   the axis ends; the corner sits where the two grip bands meet. Position is the whole
-   of what says which is which, before a glyph is read. */
-:is(.qm-table-grip, .qm-table-corner, .qm-table-add) {
+   the axis ends. Position is the whole of what says which is which, before a glyph is
+   read. */
+:is(.qm-table-grip, .qm-table-add) {
 	position: absolute;
 	display: flex;
 	align-items: center;
@@ -314,18 +315,23 @@ li.ProseMirror-selectednode::after {
 	padding: 0;
 	border: none;
 	background: none;
-	color: var(--_qm-ink-label);
+	color: var(--_qm-ink);
 	cursor: pointer;
 }
 /* The bar every one of them draws: a pill the length of what it acts on, a rhythm rung
    thick where the target is the tap floor, with the family's glyph centred in it.
-   Stated once, so a grip and an add bar cannot drift into two shapes. */
+   Stated once, so a grip and an add bar cannot drift into two shapes.
+
+   ONE tone, not a hover ladder: the control is drawn only while it is the one the
+   pointer is on or the one a gesture is about, so a resting tone under that would be a
+   rung nothing ever reaches. The selected grip's tint below is the one exception, and it
+   says which line the next command acts on rather than where the pointer is. */
 :is(.qm-table-grip-bar, .qm-table-add-bar) {
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	border-radius: var(--_qm-radius-pill);
-	background: var(--_qm-surface-hover);
+	background: var(--_qm-border);
 	transition:
 		background-color var(--_qm-duration-fast) var(--_qm-ease-reverse),
 		color var(--_qm-duration-fast) var(--_qm-ease-reverse);
@@ -375,11 +381,6 @@ li.ProseMirror-selectednode::after {
 	right: 100%;
 	width: var(--_qm-tap-min);
 }
-.qm-table-grip:hover .qm-table-grip-bar,
-.qm-table-grip:focus-visible .qm-table-grip-bar {
-	background: var(--_qm-border);
-	color: var(--_qm-ink);
-}
 /* A selected grip takes the line's own tint and the accent for its marks, so the bar
    and the wash say the same thing at both ends of the gesture. */
 .qm-table-grip[aria-pressed='true'] .qm-table-grip-bar {
@@ -403,45 +404,21 @@ li.ProseMirror-selectednode::after {
 	top: 100%;
 	height: var(--_qm-tap-min);
 }
-.qm-table-add:hover .qm-table-add-bar,
-.qm-table-add:focus-visible .qm-table-add-bar {
-	background: var(--_qm-border);
-	color: var(--_qm-ink);
-}
+/* THE REVEAL, and it is the control's own. A grip or a bar is drawn while the pointer
+   is ON it, while it holds the focus, or while it is what a gesture is about: the
+   selected line's grip, and the lifted one, which is drawn through a drag the pointer
+   has travelled off. Opacity rather than absence, so every control keeps its box and its
+   place in the tab order, and a keyboard reaches the band with no pointer at all.
 
-/* The corner is the ISLAND's handle: the grid origin, where the two grip bands
-   converge, and the one gesture that selects the whole table. Its mark is a square
-   because what it acts on is the rectangle and not a line of it. */
-.qm-table-corner {
-	right: 100%;
-	bottom: 100%;
-	width: var(--_qm-tap-min);
-	height: var(--_qm-tap-min);
-}
-.qm-table-corner-mark {
-	display: block;
-	width: var(--_qm-space-3);
-	height: var(--_qm-space-3);
-	border-radius: var(--_qm-radius-inner);
-	background: var(--_qm-surface-hover);
-	transition: background-color var(--_qm-duration-fast) var(--_qm-ease-reverse);
-}
-.qm-table-corner:hover .qm-table-corner-mark,
-.qm-table-corner:focus-visible .qm-table-corner-mark {
-	background: var(--_qm-border);
-}
-
-/* THE REVEAL, and it is one trip for the whole band. Pointer, focus, or a held
-   selection: opacity rather than absence, so every control stays in the tab order and a
-   keyboard reaches the band without a pointer ever touching it. `:focus-within` on the
-   ISLAND, so a caret in a cell holds the band as a focused control does;
-   `.qm-table-armed` so a selection does too, once the pointer has left. */
-:is(.qm-table-grip, .qm-table-corner, .qm-table-add) {
+   `:hover` on the CONTROL and not the island: a pointer crossing a table says nothing
+   about which line it is crossing, and a band that comes up whole answers a question
+   with six controls when the pointer has picked out none. */
+:is(.qm-table-grip, .qm-table-add) {
 	opacity: 0;
 	transition: opacity var(--_qm-duration-fast) var(--_qm-ease-reverse);
 }
-.qm-table-island:is(:hover, :focus-within, .qm-table-armed)
-	:is(.qm-table-grip, .qm-table-corner, .qm-table-add) {
+:is(.qm-table-grip, .qm-table-add):is(:hover, :focus-visible),
+.qm-table-grip:is([aria-pressed='true'], .qm-table-lifted) {
 	opacity: 1;
 }
 
@@ -450,7 +427,7 @@ li.ProseMirror-selectednode::after {
    grip is a button, and a button that takes focus to hold a selection has to show
    it. Declared here rather than reached for as `.qm-focus-ring`: that recipe is the
    visual tier's stylesheet, and the island is inside the leaf, which is the codec's. */
-:is(.qm-table-grip, .qm-table-corner, .qm-table-add):focus-visible {
+:is(.qm-table-grip, .qm-table-add):focus-visible {
 	outline: var(--_qm-ring);
 	outline-offset: var(--_qm-ring-offset);
 }

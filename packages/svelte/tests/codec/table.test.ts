@@ -179,8 +179,8 @@ function tableLeaf(props?: TableProps) {
 }
 
 /** The row grips, in order (body rows only), and the column grips. Both read off the
- *  axis each declares, which is what leaves the two caps and the corner out of either
- *  set: none of them names a line. */
+ *  axis each declares, which is what leaves the two caps out of either set: neither
+ *  names a line. */
 function grips(field: FieldController, kind: 'row' | 'column'): HTMLButtonElement[] {
 	return Array.from(
 		field.el.querySelectorAll<HTMLButtonElement>(`.qm-table-grip[data-axis='${kind}']`)
@@ -204,11 +204,6 @@ function washed(field: FieldController): string[] {
 	return Array.from(field.el.querySelectorAll('.qm-table-cell[data-selected]')).map(
 		(c) => `${c.getAttribute('data-r')},${c.getAttribute('data-c')}`
 	);
-}
-
-/** The corner: the island's block handle. */
-function corner(field: FieldController): HTMLButtonElement {
-	return field.el.querySelector<HTMLButtonElement>('.qm-table-corner')!;
 }
 
 /** Sweep a block: press in one cell and travel to another, which is the one gesture
@@ -268,11 +263,10 @@ describe('the table NodeView', () => {
 		// since `header: []` is not a table and nothing goes above it.
 		expect(grips(field, 'column')).toHaveLength(2);
 		expect(grips(field, 'row')).toHaveLength(2);
-		// The band's ends are three: a cap on each axis and the corner between them.
-		// Everything else an op needs is a row of a menu, so the count does not track
-		// the table's size the way a control per boundary did.
+		// The band's ends are two: one cap per axis, and nothing at the origin — the
+		// whole table is a keyboard subject (Escape), not a control.
 		expect(field.el.querySelectorAll('.qm-table-add')).toHaveLength(2);
-		expect(field.el.querySelectorAll('.qm-table-corner')).toHaveLength(1);
+		expect(field.el.querySelectorAll('.qm-table-corner')).toHaveLength(0);
 		// And the grid is the DATA's shape: the chrome is in no row and no column of
 		// it, so nothing empty reaches the accessibility tree.
 		const lines = field.el.querySelectorAll('.qm-table tr');
@@ -482,8 +476,11 @@ describe('the table NodeView', () => {
 		const outer = outerView(field);
 		const selection = outer.state.selection;
 		expect(selection instanceof NodeSelection && selection.node.type.name).toBe('island_block');
+		// Delete is the SELECTION's verb, the one every island already answered to;
+		// nothing on the band names it a second time.
 		outer.dispatch(outer.state.tr.deleteSelection());
 		expect(doc.main.body.islands).toHaveLength(0);
+		expect(doc.main.body.text).toBe('para\ntail');
 		field.destroy();
 	});
 
@@ -660,8 +657,8 @@ describe('a selection is a rectangle of cells, and Backspace reads its extent', 
 // Click-to-NodeSelect belongs to an atom with no interior, and a table has cells. So
 // a press on the chrome resolves to a CARET (inside the frame the nearest cell's,
 // outside it the document's), and a printable key over a selected island writes past
-// it rather than replacing it. What selects the island is a named gesture: the
-// corner, or Escape.
+// it rather than replacing it. What selects the island is one named gesture, Escape,
+// and no pointer gesture at all.
 
 interface Box {
 	left: number;
@@ -797,22 +794,6 @@ describe('a pointer press on the island resolves to a caret', () => {
 		const event = new MouseEvent('mousedown', { cancelable: true, clientX: 5, clientY: 5 });
 		field.el.querySelector('.qm-table-island')!.dispatchEvent(event);
 		expect(event.defaultPrevented).toBe(false);
-		field.destroy();
-	});
-});
-
-describe("the corner is the island's handle", () => {
-	it('a press selects the island, which Backspace then deletes', () => {
-		const { doc, field } = tableLeaf(LETTERED);
-		corner(field).click();
-		const outer = outerView(field);
-		const selection = outer.state.selection;
-		expect(selection instanceof NodeSelection && selection.node.type.name).toBe('island_block');
-		// Delete is the SELECTION's verb, the one every island already answered to;
-		// nothing names it a second time.
-		outer.dispatch(outer.state.tr.deleteSelection());
-		expect(doc.main.body.islands).toHaveLength(0);
-		expect(doc.main.body.text).toBe('para\ntail');
 		field.destroy();
 	});
 });
