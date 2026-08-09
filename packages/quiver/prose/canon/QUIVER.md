@@ -57,7 +57,7 @@ Every name but the pointer carries the SHA-256 of what it names, and the loader 
 
 Bundle and manifest names carry 12 hex chars, 48 bits: enough that a new manifest name colliding with a prior release's, which under immutable CDN caching would serve the old catalog forever, is not a birthday problem within any release count a quiver will see. Store keys are the full 64, because the store is keyed by hash and two distinct fonts sharing a prefix would merge into one entry.
 
-One thing the addressing does not yet buy: `build` replaces its output rather than adding to it, so a client pinned to a stale pointer gets 404s rather than a stale-but-working catalog. An append-only store with garbage collection is the answer, and it only matters once artifacts and clients deploy independently.
+What the addressing does not buy is a stale-pointer fallback: `build` replaces its output rather than adding to it, so a client pinned to a stale pointer gets 404s rather than a stale-but-working catalog. That costs nothing while an artifact and its clients deploy together; where they deploy independently, an append-only store with garbage collection is what buys it back.
 
 ## getQuill is the seam
 

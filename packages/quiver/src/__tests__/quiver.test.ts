@@ -6,7 +6,6 @@ import { randomUUID } from 'node:crypto';
 import { fromDir } from '../node.js';
 import { mockQuillFromTree } from './helpers/mock-engine.js';
 
-// Absolute path to the committed fixture
 const SAMPLE_FIXTURE = new URL('./fixtures/sample-quiver', import.meta.url).pathname;
 
 function makeTempDir(): string {
@@ -49,8 +48,8 @@ describe('fromDir', () => {
 
 	// --- tree loading (observed via the tree fed to Quill.fromTree) ---
 	//
-	// The tree path is private (`getQuill` → internal `#loadTree`). To inspect
-	// the loaded tree, stub `Quill.fromTree` and read the tree it was handed.
+	// The tree path is private: `getQuill` hands the loaded tree straight to
+	// `Quill.fromTree`. Stub that to read the tree the loader produced.
 
 	let stub: ReturnType<typeof mockQuillFromTree> | undefined;
 	afterEach(() => {

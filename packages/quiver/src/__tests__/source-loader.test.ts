@@ -4,17 +4,13 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { scanSourceQuiver, readQuillTree } from '../source-loader.js';
-import { QuiverError } from '../errors.js';
 
-// Absolute path to the committed fixture
 const SAMPLE_FIXTURE = new URL('./fixtures/sample-quiver', import.meta.url).pathname;
 
-// Helper: create a temp directory unique per test
 function makeTempDir(): string {
 	return join(tmpdir(), `quiver-test-${randomUUID()}`);
 }
 
-// Helper: build a minimal valid quiver tree in a temp dir
 async function buildMinimalQuiver(
 	root: string,
 	opts: {

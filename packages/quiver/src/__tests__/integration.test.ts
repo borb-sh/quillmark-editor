@@ -1,10 +1,10 @@
 /**
- * Integration tests — build → fromBuiltUrl (mock fetch) → resolve → getQuill →
- * mock render.
+ * Integration tests — `build` → `fromBuiltUrl` / `fromBuiltDir` → `getQuill`,
+ * against artifacts written to a temporary directory.
  *
- * Built artifacts are loaded over HTTP only (Quiver.fromBuiltUrl accepts
- * http(s):// URLs); these tests mock globalThis.fetch to serve files
- * from a temporary directory written by Quiver.build.
+ * `fromBuiltUrl` takes http(s):// URLs only, so `globalThis.fetch` is stubbed to
+ * serve the packed tree off disk. `Quill.fromTree` is stubbed too: what is under
+ * test is the tree that reaches it, not the quill it builds.
  */
 
 import { describe, it, expect, afterEach } from 'vitest';
@@ -13,7 +13,6 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { Quiver, build, fromBuiltDir } from '../node.js';
-import { QuiverError } from '../errors.js';
 import { mockQuillFromTree } from './helpers/mock-engine.js';
 
 // ─── Fixture ──────────────────────────────────────────────────────────────────

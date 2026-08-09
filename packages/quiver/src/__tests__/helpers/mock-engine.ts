@@ -4,15 +4,11 @@ import { init, type Quill } from '@quillmark/wasm';
 const core = await init();
 
 /**
- * Stubs `Quill.fromTree` so tests can exercise `Quiver.getQuill` without the
- * real WASM validator (quill construction is now engine-free — `getQuill`
- * calls `Quill.fromTree(tree)` directly). Each call records the tree it was
- * given and returns a fresh fake `Quill` whose identity tracks the
- * caching/coalescing behavior under test.
+ * Stubs `Quill.fromTree` so tests can exercise `Quiver.getQuill` without the real
+ * WASM validator. Each call records the tree it was given and returns a fresh
+ * fake `Quill`, whose identity is what the caching and coalescing tests read.
  *
- * Returns `calls` (the trees passed to `Quill.fromTree`, in order) and a
- * `restore()` to undo the stub. Install in `beforeEach`/at test top and call
- * `restore()` after.
+ * `calls` holds the trees in order; `restore()` undoes the stub.
  */
 export function mockQuillFromTree(): {
 	calls: Array<Map<string, Uint8Array>>;

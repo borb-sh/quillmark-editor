@@ -1,12 +1,8 @@
 /**
- * Real-engine integration test.
- *
- * Every other render-path test in the suite drives a MOCK engine
- * (`integration.test.ts` "mock render"). This file is the only one that wires a
- * TRUE `new Engine()` from `@quillmark/wasm`
- * to a quiver-materialized core `Quill` and renders end-to-end: it loads the
- * private Typst backend binary, clones the core handles across the WASM-memory
- * seam, and produces real artifact bytes.
+ * Real-engine integration test. Everywhere else in the suite `Quill.fromTree` is
+ * stubbed; this file is the only one that materializes a real core `Quill` from a
+ * quiver and renders it through a real `Engine`, loading the Typst backend,
+ * crossing the WASM-memory seam, and producing artifact bytes.
  *
  * It pins quiver's side of three canonical contracts:
  *   1. a core `Quill` from `getQuill` passes straight to `engine.render` — no
