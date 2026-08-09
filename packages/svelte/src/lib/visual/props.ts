@@ -47,9 +47,9 @@ export interface VisualEditorProps {
 	 *
 	 * **The lane split is the default, not a tuning exercise.** `'structure'` arrives
 	 * once per gesture and recompiles at once; `'prose'` and `'field'` arrive per
-	 * keystroke and wait for the burst to settle. Anything else either makes a card
-	 * insert look dropped or recompiles the document on every character
-	 * (`packages/playground` wires exactly this, and holds the interval it settled on).
+	 * keystroke and wait for the burst to settle. Recompiling structure on the debounce
+	 * makes a card insert look dropped, and recompiling prose at once compiles the
+	 * document on every character.
 	 */
 	onChange?: (change: EditorChange) => void;
 	/**

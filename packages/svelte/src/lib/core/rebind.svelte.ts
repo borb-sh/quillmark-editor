@@ -8,27 +8,26 @@
 // The snapshot is every once-bound prop, and one report names whichever went stale.
 import { reportError, type EditorErrorHandler } from './errors.js';
 
-// A dev build, where a bundler defines one. Read through a cast, since the package
-// declares no bundler's ambient types, and false wherever `import.meta.env` is not
-// injected: a toolchain that does not answer gets the report alone.
+// True in a dev build whose bundler injects `import.meta.env`. Cast, since the package
+// declares no bundler's ambient types; false where nothing injects it, so a toolchain
+// that does not answer gets the report alone.
 const DEV = (import.meta as { env?: { DEV?: boolean } }).env?.DEV === true;
 
 /** The once-bound props by name, `onError` among them. */
 export type Bound = Record<string, unknown> & { onError?: EditorErrorHandler };
 
 /**
- * Report the violation, then throw it in a dev build. Both surfaces raise this, from
- * guards shaped differently enough not to share one (the preview snapshots its props
- * once; the editor re-reads its pair on every re-key), so what they share is the way
- * it is raised.
+ * Report the violation, then throw it in a dev build. Both surfaces raise it here; the
+ * guards themselves stay separate, since the preview snapshots its props once and the
+ * editor re-reads its pair on every re-key.
  *
  * The report alone reaches whoever bound `onError` at mount, and a consumer swapping
- * the handler beside the handle it belongs to is the case this exists for: they are
+ * that handler beside the handle it belongs to is the case this exists for: they are
  * told through the sink they just abandoned. A throw needs no handler to arrive.
  *
- * It costs the surface nothing. An effect that throws does not unmount its tree or
- * stop the ones beside it: the surface goes on serving what it bound, which is the
- * very state being reported. So this is the message escalating, not the failure.
+ * It costs the surface nothing: an effect that throws neither unmounts its tree nor
+ * stops the ones beside it, so the surface goes on serving what it bound, which is the
+ * very state being reported.
  */
 export function reportRebindIgnored(
 	onError: EditorErrorHandler | undefined,
@@ -48,8 +47,7 @@ export function reportRebindIgnored(
  *
  * The report goes to the SNAPSHOT's `onError`: every other error these surfaces
  * report reaches the handler they bound, and a swapped `onError` is itself one of
- * the reports — which is why the throw is here, since that report reaches a handler
- * the consumer has already replaced.
+ * the reports.
  */
 export function guardRebind(snapshot: () => Bound, remount: string): void {
 	let mounted: Bound | undefined;

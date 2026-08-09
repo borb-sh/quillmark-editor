@@ -66,9 +66,9 @@ function rebinds(errors: EditorError[]): EditorError[] {
 }
 
 /**
- * Flush, absorbing the dev throw the guard raises after it reports, and answer what
- * it threw. Vitest builds with `DEV`, so every swap below throws; the surface it was
- * raised from is unharmed, which is what the last case here asserts.
+ * Flush, absorbing the dev throw the guard raises after it reports, and answer what it
+ * threw. Vitest builds with `DEV`, so every swap below throws, and a case reading only
+ * the reports still has to flush through it.
  */
 function flushCatching(): Error | undefined {
 	try {

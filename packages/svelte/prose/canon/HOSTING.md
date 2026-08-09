@@ -26,7 +26,7 @@ What an app is left holding once it mounts `<VisualEditor>` and `<Preview>`: the
 
 ## Recompile
 
-**The lane split is the default, not a tuning exercise**: structure at once, prose and field on the settle ([VISUAL_EDITOR.md](VISUAL_EDITOR.md) §"Edits are ops to the live Document"). Recompiling structure on the debounce makes a card insert look dropped; recompiling prose immediately compiles the document on every character.
+**The lane split is the default, not a tuning exercise**: `EditorChange.source` names the lane, structure recompiles at once, prose and field wait for the burst to settle ([VISUAL_EDITOR.md](VISUAL_EDITOR.md) §"Edits are ops to the live Document").
 
 **`session.update` is transactional.** A document mid-edit that cannot compile leaves the last-good compile painted and throws; the next good keystroke recovers it. A host needs no last-good bookkeeping of its own, and a compile failure is a thing to show beside the preview rather than instead of it.
 
@@ -38,7 +38,7 @@ The bridge between the panes runs on addresses, and a field only has one where t
 
 **Scalar reference tracking, span-less.** A field declared `string`, `number`, `date` or an array of them is not content, and gets a region only where the plate marks it: a `field:`-bound widget, or a bare `#data.<field>` evaluated at a place that prints. This rung is syntactic — the same scalar through a plate-side function call surfaces nothing — and it yields a region with a rect and no span. `fieldAt` answers over it, so a preview click lands the field with no offset ([PREVIEW.md](PREVIEW.md) §"Click bridge"), and `fieldBoxes` answers `[]` while `regions()` carries the rect.
 
-**So a front-matter field a user types prose into wants `richtext` in the quill's schema, and gets the caret for free.** On the reference quill, `subject` is declared `richtext` and is caret-addressable through `frontmatter.with`; `memo_for` and `signature_block` are `array<string>` and reach only the field rung, the latter because the plate places a `signature-field` widget for it. A field that is neither declared as content nor marked by the plate is addressable by nothing, and the host sees a preview click that does not land and a `scrollToField` returning `false`. That is a quill-authoring outcome, and the fix is in the collection.
+**So a front-matter field a user types prose into wants `richtext` in the quill's schema, and gets the caret for free.** The reference quill has all three cases. `subject` is `richtext` and is caret-addressable straight through `frontmatter.with`. `signature_block` is `array<string>` and reaches the field rung, because the plate places a `signature-field` widget bound to it. `memo_for` is `array<string>` passed through `frontmatter.with` with no widget, and is addressable by nothing: a preview click there does not land, and `scrollToField` returns `false`. Which of the three a field lands in is the quill's to decide, so a bridge that reaches too little is answered in the collection.
 
 ## Not owned here
 
