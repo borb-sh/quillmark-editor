@@ -10,6 +10,8 @@
 
 [`MIGRATION.md`](MIGRATION.md) covers 0.16 → 0.19, leading with the removals whose only signal is a runtime `TypeError`: `buildPackage`, `fromPackage`, `warm`, `fromManifest`, and `resolve` becoming sync.
 
+**The `@quillmark/wasm` peer floor is `>=0.103.0-0`, and `getQuill` awaits the gate itself.** `init()` is the only door to `Quill` at that pin, so the materialization awaits it beside the tree load rather than leaving it a precondition of the call. The gate is memoized, so this is one instantiation shared with every other caller, overlapped with the fetch that pays for it.
+
 ## v0.19.0 - 2026-08-08
 
 **The bin is gone.** `quillmark-quiver test` and `quillmark-quiver build` are `quillkit test` and `quillkit build`, in a package of its own. This is a library: it loads a quiver and packs one, and a collection that depends on it pins the format its quiver is written in rather than a version tooling releases move. `quiver.config.js` is `quillkit.config.js`.

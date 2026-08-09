@@ -5,11 +5,13 @@
 // `reader.getContent`, which decodes by declared type, so it takes both rest forms
 // and an edit lands back in the same document.
 import { describe, it, expect } from 'vitest';
-import { Document, type Quill } from '@quillmark/wasm';
+import { init, type Quill, type Document } from '@quillmark/wasm';
 import { createField } from '$lib/core/codec';
 import type { FieldController } from '$lib/core/codec';
 import type { EditorView } from 'prosemirror-view';
 import { quill } from '../helpers/fixtures.js';
+
+const core = await init();
 
 function mount(): HTMLElement {
 	const el = document.createElement('div');
@@ -24,7 +26,7 @@ function loaded(): { q: Quill; doc: Document } {
 	const q = quill();
 	const seed = q.seedDocument();
 	q.writer(seed).set('subject', 'Reloaded subject');
-	const doc = Document.fromMarkdown(seed.toMarkdown());
+	const doc = core.Document.fromMarkdown(seed.toMarkdown());
 	seed.free();
 	return { q, doc };
 }
@@ -41,7 +43,7 @@ describe('a document loaded from markdown', () => {
 
 	it('round-trips through toMarkdown → fromMarkdown', () => {
 		const { doc } = loaded();
-		const again = Document.fromMarkdown(doc.toMarkdown());
+		const again = core.Document.fromMarkdown(doc.toMarkdown());
 		expect(again.toMarkdown()).toBe(doc.toMarkdown());
 		expect(again.cardCount).toBe(doc.cardCount);
 		again.free();
@@ -86,7 +88,7 @@ describe('a document loaded from markdown', () => {
 		const card = q.seedCard(kind, seeded.seedOverlay(kind));
 		expect(card).toBeTruthy();
 		seeded.insertCard(card!, 0);
-		const withCard = Document.fromMarkdown(seeded.toMarkdown());
+		const withCard = core.Document.fromMarkdown(seeded.toMarkdown());
 		expect(withCard.cardCount).toBeGreaterThan(0);
 
 		const field = createField({ doc: withCard, quill: q, addr: { card: 0 }, container: mount() });
@@ -107,7 +109,7 @@ describe('a document loaded from markdown', () => {
 		q.writer(seed).set('subject', 'Reloaded subject');
 		const md = seed.toMarkdown();
 		const parsed = q.parse(md);
-		const transported = Document.fromMarkdown(md);
+		const transported = core.Document.fromMarkdown(md);
 
 		expect(typeof parsed.getStored({ field: 'subject' })).toBe('object');
 		expect(q.reader(parsed).getContent('subject')).toEqual(

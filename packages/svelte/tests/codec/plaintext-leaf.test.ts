@@ -13,10 +13,12 @@
 // here and stays minimal: two content fields differing only in declared type, which is
 // the entire variable.
 import { describe, it, expect } from 'vitest';
-import { Document, Quill } from '@quillmark/wasm';
+import { init, type Document, type Quill } from '@quillmark/wasm';
 import { createField } from '$lib/core/codec';
 import type { FieldController } from '$lib/core/codec';
 import type { EditorView } from 'prosemirror-view';
+
+const core = await init();
 
 const QUILL_YAML = `
 quill:
@@ -44,7 +46,7 @@ function probeQuill(): Quill {
 	// Re-wrapped in this realm's `Uint8Array`: under jsdom the encoder's output comes
 	// from another realm and the boundary refuses it by identity.
 	const bytes = (s: string): Uint8Array => new Uint8Array(new TextEncoder().encode(s));
-	return Quill.fromTree(
+	return core.Quill.fromTree(
 		new Map([
 			['Quill.yaml', bytes(QUILL_YAML)],
 			['plate.typ', bytes('#set page(width: 200pt)\n')]
@@ -65,7 +67,7 @@ const AUTHORED = 'Wing *Motto* Here';
  *  neither is conformed. Hand-written rather than round-tripped, because a serialize
  *  would escape the asterisks and the contrast is what escaping erases. */
 const authored = (): Document =>
-	Document.fromMarkdown(
+	core.Document.fromMarkdown(
 		[
 			'~~~',
 			'$quill: codec_probe@0.1.0',

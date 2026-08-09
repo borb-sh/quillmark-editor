@@ -8,10 +8,11 @@
 
 export const INSTALL = `npm install @quillmark/svelte @quillmark/wasm`;
 
-export const OPEN_SESSION = `import { Engine, Quill } from '@quillmark/wasm';
+export const OPEN_SESSION = `import { Engine } from '@quillmark/wasm';
 import { init } from '@quillmark/svelte/core';
 
-await init(); // one-time, instantiates the WASM core
+// One-time; the gate is the only door to Quill and Document
+const { Quill } = await init();
 
 const quill = Quill.fromTree(tree); // the quill's files
 const doc = quill.seedDocument(); // or Document.fromMarkdown(md)

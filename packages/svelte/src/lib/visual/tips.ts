@@ -5,7 +5,7 @@
 //
 // The channel narrowing the derive reads and the render the card paints. The write
 // is `patchEditorExt` (ext.ts), the one door into the namespace.
-import { importMarkdown } from '@quillmark/wasm';
+import { core } from '../core/lifecycle.js';
 import { reportError, errorMessage, type EditorErrorHandler } from '../core/errors.js';
 import { renderContent, inlineSchema } from '../core/codec/index.js';
 
@@ -33,9 +33,12 @@ export function tipsChannel(raw: unknown): string[] {
  *
  * Raw HTML does not survive the round-trip, so this is not the injection seam an
  * `{@html}` of the same string would be. A throw degrades to the literal text:
- * chrome never breaks the editor.
+ * chrome never breaks the editor. The gate is read OUTSIDE that catch — an
+ * uninitialized core is not a tip that failed to render, and would otherwise be
+ * reported as one.
  */
 export function renderTip(markdown: string, onError?: EditorErrorHandler): Node {
+	const { importMarkdown } = core();
 	try {
 		return renderContent(importMarkdown(markdown), inlineSchema);
 	} catch (e) {

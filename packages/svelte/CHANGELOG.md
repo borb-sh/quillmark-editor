@@ -4,6 +4,10 @@
 
 ## Unreleased
 
+**The `@quillmark/wasm` peer floor is `>=0.103.0-0`**, where the init gate is the only door to the classes. `Quill`, `Document`, `importMarkdown`, `exportMarkdown`, `rebase`, `mapPos`, `parseDocPath` and `formatDocPath` are not static exports of the artifact; `init()` resolves to them, so `const { Quill, Document } = await init()` is what a host writes in place of the value import beside it. `Engine`, `MAIN_CARD_ADDR`, `isQuillmarkError` and the open-set guards are unchanged, as are the `Quill` / `Document` **type** exports, so an annotation and an `import type` compile untouched.
+
+`init` from `/core` hands that surface straight back and latches it for the verbs here that cannot await one: `fieldPathForAddr` and `addrForFieldPath` on the public API, and the codec inside a ProseMirror transaction. Reaching one before the gate resolves throws naming the fix rather than reading `undefined` off the artifact. A host awaits `init()` where it already did, at each entry point that needs a class.
+
 ## v0.1.1 - 2026-08-08
 
 The package claims `sideEffects: true`, so a consumer's bundler keeps the stylesheets its modules import for effect. Under the previous `["**/*.css"]` every module the globs missed was prunable, and Rollup dropped all four sheet-carrying edges. With `core/theme.css` gone every `--_qm-*` rung was undefined, so every declaration reading one was invalid at computed-value time and dropped: controls with no border, no background and no padding, under chrome that read as intact. `codec/prose.css` and ProseMirror's own two sheets went the same way, taking the prose reset and the structural rules a view needs to render. A bundled consumer now takes the surfaces whole; an unbundled one was never affected.

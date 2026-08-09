@@ -30,10 +30,10 @@
 		"gate": "npm run lint && npm run check && npm run check:canon && npm run check:style && npm run check:deps && npm run check:ledger && npm run build && npm run check:bundle && npm test"
 	},
 	"overrides": {
-		"@quillmark/wasm": "0.102.0"
+		"@quillmark/wasm": "0.103.0"
 	},
 	"devDependencies": {
-		"@quillmark/wasm": "0.102.0",
+		"@quillmark/wasm": "0.103.0",
 		"prettier": "^3.4.0",
 		"prettier-plugin-svelte": "^3.3.0"
 	}

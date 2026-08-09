@@ -10,7 +10,8 @@
  */
 
 import { QuiverError } from './errors.js';
-import { Quill } from '@quillmark/wasm';
+import { init } from '@quillmark/wasm';
+import type { Quill } from '@quillmark/wasm';
 import { parseQuillRef } from './ref.js';
 import { matchesSemverSelector, chooseHighestVersion } from './semver.js';
 
@@ -214,10 +215,17 @@ export class Quiver {
 	 *
 	 * Every caller arrives through `resolve` or the catalog itself, so the ref is
 	 * catalog-backed by construction and the loader needs no gate.
+	 *
+	 * `init()` is the only door to `Quill`, awaited here rather than left a
+	 * precondition of `getQuill`. The gate is memoized, so this is one instantiation
+	 * across every caller, overlapped with the load that pays for it.
 	 */
 	async #materializeQuill(canonicalRef: string): Promise<Quill> {
 		const at = canonicalRef.indexOf('@');
-		const tree = await this.#loader.loadTree(canonicalRef.slice(0, at), canonicalRef.slice(at + 1));
+		const [{ Quill }, tree] = await Promise.all([
+			init(),
+			this.#loader.loadTree(canonicalRef.slice(0, at), canonicalRef.slice(at + 1))
+		]);
 		return Quill.fromTree(tree);
 	}
 }

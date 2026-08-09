@@ -14,7 +14,7 @@
 // (== `mapPos`) through BOTH text-moving channels, so the mark diff replicates
 // that rebase exactly and is coverage-precise.
 import type { Mark, Node as PMNode } from 'prosemirror-model';
-import { mapPos, isAnchorMark } from '@quillmark/wasm';
+import { isAnchorMark } from '@quillmark/wasm';
 import type {
 	ChangeBundle,
 	Delta,
@@ -28,6 +28,7 @@ import type {
 	ContentLineKind,
 	ContentMark
 } from '@quillmark/wasm';
+import { core } from '../lifecycle.js';
 import { codePoints, usvLength } from './decode.js';
 import { ISLAND_SLOT, islandEntryFromNode, type IslandNodeAttrs } from './islands.js';
 import { contentDescriptorFromPM, descriptorOf, markKey } from './marks.js';
@@ -506,6 +507,8 @@ function diffMarks(
 	opts: LowerOpts
 ): MarkOp[] {
 	const ops: MarkOp[] = [];
+	// Read the gate once per diff rather than once per mark.
+	const { mapPos } = core();
 	// Rebase old marks through BOTH text-moving channels to final coords, exactly
 	// as `applyChange` does internally (start assoc `after`, end assoc `before`).
 	const rebase = (pos: number, assoc: 'before' | 'after') =>

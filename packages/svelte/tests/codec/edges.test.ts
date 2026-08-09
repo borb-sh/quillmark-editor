@@ -10,18 +10,20 @@
 // field's suppression. Counting the mounted rules proves neither; a rule that
 // fires at the wrong position is still one rule.
 import { describe, it, expect } from 'vitest';
-import { rebase, exportMarkdown } from '@quillmark/wasm';
+import { init } from '@quillmark/wasm';
 import { md } from './_util.js';
+
+const core = await init();
 
 describe('markdown edges', () => {
 	it('paste rebases markdown onto a base and returns a delta', () => {
 		const base = md('hello');
-		const { content, delta } = rebase(base, 'hello world');
+		const { content, delta } = core.rebase(base, 'hello world');
 		expect(content.text).toBe('hello world');
 		expect(delta.ops.length).toBeGreaterThan(0);
 	});
 
 	it('copy projects to markdown', () => {
-		expect(exportMarkdown(md('**bold** text')).trim()).toBe('**bold** text');
+		expect(core.exportMarkdown(md('**bold** text')).trim()).toBe('**bold** text');
 	});
 });
