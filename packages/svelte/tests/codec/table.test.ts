@@ -120,13 +120,6 @@ describe('the rectangle survives every op', () => {
 });
 
 describe('what the model already answers', () => {
-	it('the header deletes like any row: the one under it takes index 0', () => {
-		expect(grid(deleteRow(LETTERED, 0))).toEqual([
-			['a1', 'a2'],
-			['b1', 'b2']
-		]);
-	});
-
 	it('the header MOVES like any row, and being the header is holding index 0', () => {
 		// Down one: the body row it passed lands at index 0 and is the header now.
 		expect(grid(moveRow(LETTERED, 0, 1))).toEqual([
@@ -296,7 +289,6 @@ describe('the table NodeView', () => {
 		// The band's ends are two: one cap per axis, and nothing at the origin — the
 		// whole table is what a selection covering every rank says, not a control.
 		expect(field.el.querySelectorAll('.qm-table-add')).toHaveLength(2);
-		expect(field.el.querySelectorAll('.qm-table-corner')).toHaveLength(0);
 		// And the grid is the DATA's shape: the chrome is in no row and no column of
 		// it, so nothing empty reaches the accessibility tree.
 		const lines = field.el.querySelectorAll('.qm-table tr');

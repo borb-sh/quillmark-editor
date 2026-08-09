@@ -16,7 +16,6 @@
 
 	let { children } = $props();
 
-	// Named for what the page shows.
 	const ROUTES = [
 		{ path: '/', label: 'Overview' },
 		{ path: '/playground', label: 'Playground' }

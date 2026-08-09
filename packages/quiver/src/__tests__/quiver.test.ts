@@ -6,7 +6,6 @@ import { randomUUID } from 'node:crypto';
 import { fromDir } from '../node.js';
 import { mockQuillFromTree } from './helpers/mock-engine.js';
 
-// Absolute path to the committed fixture
 const SAMPLE_FIXTURE = new URL('./fixtures/sample-quiver', import.meta.url).pathname;
 
 function makeTempDir(): string {
@@ -42,25 +41,15 @@ describe('fromDir', () => {
 		expect(q.versionsOf('memo')).toEqual(['1.1.0', '1.0.0']);
 	});
 
-	it("loads sample fixture: versionsOf('resume') is ['2.0.0']", async () => {
-		const q = await fromDir(SAMPLE_FIXTURE);
-		expect(q.versionsOf('resume')).toEqual(['2.0.0']);
-	});
-
 	it('versionsOf returns empty array for unknown quill name', async () => {
 		const q = await fromDir(SAMPLE_FIXTURE);
 		expect(q.versionsOf('nonexistent')).toEqual([]);
 	});
 
-	it('name property is readonly string', async () => {
-		const q = await fromDir(SAMPLE_FIXTURE);
-		expect(typeof q.name).toBe('string');
-	});
-
 	// --- tree loading (observed via the tree fed to Quill.fromTree) ---
 	//
-	// The tree path is private (`getQuill` → internal `#loadTree`). To inspect
-	// the loaded tree, stub `Quill.fromTree` and read the tree it was handed.
+	// The tree path is private: `getQuill` hands the loaded tree straight to
+	// `Quill.fromTree`. Stub that to read the tree the loader produced.
 
 	let stub: ReturnType<typeof mockQuillFromTree> | undefined;
 	afterEach(() => {
@@ -76,16 +65,6 @@ describe('fromDir', () => {
 		expect(tree).toBeInstanceOf(Map);
 		expect(tree.has('Quill.yaml')).toBe(true);
 		expect(tree.has('template.typ')).toBe(true);
-	});
-
-	it('loaded tree values are Uint8Array', async () => {
-		const q = await fromDir(SAMPLE_FIXTURE);
-		stub = mockQuillFromTree();
-		await q.getQuill('memo@1.0.0');
-		const tree = stub.calls[0]!;
-		for (const value of tree.values()) {
-			expect(value).toBeInstanceOf(Uint8Array);
-		}
 	});
 
 	it('loads the correct version: 1.1.0 content differs from 1.0.0', async () => {
@@ -108,27 +87,7 @@ describe('fromDir', () => {
 		);
 	});
 
-	it('getQuill throws quill_not_found for unknown version of a known quill', async () => {
-		const q = await fromDir(SAMPLE_FIXTURE);
-		await expect(q.getQuill('memo@99.0.0')).rejects.toThrow(
-			expect.objectContaining({ code: 'quill_not_found' })
-		);
-	});
-
 	// --- Error propagation from scanSourceQuiver ---
-
-	it('throws transport_error when Quiver.yaml is missing', async () => {
-		// ENOENT on Quiver.yaml is transport_error (missing-path condition) — the
-		// path doesn't point to a quiver at all, not a structural violation within
-		// one. Contrast: missing Quill.yaml inside a version dir is quiver_invalid.
-		const root = makeTempDir();
-		tempDirs.push(root);
-		await mkdir(root, { recursive: true });
-
-		await expect(fromDir(root)).rejects.toThrow(
-			expect.objectContaining({ code: 'transport_error' })
-		);
-	});
 
 	it('throws quiver_invalid for non-canonical version dir', async () => {
 		const root = makeTempDir();

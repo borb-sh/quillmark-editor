@@ -51,16 +51,6 @@ export function bodyContent(): Content {
 	return freshDoc().main.body;
 }
 
-/**
- * The position map's defining property, asserted over EVERY USV offset of `doc`:
- * `pmToUsv ∘ usvToPM` is the identity, and every PM position it produces is in
- * range. The index is built fresh here, so a caller that mutated the doc is
- * asserting against the rebuilt map rather than a stale one.
- *
- * One helper for every caller: the property does not change with the doc's origin,
- * so a decode (positions.test.ts) and a structural edit (roundtrip.test.ts) assert
- * it identically. A per-suite copy is a per-suite assertion set.
- */
 /** The doc's textblocks in document order, with their content-start positions. */
 export function textblocks(doc: PMNode): { node: PMNode; start: number }[] {
 	const out: { node: PMNode; start: number }[] = [];
@@ -152,6 +142,16 @@ export function keyDriver(keys: Record<string, Command>) {
 	return { press, expectPress };
 }
 
+/**
+ * The position map's defining property, asserted over EVERY USV offset of `doc`:
+ * `pmToUsv ∘ usvToPM` is the identity, and every PM position it produces is in range.
+ * The index is built fresh here, so a caller that mutated the doc asserts against the
+ * rebuilt map rather than a stale one.
+ *
+ * One helper for every caller: the property does not change with the doc's origin, so a
+ * decode (positions.test.ts) and a structural edit (roundtrip.test.ts) assert it
+ * identically.
+ */
 export function assertPositionInverse(doc: PMNode, label = 'position map'): void {
 	const index = buildLineIndex(doc);
 	const total = usvLength(pmToContent(doc).text);

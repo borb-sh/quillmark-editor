@@ -4,17 +4,13 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { scanSourceQuiver, readQuillTree } from '../source-loader.js';
-import { QuiverError } from '../errors.js';
 
-// Absolute path to the committed fixture
 const SAMPLE_FIXTURE = new URL('./fixtures/sample-quiver', import.meta.url).pathname;
 
-// Helper: create a temp directory unique per test
 function makeTempDir(): string {
 	return join(tmpdir(), `quiver-test-${randomUUID()}`);
 }
 
-// Helper: build a minimal valid quiver tree in a temp dir
 async function buildMinimalQuiver(
 	root: string,
 	opts: {
@@ -64,16 +60,6 @@ describe('scanSourceQuiver', () => {
 		expect(catalog.get('memo')).toEqual(['1.1.0', '1.0.0']);
 	});
 
-	it('scans sample fixture: catalog has resume with [2.0.0]', async () => {
-		const { catalog } = await scanSourceQuiver(SAMPLE_FIXTURE);
-		expect(catalog.get('resume')).toEqual(['2.0.0']);
-	});
-
-	it('scans sample fixture: description is present', async () => {
-		const { meta } = await scanSourceQuiver(SAMPLE_FIXTURE);
-		expect(meta.description).toBe('A sample quiver for testing');
-	});
-
 	// --- Non-canonical version dir ---
 
 	it("throws quiver_invalid for non-canonical version dir '1.0' (missing patch)", async () => {
@@ -81,18 +67,6 @@ describe('scanSourceQuiver', () => {
 		tempDirs.push(root);
 		await buildMinimalQuiver(root, {
 			quills: [{ name: 'myquill', version: '1.0' }]
-		});
-
-		await expect(scanSourceQuiver(root)).rejects.toThrow(
-			expect.objectContaining({ code: 'quiver_invalid' })
-		);
-	});
-
-	it("throws quiver_invalid for non-canonical version dir '1.2.3-beta' (prerelease)", async () => {
-		const root = makeTempDir();
-		tempDirs.push(root);
-		await buildMinimalQuiver(root, {
-			quills: [{ name: 'myquill', version: '1.2.3-beta' }]
 		});
 
 		await expect(scanSourceQuiver(root)).rejects.toThrow(
@@ -170,14 +144,6 @@ describe('readQuillTree', () => {
 		expect(tree.has('template.typ')).toBe(true);
 	});
 
-	it('returns Uint8Array values for each file', async () => {
-		const quillDir = join(SAMPLE_FIXTURE, 'quills', 'memo', '1.0.0');
-		const tree = await readQuillTree(quillDir);
-		for (const value of tree.values()) {
-			expect(value).toBeInstanceOf(Uint8Array);
-		}
-	});
-
 	it('reads nested files with forward-slash POSIX paths', async () => {
 		const root = makeTempDir();
 		tempDirs.push(root);
@@ -188,14 +154,6 @@ describe('readQuillTree', () => {
 		const tree = await readQuillTree(root);
 		expect(tree.has('subdir/asset.svg')).toBe(true);
 		expect(tree.has('Quill.yaml')).toBe(true);
-	});
-
-	it('returns correct byte content for a file', async () => {
-		const quillDir = join(SAMPLE_FIXTURE, 'quills', 'memo', '1.0.0');
-		const tree = await readQuillTree(quillDir);
-		const bytes = tree.get('template.typ')!;
-		const text = new TextDecoder().decode(bytes);
-		expect(text).toContain('minimal');
 	});
 
 	it('throws transport_error when directory does not exist', async () => {

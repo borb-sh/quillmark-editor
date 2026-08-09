@@ -57,7 +57,8 @@ describe('preview controller empty-state across page-count transitions', () => {
 		expect(isEmpty()).toBe(true);
 		expect(pages()).toBe(0);
 
-		// The bug: this ChangeSet was ignored forever. Now it must build slots.
+		// A ChangeSet arriving after an empty open builds slots; ignoring it would
+		// strand the surface in the empty state for the session.
 		preview.refresh(change(2));
 		expect(isEmpty()).toBe(false);
 		expect(pages()).toBe(2);

@@ -95,13 +95,10 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 
 	const { scanSourceQuiver, readQuillTree } = await import('./source-loader.js');
 
-	// 0. Three trees get cleared here; refuse the paths where that deletes the
-	//    caller instead of a previous build.
 	assertSafeOutDir(path, sourceDir, outDir);
 	const out = resolve(outDir);
 	const { stage, prev } = stagesOf(out);
 
-	// 1. Scan + validate source quiver (throws quiver_invalid on bad input).
 	const { meta, catalog } = await scanSourceQuiver(sourceDir);
 
 	try {
@@ -122,7 +119,6 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 	 * wide against the seconds a build takes.
 	 */
 	async function packGeneration(): Promise<void> {
-		// 2. Clear and recreate the staged tree + its store/.
 		try {
 			await rm(stage, { recursive: true, force: true });
 			await mkdir(join(stage, 'store'), { recursive: true });
@@ -134,7 +130,6 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 			);
 		}
 
-		// 3. Process each quill version.
 		const manifestQuills: Array<{
 			name: string;
 			version: string;
@@ -146,10 +141,8 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 			for (const version of versions) {
 				const quillDir = join(sourceDir, 'quills', quillName, version);
 
-				// a. Read quill file tree.
 				const tree = await readQuillTree(quillDir);
 
-				// b. Partition fonts vs content.
 				const fontEntries: Array<[string, Uint8Array]> = [];
 				const contentEntries: Array<[string, Uint8Array]> = [];
 
@@ -161,7 +154,6 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 					}
 				}
 
-				// c. Dehydrate fonts into store/.
 				const fonts: Record<string, string> = {};
 				for (const [path, bytes] of fontEntries) {
 					// Full width: the store is keyed by hash, so two distinct fonts
@@ -181,21 +173,18 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 					fonts[path] = hash;
 				}
 
-				// d. Zip content files (deterministic: sorted paths, fixed mtime).
 				const contentRecord: Record<string, Uint8Array> = {};
 				for (const [path, bytes] of contentEntries) {
 					contentRecord[path] = bytes;
 				}
 				const zipBytes = packFiles(contentRecord);
 
-				// e–f. Compute bundle hash and name.
 				const bundleHash = createHash('sha256')
 					.update(zipBytes)
 					.digest('hex')
 					.slice(0, NAME_DIGEST_LENGTH);
 				const bundleName = `${quillName}@${version}.${bundleHash}.zip`;
 
-				// g. Write bundle zip.
 				try {
 					await writeFile(join(stage, bundleName), zipBytes);
 				} catch (err) {
@@ -206,12 +195,10 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 					);
 				}
 
-				// h. Record manifest entry.
 				manifestQuills.push({ name: quillName, version, bundle: bundleName, fonts });
 			}
 		}
 
-		// 4–8. Build and write hashed manifest.
 		const manifest = {
 			version: 1 as const,
 			name: meta.name,
@@ -235,8 +222,8 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 			);
 		}
 
-		// 9–10. Write stable pointer latest.json. The format is stamped here and read first,
-		//       so a client older than the tree says so rather than misreading it.
+		// The format is stamped here and read first, so a client older than the tree
+		// says so rather than misreading it.
 		const pointer = { format: POINTER_FORMAT, manifest: manifestFileName };
 
 		try {
@@ -249,9 +236,8 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 			);
 		}
 
-		// 11. Move the generation in. `prev` is cleared first: a rename onto a
-		//     non-empty directory fails, and the tree left by an interrupted run is
-		//     one.
+		// `prev` is cleared first: a rename onto a non-empty directory fails, and the
+		// tree left by an interrupted run is one.
 		try {
 			await mkdir(dirname(out), { recursive: true });
 			await rm(prev, { recursive: true, force: true });

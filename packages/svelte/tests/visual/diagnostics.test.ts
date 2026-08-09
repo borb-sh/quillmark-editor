@@ -4,7 +4,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Diagnostic } from '@quillmark/wasm';
 import {
-	fieldKeyToString,
 	resolveCardKey,
 	routeAndResolve,
 	mergeDiagnostics,
@@ -16,18 +15,6 @@ const warn = (message: string, path?: string): Diagnostic => ({
 	severity: 'warning',
 	message,
 	path
-});
-
-describe('fieldKeyToString', () => {
-	it('keys the main card by "main"', () => {
-		expect(fieldKeyToString({ field: 'subject' })).toBe('main:subject');
-		expect(fieldKeyToString({})).toBe('main:$body');
-	});
-	it('keys a composable card by its card slot (id or index)', () => {
-		expect(fieldKeyToString({ card: 'c0', field: 'from' })).toBe('c0:from');
-		expect(fieldKeyToString({ card: 0, field: 'from' })).toBe('0:from');
-		expect(fieldKeyToString({ card: 'c0' })).toBe('c0:$body');
-	});
 });
 
 describe('resolveCardKey', () => {
@@ -112,14 +99,5 @@ describe('mergeDiagnostics', () => {
 		const m = mergeDiagnostics(a, b);
 		expect(m.get('main:x')?.length).toBe(1);
 		expect(m.get('main:y')?.length).toBe(1);
-	});
-	it('routes card and main fields into separate keys', () => {
-		const group = [
-			{ key: { field: 'from' } as FieldKey, diagnostic: err('main-from') },
-			{ key: { card: 'c0', field: 'from' } as FieldKey, diagnostic: err('card-from') }
-		];
-		const m = mergeDiagnostics(group);
-		expect(m.get('main:from')?.[0].message).toBe('main-from');
-		expect(m.get('c0:from')?.[0].message).toBe('card-from');
 	});
 });

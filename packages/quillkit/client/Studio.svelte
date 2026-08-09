@@ -42,7 +42,7 @@
 	import { close, openRef, type Opened } from './session';
 	import { collect, diagnosticsOf, messageOf, placeOf, type NoteSet } from './notes';
 
-	/** The dev-server signal the Node half sends after a repack. */
+	/** The dev server's signal that a repack landed. */
 	const REPACKED = 'studio:quiver-repacked';
 	/** One apply per settled burst of keystrokes. A structure op skips it. */
 	const RECOMPILE_MS = 120;

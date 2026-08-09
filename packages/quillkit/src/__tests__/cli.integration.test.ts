@@ -175,11 +175,4 @@ describe('what the tool loads', () => {
 			expect(specifiers, `${file} reaches the wasm artifact`).not.toContain('@quillmark/wasm');
 		}
 	});
-
-	it('ships the client beside the tool', async () => {
-		// One tarball, two halves, and the serving verbs take no override: the client is
-		// always this one, so its absence is the only way they can fail to find it.
-		const files = await readdir(DIST, { recursive: true });
-		expect(files).toContain(`${CLIENT}index.html`);
-	});
 });

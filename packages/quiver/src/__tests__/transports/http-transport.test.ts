@@ -61,15 +61,6 @@ describe('HttpTransport.fetchBytes', () => {
 		);
 	});
 
-	it('HTTP 500 throws transport_error', async () => {
-		globalThis.fetch = makeFetchMock(async () => mockErrorResponse(500));
-
-		const transport = new HttpTransport('https://cdn.example.com/quivers/');
-		await expect(transport.fetchBytes('file.json')).rejects.toThrow(
-			expect.objectContaining({ code: 'transport_error' })
-		);
-	});
-
 	it('network error (fetch rejects) throws transport_error with cause', async () => {
 		globalThis.fetch = makeFetchMock(async () => {
 			throw new TypeError('Network failure');

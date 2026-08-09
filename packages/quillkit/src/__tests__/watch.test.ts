@@ -47,9 +47,9 @@ describe('serialize', () => {
 	});
 
 	it('a failure does not end the queue', async () => {
-		// The regression this pins: a queue that chains onto its own result answers
-		// every later call with the FIRST failure instead of running it, so one
-		// half-written `Quill.yaml` ends the loop until the process restarts.
+		// A queue chaining onto its own result would answer every later call with the
+		// FIRST failure instead of running it, so one half-written `Quill.yaml` would
+		// end the loop until the process restarts.
 		let calls = 0;
 		const run = serialize(async () => {
 			if (++calls === 1) throw new Error('mid-edit');

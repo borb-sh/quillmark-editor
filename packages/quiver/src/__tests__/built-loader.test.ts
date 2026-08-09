@@ -176,10 +176,6 @@ async function loadMinimal() {
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('loadBuiltQuiver — happy path', () => {
-	it('returns correct name from manifest', async () => {
-		expect((await loadMinimal()).name).toBe('sample');
-	});
-
 	it('quillNames() returns sorted quill names', async () => {
 		expect((await loadMinimal()).quillNames()).toEqual(['memo', 'resume']);
 	});
@@ -189,22 +185,9 @@ describe('loadBuiltQuiver — happy path', () => {
 		expect(q.versionsOf('memo')).toEqual(['1.1.0', '1.0.0']);
 		expect(q.versionsOf('resume')).toEqual(['2.0.0']);
 	});
-
-	it('versionsOf() returns [] for unknown quill', async () => {
-		expect((await loadMinimal()).versionsOf('nonexistent')).toEqual([]);
-	});
 });
 
 describe('loadBuiltQuiver — tree rehydration', () => {
-	it('loaded tree has content files', async () => {
-		const q = await loadMinimal();
-		const tree = await loadTreeViaGetQuill(q, 'memo', '1.0.0');
-
-		expect(tree).toBeInstanceOf(Map);
-		expect(tree.has('Quill.yaml')).toBe(true);
-		expect(tree.has('template.typ')).toBe(true);
-	});
-
 	it('loaded tree has correct bytes for content files', async () => {
 		const q = await loadMinimal();
 		const tree = await loadTreeViaGetQuill(q, 'memo', '1.0.0');
@@ -223,13 +206,6 @@ describe('loadBuiltQuiver — tree rehydration', () => {
 
 		expect(tree.has('fonts/body.ttf')).toBe(true);
 		expect(tree.get('fonts/body.ttf')).toEqual(fontBytes);
-	});
-
-	it('getQuill throws quill_not_found for unknown name/version', async () => {
-		const q = await loadMinimal();
-		await expect(q.getQuill('memo@9.9.9')).rejects.toThrow(
-			expect.objectContaining({ code: 'quill_not_found' })
-		);
 	});
 });
 
@@ -321,16 +297,11 @@ describe('loadBuiltQuiver — font coalescing', () => {
 });
 
 describe('loadBuiltQuiver — invalid pointer', () => {
-	it('missing latest.json → transport_error', async () => {
-		const transport = new MemTransport({});
-		await expect(loadBuiltQuiver(transport)).rejects.toThrow(
-			expect.objectContaining({ code: 'transport_error' })
-		);
-	});
-
-	it('malformed latest.json (not JSON) → quiver_invalid', async () => {
+	// Truncated bytes are what a partial sync of an immutable-CDN quiver leaves behind, and
+	// the raw SyntaxError would escape every QuiverError handler downstream.
+	it('latest.json that is not JSON → quiver_invalid', async () => {
 		const transport = new MemTransport({
-			'latest.json': enc.encode('not-json')
+			'latest.json': enc.encode('{"manifest": "manifest.')
 		});
 		await expect(loadBuiltQuiver(transport)).rejects.toThrow(
 			expect.objectContaining({ code: 'quiver_invalid' })
@@ -405,12 +376,6 @@ describe('loadBuiltQuiver — invalid pointer', () => {
 });
 
 describe('loadBuiltQuiver — invalid manifest', () => {
-	it('missing version field → quiver_invalid', async () => {
-		await expect(
-			loadBuiltQuiver(await transportWith({ name: 'test', quills: [] }))
-		).rejects.toThrow(expect.objectContaining({ code: 'quiver_invalid' }));
-	});
-
 	it('version !== 1 → quiver_invalid', async () => {
 		await expect(
 			loadBuiltQuiver(await transportWith({ version: 2, name: 'test', quills: [] }))

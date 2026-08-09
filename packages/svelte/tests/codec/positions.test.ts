@@ -1,6 +1,6 @@
-// Criterion 1: the position map, the highest-value UTF-16/USV seam. For every USV
-// offset (including across astral chars and structural shapes) the map is a clean
-// inverse, and offsets land on the right code point.
+// The position map, the UTF-16/USV seam. For every USV offset (across astral chars and
+// structural shapes alike) the map is a clean inverse, and offsets land on the right
+// code point.
 import { describe, it, expect } from 'vitest';
 import { decode, blockSchema, buildLineIndex, usvToPM, pmToUsv } from '$lib/core/codec';
 import type { Content } from '@quillmark/wasm';

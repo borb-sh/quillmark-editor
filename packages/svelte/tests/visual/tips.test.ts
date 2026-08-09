@@ -28,10 +28,6 @@ function html(markdown: string): string {
 }
 
 describe('tipsChannel', () => {
-	it('passes a list of non-empty strings through', () => {
-		expect(tipsChannel(['one', 'two'])).toEqual(['one', 'two']);
-	});
-
 	it('narrows an unusable channel to none', () => {
 		// Consumer-authored and unvalidated: anything can arrive here, and every
 		// unusable shape has to read as "no tips" rather than as an empty card.

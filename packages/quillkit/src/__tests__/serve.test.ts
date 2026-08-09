@@ -1,8 +1,7 @@
 /**
  * The static server, at the two points a general-purpose one gets wrong for this: the
- * content type `.wasm` must carry, and the paths that must not resolve.
- *
- * Both are why a consumer wrote a server of their own before this existed.
+ * content type `.wasm` must carry, and the paths that must not resolve. Both are why
+ * this server is written rather than borrowed.
  */
 
 import { describe, it, expect, afterEach } from 'vitest';

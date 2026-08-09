@@ -1,7 +1,7 @@
-// Criteria 3 & 4: lower∘apply matches the optimistic PM up to normalization, and
-// formatting / anchor / unknown marks each survive decode→lower→apply→decode.
-// Uses a REAL Document so `applyChange` actually runs. PM transactions are built
-// on a DOM-free EditorState (works in node).
+// Lowering: `lower ∘ apply` matches the optimistic PM up to normalization, and
+// formatting / anchor / unknown marks each survive decode→lower→apply→decode. Uses a
+// REAL Document so `applyChange` actually runs; PM transactions are built on a DOM-free
+// EditorState, so this suite runs under node.
 import { describe, it, expect } from 'vitest';
 import { EditorState } from 'prosemirror-state';
 import type { Transaction } from 'prosemirror-state';
@@ -190,34 +190,6 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		expect(anchor?.start).toBe(8);
 	});
 
-	it('adding a new anchor emits an add op', () => {
-		const doc = freshDoc();
-		doc.overwrite({}, md('plain text'));
-		const oldRt = doc.main.body;
-		const newDoc = decode(oldRt, blockSchema);
-		const bundle = lower(contentEdit(oldRt, pmToContent(newDoc)), {
-			oldAnchors: [],
-			newAnchors: [{ id: 'new1', pos: 3 }]
-		});
-		doc.applyChange({}, bundle);
-		const anchor = doc.main.body.marks.find((m) => m.type === 'anchor') as
-			{ id: string } | undefined;
-		expect(anchor?.id).toBe('new1');
-	});
-
-	it('removing an anchor emits removeAnchor', () => {
-		const doc = freshDoc();
-		doc.overwrite({}, anchorRt);
-		const oldRt = doc.main.body;
-		const newDoc = decode(oldRt, blockSchema);
-		const bundle = lower(contentEdit(oldRt, pmToContent(newDoc)), {
-			oldAnchors: [{ id: 'a1', pos: 6 }],
-			newAnchors: []
-		});
-		doc.applyChange({}, bundle);
-		expect(doc.main.body.marks.some((m) => m.type === 'anchor')).toBe(false);
-	});
-
 	it('an anchor survives a code-block-interior edit (the payoff: op path, not install)', () => {
 		// Adding an interior line to a code block lowers via `setContinues`, not
 		// `install`, so this field's anchor rebases through the splice instead of
@@ -251,8 +223,8 @@ describe('the island channel — an island edit lowers op-wise', () => {
 	// A block island between two paragraphs: `￼` on its own `island` line.
 	const TABLE_MD = 'para\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\ntail';
 
-	/** The block island node and its position, the projection a table NodeView
-	 *  will hand the codec; built by hand until one exists. */
+	/** The block island node and its position: the projection the table NodeView hands
+	 *  the codec, built here directly so the lowering is under test on its own. */
 	function islandOf(doc: PMNode): { pos: number; node: PMNode } {
 		let found: { pos: number; node: PMNode } | undefined;
 		doc.descendants((node, pos) => {

@@ -242,7 +242,7 @@ describe('geometry: the addresses a compile serves (usaf_memo)', () => {
 				}
 			}
 			// …and the second rung is not dead weight: the span-less addresses answer it
-			// and nothing else, which is the half of the compile a click used to lose.
+			// and nothing else, so without it a click on them resolves to no field.
 			expect(placementOnly).toBeGreaterThan(0);
 		} finally {
 			session.free();

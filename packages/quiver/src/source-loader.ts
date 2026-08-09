@@ -1,8 +1,6 @@
 /**
- * Internal filesystem scanner for Source Quiver layout.
- *
- * Uses Node.js `fs/promises` — this module must only be imported from
- * Node-only contexts (`fromDir`, `build`).
+ * Internal filesystem scanner for the Source Quiver layout. Statically imports
+ * `node:fs`, so it is reachable from the Node entry alone.
  */
 
 import { readdir, readFile, stat } from 'node:fs/promises';
@@ -30,7 +28,6 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 	meta: QuiverMeta;
 	catalog: Map<string, string[]>;
 }> {
-	// --- Read Quiver.yaml ---
 	const quiverYamlPath = join(rootDir, 'Quiver.yaml');
 	let raw: Uint8Array;
 	try {
@@ -58,7 +55,6 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 
 	const meta = parseQuiverYaml(raw);
 
-	// --- Walk quills/ directory ---
 	const quillsDir = join(rootDir, 'quills');
 
 	let quillNames: string[];
@@ -67,7 +63,6 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 	} catch (err) {
 		const code = (err as NodeJS.ErrnoException).code;
 		if (code === 'ENOENT') {
-			// Missing quills/ is fine — empty catalog
 			return { meta, catalog: new Map() };
 		}
 		throw new QuiverError(
@@ -82,7 +77,6 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 	for (const quillName of quillNames) {
 		const quillNameDir = join(quillsDir, quillName);
 
-		// Ensure it's a directory
 		let st;
 		try {
 			st = await stat(quillNameDir);
@@ -95,7 +89,6 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 		}
 		if (!st.isDirectory()) continue;
 
-		// Read version directories
 		let versionDirs: string[];
 		try {
 			versionDirs = await readdir(quillNameDir);
@@ -112,7 +105,6 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 		for (const versionDir of versionDirs) {
 			const versionPath = join(quillNameDir, versionDir);
 
-			// Ensure it's a directory
 			let vst;
 			try {
 				vst = await stat(versionPath);
@@ -125,7 +117,6 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 			}
 			if (!vst.isDirectory()) continue;
 
-			// Non-canonical version → quiver_invalid
 			if (!isCanonicalSemver(versionDir)) {
 				throw new QuiverError(
 					'quiver_invalid',
@@ -134,7 +125,6 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 				);
 			}
 
-			// Require Quill.yaml sentinel inside the version dir
 			const quillYamlPath = join(versionPath, 'Quill.yaml');
 			try {
 				await stat(quillYamlPath);
@@ -158,7 +148,6 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 		}
 
 		if (versions.length > 0) {
-			// Sort descending
 			versions.sort((a, b) => compareSemver(b, a));
 			catalog.set(quillName, versions);
 		}
@@ -211,7 +200,6 @@ async function walkDir(
 		if (st.isDirectory()) {
 			await walkDir(baseDir, fullPath, tree);
 		} else {
-			// Compute relative POSIX path
 			const rel = relative(baseDir, fullPath);
 			const posixRel = sep === '/' ? rel : rel.split(sep).join('/');
 
@@ -232,8 +220,8 @@ async function walkDir(
 
 /**
  * Source-backed QuiverLoader: loads file trees from a Source Quiver on disk.
- * The outer Quiver.loadTree already validates name/version against the catalog,
- * so this loader trusts the gate and goes straight to reading files.
+ * `Quiver` resolves every ref against its catalog before reaching a loader, so
+ * the name and version arrive catalog-backed and go straight to the disk.
  */
 export class SourceLoader implements QuiverLoader {
 	constructor(private readonly rootDir: string) {}

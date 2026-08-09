@@ -1,12 +1,11 @@
 /**
- * Quiver — primary runtime abstraction for a collection of quills.
+ * A collection of quills, addressed by ref. One class over a composed
+ * `QuiverLoader`, source-backed or built, so what a quiver reads is the loader's
+ * business and never the class's.
  *
- * Polymorphism via composition: internally stores a pluggable loader
- * (either source-backed or build-output-backed).
- *
- * This module is browser-safe: only `fromBuiltUrl`, `fromBuiltFiles` and the
- * instance API live here. The filesystem factories are free functions in
- * `./node.js`; the class is the same either way.
+ * Browser-safe: only `fromBuiltUrl`, `fromBuiltFiles` and the instance API live
+ * here. The filesystem factories are free functions in `./node.js`; the class is
+ * the same either way.
  */
 
 import { QuiverError } from './errors.js';
@@ -34,7 +33,7 @@ export class Quiver {
 	readonly #loader: QuiverLoader;
 
 	/**
-	 * Cache of materialized quills, keyed by canonical ref. A `Quill` is now
+	 * Cache of materialized quills, keyed by canonical ref. A `Quill` is
 	 * engine-free, portable data (`Quill.fromTree`), so one instance per ref is
 	 * shared across every engine. Promise values so concurrent getQuill calls
 	 * coalesce into a single materialization.

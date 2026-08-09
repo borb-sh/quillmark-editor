@@ -1,4 +1,4 @@
-// The pure join/ordering/identity math (VisualEditor's projection). Unit-tested
+// The pure join/ordering/layout math (VisualEditor's projection). Unit-tested
 // in isolation (no runes, no Document) including against the REAL usaf_memo
 // schema so the ordering contract and group layout are asserted on the fixture
 // the suite runs against.
@@ -16,8 +16,7 @@ import {
 	placeFields,
 	interpolateTitle,
 	cardTitle,
-	bodyEnabled,
-	IdSeq
+	bodyEnabled
 } from '$lib/visual/structure';
 import { quill } from '../helpers/fixtures.js';
 
@@ -259,14 +258,6 @@ describe('required', () => {
 		expect(byName.none.required).toBe(true);
 		expect(byName.empty.required).toBe(false);
 		expect(byName.list.required).toBe(false);
-	});
-});
-
-describe('IdSeq identity', () => {
-	it('takes unique ids, and keeps taking them across calls', () => {
-		const seq = new IdSeq();
-		const ids = [...seq.take(3), ...seq.take(2)];
-		expect(new Set(ids).size).toBe(5);
 	});
 });
 

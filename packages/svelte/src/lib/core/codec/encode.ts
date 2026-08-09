@@ -1,12 +1,10 @@
-// Encode: PM → a `ChangeBundle` for `applyChange` (CODEC §Encode). Direction:
-// content is truth, PM its projection, edits are OPS. We do NOT re-`overwrite`; we
-// lower to `{ delta?, islandOps?, lineOps?, markOps? }` so identity anchors rebase
-// through the splice.
+// Encode: PM → a `ChangeBundle` for `applyChange` (CODEC §Encode). Content is truth,
+// PM its projection, and an edit lowers to `{ delta?, islandOps?, lineOps?, markOps? }`
+// rather than re-`overwrite`ing, so identity anchors rebase through the splice.
 //
-// Implementation (per the phase brief's permitted route): `pmToContent` is a pure
-// inverse of decode; `lower` diffs old→new into ops. Empirically grounded (see
-// scratchpad probes): a raw `\n` in the `delta` splits a line and a deleted `\n`
-// joins: so ALL text routes through `delta`, `lineOps` carry per-line `setKind` /
+// `pmToContent` is decode's pure inverse; `lower` diffs old→new into ops. A raw `\n`
+// in the `delta` splits a line and a deleted `\n` joins: so ALL text routes through
+// `delta`, `lineOps` carry per-line `setKind` /
 // `setContainers` / `setContinues` metadata, and an island's payload rides
 // `islandOps`, the one channel that reaches it. Every op reads in ONE coordinate
 // space, the FINAL USV content (delta then island ops applied). `applyChange`

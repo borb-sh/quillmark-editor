@@ -14,15 +14,9 @@
 // field's, so one undo stack covers the leaf), no anchor plugin (an anchor in a cell
 // is preserved, never minted), and no placeholder.
 //
-// THE CHROME IS A BAND AND A SELECTION, and it raises nothing. Every control is
-// absolutely positioned out of the grid: a grip along each line's leading edge, inside
-// the cell it names, and an add bar along each axis's trailing edge, against the grid's
-// frame. What no control says, the SELECTION says: one rectangle of cells, drawn by a
-// grip or swept by the pointer, and one verb over it. `codec/prose.css` draws it.
-//
-// A POINTER PRESS RESOLVES TO A CARET, always, except on a band control; a press that
-// TRAVELS out of the cell it started in draws a block instead (CODEC §"The table
-// island").
+// THE CHROME IS A BAND AND A SELECTION (CODEC §"The table island"), and it raises
+// nothing. Every control is absolutely positioned out of the grid, so the band is in no
+// row and no column of it; `codec/prose.css` draws the band and the selection wash both.
 import { baseKeymap, toggleMark } from 'prosemirror-commands';
 import { redo, undo } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
@@ -668,15 +662,12 @@ class TableIslandView implements NodeView {
 
 	/**
 	 * What Backspace means over the selection, decided by its EXTENT rather than by the
-	 * gesture that drew it (CODEC §"The table island"): a rectangle spanning every row
-	 * covers whole COLUMNS and deletes them, one spanning every column covers whole ROWS
-	 * and deletes those, one spanning BOTH is the whole table and deletes the ISLAND, and
-	 * anything else covers no rank at all and is cleared.
+	 * gesture that drew it (CODEC §"The table island").
 	 *
-	 * The both-axes arm is the rule's own limit rather than an exception to it: what a
-	 * delete over a selection means is that the selected thing goes, and every rank going
-	 * at once leaves no table for a rank rule to have produced. It is the whole of how a
-	 * pointer deletes a table, and on a one-column or one-row table a single grip draws it.
+	 * The both-axes arm is the rule's own limit rather than an exception to it: every rank
+	 * going at once leaves no table for a rank rule to have produced. It is the whole of
+	 * how a pointer deletes a table, and on a one-column or one-row table a single grip
+	 * draws it.
 	 */
 	private deleteSelection(): void {
 		const held = this.selected;
@@ -999,13 +990,10 @@ class TableIslandView implements NodeView {
 	}
 
 	/** A trailing bar: the whole edge past the last line of its axis, and the one way a
-	 *  pointer grows the table. It spans the edge rather than capping it, because what
-	 *  it appends to is the AXIS and not a line — there is no line out there to sit
-	 *  against, and an edge-long target is the easiest thing on the island to hit.
-	 *
-	 *  It draws no glyph: a bar the length of the edge it would grow, appearing under the
-	 *  pointer out past the last line, is the claim. Its NAME still carries the verb, for
-	 *  the pointer that hovers and everything that does not use one. */
+	 *  pointer grows the table. It spans the edge rather than capping it, because what it
+	 *  appends to is the AXIS and not a line. It draws no glyph — the bar arriving under
+	 *  the pointer out past the last line is the claim — so its NAME carries the verb for
+	 *  everything that does not read position. */
 	private addBar(axis: Axis, label: string): HTMLButtonElement {
 		const btn = chromeButton('qm-table-add', label, () => {
 			const props = this.props();

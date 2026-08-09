@@ -1,12 +1,12 @@
 /**
- * The static server `dev` serves the loop over. It composes two roots rather than
+ * The static server `studio` serves the loop over. It composes two roots rather than
  * copying one into the other: the client out of this package, the packed quiver out of
  * the tree the packer swaps. A repack replaces a directory the server reads per
  * request, so nothing here is told a pack happened.
  *
- * Two things a general-purpose static server gets wrong for this, which is the reason a
- * consumer writes their own: `.wasm` must be served as `application/wasm`, and a path
- * escaping its root must be refused.
+ * Two things a general-purpose static server gets wrong for this, which is why this one
+ * is written rather than borrowed: `.wasm` must be served as `application/wasm`, and a
+ * path escaping its root must be refused.
  */
 
 import { createReadStream, existsSync, statSync } from 'node:fs';

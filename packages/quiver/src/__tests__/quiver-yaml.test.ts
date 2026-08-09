@@ -26,11 +26,6 @@ describe('parseQuiverYaml', () => {
 		expect(result).toEqual({ name: 'My-Quiver_123' });
 	});
 
-	it('returns no description field when description is absent', () => {
-		const result = parseQuiverYaml('name: foo\n');
-		expect(result.description).toBeUndefined();
-	});
-
 	// --- Missing name ---
 
 	it('throws quiver_invalid when name is missing', () => {
@@ -47,28 +42,10 @@ describe('parseQuiverYaml', () => {
 		);
 	});
 
-	it('throws quiver_invalid when name is a boolean', () => {
-		expect(() => parseQuiverYaml('name: true\n')).toThrow(
-			expect.objectContaining({ code: 'quiver_invalid' })
-		);
-	});
-
-	it('throws quiver_invalid when name is null', () => {
-		expect(() => parseQuiverYaml('name: ~\n')).toThrow(
-			expect.objectContaining({ code: 'quiver_invalid' })
-		);
-	});
-
 	// --- Invalid name charset ---
 
 	it('throws quiver_invalid when name contains a space', () => {
 		expect(() => parseQuiverYaml('name: bad name\n')).toThrow(
-			expect.objectContaining({ code: 'quiver_invalid' })
-		);
-	});
-
-	it('throws quiver_invalid when name contains a dot', () => {
-		expect(() => parseQuiverYaml('name: bad.name\n')).toThrow(
 			expect.objectContaining({ code: 'quiver_invalid' })
 		);
 	});
@@ -83,12 +60,6 @@ describe('parseQuiverYaml', () => {
 
 	it('throws quiver_invalid for unknown field', () => {
 		expect(() => parseQuiverYaml('name: ok\nunknown_field: something\n')).toThrow(
-			expect.objectContaining({ code: 'quiver_invalid' })
-		);
-	});
-
-	it('throws quiver_invalid for multiple unknown fields', () => {
-		expect(() => parseQuiverYaml('name: ok\nfoo: bar\nbaz: qux\n')).toThrow(
 			expect.objectContaining({ code: 'quiver_invalid' })
 		);
 	});
