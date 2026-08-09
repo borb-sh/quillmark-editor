@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.20.0 - 2026-08-09
+
 **A runtime whose packed artifact is not on a path it can read has a loader.** `Quiver.fromBuiltFiles(files)` reads build output from a `Map` of artifact-relative path to bytes, fetching nothing: a serverless function whose deployment bundle carries the artifact, a bundler that inlines it, a test. It spares that runtime the self-fetch over its own load balancer that `fromBuiltDir` spares one with the artifact on disk.
 
 `Quiver.fromBuiltUrl(url, { seed })` is the partial case: the map answers first, the URL serves what it does not carry. A deployment that ships `latest.json` settles which catalog the process reads at deploy time rather than at cache-revalidation time. Seeded bytes are checked against the digest in their name exactly as fetched bytes are.
