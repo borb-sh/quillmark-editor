@@ -26,10 +26,12 @@ Each subpath is its own module root; a bundler pulls only what the entry you imp
 The **consumer** owns the session and the handles, and drives every edit; the surfaces are views over it. The handles come from the `@quillmark/wasm` peer, never re-exported here.
 
 ```ts
-import { Document, Engine, Quill } from '@quillmark/wasm';
+import { Engine } from '@quillmark/wasm';
 import { init } from '@quillmark/svelte/core';
 
-init(); // one-time WASM panic-hook install
+// One-time, and the only door to Quill and Document: the artifact exports
+// neither statically.
+const { Quill, Document } = await init();
 
 const quill = Quill.fromTree(tree); // tree: Map<string, Uint8Array> of the quill dir
 
@@ -49,7 +51,7 @@ const session = await new Engine().open(quill, doc);
 A stored document carries none of its quill's bytes, only a reference: `doc.quillRef` is `name@version`, persisted in the markdown itself. Resolution is **host code**: read the ref, map it to a `Quill`, open. No surface resolves, so one resolution per document holds by construction.
 
 ```ts
-const doc = Document.fromMarkdown(stored);
+const doc = Document.fromMarkdown(stored); // Document, from the gate above
 const quill = await registry.getQuill(doc.quillRef); // your ref → Quill mapping
 const session = await new Engine().open(quill, doc);
 ```

@@ -9,13 +9,12 @@
 // this module are the hop between the two. `fieldPathForAddr` and `addrForFieldPath`
 // are public, because a host given a path by a hook and holding a verb that takes an
 // `Addr` needs them; `cardPath` is the editor's own.
-import {
-	formatDocPath,
-	parseDocPath,
-	type Addr,
-	type DocPathSeg,
-	type HitGranularity
-} from '@quillmark/wasm';
+//
+// The grammar is the boundary's, reached through the init gate (`core()`):
+// `parseDocPath` / `formatDocPath` are on the awaited surface, and the verbs here are
+// pure and sync on both sides of it.
+import type { Addr, DocPathSeg, HitGranularity } from '@quillmark/wasm';
+import { core } from './lifecycle.js';
 
 /**
  * A canonical field address: `main.<field>` / `main.body` /
@@ -86,7 +85,7 @@ export function fieldPathForAddr(addr: Addr, kinds: readonly string[]): DocPath 
 	if (!head) return undefined;
 	const tail: DocPathSeg =
 		addr.field != null ? { seg: 'field', name: addr.field } : { seg: 'body' };
-	return formatDocPath([head, tail]);
+	return core().formatDocPath([head, tail]);
 }
 
 /**
@@ -96,7 +95,7 @@ export function fieldPathForAddr(addr: Addr, kinds: readonly string[]): DocPath 
  */
 export function cardPath(index: number, kinds: readonly string[]): DocPath | undefined {
 	const head = cardHead(index, kinds);
-	return head ? formatDocPath([head]) : undefined;
+	return head ? core().formatDocPath([head]) : undefined;
 }
 
 /**
@@ -148,8 +147,11 @@ export interface ElementAddr {
 	index: number;
 }
 
-/** `parseDocPath`, with a malformed path as `undefined` rather than a throw. */
+/** `parseDocPath`, with a malformed path as `undefined` rather than a throw. The gate
+ *  is read OUTSIDE the try: an uninitialized core is not a malformed path, and would
+ *  otherwise leave here as one. */
 function segsOf(path: DocPath): DocPathSeg[] | undefined {
+	const { parseDocPath } = core();
 	try {
 		return parseDocPath(path);
 	} catch {

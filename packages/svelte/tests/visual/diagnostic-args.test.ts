@@ -4,8 +4,10 @@
 // assumed: the doc on that hook tells a consumer which fields to word a sentence
 // from, and it is only sound advice while these hold.
 import { describe, it, expect } from 'vitest';
-import { Document, type Diagnostic } from '@quillmark/wasm';
+import { init, type Diagnostic } from '@quillmark/wasm';
 import { quill } from '../helpers/fixtures.js';
+
+const core = await init();
 
 describe('what a Diagnostic carries', () => {
 	it('hands the validation lane the offending value under `args`', () => {
@@ -38,7 +40,9 @@ describe('what a Diagnostic carries', () => {
 		// from a formatter is the correct answer rather than a concession.
 		let thrown: unknown;
 		try {
-			Document.fromMarkdown('~~~\n$quill: usaf_memo@0.2.0\nsubject: [unclosed\n~~~\n\nBody.\n');
+			core.Document.fromMarkdown(
+				'~~~\n$quill: usaf_memo@0.2.0\nsubject: [unclosed\n~~~\n\nBody.\n'
+			);
 		} catch (e) {
 			thrown = e;
 		}

@@ -7,7 +7,7 @@ import type { Node as PMNode } from 'prosemirror-model';
 import type { EditorView } from 'prosemirror-view';
 import { EditorState, TextSelection, type Command } from 'prosemirror-state';
 import { baseKeymap } from 'prosemirror-commands';
-import { Document, importMarkdown, type Content } from '@quillmark/wasm';
+import { init, type Content, type Document } from '@quillmark/wasm';
 import { contentEqual } from '$lib/core/codec/reconcile.js';
 import {
 	blockSchema,
@@ -19,6 +19,8 @@ import {
 	usvToPM
 } from '$lib/core/codec';
 import { quill } from '../helpers/fixtures.js';
+
+const core = await init();
 
 export { quill };
 export function freshDoc(): Document {
@@ -37,7 +39,7 @@ export { contentEqual };
 
 /** A content from markdown; a guaranteed-valid `Content` for test inputs. */
 export function md(markdown: string): Content {
-	return importMarkdown(markdown);
+	return core.importMarkdown(markdown);
 }
 
 /** The reference quill's seeded `subject` (inline richtext) content. */

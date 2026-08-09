@@ -32,8 +32,10 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Document, Engine } from '@quillmark/wasm';
+import { init, Engine } from '@quillmark/wasm';
 import { build, fromBuiltDir, fromDir } from '../node.js';
+
+const core = await init();
 
 // Two quills, `memo@1.0.0` and `plain@1.0.0`, both `backend: typst` (see their
 // `Quill.yaml`) and both render-complete — a comment-only `template.typ`
@@ -109,7 +111,7 @@ describe('Engine.render against a quiver quill', () => {
 		// Loading side: the stored bytes are the only input. The document names its
 		// quill, the quiver answers it — the consumer dispatches to no loader of its
 		// own.
-		const doc = Document.fromMarkdown(stored);
+		const doc = core.Document.fromMarkdown(stored);
 		try {
 			expect(doc.quillRef).toBe(`${authored.metadata.name}@${authored.metadata.version}`);
 			const quill = await quiver.getQuill(doc.quillRef);

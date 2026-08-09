@@ -9,9 +9,11 @@
 // only re-exports the public `createPreview`/`Preview` surface per PREVIEW.md;
 // the transform is an internal correctness seam, not part of that surface).
 import { describe, it, expect } from 'vitest';
-import { Engine, Quill, type FieldRegion, type PageSize } from '@quillmark/wasm';
+import { init, Engine, type FieldRegion, type PageSize } from '@quillmark/wasm';
 import { boxesForField, rectToPercent, clickToPdfPt } from '$lib/preview/geometry.js';
 import { loadFixtureTree } from '../helpers/fixtures.js';
+
+const core = await init();
 
 describe('geometry: synthetic round-trip', () => {
 	const pageSize: PageSize = { widthPt: 612, heightPt: 792 }; // US Letter
@@ -67,7 +69,7 @@ describe('geometry: synthetic round-trip', () => {
 describe('geometry: against a real compiled session (usaf_memo)', () => {
 	it('forward-transforms a subject fieldBox to %, then inverse-transforms its center back to a positionAt hit on subject', async () => {
 		const tree = loadFixtureTree();
-		const quill = Quill.fromTree(tree);
+		const quill = core.Quill.fromTree(tree);
 		const doc = quill.seedDocument();
 		const engine = new Engine();
 		const session = await engine.open(quill, doc);
@@ -96,7 +98,7 @@ describe('geometry: against a real compiled session (usaf_memo)', () => {
 
 	it('subject surfaces multiple fieldBoxes across pages (header + continuation)', async () => {
 		const tree = loadFixtureTree();
-		const quill = Quill.fromTree(tree);
+		const quill = core.Quill.fromTree(tree);
 		const doc = quill.seedDocument();
 		const engine = new Engine();
 		const session = await engine.open(quill, doc);
@@ -123,7 +125,7 @@ describe('geometry: against a real compiled session (usaf_memo)', () => {
 		// correct everywhere it's exercised, without assuming a geometry the API
 		// never promised (that promise is `subject`-specific, tested above).
 		const tree = loadFixtureTree();
-		const quill = Quill.fromTree(tree);
+		const quill = core.Quill.fromTree(tree);
 		const doc = quill.seedDocument();
 		const engine = new Engine();
 		const session = await engine.open(quill, doc);
@@ -187,7 +189,7 @@ describe('boxesForField', () => {
 
 describe('geometry: the addresses a compile serves (usaf_memo)', () => {
 	it('gives every regions() address a box, and a declared array one off its elements', async () => {
-		const quill = Quill.fromTree(loadFixtureTree());
+		const quill = core.Quill.fromTree(loadFixtureTree());
 		const doc = quill.seedDocument();
 		const engine = new Engine();
 		const session = await engine.open(quill, doc);
@@ -220,7 +222,7 @@ describe('geometry: the addresses a compile serves (usaf_memo)', () => {
 		// The ladder's premise: `positionAt` over span-tracked content, `fieldAt` over
 		// every placement, the second a superset of the first. If it ever stopped being
 		// one, a click on content would fall through to a rung that named nothing.
-		const quill = Quill.fromTree(loadFixtureTree());
+		const quill = core.Quill.fromTree(loadFixtureTree());
 		const doc = quill.seedDocument();
 		const engine = new Engine();
 		const session = await engine.open(quill, doc);

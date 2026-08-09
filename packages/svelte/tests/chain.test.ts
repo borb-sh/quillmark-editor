@@ -4,18 +4,19 @@
 // the real Typst backend (no browser, no canvas). Imports the surface through
 // `$lib/core` exactly as a consumer does.
 import { describe, it, expect } from 'vitest';
-import { Engine, Quill } from '@quillmark/wasm';
+import { Engine } from '@quillmark/wasm';
 import { init } from '$lib/core';
 import { loadFixtureTree } from './helpers/fixtures.js';
 
+const core = await init();
+
 describe('substrate chain', () => {
 	it('loads the fixture, seeds a document, opens a session', async () => {
-		init();
 		const tree = loadFixtureTree();
 		expect(tree.size).toBeGreaterThan(0);
 		expect(tree.has('Quill.yaml')).toBe(true);
 
-		const quill = Quill.fromTree(tree);
+		const quill = core.Quill.fromTree(tree);
 		expect(quill.metadata.name).toBe('usaf_memo');
 		expect(quill.backendId).toBe('typst');
 		expect(Object.keys(quill.schema.main.fields).length).toBeGreaterThan(0);
@@ -50,7 +51,7 @@ describe('substrate chain', () => {
 
 	it('opens and frees repeatedly without a handle leak', async () => {
 		const tree = loadFixtureTree();
-		const quill = Quill.fromTree(tree);
+		const quill = core.Quill.fromTree(tree);
 		const engine = new Engine();
 		// Repeated open/close on one cached quill clone; a leak or use-after-free
 		// would surface as a throw or a corrupt compile by the last iteration.

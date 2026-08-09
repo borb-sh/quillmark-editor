@@ -6,11 +6,13 @@
 // drives them with what the hooks handed it.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync, tick } from 'svelte';
-import { Quill, type Document } from '@quillmark/wasm';
+import { init, type Document, type Quill } from '@quillmark/wasm';
 import type { EditorError } from '$lib/core';
 import type { ActiveLeaf, CardId, EditorChange } from '$lib/visual';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
 import { quill } from '../helpers/fixtures.js';
+
+const core = await init();
 
 // jsdom implements neither, and a card operation reaches both: the insert/reorder
 // scroll hop and the FLIP the removal runs the survivors through.

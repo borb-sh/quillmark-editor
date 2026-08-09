@@ -5,7 +5,9 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, relative, sep } from 'node:path';
-import { Quill } from '@quillmark/wasm';
+import { init, type Quill } from '@quillmark/wasm';
+
+const core = await init();
 
 // `fixtures/` is the workspace's, not this package's: the playground reads the same
 // tree, so it sits above both.
@@ -47,6 +49,6 @@ export function loadFixtureTree(root: string = USAF_MEMO_ROOT): Map<string, Uint
  */
 let cachedQuill: Quill | undefined;
 export function quill(): Quill {
-	if (!cachedQuill) cachedQuill = Quill.fromTree(loadFixtureTree());
+	if (!cachedQuill) cachedQuill = core.Quill.fromTree(loadFixtureTree());
 	return cachedQuill;
 }

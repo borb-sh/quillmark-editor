@@ -54,9 +54,8 @@ export async function loadQuiverNode(collection: string): Promise<QuiverNode> {
  * `quillkit.config.js` at the collection root, else `@quillmark/wasm` out of the
  * collection's own tree.
  *
- * **The core is instantiated here.** Every `@quillmark/wasm` export throws
- * `runtime::not_initialized` until `init()` resolves, and `new Engine()` is lazy, so
- * a gate that skips it reports an uninitialized runtime as a failing quill.
+ * **The core is instantiated here.** `new Engine()` is lazy, so the gate holds a live
+ * instance before it renders rather than at whichever call first needs one.
  */
 export async function loadEngine(collection: string): Promise<Engine> {
 	let wasm: Wasm | undefined;

@@ -263,9 +263,9 @@
 		let cancelled = false;
 		(async () => {
 			try {
-				// `init` instantiates the core; every boundary verb throws
-				// `runtime::not_initialized` until it resolves, and the quiver's
-				// `getQuill` materializes a quill, so it waits.
+				// `init` instantiates the core and latches the surface the editor's codec
+				// reads synchronously. The quiver awaits the same memoized gate to
+				// materialize a quill.
 				await init();
 				quiver = await openQuiver();
 				const next = catalogOf(quiver);

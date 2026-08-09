@@ -11,9 +11,11 @@
 // than by a captured callback argument.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
-import { Quill, Document, DocumentReader } from '@quillmark/wasm';
+import { init, DocumentReader, type Quill, type Document } from '@quillmark/wasm';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
 import { loadFixtureTree } from '../helpers/fixtures.js';
+
+const core = await init();
 
 // jsdom implements neither, and mounting the editor reaches both: the card
 // scroll hop and the FLIP the survivors run through.
@@ -68,7 +70,7 @@ function quillWithAbsentTypes(): Quill {
 	if (patched === yaml)
 		throw new Error('fixture drift: `card_kinds:` no longer closes main.fields');
 	tree.set('Quill.yaml', new Uint8Array(Buffer.from(patched, 'utf8')));
-	return Quill.fromTree(tree);
+	return core.Quill.fromTree(tree);
 }
 
 let cleanup: (() => void) | undefined;

@@ -12,11 +12,13 @@
 // card rather than staying at the index.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
-import { Quill, type Document } from '@quillmark/wasm';
+import { init, type Document, type Quill } from '@quillmark/wasm';
 import { addrForFieldPath } from '$lib/core';
 import type { ActiveLeaf, EditorChange } from '$lib/visual';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
 import { loadFixtureTree } from '../helpers/fixtures.js';
+
+const core = await init();
 
 /**
  * The reference quill with the indorsement card's `date` retyped to `datetime`.
@@ -33,7 +35,7 @@ function quillWithDatetimeDate(): Quill {
 	if (patched === yaml)
 		throw new Error('fixture drift: indorsement.date is no longer `type: date`');
 	tree.set('Quill.yaml', new Uint8Array(Buffer.from(patched, 'utf8')));
-	return Quill.fromTree(tree);
+	return core.Quill.fromTree(tree);
 }
 
 /** A document with TWO indorsement cards: the seed carries one, the second is inserted. */
