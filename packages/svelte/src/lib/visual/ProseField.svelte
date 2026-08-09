@@ -127,7 +127,6 @@
 			describedBy,
 			placeholder,
 			tableStrings: () => t.strings,
-			slashStrings: () => t.strings,
 			onSlash: (next) => {
 				slash = next;
 			},

@@ -98,16 +98,19 @@
 						aria-label={label}
 						inert={!raised}
 					>
-						{#each menu?.items ?? [] as item, i (item.id)}
+						<!-- The row is the command AS TYPED, leading `/` and all: the menu is a
+						     completion of the run in the text, so the row and the run read the
+						     same. -->
+						{#each menu?.items ?? [] as name, i (name)}
 							<button
 								type="button"
 								class="qm-menu-item qm-slash-item"
 								data-highlighted={i === menu?.index ? '' : undefined}
 								onmousedown={keepFocus}
-								onclick={() => leaf()?.slashPick(item.id)}
-								onpointerenter={() => leaf()?.slashFocus(item.id)}
+								onclick={() => leaf()?.slashPick(name)}
+								onpointerenter={() => leaf()?.slashFocus(name)}
 							>
-								{item.label}
+								/{name}
 							</button>
 						{/each}
 					</div>

@@ -19,7 +19,7 @@ import { chainCommands } from 'prosemirror-commands';
 import type { Command } from 'prosemirror-state';
 import { codeKeymap } from './code.js';
 import { listKeymap } from './lists.js';
-import { slashKeymap, type SlashItem } from './slash.js';
+import { slashKeymap } from './slash.js';
 
 /** One chain per key, the maps taken in precedence order: on a key several bind, an
  * earlier map's command runs first and the next runs only if it declines. A key one
@@ -40,13 +40,10 @@ function chainKeymaps(...maps: Record<string, Command>[]): Record<string, Comman
  * at its place in that order rather than a nesting to read inside out.
  *
  * The slash menu is innermost of the three, and it is conditional rather than
- * schema-gated: the keys exist only where a menu can be DRAWN (`slashItems` present),
- * because Enter and Escape claimed by a surface nobody can see is a body that
- * swallows two keys for no visible reason. */
-export function bodyKeymap(
-	schema: Schema,
-	slashItems?: () => SlashItem[]
-): Record<string, Command> {
-	const links = slashItems ? [slashKeymap(slashItems)] : [];
+ * schema-gated: the keys exist only where a menu can be DRAWN (`slash`), because Enter
+ * and Escape claimed by a surface nobody can see is a body that swallows two keys for
+ * no visible reason. */
+export function bodyKeymap(schema: Schema, slash?: boolean): Record<string, Command> {
+	const links = slash ? [slashKeymap()] : [];
 	return chainKeymaps(...links, codeKeymap(schema), listKeymap(schema));
 }
