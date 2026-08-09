@@ -102,8 +102,10 @@
 	   (core/theme.css).
 
 	   The DESK as well as the paper: a sheet is at `--_qm-surface` (paint.ts), so the
-	   tone behind it is one rung raised and the gutter is the margin the sheet floats
-	   in. Both are the surface's own, so a bare `<div>` is a mounting site. The
+	   tone behind it is the SUNKEN rung and the gutter is the margin the sheet floats
+	   in. Paper is the brighter plane at both poles, exactly as a card is over the
+	   editor's own column, so the two panes step the same way. Both are
+	   the surface's own, so a bare `<div>` is a mounting site. The
 	   padding is safe against the paint loop: a slot is a `width: 100%` child and
 	   measures the CONTENT box, and the container's own `clientWidth` is read only as
 	   a change detector, which a constant inset does not disturb. */
@@ -114,6 +116,6 @@
 		height: 100%;
 		overflow-y: auto;
 		padding: var(--_qm-space-4);
-		background: var(--_qm-surface-raised);
+		background: var(--_qm-surface-sunken);
 	}
 </style>

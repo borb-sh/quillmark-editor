@@ -386,13 +386,15 @@
 		align-items: center;
 	}
 	/* The box's recipe without `.qm-input`, which adds the `width: 100%` that would
-	   stretch this to the popover. */
+	   stretch this to the popover. The fill is the box's own rung and there is no
+	   edge, as everywhere else a value is typed (controls.css). */
 	.qm-link-input {
 		font: inherit;
 		font-size: var(--_qm-text-body);
 		padding: var(--_qm-inset-control);
-		border: var(--_qm-border-width) solid var(--_qm-border);
+		border: none;
 		border-radius: var(--_qm-radius-inner);
+		background: var(--_qm-surface-well);
 		min-width: 12rem;
 	}
 </style>

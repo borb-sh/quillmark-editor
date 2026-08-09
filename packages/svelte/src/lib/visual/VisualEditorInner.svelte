@@ -941,15 +941,14 @@
 		{@const marked = atIndex === model.cards.length}
 		<div class="qm-add-card" class:qm-add-card-marked={marked}>
 			<!-- Marked, the words ARE the accessible name and no `aria-label` doubles
-			 them; bare, the kind is the whole reading, the one with no geometry to
-			 carry it. -->
+			 them; bare, the same words land as the label, the strip having no
+			 geometry to carry them. -->
 			{#if kinds.length === 1}
 				<button
 					type="button"
 					class="qm-add-btn qm-add-affordance"
-					aria-label={marked ? undefined : merged.addCardOfKind(humanize(kinds[0]))}
-					onclick={() => addCard(atIndex, kinds[0])}
-					>{marked ? merged.addCardMark(humanize(kinds[0])) : ''}</button
+					aria-label={marked ? undefined : merged.addCard}
+					onclick={() => addCard(atIndex, kinds[0])}>{marked ? merged.addCard : ''}</button
 				>
 			{:else}
 				<!-- Multi-kind add: pick the kind, then seed + insert. A MENU rather than a
@@ -961,7 +960,7 @@
 					<DropdownMenu.Trigger
 						class="qm-add-btn qm-add-affordance"
 						aria-label={marked ? undefined : merged.addCard}
-						>{marked ? merged.addCardMarkAny : ''}</DropdownMenu.Trigger
+						>{marked ? merged.addCard : ''}</DropdownMenu.Trigger
 					>
 					<DropdownMenu.Portal to={rootEl}>
 						<DropdownMenu.Content sideOffset={4}>
@@ -992,14 +991,21 @@
 	   behind it are the surface's own, so a bare `<div>` is a mounting site and
 	   nothing is owed before the editor looks right. Consumer CSS is unlayered and
 	   beats all of it, which is how a host that wants the column back takes it.
-	   `border-box`, so a height from the caller is the height this draws. */
+	   `border-box`, so a height from the caller is the height this draws.
+
+	   The SUNKEN rung, which is what makes a card an island: the cards are the base
+	   plane and this is the one they float on, so the gutter reads as ground rather
+	   than as more card (ARCHITECTURE §Styling). The inset is the widest rung on the
+	   ramp, which is what gives the ground enough of itself to read as ground: at a
+	   narrower one the stack meets whatever frames the surface and the islands are
+	   back to being one block clipped at its edges. */
 	.qm-editor {
 		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
-		padding: var(--_qm-space-2);
-		background: var(--_qm-surface);
+		padding: var(--_qm-space-4);
+		background: var(--_qm-surface-sunken);
 		color: var(--_qm-ink);
 	}
 	/* A fixed-height pane, which the stack is NOT by default, and the four popovers

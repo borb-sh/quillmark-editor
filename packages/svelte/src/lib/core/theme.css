@@ -79,9 +79,13 @@
 		   whatever the OS says, and one that declares nothing gets light, matching
 		   its own unstyled text. So the package owns no mode logic at all: light or
 		   dark is the mounting site's, like every other value here (THEMING.md
-		   §"The surface follows your colour scheme"). */
-		--_qm-bg: var(--qm-bg, light-dark(#fff, #14171c));
-		--_qm-fg: var(--qm-fg, light-dark(#1a1a1a, #e8eaed));
+		   §"The surface follows your colour scheme").
+
+		   `--qm-bg` is the CARD, not the column behind it: the plane content is
+		   written on, which is also the preview's paper. Everything else is a step
+		   off it, and the column is a step DOWN. */
+		--_qm-bg: var(--qm-bg, light-dark(#fff, #272729));
+		--_qm-fg: var(--qm-fg, light-dark(#1c1c1c, #d7dadc));
 		--_qm-accent: var(--qm-accent, #2563eb);
 		--_qm-danger: var(--qm-danger, #c5221f);
 		--_qm-warning: var(--qm-warning, #b25000);
@@ -89,18 +93,57 @@
 		--_qm-font-mono: var(--qm-font-mono, ui-monospace, monospace);
 
 		/* ── Colour ──────────────────────────────────────────────────────────────
-		   Surfaces step bg → fg, ink steps fg → bg, mixed in oklab; sRGB muddies
-		   the mid-tones and the label/meta/border rungs are exactly mid-tone. So
-		   inverting the poles inverts the scale. The percentages are calibrated to
-		   the light-mode literals they stand in for (17% ≈ #d4d4d4, 35% ≈ #555).
+		   Ink steps fg → bg, the border and hover rungs step bg → fg, all mixed in
+		   oklab; sRGB muddies the mid-tones and the label/meta/border rungs are
+		   exactly mid-tone. So inverting the poles inverts that half of the scale.
+		   The percentages are calibrated to the light-mode literals they stand in
+		   for (17% ≈ #d4d4d4, 35% ≈ #555).
 
-		   The three surface rungs sit EVENLY 4pp apart, which is what keeps them three
-		   distinguishable steps: uneven spacing spends one rung to buy another:
-		   widening `raised` alone would leave `hover` 1pp above it. `raised` steps
-		   toward the INK pole rather than away from it, so a card is darker than the
-		   page in light and lighter in dark. */
+		   PLANES ARE THE HALF THAT DOES NOT READ THE INK POLE, because what makes a
+		   card read as a card is that it is the BRIGHTER plane, in both schemes
+		   alike (ARCHITECTURE §Styling). A plane stepped toward the ink is right in
+		   dark and inverted in light, where it darkens the card below the page it
+		   floats on. So `sunken` and `well` step toward shadow and `raised` toward
+		   light, and the base plane — a card, the preview's paper — is the pole
+		   itself.
+
+		   TWO PLANES SINK. `sunken` is the GROUND — the column behind the cards, the
+		   desk behind the sheets — and lifting the plane above it takes very little
+		   at the light pole. `well` is the hole cut INTO a card: a field, a table's
+		   header band, the one native select, none of which draw an edge, so the
+		   step is the whole of what says a value is typed there. The order at the
+		   light pole is card, ground, well; at the dark pole the two sink to within
+		   a channel of each other, which is where a card with little light left to
+		   give up leaves them.
+
+		   Each takes TWO ARMS, because one figure cannot serve both poles: a dark
+		   surface has to spend more of what little it has before the card above it
+		   reads as lifted. Pinning a dark palette under a light `color-scheme` takes
+		   the LIGHT arm with it
+		   (THEMING §"The surface follows your colour scheme"), which is a step you
+		   can barely see, so a host that pins declares the scheme with it.
+
+		   The GROUND steps by SUBTRACTION where every other rung mixes: a mix toward
+		   black is a ratio, so it scales what it takes and pulls the result toward
+		   neutral, and a ground is a fixed distance that keeps the pole's hue. Its
+		   arms are 0.0214 of oklab L in light and 0.0553 in dark, with a/b terms
+		   carrying a cool cast a mix toward black would strip, so the default lands
+		   on `#f7f8f9` and `#1a1a1b` exactly and a turned `--qm-bg` tints the plane
+		   under it.
+
+		   `raised` is a no-op at the light pole, where the card is already white
+		   and there is nowhere further to go, so a floating surface separates on
+		   its hairline in light and on the step in dark. */
 		--_qm-surface: var(--_qm-bg);
-		--_qm-surface-raised: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 4%);
+		--_qm-surface-sunken: light-dark(
+			oklab(from var(--_qm-bg) calc(l - 0.0214) calc(a - 0.00065) calc(b - 0.00158)),
+			oklab(from var(--_qm-bg) calc(l - 0.0553) calc(a - 0.00048) calc(b + 0.00165))
+		);
+		--_qm-surface-well: light-dark(
+			color-mix(in oklab, var(--_qm-bg), #000 4%),
+			color-mix(in oklab, var(--_qm-bg), #000 20%)
+		);
+		--_qm-surface-raised: color-mix(in oklab, var(--_qm-bg), #fff 8%);
 		--_qm-surface-hover: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 8%);
 		--_qm-border: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 17%);
 		/* A rule that separates without structuring: the lines BETWEEN a table's cells,
@@ -125,6 +168,20 @@
 		   stacks over whichever surface rung the cell already draws instead of replacing
 		   it. */
 		--_qm-accent-tint: color-mix(in oklab, var(--_qm-accent) 12%, transparent);
+
+		/* THE TIPS CARD'S HUE: the surface's one exit from the greyscale that is not
+		   a status, and what the amber and the typewriter face say together is
+		   draft (VISUAL_EDITOR §"Card operations"). A literal rather than a dial
+		   because there is nothing left to turn: the three rungs under it mix over
+		   the surface and the ink a consumer already tuned, so the card follows a
+		   brand untold. The mixes are faint on purpose: a warmth, not a badge. */
+		--_qm-tips: #e88c0a;
+		--_qm-tips-surface: color-mix(in oklab, var(--_qm-surface), var(--_qm-tips) 4%);
+		--_qm-tips-ink: color-mix(in oklab, var(--_qm-ink), var(--_qm-tips) 24%);
+		/* The chip behind a token in a tip. The card's own face is already
+		   monospace, so a `code` run needs a FILL to read as literal text rather
+		   than as the sentence around it. */
+		--_qm-tips-chip: color-mix(in oklab, var(--_qm-tips) 12%, transparent);
 
 		/* ── Ratios and effects ──────────────────────────────────────────────────
 		   No palette fixes these, so they are their own rungs. There is no shadow
@@ -243,10 +300,23 @@
 		   a rung of hierarchy, and clear of the title rung, which one 9/8 step lands on
 		   exactly. */
 		--_qm-text-paper: calc(var(--_qm-text-body) * 16 / 15);
-		/* ONE weight over the regular: every heading here is a name over the value under
-		   it, so a second is a rung with no register beneath it. Hierarchy is the size
-		   ramp's. */
-		--_qm-weight-label: 600;
+		/* TWO weights over the regular, and only ONE of them is chrome. `mid` names
+		   everything the surface names — a card title, a section header, a field
+		   label, a nested property — so a stack of them reads as one register and
+		   hierarchy stays the size ramp's, which is the axis that can carry it.
+		   500 rather than 600 because the family dial resolves to the PLATFORM UI
+		   face, whose 600 is heavier at the same number than the webfont a surface
+		   is usually drawn against: at the label rung it goes smudgy, and one
+		   number across three sizes does not read as one weight.
+
+		   `strong` is not a rung of that ramp. It is the mark a run wears where
+		   weight is the ONLY signal it has: a heading inside a prose leaf, drawn at
+		   no size step of its own because the quill sets the paper's; a table
+		   island's header row; the stored value in an enum listbox. Reaching for it
+		   where a size or a tone could speak is the drift the split exists to
+		   stop. */
+		--_qm-weight-strong: 600;
+		--_qm-weight-mid: 500;
 		/* Leading: the ramp's third axis, and it does not track the sizes one for one:
 		   two rungs, because a wrapped label and a wrapped paragraph want different
 		   rhythms and nothing wants four. `body` is reading rhythm (both prose leaves,

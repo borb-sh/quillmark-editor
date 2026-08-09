@@ -149,7 +149,7 @@ The package ships English and a seam to replace it. `strings` is keyed and **par
 	{quill}
 	strings={{
 		cardDelete: 'Supprimer la carte',
-		addCardOfKind: (kind) => `Ajouter : ${kind}`
+		addCard: '+ Ajouter une carte'
 	}}
 	formatDiagnostic={(d) =>
 		d.code === 'validation::must_fill' ? `${d.path} est obligatoire` : undefined}

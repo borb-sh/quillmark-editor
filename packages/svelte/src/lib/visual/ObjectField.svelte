@@ -134,9 +134,10 @@
 	}
 	.qm-object-label {
 		font-size: var(--_qm-text-label);
-		/* Soft (500), a rung under the top-level field label's 600: a nested object
-		   prop reads as secondary. Resolves the label-weight disagreement. */
-		font-weight: var(--_qm-weight-label);
+		/* The chrome weight, the same one the field label above it takes: what says
+		   this name is nested is the subform's rule and its inset, so a weight step
+		   here would state it twice and rank two names the ramp does not separate. */
+		font-weight: var(--_qm-weight-mid);
 		/* A label is a line, not a passage, so it overrides the root's reading
 		   rhythm the way every other label rung does. */
 		line-height: var(--_qm-leading-tight);
