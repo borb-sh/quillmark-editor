@@ -553,7 +553,7 @@
 		min-width: 0;
 		max-width: 100%;
 		font-size: var(--_qm-text-title);
-		font-weight: var(--_qm-weight-label);
+		font-weight: var(--_qm-weight-mid);
 		line-height: var(--_qm-leading-tight);
 		font-family: inherit;
 	}
@@ -759,7 +759,7 @@
 		padding: var(--_qm-space) 0 var(--_qm-space) var(--_qm-space);
 		font: inherit;
 		font-size: var(--_qm-text-body);
-		font-weight: var(--_qm-weight-label);
+		font-weight: var(--_qm-weight-mid);
 		line-height: var(--_qm-leading-tight);
 		cursor: pointer;
 		color: var(--_qm-ink-label);
@@ -839,7 +839,7 @@
 	 rhythm. */
 	.qm-card-title-static {
 		font-size: var(--_qm-text-title);
-		font-weight: var(--_qm-weight-label);
+		font-weight: var(--_qm-weight-mid);
 		line-height: var(--_qm-leading-tight);
 		color: var(--_qm-ink-label);
 	}

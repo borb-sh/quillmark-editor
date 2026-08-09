@@ -107,7 +107,7 @@
 		align-items: center;
 		gap: var(--_qm-space-half);
 		font-size: var(--_qm-text-label);
-		font-weight: var(--_qm-weight-label);
+		font-weight: var(--_qm-weight-mid);
 		line-height: var(--_qm-leading-tight);
 		color: var(--_qm-ink-label);
 		min-width: 0;

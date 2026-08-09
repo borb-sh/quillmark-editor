@@ -176,7 +176,7 @@
 		overflow-y: auto;
 	}
 	.qm-select-content :global(.qm-select-item[data-selected]) {
-		font-weight: var(--_qm-weight-label);
+		font-weight: var(--_qm-weight-strong);
 	}
 	/* Consumer policy, for a refused option the list still draws: offered, unpickable. */
 	.qm-select-content :global(.qm-select-item[data-disabled]) {

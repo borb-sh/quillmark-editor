@@ -183,7 +183,7 @@ li.ProseMirror-selectednode::after {
    minting five more is the drift the scale exists to prevent. */
 .ProseMirror :is(h1, h2, h3, h4, h5, h6) {
 	font-size: inherit;
-	font-weight: var(--_qm-weight-label);
+	font-weight: var(--_qm-weight-strong);
 }
 
 /* ── The table island ────────────────────────────────────────────────────────
@@ -261,7 +261,7 @@ li.ProseMirror-selectednode::after {
    band cut into the paper rather than a layer stacked on it, and a rung either way
    rather than a shadow. The rest of a table's type is paper's. */
 .qm-table-header-row .qm-table-cell {
-	font-weight: var(--_qm-weight-label);
+	font-weight: var(--_qm-weight-strong);
 	background: var(--_qm-surface-sunken);
 	border-bottom: var(--_qm-border-width) solid var(--_qm-border);
 }

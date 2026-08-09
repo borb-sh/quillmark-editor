@@ -275,10 +275,23 @@
 		   a rung of hierarchy, and clear of the title rung, which one 9/8 step lands on
 		   exactly. */
 		--_qm-text-paper: calc(var(--_qm-text-body) * 16 / 15);
-		/* ONE weight over the regular: every heading here is a name over the value under
-		   it, so a second is a rung with no register beneath it. Hierarchy is the size
-		   ramp's. */
-		--_qm-weight-label: 600;
+		/* TWO weights over the regular, and only ONE of them is chrome. `mid` names
+		   everything the surface names — a card title, a section header, a field
+		   label, a nested property — so a stack of them reads as one register and
+		   hierarchy stays the size ramp's, which is the axis that can carry it.
+		   500 rather than 600 because the family dial resolves to the PLATFORM UI
+		   face, whose 600 is heavier at the same number than the webfont a surface
+		   is usually drawn against: at the label rung it goes smudgy, and three
+		   sizes of it down a card read as three weights of bold.
+
+		   `strong` is not a rung of that ramp. It is the mark a run wears where
+		   weight is the ONLY signal it has, and it appears at three: a heading
+		   inside a prose leaf, drawn at no size step of its own because the quill
+		   sets the paper's; a table island's header row; the stored value in an
+		   enum listbox. Reaching for it anywhere a size or a tone could speak is
+		   the drift the split exists to stop. */
+		--_qm-weight-strong: 600;
+		--_qm-weight-mid: 500;
 		/* Leading: the ramp's third axis, and it does not track the sizes one for one:
 		   two rungs, because a wrapped label and a wrapped paragraph want different
 		   rhythms and nothing wants four. `body` is reading rhythm (both prose leaves,
