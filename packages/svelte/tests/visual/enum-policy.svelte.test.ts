@@ -1,12 +1,9 @@
 // @vitest-environment jsdom
-// The enum-option policy's two arms, driven the way a pointer opens the listbox and
-// judged on the rows it draws. `classification` is the field the distinction exists
-// for: a level a deployment does not carry is not a level it withholds, and
-// `'disable'` is a promise only the second case can keep.
-//
-// The third case is the authored-value escape, which is what makes `'hide'` coherent
-// rather than merely shorter: the row the control has selected is drawn under either
-// policy, so the listbox still shows what the document says.
+// The enum-option policy's two arms and the authored-value escape (VISUAL_EDITOR
+// §"Enum policy"), driven the way a pointer opens the listbox and judged on the rows
+// it draws. `classification` is the case the distinction exists for, and the six
+// levels the reference quill declares leave a deployment carrying three with both
+// kinds of row in one list.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
 import type { Addr, Document, Quill } from '@quillmark/wasm';
@@ -14,19 +11,10 @@ import VisualEditor from '$lib/visual/VisualEditor.svelte';
 import type { VisualEditorProps } from '$lib/visual/props';
 import { quill } from '../helpers/fixtures.js';
 
-// jsdom implements none of these, and mounting the editor and opening a listbox
-// reach all of them: the card scroll hop, the reorder FLIP, the trigger's implicit
-// pointer-capture release, and floating-ui's observation of the anchor.
-Element.prototype.scrollIntoView ??= () => {};
-Element.prototype.getAnimations ??= () => [];
+// jsdom implements no pointer-capture API, and the trigger probes for one before it
+// opens. `false` is the whole of what it needs: with nothing captured, the release
+// beside it is never reached.
 Element.prototype.hasPointerCapture ??= () => false;
-Element.prototype.setPointerCapture ??= () => {};
-Element.prototype.releasePointerCapture ??= () => {};
-globalThis.ResizeObserver ??= class {
-	observe(): void {}
-	unobserve(): void {}
-	disconnect(): void {}
-};
 
 /** The levels this deployment does not carry, in the reference quill's own set. */
 const WITHHELD = ['CONFIDENTIAL', 'SECRET', 'TOP SECRET'];
