@@ -8,12 +8,17 @@ import { fileURLToPath } from 'node:url';
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Every workspace package, sorted by directory: `{ dir, at, json }`. */
+/** Every workspace package, sorted by directory: `{ dir, at, json }`. `packages/*` is the
+ *  root manifest's own workspace glob, so a directory there with no manifest is named
+ *  rather than opened: the throw is otherwise a bare ENOENT from whichever gate read it
+ *  first, which reads as a broken gate rather than as output written where packages go. */
 export function packages() {
 	return readdirSync(join(ROOT, 'packages'))
 		.sort()
 		.map((dir) => {
 			const at = join(ROOT, 'packages', dir);
+			if (!existsSync(join(at, 'package.json')))
+				throw new Error(`packages/${dir}: no package.json — packages/ holds workspace packages`);
 			return { dir, at, json: JSON.parse(readFileSync(join(at, 'package.json'), 'utf8')) };
 		});
 }
