@@ -42,7 +42,7 @@ describe('mergeStrings', () => {
 		expect(merged.cardDelete).toBe('Supprimer la carte');
 		// Every other key is still the package's, including the parametric ones.
 		expect(merged.cardMoveUp).toBe(DEFAULT_VISUAL_STRINGS.cardMoveUp);
-		expect(merged.addCardOfKind('Indorsement')).toBe('Add Indorsement');
+		expect(merged.tipsDot(1, 3)).toBe('Tip 1 of 3');
 	});
 
 	it('takes the package set whole when nothing is passed', () => {
@@ -53,13 +53,13 @@ describe('mergeStrings', () => {
 describe('strings on the mounted surface', () => {
 	it('renders an overridden accessible name and leaves the rest English', () => {
 		const { target } = mountEditor({
-			strings: { addCardOfKind: (kind: string) => `Ajouter : ${kind}` }
+			strings: { addCard: 'Ajouter une carte' }
 		});
 
-		// The reference quill declares ONE card kind, so the add trigger is the
-		// single-kind button, whose accessible name is the kind it seeds.
+		// The strip queried is the one ahead of the first card, which carries no
+		// visible words, so the wording lands on it as an `aria-label`.
 		const add = target.querySelector('.qm-add-btn');
-		expect(add?.getAttribute('aria-label')).toBe('Ajouter : Indorsement');
+		expect(add?.getAttribute('aria-label')).toBe('Ajouter une carte');
 
 		// An untouched key still reads the package's English on the same surface.
 		const titles = [...target.querySelectorAll('[title]')].map((el) => el.getAttribute('title'));
@@ -67,10 +67,10 @@ describe('strings on the mounted surface', () => {
 	});
 
 	it('re-renders when the wording changes under a live mount', () => {
-		const { target, bag } = mountEditor({ strings: { addCardOfKind: () => 'FIRST' } });
+		const { target, bag } = mountEditor({ strings: { addCard: 'FIRST' } });
 		expect(target.querySelector('.qm-add-btn')?.getAttribute('aria-label')).toBe('FIRST');
 
-		bag.strings = { addCardOfKind: () => 'SECOND' };
+		bag.strings = { addCard: 'SECOND' };
 		flushSync();
 		expect(target.querySelector('.qm-add-btn')?.getAttribute('aria-label')).toBe('SECOND');
 	});

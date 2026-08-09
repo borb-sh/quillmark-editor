@@ -941,15 +941,14 @@
 		{@const marked = atIndex === model.cards.length}
 		<div class="qm-add-card" class:qm-add-card-marked={marked}>
 			<!-- Marked, the words ARE the accessible name and no `aria-label` doubles
-			 them; bare, the kind is the whole reading, the one with no geometry to
-			 carry it. -->
+			 them; bare, the same words land as the label, the strip having no
+			 geometry to carry them. -->
 			{#if kinds.length === 1}
 				<button
 					type="button"
 					class="qm-add-btn qm-add-affordance"
-					aria-label={marked ? undefined : merged.addCardOfKind(humanize(kinds[0]))}
-					onclick={() => addCard(atIndex, kinds[0])}
-					>{marked ? merged.addCardMark(humanize(kinds[0])) : ''}</button
+					aria-label={marked ? undefined : merged.addCard}
+					onclick={() => addCard(atIndex, kinds[0])}>{marked ? merged.addCard : ''}</button
 				>
 			{:else}
 				<!-- Multi-kind add: pick the kind, then seed + insert. A MENU rather than a
@@ -961,7 +960,7 @@
 					<DropdownMenu.Trigger
 						class="qm-add-btn qm-add-affordance"
 						aria-label={marked ? undefined : merged.addCard}
-						>{marked ? merged.addCardMarkAny : ''}</DropdownMenu.Trigger
+						>{marked ? merged.addCard : ''}</DropdownMenu.Trigger
 					>
 					<DropdownMenu.Portal to={rootEl}>
 						<DropdownMenu.Content sideOffset={4}>
