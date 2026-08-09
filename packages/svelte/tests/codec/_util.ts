@@ -103,10 +103,12 @@ export function mount(): HTMLElement {
 }
 
 /** Drive one key at a MOUNTED view the way the browser does, through the props the
- *  plugin stack registered. The `keyDriver` above is the other half of this: it runs
- *  a keymap directly, without a view, where what is under test is the binding. */
-export function press(view: EditorView, key: string): void {
-	const event = new KeyboardEvent('keydown', { key, bubbles: true });
+ *  plugin stack registered. `init` carries the modifiers, which prosemirror-keymap
+ *  reads off the event rather than off the key name. The `keyDriver` above is the other
+ *  half of this: it runs a keymap directly, without a view, where what is under test is
+ *  the binding. */
+export function press(view: EditorView, key: string, init: KeyboardEventInit = {}): void {
+	const event = new KeyboardEvent('keydown', { key, bubbles: true, ...init });
 	view.someProp('handleKeyDown', (f) => f(view, event));
 }
 

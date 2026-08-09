@@ -73,7 +73,10 @@ export interface TableChromeStrings {
 	/** A cell's accessible name: nothing else names a nested leaf. */
 	tableCell: (row: string, column: string) => string;
 	/** A grip's name. It SELECTS its line, and the verbs are then the selection's
-	 *  (Backspace, Alt+arrows) or the drag's, so the name is the gesture. */
+	 *  (Backspace, Alt+arrows) or the drag's, so the name is the gesture. Row 0 takes a
+	 *  name of its own for the reason it takes one above: the gesture is every other
+	 *  row's, but the line it names is still the header and not "row 0". */
+	tableSelectHeaderRow: string;
 	tableSelectRow: (index: number) => string;
 	tableSelectColumn: (index: number) => string;
 	/** The two trailing bars, each of which grows the table along its own axis. */
@@ -94,6 +97,7 @@ export const DEFAULT_TABLE_STRINGS: TableChromeStrings = {
 	tableRow: (index) => `Row ${index}`,
 	tableColumn: (index) => `Column ${index}`,
 	tableCell: (row, column) => `${row}, ${column}`,
+	tableSelectHeaderRow: 'Select header row',
 	tableSelectRow: (index) => `Select row ${index}`,
 	tableSelectColumn: (index) => `Select column ${index}`,
 	tableAddRow: 'Add row',
@@ -469,8 +473,9 @@ class TableIslandView implements NodeView {
 	}
 
 	/** The island as the selection: Escape out of a cell or a line, which is the whole of
-	 *  what selects it, and Backspace over it is what deletes the table
-	 *  (CODEC §"The table island"). */
+	 *  what selects it. Backspace there deletes the table, as it does over every other
+	 *  island; the cell selection covering every rank reaches the same delete without
+	 *  leaving the grid (CODEC §"The table island"). */
 	private selectIsland(): void {
 		const pos = this.getPos();
 		if (pos == null) return;
@@ -566,11 +571,12 @@ class TableIslandView implements NodeView {
 			: { r0: 0, c0: line.index, r1: rowCount(props) - 1, c1: line.index };
 	}
 
-	/** The index space an axis allows. Stated once, because "the header is the floor"
-	 *  is a rule three callers would otherwise each spell out. */
+	/** The index space an axis allows: the whole of it, on both. The header is row 0 and
+	 *  not a floor above it — a walk reaches it, a drag lands on it, and the row that
+	 *  lands there becomes the header (`table.ts` §{@link moveRow}). */
 	private bounds(axis: Axis, props: TableProps): { floor: number; limit: number } {
 		return axis === 'row'
-			? { floor: 1, limit: rowCount(props) - 1 }
+			? { floor: 0, limit: rowCount(props) - 1 }
 			: { floor: 0, limit: columnCount(props) - 1 };
 	}
 
@@ -663,10 +669,14 @@ class TableIslandView implements NodeView {
 	/**
 	 * What Backspace means over the selection, decided by its EXTENT rather than by the
 	 * gesture that drew it (CODEC §"The table island"): a rectangle spanning every row
-	 * covers whole COLUMNS and deletes them, one spanning every column covers whole
-	 * ROWS, and anything else covers no rank at all and is CLEARED. The rectangle
-	 * spanning BOTH is the whole table, which is no rank deletion — one leaves a table
-	 * with fewer ranks — so it clears with the rest.
+	 * covers whole COLUMNS and deletes them, one spanning every column covers whole ROWS
+	 * and deletes those, one spanning BOTH is the whole table and deletes the ISLAND, and
+	 * anything else covers no rank at all and is cleared.
+	 *
+	 * The both-axes arm is the rule's own limit rather than an exception to it: what a
+	 * delete over a selection means is that the selected thing goes, and every rank going
+	 * at once leaves no table for a rank rule to have produced. It is the whole of how a
+	 * pointer deletes a table, and on a one-column or one-row table a single grip draws it.
 	 */
 	private deleteSelection(): void {
 		const held = this.selected;
@@ -674,32 +684,40 @@ class TableIslandView implements NodeView {
 		const props = this.props();
 		const wide = held.c0 === 0 && held.c1 === columnCount(props) - 1;
 		const tall = held.r0 === 0 && held.r1 === rowCount(props) - 1;
-		if (tall && !wide) return this.dropColumns(held);
-		if (wide && !tall) return this.dropRows(held);
+		if (tall && wide) return this.deleteIsland();
+		if (tall) return this.dropColumns(held);
+		if (wide) return this.dropRows(held);
 		this.write(clearCells(props, held.r0, held.c0, held.r1, held.c1));
 		this.select(held);
 	}
 
-	/** Drop the body rows the selection covers, high index first so the ones still to go
-	 *  keep their indices, and empty the header's cells if the selection reached them:
-	 *  `header: []` is not a table, so that rank cannot go and its cells are cleared
-	 *  instead. One `write`, so the whole gesture is one undo step. */
-	private dropRows(held: Cells): void {
-		const from = Math.max(1, held.r0);
-		let props = this.props();
-		if (held.r0 === 0) props = clearCells(props, 0, held.c0, 0, held.c1);
-		for (let r = held.r1; r >= from; r--) props = deleteRow(props, r);
-		this.write(props);
-		// A header-only selection deleted nothing, so it still names what it named.
-		if (held.r1 < from) return this.select(held);
-		const rows = rowCount(this.props());
-		if (rows > 1) this.selectLine({ axis: 'row', index: Math.max(1, Math.min(from, rows - 1)) });
-		else this.clearSelection();
+	/** Delete the whole island: an ordinary delete on the OUTER view, so the table goes
+	 *  the way the node selection's Backspace already took it and rides the same undo
+	 *  stack. The selection is dropped without a repaint: the DOM holding it is about to
+	 *  be gone. */
+	private deleteIsland(): void {
+		const pos = this.getPos();
+		if (pos == null) return;
+		this.selected = undefined;
+		this.outer.focus();
+		this.outer.dispatch(this.outer.state.tr.delete(pos, pos + this.node.nodeSize));
 	}
 
-	/** Drop the columns the selection covers. It never covers them all — that is the
-	 *  clear case above — so the rectangle's floor of one is never reached here, and
-	 *  every selected cell leaves with its column. */
+	/** Drop the rows the selection covers, high index first so the ones still to go keep
+	 *  their indices, and select whatever took the first one's place. The header is among
+	 *  them like any other row, and the row left at index 0 is the header afterwards. One
+	 *  `write`, so the whole gesture is one undo step. */
+	private dropRows(held: Cells): void {
+		let props = this.props();
+		for (let r = held.r1; r >= held.r0; r--) props = deleteRow(props, r);
+		this.write(props);
+		this.selectLine({ axis: 'row', index: Math.min(held.r0, rowCount(this.props()) - 1) });
+	}
+
+	/** Drop the columns the selection covers, and select what took the first one's place.
+	 *  Neither this nor {@link TableIslandView.dropRows} can empty the table: a rectangle
+	 *  covering every rank of its axis spans the other one too, which is the island arm
+	 *  above, so a rank always survives here. */
 	private dropColumns(held: Cells): void {
 		let props = this.props();
 		for (let c = held.c1; c >= held.c0; c--) props = deleteColumn(props, c);
@@ -939,14 +957,19 @@ class TableIslandView implements NodeView {
 			const host = el('div', 'qm-table-cell-host');
 			box.appendChild(host);
 
-			// The COLUMN band hangs off the header row; the ROW band off each body row's
-			// first cell. Both are absolutely positioned into the frame's own padding, so
-			// neither is in the grid's layout and neither is a cell of its own. The header
-			// carries no row grip: it cannot be deleted (`header: []` is not a table) and
-			// nothing goes above it, so there is no line to select.
+			// The COLUMN band hangs off the header row; the ROW band off every row's first
+			// cell, the header's included. Both are absolutely positioned into the frame's
+			// own padding, so neither is in the grid's layout and neither is a cell of its
+			// own, and the two the header's first cell carries hang off perpendicular edges
+			// and meet at no point. The header takes a grip because a row grip acts on a
+			// ROW and the header is one: it selects, it deletes, and it drags, all by the
+			// rules every other row is under.
 			if (r === 0)
 				box.appendChild(this.grip({ axis: 'column', index: c }, s.tableSelectColumn(c + 1)));
-			else if (c === 0) box.appendChild(this.grip({ axis: 'row', index: r }, s.tableSelectRow(r)));
+			if (c === 0)
+				box.appendChild(
+					this.grip({ axis: 'row', index: r }, r === 0 ? s.tableSelectHeaderRow : s.tableSelectRow(r))
+				);
 			tr.appendChild(box);
 			this.mountCell(box, host, r, c, s);
 		});

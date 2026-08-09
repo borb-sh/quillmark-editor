@@ -24,6 +24,7 @@ import {
 	emptyCell,
 	insertColumn,
 	insertRow,
+	moveRow,
 	newTable,
 	normalizeTable,
 	rowCells,
@@ -82,6 +83,9 @@ describe('the rectangle survives every op', () => {
 		{ name: 'insert a row below the header', run: (p) => insertRow(p, 0) },
 		{ name: 'insert a row below the last', run: (p) => insertRow(p, rowCount(p) - 1) },
 		{ name: 'delete a body row', run: (p) => deleteRow(p, 1) },
+		{ name: 'delete the header row', run: (p) => deleteRow(p, 0) },
+		{ name: 'move the header row down', run: (p) => moveRow(p, 0, 1) },
+		{ name: 'move a body row up into the header', run: (p) => moveRow(p, 2, -2) },
 		{ name: 'insert a column left', run: (p) => insertColumn(p, -1) },
 		{ name: 'insert a column right', run: (p) => insertColumn(p, 0) },
 		{ name: 'delete a column', run: (p) => deleteColumn(p, 1) },
@@ -116,8 +120,31 @@ describe('the rectangle survives every op', () => {
 });
 
 describe('what the model already answers', () => {
-	it('the header has no delete: `header: []` is not a table', () => {
-		expect(grid(deleteRow(LETTERED, 0))).toEqual(grid(LETTERED));
+	it('the header deletes like any row: the one under it takes index 0', () => {
+		expect(grid(deleteRow(LETTERED, 0))).toEqual([
+			['a1', 'a2'],
+			['b1', 'b2']
+		]);
+	});
+
+	it('the header MOVES like any row, and being the header is holding index 0', () => {
+		// Down one: the body row it passed lands at index 0 and is the header now.
+		expect(grid(moveRow(LETTERED, 0, 1))).toEqual([
+			['a1', 'a2'],
+			['h1', 'h2'],
+			['b1', 'b2']
+		]);
+		// And the reverse trip: the last body row carried to the top becomes the header.
+		expect(grid(moveRow(LETTERED, 2, -2))).toEqual([
+			['b1', 'b2'],
+			['h1', 'h2'],
+			['a1', 'a2']
+		]);
+	});
+
+	it('the LAST row is the one the model keeps: under it there is no table', () => {
+		const one = normalizeTable({ header: [cell('h')], rows: [], aligns: ['none'] });
+		expect(grid(deleteRow(one, 0))).toEqual([['h']]);
 	});
 
 	it('a one-column table keeps its column', () => {
@@ -178,9 +205,9 @@ function tableLeaf(props?: TableProps) {
 	return { doc, field };
 }
 
-/** The row grips, in order (body rows only), and the column grips. Both read off the
- *  axis each declares, which is what leaves the two caps out of either set: neither
- *  names a line. */
+/** The row grips, in order and the header's first, and the column grips. Both read off
+ *  the axis each declares, which is what leaves the two caps out of either set: neither
+ *  names a line. So a row grip's index in this set IS its row in the chrome's space. */
 function grips(field: FieldController, kind: 'row' | 'column'): HTMLButtonElement[] {
 	return Array.from(
 		field.el.querySelectorAll<HTMLButtonElement>(`.qm-table-grip[data-axis='${kind}']`)
@@ -259,12 +286,15 @@ describe('the table NodeView', () => {
 		const { field } = tableLeaf(LETTERED);
 		expect(field.el.querySelectorAll('.qm-table-cell-host').length).toBe(6);
 		expect(field.el.querySelectorAll('th.qm-table-cell').length).toBe(2);
-		// One grip per COLUMN and per BODY row: the header carries no row grip,
-		// since `header: []` is not a table and nothing goes above it.
+		// One grip per column and one per ROW, the header's included: it is a row, and a
+		// row grip acts on rows.
 		expect(grips(field, 'column')).toHaveLength(2);
-		expect(grips(field, 'row')).toHaveLength(2);
+		expect(grips(field, 'row')).toHaveLength(3);
+		// The header's own grip is named for the line it draws, not for an index it
+		// would share with the first body row.
+		expect(grips(field, 'row')[0].getAttribute('aria-label')).toBe('Select header row');
 		// The band's ends are two: one cap per axis, and nothing at the origin — the
-		// whole table is a keyboard subject (Escape), not a control.
+		// whole table is what a selection covering every rank says, not a control.
 		expect(field.el.querySelectorAll('.qm-table-add')).toHaveLength(2);
 		expect(field.el.querySelectorAll('.qm-table-corner')).toHaveLength(0);
 		// And the grid is the DATA's shape: the chrome is in no row and no column of
@@ -309,27 +339,43 @@ describe('the table NodeView', () => {
 
 	it('a grip SELECTS its line: the wash is the whole of what the FIRST press does', () => {
 		const { field } = tableLeaf(LETTERED);
-		grips(field, 'row')[0].click();
+		grips(field, 'row')[1].click();
 		// Row 1 in the chrome's space, which is the first BODY row.
 		expect(washed(field)).toEqual(['1,0', '1,1']);
-		expect(grips(field, 'row')[0].getAttribute('aria-pressed')).toBe('true');
+		expect(grips(field, 'row')[1].getAttribute('aria-pressed')).toBe('true');
 		// Nothing was armed on the document: the island is not what got selected.
 		expect(outerView(field).state.selection instanceof NodeSelection).toBe(false);
 		grips(field, 'column')[1].click();
 		expect(washed(field)).toEqual(['0,1', '1,1', '2,1']);
-		expect(grips(field, 'row')[0].getAttribute('aria-pressed')).toBe('false');
+		expect(grips(field, 'row')[1].getAttribute('aria-pressed')).toBe('false');
 		field.destroy();
 	});
 
 	it('Backspace over a selected row deletes it', () => {
 		const { field } = tableLeaf(LETTERED);
-		const grip = grips(field, 'row')[0];
+		const grip = grips(field, 'row')[1];
 		grip.click();
 		key(grip, 'Backspace');
 		expect(grid(leafProps(field))).toEqual([
 			['h1', 'h2'],
 			['b1', 'b2']
 		]);
+		field.destroy();
+	});
+
+	it('the HEADER row deletes the same way, and the row under it takes its place', () => {
+		const { field } = tableLeaf(LETTERED);
+		const grip = grips(field, 'row')[0];
+		grip.click();
+		expect(washed(field)).toEqual(['0,0', '0,1']);
+		key(grip, 'Backspace');
+		// A table is one row shorter and still has a header, which is the whole of what
+		// the model asked for. Alignment is the COLUMN's, so it does not travel.
+		expect(grid(leafProps(field))).toEqual([
+			['a1', 'a2'],
+			['b1', 'b2']
+		]);
+		expect(leafProps(field).aligns).toEqual(['left', 'right']);
 		field.destroy();
 	});
 
@@ -345,30 +391,34 @@ describe('the table NodeView', () => {
 
 	it('an arrow steps the selection, and stops where the axis does', () => {
 		const { field } = tableLeaf(LETTERED);
-		const grip = grips(field, 'row')[0];
+		const grip = grips(field, 'row')[1];
 		grip.click();
 		key(grip, 'ArrowDown');
 		expect(washed(field)).toEqual(['2,0', '2,1']);
-		// Up twice from there stops at the first BODY row: the header carries no grip,
-		// so it is never the selected line.
+		// Up runs to the HEADER and stops there, the row axis floor being row 0 like
+		// every other index the chrome walks.
+		key(grips(field, 'row')[2], 'ArrowUp');
 		key(grips(field, 'row')[1], 'ArrowUp');
+		expect(washed(field)).toEqual(['0,0', '0,1']);
 		key(grips(field, 'row')[0], 'ArrowUp');
-		expect(washed(field)).toEqual(['1,0', '1,1']);
+		expect(washed(field)).toEqual(['0,0', '0,1']);
 		field.destroy();
 	});
 
-	it('where the model keeps the line, the gesture CLEARS it: the last column', () => {
-		const { field } = tableLeaf(newTable(1, 1));
+	it('the one line that IS the table deletes it: a one-column table, its grip', () => {
+		const { doc, field } = tableLeaf(newTable(1, 1));
 		const grip = grips(field, 'column')[0];
 		grip.click();
+		// That rectangle spans both axes — the column is every column and it runs every
+		// row — so it is the table, and the table is what goes.
 		key(grip, 'Backspace');
-		expect(columnCount(leafProps(field))).toBe(1);
+		expect(doc.main.body.islands).toHaveLength(0);
 		field.destroy();
 	});
 
 	it('Alt+arrow moves the selected line, and the selection travels with it', () => {
 		const { field } = tableLeaf(LETTERED);
-		const grip = grips(field, 'row')[0];
+		const grip = grips(field, 'row')[1];
 		grip.click();
 		key(grip, 'ArrowDown', { altKey: true });
 		expect(grid(leafProps(field))).toEqual([
@@ -396,9 +446,25 @@ describe('the table NodeView', () => {
 		field.destroy();
 	});
 
-	it('Escape leaves a line selection for the island, one rung up the ladder', () => {
+	it('Alt+arrow carries the header down, and the row it passed is the header now', () => {
 		const { field } = tableLeaf(LETTERED);
 		const grip = grips(field, 'row')[0];
+		grip.click();
+		key(grip, 'ArrowDown', { altKey: true });
+		expect(grid(leafProps(field))).toEqual([
+			['a1', 'a2'],
+			['h1', 'h2'],
+			['b1', 'b2']
+		]);
+		// The selection travels with the LINE, which is now row 1 and no longer the
+		// header: what a grip names is an index, and the move handed index 0 over.
+		expect(washed(field)).toEqual(['1,0', '1,1']);
+		field.destroy();
+	});
+
+	it('Escape leaves a line selection for the island, one rung up the ladder', () => {
+		const { field } = tableLeaf(LETTERED);
+		const grip = grips(field, 'row')[1];
 		grip.click();
 		key(grip, 'Escape');
 		const selection = outerView(field).state.selection;
@@ -409,7 +475,7 @@ describe('the table NodeView', () => {
 
 	it('a caret in a cell drops the line selection: one subject at a time', () => {
 		const { field } = tableLeaf(LETTERED);
-		grips(field, 'row')[0].click();
+		grips(field, 'row')[1].click();
 		expect(washed(field)).not.toEqual([]);
 		cellViews(field)[0].focus();
 		expect(washed(field)).toEqual([]);
@@ -560,19 +626,30 @@ describe('a selection is a rectangle of cells, and Backspace reads its extent', 
 		field.destroy();
 	});
 
-	it('the whole table CLEARS: the model keeps both lines, so nothing else is honest', () => {
-		const { field } = tableLeaf(LETTERED);
+	it('the whole table is the ISLAND, and Backspace deletes it', () => {
+		const { doc, field } = tableLeaf(LETTERED);
 		layout(field);
 		sweep(field, 0, 5); // every cell
 		expect(washed(field)).toHaveLength(6);
 		press(cellViews(field)[0], 'Backspace');
-		// A header is not a row and the rectangle floors at one column, so "remove every
-		// line" has no reading the model can honour and emptying is the one left.
-		expect(grid(leafProps(field))).toEqual([
-			['', ''],
-			['', ''],
-			['', '']
-		]);
+		// The rule's own limit: every rank going at once leaves no table for a rank
+		// deletion to have produced, so what the selection covers is the table.
+		expect(doc.main.body.islands).toHaveLength(0);
+		expect(doc.main.body.text).toBe('para\ntail');
+		field.destroy();
+	});
+
+	it('one Mod-z brings the deleted table back whole', () => {
+		const { doc, field } = tableLeaf(LETTERED);
+		layout(field);
+		sweep(field, 0, 5);
+		press(cellViews(field)[0], 'Backspace');
+		expect(doc.main.body.islands).toHaveLength(0);
+		// The delete is an ordinary transaction on the leaf's own view, so it rides the
+		// one undo stack every other op here does and comes back in one step.
+		press(outerView(field), 'z', { ctrlKey: true });
+		expect(doc.main.body.islands).toHaveLength(1);
+		expect(grid(leafProps(field))).toEqual(grid(LETTERED));
 		field.destroy();
 	});
 
@@ -599,55 +676,58 @@ describe('a selection is a rectangle of cells, and Backspace reads its extent', 
 
 	it('a grip draws the same rectangle its line covers', () => {
 		const { field } = tableLeaf(LETTERED);
-		grips(field, 'row')[0].click();
+		grips(field, 'row')[1].click();
 		expect(washed(field)).toEqual(['1,0', '1,1']);
 		// Swept or named, one rectangle: the grip is marked exactly when the selection is
 		// its own line, which is the only thing that tells the two gestures apart.
-		expect(grips(field, 'row')[0].getAttribute('aria-pressed')).toBe('true');
+		expect(grips(field, 'row')[1].getAttribute('aria-pressed')).toBe('true');
 		layout(field);
 		sweep(field, 2, 3);
 		expect(washed(field)).toEqual(['1,0', '1,1']);
-		expect(grips(field, 'row')[0].getAttribute('aria-pressed')).toBe('true');
+		expect(grips(field, 'row')[1].getAttribute('aria-pressed')).toBe('true');
 		field.destroy();
 	});
 
-	it('every selected cell goes with its rank or is cleared, and never a third way', () => {
+	it('every selected cell goes with its rank, header and all', () => {
 		const { field } = tableLeaf(LETTERED);
 		layout(field);
-		// The header AND the first body row, across every column: the body row's rank
-		// goes, and the header's — which is `header`, not a member of `rows` — cannot, so
-		// its cells are emptied where they stand. A cell left holding its old text would
-		// be the third outcome this rule exists to forbid.
+		// The header AND the first body row, across every column: two rows, and both go.
+		// The header being stored apart from `rows` buys it no exemption — the row left
+		// at index 0 is the header, so the table below is one that lost two ranks.
 		sweep(field, 0, 3);
 		expect(washed(field)).toEqual(['0,0', '0,1', '1,0', '1,1']);
 		press(cellViews(field)[0], 'Backspace');
-		expect(grid(leafProps(field))).toEqual([
-			['', ''],
-			['b1', 'b2']
-		]);
+		expect(grid(leafProps(field))).toEqual([['b1', 'b2']]);
 		field.destroy();
 	});
 
-	it('the header row alone CLEARS: `header: []` is not a table', () => {
+	it('the header row alone deletes, and the row under it is the header now', () => {
 		const { field } = tableLeaf(LETTERED);
 		layout(field);
 		sweep(field, 0, 1); // the whole header, and nothing under it
 		press(cellViews(field)[0], 'Backspace');
 		expect(grid(leafProps(field))).toEqual([
-			['', ''],
 			['a1', 'a2'],
 			['b1', 'b2']
 		]);
+		// And it is the HEADER cell it landed in: the `thead` holds one row, whichever
+		// row that is.
+		expect(field.el.querySelectorAll('th.qm-table-cell')[0].textContent).toBe('a1');
 		field.destroy();
 	});
 
-	it('the last column CLEARS: the rectangle floors at one', () => {
-		const { field } = tableLeaf(newTable(1, 1));
-		const grip = grips(field, 'column')[0];
-		grip.click();
-		key(grip, 'Backspace');
-		expect(columnCount(leafProps(field))).toBe(1);
-		expect(grid(leafProps(field))).toEqual([[''], ['']]);
+	it('a sub-rectangle is the only thing left that clears', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		// One cell: it spans neither axis, so no rank covers it and no rank can go.
+		sweep(field, 0, 2);
+		expect(washed(field)).toEqual(['0,0', '1,0']);
+		press(cellViews(field)[0], 'Backspace');
+		expect(grid(leafProps(field))).toEqual([
+			['', 'h2'],
+			['', 'a2'],
+			['b1', 'b2']
+		]);
 		field.destroy();
 	});
 });
@@ -684,7 +764,7 @@ describe('a grip drag moves its line', () => {
 		layout(field);
 		// The mousedown-then-travel that sweeps a block from a cell's own host (above),
 		// aimed at the grip inside that same cell.
-		pressAt(grips(field, 'row')[0], 35, 55);
+		pressAt(grips(field, 'row')[1], 35, 55);
 		for (const [x, y] of [
 			[60, 60],
 			[150, 80]
@@ -703,7 +783,7 @@ describe('a grip drag moves its line', () => {
 		const { field } = tableLeaf(LETTERED);
 		layout(field);
 		// Row 1 (45–65 in the stubbed geometry) lifted and carried into row 2's extent.
-		dragGrip(grips(field, 'row')[0], [
+		dragGrip(grips(field, 'row')[1], [
 			[35, 55],
 			[35, 60],
 			[35, 80]
@@ -716,6 +796,29 @@ describe('a grip drag moves its line', () => {
 		// The selection travels with the line, or the next Alt+arrow acts on whatever
 		// took the index.
 		expect(washed(field)).toEqual(['2,0', '2,1']);
+		field.destroy();
+	});
+
+	it('a body row dragged onto the header becomes the header', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		// Row 2 (70–85) lifted and carried up into row 0's extent (20–40), which the drag
+		// reaches because the row axis runs to 0 like the column one does.
+		dragGrip(grips(field, 'row')[2], [
+			[35, 78],
+			[35, 70],
+			[35, 30]
+		]);
+		expect(grid(leafProps(field))).toEqual([
+			['b1', 'b2'],
+			['h1', 'h2'],
+			['a1', 'a2']
+		]);
+		expect(washed(field)).toEqual(['0,0', '0,1']);
+		// The drop landed in `header`, not on top of it: the `thead` is one row deep
+		// however many rows have passed through index 0.
+		expect(field.el.querySelectorAll('thead tr')).toHaveLength(1);
+		expect(field.el.querySelectorAll('th.qm-table-cell')[0].textContent).toBe('b1');
 		field.destroy();
 	});
 });
