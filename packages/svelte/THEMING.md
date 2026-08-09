@@ -2,7 +2,7 @@
 
 `@quillmark/svelte` ships complex UX over a thin skin: the surfaces carry the behavior (direct manipulation, the caret bridge, per-field state) against a neutral visual baseline a consumer restyles to its brand without fighting baked-in design.
 
-There are three depths to that. An app mounting into an unstyled page stops at the first; an app with a theme of its own starts at the second, where two of the dials are correctness rather than brand:
+There are three depths to that. An app mounting into an unstyled page stops at the first; an app with a plate of its own starts at the second:
 
 |                   | You write             | You get                                                 |
 | ----------------- | --------------------- | ------------------------------------------------------- |
@@ -41,9 +41,9 @@ The whole contract is **ten CSS custom properties**. They are dials, not a palet
 
 ### Two of them are not branding
 
-`--qm-bg` and `--qm-fg` are what a themed host hands over before any brand decision. Their defaults are a self-consistent neutral for a bare mounting site, not a guess at your page: an app that paints its own plate and leaves them mounts one plate inside another, and two tones a few percent apart read as a fault rather than as a layer. Meet the host's tone exactly, or stand far enough off it to be a layer; the near miss is neither.
+`--qm-bg` and `--qm-fg` are the two a themed host sets before any brand decision. Their defaults are a self-consistent neutral for a bare mounting site, not a guess at your page: an app that paints its own plate and leaves them mounts one plate inside another. Two tones a few percent apart read as a fault rather than as a layer, so meet your page's tone exactly or stand far enough off it to be a layer.
 
-There is no `transparent` or `inherit` that skips the line. The poles are a mixing basis rather than a paint: the raised surfaces, the borders and the muted inks are each a `color-mix` against `--qm-bg`, so a transparent pole half-dissolves every one of them instead of letting the page through. Hand over the value your page is painted with and the derivation steps off it.
+The poles take a colour, not `transparent` or `inherit`: the raised surfaces, the borders and the muted inks are each a `color-mix` against `--qm-bg`, so a transparent pole makes every one of them translucent instead of letting your page through. Hand over the value your page is painted with and the derivation steps off it.
 
 ### The dials
 
