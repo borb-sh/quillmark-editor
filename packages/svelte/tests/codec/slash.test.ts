@@ -248,6 +248,88 @@ describe('a dismissal edits no text; a pick consumes exactly the run', () => {
 	});
 });
 
+describe('a pick lands in the container the caret was writing in', () => {
+	/** Pick `id` with the trigger typed at the START of the block holding USV `pos`: a
+	 *  boundary the menu opens on, and the one that leaves the block's own text intact
+	 *  once the run is consumed, so an assertion reads the structure and nothing else. */
+	function pick(field: FieldController, view: EditorView, pos: number, id = 'table'): void {
+		field.setCaret(pos);
+		type(view, `/${id}`);
+		press(view, 'Enter');
+	}
+
+	/** The `list_item` container an item at `ordinal` carries. */
+	const item = (ordinal: number, ordered = false) => ({
+		container: 'list_item',
+		ordered,
+		start: 1,
+		ordinal
+	});
+
+	it('nests a table in the bullet item the caret was in', () => {
+		const { field, view } = leaf('- alpha\n- beta');
+		pick(field, view, 0);
+		const stored = field.getContent();
+		expect(stored.text).toBe('alpha\n￼\nbeta');
+		expect(stored.lines.map((l) => l.kind)).toEqual(['para', 'island', 'para']);
+		expect(stored.lines[1].containers).toEqual([item(0)]);
+		field.destroy();
+	});
+
+	it('nests it in an ordered item, whose ordinal the island line carries', () => {
+		const { field, view } = leaf('1. alpha\n2. beta');
+		pick(field, view, 6);
+		const stored = field.getContent();
+		expect(stored.lines.map((l) => l.kind)).toEqual(['para', 'para', 'island', 'para']);
+		expect(stored.lines[2].containers).toEqual([item(1, true)]);
+		field.destroy();
+	});
+
+	it('nests it at the depth of a nested item, carrying the whole path', () => {
+		const { field, view } = leaf('- alpha\n    - beta');
+		pick(field, view, 6);
+		const stored = field.getContent();
+		expect(stored.lines[2].containers).toEqual([item(0), item(0)]);
+		field.destroy();
+	});
+
+	it('nests it in a quote', () => {
+		const { field, view } = leaf('> alpha');
+		pick(field, view, 0);
+		const stored = field.getContent();
+		expect(stored.lines[1].containers).toEqual([{ container: 'quote' }]);
+		field.destroy();
+	});
+
+	it('mints the exit paragraph at the end of the BODY', () => {
+		const { field, view } = leaf('- alpha\n- beta');
+		pick(field, view, 6);
+		const stored = field.getContent();
+		expect(stored.text).toBe('alpha\nbeta\n￼\n');
+		expect(stored.lines.map((l) => l.kind)).toEqual(['para', 'para', 'island', 'para']);
+		// The exit is the ITEM's: the island opened inside it, so the way out is there too.
+		expect(stored.lines[3].containers).toEqual([item(1)]);
+		field.destroy();
+	});
+
+	it('mints none where the doc goes on, a non-last item having the next to type in', () => {
+		const { field, view } = leaf('- alpha\n- beta');
+		pick(field, view, 0);
+		// Three lines, not four: a fourth would be an empty continuation of item 0, which
+		// the reference quill typesets as an unnumbered paragraph.
+		expect(field.getContent().lines).toHaveLength(3);
+		field.destroy();
+	});
+
+	it('lands the caret in the fresh cell even where no exit paragraph follows', () => {
+		const { field, view } = leaf('- alpha\n- beta');
+		pick(field, view, 0);
+		const focused = (field as FieldController & LeafViews).focusedView();
+		expect((field as FieldController & LeafViews).nestedViews()).toContain(focused);
+		field.destroy();
+	});
+});
+
 describe('the menu does not disturb the body it sits in', () => {
 	it('Enter with no menu open still splits a paragraph', () => {
 		const { field, view } = leaf('para');
