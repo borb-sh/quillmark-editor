@@ -185,7 +185,7 @@
 	   button carries a label and so widens its inset and takes the meta type rung. */
 	.qm-tips-action {
 		padding: var(--_qm-space-half) var(--_qm-space-2);
-		font-size: var(--_qm-text-meta);
+		font-size: var(--_qm-text-label);
 		color: var(--_qm-ink-label);
 	}
 </style>

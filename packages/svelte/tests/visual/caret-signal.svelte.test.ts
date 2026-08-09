@@ -10,10 +10,12 @@
 // the caret has to hear both.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
-import { Quill, type ContentHit, type Document } from '@quillmark/wasm';
+import { init, type ContentHit, type Document, type Quill } from '@quillmark/wasm';
 import type { Place } from '$lib/core';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
 import { quill } from '../helpers/fixtures.js';
+
+const core = await init();
 
 // jsdom implements neither, and the reveal `setCaret` runs first reaches both.
 Element.prototype.scrollIntoView ??= () => {};

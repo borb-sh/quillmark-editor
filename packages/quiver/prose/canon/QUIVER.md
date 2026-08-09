@@ -63,6 +63,8 @@ One thing the addressing does not yet buy: `build` replaces its output rather th
 
 `quiver.getQuill(ref)` is the only way to obtain a quill from a quiver, and the only entry point a consumer needs. It accepts selector refs (`"memo"`, `"memo@1"`) and canonical ones (`"memo@1.0.0"`), resolves the selector, fetches the tree, materializes it through `Quill.fromTree`, and caches one instance per canonical ref for the quiver's lifetime. Concurrent calls for the same ref coalesce into a single load.
 
+**It awaits the WASM gate itself**, so instantiating the core is not a precondition a consumer has to know about. `init()` is the only door to `Quill`, and it is memoized: this is one instantiation across every caller, overlapped with the fetch that pays for it. A consumer reaching the classes for its own reasons awaits the same gate.
+
 Reaching for `Quill.fromTree` inside a quiver consumer bypasses that cache and redoes the work. `Quill.fromTree` is for quills built **outside** a quiver: a server route receiving a raw tree over the network, a test fixture assembling one by hand.
 
 One narrower verb sits beside it: `resolve(ref)` returns the canonical ref without materializing anything.

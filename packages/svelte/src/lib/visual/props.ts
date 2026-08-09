@@ -11,6 +11,13 @@ import type { FormatDiagnostic, VisualStringsInput } from './strings.js';
 
 export interface VisualEditorProps {
 	doc: Document;
+	/**
+	 * The schema this document is edited against. BORROWED for the surface's lifetime,
+	 * whoever handed it over: a quill from `@quillmark/quiver`'s `getQuill` is the
+	 * quiver's, shared with every other caller for that ref, and freeing it hands the
+	 * next caller a freed handle. A host wanting one of its own mints it from
+	 * `.toTree()`. The editor frees nothing it is passed.
+	 */
 	quill: Quill;
 	/**
 	 * The active leaf: its canonical `DocPath` and the session key of the card holding
@@ -36,8 +43,13 @@ export interface VisualEditorProps {
 	/**
 	 * EVERY edit that lands on the document: a prose commit, a scalar/array/object
 	 * write, a card operation. The signal a host recompiles off; `source` is what
-	 * moved, for a host that wants a structure op to recompile at once and a
-	 * keystroke to wait for the burst to settle.
+	 * moved.
+	 *
+	 * **The lane split is the default, not a tuning exercise.** `'structure'` arrives
+	 * once per gesture and recompiles at once; `'prose'` and `'field'` arrive per
+	 * keystroke and wait for the burst to settle. Recompiling structure on the debounce
+	 * makes a card insert look dropped, and recompiling prose at once compiles the
+	 * document on every character.
 	 */
 	onChange?: (change: EditorChange) => void;
 	/**
@@ -55,12 +67,21 @@ export interface VisualEditorProps {
 	diagnostics?: Diagnostic[];
 	/**
 	 * Consumer policy hook: given a field `addr` and an enum option,
-	 * return `false` to mark that option unavailable. A disallowed option renders
-	 * DISABLED (never stripped), so an already-authored value stays visible and its
-	 * stored payload is untouched: the schema is unchanged, this is runtime policy.
-	 * Absent → every schema option is offered (the default, zero behavior change).
+	 * return `false` to mark that option unavailable; `enumDisallowed` decides how
+	 * the control then draws it. The stored payload is untouched either way: the
+	 * schema is unchanged, this is runtime policy. Absent → every schema option is
+	 * offered. It reaches a field's own enum control; an enum inside an object
+	 * subform has no `Addr` to pass and is offered whole.
 	 */
 	enumOptionAllowed?: (addr: Addr, value: string) => boolean;
+	/**
+	 * How an `enumOptionAllowed: false` option draws: `'disable'` (the default) greys
+	 * it in place, `'hide'` leaves it out of the list. One policy for the surface, not
+	 * a per-option verdict, and the SELECTED value is drawn under either (disabled
+	 * when refused), so the control always shows what the document says
+	 * (VISUAL_EDITOR §"Enum policy").
+	 */
+	enumDisallowed?: 'hide' | 'disable';
 	/**
 	 * Every word the surface says, keyed and partial: unset keys take the package's
 	 * English. Several are ACCESSIBLE NAMES rather than decoration, so this is what

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+The carried `@quillmark/wasm` is 0.103.0, where `init()` is the only door to `Quill` and `Document`. The studio and `test` await that gate and reach no class through it, so the resolution rules are unmoved.
+
 **The bundle names what it carries.** The client compiles in `@quillmark/svelte`, `@quillmark/quiver` and `@quillmark/wasm`, and nothing in a consumer's tree records which copies: a browser resolves nothing, so there is no dependency edge to read. `dist/client/carried.json` names all three beside the bundle, the running client holds the same three in `__CARRIED__`, and each release's notes state them in one line. Each is the version its manifest states.
 
 ## v0.1.1 - 2026-08-08

@@ -37,15 +37,15 @@
 			try {
 				// Dynamic: the WASM binary and VisualEditor's ProseMirror stack are the
 				// route's heaviest payload and nothing before paint needs them. `init`
-				// instantiates the core and every boundary verb throws
-				// `runtime::not_initialized` until it resolves; the fixture load is one of
-				// them (it materializes a quill to read its tree), so it waits.
-				const [{ Engine, Quill }, { init }, visual] = await Promise.all([
+				// instantiates the core and resolves to `Quill`, which the artifact exports
+				// nowhere statically; the fixture load awaits the same memoized gate to
+				// materialize its quill.
+				const [{ Engine }, { init }, visual] = await Promise.all([
 					import('@quillmark/wasm'),
 					import('@quillmark/svelte/core'),
 					import('@quillmark/svelte/visual')
 				]);
-				await init();
+				const { Quill } = await init();
 				const quill = Quill.fromTree(await loadUsafMemoTree());
 				created.unshift(quill);
 				const previewDoc = quill.seedDocument();

@@ -47,18 +47,18 @@ The poles take a colour, not `transparent` or `inherit`: the raised surfaces, th
 
 ### The dials
 
-| Token            | Default                                | What it sets                                                                                            |
-| ---------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `--qm-bg`        | `#fff` / `#14171c`                     | Base surface. Cards, fields, the painted page, the popover, and the column behind them step off it.     |
-| `--qm-fg`        | `#1a1a1a` / `#e8eaed`                  | Base ink. Body text, labels, and borders step off it.                                                   |
-| `--qm-accent`    | `#2563eb`                              | Focus rings, active marks, the preview's active field box.                                              |
-| `--qm-danger`    | `#c5221f`                              | Error diagnostics, the required marker, the delete glyph.                                               |
-| `--qm-warning`   | `#b25000`                              | Warning diagnostics.                                                                                    |
-| `--qm-font`      | `ui-sans-serif, system-ui, sans-serif` | The editor surface's font family. Controls and buttons take it too, in place of the UA face.            |
-| `--qm-font-mono` | `ui-monospace, monospace`              | The monospace face: the JSON array control, the tips card.                                              |
-| `--qm-font-size` | `0.875rem`                             | Body text: every control's size, and the anchor the ramp derives up (title) and down (label/meta) from. |
-| `--qm-radius`    | `8px`                                  | Card & popover corner. Interior controls derive a tighter tier (half).                                  |
-| `--qm-space`     | `0.25rem`                              | Spacing base. Gaps and insets are `half`/`1×`/`2×`/`3×`/`4×` multiples of it.                           |
+| Token            | Default                                | What it sets                                                                                                                                                   |
+| ---------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--qm-bg`        | `#fff` / `#14171c`                     | Base surface. Cards, fields, the painted page, the popover, and the column behind them step off it.                                                            |
+| `--qm-fg`        | `#1a1a1a` / `#e8eaed`                  | Base ink. Body text, labels, and borders step off it.                                                                                                          |
+| `--qm-accent`    | `#2563eb`                              | Focus rings, active marks, the preview's active field box.                                                                                                     |
+| `--qm-danger`    | `#c5221f`                              | Error diagnostics, the required marker, the delete glyph.                                                                                                      |
+| `--qm-warning`   | `#b25000`                              | Warning diagnostics.                                                                                                                                           |
+| `--qm-font`      | `ui-sans-serif, system-ui, sans-serif` | The editor surface's font family. Controls and buttons take it too, in place of the UA face.                                                                   |
+| `--qm-font-mono` | `ui-monospace, monospace`              | The monospace face: the JSON array control, the tips card.                                                                                                     |
+| `--qm-font-size` | `0.875rem`                             | Chrome text: every control's size, the anchor the ramp derives up (title) and down (label/meta) from, and the anchor a document body sits one small step over. |
+| `--qm-radius`    | `8px`                                  | Card & popover corner. Interior controls derive a tighter tier (half), so a square brand is square throughout.                                                 |
+| `--qm-space`     | `0.25rem`                              | Spacing base. Gaps and insets are `half`/`1×`/`2×`/`3×`/`4×` multiples of it.                                                                                  |
 
 Give a length dial a length: `--qm-space: 4` is a valid custom property and an invalid length, so it substitutes through every `calc()` that reads it. Where `@property` is supported the surface absorbs that, landing on the package default rather than collapsing the padding to zero.
 

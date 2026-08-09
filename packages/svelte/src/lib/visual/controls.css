@@ -17,7 +17,7 @@
 
 @layer qm.chrome {
 	/* The themed focus ring in place of the raw UA outline, as a
-	 RULE rather than a pair of rungs each control assembles. `--_qm-ring-focus`
+	 RULE rather than a pair of rungs each control assembles. `--_qm-ring`
 	 fixes the VALUE; which properties draw a ring, and on what state, is the other
 	 half of the decision, and `check:style` sees a minted literal but never a
 	 divergent rule. A control opts in by carrying the marker class.
@@ -28,7 +28,7 @@
 	 it. That is the only distinction, and this pair is the whole of it. */
 	.qm-focus-ring:focus-visible,
 	.qm-focus-ring-within:focus-within {
-		outline: var(--_qm-ring-focus);
+		outline: var(--_qm-ring);
 		outline-offset: var(--_qm-ring-offset);
 	}
 
@@ -46,9 +46,10 @@
 	 DIFFERENT rungs, which no gate can see: `check:style`'s type axis holds that
 	 each side reads a rung, never that both read the same one.
 
-	 The list is wider than either recipe's chrome: the body leaf withholds the box
+	 The list is wider than either recipe's chrome: a prose leaf withholds the box
 	 and still reads the ramp, so `.qm-prose` is
-	 here and not below.
+	 here and not below. The BODY leaf steps off this rung onto `--_qm-text-paper`
+	 from its own block (`ProseField`).
 
 	 `font` is a shorthand carrying `line-height`, so each family's leading is
 	 declared in the rules BELOW and would be dropped in silence above them. */
@@ -70,9 +71,11 @@
 	 green while a control renders subtly the wrong height).
 
 	 LEADING sits on the wide list rather than on the box's own, because a box's
-	 height is a padding rung plus a line box plus two hairlines: a leaf and the
-	 input beside it agree on height exactly as long as they agree on leading, which
-	 is the whole of what "by construction" buys.
+	 height is an inset rung plus a line box plus two hairlines: a leaf and the
+	 input beside it agree on height exactly as long as they agree on leading and on
+	 size, which is the whole of what "by construction" buys. The body leaf keeps the
+	 leading and steps off the size, which costs it nothing: it draws no box and
+	 stands in no row.
 
 	 COLOUR is the trap one property over: `font` does not carry it either, so an
 	 input or trigger left off this line falls to the UA's own text colour: a second
@@ -90,7 +93,7 @@
 	}
 	.qm-control-box,
 	.qm-input {
-		padding: var(--_qm-space) var(--_qm-space-2);
+		padding: var(--_qm-inset-control);
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius-inner);
 		background: var(--_qm-surface);
@@ -137,7 +140,7 @@
 	 which is why it is here and not on one family, and it is what keeps a button off
 	 the host page's leading the way the size rung keeps it off the host page's body
 	 size. A caller whose button carries a LABEL restates the rung it wants from its
-	 own block: the tips foot takes the meta rung, which is that surface's decision,
+	 own block: the tips foot takes the label rung, which is that surface's decision,
 	 not the family's. */
 	.qm-icon-btn,
 	.qm-add-affordance {
@@ -244,10 +247,10 @@
 		-webkit-backdrop-filter: blur(var(--_qm-blur));
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
-		animation: qm-pop-in var(--_qm-duration-fast) var(--_qm-ease-arrive);
+		animation: qm-pop-in var(--_qm-duration-fast) var(--_qm-ease-reverse);
 	}
 	.qm-popover-surface[data-ending-style] {
-		animation: qm-pop-out var(--_qm-duration-fast) var(--_qm-ease-depart);
+		animation: qm-pop-out var(--_qm-duration-fast) var(--_qm-ease-reverse);
 	}
 	@keyframes qm-pop-in {
 		from {

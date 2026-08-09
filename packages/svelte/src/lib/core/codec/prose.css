@@ -20,13 +20,13 @@
    re-measured here rather than in `theme.css` because a layered rule loses to that
    unlayered stylesheet: equal specificity and a later import is what wins. */
 .ProseMirror-selectednode {
-	outline: var(--_qm-ring-width) solid var(--_qm-accent);
+	outline: var(--_qm-ring);
 }
 /* Upstream's `-32px` is measured against the UA's 40px list indent, which the list
    rule below replaces with a rung. The offset moves with it, or a selected item's
    outline hangs into the margin by the difference. */
 li.ProseMirror-selectednode::after {
-	border: var(--_qm-ring-width) solid var(--_qm-accent);
+	border: var(--_qm-ring);
 	left: calc(var(--_qm-space-4) * -1);
 }
 
@@ -96,14 +96,25 @@ li.ProseMirror-selectednode::after {
    `--_qm-surface-raised` and the only rung over it is `--_qm-surface-hover`, the
    hover lane, so a chip at rest would read as a hovered button.
 
-   ONE selector for the mark and the block: a `code_block` renders `pre > code`
-   (`schema.ts`), so every character of it is inside a `code` element and the `pre`
-   needs no face of its own. `pre` takes no `overflow-x` either, because there is no
-   overflow: ProseMirror's own stylesheet sets `white-space: pre-wrap` there, so a
-   long line wraps. A scroller means overriding that to `pre` inside an editable
-   `code` textblock, which is an editing change, not a display rule. */
-.ProseMirror code {
+   The withheld properties are DECLARED at their zero, which is what makes the
+   paragraph above true of a MOUNTED leaf: a chip on these tags is an ordinary page
+   rule, so left off, these are the two tags the host draws rather than the surface.
+   The other marks are ink, weight and decoration, which the leaf sets or safely
+   inherits, so the box is this mark's alone and the zeros are not a reset.
+
+   BOTH tags, where the face alone needs only one: a `code_block` renders `pre > code`
+   (`schema.ts`), so every character is inside a `code` element and the face reaches it
+   there — but the block's BOX is the `pre`, outside that element and styled by the
+   host on its own. `pre` still takes no `overflow-x`, because there is no overflow:
+   ProseMirror's own stylesheet sets `white-space: pre-wrap` there, so a long line
+   wraps. A scroller means overriding that to `pre` inside an editable `code`
+   textblock, which is an editing change, not a display rule. */
+.ProseMirror :is(code, pre) {
 	font-family: var(--_qm-font-mono);
+	padding: 0;
+	border-radius: 0;
+	background: none;
+	font-size: inherit;
 }
 
 /* A link takes the surface's ink (the UA's blue is the `#8cf` defect again) and a
@@ -152,9 +163,9 @@ li.ProseMirror-selectednode::after {
 /* Six levels, one weight, no size step. The quill reads no level at all, so a size
    ramp here would be the editor predicting a hierarchy the paper does not set; the
    level stays in the model, which is where the codec round-trips it. It is also all
-   the ramp could carry: `--_qm-text-title` is one 1.125 step over the body, the
-   body sits on `--_qm-text-body` by decision, and leading alone is what separates
-   paper from chrome. Six levels do not fit in one step, and
+   the ramp could carry: this leaf renders at `--_qm-text-paper` and the next rung up
+   is `--_qm-text-title`, a chrome rung a heading inside a document has no business
+   reading. Six levels do not fit in the gap, and
    minting five more is the drift the scale exists to prevent. */
 .ProseMirror :is(h1, h2, h3, h4, h5, h6) {
 	font-size: inherit;
@@ -443,7 +454,7 @@ li.ProseMirror-selectednode::after {
 .qm-table-handle:focus-visible,
 .qm-table-seam:focus-visible,
 .qm-table-align-item:focus-visible {
-	outline: var(--_qm-ring-focus);
+	outline: var(--_qm-ring);
 	outline-offset: var(--_qm-ring-offset);
 }
 

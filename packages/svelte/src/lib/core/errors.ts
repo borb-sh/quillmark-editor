@@ -5,6 +5,13 @@
 // because a `console.error` is not something an app can route, filter or count.
 // Nothing gates on the handler, and an absent handler logs.
 //
+// **Two axes route it, and neither is the code.** `severity` splits a contract
+// violation aimed at whoever wired the surface (`dev`) from a runtime failure an app
+// counts (`error`). Damage splits the runtime ones: every code below leaves the
+// document as it found it except `commit-lost`, which leaves one field's store stale
+// behind an optimistic view. So `commit-lost` is the only one with anything to say to
+// the person typing, and the rest are telemetry.
+//
 // It is NOT the diagnostics channel. A `Diagnostic` is about the DOCUMENT and is
 // drawn on the field it belongs to; an `EditorError` is about the SURFACE and is
 // drawn nowhere. A refused scalar commit produces both, deliberately: the
@@ -42,6 +49,10 @@ export type EditorErrorCode =
 	 * re-keyed on it nor observed it. The mounted surface still names the previous
 	 * handle. `dev` throughout: the fix is a remount at the call site, so this is
 	 * aimed at whoever wired it and never at a running app's telemetry.
+	 *
+	 * The one code that is also THROWN, in a dev build, once reported: a swapped
+	 * `onError` is itself a rebind, so the handler this arrives at may be the one the
+	 * consumer just replaced (`rebind.svelte.ts`).
 	 */
 	| 'rebind-ignored'
 	/**

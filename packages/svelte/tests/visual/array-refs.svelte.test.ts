@@ -14,9 +14,11 @@
 // breaking the refs is the same defect one console line quieter.
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { mount, unmount, flushSync, tick } from 'svelte';
-import { Quill, type Document } from '@quillmark/wasm';
+import { init, type Document, type Quill } from '@quillmark/wasm';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
 import { quill } from '../helpers/fixtures.js';
+
+const core = await init();
 
 // The reference memo's `main.memo_for` is `string[]`, so its elements are `TextField`s:
 // the array control with a component instance behind each row. Located by the

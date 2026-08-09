@@ -99,6 +99,7 @@
 		onError,
 		diagnostics,
 		enumOptionAllowed,
+		enumDisallowed = 'disable',
 		strings,
 		formatDiagnostic,
 		class: className,
@@ -876,6 +877,7 @@
 			isLast={true}
 			{kinds}
 			ops={opsFor('main', true)}
+			{enumDisallowed}
 			onFocus={handleFocus}
 			onCaretMove={handleCaret}
 			onChange={proseChanged}
@@ -909,6 +911,7 @@
 				isLast={i === model.cards.length - 1}
 				{kinds}
 				ops={opsFor(c.id, false)}
+				{enumDisallowed}
 				onFocus={handleFocus}
 				onCaretMove={handleCaret}
 				onChange={proseChanged}

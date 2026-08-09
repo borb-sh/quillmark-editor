@@ -30,19 +30,20 @@ A quiver installed from npm is a directory like any other. Resolve its root from
 ```ts
 import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
-import { Engine, Document } from '@quillmark/wasm';
+import { Engine, init } from '@quillmark/wasm';
 import { fromDir } from '@quillmark/quiver/node';
 
 const root = dirname(createRequire(import.meta.url).resolve('@org/my-quiver/Quiver.yaml'));
 const quiver = await fromDir(root);
 const engine = new Engine();
 
+const { Document } = await init(); // the gate is the only door to Document
 const doc = Document.fromMarkdown(markdownString);
 const quill = await quiver.getQuill(doc.quillRef);
 const result = await engine.render(quill, doc, { format: 'pdf' });
 ```
 
-`getQuill(ref)` is the only way to obtain a quill from a quiver, and the only entry point most consumers need. It accepts selector refs (`"memo"`, `"memo@1"`) and canonical ones (`"memo@1.0.0"`), resolves the selector, materializes the quill via `Quill.fromTree`, and caches one instance per canonical ref for the quiver's lifetime; concurrent calls for the same ref coalesce into a single load.
+`getQuill(ref)` is the only way to obtain a quill from a quiver, and the only entry point most consumers need. It accepts selector refs (`"memo"`, `"memo@1"`) and canonical ones (`"memo@1.0.0"`), resolves the selector, materializes the quill via `Quill.fromTree`, and caches one instance per canonical ref for the quiver's lifetime; concurrent calls for the same ref coalesce into a single load. It awaits `init()` itself, so instantiating the core is not a precondition of calling it.
 
 That quill is **borrowed, not owned**: every caller asking for that ref gets the same instance, so `free()` on it hands the next caller a freed handle. Code that owns its quill mints one from `(await quiver.getQuill(ref)).toTree()` and frees that.
 
@@ -69,12 +70,13 @@ await build('./node_modules/@org/my-quiver', './public/quivers/my-quiver');
 
 ```ts
 // browser runtime
-import { Engine, Document } from '@quillmark/wasm';
+import { Engine, init } from '@quillmark/wasm';
 import { Quiver } from '@quillmark/quiver';
 
 const quiver = await Quiver.fromBuiltUrl('/quivers/my-quiver/');
 const engine = new Engine();
 
+const { Document } = await init(); // the gate is the only door to Document
 const doc = Document.fromMarkdown(markdownString);
 const quill = await quiver.getQuill(doc.quillRef);
 const result = await engine.render(quill, doc, { format: 'pdf' });

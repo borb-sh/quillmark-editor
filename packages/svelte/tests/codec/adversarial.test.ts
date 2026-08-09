@@ -5,8 +5,10 @@
 // unit-test artifact. That end-to-end route is what these add; the position map's
 // own inverse is positions.test.ts, over a strictly wider corpus.
 import { describe, it, expect } from 'vitest';
-import { Document, type Content, type ContentMark } from '@quillmark/wasm';
+import { init, type Content, type ContentMark } from '@quillmark/wasm';
 import { contentEdit, lower } from '$lib/core/codec';
+
+const core = await init();
 
 function rt(text: string, marks: ContentMark[] = [], lines?: Content['lines']): Content {
 	return {
@@ -17,9 +19,9 @@ function rt(text: string, marks: ContentMark[] = [], lines?: Content['lines']): 
 	};
 }
 
-describe('codec adversarial — lower∘apply through a real Document (independent)', () => {
+describe('codec adversarial — lower∘apply through a real core.Document (independent)', () => {
 	it('text delta counts USV code points, so an insert after an astral char lands correctly', () => {
-		const doc = new Document('usaf_memo@0.2.0');
+		const doc = new core.Document('usaf_memo@0.2.0');
 		doc.overwrite({}, rt('a😀b')); // 3 USV, 4 UTF-16
 		const oldRt = doc.main.body;
 
@@ -33,7 +35,7 @@ describe('codec adversarial — lower∘apply through a real Document (independe
 	});
 
 	it('a delete spanning an astral char removes the right code points', () => {
-		const doc = new Document('usaf_memo@0.2.0');
+		const doc = new core.Document('usaf_memo@0.2.0');
 		doc.overwrite({}, rt('x😀😀y'));
 		const bundle = lower(contentEdit(doc.main.body, rt('xy'))); // drop both emoji
 		doc.applyChange({}, bundle);
@@ -41,7 +43,7 @@ describe('codec adversarial — lower∘apply through a real Document (independe
 	});
 
 	it('a formatting mark added after an astral char lowers to the right USV range', () => {
-		const doc = new Document('usaf_memo@0.2.0');
+		const doc = new core.Document('usaf_memo@0.2.0');
 		doc.overwrite({}, rt('a😀bold')); // USV: a=0, 😀=1, b=2,o=3,l=4,d=5
 		const withMark = rt('a😀bold', [{ start: 2, end: 6, type: 'strong' } as ContentMark]);
 		const bundle = lower(contentEdit(doc.main.body, withMark));
@@ -54,7 +56,7 @@ describe('codec adversarial — lower∘apply through a real Document (independe
 	});
 
 	it('a paragraph split (new \\n via delta) applies without an install fallback', () => {
-		const doc = new Document('usaf_memo@0.2.0');
+		const doc = new core.Document('usaf_memo@0.2.0');
 		doc.overwrite({}, rt('one two'));
 		// Split into two paragraphs at the space → "one\ntwo", two para lines.
 		const split: Content = {
