@@ -5,7 +5,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import type { EditorView } from 'prosemirror-view';
 import { createField } from '$lib/core/codec';
 import type { FieldController, LeafViews, SlashState } from '$lib/core/codec';
-import { filterItems, slashItems, DEFAULT_SLASH_STRINGS } from '$lib/core/codec/slash.js';
+import { filterItems, slashItems } from '$lib/core/codec/slash.js';
 import type { Document, TableProps } from '@quillmark/wasm';
 import { mount, press, quill, md } from './_util.js';
 
@@ -25,15 +25,19 @@ function leaf(markdown = 'para') {
 	const doc: Document = quill().seedDocument();
 	doc.overwrite({}, md(markdown));
 	const reports: (SlashState | undefined)[] = [];
+	// One count per COMMITTED edit (`field.ts` §`dispatchTransaction`), which is what a
+	// host recompiles on: the currency a pick is measured in.
+	let commits = 0;
 	const field = createField({
 		doc,
 		quill: quill(),
 		addr: {},
 		container: mount(),
+		onChange: () => commits++,
 		onSlash: (state) => reports.push(state)
 	});
 	const view = (field as FieldController & LeafViews).view;
-	return { doc, field, view, reports, state: () => reports.at(-1) };
+	return { doc, field, view, reports, state: () => reports.at(-1), commits: () => commits };
 }
 
 /** Type `text` at the caret, one character per transaction, the way a keyboard does:
@@ -99,19 +103,21 @@ describe('the trigger is a word boundary', () => {
 	});
 });
 
-describe('the query filters, and a miss closes', () => {
-	it('narrows on the label', () => {
-		const { field, view, state } = leaf('');
-		typeAt(field, view, 0, '/tab');
-		expect(state()?.items.map((i) => i.id)).toEqual(['table']);
-		field.destroy();
+describe('the vocabulary is what no shorthand reaches', () => {
+	it('offers the table and nothing a `- `, `1. `, `# `, `> ` or fence already opens', () => {
+		expect(slashItems()).toEqual(['table']);
 	});
 
-	it('narrows on the id, which the label does not carry', () => {
+	it('is lowercase kebab-case throughout: a name is typed, not read', () => {
+		for (const name of slashItems()) expect(name).toMatch(/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/);
+	});
+});
+
+describe('the query filters, and a miss closes', () => {
+	it('narrows on the name', () => {
 		const { field, view, state } = leaf('');
-		// `ordered` is the id; the label it draws is `Numbered list`.
-		typeAt(field, view, 0, '/ord');
-		expect(state()?.items.map((i) => i.id)).toEqual(['ordered']);
+		typeAt(field, view, 0, '/tab');
+		expect(state()?.items).toEqual(['table']);
 		field.destroy();
 	});
 
@@ -130,10 +136,15 @@ describe('the query filters, and a miss closes', () => {
 		field.destroy();
 	});
 
-	it('filters case-insensitively, over the words the chrome displays', () => {
-		expect(filterItems(slashItems(DEFAULT_SLASH_STRINGS), 'BULLETED').map((i) => i.id)).toEqual([
-			'bullet'
-		]);
+	// Over a vocabulary of its own: the shipped one is one command, which cannot show
+	// that a prefix beats a substring or that the order survives.
+	it('matches a case-insensitive PREFIX, keeping the vocabulary order', () => {
+		const vocab = ['table', 'table-of-contents', 'footnote'];
+		expect(filterItems(vocab, 'TAB')).toEqual(['table', 'table-of-contents']);
+		// `note` is inside `footnote` and is not a prefix of it: a command completes the
+		// way it is typed, from the front.
+		expect(filterItems(vocab, 'note')).toEqual([]);
+		expect(filterItems(vocab, '')).toEqual(vocab);
 	});
 });
 
@@ -165,43 +176,45 @@ describe('a dismissal edits no text; a pick consumes exactly the run', () => {
 		field.destroy();
 	});
 
-	it('the arrows walk the offers and wrap', () => {
+	// One command, so there is nothing for the arrows to walk TO; what has to hold is
+	// that they are claimed, since a caret leaving the run closes the menu it was
+	// navigating.
+	it("the arrows are the menu's while it is open, and hold the cursor in range", () => {
 		const { field, view, state } = leaf('');
 		typeAt(field, view, 0, '/');
-		const count = state()!.items.length;
-		press(view, 'ArrowDown');
-		expect(state()?.index).toBe(1);
-		press(view, 'ArrowUp');
-		press(view, 'ArrowUp');
-		expect(state()?.index).toBe(count - 1);
+		const claimed = (key: string) =>
+			view.someProp('handleKeyDown', (f) => f(view, new KeyboardEvent('keydown', { key })));
+		expect(claimed('ArrowDown')).toBe(true);
+		expect(claimed('ArrowUp')).toBe(true);
+		expect(state()?.index).toBe(0);
+		expect(state()?.items).toHaveLength(1);
 		field.destroy();
 	});
 
-	it('Enter picks: the run is gone and the block wrapped, in ONE commit', () => {
-		const { field, view, state } = leaf('');
-		typeAt(field, view, 0, '/bul');
-		expect(state()?.items[0].id).toBe('bullet');
-		const before = view.state.doc.toString();
+	it('Enter picks: the run is gone and the island opened, in ONE commit', () => {
+		const { field, view, state, commits } = leaf('');
+		typeAt(field, view, 0, '/tab');
+		expect(state()?.items[0]).toBe('table');
+		const before = commits();
 		press(view, 'Enter');
-		expect(before).not.toBe(view.state.doc.toString());
-		const stored = field.getContent();
-		expect(stored.text).toBe('');
-		expect(stored.lines[0].containers).toEqual([
-			{ container: 'list_item', ordered: false, start: 1, ordinal: 0 }
-		]);
-		expect(stored.lines).toHaveLength(1); // one block, not a split and a wrap
+		// The delete and the insert are one transaction, so the gesture recompiles the
+		// document once rather than through a state with the run's text still in it.
+		expect(commits()).toBe(before + 1);
+		// The empty block the run was typed in is REPLACED, and a paragraph after the
+		// island is the exit.
+		expect(field.getContent().lines.map((l) => l.kind)).toEqual(['island', 'para']);
 		field.destroy();
 	});
 
 	it('a pick mid-paragraph keeps the text and takes only the run', () => {
 		const { field, view } = leaf('para');
-		typeAt(field, view, 4, ' /ordered');
+		typeAt(field, view, 4, ' /table');
 		press(view, 'Enter');
 		const stored = field.getContent();
-		expect(stored.text).toBe('para ');
-		expect(stored.lines[0].containers).toEqual([
-			{ container: 'list_item', ordered: true, start: 1, ordinal: 0 }
-		]);
+		// The paragraph keeps every character but the run, and the island opens after it
+		// rather than splitting it.
+		expect(stored.text).toBe('para \n￼\n');
+		expect(stored.lines.map((l) => l.kind)).toEqual(['para', 'island', 'para']);
 		field.destroy();
 	});
 
@@ -230,20 +243,21 @@ describe('a dismissal edits no text; a pick consumes exactly the run', () => {
 
 	it('a pointer pick runs the same path as Enter', () => {
 		const { field, view } = leaf('');
-		typeAt(field, view, 0, '/bul');
-		field.slashPick('bullet');
-		expect(field.getContent().lines[0].containers).toEqual([
-			{ container: 'list_item', ordered: false, start: 1, ordinal: 0 }
-		]);
+		typeAt(field, view, 0, '/tab');
+		field.slashPick('table');
+		expect(field.getContent().lines.map((l) => l.kind)).toEqual(['island', 'para']);
 		field.destroy();
 	});
 
 	it('a pointer entering an item moves the ONE highlight the keys drive', () => {
 		const { field, view, state } = leaf('');
 		typeAt(field, view, 0, '/');
-		field.slashFocus('ordered');
-		const items = state()!.items;
-		expect(items[state()!.index].id).toBe('ordered');
+		field.slashFocus('table');
+		expect(state()!.items[state()!.index]).toBe('table');
+		// A name the menu is not offering moves nothing: a stale pointer event arrives
+		// after the query that filtered its row away.
+		field.slashFocus('nonesuch');
+		expect(state()!.index).toBe(0);
 		field.destroy();
 	});
 });

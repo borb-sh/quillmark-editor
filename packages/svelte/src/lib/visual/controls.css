@@ -203,7 +203,15 @@
 	 `[data-highlighted]` is bits-ui's mark and it is the ONLY hover lane: an item
 	 under the pointer and an item under the keyboard cursor are one state to a menu,
 	 so the primitive marks both and a `:hover` rule beside it would paint a second
-	 highlight the keyboard cannot reach.
+	 highlight the keyboard cannot reach. It fills with the accent HELD rather than
+	 the hover rung: the mark is a cursor a keyboard drives, so it has to read at a
+	 glance from across the list, where a hover only has to confirm the pointer
+	 already under it.
+
+	 The RESTING fill is the recipe's too: an item drawn on a `<button>` carries a UA
+	 fill to take back, and a component's scoped block is unlayered, so a caller taking
+	 it back outranks this layer and erases the highlight with it. Transparent here
+	 leaves the caller nothing to declare.
 
 	 A FLOATING surface is the one place a hairline is still load-bearing: it hangs
 	 over content the surface did not choose, so there is no plane under it for a
@@ -220,11 +228,12 @@
 	.qm-menu-item {
 		padding: var(--_qm-space) var(--_qm-space-2);
 		border-radius: var(--_qm-radius-inner);
+		background: transparent;
 		cursor: pointer;
 		user-select: none;
 	}
 	.qm-menu-item[data-highlighted] {
-		background: var(--_qm-surface-hover);
+		background: var(--_qm-accent-tint);
 	}
 
 	/* A floating surface that is READ rather than picked from: the selection popover
