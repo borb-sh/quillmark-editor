@@ -103,36 +103,33 @@
 		   card read as a card is that it is the BRIGHTER plane, in both schemes
 		   alike (ARCHITECTURE §Styling). A plane stepped toward the ink is right in
 		   dark and inverted in light, where it darkens the card below the page it
-		   floats on. So `sunken` mixes toward shadow and `raised` toward light, and
-		   the base plane — a card, the preview's paper — is the pole itself.
+		   floats on. So `sunken` and `well` step toward shadow and `raised` toward
+		   light, and the base plane — a card, the preview's paper — is the pole
+		   itself.
 
-		   TWO PLANES SINK, by what the step has to carry. `sunken` is the GROUND —
-		   the column behind the cards, the desk behind the sheets — and its whole
-		   job is to let the plane above it read as an island, which at the light
-		   pole takes very little. `well` is the hole cut INTO that plane: a field,
-		   a table's header band, the one native select. It draws no edge, so the
-		   step is the only thing saying a value is typed there, and it goes deeper
-		   than the ground for that reason. The order at the light pole is card,
-		   ground, well; at the dark pole the two land on the same figure, which is
-		   where a card that has already given up most of its light leaves them.
+		   TWO PLANES SINK. `sunken` is the GROUND — the column behind the cards, the
+		   desk behind the sheets — and lifting the plane above it takes very little
+		   at the light pole. `well` is the hole cut INTO a card: a field, a table's
+		   header band, the one native select, none of which draw an edge, so the
+		   step is the whole of what says a value is typed there. The order at the
+		   light pole is card, ground, well; at the dark pole the two sink to within
+		   a channel of each other, which is where a card with little light left to
+		   give up leaves them.
 
-		   Each takes TWO ARMS, and one figure cannot serve both poles: a step down
-		   from white and a step down from a dark card are different distances,
-		   because a dark surface has to spend more of what little it has before the
-		   card above it reads as lifted. Pinning a dark palette under a light
-		   `color-scheme` takes the LIGHT arm with it
+		   Each takes TWO ARMS, because one figure cannot serve both poles: a dark
+		   surface has to spend more of what little it has before the card above it
+		   reads as lifted. Pinning a dark palette under a light `color-scheme` takes
+		   the LIGHT arm with it
 		   (THEMING §"The surface follows your colour scheme"), which is a step you
 		   can barely see, so a host that pins declares the scheme with it.
 
-		   The GROUND steps by SUBTRACTION where every other rung mixes, and the two
-		   forms are not interchangeable: a mix toward black is a ratio, so it scales
-		   what it takes and drags the result toward neutral, and neither is what a
-		   ground is. What a ground is is the pole minus a fixed amount of oklab —
-		   0.0214 of L in light and 0.0553 in dark, with the small a/b terms carrying
-		   the reference palette's cool cast — so it lands on `#f7f8f9` and `#1a1a1b`
-		   exactly, and a turned `--qm-bg` keeps its own hue in the plane under it
-		   rather than being greyed by the step. Relative colour costs no support
-		   floor: `light-dark()` above it is the newer requirement.
+		   The GROUND steps by SUBTRACTION where every other rung mixes: a mix toward
+		   black is a ratio, so it scales what it takes and pulls the result toward
+		   neutral, and a ground is a fixed distance that keeps the pole's hue. Its
+		   arms are 0.0214 of oklab L in light and 0.0553 in dark, with a/b terms
+		   carrying a cool cast a mix toward black would strip, so the default lands
+		   on `#f7f8f9` and `#1a1a1b` exactly and a turned `--qm-bg` tints the plane
+		   under it.
 
 		   `raised` is a no-op at the light pole, where the card is already white
 		   and there is nowhere further to go, so a floating surface separates on

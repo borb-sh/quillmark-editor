@@ -93,8 +93,7 @@
 	}
 	/* THE BOX IS A FILL AND NOT AN EDGE (ARCHITECTURE §Styling), and the fill is the
 	 WELL rung: a field is a hole cut into the card rather than a plane of its own,
-	 and with no edge to carry it the step is the whole of what says so, which is why
-	 it goes deeper than the ground the card itself sits on. */
+	 and with no edge to carry it the step is the whole of what says so. */
 	.qm-control-box,
 	.qm-input {
 		padding: var(--_qm-inset-control);
