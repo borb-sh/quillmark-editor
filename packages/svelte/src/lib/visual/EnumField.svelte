@@ -34,13 +34,23 @@
 		/** The parked `description` (FieldLabel): announced after the name. */
 		describedBy?: string;
 		onCommit: (v: string | undefined) => void;
-		/** Consumer policy: `false` disables an option so it can't be picked.
-		 * A disallowed value already authored stays SELECTED and visible (disabled), never
-		 * stripped or mutated. The UNSET sentinel is exempt: clear-to-default always works. */
+		/** Consumer policy: `false` marks an option unavailable, so it can't be picked.
+		 * The UNSET sentinel is exempt: clear-to-default always works. */
 		optionAllowed?: (value: string) => boolean;
+		/** How a refused option draws: greyed and unpickable, or left out of the list. */
+		enumDisallowed?: 'hide' | 'disable';
 	}
-	let { value, values, fallback, label, id, describedBy, onCommit, optionAllowed }: Props =
-		$props();
+	let {
+		value,
+		values,
+		fallback,
+		label,
+		id,
+		describedBy,
+		onCommit,
+		optionAllowed,
+		enumDisallowed = 'disable'
+	}: Props = $props();
 
 	// The sentinel's option value: a namespaced marker that no schema-authored
 	// enum member would ever be (`values` are classification markings, seal ids, and
@@ -107,15 +117,25 @@
 						<Select.Item class="qm-menu-item qm-select-item" value={UNSET} label={ghostText}>
 							<span class="qm-select-ghost">{ghostText}</span>
 						</Select.Item>
+						<!-- A refused option still draws under `'disable'`, and under EITHER
+						     policy when it is the one selected: a listbox whose selected value
+						     has no row shows nothing for what the document says, and offers none
+						     for the primitive to mark, type-ahead to, or key onto
+						     (VISUAL_EDITOR §"Enum policy"). Off `local.value`, not `value`: the
+						     row that exists is the row the control has selected, through the
+						     window where an own pick has not reconciled back. -->
 						{#each values as v (v)}
-							<Select.Item
-								class="qm-menu-item qm-select-item"
-								value={v}
-								label={dash(v)}
-								disabled={optionAllowed?.(v) === false}
-							>
-								{dash(v)}
-							</Select.Item>
+							{@const allowed = optionAllowed?.(v) !== false}
+							{#if allowed || enumDisallowed === 'disable' || v === local.value}
+								<Select.Item
+									class="qm-menu-item qm-select-item"
+									value={v}
+									label={dash(v)}
+									disabled={!allowed}
+								>
+									{dash(v)}
+								</Select.Item>
+							{/if}
 						{/each}
 					</Select.Viewport>
 				</div>
@@ -158,7 +178,7 @@
 	.qm-select-content :global(.qm-select-item[data-selected]) {
 		font-weight: var(--_qm-weight-label);
 	}
-	/* Consumer policy: offered but unpickable, never hidden. */
+	/* Consumer policy, for a refused option the list still draws: offered, unpickable. */
 	.qm-select-content :global(.qm-select-item[data-disabled]) {
 		opacity: var(--_qm-opacity-muted);
 		cursor: default;

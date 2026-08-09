@@ -51,6 +51,9 @@
 		isLast: boolean;
 		kinds: string[];
 		ops: CardOps;
+		/** How an option `ops.enumAllowed` refuses draws. Nothing about it is per-card,
+		 *  so it sits beside the bundle rather than in it. */
+		enumDisallowed?: 'hide' | 'disable';
 		onFocus?: (addr: Addr) => void;
 		onCaretMove?: (addr: Addr, pos: number) => void;
 		onChange?: (addr: Addr) => void;
@@ -69,6 +72,7 @@
 		isLast,
 		kinds,
 		ops,
+		enumDisallowed,
 		onFocus,
 		onCaretMove,
 		onChange,
@@ -389,6 +393,7 @@
 				domIds={ops.domIds(f.name)}
 				onCommitScalar={(v) => ops.commit(f.name, v)}
 				optionAllowed={(v) => ops.enumAllowed(f.name, v)}
+				{enumDisallowed}
 				{onFocus}
 				{onCaretMove}
 				{onChange}

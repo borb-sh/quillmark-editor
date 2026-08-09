@@ -67,12 +67,21 @@ export interface VisualEditorProps {
 	diagnostics?: Diagnostic[];
 	/**
 	 * Consumer policy hook: given a field `addr` and an enum option,
-	 * return `false` to mark that option unavailable. A disallowed option renders
-	 * DISABLED (never stripped), so an already-authored value stays visible and its
-	 * stored payload is untouched: the schema is unchanged, this is runtime policy.
-	 * Absent → every schema option is offered (the default, zero behavior change).
+	 * return `false` to mark that option unavailable; `enumDisallowed` decides how
+	 * the control then draws it. The stored payload is untouched either way: the
+	 * schema is unchanged, this is runtime policy. Absent → every schema option is
+	 * offered. It reaches a field's own enum control; an enum inside an object
+	 * subform has no `Addr` to pass and is offered whole.
 	 */
 	enumOptionAllowed?: (addr: Addr, value: string) => boolean;
+	/**
+	 * How an `enumOptionAllowed: false` option draws: `'disable'` (the default) greys
+	 * it in place, `'hide'` leaves it out of the list. One policy for the surface, not
+	 * a per-option verdict, and the SELECTED value is drawn under either (disabled
+	 * when refused), so the control always shows what the document says
+	 * (VISUAL_EDITOR §"Enum policy").
+	 */
+	enumDisallowed?: 'hide' | 'disable';
 	/**
 	 * Every word the surface says, keyed and partial: unset keys take the package's
 	 * English. Several are ACCESSIBLE NAMES rather than decoration, so this is what

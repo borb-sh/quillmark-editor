@@ -50,9 +50,11 @@
 		 * the label and the control find each other. */
 		domIds: FieldDomIds;
 		onCommitScalar: (value: unknown) => void;
-		/** Enum-option policy: `false` disables that option. Only the enum
-		 * control reads it; other controls ignore it. */
+		/** Enum-option policy: `false` marks that option unavailable. Only the enum
+		 * control reads this pair. */
 		optionAllowed?: (value: string) => boolean;
+		/** How a refused option draws: greyed (default) or left out. */
+		enumDisallowed?: 'hide' | 'disable';
 		onFocus?: (addr: Addr) => void;
 		onCaretMove?: (addr: Addr, pos: number) => void;
 		onChange?: (addr: Addr) => void;
@@ -74,6 +76,7 @@
 		domIds,
 		onCommitScalar,
 		optionAllowed,
+		enumDisallowed,
 		onFocus,
 		onCaretMove,
 		onChange,
@@ -205,6 +208,7 @@
 				{describedBy}
 				onCommit={onCommitScalar}
 				{optionAllowed}
+				{enumDisallowed}
 			/>
 		{:else if field.control === 'number'}
 			<NumberField
