@@ -173,15 +173,28 @@ export function moveColumn(props: TableProps, c: number, by: number): TableProps
 	});
 }
 
-/** Column `c` with every cell emptied, alignment kept: what a delete gesture means at
- *  the LAST column, which the model keeps. There is no row analogue: the header is the
- *  only row a delete is refused for, and it carries no handle to select it from. */
-export function clearColumn(props: TableProps, c: number): TableProps {
-	const blank = (cells: TableCell[]): TableCell[] =>
-		cells.map((cell, i) => (i === c ? emptyCell() : cell));
+/**
+ * Every cell in the inclusive rectangle emptied, alignment kept: what a delete gesture
+ * means over a block of cells, and over a whole line the model refuses to remove (the
+ * header row, the last column).
+ *
+ * A rectangle rather than a line, because the surface selects one: the two cases the
+ * chrome has are a block the pointer drew and a line a grip named, and a line is the
+ * rectangle that covers it. Alignment is the COLUMN's rather than the cells', so it
+ * survives a clear that spans one.
+ */
+export function clearCells(
+	props: TableProps,
+	r0: number,
+	c0: number,
+	r1: number,
+	c1: number
+): TableProps {
+	const blank = (cells: TableCell[], r: number): TableCell[] =>
+		cells.map((cell, c) => (r >= r0 && r <= r1 && c >= c0 && c <= c1 ? emptyCell() : cell));
 	return normalizeTable({
-		header: blank(props.header),
-		rows: props.rows.map(blank),
+		header: blank(props.header, 0),
+		rows: props.rows.map((row, i) => blank(row, i + 1)),
 		aligns: props.aligns
 	});
 }

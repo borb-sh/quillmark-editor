@@ -201,7 +201,7 @@ function key(target: Element, k: string, init: KeyboardEventInit = {}): void {
 
 /** Which cells the surface is washing: the selected line, read back off the DOM. */
 function washed(field: FieldController): string[] {
-	return Array.from(field.el.querySelectorAll('.qm-table-cell[data-line]')).map(
+	return Array.from(field.el.querySelectorAll('.qm-table-cell[data-selected]')).map(
 		(c) => `${c.getAttribute('data-r')},${c.getAttribute('data-c')}`
 	);
 }
@@ -211,43 +211,36 @@ function corner(field: FieldController): HTMLButtonElement {
 	return field.el.querySelector<HTMLButtonElement>('.qm-table-corner')!;
 }
 
-/** The open menu, or `null`: the surface is mounted only while it is raised, and it is
- *  portalled OUT of the leaf, so it is looked for in the document rather than under
- *  the field. */
-function menu(_field: FieldController): HTMLElement | null {
-	return document.querySelector<HTMLElement>('.qm-table-menu');
-}
-
-/** The open menu's rows, by their visible label: what a reader of the surface sees,
- *  and the only handle a test has on an op with no control of its own. */
-function rows(_field: FieldController): Record<string, HTMLButtonElement> {
-	const out: Record<string, HTMLButtonElement> = {};
-	for (const row of document.querySelectorAll<HTMLButtonElement>('.qm-table-menu-item'))
-		out[row.textContent ?? ''] = row;
-	return out;
-}
-
-/** The alignment set: one row of glyphs rather than four rows of words, so it is read
- *  by the value each names rather than by a label. */
-function aligns(_field: FieldController): Record<string, HTMLButtonElement> {
-	const out: Record<string, HTMLButtonElement> = {};
-	for (const glyph of document.querySelectorAll<HTMLButtonElement>('.qm-table-menu-glyph'))
-		out[glyph.getAttribute('data-align') ?? ''] = glyph;
-	return out;
-}
-
-/** Raise a line's menu the way the pointer does: the first press names the subject,
- *  the second asks what to do with it. */
-function raise(grip: HTMLButtonElement): void {
-	grip.click();
-	grip.click();
-}
-
-/** A secondary press, which is the other way to every op and the only one a cell has. */
-function rightPress(target: Element): MouseEvent {
-	const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
-	target.dispatchEvent(event);
-	return event;
+/** Sweep a block: press in one cell and travel to another, which is the one gesture
+ *  that turns a caret into a selection. The moves are dispatched on the document, where
+ *  the view listens, and the boxes are the stubbed geometry `layout` installed. */
+function sweep(field: FieldController, from: number, to: number): void {
+	const boxes = field.el.querySelectorAll('.qm-table-cell');
+	const at = (i: number) => {
+		const r = boxes[i].getBoundingClientRect();
+		return { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 };
+	};
+	const head = at(from);
+	boxes[from].dispatchEvent(
+		new MouseEvent('mousedown', {
+			bubbles: true,
+			cancelable: true,
+			clientX: head.x,
+			clientY: head.y
+		})
+	);
+	for (const step of [from, to]) {
+		const p = at(step);
+		document.dispatchEvent(
+			new MouseEvent('mousemove', {
+				bubbles: true,
+				cancelable: true,
+				clientX: p.x + 8,
+				clientY: p.y + 8
+			})
+		);
+	}
+	document.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
 }
 
 /** The leaf's own view: the document the island sits in. */
@@ -409,22 +402,6 @@ describe('the table NodeView', () => {
 		field.destroy();
 	});
 
-	it("a column's menu marks the alignment it already has, and sets another", () => {
-		const { field } = tableLeaf(LETTERED);
-		raise(grips(field, 'column')[1]);
-		// One glyph per value the model carries, and exactly one of them live.
-		expect(Object.keys(aligns(field))).toEqual([...ALIGNS]);
-		const marked = menu(field)!.querySelector('[aria-checked="true"]');
-		expect(marked?.getAttribute('data-align')).toBe('right'); // LETTERED's column 2
-		aligns(field)['center'].click();
-		expect(leafProps(field).aligns).toEqual(['left', 'center']);
-		// The pick closes the menu and leaves the column selected: a set with one live
-		// member has nothing more to say, and the next command is still about column 2.
-		expect(menu(field)).toBeNull();
-		expect(washed(field)).toEqual(['0,1', '1,1', '2,1']);
-		field.destroy();
-	});
-
 	it('Escape leaves a line selection for the island, one rung up the ladder', () => {
 		const { field } = tableLeaf(LETTERED);
 		const grip = grips(field, 'row')[0];
@@ -530,166 +507,133 @@ describe('the table NodeView', () => {
 		field.destroy();
 	});
 });
-
-// ── The menu ────────────────────────────────────────────────────────────────
+// ── The selection ───────────────────────────────────────────────────────────
 //
-// Every op that is not a drag, a cap or a key. It is raised three ways over the same
-// builders — a second press on a grip, a secondary press on a grip, a secondary press
-// in a cell — so what each test pins is the SECTIONS a subject offers and what a row
-// does, never a third copy of the vocabulary.
+// One rectangle of cells, drawn two ways — a grip names the line it covers, a press
+// that travels sweeps the block it crossed — and one verb over it. What Backspace
+// means is read off the rectangle's EXTENT, so these assert the extents rather than
+// the gestures: a row swept cell by cell has to delete exactly as the row its grip
+// named does, or there are two rules wearing one key.
 
-describe('the line menu', () => {
-	it('the SECOND press on a grip raises it; the first only names the line', () => {
+describe('a selection is a rectangle of cells, and Backspace reads its extent', () => {
+	it('a press that travels out of its cell sweeps a block; one that stays is a caret', () => {
 		const { field } = tableLeaf(LETTERED);
-		const grip = grips(field, 'row')[0];
-		grip.click();
-		expect(menu(field)).toBeNull();
-		expect(washed(field)).toEqual(['1,0', '1,1']);
-		grip.click();
-		expect(menu(field)).not.toBeNull();
-		// And the band stays out with the pointer gone: a held subject arms it.
-		expect(field.el.querySelector('.qm-table-island')!.classList).toContain('qm-table-armed');
-		field.destroy();
-	});
-
-	it('a secondary press in a cell raises BOTH its lines, column first', () => {
-		const { field } = tableLeaf(LETTERED);
-		const event = rightPress(field.el.querySelectorAll('.qm-table-cell')[2]);
-		expect(event.defaultPrevented).toBe(true);
-		const labels = Object.keys(rows(field));
-		expect(labels).toContain('Insert column left');
-		expect(labels).toContain('Insert row above');
-		expect(labels.indexOf('Insert column left')).toBeLessThan(labels.indexOf('Insert row above'));
-		// A cell's menu names the cell and selects nothing: it is read from where the
-		// press landed, not aimed at a line first.
-		expect(menu(field)!.getAttribute('aria-label')).toBe('Row 1, Column 1 actions');
+		layout(field);
+		// Cell 2 is row 1 column 1, cell 5 is row 2 column 2: the block between them.
+		sweep(field, 2, 5);
+		expect(washed(field)).toEqual(['1,0', '1,1', '2,0', '2,1']);
+		// And a press that does not travel leaves the caret alone: the cell keeps it.
+		pressAt(field.el.querySelectorAll('.qm-table-cell-host')[0], 40, 30);
 		expect(washed(field)).toEqual([]);
 		field.destroy();
 	});
 
-	it('the header offers no row section: `header` is a separate field from `rows`', () => {
+	it('a block of cells CLEARS on Backspace, and the rectangle stays selected', () => {
 		const { field } = tableLeaf(LETTERED);
-		rightPress(field.el.querySelector('th.qm-table-cell')!);
-		const labels = Object.keys(rows(field));
-		expect(labels).toContain('Insert column left');
-		expect(labels.some((l) => l.includes('row'))).toBe(false);
-		field.destroy();
-	});
-
-	it('a row that would act on nothing is disabled rather than withheld', () => {
-		const { field } = tableLeaf(LETTERED);
-		raise(grips(field, 'column')[0]);
-		// The first column cannot move left and the last cannot move right; both rows
-		// stay, so the menu's shape does not change as the subject does.
-		expect(rows(field)['Move column left'].disabled).toBe(true);
-		expect(rows(field)['Move column right'].disabled).toBe(false);
-		field.destroy();
-	});
-
-	it('the last column names what removing it will DO: clear, not delete', () => {
-		const { field } = tableLeaf(newTable(1, 1));
-		raise(grips(field, 'column')[0]);
-		expect(rows(field)['Delete column']).toBeUndefined();
-		rows(field)['Clear column'].click();
-		// The model keeps the line, so the gesture emptied it (CODEC §"The table island").
-		expect(columnCount(leafProps(field))).toBe(1);
-		expect(grid(leafProps(field))).toEqual([[''], ['']]);
-		field.destroy();
-	});
-
-	it('an insert opens a line at the boundary its label names', () => {
-		const { field } = tableLeaf(LETTERED);
-		raise(grips(field, 'row')[0]);
-		rows(field)['Insert row above'].click();
-		// Above the FIRST body row is directly under the header, which is the one
-		// boundary the caps cannot reach.
+		layout(field);
+		sweep(field, 2, 4); // rows 1–2, column 1 only: neither axis is spanned
+		expect(washed(field)).toEqual(['1,0', '2,0']);
+		press(cellViews(field)[2], 'Backspace');
 		expect(grid(leafProps(field))).toEqual([
 			['h1', 'h2'],
+			['', 'a2'],
+			['', 'b2']
+		]);
+		expect(washed(field)).toEqual(['1,0', '2,0']);
+		field.destroy();
+	});
+
+	it('a block spanning every column is a set of ROWS, and deletes them', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		sweep(field, 2, 5); // both body rows, both columns
+		press(cellViews(field)[2], 'Backspace');
+		expect(grid(leafProps(field))).toEqual([['h1', 'h2']]);
+		field.destroy();
+	});
+
+	it('a block spanning every row is a set of COLUMNS, and deletes them', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		sweep(field, 1, 5); // header through last body row, column 2 only
+		expect(washed(field)).toEqual(['0,1', '1,1', '2,1']);
+		press(cellViews(field)[1], 'Backspace');
+		expect(grid(leafProps(field))).toEqual([['h1'], ['a1'], ['b1']]);
+		expect(leafProps(field).aligns).toEqual(['left']);
+		field.destroy();
+	});
+
+	it('the whole table CLEARS: the model keeps both lines, so nothing else is honest', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		sweep(field, 0, 5); // every cell
+		expect(washed(field)).toHaveLength(6);
+		press(cellViews(field)[0], 'Backspace');
+		// A header is not a row and the rectangle floors at one column, so "remove every
+		// line" has no reading the model can honour and emptying is the one left.
+		expect(grid(leafProps(field))).toEqual([
+			['', ''],
+			['', ''],
+			['', '']
+		]);
+		field.destroy();
+	});
+
+	it("a fresh press in a cell retires the block, and Backspace is the text's again", () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		sweep(field, 2, 5);
+		expect(washed(field)).not.toEqual([]);
+		// The origin cell already holds the focus, so no `focus` event fires: the press
+		// itself is what has to drop the block.
+		pressAt(field.el.querySelectorAll('.qm-table-cell-host')[2], 40, 55);
+		expect(washed(field)).toEqual([]);
+		// The block handler DECLINES with nothing held, which is what leaves an ordinary
+		// Backspace to the text. jsdom edits no contenteditable, so what is observable is
+		// the wrong outcome: the cells emptied by a handler that should not have fired.
+		press(cellViews(field)[2], 'Backspace');
+		expect(grid(leafProps(field))).toEqual([
+			['h1', 'h2'],
+			['a1', 'a2'],
+			['b1', 'b2']
+		]);
+		field.destroy();
+	});
+
+	it('a grip draws the same rectangle its line covers', () => {
+		const { field } = tableLeaf(LETTERED);
+		grips(field, 'row')[0].click();
+		expect(washed(field)).toEqual(['1,0', '1,1']);
+		// Swept or named, one rectangle: the grip is marked exactly when the selection is
+		// its own line, which is the only thing that tells the two gestures apart.
+		expect(grips(field, 'row')[0].getAttribute('aria-pressed')).toBe('true');
+		layout(field);
+		sweep(field, 2, 3);
+		expect(washed(field)).toEqual(['1,0', '1,1']);
+		expect(grips(field, 'row')[0].getAttribute('aria-pressed')).toBe('true');
+		field.destroy();
+	});
+
+	it('the header row alone CLEARS: `header: []` is not a table', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		sweep(field, 0, 1); // the whole header, and nothing under it
+		press(cellViews(field)[0], 'Backspace');
+		expect(grid(leafProps(field))).toEqual([
 			['', ''],
 			['a1', 'a2'],
 			['b1', 'b2']
 		]);
-		raise(grips(field, 'column')[0]);
-		rows(field)['Insert column left'].click();
-		expect(grid(leafProps(field))[0]).toEqual(['', 'h1', 'h2']);
 		field.destroy();
 	});
 
-	it('an arrow walks the live rows and steps over the disabled ones', () => {
-		const { field } = tableLeaf(LETTERED);
-		raise(grips(field, 'column')[0]);
-		// Focus opens on the first live row, which is not the first row: the walk and
-		// the opening focus read one list.
-		expect(document.activeElement).toBe(rows(field)['Insert column left']);
-		key(document.activeElement!, 'ArrowDown');
-		expect(document.activeElement).toBe(rows(field)['Insert column right']);
-		key(document.activeElement!, 'ArrowDown');
-		expect(document.activeElement).toBe(rows(field)['Move column right']); // left is disabled
-		// And the inline set is in the SAME walk: four glyphs beside a heading are still
-		// four choices, so the keyboard crosses them rather than skipping to what follows.
-		key(document.activeElement!, 'ArrowDown');
-		expect(document.activeElement).toBe(aligns(field)['none']);
-		key(document.activeElement!, 'ArrowUp');
-		expect(document.activeElement).toBe(rows(field)['Move column right']);
-		field.destroy();
-	});
-
-	it('Escape closes it and hands focus back to the grip that raised it', () => {
-		const { field } = tableLeaf(LETTERED);
-		const grip = grips(field, 'row')[0];
-		raise(grip);
-		key(document.activeElement!, 'Escape');
-		expect(menu(field)).toBeNull();
-		expect(document.activeElement).toBe(grip);
-		// The line is still the subject: closing the menu retires the question, not the
-		// selection, so Backspace still means this row.
-		expect(washed(field)).toEqual(['1,0', '1,1']);
-		field.destroy();
-	});
-
-	it('a press outside closes it, and a press inside does not', () => {
-		const { field } = tableLeaf(LETTERED);
-		raise(grips(field, 'row')[0]);
-		menu(field)!.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
-		expect(menu(field)).not.toBeNull();
-		document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
-		expect(menu(field)).toBeNull();
-		field.destroy();
-	});
-
-	it('a caret in a cell closes it: one subject at a time, menus included', () => {
-		const { field } = tableLeaf(LETTERED);
-		raise(grips(field, 'row')[0]);
-		cellViews(field)[0].focus();
-		expect(menu(field)).toBeNull();
-		expect(washed(field)).toEqual([]);
-		field.destroy();
-	});
-
-	it('it portals to the nearest `[data-qm-root]`, out of the card that isolates', () => {
-		const root = mount();
-		root.setAttribute('data-qm-root', '');
-		const doc = quill().seedDocument();
-		doc.overwrite({}, withTable(LETTERED));
-		const field = createField({ doc, quill: quill(), addr: {}, container: root });
-		raise(grips(field, 'row')[0]);
-		// The marker, not the leaf: the marker is what carries the consumer's dials, and
-		// the card stack isolates a stacking context around its first card, so a menu
-		// left inside the leaf takes a `z-index` scoped to that one card.
-		expect(menu(field)!.parentElement).toBe(root);
-		expect(field.el.querySelector('.qm-table-island .qm-table-menu')).toBeNull();
-		// And it leaves with the leaf: nothing else would take it down.
-		field.destroy();
-		expect(document.querySelector('.qm-table-menu')).toBeNull();
-	});
-
-	it('Space raises it from the keyboard, where a second press is not a gesture', () => {
-		const { field } = tableLeaf(LETTERED);
-		const grip = grips(field, 'column')[1];
+	it('the last column CLEARS: the rectangle floors at one', () => {
+		const { field } = tableLeaf(newTable(1, 1));
+		const grip = grips(field, 'column')[0];
 		grip.click();
-		key(grip, ' ');
-		expect(menu(field)).not.toBeNull();
-		expect(menu(field)!.getAttribute('aria-label')).toBe('Column 2 actions');
+		key(grip, 'Backspace');
+		expect(columnCount(leafProps(field))).toBe(1);
+		expect(grid(leafProps(field))).toEqual([[''], ['']]);
 		field.destroy();
 	});
 });
@@ -742,6 +686,11 @@ function layout(field: FieldController, hosts: Box[] = HOSTS): void {
 	field.el
 		.querySelectorAll('.qm-table-cell-host')
 		.forEach((host, i) => hosts[i] && stub(host, hosts[i]));
+	// The `td`s take the same boxes as the hosts they hold: what a press resolves
+	// against is the host, and what a SWEEP resolves against is the box, so a test that
+	// drives either needs both. Tiling them identically is close enough for a hit test
+	// and keeps one set of numbers.
+	field.el.querySelectorAll('.qm-table-cell').forEach((box, i) => hosts[i] && stub(box, hosts[i]));
 }
 
 // jsdom implements no `Range` rects, and PM reads them to scroll a caret it just
