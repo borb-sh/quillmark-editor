@@ -680,8 +680,8 @@ class TableIslandView implements NodeView {
 
 	// ── The clipboard ─────────────────────────────────────────────────────────
 
-	/** The held rectangle's cells, read off the stored props. The rectangle is the unit
-	 *  that crosses the clipboard, which is why it is also the unit the verbs read. */
+	/** The held rectangle's cells, read off the stored props: the unit that crosses the
+	 *  clipboard (`clipboard.ts`), so the unit the verbs here read. */
 	private heldBlock(held: Cells): TableCell[][] {
 		const props = this.props();
 		return Array.from({ length: held.r1 - held.r0 + 1 }, (_, i) =>

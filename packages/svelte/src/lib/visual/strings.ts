@@ -71,7 +71,7 @@ export interface VisualStrings extends TableChromeStrings, SlashStrings {
 	formatAnchorTitle: string;
 	linkPlaceholder: string;
 	linkApply: string;
-	/** The prompt's remove arm, drawn only where the selection carries a link. */
+	/** Drawn only where the selection carries a link. */
 	linkRemove: string;
 	linkCancel: string;
 

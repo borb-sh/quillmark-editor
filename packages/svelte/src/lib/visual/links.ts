@@ -1,7 +1,5 @@
-// The link prompt's answer to a URL: what a typed value means as an href, what the
-// selection reports back, and how one is written over a range. Off the component,
-// so the parts carrying a data consequence are functions with tests rather than
-// event handlers.
+// The href logic behind the link prompt, off the component: the parts carrying a
+// data consequence are functions with tests rather than event handlers.
 //
 // `link` is the one mark carrying a VALUE, which is what keeps it off `toggleMark`:
 // that command matches by TYPE (`rangeHasMark(from, to, markType)`), so a second

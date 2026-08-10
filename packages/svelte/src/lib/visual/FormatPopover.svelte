@@ -206,11 +206,11 @@
 		if (!open) linkPromptOpen = false;
 	});
 
-	// The prompt takes its own focus: open-auto-focus is prevented (FOCUS DISCIPLINE
-	// above) and the prompt replaces the buttons on a surface that is ALREADY open,
-	// so nothing else moves focus off the leaf and the URL would be typed into the
-	// document. Selected, not merely focused, because the input arrives seeded and
-	// replacing that value is what the prompt is usually raised for.
+	// The prompt takes its own focus. Nothing else moves it: open-auto-focus is
+	// prevented (FOCUS DISCIPLINE above), and the prompt replaces the buttons on a
+	// surface ALREADY open, so without this the URL is typed into the document.
+	// Selected rather than merely focused, the input arriving seeded and replacing
+	// that value being what the prompt is usually raised for.
 	$effect(() => {
 		if (linkPromptOpen && linkInputEl) {
 			linkInputEl.focus();
