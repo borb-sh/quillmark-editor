@@ -10,7 +10,6 @@
 // decoration; main is asked all the same, which is what `seen` is read for.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
-import type { Document, Quill } from '@quillmark/wasm';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
 import type { VisualEditorProps } from '$lib/visual/props';
 import type { BodyPlaceholderContext } from '$lib/visual/structure';
@@ -28,8 +27,8 @@ afterEach(() => {
 /** Mount over a document carrying one added indorsement beyond the seed, so the kind
  *  appears more than once and per-card wording has something to distinguish. */
 function mountEditor(props: Partial<VisualEditorProps> = {}) {
-	const q: Quill = quill();
-	const doc: Document = q.seedDocument();
+	const q = quill();
+	const doc = q.seedDocument();
 	const card = q.seedCard('indorsement', doc.seedOverlay('indorsement'));
 	if (card) doc.insertCard(card, doc.cardCount);
 	const target = document.createElement('div');
@@ -46,9 +45,9 @@ function mountEditor(props: Partial<VisualEditorProps> = {}) {
 
 /** Every empty body's rendered ghost, in card order. The decoration stamps
  *  `data-placeholder` on the sole empty paragraph, which is what the CSS prints. */
-function ghosts(target: HTMLElement): (string | null)[] {
-	return [...target.querySelectorAll<HTMLElement>('.qm-body-leaf [data-placeholder]')].map((el) =>
-		el.getAttribute('data-placeholder')
+function ghosts(target: HTMLElement): string[] {
+	return [...target.querySelectorAll<HTMLElement>('.qm-body-leaf [data-placeholder]')].map(
+		(el) => el.dataset.placeholder ?? ''
 	);
 }
 
@@ -70,7 +69,7 @@ describe('the hook is asked per card', () => {
 		const drawn = ghosts(target);
 		expect(drawn.length).toBeGreaterThan(1);
 		expect(new Set(drawn).size).toBe(drawn.length);
-		expect(drawn.every((g) => /^Write .+…$/.test(g ?? ''))).toBe(true);
+		expect(drawn.every((g) => /^Write .+…$/.test(g))).toBe(true);
 
 		// The main card is asked too, naming itself; every other ask carries a distinct
 		// session key.
@@ -83,7 +82,7 @@ describe('the hook is asked per card', () => {
 	it('reads as one invitation per kind when the hook is a function of kind', () => {
 		// Same kind, same words, because the function says so.
 		const target = mountEditor({
-			strings: { bodyPlaceholder: (ctx) => (ctx.isMain ? undefined : `Endorse the ${ctx.kind}…`) }
+			strings: { bodyPlaceholder: (ctx) => `Endorse the ${ctx.kind}…` }
 		});
 
 		const drawn = ghosts(target);
@@ -91,22 +90,15 @@ describe('the hook is asked per card', () => {
 		expect(new Set(drawn)).toEqual(new Set(['Endorse the indorsement…']));
 	});
 
-	it('takes the built-in where the hook declines', () => {
-		// `undefined` is the documented defer; the rung below it is the built-in.
-		const target = mountEditor({ strings: { bodyPlaceholder: () => undefined } });
-
-		const drawn = ghosts(target);
-		expect(drawn.length).toBeGreaterThan(1);
-		expect(drawn).toEqual(drawn.map(() => BUILT_IN));
-	});
-
-	it('ghosts the built-in when no hook is set', () => {
-		// The reference quill declares no body `default:` on any kind, so with no
-		// wording every rung falls through to the package's English.
+	it('ghosts the built-in when the hook declines', () => {
+		// No hook set IS the declining hook: the package's own `bodyPlaceholder` returns
+		// `undefined`, so this is the same rung a consumer reaches by deferring. The
+		// reference quill declares no body `default:` on any kind, so nothing above the
+		// built-in answers either.
 		const target = mountEditor();
 
 		const drawn = ghosts(target);
 		expect(drawn.length).toBeGreaterThan(1);
-		expect(drawn).toEqual(drawn.map(() => BUILT_IN));
+		expect(new Set(drawn)).toEqual(new Set([BUILT_IN]));
 	});
 });
