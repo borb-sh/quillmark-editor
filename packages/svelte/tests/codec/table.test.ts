@@ -381,6 +381,34 @@ describe('the table NodeView', () => {
 		field.destroy();
 	});
 
+	it('a dropped rank hands the selection to whatever took its place, on either axis', () => {
+		// One rule for both, or the next Alt+arrow acts on a line the writer did not aim
+		// at — and which line that is would depend on which axis they were on.
+		const wide = tableLeaf(insertColumn(LETTERED, 1));
+		const column = grips(wide.field, 'column')[1];
+		column.click();
+		key(column, 'Backspace');
+		expect(washed(wide.field)).toEqual(['0,1', '1,1', '2,1']);
+		wide.field.destroy();
+
+		const tall = tableLeaf(LETTERED);
+		const row = grips(tall.field, 'row')[1];
+		row.click();
+		key(row, 'Backspace');
+		expect(washed(tall.field)).toEqual(['1,0', '1,1']);
+		tall.field.destroy();
+	});
+
+	it('the LAST rank of an axis hands it back, there being nothing after it', () => {
+		const { field } = tableLeaf(LETTERED);
+		const grip = grips(field, 'column')[1];
+		grip.click();
+		key(grip, 'Backspace');
+		// Two columns, the second dropped: the clamp lands on the one that is left.
+		expect(washed(field)).toEqual(['0,0', '1,0', '2,0']);
+		field.destroy();
+	});
+
 	it('an arrow steps the selection, and stops where the axis does', () => {
 		const { field } = tableLeaf(LETTERED);
 		const grip = grips(field, 'row')[1];
@@ -511,6 +539,53 @@ describe('the table NodeView', () => {
 		last.focus();
 		press(last, 'Tab');
 		expect(leafProps(field).rows).toHaveLength(3);
+		field.destroy();
+	});
+
+	it('Shift-Tab before the FIRST cell declines, which is the island’s keyboard exit', () => {
+		const { field } = tableLeaf(LETTERED);
+		const first = cellViews(field)[0];
+		first.focus();
+		const claimed = first.someProp('handleKeyDown', (f) =>
+			f(first, new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true }))
+		);
+		// Unclaimed, so the browser moves the focus out of the grid the way it moved it
+		// in: swallowing it would leave Tab no way out of a table at all, forward being
+		// the growth affordance.
+		expect(claimed).toBeFalsy();
+		expect(leafProps(field).rows).toHaveLength(2);
+		field.destroy();
+	});
+
+	it('a rebuild puts the focus back, so a second undo still has a view to reach', () => {
+		const { field } = tableLeaf(LETTERED);
+		const views = cellViews(field);
+		const last = views[views.length - 1];
+		last.focus();
+		press(last, 'Tab'); // appends a row: a CHANGED rectangle, so the views are rebuilt
+		expect(leafProps(field).rows).toHaveLength(3);
+		const grown = cellViews(field).find((v) => v.hasFocus());
+		expect(grown).toBeDefined();
+		press(grown!, 'z', { ctrlKey: true });
+		expect(leafProps(field).rows).toHaveLength(2);
+		// An undo is the outer history's transaction, not an op of this view's, so it
+		// names no landing: without the seat the DOM under the focus goes and the focus
+		// falls to the document body, where the next undo reaches nothing.
+		expect(cellViews(field).some((v) => v.hasFocus())).toBe(true);
+		field.destroy();
+	});
+
+	it('a reseed keeps the cell’s caret rather than dropping it to the start', () => {
+		const { field } = tableLeaf(LETTERED);
+		const view = cellViews(field)[0];
+		view.focus();
+		view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 3)));
+		view.dispatch(view.state.tr.insertText('XY', 3));
+		expect(view.state.selection.head).toBe(5);
+		press(view, 'z', { ctrlKey: true });
+		expect(leafProps(field).header[0].text).toBe('h1');
+		// Where the edit was, not where a fresh state resolves to.
+		expect(cellViews(field)[0].state.selection.head).toBe(3);
 		field.destroy();
 	});
 

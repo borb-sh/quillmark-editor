@@ -1,16 +1,19 @@
 // Input rules: the markdown-shorthand plugin the codec owns (`**`→strong, `*`→em,
 // `~~`→strike, `` ` ``→code, `# `→heading, `- `/`1. `→lists, `> `→blockquote,
 // `---`→divider).
-// Mark rules are hand-rolled (prosemirror-inputrules ships only node rules); block
-// rules reuse `wrappingInputRule` / `textblockTypeInputRule`. These produce
-// transactions the codec already lowers: they add no new lowering surface.
-import {
-	InputRule,
-	inputRules,
-	textblockTypeInputRule,
-	wrappingInputRule
-} from 'prosemirror-inputrules';
-import type { Attrs, MarkType, Node as PMNode, NodeType, Schema } from 'prosemirror-model';
+// Mark rules are hand-rolled (prosemirror-inputrules ships only node rules); the one
+// block rule with no guard of its own reuses `wrappingInputRule`, and the rest mirror
+// an upstream body around one. These produce transactions the codec already lowers:
+// they add no new lowering surface.
+import { InputRule, inputRules, wrappingInputRule } from 'prosemirror-inputrules';
+import type {
+	Attrs,
+	MarkType,
+	Node as PMNode,
+	NodeType,
+	ResolvedPos,
+	Schema
+} from 'prosemirror-model';
 import { canJoin, findWrapping } from 'prosemirror-transform';
 import { Selection } from 'prosemirror-state';
 import type { EditorState, Plugin, Transaction } from 'prosemirror-state';
@@ -63,17 +66,22 @@ function markInputRule(regexp: RegExp, markType: MarkType, delimLen: number): In
  * body paragraphs (`usaf_memo`'s `render-body`), where a heading resolves to
  * nothing. This is the wrap-side route into that shape; the `# ` rule guards the
  * other, in {@link markdownInputRules}.
+ *
+ * `item` is the second guard, and it is about the GESTURE rather than the shape: the
+ * rule declines at the start of an item's own first block ({@link openingAnItem}).
  */
 function listWrappingRule(
 	regexp: RegExp,
 	listType: NodeType,
 	paragraph: NodeType,
+	item: NodeType | undefined,
 	getAttrs?: (match: RegExpMatchArray) => Attrs | null,
 	joinPredicate?: (match: RegExpMatchArray, node: PMNode) => boolean
 ): InputRule {
 	return new InputRule(
 		regexp,
 		(state: EditorState, match: RegExpMatchArray, start: number, end: number) => {
+			if (openingAnItem(state.doc.resolve(start), item)) return null;
 			const attrs = getAttrs ? getAttrs(match) : null;
 			const tr = state.tr.delete(start, end);
 			// Positions survive the retype: same content, same size.
@@ -101,10 +109,28 @@ function listWrappingRule(
 	);
 }
 
+/**
+ * Whether `$start` is the head of an item that already exists: offset 0 of a
+ * `list_item`'s FIRST block, which is where a list shorthand is the text an author
+ * typed rather than a shorthand at all.
+ *
+ * Firing there wraps the item's own paragraph in a fresh list, minting an item whose
+ * only content is another item — a level with nothing on it. Tab is the indent gesture
+ * and lands the shape a nesting is supposed to have, under the PREVIOUS sibling, so
+ * what the rule adds here is a second door onto a worse answer. A LATER block of the
+ * item is not this case: wrapping a continuation paragraph is how a sub-list opens
+ * under text.
+ */
+function openingAnItem($start: ResolvedPos, item: NodeType | undefined): boolean {
+	if (!item || $start.depth < 2 || $start.parentOffset !== 0) return false;
+	return $start.node(-1).type === item && $start.index(-1) === 0;
+}
+
 /** The full markdown-shorthand rule set for a block schema. */
 export function markdownInputRules(schema: Schema): InputRule[] {
 	const rules: InputRule[] = [];
 	const m = schema.marks;
+	const item = schema.nodes.list_item;
 
 	// Inline marks. Non-greedy capture between matching delimiters.
 	if (m.strong) rules.push(markInputRule(/\*\*([^*]+)\*\*$/, m.strong, 2));
@@ -119,7 +145,6 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 		// declines (null) and stays literal text, rather than minting the unrenderable
 		// `list_item > heading` {@link listWrappingRule} normalizes away on the wrap side.
 		const heading = schema.nodes.heading;
-		const item = schema.nodes.list_item;
 		rules.push(
 			new InputRule(
 				/^(#{1,6})\s$/,
@@ -138,15 +163,35 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 			)
 		);
 	}
-	if (schema.nodes.code_block) {
-		rules.push(textblockTypeInputRule(/^```$/, schema.nodes.code_block));
+	if (schema.nodes.code_block && schema.nodes.paragraph) {
+		// `textblockTypeInputRule`'s body plus the exit the `---` rule mints below, for a
+		// sharper version of its reason: a code block is the one block a GAP CURSOR will
+		// not sit beside either (`closedBefore`/`closedAfter` both fail on a textblock), so
+		// a fence at the end of a body leaves the caret with no way forward at all.
+		const code = schema.nodes.code_block;
+		const paragraph = schema.nodes.paragraph;
+		rules.push(
+			new InputRule(
+				/^```$/,
+				(state: EditorState, _match: RegExpMatchArray, start: number, end: number) => {
+					const $start = state.doc.resolve(start);
+					if (!$start.node(-1).canReplaceWith($start.index(-1), $start.indexAfter(-1), code)) {
+						return null;
+					}
+					const tr = state.tr.delete(start, end).setBlockType(start, start, code);
+					const at = tr.doc.resolve(start).after();
+					if (!tr.doc.nodeAt(at)) tr.insert(at, paragraph.create());
+					// The caret stays in the fence, not in the exit it minted.
+					return tr;
+				}
+			)
+		);
 	}
 	if (schema.nodes.horizontal_rule && schema.nodes.paragraph) {
 		// A divider is a whole block, so this rule REPLACES its textblock rather than
 		// retyping one: `horizontal_rule` holds no content to retype into.
 		const rule = schema.nodes.horizontal_rule;
 		const paragraph = schema.nodes.paragraph;
-		const item = schema.nodes.list_item;
 		rules.push(
 			new InputRule(
 				/^---$/,
@@ -179,12 +224,11 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 			)
 		);
 	}
-	// `- ` / `1. ` at the start of a block, here or nested inside an item. These are
-	// the one pair of shorthands the slash menu ALSO carries: a list opens an item the
-	// caret then lives in, which is what that menu is the set of (`slash.ts`).
+	// `- ` / `1. ` at the start of a block, here or nested inside an item — but NOT at
+	// the start of an item's own first block, where {@link openingAnItem} declines.
 	if (schema.nodes.bullet_list && schema.nodes.paragraph) {
 		rules.push(
-			listWrappingRule(/^\s*([-+*])\s$/, schema.nodes.bullet_list, schema.nodes.paragraph)
+			listWrappingRule(/^\s*([-+*])\s$/, schema.nodes.bullet_list, schema.nodes.paragraph, item)
 		);
 	}
 	if (schema.nodes.ordered_list && schema.nodes.paragraph) {
@@ -193,6 +237,7 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 				/^(\d+)\.\s$/,
 				schema.nodes.ordered_list,
 				schema.nodes.paragraph,
+				item,
 				(match) => ({ start: +match[1] }),
 				(match, node) => node.childCount + (node.attrs.start as number) === +match[1]
 			)
