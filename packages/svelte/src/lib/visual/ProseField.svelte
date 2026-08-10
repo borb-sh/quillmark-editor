@@ -1,11 +1,9 @@
 <!--
- One content prose leaf: a thin Svelte mount of the codec's `createField`
- (VISUAL_EDITOR §Surface). Mounts once per stable leaf key and tears down on
- unmount; the leaf owns its PM state, history, and per-keystroke `applyChange`
- commit, so this wrapper adds no logic beyond wiring and registration. The
- `addr` is supplied by the parent as a live object (its `card` a getter over the
- stable-id→index map), so a card reorder re-targets this leaf's commits without
- a remount: the caret rides the untouched PM view.
+ One content prose leaf: a Svelte mount of the codec's `createField`
+ (VISUAL_EDITOR §Surface), which owns the PM state, the history and the
+ per-keystroke commit, so this wrapper is wiring and registration. `addr` is a
+ live object the parent builds, so a card reorder re-targets this leaf's commits
+ with the caret riding the untouched view.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -20,32 +18,28 @@
 	interface Props {
 		doc: Document;
 		/** The schema this leaf reads its content through: `createField` binds a reader
-		 *  off it, so a stored string decodes by declared type rather than by guess. */
+		 *  off it, so a stored string decodes by its declared type. */
 		quill: Quill;
 		addr: Addr;
 		inline?: boolean;
 		plaintext?: boolean;
 		/**
-		 * Draw no box: the card body's leaf, and nothing else. A property
-		 * of the slot rather than of the leaf: `block` is not the same predicate, since
-		 * a `richtext` field without `inline` is block prose and still a control in a
-		 * row of controls. Only the body is paper, and only its caller knows it is.
+		 * Draw no box: the card body's leaf, and nothing else. Not `block`, which is a
+		 * different predicate: a `richtext` field without `inline` is block prose and
+		 * still a control in a row of controls, so only the caller knows what is paper.
 		 */
 		unframed?: boolean;
 		/** Accessible name for a leaf nothing else names: an array element, or the
-		 * card body. A leaf with a field label takes `labelledBy` instead. */
+		 * card body. A leaf with a field label takes `labelledBy`. */
 		label?: string;
 		/** The field label's own id → `aria-labelledby` on the editable region. `for`
-		 * cannot reach a `contenteditable` (not a labelable element) so the
-		 * association runs the other way, and the label's click comes back through
-		 * the controller's `focus`. */
+		 * cannot reach a `contenteditable`, so the association runs the other way and
+		 * the label's click comes back through the controller's `focus`. */
 		labelledBy?: string;
 		/** The parked `description` (FieldLabel) → `aria-describedby`. */
 		describedBy?: string;
-		/** Ghost shown on the empty leaf. An inline leaf's is the resolved `default:`
-		 * or nothing; a body's always has text, falling back to an invitation
-		 * (`resolveBodyGhost`). Reactive: a change is pushed into the mounted view,
-		 * never a remount. */
+		/** Ghost shown on the empty leaf: an inline leaf's resolved `default:` or
+		 * nothing, a body's always text (`resolveBodyGhost`). */
 		placeholder?: string;
 		/** Stable identity for the registry, stamped on the DOM node so a remount is
 		 *  visible as one. */
@@ -55,9 +49,8 @@
 		/** A commit landed on this leaf: the prose change lane. */
 		onChange?: (addr: Addr) => void;
 		onError?: EditorErrorHandler;
-		/** The editor's leaf registry (`leaves.ts`). A prose leaf registers its
-		 *  controller: the landing handle plus the codec seam a form control has no half
-		 *  of, which is what makes this leaf a caret target and not merely a focus one. */
+		/** The editor's leaf registry (`leaves.ts`). Registering the controller is what
+		 *  makes this leaf a caret target and not merely a focus one. */
 		leaves?: LeafRegistry;
 	}
 
@@ -82,33 +75,24 @@
 
 	let containerEl: HTMLDivElement | undefined = $state();
 
-	// The island chrome's wording, read where every other surface reads it. Passed as
-	// a getter: the codec draws that chrome on each render, so a locale swap reaches a
-	// mounted table without remounting the leaf and losing the caret.
+	// Handed to the codec as a getter: the island chrome redraws on each render, so a
+	// locale swap reaches a mounted table without remounting the leaf and losing the caret.
 	const t = wording();
 
-	/** The insert menu's live state, pushed by the leaf's trigger plugin. Held here
-	 * rather than in the shell: a trigger belongs to one caret in one leaf, so the
-	 * menu is the leaf's surface, unlike the one format popover that follows whichever
-	 * leaf is active. A constrained leaf never receives one (`createField` mounts the
-	 * trigger on the block schema alone). */
+	/** The insert menu's live state, pushed by the leaf's trigger plugin: the menu is
+	 * the leaf's surface rather than the shell's (VISUAL_EDITOR §Chrome). A constrained
+	 * leaf never receives one, the trigger mounting on the block schema alone. */
 	let slash: SlashState | undefined = $state();
 
-	// Block prose vs a control in a row of controls: the same predicate the codec
-	// picks its schema by (`createField`: `plaintext` implies `inline`), so the box a
-	// leaf draws and the schema it holds cannot disagree. Keyed on `inline` alone, a
-	// `plaintext`-only field would take the body's floor while holding one paragraph.
+	// The codec's own schema predicate (`createField`: `plaintext` implies `inline`), so
+	// the box a leaf draws and the schema it holds cannot disagree. On `inline` alone a
+	// `plaintext` field would take the block floor while holding one paragraph.
 	const block = $derived(!(inline || plaintext));
 
-	// An absent richtext field (a `default:`-only field like `tag_line`) is handled
-	// by the codec itself: `createField` decodes an empty content and overwrites on
-	// the first edit; so this wrapper adds no pre-seeding, and an untouched field
-	// stays absent (its default rendering intact) until actually edited.
 	let controller: FieldController | undefined;
 
-	/** Take the caret: what the label click calls. The controller's focus, not the
-	 * container's: a PM view restores a selection that an `HTMLElement.focus` on
-	 * the wrapper leaves unplaced. */
+	/** Take the caret: what the label's click calls. The controller's focus, not the
+	 * container's, which leaves the PM selection unplaced. */
 	export function focus(): void {
 		controller?.focus();
 	}
@@ -143,10 +127,8 @@
 		};
 	});
 
-	// The ghost outlives no remount of its own: the leaf is keyed by the card's
-	// session id, so a card retyped to another kind keeps this view and would keep
-	// the old kind's wording. Push it instead: the caret is worth more than the
-	// simplicity of rebuilding.
+	// A retype does not remount the leaf (its key is the card's session id), so the new
+	// kind's ghost is pushed into the live view rather than paid for with the caret.
 	$effect(() => {
 		controller?.setPlaceholder(placeholder);
 	});
@@ -163,48 +145,40 @@
 <SlashMenu menu={slash} leaf={() => controller} label={t.strings.slashLabel} />
 
 <style>
-	/* The box is `.qm-control-box` (controls.css): the same rule the input beside it
-	 draws, so the two agree on height by construction rather than by two floors
-	 tuned to match. Nothing here restates it, and there is no
-	 `min-height`: `core/codec/prose.css` resets the paragraph box, so one line of
-	 prose in this box measures one line of text in that one. */
+	/* The box is `.qm-control-box` (controls.css), the same rule the input beside it
+	 draws, so the two agree on height by construction. No `min-height` with it:
+	 `core/codec/prose.css` resets the paragraph box, so one line of prose in this box
+	 measures one line of text in that one. */
 	.qm-prose {
-		/* Positioned for the arrival wash `setCaret` inserts (`core/bloom.ts`): an
-		 inset child, so it covers the text without fading it or tinting the leaf's
-		 own surface. */
+		/* Containing block for the arrival wash's inset child (`core/bloom.ts`). */
 		position: relative;
 	}
-	/* A leaf the inline schema does not constrain is prose rather than a cell in a row
-	 of controls, so it opens at a few lines and grows. The floor is three line boxes,
-	 not a length: `1em` rather than a size rung because which rung this leaf reads is
-	 the rule below's, and a second naming of it drifts. Three is what an empty body
-	 costs, which is the only state the floor is ever the height: the ghost takes the
-	 first line, so the opening reads as an invitation with room under it rather than
-	 as a drop. */
-	.qm-prose-block {
+	/* A leaf the inline schema does not constrain is prose rather than a cell in a row of
+	 controls, so it opens at three line boxes and grows: the ghost takes the first,
+	 leaving room under it. `1em`, not a size rung, which is the rule below's to name.
+
+	 On the editable rather than on the wrapper, which is what makes those lines part of
+	 the body: height the wrapper holds is height outside the `contenteditable`, where a
+	 press lands no caret. Inside it, the browser answers a press past the last line at
+	 the end of it. */
+	.qm-prose-block :global(.ProseMirror) {
 		min-height: calc(1em * var(--_qm-leading-body) * 3);
 	}
-	/* Paper, and the box is what says so. Not `block` alone: `inline` is the quill's to
-	 declare, so a schema omitting it on a richtext field puts a block leaf in a field
-	 row, where the paper rung would break the height agreement `controls.css` builds by
-	 construction. */
+	/* Paper, and the withheld box is what says so. Not `block` alone: `inline` is the
+	 quill's to declare, so a schema omitting it on a richtext field puts a block leaf in
+	 a field row, where this rung would break the height agreement above. */
 	.qm-prose-block:not(.qm-control-box) {
 		font-size: var(--_qm-text-paper);
 	}
-	/* The caret is the body's focus indicator, not a ring: a ring around the one
-	 surface in a card that is paper reads as form chrome. So the contenteditable's
-	 own outline is dropped everywhere, and a boxed leaf takes the shared ring on
-	 its wrapper instead (`qm-focus-ring-within`, controls.css) — the same cue the
-	 input beside it draws, on the leaf that is a control in a row of controls.
-	 The body keeps nothing: it is one surface per card and the largest in it, so
-	 "which leaf am I in" is not a question it raises. */
+	/* The caret is the body's focus indicator: a ring around the one surface in a card
+	 that is paper reads as form chrome. So the contenteditable's own outline is dropped
+	 everywhere, and a boxed leaf takes the shared ring on its wrapper instead
+	 (`qm-focus-ring-within`, controls.css). */
 	.qm-prose :global(.ProseMirror) {
 		outline: none;
 	}
-	/* Empty-leaf ghost: the resolved `default:` as dim/italic ghost,
-	   matching the scalar ghost rung. Rendered from a node decoration's data attr so
-	   it stays out of the
-	   document; `float`/`height:0` keep it from displacing the caret. */
+	/* Empty-leaf ghost, at the scalar ghost rung: a node decoration's data attr, so it
+	 stays out of the document; `float`/`height: 0` keep it from displacing the caret. */
 	.qm-prose :global(.ProseMirror .qm-prose-placeholder::before) {
 		content: attr(data-placeholder);
 		color: var(--_qm-ink-ghost);
