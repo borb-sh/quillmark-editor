@@ -6,11 +6,11 @@
 //   carried  the `conform::*` set a repack stranded
 //   surface  what an editor or a preview recovered from
 //
-// Each note keeps its origin and its address, and an address is written in one of TWO
+// Each note keeps its origin and its address, and an address is written in one of two
 // spaces. `path` is the document's: the editor routes on it, so a note carrying one
 // reaches a control. `location` is the quill source's: a compile failure names a file,
 // a line and a column, which routes to nothing here and is what the author's other
-// editor opens at. A note with neither is UNROUTED, naming no place at all, and is the
+// editor opens at. A note with neither is unrouted, naming no place at all, and is the
 // one shape visible nowhere but this band.
 import { isQuillmarkError, type Diagnostic, type Location, type Severity } from '@quillmark/wasm';
 

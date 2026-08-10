@@ -2,8 +2,8 @@
 // The table island: the rectangularizing constructors, the cell codec, and the
 // NodeView the two meet in.
 //
-// The load-bearing assertion is the rectangle one. Props NORMALIZE to one column
-// count, and the editor holds optimistic PM and re-hydrates only on an EXTERNAL
+// The load-bearing assertion is the rectangle one. Props normalize to one column
+// count, and the editor holds optimistic PM and re-hydrates only on an external
 // change, so an op that emitted a ragged table would leave the store rectangularized
 // and PM ragged, permanently, with no error channel. Text gets away with
 // normalization drift because it is mark union; a table's drift is structural. So
@@ -177,7 +177,7 @@ describe('the cell codec: a cell is its own content unit', () => {
 			text: 'abcd',
 			marks: [{ start: 3, end: 3, type: 'anchor', id: 'a1' }] as TableCell['marks']
 		};
-		// Retype the cell to something longer, inserted BEFORE the anchor.
+		// Retype the cell to something longer, inserted before the anchor.
 		const edited = decode(cellContent({ text: 'XXabcd', marks: [] }), inlineSchema);
 		const next = cellFromDoc(edited, c);
 		const anchor = next.marks.find((m) => m.type === 'anchor') as { start: number; id: string };
@@ -203,7 +203,7 @@ function tableLeaf(props?: TableProps) {
 
 /** The row grips, in order and the header's first, and the column grips. Both read off
  *  the axis each declares, which is what leaves the two caps out of either set: neither
- *  names a line. So a row grip's index in this set IS its row in the chrome's space. */
+ *  names a line. So a row grip's index in this set is its row in the chrome's space. */
 function grips(field: FieldController, kind: 'row' | 'column'): HTMLButtonElement[] {
 	return Array.from(
 		field.el.querySelectorAll<HTMLButtonElement>(`.qm-table-grip[data-axis='${kind}']`)
@@ -282,7 +282,7 @@ describe('the table NodeView', () => {
 		const { field } = tableLeaf(LETTERED);
 		expect(field.el.querySelectorAll('.qm-table-cell-host').length).toBe(6);
 		expect(field.el.querySelectorAll('th.qm-table-cell').length).toBe(2);
-		// One grip per column and one per ROW, the header's included: it is a row, and a
+		// One grip per column and one per row, the header's included: it is a row, and a
 		// row grip acts on rows.
 		expect(grips(field, 'column')).toHaveLength(2);
 		expect(grips(field, 'row')).toHaveLength(3);
@@ -292,7 +292,7 @@ describe('the table NodeView', () => {
 		// The band's ends are two: one cap per axis, and nothing at the origin — the
 		// whole table is what a selection covering every rank says, not a control.
 		expect(field.el.querySelectorAll('.qm-table-add')).toHaveLength(2);
-		// And the grid is the DATA's shape: the chrome is in no row and no column of
+		// And the grid is the data's shape: the chrome is in no row and no column of
 		// it, so nothing empty reaches the accessibility tree.
 		const lines = field.el.querySelectorAll('.qm-table tr');
 		expect(lines).toHaveLength(3);
@@ -335,7 +335,7 @@ describe('the table NodeView', () => {
 	it('a grip SELECTS its line: the wash is the whole of what the FIRST press does', () => {
 		const { field } = tableLeaf(LETTERED);
 		grips(field, 'row')[1].click();
-		// Row 1 in the chrome's space, which is the first BODY row.
+		// Row 1 in the chrome's space, which is the first body row.
 		expect(washed(field)).toEqual(['1,0', '1,1']);
 		expect(grips(field, 'row')[1].getAttribute('aria-pressed')).toBe('true');
 		// Nothing was armed on the document: the island is not what got selected.
@@ -365,7 +365,7 @@ describe('the table NodeView', () => {
 		expect(washed(field)).toEqual(['0,0', '0,1']);
 		key(grip, 'Backspace');
 		// A table is one row shorter and still has a header, which is the whole of what
-		// the model asked for. Alignment is the COLUMN's, so it does not travel.
+		// the model asked for. Alignment is the column's, so it does not travel.
 		expect(grid(leafProps(field))).toEqual([
 			['a1', 'a2'],
 			['b1', 'b2']
@@ -418,7 +418,7 @@ describe('the table NodeView', () => {
 		grip.click();
 		key(grip, 'ArrowDown');
 		expect(washed(field)).toEqual(['2,0', '2,1']);
-		// Up runs to the HEADER and stops there, the row axis floor being row 0 like
+		// Up runs to the header and stops there, the row axis floor being row 0 like
 		// every other index the chrome walks.
 		key(grips(field, 'row')[2], 'ArrowUp');
 		key(grips(field, 'row')[1], 'ArrowUp');
@@ -479,7 +479,7 @@ describe('the table NodeView', () => {
 			['h1', 'h2'],
 			['b1', 'b2']
 		]);
-		// The selection travels with the LINE, which is now row 1 and no longer the
+		// The selection travels with the line, which is now row 1 and no longer the
 		// header: what a grip names is an index, and the move handed index 0 over.
 		expect(washed(field)).toEqual(['1,0', '1,1']);
 		field.destroy();
@@ -514,7 +514,7 @@ describe('the table NodeView', () => {
 		// element now.
 		cap(field, 'row').click();
 		expect(leafProps(field).rows).toHaveLength(3);
-		// Both grew the RECTANGLE rather than the axis they were on alone.
+		// Both grew the rectangle rather than the axis they were on alone.
 		expect(grid(leafProps(field)).every((line) => line.length === 3)).toBe(true);
 		field.destroy();
 	});
@@ -565,7 +565,7 @@ describe('the table NodeView', () => {
 		const views = cellViews(field);
 		const last = views[views.length - 1];
 		last.focus();
-		press(last, 'Tab'); // appends a row: a CHANGED rectangle, so the views are rebuilt
+		press(last, 'Tab'); // appends a row: a changed rectangle, so the views are rebuilt
 		expect(leafProps(field).rows).toHaveLength(3);
 		const grown = cellViews(field).find((v) => v.hasFocus());
 		expect(grown).toBeDefined();
@@ -612,7 +612,7 @@ describe('the table NodeView', () => {
 		const outer = outerView(field);
 		const selection = outer.state.selection;
 		expect(selection instanceof NodeSelection && selection.node.type.name).toBe('island_block');
-		// Delete is the SELECTION's verb, the one every island already answered to;
+		// Delete is the selection's verb, the one every island already answered to;
 		// nothing on the band names it a second time.
 		outer.dispatch(outer.state.tr.deleteSelection());
 		expect(doc.main.body.islands).toHaveLength(0);
@@ -644,7 +644,7 @@ describe('the table NodeView', () => {
 //
 // One rectangle of cells, drawn two ways — a grip names the line it covers, a press
 // that travels sweeps the block it crossed — and one verb over it. What Backspace
-// means is read off the rectangle's EXTENT, so these assert the extents rather than
+// means is read off the rectangle's extent, so these assert the extents rather than
 // the gestures: a row swept cell by cell has to delete exactly as the row its grip
 // named does, or there are two rules wearing one key.
 
@@ -732,7 +732,7 @@ describe('a selection is a rectangle of cells, and Backspace reads its extent', 
 		// itself is what has to drop the block.
 		pressAt(field.el.querySelectorAll('.qm-table-cell-host')[2], 40, 55);
 		expect(washed(field)).toEqual([]);
-		// The block handler DECLINES with nothing held, which is what leaves an ordinary
+		// The block handler declines with nothing held, which is what leaves an ordinary
 		// Backspace to the text. jsdom edits no contenteditable, so what is observable is
 		// the wrong outcome: the cells emptied by a handler that should not have fired.
 		press(cellViews(field)[2], 'Backspace');
@@ -761,7 +761,7 @@ describe('a selection is a rectangle of cells, and Backspace reads its extent', 
 	it('every selected cell goes with its rank, header and all', () => {
 		const { field } = tableLeaf(LETTERED);
 		layout(field);
-		// The header AND the first body row, across every column: two rows, and both go.
+		// The header and the first body row, across every column: two rows, and both go.
 		// The header being stored apart from `rows` buys it no exemption — the row left
 		// at index 0 is the header, so the table below is one that lost two ranks.
 		sweep(field, 0, 3);
@@ -780,7 +780,7 @@ describe('a selection is a rectangle of cells, and Backspace reads its extent', 
 			['a1', 'a2'],
 			['b1', 'b2']
 		]);
-		// And it is the HEADER cell it landed in: the `thead` holds one row, whichever
+		// And it is the header cell it landed in: the `thead` holds one row, whichever
 		// row that is.
 		expect(field.el.querySelectorAll('th.qm-table-cell')[0].textContent).toBe('a1');
 		field.destroy();
@@ -804,8 +804,8 @@ describe('a selection is a rectangle of cells, and Backspace reads its extent', 
 
 // ── The grip drag ───────────────────────────────────────────────────────────
 //
-// A grip lives INSIDE the cell it names, so a press on one reaches the island's own
-// pointer router as a press in that cell. The router has to read it as the LINE's, or
+// A grip lives inside the cell it names, so a press on one reaches the island's own
+// pointer router as a press in that cell. The router has to read it as the line's, or
 // the travel that drags a line also sweeps the cells it crosses and one press draws two
 // selections.
 
@@ -896,7 +896,7 @@ describe('a grip drag moves its line', () => {
 // ── The pointer, and what a selection is for ────────────────────────────────
 //
 // Click-to-NodeSelect belongs to an atom with no interior, and a table has cells. So
-// a press on the chrome resolves to a CARET (inside the frame the nearest cell's,
+// a press on the chrome resolves to a caret (inside the frame the nearest cell's,
 // outside it the document's), and a printable key over a selected island writes past
 // it rather than replacing it. What selects the island is one named gesture, Escape,
 // and no pointer gesture at all.
@@ -942,7 +942,7 @@ function layout(field: FieldController, hosts: Box[] = HOSTS): void {
 		.querySelectorAll('.qm-table-cell-host')
 		.forEach((host, i) => hosts[i] && stub(host, hosts[i]));
 	// The `td`s take the same boxes as the hosts they hold: what a press resolves
-	// against is the host, and what a SWEEP resolves against is the box, so a test that
+	// against is the host, and what a sweep resolves against is the box, so a test that
 	// drives either needs both. Tiling them identically is close enough for a hit test
 	// and keeps one set of numbers.
 	field.el.querySelectorAll('.qm-table-cell').forEach((box, i) => hosts[i] && stub(box, hosts[i]));
@@ -950,7 +950,7 @@ function layout(field: FieldController, hosts: Box[] = HOSTS): void {
 
 // jsdom implements no `Range` rects, and PM reads them to scroll a caret it just
 // moved into view. The one browser API a landing past the island touches, stubbed at
-// the zero box: what is under test is where the caret WENT, not what scrolled.
+// the zero box: what is under test is where the caret went, not what scrolled.
 Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
 Range.prototype.getBoundingClientRect = () => domRect({ left: 0, top: 0, right: 0, bottom: 0 });
 
@@ -962,7 +962,7 @@ function pressAt(target: Element, x: number, y: number): void {
 	);
 }
 
-/** The `td` of a cell, which is the cell's PADDING and its borders: chrome inside the
+/** The `td` of a cell, which is the cell's padding and its borders: chrome inside the
  *  frame, and the commonest place a press misses a host by a few pixels. */
 function cellBox(field: FieldController, index: number): Element {
 	return field.el.querySelectorAll('.qm-table-cell')[index];
@@ -1029,7 +1029,7 @@ describe('a pointer press on the island resolves to a caret', () => {
 		rt.islands[0] = { id: 'isl-0', type: 'chart', props: { any: 1 }, loss: 'unrepresentable' };
 		doc.overwrite({}, rt);
 		const field = createField({ doc, quill: quill(), addr: {}, container: mount() });
-		// Dispatched AT the island rather than through it: PM's own mousedown wants a
+		// Dispatched at the island rather than through it: PM's own mousedown wants a
 		// `elementFromPoint` jsdom does not have, and what is asserted is that the
 		// guard declined to stand in front of it.
 		const event = new MouseEvent('mousedown', { cancelable: true, clientX: 5, clientY: 5 });
@@ -1074,14 +1074,14 @@ describe('a selection is the subject of the next command', () => {
 
 // ── The clipboard door ──────────────────────────────────────────────────────
 //
-// `TableProps` IS a pipe table, so a reader and a writer over it are one grammar seen
+// `TableProps` is a pipe table, so a reader and a writer over it are one grammar seen
 // from two sides, and these assert that: what a copy writes, a paste reads. The
-// load-bearing case is the DESTRUCTIVE one. The block schema declares no `parseDOM` for
+// load-bearing case is the destructive one. The block schema declares no `parseDOM` for
 // an island, so the clipboard rule is the only thing holding a pasted table's cell
 // boundaries, and `ab12` is unrecoverable even as text — worse than dropping the paste.
 
 /** A clipboard event jsdom can carry: it implements no `DataTransfer`, and what the two
- *  handlers use of one is `getData` / `setData`. The seed is what a paste ARRIVES with;
+ *  handlers use of one is `getData` / `setData`. The seed is what a paste arrives with;
  *  the same object is what a copy is read back off. */
 function clipboard(kind: 'copy' | 'cut' | 'paste', seed: Record<string, string> = {}) {
 	const held: Record<string, string> = { ...seed };
@@ -1242,7 +1242,7 @@ describe('a table crosses the clipboard as a table', () => {
 			['a1', 'a', 'b'],
 			['b1', '1', '2']
 		]);
-		// The alignment the table already carried is the COLUMN's and survives; the
+		// The alignment the table already carried is the column's and survives; the
 		// column the paste added arrives unaligned like any other fresh one.
 		expect(leafProps(field).aligns).toEqual(['left', 'right', 'none']);
 		field.destroy();

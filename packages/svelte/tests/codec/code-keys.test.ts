@@ -1,9 +1,9 @@
 // The code-block keys: Tab/Shift-Tab as literal indentation, Enter as
 // a newline. Driven through `bodyKeymap`, the composed chains the leaf binds, so
-// these cover PRECEDENCE as much as the commands: the code link is only correct
+// these cover precedence as much as the commands: the code link is only correct
 // relative to the list link it sits ahead of.
 //
-// Every mutation is also checked for REPRESENTABILITY (encode → the upstream
+// Every mutation is also checked for representability (encode → the upstream
 // normalizer → decode is a fixpoint), because indentation is only real if it
 // survives the boundary verbatim.
 import { describe, it, expect } from 'vitest';
@@ -121,7 +121,7 @@ describe('Enter takes a newline', () => {
 
 // Precedence is load-bearing rather than cosmetic: `list_item > code_block` is
 // reachable from ordinary imported markdown, and the list link's own meanings there
-// are all wrong; Tab nests the ITEM, Shift-Tab lifts the block clean out of the
+// are all wrong; Tab nests the item, Shift-Tab lifts the block clean out of the
 // list, Enter splits the item in two. The code link ahead of it is what these
 // shapes guard.
 describe('inside a list item, the code link wins', () => {

@@ -1,6 +1,6 @@
 // The provenance channel (FIELD_PROVENANCE): `quill.resolve(doc)` mapped to the
 // editor's name-keyed `provenance` map and the ghosted `default:` it feeds. The
-// pure helpers are unit-tested; the resolve behavior is asserted against the REAL
+// pure helpers are unit-tested; the resolve behavior is asserted against the real
 // usaf_memo schema, so the authored↔default flip the ghost turns on is pinned to
 // the fixture the suite runs against, not a mock.
 import { describe, it, expect } from 'vitest';
@@ -52,7 +52,7 @@ describe('resolvedByCardIndex', () => {
 });
 
 // The two halves of the ghost projection every control and the body leaf share:
-// `ghostDefault` decides WHETHER a row ghosts, `stringifyGhost` whether it has a
+// `ghostDefault` decides whether a row ghosts, `stringifyGhost` whether it has a
 // text form to show.
 describe('the ghost projection', () => {
 	it('ghosts only a default-sourced value', () => {
@@ -81,7 +81,7 @@ describe('resolve over the real usaf_memo schema', () => {
 		});
 		expect(main.font_size).toMatchObject({ source: 'default', value: 12 });
 		expect(main.letterhead_seal).toMatchObject({ source: 'default', value: 'dow' });
-		// The ghost the control shows for each unset field IS that resolved default.
+		// The ghost the control shows for each unset field is that resolved default.
 		expect(ghostDefault(main.letterhead_title)).toBe('DEPARTMENT OF THE AIR FORCE');
 	});
 

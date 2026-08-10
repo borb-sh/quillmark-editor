@@ -1,6 +1,6 @@
 <!--
- The formatting selection popover (VISUAL_EDITOR §Chrome). ONE popover,
- shell-owned, observing the ACTIVE leaf through
+ The formatting selection popover (VISUAL_EDITOR §Chrome). One popover,
+ shell-owned, observing the active leaf through
  `getActiveLeaf`: the VisualEditor's accessor over its `leaves` registry, and
  the whole of what this surface knows about the editor. A non-empty selection in
  the active leaf raises it over
@@ -11,20 +11,20 @@
  content. The keymap mirror (Mod-b/i/u) already lives in the codec's keymap
  (field.ts); this is the pointer affordance for all six marks.
 
- SELECTION OBSERVATION. The view's `dispatchTransaction` is the codec's
+ Selection observation. The view's `dispatchTransaction` is the codec's
  (read-only), so there is no hook to observe transactions from outside.
  Fallback: a document-level `selectionchange` listener, coalesced to one
  `requestAnimationFrame`-deferred check (see `deferredSync` below: a bare
- microtask is NOT late enough; verified a "select all" gesture fires several
+ microtask is not late enough; verified a "select all" gesture fires several
  transient `selectionchange` events first). `focusout` keeps the popover honest
  when focus leaves the leaf.
 
- Nothing here watches SCROLL. `sync` decides whether the surface is up and what
+ Nothing here watches scroll. `sync` decides whether the surface is up and what
  its buttons read, which a scroll changes neither of; where it sits is the
  anchor's own question, and the anchor answers it by measuring when floating-ui
  asks rather than by being handed a rect (`codec/anchor.ts`).
 
- FOCUS DISCIPLINE. Three failure modes a naive Popover.Content invites:
+ Focus discipline. Three failure modes a naive Popover.Content invites:
  (1) its default `trapFocus` (true) redirects any focus landing outside its
  DOM back inside; which would make it impossible to click back into
  the editor to change the selection while the popover is showing. Fixed
@@ -41,7 +41,7 @@
  the viewport off the clicked field. Fixed by `onCloseAutoFocus`
  calling `preventDefault`: the intentional returns after mark toggle
  / link submit go through `view.focus` in `toggle`/`submitLink`.
- A mark button ALSO swallows its own `mousedown` (prosemirror-menu's own
+ A mark button also swallows its own `mousedown` (prosemirror-menu's own
  trick): without it, the browser's default mousedown action focuses the
  button before `click` fires, blurring the editor and collapsing the
  selection the command is supposed to act on.
@@ -92,24 +92,24 @@
 
 	let open = $state(false);
 	let activeMarks = $state<Record<string, boolean>>({});
-	/** Whether the selection is in the FIELD's coordinate space, which an anchor needs
+	/** Whether the selection is in the field's coordinate space, which an anchor needs
 	 *  and a table cell is not (see `sync`). */
 	let anchorAvailable = $state(true);
 	let linkPromptOpen = $state(false);
 	let linkValue = $state('');
 	let linkInputEl = $state<HTMLInputElement | undefined>(undefined);
 	let contentEl = $state<HTMLElement | undefined>(undefined);
-	/** The root to portal INTO: `document.body` escapes the editor's subtree and
+	/** The root to portal into: `document.body` escapes the editor's subtree and
 	 * the consumer's dials with it, so a pane-scoped palette misses this surface.
 	 * Resolved from the active leaf's own DOM, so the popover lands inside whichever
 	 * root raised it; `undefined` falls back to bits-ui's `document.body` for a leaf
 	 * mounted outside any root. */
 	let portalTarget = $state<HTMLElement | undefined>(undefined);
 
-	/** The selection the surface hangs off, live rather than measured (`codec/anchor.ts`): floating-ui re-reads it through every scroll and reflow, so `sync` mints one only when the RANGE moves. A NEW object each time it does, so bits-ui's `watch( => opts.customAnchor.current, …)` sees the change and repositions (a mutated-in-place object would not). */
+	/** The selection the surface hangs off, live rather than measured (`codec/anchor.ts`): floating-ui re-reads it through every scroll and reflow, so `sync` mints one only when the range moves. A new object each time it does, so bits-ui's `watch( => opts.customAnchor.current, …)` sees the change and repositions (a mutated-in-place object would not). */
 	let anchor = $state<RangeAnchor | undefined>(undefined);
 
-	/** The view the caret is actually in: the leaf's own, or the NESTED cell view of a
+	/** The view the caret is actually in: the leaf's own, or the nested cell view of a
 	 * table island (`codec/table-view.ts`). The six marks are the inline schema's
 	 * too, so a selection in a cell raises the same popover and toggles the same
 	 * commands; only `anchor` is withheld (below). */
@@ -118,7 +118,7 @@
 		return leaf?.focusedView?.() ?? leaf?.view;
 	}
 
-	/** Recompute open/anchor/active-marks from the active leaf's CURRENT PM selection. */
+	/** Recompute open/anchor/active-marks from the active leaf's current PM selection. */
 	function sync(): void {
 		const insidePopover =
 			!!contentEl && !!document.activeElement && contentEl.contains(document.activeElement);
@@ -128,7 +128,7 @@
 		if (insidePopover) return;
 		const leaf = getActiveLeaf() as LeafWithView | undefined;
 		const view = leaf?.focusedView?.() ?? leaf?.view;
-		// A non-empty TEXT selection. A NODE selection is non-empty too and has nothing
+		// A non-empty text selection. A node selection is non-empty too and has nothing
 		// to format: it covers a leaf block (an island, a rule), which is exactly where
 		// Escape out of a table cell lands.
 		const selection = view?.state.selection;
@@ -149,7 +149,7 @@
 		// `anchor` is a decoration, not a PM mark (CODEC §Marks): its active state is
 		// whether the selection covers an identity anchor, read off the leaf in USV.
 		//
-		// A selection inside a table CELL is not in that coordinate space at all: the
+		// A selection inside a table cell is not in that coordinate space at all: the
 		// field's position map holds one `atom` run for the whole island, so there is
 		// no USV offset to mint an anchor at. The button is withheld rather than
 		// disabled, because what it would toggle does not exist there (CODEC §Islands).
@@ -163,8 +163,8 @@
 	}
 
 	// A burst of DOM events (verified: browser "select all" processing fires
-	// `selectionchange` several times, transiently EMPTY before landing on the
-	// final range) must coalesce to ONE settled check, not one `sync()` per
+	// `selectionchange` several times, transiently empty before landing on the
+	// final range) must coalesce to one settled check, not one `sync()` per
 	// event: reacting to each intermediate state mounts/unmounts
 	// `Popover.Content` repeatedly within a few event-loop turns, which is both
 	// visibly unstable (a moving, momentarily detached click target) and races
@@ -173,7 +173,7 @@
 	// microtask is not late enough: those transient events are themselves
 	// separated by microtasks. `requestAnimationFrame` is: it runs once
 	// per-frame, after the browser has finished dispatching every synchronous
-	// consequence of the user gesture, so it always reads the FINAL, settled
+	// consequence of the user gesture, so it always reads the final, settled
 	// selection. `pending` collapses a burst to a single scheduled callback.
 	let pending = false;
 	let rafHandle = 0;
@@ -207,8 +207,8 @@
 	});
 
 	// The prompt takes its own focus. Nothing else moves it: open-auto-focus is
-	// prevented (FOCUS DISCIPLINE above), and the prompt replaces the buttons on a
-	// surface ALREADY open, so without this the URL is typed into the document.
+	// prevented (focus discipline above), and the prompt replaces the buttons on a
+	// surface already open, so without this the URL is typed into the document.
 	// Selected rather than merely focused, the input arriving seeded and replacing
 	// that value being what the prompt is usually raised for.
 	$effect(() => {
@@ -223,7 +223,7 @@
 		e.preventDefault();
 	}
 
-	// A link is a VALUE, so its button raises the prompt rather than toggling — one
+	// A link is a value, so its button raises the prompt rather than toggling — one
 	// meaning whether or not the selection carries one, and the seeded prompt is the
 	// only place the document's href is legible. Removal is an arm inside the
 	// prompt, not a second meaning for the button. The five value-less marks keep
@@ -302,7 +302,7 @@
 			onOpenAutoFocus={(e: Event) => e.preventDefault()}
 			onCloseAutoFocus={(e: Event) => e.preventDefault()}
 		>
-			<!-- The `child` snippet, so the surface IS the primitive's content node
+			<!-- The `child` snippet, so the surface is the primitive's content node
 			 rather than a pill inside it: the dismissal is a CSS animation and the
 			 primitive unmounts on the content node's own animations finishing. It
 			 also keeps the recipe reachable from this
@@ -392,7 +392,7 @@
 </Popover.Root>
 
 <style>
-	/* This surface PORTALS out of the leaf's DOM but INTO the nearest `[data-qm-root]`
+	/* This surface portals out of the leaf's DOM but into the nearest `[data-qm-root]`
 	   (the target is resolved in `sync`), so it inherits the consumer's dials like
 	   every other surface. It carries the marker itself too: floating over content is
 	   still a detached subtree for the derivation's purposes, and the marker is what

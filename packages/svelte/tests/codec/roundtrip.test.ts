@@ -1,5 +1,5 @@
 // Two structural properties the fixed-example suites miss:
-//   (1) decode → lower round-trip under a SEEDED generator over random line
+//   (1) decode → lower round-trip under a seeded generator over random line
 //       kinds / containers / continues / marks:
 //       `normalize(pmToContent(decode(rt))) == normalize(rt)`;
 //   (2) the position map after split/join/wrap: rebuild `buildLineIndex` and
@@ -86,7 +86,7 @@ describe('generative decode → lower round-trip', () => {
 
 // ── Position map across a structural edit + index rebuild ────────────────────
 // The inverse property itself is `assertPositionInverse` (_util.ts): what these
-// add over positions.test.ts is that the index is REBUILT after a structural
+// add over positions.test.ts is that the index is rebuilt after a structural
 // mutation, not read off a fresh decode.
 
 describe('position map across structural edits + rebuild', () => {

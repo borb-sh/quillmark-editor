@@ -4,7 +4,7 @@
 // paragraph where nothing above the list takes a caret) and Backspace (merge, or
 // lift at the list's start).
 //
-// Cleanup is COMMAND-LOCAL, never a global pass: `liftToOuterList` joins the
+// Cleanup is command-local, never a global pass: `liftToOuterList` joins the
 // boundary it opens and `sinkListItem` reuses the previous item's nested list, so
 // no mutation strands a node. A whole-doc normalizer would instead fuse adjacent
 // same-type lists, and that boundary is load-bearing: an ordinal decrease is how
@@ -17,7 +17,7 @@ import type { Command } from 'prosemirror-state';
 import { chainCommands, joinTextblockBackward } from 'prosemirror-commands';
 
 /** The caret's enclosing `list_item` when it sits at the very start of that item's
- * FIRST block: the position both structural keys branch on. `null` otherwise
+ * first block: the position both structural keys branch on. `null` otherwise
  * (mid-text, a non-first block of a multi-paragraph item, a non-empty selection),
  * which is where the key keeps its ordinary meaning. */
 function atItemStart(
@@ -57,7 +57,7 @@ function writableAbove(doc: PMNode, pos: number): boolean {
  * fits above, the key is the conventional split instead, at every item alike: an
  * escape a writer reaches by pressing Up needs no key of its own.
  *
- * Also only where the list itself is not inside an item: in a NESTED list this
+ * Also only where the list itself is not inside an item: in a nested list this
  * pushes an empty paragraph into the parent item (`list_item` is `block+`, so the
  * shape is representable and wrong), where the conventional split (an empty item
  * above) is what the next link does. An empty first item falls through to that same
@@ -75,7 +75,7 @@ function paragraphAboveList(itemType: NodeType, paragraph: NodeType): Command {
 }
 
 /**
- * Backspace at the start of a list's FIRST item → lift it: one level out for a
+ * Backspace at the start of a list's first item → lift it: one level out for a
  * nested item, out of the list entirely (to a paragraph) at the top.
  */
 function liftAtListStart(itemType: NodeType): Command {
@@ -87,10 +87,10 @@ function liftAtListStart(itemType: NodeType): Command {
 }
 
 /**
- * Backspace at the start of any LATER item → join its text into the previous
+ * Backspace at the start of any later item → join its text into the previous
  * item's last block, so the two items become one line.
  *
- * Not the base keymap's `joinBackward`, which merges the BLOCK and leaves
+ * Not the base keymap's `joinBackward`, which merges the block and leaves
  * `list_item(paragraph, paragraph)`: the item's marker gone while its text stays
  * on its own line, which the reference quill typesets as an unnumbered
  * continuation paragraph.
@@ -111,14 +111,14 @@ function mergeIntoPreviousItem(itemType: NodeType): Command {
  * Tab more locally under the same rule (`prose/canon/VISUAL_EDITOR.md` §Chrome)
  * prepend a link ahead of these in `keymap.ts`: a `code_block` takes literal
  * indentation (`code.ts`), an island takes cell traversal once added. Outside all
- * of them every link returns false and the key is NOT swallowed: Tab keeps its
+ * of them every link returns false and the key is not swallowed: Tab keeps its
  * default meaning, which is the body's only keyboard exit and the open seam for a
  * shell structural keymap (VISUAL_EDITOR §Settled and open).
  *
  * `Enter` is a chain in precedence order: the escape-above gesture, then
  * `splitListItem`, then `liftListItem`. The middle link carries two behaviors of
  * its own: it splits a non-empty item, and on an empty item it either splits the
- * WRAPPING item (a nested empty item, so Enter lifts exactly one level) or bails
+ * wrapping item (a nested empty item, so Enter lifts exactly one level) or bails
  * so the third link lifts a top-level empty item out to a paragraph. `Backspace`
  * forks on the item's index: the first item lifts, any later one merges.
  */

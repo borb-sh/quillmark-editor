@@ -5,18 +5,18 @@
 // package ships it, `publint` reads a manifest that points at it, and it is absent from
 // the bytes a consumer serves. Zero deps; run via `npm run check:bundle`, after
 // `npm run build`. Extra bundle directories are named as arguments, which is how CI adds
-// the site laid from the TARBALL to the two the worktree builds.
+// the site laid from the tarball to the two the worktree builds.
 //
 // Two rules:
 //
-//   1. THE DECLARATION. A package whose modules side-effect import a stylesheet claims
+//   1. The declaration. A package whose modules side-effect import a stylesheet claims
 //      `sideEffects: true`. A list is the failure whatever it names, because it inverts
 //      the burden: every module the globs miss is prunable, so the list has to name each
 //      importer, and it rots at the next one, silently: the package still ships the
 //      sheet, the import is still in the source, and nothing errors.
 //
-//   2. THE EVIDENCE. In a built consumer, every custom property the workspace's shipped
-//      stylesheets MINT and the bundle READS is defined in that bundle. An unresolved
+//   2. The evidence. In a built consumer, every custom property the workspace's shipped
+//      stylesheets mint and the bundle reads is defined in that bundle. An unresolved
 //      `var()` is invalid at computed-value time and drops the whole declaration, so a
 //      pruned derivation is a control with no border, no background and no padding.
 //      Presence against absence rather than a value, so it survives a retune of every
@@ -35,14 +35,14 @@ import { ROOT, packages, report } from './workspace.mjs';
  *  holds. A third-party consumer takes the package the same way. */
 const BUNDLES = ['packages/quillkit/dist/client', 'packages/playground/build'];
 
-/** A bare stylesheet import: the specifier IS the statement, so there is no binding to
+/** A bare stylesheet import: the specifier is the statement, so there is no binding to
  *  keep the edge alive by. Any other CSS import (a named one, a `?url` asset) carries a
  *  binding a bundler follows on its own. */
 const SHEET_IMPORT = /\bimport\s*['"][^'"]+\.css['"]/;
-/** A custom property DEFINITION. A `var()` reference is followed by `,` or `)` and
+/** A custom property definition. A `var()` reference is followed by `,` or `)` and
  *  never a colon, so this cannot match one. */
 const DEFINES = /(--[\w-]+)\s*:/g;
-/** A custom property READ. */
+/** A custom property read. */
 const READS = /var\(\s*(--[\w-]+)/g;
 
 /** Block comments blanked. A shipped stylesheet is unminified, and its prose names the
@@ -98,7 +98,7 @@ for (const { dir, at, json } of PACKAGES) {
 
 // ── 2. The evidence ─────────────────────────────────────────────────────────────
 
-// What the workspace SHIPS: every custom property minted by a stylesheet under a
+// What the workspace ships: every custom property minted by a stylesheet under a
 // package's `dist`. The bundle trees are cut out of this walk: one of them sits inside a
 // package's `dist`, and a bundle is what is measured rather than a source of what to
 // measure.

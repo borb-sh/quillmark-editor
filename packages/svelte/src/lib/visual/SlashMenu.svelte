@@ -1,20 +1,20 @@
 <!--
  The slash menu. The leaf's own surface, not the
  shell's: the trigger belongs to one caret in one leaf, so it is mounted by
- `ProseField` beside the view it reads from, unlike the ONE shell-owned format
+ `ProseField` beside the view it reads from, unlike the one shell-owned format
  popover that follows whichever leaf is active.
 
- The MODEL is the codec's (`codec/slash.ts`: the trigger run, the query, the
+ The model is the codec's (`codec/slash.ts`: the trigger run, the query, the
  highlighted index, and what each pick does). This component draws it and nothing
  else. The keys are the leaf's keymap for the same reason: the caret stays in the
  contenteditable while the menu is open, so a focus-taking listbox would move the
- selection the insert is measured against. What is left here is mostly the POINTER's
+ selection the insert is measured against. What is left here is mostly the pointer's
  half: buttons that pick, and that swallow their own mousedown so the caret stays put.
 
- The highlight has ONE lane: `data-highlighted` marks whichever item the codec's
- index names, and a pointer entering an item MOVES that index rather than painting a
+ The highlight has one lane: `data-highlighted` marks whichever item the codec's
+ index names, and a pointer entering an item moves that index rather than painting a
  second highlight the keyboard cannot reach (controls.css, the shared menu recipe).
- The keyboard's one claim here is the SCROLL: the arrows move an index, and only the
+ The keyboard's one claim here is the scroll: the arrows move an index, and only the
  chrome knows the port that index has to stay inside.
 -->
 <script lang="ts">
@@ -34,7 +34,7 @@
 	let { menu, leaf, label }: Props = $props();
 
 	/** Raised whenever the codec reports offers. Mirrored into local state rather than
-	 * derived, because the primitive OWNS this prop: its own dismissal layer (an
+	 * derived, because the primitive owns this prop: its own dismissal layer (an
 	 * outside press) writes it, and a derived it cannot write to is an error rather
 	 * than a dismissal. The next report re-syncs, so the codec stays the authority on
 	 * whether a run is live. */
@@ -43,14 +43,14 @@
 		open = !!menu && menu.items.length > 0;
 	});
 
-	/** The root to portal INTO, resolved from the leaf's own DOM so the menu lands
+	/** The root to portal into, resolved from the leaf's own DOM so the menu lands
 	 * inside whichever `[data-qm-root]` raised it and inherits the consumer's dials;
 	 * `undefined` falls back to bits-ui's `document.body`. */
 	const portalTarget = $derived(leaf()?.el.closest<HTMLElement>('[data-qm-root]') ?? undefined);
 
 	let surface = $state<HTMLElement | undefined>();
 
-	/** Keep the keyboard's cursor in the port: the arrows move an INDEX rather than a
+	/** Keep the keyboard's cursor in the port: the arrows move an index rather than a
 	 *  focus, so a row the list scrolled past has nothing bringing it back. `nearest`
 	 *  scrolls the least that works, and no ancestor the row is already visible in. */
 	$effect(() => {
@@ -67,7 +67,7 @@
 
 <Popover.Root bind:open>
 	<Popover.Portal to={portalTarget}>
-		<!-- Hung off the TRIGGER and flush against it: the anchor is the `/` itself
+		<!-- Hung off the trigger and flush against it: the anchor is the `/` itself
 		     (`codec/slash.ts`), so the surface's top left corner sits at the line's bottom
 		     edge under the character that opened the menu, and stays there as the query is
 		     typed. Zero offset, because a gap reads as a surface floating near the caret
@@ -98,7 +98,7 @@
 						aria-label={label}
 						inert={!raised}
 					>
-						<!-- The row is the command AS TYPED, leading `/` and all: the menu is a
+						<!-- The row is the command as typed, leading `/` and all: the menu is a
 						     completion of the run in the text, so the row and the run read the
 						     same. -->
 						{#each menu?.items ?? [] as name, i (name)}
@@ -126,7 +126,7 @@
 	   listbox and the card stack's kind menu draw, because all three are lists picked
 	   from. What is here is this menu's own: a measure, so a long label does not stretch
 	   the surface across the card, a scroll for a filtered list that stays long, and the
-	   FACE. Monospace, where the sibling menus are not: they offer VALUES of the document
+	   face. Monospace, where the sibling menus are not: they offer values of the document
 	   and read as the prose around them, where these are commands, and the surface
 	   already spells a literal in that face (the `code` mark, `codec/prose.css`). */
 	.qm-slash-menu {
@@ -137,7 +137,7 @@
 	}
 	/* An item is a row of text, not a glyph: the whole row is the target, and the label
 	   is the accessible name with nothing beside it. A button is a button, so the UA's
-	   own box is taken back; what is left is the shared item recipe. The FILL is not
+	   own box is taken back; what is left is the shared item recipe. The fill is not
 	   taken back here: a scoped block is unlayered, so a reset would outrank the recipe's
 	   highlight; the resting transparent is the recipe's own (controls.css). */
 	.qm-slash-item {

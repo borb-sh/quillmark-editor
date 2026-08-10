@@ -184,7 +184,7 @@ function parsePointer(raw: string): string {
 
 	const obj = parsed as Record<string, unknown>;
 
-	// The format, read before anything is believed about the rest. An unknown key is NOT
+	// The format, read before anything is believed about the rest. An unknown key is not
 	// a failure here: this is the document a newer format announces itself on, and a
 	// reader rejecting what it does not recognise refuses the announcement too. Absent
 	// means a build from before the marker (`format.ts`).

@@ -3,14 +3,14 @@
 // The federated VisualEditor: a thin Svelte composition over many small editors.
 // Each content leaf is the codec's `createField` prose leaf; scalar fields are
 // form controls; structure/cards are the editor's own. Depends on `/core` and the
-// codec. RELATIVE imports (not `$lib`): svelte-package ships this as-is.
+// codec. Relative imports (not `$lib`): svelte-package ships this as-is.
 //
 // The barrel carries what a consumer story wants, and nothing else: a symbol
 // earns its line when a caller outside the package needs it, and grows one when
 // that caller arrives, not before.
 
 // The theme derivation, which every control on this surface reads through `var()`.
-// Imported at the BARREL because a subpath is what a consumer gets: this surface
+// Imported at the barrel because a subpath is what a consumer gets: this surface
 // reaches modules inside `core/` and never its entry, so a sheet hanging off that
 // entry arrives only for a consumer importing `/core` for some other reason. The
 // sheet rather than the entry, because the barrel needs the derivation and not
@@ -25,7 +25,7 @@ export type { VisualEditorProps } from './props.js';
 export { createField } from '../core/codec/index.js';
 export type { CreateFieldOpts, FieldController } from '../core/codec/index.js';
 
-// What the surface SAYS, and how it words a diagnostic. `strings` is keyed and
+// What the surface says, and how it words a diagnostic. `strings` is keyed and
 // partial (unset keys take the package's English) and `DEFAULT_VISUAL_STRINGS` is
 // that English, exported so a consumer can compose against it rather than restate
 // it. The empty body's per-card hook is the `bodyPlaceholder` key inside it.

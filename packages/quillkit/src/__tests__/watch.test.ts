@@ -48,7 +48,7 @@ describe('serialize', () => {
 
 	it('a failure does not end the queue', async () => {
 		// A queue chaining onto its own result would answer every later call with the
-		// FIRST failure instead of running it, so one half-written `Quill.yaml` would
+		// first failure instead of running it, so one half-written `Quill.yaml` would
 		// end the loop until the process restarts.
 		let calls = 0;
 		const run = serialize(async () => {

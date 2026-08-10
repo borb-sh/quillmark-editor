@@ -1,9 +1,9 @@
 // Every word the visual surface says, in one place, so a product shipping in
-// another language can replace them. Keyed and PARTIAL: a consumer sets the keys
+// another language can replace them. Keyed and partial: a consumer sets the keys
 // it has translations for and the rest take the package's English, which is what
 // makes wording an override rather than a fork.
 //
-// Several of these are ACCESSIBLE NAMES rather than decoration — the card
+// Several of these are accessible names rather than decoration — the card
 // controls, the add trigger, the required marker — so an untranslated surface is
 // not merely inconsistent, it reads the wrong language to a screen reader. That is
 // why this exists as a seam and not as a list of literals to grep for.
@@ -12,7 +12,7 @@
 // a parametric string cannot be assembled from fragments and stay translatable,
 // since the word order is the translator's to choose.
 //
-// The strings reach the tree through CONTEXT, not props. They are ambient,
+// The strings reach the tree through context, not props. They are ambient,
 // read-only, and wanted eight components deep (a card's controls, a field's
 // required marker, the formatting popover, the tips card); threading them by hand
 // would put a `strings` prop on every component between the root and each leaf,
@@ -28,7 +28,7 @@ import {
 import type { BodyPlaceholder } from './structure.js';
 
 /**
- * The island and the insert menu's keys come from the CODEC, which owns both models
+ * The island and the insert menu's keys come from the codec, which owns both models
  * (a NodeView inside the leaf, and the trigger the leaf's keymap drives). Extending
  * rather than restating them is what keeps one English list: a consumer overrides an
  * island handle's name beside the card controls' and the codec still has a default
@@ -43,9 +43,9 @@ export interface VisualStrings extends TableChromeStrings, SlashStrings {
 	cardTitle: string;
 
 	// ── The add affordance ────────────────────────────────────────────────────
-	/** The trailing strip's VISIBLE words, which are also every strip's accessible
+	/** The trailing strip's visible words, which are also every strip's accessible
 	 * name; the glyph rides the wording, as the array foot's does. One string over
-	 * one kind and many: the trigger seeds A CARD, and which kind is the menu's word
+	 * one kind and many: the trigger seeds A card, and which kind is the menu's word
 	 * to say or the schema's to have already settled. */
 	addCard: string;
 
@@ -67,7 +67,7 @@ export interface VisualStrings extends TableChromeStrings, SlashStrings {
 	formatLink: string;
 	/** The anchor button's accessible name. */
 	formatAnchor: string;
-	/** Its hover title, which says what an anchor IS; the name above only says what. */
+	/** Its hover title, which says what an anchor is; the name above only says what. */
 	formatAnchorTitle: string;
 	linkPlaceholder: string;
 	linkApply: string;
@@ -109,22 +109,22 @@ export interface VisualStrings extends TableChromeStrings, SlashStrings {
  * lane (VISUAL_EDITOR §Diagnostics for why each lands where it does):
  *
  * - **`validation::enum_violation`, `type_mismatch`, `format_violation`,
- *   `must_fill`**: the CONSTRAINT re-words from the quill's schema at `path`, the
- *   offending VALUE from `args` (`value` / `sourceToken` / `actual`, the engine
+ *   `must_fill`**: the constraint re-words from the quill's schema at `path`, the
+ *   offending value from `args` (`value` / `sourceToken` / `actual`, the engine
  *   testifying to what it saw) and never from the document at `path`: validation
  *   runs post-coercion, so the validator read a value the document does not hold and
  *   a sentence built from `path` names a spelling the user never typed.
  * - **`edit::field_coercion_failed`**: re-words from the app's own control state, the
  *   refused value being in neither document (unchanged on throw) nor schema.
  * - **`parse::yaml_error_with_location`, `invalid_structure`**: does not re-word. No
- *   `path`, and `args` carries the LOCATION (`blockIndex`, `line`) and nothing else,
+ *   `path`, and `args` carries the location (`blockIndex`, `line`) and nothing else,
  *   engine prose riding under no key: the parser's own text, its column and its caret
  *   snippet exist only inside `message`.
  * - **`LiveSession.warnings`**: does not re-word. Backend text, an external feed.
  *
  * The last two are the boundary's shape, not a gap in it, so the fallback arm is
  * permanent: returning `undefined` renders `d.message` unchanged. `code` is optional
- * at this pin, so that arm is reachable by TYPE and not only in principle.
+ * at this pin, so that arm is reachable by type and not only in principle.
  *
  * Displayed text is that message or this replacement and nothing beside it: `hint` is
  * the tail of the message it accompanies, so rendering it too ships a two-language

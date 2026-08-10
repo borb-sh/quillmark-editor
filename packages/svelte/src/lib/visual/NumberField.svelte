@@ -1,20 +1,20 @@
 <!--
  A `number` / `integer` field → numeric input (fixture `font_size` = 11.5).
- Commits at `change` (blur/Enter), NOT per keystroke: a partial numeric entry
+ Commits at `change` (blur/Enter), not per keystroke: a partial numeric entry
  (`-`, `1.`, `1e`) is never a document state worth a boundary round-trip, and
  committing it live flashes a coercion diagnostic + `console.error` on every
  intermediate prefix, announced by `DiagnosticList`'s `role="status"` live
- region. A blank entry commits `undefined`: the UNSET rung of the
+ region. A blank entry commits `undefined`: the unset rung of the
  commitment ladder: the parent removes the field and the engine renders the
  ghosted `default:`. Settling at `change` also keeps
  select-all-and-retype from flashing the preview through the default mid-keystroke.
 
- `type="text"`, not `type="number"`: a native number input SANITIZES an
+ `type="text"`, not `type="number"`: a native number input sanitizes an
  invalid string to `""` before the DOM `value` setter even runs (verified:
  `.value = "abc"` on `type="number"` never lands), which would make a
  genuinely bad entry untypeable. The commit-time coercion diagnostic
  (VISUAL_EDITOR §Diagnostics) needs exactly that path reachable through the
- UI, so a non-blank entry that fails to parse forwards the RAW STRING to
+ UI, so a non-blank entry that fails to parse forwards the raw string to
  `onCommit` unchanged: the boundary's own `writer.set` coercion is the judge
  (throws a `QuillmarkError` the parent turns into a field diagnostic), not a
  client-side guess. `inputmode` keeps the numeric mobile keyboard.
@@ -27,7 +27,7 @@
 		value: number | undefined;
 		integer?: boolean;
 		fallback?: number;
-		/** Accessible name for an input NOTHING else names: an object property, whose
+		/** Accessible name for an input nothing else names: an object property, whose
 		 * name is the field label plus the property's. A field's own input takes `id`
 		 * instead and is named by the `<label for>` beside it. */
 		label?: string;

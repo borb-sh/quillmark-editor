@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // The slash menu: the trigger's word boundary, the dismissals that edit no text, and
-// a pick that consumes exactly the trigger run in ONE commit.
+// a pick that consumes exactly the trigger run in one commit.
 import { describe, it, expect, beforeAll } from 'vitest';
 import type { EditorView } from 'prosemirror-view';
 import { createField } from '$lib/core/codec';
@@ -25,7 +25,7 @@ function leaf(markdown = 'para') {
 	const doc: Document = quill().seedDocument();
 	doc.overwrite({}, md(markdown));
 	const reports: (SlashState | undefined)[] = [];
-	// One count per COMMITTED edit (`field.ts` §`dispatchTransaction`), which is what a
+	// One count per committed edit (`field.ts` §`dispatchTransaction`), which is what a
 	// host recompiles on: the currency a pick is measured in.
 	let commits = 0;
 	const field = createField({
@@ -246,7 +246,7 @@ describe('a dismissal edits no text; a pick consumes exactly the run', () => {
 		field.destroy();
 	});
 
-	// One command, so there is nothing for the arrows to walk TO; what has to hold is
+	// One command, so there is nothing for the arrows to walk to; what has to hold is
 	// that they are claimed, since a caret leaving the run closes the menu it was
 	// navigating.
 	it("the arrows are the menu's while it is open, and hold the cursor in range", () => {
@@ -270,7 +270,7 @@ describe('a dismissal edits no text; a pick consumes exactly the run', () => {
 		// The delete and the insert are one transaction, so the gesture recompiles the
 		// document once rather than through a state with the run's text still in it.
 		expect(commits()).toBe(before + 1);
-		// The empty block the run was typed in is REPLACED, and a paragraph after the
+		// The empty block the run was typed in is replaced, and a paragraph after the
 		// island is the exit.
 		expect(field.getContent().lines.map((l) => l.kind)).toEqual(['island', 'para']);
 		field.destroy();
@@ -333,7 +333,7 @@ describe('a dismissal edits no text; a pick consumes exactly the run', () => {
 });
 
 describe('a pick lands in the container the caret was writing in', () => {
-	/** Run `/table` with the trigger typed at the START of the block holding USV `pos`: a
+	/** Run `/table` with the trigger typed at the start of the block holding USV `pos`: a
 	 *  boundary the menu opens on, and the one that leaves the block's own text intact
 	 *  once the run is consumed, so an assertion reads the structure and nothing else. */
 	function pick(field: FieldController, view: EditorView, pos: number): void {
@@ -391,7 +391,7 @@ describe('a pick lands in the container the caret was writing in', () => {
 		const stored = field.getContent();
 		expect(stored.text).toBe('alpha\nbeta\n￼\n');
 		expect(stored.lines.map((l) => l.kind)).toEqual(['para', 'para', 'island', 'para']);
-		// The exit is the ITEM's: the island opened inside it, so the way out is there too.
+		// The exit is the item's: the island opened inside it, so the way out is there too.
 		expect(stored.lines[3].containers).toEqual([item(1)]);
 		field.destroy();
 	});

@@ -3,15 +3,15 @@
  {@link FieldModel} and its live value, render the label + the control the type
  maps to. Array controls own their label (paired with the add affordance in
  {@link ArrayField}); other types render the label here. Prose leaves take a
- parent-built LIVE `addr` (its `card` a getter over the stable-id→index map) so
+ parent-built live `addr` (its `card` a getter over the stable-id→index map) so
  a reorder re-targets without a remount; scalars, arrays, and objects commit
- their value UP through `onCommitScalar`, which the parent lowers to the typed
+ their value up through `onCommitScalar`, which the parent lowers to the typed
  writer.
 
  `diagnostics` is the routed `Diagnostic[]` for this field (VisualEditor's
  `diagByKey`, merging `quill.validate`, local commit errors, and the external
  `diagnostics` prop (VISUAL_EDITOR §Diagnostics)) rendered via the shared
- `DiagnosticList`, severity-styled, NON-GATING.
+ `DiagnosticList`, severity-styled, non-gating.
 -->
 <script lang="ts">
 	import type { Document, Quill, Addr, Diagnostic, ResolvedField } from '@quillmark/wasm';
@@ -42,7 +42,7 @@
 		doc: Document;
 		/** The schema a prose leaf reads its content through (`ProseField`). */
 		quill: Quill;
-		/** This field's LIVE address (getter-`card`, so a card reorder re-targets in
+		/** This field's live address (getter-`card`, so a card reorder re-targets in
 		 *  place): the prose leaf commits to it, and a focus reports it. */
 		addr: Addr;
 		leafKey: string;
@@ -92,7 +92,7 @@
 	const ghost = $derived(ghostDefault(provenance));
 	const defaultStr = $derived(stringifyGhost(ghost));
 
-	// `for` reaches a LABELABLE control and the browser does the rest. The other four
+	// `for` reaches a labelable control and the browser does the rest. The other four
 	// are not labelable (the prose leaf's `contenteditable`, the date field's segment
 	// container, the object subform, an array's N inputs) so `for` there would be
 	// both inert and invalid markup; they take `aria-labelledby` and a click handoff.
@@ -159,7 +159,7 @@
 	});
 
 	/**
-	 * A form control has no controller to report its focus through, so the WRAPPER
+	 * A form control has no controller to report its focus through, so the wrapper
 	 * reports: `focusin` bubbles, so one handler covers a plain input, an array's N
 	 * elements and an object's properties alike, and the active leaf names a scalar
 	 * field the way it names a prose one. A prose leaf reports through its own
@@ -181,7 +181,7 @@
 			description={field.description}
 		/>
 	{/if}
-	<!-- The control and what hangs under it, in ONE grid cell: the diagnostics stack
+	<!-- The control and what hangs under it, in one grid cell: the diagnostics stack
 	 inside the control's track rather than claiming a track of their own (the subgrid
 	 rule below holds why). One markup for both spans; a field owning its row nests a
 	 level and measures the same. -->
@@ -282,9 +282,9 @@
 	/* The `full` span, and the base every field starts from: its own row, a plain
 	   stack. Nothing shares the row, so there are no internals to align against.
 
-	   THE ACTION COLUMN IS THE FIELD'S INSET, not the section's:
+	   The action column is the field'S inset, not the section's:
 	   a row action's tap target plus the grid's own column gutter, held clear at the
-	   end of whatever the field spans. On the SECTION it reserves one trailing column
+	   end of whatever the field spans. On the section it reserves one trailing column
 	   for the whole grid, which reaches only a field that stops short of it. The array
 	   carries the only row action there is, and it always owns its row (structure.ts
 	   `packable`), so it spans that reservation with every other column: the one field
@@ -305,7 +305,7 @@
 	/* A row-sharing field subgrids onto the section's row tracks instead of sizing its
 	 own: two tracks, the label and the control's stack, taken from the parent, so
 	 every control in a visual row starts at the same y however tall a neighbour's
-	 label wrapped. Source order IS track order; `align-items: start` keeps a short
+	 label wrapped. Source order is track order; `align-items: start` keeps a short
 	 control from stretching to a taller sibling's track. `row-gap` overrides the
 	 section's inter-row gutter for the tracks this field spans: inside a field the
 	 rhythm is tighter than between rows.
@@ -316,7 +316,7 @@
 	 is wrong. That rung is the one place a field's box outruns its ink. It is what
 	 makes a run of row-sharing fields read looser than the arrays and prose leaves
 	 beside them, whose boxes end where their ink does. What a third track buys is the
-	 diagnostics of one row starting at one y; the alignment a row is READ by is the
+	 diagnostics of one row starting at one y; the alignment a row is read by is the
 	 controls', and the label track holds that. A diagnostic grows its row instead. */
 	.qm-field.cell,
 	.qm-field.lone {

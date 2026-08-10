@@ -1,5 +1,5 @@
 // The one address vocabulary the surfaces speak in public: canonical `DocPath`
-// strings for places, `Addr` for the document verbs. Declared HERE because both
+// strings for places, `Addr` for the document verbs. Declared here because both
 // `/preview` and `/visual` name a place in their hooks, and a type declared twice
 // structurally is drift with nothing to catch it: `/core` is the module both
 // already import.
@@ -18,7 +18,7 @@ import { core } from './lifecycle.js';
 
 /**
  * A canonical field address: `main.<field>` / `main.body` /
- * `cards.<kind>[<i>].<field>`, cards keyed by ABSOLUTE document index.
+ * `cards.<kind>[<i>].<field>`, cards keyed by absolute document index.
  *
  * The grammar `parseDocPath` / `formatDocPath` speak, and the one
  * `Diagnostic.path`, `ContentHit.field`, `FieldRegion.field` and
@@ -46,7 +46,7 @@ export interface Place {
  * Where a preview click landed. What the preview surfaces and what the editor's
  * `setCaret` takes.
  *
- * **An absent `pos` is the PLACEMENT rung**, not a caret at zero: the click resolved
+ * **An absent `pos` is the placement rung**, not a caret at zero: the click resolved
  * a field the plate places without tracking its content (`fieldAt` answers,
  * `positionAt` does not), so there is no offset and the landing is a focus. A `Place`
  * is a landing carrying its caret, and a `ContentHit` is one too.
@@ -70,7 +70,7 @@ export interface Landing {
 /**
  * A field's canonical `DocPath`, or `undefined` when `addr.card` is outside the live
  * `kinds` array (a stale address: drop it rather than mis-target). A field-less card
- * addresses its BODY, which is the leaf `{card: i}` names.
+ * addresses its body, which is the leaf `{card: i}` names.
  *
  * - `{}` → `"main.body"`
  * - `{field}` → `"main.<field>"`
@@ -89,7 +89,7 @@ export function fieldPathForAddr(addr: Addr, kinds: readonly string[]): DocPath 
 }
 
 /**
- * A CARD's own path (`cards.<kind>[i]`), not a leaf's: what a structure op names,
+ * A card's own path (`cards.<kind>[i]`), not a leaf's: what a structure op names,
  * where the change is the card rather than anything inside it. `undefined` for an
  * index outside `kinds`.
  */
@@ -114,7 +114,7 @@ export function addrForFieldPath(path: DocPath): Addr | undefined {
 }
 
 /**
- * An ARRAY ELEMENT's address, split. `main.references.0` and `main.references[0]`
+ * An array element's address, split. `main.references.0` and `main.references[0]`
  * both land here; anything {@link addrForFieldPath} can name, and anything whose
  * trailing segment is not an index, does not.
  *
@@ -122,7 +122,7 @@ export function addrForFieldPath(path: DocPath): Addr | undefined {
  * and `positionAt` emit `main.references.0`, which `parseDocPath` reads as a field
  * literally named `"0"`, while `formatDocPath` spells the index segment
  * `main.references[0]`. A trailing all-digits field name is therefore an index that
- * lost its brackets — but only under a field the SCHEMA declares an array, the
+ * lost its brackets — but only under a field the schema declares an array, the
  * caller's guard to apply: this module holds the grammar and no schema.
  */
 export function elementAddrForFieldPath(path: DocPath): ElementAddr | undefined {
@@ -137,18 +137,18 @@ export function elementAddrForFieldPath(path: DocPath): ElementAddr | undefined 
 				: undefined;
 	if (index == null) return undefined;
 	const field = addrForSegs(segs.slice(0, -1));
-	// A body has no elements: the parent must name a FIELD.
+	// A body has no elements: the parent must name a field.
 	return field?.field != null ? { field, index } : undefined;
 }
 
-/** An array element's address: the ARRAY's `Addr`, and which element of it. */
+/** An array element's address: the array's `Addr`, and which element of it. */
 export interface ElementAddr {
 	field: Addr;
 	index: number;
 }
 
 /** `parseDocPath`, with a malformed path as `undefined` rather than a throw. The gate
- *  is read OUTSIDE the try: an uninitialized core is not a malformed path, and would
+ *  is read outside the try: an uninitialized core is not a malformed path, and would
  *  otherwise leave here as one. */
 function segsOf(path: DocPath): DocPathSeg[] | undefined {
 	const { parseDocPath } = core();

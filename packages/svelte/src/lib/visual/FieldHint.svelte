@@ -1,12 +1,12 @@
 <!--
- The schema `description` as a themed floating surface: the second that is READ
+ The schema `description` as a themed floating surface: the second that is read
  rather than picked from, so it shares {@link FormatPopover}'s translucent recipe
  and portals into the nearest `[data-qm-root]` like every
  other floating surface, so a consumer's dials still reach it.
 
  Not the native `title` tooltip: that reaches no dial, waits ~1s, cannot be
- dismissed, and (the part that makes it a hole rather than a blemish) DOES NOT EXIST
- ON TOUCH, which leaves guidance the reference quill puts on nearly every field
+ dismissed, and (the part that makes it a hole rather than a blemish) does not exist
+ on touch, which leaves guidance the reference quill puts on nearly every field
  reachable on a tablet only through a screen reader.
 
  Floating rather than inline under the label: the reference quill's descriptions run
@@ -15,7 +15,7 @@
  to avoid. Measured, not assumed; a quill whose descriptions are all one short line
  would be better served inline.
 
- THE POPOVER IS CHROME, NOT THE ANNOUNCEMENT. Its content is `aria-hidden`: the
+ The popover is chrome, not the announcement. Its content is `aria-hidden`: the
  description reaches assistive tech through the always-present parked node
  {@link FieldLabel} renders and the `aria-describedby` the control carries, which
  holds whether the surface is open or not. So no reader depends on a hover.
@@ -35,14 +35,14 @@
 		 * do not all announce alike. */
 		label: string;
 		/** The parked description node; the trigger points at it too, so a reader
-		 * that lands HERE announces the guidance rather than only the field's own. */
+		 * that lands here announces the guidance rather than only the field's own. */
 		describedBy?: string;
 	}
 	let { description, label, describedBy }: Props = $props();
 
 	let open = $state(false);
 	let triggerEl = $state<HTMLButtonElement | undefined>(undefined);
-	/** The root to portal INTO: `document.body` would escape the consumer's dials
+	/** The root to portal into: `document.body` would escape the consumer's dials
 	 * along with the editor's subtree. `undefined` falls back to bits-ui's default. */
 	const portalTarget = $derived(triggerEl?.closest<HTMLElement>('[data-qm-root]') ?? undefined);
 
@@ -51,7 +51,7 @@
 	let beside = $state(false);
 
 	/** Whether this description sets one line. Off a probe rather than the surface
-	 * itself, since the side is a prop the surface is positioned FROM, and a side chosen
+	 * itself, since the side is a prop the surface is positioned from, and a side chosen
 	 * after the fact moves a surface the reader is already looking at. The probe wears
 	 * the surface's own class inside the portal target, so it wraps to the same measure
 	 * under the same dials; `width: max-content` keeps that measure the class's rather
@@ -80,9 +80,9 @@
 	}
 </script>
 
-<!-- The trigger is OURS, not `Popover.Trigger`, and the surface anchors to it:
+<!-- The trigger is ours, not `Popover.Trigger`, and the surface anchors to it:
  the same shape {@link FormatPopover} uses. The primitive's trigger owns a click
- TOGGLE, which fights every one of the three openings below: a mouse click after
+ toggle, which fights every one of the three openings below: a mouse click after
  a hover-open would close, and on touch the focus that precedes the click opens
  it just in time for the click to close it again. -->
 <button
@@ -99,7 +99,7 @@
 		if (e.pointerType !== 'touch') open = false;
 	}}
 	onpointerup={(e) => {
-		// Touch only, and a TOGGLE: the one modality with no hover to leave and no
+		// Touch only, and a toggle: the one modality with no hover to leave and no
 		// blur on the way out. A mouse press falls through to hover, which already
 		// has it open and will close it on the way off.
 		if (e.pointerType === 'touch') {
@@ -124,10 +124,10 @@
 	}}><Icon name="info" size={13} /></button
 >
 
-<!-- PLACEMENT IS THE DESCRIPTION'S HEIGHT. One line rides the label rung beside its own
+<!-- Placement is the description'S height. One line rides the label rung beside its own
  glyph, where the overhang past the rung's line box falls in the label-to-control gaps.
- Anything taller stands over the field: beside the glyph it would hang onto THE CONTROL
- IT DESCRIBES, the one overlap a reader cannot clear by reaching for what is hidden,
+ Anything taller stands over the field: beside the glyph it would hang onto the control
+ it describes, the one overlap a reader cannot clear by reaching for what is hidden,
  since a pointer leaving the trigger closes the surface. Over the field it covers a
  neighbour's control instead, which reaching for it dismisses. -->
 <!-- `align="center"` for the rung, `"start"` over the field: centred, a surface taller
@@ -173,14 +173,14 @@
 <style>
 	/* Chrome, type and ring are the glyph-button family's (`.qm-icon-btn` +
 	 `.qm-focus-ring`, controls.css): this trigger is one more glyph button and
-	 assembles none of that itself. What it does NOT take is the family's tap floor
+	 assembles none of that itself. What it does not take is the family's tap floor
 	 and the fill that floor sizes, because this is the one glyph button that sits in
-	 a LINE OF TEXT rather than in a row of its own: the floor is half again the label
+	 a line of text rather than in a row of its own: the floor is half again the label
 	 rung's line box, so a target-sized paint box overhangs the line at each end by
 	 most of the field's label-to-control gap: the hover fill landing on the input's
 	 top border, the focus ring crossing it.
 
-	 So the box is the GLYPH and the target is the `::after` below. A target is a
+	 So the box is the glyph and the target is the `::after` below. A target is a
 	 region of the screen, not a paint box, and separating them is what lets both be
 	 correct at once: the row keeps the line box's height and the press keeps the
 	 floor. Every other glyph button has a row to itself and keeps the floor as its
@@ -216,7 +216,7 @@
 		color: var(--_qm-ink-label);
 	}
 	/* The lift, the translucency, the blur and the scale-in come from
-	 `.qm-popover-surface` (controls.css). This surface's own is a MEASURE: guidance
+	 `.qm-popover-surface` (controls.css). This surface's own is a measure: guidance
 	 is prose, and prose past ~40 characters a line stops being scannable; plus the
 	 inset and the meta type rung that keep it a note about a field rather than a
 	 second field.

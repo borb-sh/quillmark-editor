@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// The editor's verbs reached from OUTSIDE its chrome, which is the whole point of
+// The editor's verbs reached from outside its chrome, which is the whole point of
 // them: a host toolbar, command palette or shortcut drives the same functions the
 // card header calls, through `bind:this`, and gets the same `onChange`. They speak
 // the public vocabulary — a `CardId` for a card, a `DocPath` for a place — so a host
@@ -15,7 +15,7 @@ import { quill } from '../helpers/fixtures.js';
 const core = await init();
 
 // jsdom implements neither, and a card operation reaches both: the insert/reorder
-// scroll hop and the FLIP the removal runs the survivors through.
+// scroll hop and the flip the removal runs the survivors through.
 Element.prototype.scrollIntoView ??= () => {};
 Element.prototype.getAnimations ??= () => [];
 
@@ -129,7 +129,7 @@ describe('the card verbs', () => {
 	});
 });
 
-// A memo's scalar fields ARE its front matter, and the preview reports a region for
+// A memo's scalar fields are its front matter, and the preview reports a region for
 // them (`session.regions()` names `main.signature_block` beside `main.body`), so a
 // landing that reached content leaves only covered the smaller half of the bridge.
 describe('the landing verbs over a form control', () => {
@@ -217,9 +217,9 @@ describe('the landing verbs over a form control', () => {
 	});
 });
 
-// An array ELEMENT address (`main.references.0`) is a granularity `Addr` cannot name
+// An array element address (`main.references.0`) is a granularity `Addr` cannot name
 // and the registry is not keyed at: the ladder reads the trailing segment as an index
-// under a field the SCHEMA declares an array, reveals the parent, and takes the row.
+// under a field the schema declares an array, reveals the parent, and takes the row.
 describe('a landing on an array element', () => {
 	it('takes the row the address names rather than the first', async () => {
 		const q = quill();
@@ -284,7 +284,7 @@ describe('a verb handed a target the surface does not hold', () => {
 		const q = quill();
 		const { editor, errors } = mountEditor(q, q.seedDocument());
 
-		// The element rung is SCHEMA-GUARDED: a trailing index under a field that is no
+		// The element rung is schema-guarded: a trailing index under a field that is no
 		// array is a nested address the tree mounts nothing at, and reading it as a row
 		// would land the caret in a field the path does not name. `letterhead_title` is
 		// a string; `no_such_field` is nothing at all.

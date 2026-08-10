@@ -1,9 +1,9 @@
 <!--
  A `string`+`enum` (or `type: 'enum'`) field → a styled listbox over `enum ??
- values`, on bits-ui. When nothing is authored the list shows a distinct UNSET
- sentinel that GHOSTS the `default:` (muted, shown-never-written), distinguishable
+ values`, on bits-ui. When nothing is authored the list shows a distinct unset
+ sentinel that ghosts the `default:` (muted, shown-never-written), distinguishable
  from an authored pick and re-selectable; so re-picking the default fires a
- change. The sentinel commits nothing; any real pick: INCLUDING the
+ change. The sentinel commits nothing; any real pick: including the
  value that equals the default: commits via the parent's typed `writer.set`.
  Explicitly picking the default is the one place "commit the default" is genuine
  intent, expressible. The sentinel stays in the list once a value is authored, as
@@ -22,7 +22,7 @@
 		value: string | undefined;
 		values: string[];
 		fallback?: string;
-		/** Accessible name for a trigger NOTHING else names: an object property, whose
+		/** Accessible name for a trigger nothing else names: an object property, whose
 		 * name is the field label plus the property's. A field's own trigger takes `id`
 		 * instead and is named by the `<label for>` beside it (the trigger is a
 		 * `<button>`, so `for` reaches it and a label click opens the list: what the
@@ -35,7 +35,7 @@
 		describedBy?: string;
 		onCommit: (v: string | undefined) => void;
 		/** Consumer policy: `false` marks an option unavailable, so it can't be picked.
-		 * The UNSET sentinel is exempt: clear-to-default always works. */
+		 * The unset sentinel is exempt: clear-to-default always works. */
 		optionAllowed?: (value: string) => boolean;
 		/** How a refused option draws: greyed and unpickable, or left out of the list. */
 		enumDisallowed?: 'hide' | 'disable';
@@ -59,7 +59,7 @@
 
 	// Local selection synced to `value` (sentinel when unauthored); own-picks stay
 	// local, only an external change reconciles back in (see `syncedLocal`). Driven
-	// CONTROLLED (`value` + `onValueChange`, never `bind:`) so reconciliation stays
+	// controlled (`value` + `onValueChange`, never `bind:`) so reconciliation stays
 	// the package's rather than the primitive's.
 	const local = syncedLocal(() => value ?? UNSET);
 
@@ -71,16 +71,16 @@
 	/** What the closed trigger shows: the pick, or the ghosted default while unset. */
 	const shown = $derived(unset ? ghostText : dash(local.value));
 
-	/** The root to portal INTO: `document.body` would escape the consumer's dials
+	/** The root to portal into: `document.body` would escape the consumer's dials
 	 * along with the editor's subtree. `undefined` falls back to bits-ui's default. */
 	let wrapEl = $state<HTMLElement | undefined>(undefined);
 	const portalTarget = $derived(wrapEl?.closest<HTMLElement>('[data-qm-root]') ?? undefined);
 </script>
 
 <span class="qm-select-wrap" bind:this={wrapEl}>
-	<!-- `allowDeselect={false}`: the UNSET sentinel is the clear-to-default
+	<!-- `allowDeselect={false}`: the unset sentinel is the clear-to-default
 	 affordance, so the primitive's own deselect must stay off. It reports a
-	 deselect as `''`: INDISTINGUISHABLE from picking the empty-string enum
+	 deselect as `''`: indistinguishable from picking the empty-string enum
 	 member the reference quill actually declares. -->
 	<Select.Root
 		type="single"
@@ -106,18 +106,18 @@
 		</Select.Trigger>
 		<Select.Portal to={portalTarget}>
 			<Select.Content sideOffset={4}>
-				<!-- The list PORTALS out of the trigger's DOM but INTO the nearest
+				<!-- The list portals out of the trigger's DOM but into the nearest
 				     `[data-qm-root]`, and carries the marker itself, like FormatPopover.
 				     The pill is this
 				     element (not the primitive's) because scoped CSS keys off which
-				     component OWNS the markup: a `class` passed to a primitive is a
+				     component owns the markup: a `class` passed to a primitive is a
 				     plain string and never picks up the scoping hash. -->
 				<div class="qm-menu-surface qm-select-content" data-qm-root>
 					<Select.Viewport>
 						<Select.Item class="qm-menu-item qm-select-item" value={UNSET} label={ghostText}>
 							<span class="qm-select-ghost">{ghostText}</span>
 						</Select.Item>
-						<!-- A refused option still draws under `'disable'`, and under EITHER
+						<!-- A refused option still draws under `'disable'`, and under either
 						     policy when it is the one selected: a listbox whose selected value
 						     has no row shows nothing for what the document says, and offers none
 						     for the primitive to mark, type-ahead to, or key onto
@@ -145,10 +145,10 @@
 </span>
 
 <style>
-	/* A primitive renders its OWN element, which a scoped selector cannot reach:
+	/* A primitive renders its own element, which a scoped selector cannot reach:
 	 styled through the wrapper with `:global`. */
 	/* The box is `.qm-control-box` (controls.css), carried on the primitive's own
-	   element the same way `.qm-focus-ring` is; only what a TRIGGER adds over a typed
+	   element the same way `.qm-focus-ring` is; only what a trigger adds over a typed
 	   value's box is here. */
 	.qm-select-wrap :global(.qm-select) {
 		display: flex;
@@ -167,7 +167,7 @@
 		color: var(--_qm-ink-ghost);
 	}
 	/* The open list is `.qm-menu-surface` and its rows `.qm-menu-item` (controls.css):
-	 the lift, the inset and the highlight are the shared menu recipe. What a LISTBOX
+	 the lift, the inset and the highlight are the shared menu recipe. What a listbox
 	 adds over a menu is here: it spans its trigger rather than its own content, it
 	 scrolls past a screenful, and it marks the value already stored. */
 	.qm-select-content {

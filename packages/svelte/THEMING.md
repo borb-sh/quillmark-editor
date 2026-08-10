@@ -43,7 +43,7 @@ The whole contract is **ten CSS custom properties**. They are dials, not a palet
 
 `--qm-bg` and `--qm-fg` are the two a themed host sets before any brand decision. Their defaults are a self-consistent neutral for a bare mounting site, not a guess at your page.
 
-`--qm-bg` is the **card**, not the column behind it: the plane a document is written on, which is also the sheet the preview paints. Everything else is a step off it, and the column the cards sit in is a step DOWN, so a mounted editor draws its own ground and the cards read as islands on it. Give it the tone you want a card to be — white, in most light themes — and let the column fall out. If you want the column to meet your page instead, set a `background` of your own on `.qm-editor`; your CSS is unlayered and wins.
+`--qm-bg` is the **card**, not the column behind it: the plane a document is written on, which is also the sheet the preview paints. Everything else is a step off it, and the column the cards sit in is a step down, so a mounted editor draws its own ground and the cards read as islands on it. Give it the tone you want a card to be — white, in most light themes — and let the column fall out. If you want the column to meet your page instead, set a `background` of your own on `.qm-editor`; your CSS is unlayered and wins.
 
 The poles take a colour, not `transparent` or `inherit`: the raised surfaces, the borders and the muted inks are each a `color-mix` against `--qm-bg`, so a transparent pole makes every one of them translucent instead of letting your page through. Hand over the value your page is painted with and the derivation steps off it.
 
@@ -141,7 +141,7 @@ It carries a `--qmh-*` scale for the page, derived from the same ten dials and c
 
 ### The shell, if you are building a tool
 
-An app that mounts an editor beside a preview over one session needs a screen to put them in, and the SHAPE of that screen is the same every time. Five more classes are that shape, so what you write is the wiring rather than the grid:
+An app that mounts an editor beside a preview over one session needs a screen to put them in, and the shape of that screen is the same every time. Five more classes are that shape, so what you write is the wiring rather than the grid:
 
 ```html
 <div class="qm-workspace">
@@ -173,9 +173,9 @@ An app that mounts an editor beside a preview over one session needs a screen to
 | `.qm-switch`    | The band that says which track is showing, and nothing at the widths where both are. Its controls read as even halves and stand at the touch floor (`--qmh-tap`, 44px); depth past that is yours. |
 | `.qm-frame`     | The mounting site: an edge, a corner, and the clip that holds a surface to them. What is inside it is the surface's own.                                                                          |
 
-The narrow shape is one mount at a time, not two of them stacked: half a narrow viewport is under the width either surface reads at. The track you are not showing is `display: none`, so it leaves the tab order, hit-testing and the accessibility tree together: you need no `inert` on it, and no breakpoint in your JS, since the only state you hold is which of the two you last asked for. Keep both MOUNTED: the hidden pane keeps its pixels, its caret and its scroll, and repaints itself when it comes back. A click that lands in the hidden pane is the one thing the shape adds to your wiring, so send the caret and reveal the track together, or the hit goes somewhere the reader cannot see.
+The narrow shape is one mount at a time, not two of them stacked: half a narrow viewport is under the width either surface reads at. The track you are not showing is `display: none`, so it leaves the tab order, hit-testing and the accessibility tree together: you need no `inert` on it, and no breakpoint in your JS, since the only state you hold is which of the two you last asked for. Keep both mounted: the hidden pane keeps its pixels, its caret and its scroll, and repaints itself when it comes back. A click that lands in the hidden pane is the one thing the shape adds to your wiring, so send the caret and reveal the track together, or the hit goes somewhere the reader cannot see.
 
-The shape is shared; the LOOK of a band is not. Your wordmark, your nav and the depth of your head are the most app-specific things on the screen, and a preset that drew them would hand every tool built on this the same face, so they read `--qmh-*` like everything else and you write the rules. `.qm-split`'s gap is a default rather than a fact about splitting: close it to `0` and carry a hairline on one pane if you want the two mounts to meet instead of stand apart.
+The shape is shared; the look of a band is not. Your wordmark, your nav and the depth of your head are the most app-specific things on the screen, and a preset that drew them would hand every tool built on this the same face, so they read `--qmh-*` like everything else and you write the rules. `.qm-split`'s gap is a default rather than a fact about splitting: close it to `0` and carry a hairline on one pane if you want the two mounts to meet instead of stand apart.
 
 It is **unlayered**, so your own rules beat it by ordinary precedence, exactly as they beat the surfaces. It is also opt-in and side-effect free until imported: nothing that styles your document arrives with a component.
 

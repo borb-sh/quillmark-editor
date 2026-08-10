@@ -156,7 +156,7 @@ describe('the bin without a verb', () => {
 describe('what the tool loads', () => {
 	it('names the wasm artifact in no specifier of its own', async () => {
 		// The engine is the collection's, reached by a resolved path at runtime, so the
-		// artifact is in this process only when `test` puts it there. A static SPECIFIER
+		// artifact is in this process only when `test` puts it there. A static specifier
 		// would put it in every verb's, which is what the single-copy rule forbids.
 		// Prose naming it is not one.
 		//

@@ -111,7 +111,7 @@ describe('the client this package carries', () => {
 			`no client at ${CLIENT}: run \`npm run build -w packages/quillkit\``
 		).toBe(true);
 
-		// BUILT, not the tree it is built from. The constant is spelled once for two
+		// Built, not the tree it is built from. The constant is spelled once for two
 		// trees (this suite reads `src/paths.ts`, the bin runs `dist/paths.js`), and a
 		// spelling that lands on `client/` from both resolves to a source directory
 		// carrying an `index.html` of its own. What separates them is the entry: source

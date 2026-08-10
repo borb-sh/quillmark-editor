@@ -1,4 +1,4 @@
-// The PM schema: the codec OWNS it; decode/encode target it. Nodes mirror the
+// The PM schema: the codec owns it; decode/encode target it. Nodes mirror the
 // content block kinds (para/heading/code/rule/island) and its container nesting
 // (list_item/quote → lists/blockquote); marks mirror the content formatting set.
 // Each of the three open sets gets an inert carrier so an unrecognized value
@@ -6,7 +6,7 @@
 // and the `unknown_container` node. `blockSchema` is the full field; `inlineSchema`
 // is the constrained single-textblock form for `richtext(inline)` / `plaintext`
 // (one paragraph, no block split, no containers, no islands): same decode/lower/
-// position machinery, narrower shape. Anchors are NOT marks here (decorations).
+// position machinery, narrower shape. Anchors are not marks here (decorations).
 import { Schema } from 'prosemirror-model';
 import type { MarkSpec, NodeSpec } from 'prosemirror-model';
 import { islandBlockSpec, islandInlineSpec } from './islands.js';
@@ -43,10 +43,10 @@ const marks: Record<string, MarkSpec> = {
 const blockNodes: Record<string, NodeSpec> = {
 	doc: { content: 'block+' },
 	// `unknown` carries a line `kind` this build does not know (`{ kind, attrs }`,
-	// else null). A paragraph IS how such a line renders, so the carrier is an
+	// else null). A paragraph is how such a line renders, so the carrier is an
 	// attribute rather than a node type: every paragraph command already reaches it,
 	// and retyping it to a heading or a list drops the attribute: an explicit
-	// conversion, which is the one place the unknown kind SHOULD be lost.
+	// conversion, which is the one place the unknown kind should be lost.
 	paragraph: {
 		content: 'inline*',
 		group: 'block',

@@ -2,9 +2,9 @@
 // doc) and the rectangularizing constructors every row and column op goes through
 // (CODEC §Islands, §"The table island").
 //
-// `TableProps` normalizes to ONE column count shared by `header`, every row, and
+// `TableProps` normalizes to one column count shared by `header`, every row, and
 // `aligns`, so a ragged table is not a state the content can hold. The editor keeps
-// its optimistic PM and re-hydrates only on an EXTERNAL change (CODEC
+// its optimistic PM and re-hydrates only on an external change (CODEC
 // §Reconciliation), so an op that emitted a ragged table would leave the store
 // rectangularized and PM ragged with no error channel and no repair. Every
 // constructor here therefore ends in {@link normalizeTable}, and a caller reaches
@@ -35,10 +35,10 @@ export function emptyCell(): TableCell {
 
 /**
  * The row index space the chrome and the ops share: **0 is the header**, 1…n the body
- * rows. The split is how a table is STORED, not a rank the ops answer to: a row op
+ * rows. The split is how a table is stored, not a rank the ops answer to: a row op
  * works {@link allRows} and whichever row lands at index 0 is the header afterwards,
  * so index 0 moves and deletes like any other. The one row the model refuses is the
- * LAST, there being no table under it.
+ * last, there being no table under it.
  */
 export function rowCount(props: TableProps): number {
 	return props.rows.length + 1;
@@ -82,7 +82,7 @@ export function normalizeTable(props: TableProps): TableProps {
 }
 
 /**
- * The rows as ONE list, header first: the space a row op works in. `header` is a
+ * The rows as one list, header first: the space a row op works in. `header` is a
  * separate field because a table always has one and `header: []` is not a table — a
  * storage shape, not a rank a row op has to know about. Reading it as one list is what
  * lets move and delete treat every row alike, and {@link fromRows} splits it back.
@@ -130,7 +130,7 @@ export function insertRow(props: TableProps, r: number): TableProps {
 }
 
 /** Drop row `r`, the header included: the row left at index 0 is the header, which is
- *  how a table whose first row went still has one. A no-op at the LAST row, that being
+ *  how a table whose first row went still has one. A no-op at the last row, that being
  *  the removal of the table rather than of a row, and the island's own to answer. */
 export function deleteRow(props: TableProps, r: number): TableProps {
 	const rows = allRows(props);
@@ -203,7 +203,7 @@ export function moveColumn(props: TableProps, c: number, by: number): TableProps
  * covers ranks and deletes them, and one spanning both is the table itself, so what
  * reaches here is a proper sub-rectangle and the shape it leaves is the shape it found.
  *
- * Alignment is the COLUMN's rather than the cells', so it survives a clear that spans one.
+ * Alignment is the column's rather than the cells', so it survives a clear that spans one.
  */
 export function clearCells(
 	props: TableProps,
@@ -222,7 +222,7 @@ export function clearCells(
 }
 
 /**
- * A rectangle written in at `(r, c)`, the table GROWING to hold whatever runs past its
+ * A rectangle written in at `(r, c)`, the table growing to hold whatever runs past its
  * edges: what a paste into a cell means (`clipboard.ts`). The alternative is clipping
  * to the rectangle that is there, which silently drops the tail of what the author
  * copied; growth drops nothing and every added rank is one the ops already remove.
@@ -260,7 +260,7 @@ export function setAlign(props: TableProps, c: number, align: TableAlign): Table
 
 /**
  * A cell as a one-line `Content`: what `decode` takes under the inline schema. The
- * cell's marks ARE that content's marks, because both are offsets into the same
+ * cell's marks are that content's marks, because both are offsets into the same
  * text: the cell-local coordinate space is a `Content`'s coordinate space with
  * one line in it.
  */

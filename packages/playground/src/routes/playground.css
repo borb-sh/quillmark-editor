@@ -1,4 +1,4 @@
-/* What the playground adds ON TOP of the preset, and nothing the preset already
+/* What the playground adds on top of the preset, and nothing the preset already
    carries: `@quillmark/svelte/preset` is the endorsed page scale, imported in
    `+layout.svelte`, and the app reads `--qmh-*` throughout. What survives here is the
    app's own (a page maximum, a display run, a demo frame's height), which no consumer
@@ -11,8 +11,8 @@
 
 :root {
 	/* ── Rhythm ──────────────────────────────────────────────────────────────── */
-	/* The preset's ramp WIDENED at the top, derived from its base rather than a second
-	   base beside it: a page separates SECTIONS where a card separates fields, so the
+	/* The preset's ramp widened at the top, derived from its base rather than a second
+	   base beside it: a page separates sections where a card separates fields, so the
 	   ramp runs to 6rem. Derived, so no in-between value drifts in. */
 	--pg-space-6: calc(var(--qmh-space) * 6);
 	--pg-space-8: calc(var(--qmh-space) * 8);
@@ -21,14 +21,14 @@
 	--pg-space-24: calc(var(--qmh-space) * 24);
 
 	/* ── The reading column ──────────────────────────────────────────────────── */
-	/* ONE page width for the whole shell; a per-route maximum would step the running
+	/* One page width for the whole shell; a per-route maximum would step the running
 	   head in and out over the surface it sits above. The column a passage wraps at is
 	   the preset's measure, which the front page's split reads directly: the surface
 	   takes what is left of the page beside it. */
 	--pg-max: 84rem;
 
 	/* ── Containers ──────────────────────────────────────────────────────────── */
-	/* The height of a front-page DEMO frame, and the one number here staked to the
+	/* The height of a front-page demo frame, and the one number here staked to the
 	   fixture rather than to the layout: it sits under a painted page by design, since
 	   usaf_memo is two pages and a frame shorter than one of them makes scrolling swap
 	   which page is mounted, so the paint loop's bound can be checked by hand. The

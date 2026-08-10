@@ -1,14 +1,14 @@
-/* THE ENDORSED LOOK: the rules a host draws around a mounted surface AND the shell it
+/* The endorsed look: the rules a host draws around a mounted surface and the shell it
    mounts one in, as classes it puts on its own elements. The rungs beside this in
    `scale.css` are the invisible half (a scale alone still leaves a consumer writing
    every declaration before anything on the page looks like anything), so the recipes
    are what the preset is for. This file mints nothing; `check:style` runs its axes here.
 
-   These are HOST classes. They land on the consumer's DOM, never on a mounted root, so
+   These are host classes. They land on the consumer's DOM, never on a mounted root, so
    they freeze nothing about the surfaces' interior: the reason the package withholds
    its own internal classes does not reach them.
 
-   UNLAYERED, deliberately. `@layer qm` exists so consumer CSS beats the surfaces
+   Unlayered, deliberately. `@layer qm` exists so consumer CSS beats the surfaces
    without `!important`, and the same has to be true here; a layer of the preset's own
    would put a second name in the contract and change what `revert-layer` at the foot
    of this file resolves against. Unlayered, a consumer's own rules win by ordinary
@@ -16,12 +16,12 @@
 
 /* ── The page ──────────────────────────────────────────────────────────────── */
 
-/* The baseline, on a CLASS rather than `body`: a preset that restyled the document
+/* The baseline, on a class rather than `body`: a preset that restyled the document
    root would land on an app that already has a page and change it out from under
    whatever was there. The host puts this where its own layout starts: `body`, or the
    element the app mounts into.
 
-   `color-scheme` is declared HERE and not by the package: light or dark is the
+   `color-scheme` is declared here and not by the package: light or dark is the
    mounting site's, and this file is the mounting site. `light dark` follows the OS;
    a host pinning one declares it on the same element and wins by source order. */
 .qm-page {
@@ -43,11 +43,11 @@
 
 /* ── The workspace ─────────────────────────────────────────────────────────── */
 
-/* The rules above dress the page a surface sits ON; these four are the SHELL it is
+/* The rules above dress the page a surface sits on; these four are the shell it is
    mounted in, a tool where `.qm-page` is a document: the screen an app that mounts two
    surfaces over one session is, drawn once (ARCHITECTURE §Styling).
 
-   PINNED to the viewport rather than sized to it: a page-height box still leaves the
+   Pinned to the viewport rather than sized to it: a page-height box still leaves the
    root scroller counting the overflow its panes clip, and a wheel over the chrome drags
    the whole app off the top. Three bands (a head, the body, an optional foot), and the
    body takes what is left and may shrink below its content, so the panes in it own
@@ -67,8 +67,8 @@ html:has(.qm-workspace) {
 	overscroll-behavior: none;
 }
 
-/* A band's LINE: the row a head or a foot puts its parts on, wrapping, centred. That is
-   the whole of it. What a band is made OF is the host's: the rule under it, the gutter
+/* A band's line: the row a head or a foot puts its parts on, wrapping, centred. That is
+   the whole of it. What a band is made of is the host's: the rule under it, the gutter
    beside it, and the depth of it, because where a band ends and how tall it stands are
    page-shell decisions: a site holding its content to a maximum runs the rule past it at
    its own rhythm, and a one-screen tool has no maximum to hold to. */
@@ -79,11 +79,11 @@ html:has(.qm-workspace) {
 	gap: var(--qmh-space-2) var(--qmh-space-4);
 }
 
-/* TWO EVEN TRACKS for two surfaces, and no resizer, since a divider that can be dragged
+/* Two even tracks for two surfaces, and no resizer, since a divider that can be dragged
    is a control competing with what it divides. Each track may shrink below its content,
    which is what lets the frame in it clip rather than grow.
 
-   The GAP is the endorsed default and not a fact about splitting: two surfaces standing
+   The gap is the endorsed default and not a fact about splitting: two surfaces standing
    apart on a page read as two things, which is what a host showing its instruments wants.
    A host that spends the whole screen on the mounts closes it to nothing and carries a
    hairline on one pane instead: one property, and the tracks are untouched. */
@@ -95,32 +95,32 @@ html:has(.qm-workspace) {
 	min-height: 0;
 }
 
-/* THE BAND THAT SWITCHES THEM, and nothing at the widths where both tracks are showing
+/* The band that switches them, and nothing at the widths where both tracks are showing
    and there is nothing to switch. Where it stands is the host's, like any other band; what
    goes in it is a pair of `.qm-control`s, which already carry the on-state a pressed
-   control takes. Its visibility is the PRESET's because the threshold is: a host hiding
+   control takes. Its visibility is the preset's because the threshold is: a host hiding
    its own tab row writes this file's number a second time, which is the one thing the
    single source is for. */
 .qm-switch {
 	display: none;
 }
 
-/* ONE MOUNT AT A TIME under the threshold, rather than two of them abreast. Half a narrow
+/* One mount at A time under the threshold, rather than two of them abreast. Half a narrow
    viewport is under the width either surface reads at, so the split stops being one and
    the tracks become views of the same room: the host says which with `data-qm-show`, and
-   the attribute names the TRACK rather than what is in it, so nothing here knows an editor
+   the attribute names the track rather than what is in it, so nothing here knows an editor
    from a preview. No attribute is the first track.
 
    The other track is `display: none` and not a clip, which is the whole of the hiding: it
    leaves the tab order, hit-testing and the accessibility tree in one property, so the
-   pane needs no `inert` and the host needs no breakpoint in JS. Both stay MOUNTED (a
+   pane needs no `inert` and the host needs no breakpoint in JS. Both stay mounted (a
    preview binds its handle once, an editor holds a caret, a history and a scroll), so
    the switch is presentational, never conditional. A pane hidden this way keeps the
    pixels it had (the paint loop's band sweep no-ops on an empty visible set) and repaints
    from its live box when it comes back, which its resize observer sees as a width moving
    off zero.
 
-   HEIGHT is the second clause because a landscape phone passes the first one: it clears
+   Height is the second clause because a landscape phone passes the first one: it clears
    the width with room for two tracks and has no body left to put them in. A desktop window
    that short wants one mount for the same reason. */
 @media (width < 50rem), (height < 30rem) {
@@ -129,7 +129,7 @@ html:has(.qm-workspace) {
 		gap: var(--qmh-space);
 	}
 
-	/* Even halves of the band, at the height a THUMB needs. The floor is the recipe's and
+	/* Even halves of the band, at the height a thumb needs. The floor is the recipe's and
 	   not the host's, because the band exists only at the sizes where the pointer is a
 	   finger: a host is free to stand the band deeper, and has nothing to gain from
 	   standing it shallower than the thing it is tapping. */
@@ -154,18 +154,18 @@ html:has(.qm-workspace) {
 	}
 }
 
-/* THE MOUNTING SITE: an edge, a corner, and the clip that holds a surface to them, which
+/* The mounting site: an edge, a corner, and the clip that holds a surface to them, which
    is all a surface painting its own column needs. No tone and no gutter: those are the
    surface's own (THEMING §"Drop it in"). `border-box`, so a stated height is the height
    it draws.
 
-   POSITIONED, because a clip reaches only what it is the containing block for: a
+   Positioned, because a clip reaches only what it is the containing block for: a
    surface's out-of-flow parts (a parked description, an overlay) resolve against the
    nearest positioned ancestor, and with none between them and the document they land at
-   their static position UNCLIPPED, leaving the page to scroll past its own foot by
+   their static position unclipped, leaving the page to scroll past its own foot by
    however far the frame's contents run over.
 
-   The two minimums are what let a frame in a track CLIP rather than push: a grid or flex
+   The two minimums are what let a frame in a track clip rather than push: a grid or flex
    item floors at its content, so a mount that paints wider than its column widens the
    column instead. They ride the frame rather than the split's children, which keeps every
    rule in this file landing where the host put a class. Outside a track they are the
@@ -208,7 +208,7 @@ html:has(.qm-workspace) {
 }
 
 /* The block form: a dump, or a snippet. `pre` keeps the wrapping the value came with;
-   the plate is the page's own, one rung under whatever it sits in. How TALL such a
+   the plate is the page's own, one rung under whatever it sits in. How tall such a
    block may grow before it scrolls is the host's policy rather than the look, so no
    height is stated here. */
 pre.qm-readout {
@@ -269,7 +269,7 @@ pre.qm-readout {
 
 /* ── Controls ──────────────────────────────────────────────────────────────── */
 
-/* A host's controls ARE boxed, where the package's buttons are not: inside a card a
+/* A host's controls are boxed, where the package's buttons are not: inside a card a
    button sits beside typing and a box would read as a field, and out here there is no
    typing to be confused with, so the box is what says "this is a control".
    `font: inherit` first, since the shorthand resets whatever precedes it. */
@@ -311,7 +311,7 @@ pre.qm-readout {
 /* ── Focus ─────────────────────────────────────────────────────────────────── */
 
 /* One visible indicator for the whole host, since none of these controls draws a ring
-   of its own. It reads the INK rung rather than a hue: the page is monochrome, and a
+   of its own. It reads the ink rung rather than a hue: the page is monochrome, and a
    focus ring is a position, not a destination. */
 :focus-visible {
 	outline: var(--qmh-ring-width) solid var(--qmh-ink);

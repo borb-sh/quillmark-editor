@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// The standalone prose leaf: a `createField` over a REAL usaf_memo `subject` (inline)
+// The standalone prose leaf: a `createField` over a real usaf_memo `subject` (inline)
 // and body edits via applyChange; the caret survives own-edits through the PM StepMap;
 // an external content change re-hydrates and the leaf's own edit does not.
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -88,13 +88,13 @@ describe('field-level reconciliation', () => {
 		});
 		const view = viewOf(field);
 
-		// The field's OWN edit: applyExternal must NOT re-hydrate (no divergence).
+		// The field's own edit: applyExternal must not re-hydrate (no divergence).
 		view.dispatch(view.state.tr.insertText('Q', 1));
 		const afterOwn = view.state.doc;
 		field.applyExternal();
 		expect(view.state.doc).toBe(afterOwn); // same state object → no re-hydrate
 
-		// A FOREIGN edit straight to the content (another source), then applyExternal.
+		// A foreign edit straight to the content (another source), then applyExternal.
 		doc.applyChange(
 			{ field: 'subject' },
 			{
@@ -115,7 +115,7 @@ describe('field-level reconciliation', () => {
 
 describe('plaintext fields mount no markdown input rules', () => {
 	// `inlineSchema` still declares the mark types, so a `**x**` rule reaching a
-	// plaintext field would apply a strong mark AND eat the delimiters its author is
+	// plaintext field would apply a strong mark and eat the delimiters its author is
 	// entitled to. The rule is triggered the way a keystroke does: via `handleTextInput`
 	// with the char that completes the pattern.
 	function fireClosingStar(view: EditorView): unknown {
@@ -287,14 +287,14 @@ describe('createField accessible name (a11y follow-up)', () => {
 });
 
 // The ghost is chrome: it decorates an empty leaf, never enters the document, and
-// moves without an edit. `setPlaceholder` is what a RETYPED card uses to take its
+// moves without an edit. `setPlaceholder` is what a retyped card uses to take its
 // new kind's wording; the leaf is keyed by card id, so it cannot remount to pick
 // one up.
 describe('the empty-leaf ghost', () => {
 	const ghostOf = (f: FieldController): string | null =>
 		viewOf(f).dom.querySelector('.qm-prose-placeholder')?.getAttribute('data-placeholder') ?? null;
 
-	/** A freshly added card's body: empty, which the seeded MAIN body is not.
+	/** A freshly added card's body: empty, which the seeded main body is not.
 	 *  This is the very leaf the fallback exists for. */
 	function emptyBodyDoc(): Document {
 		const q = quill();
@@ -400,7 +400,7 @@ describe('an island edit on the op path', () => {
 		props.rows[0][0].text = 'EDITED';
 		view.dispatch(view.state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, props }));
 		expect((doc.main.body.islands[0].props as TableProps).rows[0][0].text).toBe('EDITED');
-		// The reconciler advanced with it, so the NEXT keystroke still diffs from
+		// The reconciler advanced with it, so the next keystroke still diffs from
 		// what the store holds rather than from a pre-edit content.
 		field.setCaret(1);
 		view.dispatch(view.state.tr.insertText('X', view.state.selection.head));
@@ -417,7 +417,7 @@ describe('an island edit on the op path', () => {
 		expect(doc.main.body.islands).toHaveLength(0);
 		undo(view.state, view.dispatch);
 		// The undo lowers to `{ op: 'insert' }` rather than an install, so the
-		// island comes back with its id AND the field's anchor is still there.
+		// island comes back with its id and the field's anchor is still there.
 		expect(doc.main.body.text).toBe(md(TABLE_MD).text);
 		expect(doc.main.body.islands.map((i) => i.id)).toEqual(['isl-0']);
 		expect(doc.main.body.marks.some((m) => m.type === 'anchor')).toBe(true);

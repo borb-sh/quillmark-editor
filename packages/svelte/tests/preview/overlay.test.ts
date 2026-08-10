@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
-// The overlay marks correlation as an EVENT, not a state. Three
+// The overlay marks correlation as an event, not a state. Three
 // invariants, each cheap to break silently: nothing is drawn at rest, a bloom
-// RESUMES across the rebuild a recompile triggers rather than restarting, and a
+// resumes across the rebuild a recompile triggers rather than restarting, and a
 // continuous caret signal blooms only on an actual change of address.
 //
 // jsdom has no WAAPI, so `bloom()` returns `undefined` there and no animation runs.
-// That is exactly the seam these tests want: they assert the CONTROL FLOW around the
+// That is exactly the seam these tests want: they assert the control flow around the
 // wash (which elements it is asked for, and when) with a stub `Element.animate`
 // recording the calls. The paint itself is playground territory (CLAUDE.md's two
 // tiers).
@@ -48,7 +48,7 @@ beforeEach(() => {
 });
 afterEach(() => vi.restoreAllMocks());
 
-/** `main.subject` surfaces TWO boxes (the header/continuation case PREVIEW.md names). */
+/** `main.subject` surfaces two boxes (the header/continuation case PREVIEW.md names). */
 const BOXES: Record<string, { page: number; rect: [number, number, number, number] }[]> = {
 	'main.subject': [
 		{ page: 0, rect: [10, 10, 110, 30] },
@@ -158,7 +158,7 @@ describe('overlay: the bloom', () => {
 		calls = [];
 		now += 300;
 		overlay.refresh();
-		// Resumed, NOT restarted: a restart here is the bug that would make the wash
+		// Resumed, not restarted: a restart here is the bug that would make the wash
 		// re-bloom on every keystroke burst.
 		expect(calls).toEqual([{ field: 'main.body', offset: 300 }]);
 
@@ -194,7 +194,7 @@ describe('overlay: the bloom', () => {
 		overlay.flashField('main.subject');
 		expect(calls.map((c) => c.field)).toEqual(['main.subject', 'main.subject']);
 
-		// And so is coming back; the guard is the LAST address, not a visited set.
+		// And so is coming back; the guard is the last address, not a visited set.
 		calls = [];
 		overlay.flashField('main.body');
 		expect(calls.map((c) => c.field)).toEqual(['main.body']);

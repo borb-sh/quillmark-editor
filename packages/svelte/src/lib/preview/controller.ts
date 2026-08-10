@@ -144,8 +144,8 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 			);
 			return;
 		}
-		// Read the count against the current slots BEFORE reconcile moves it, and
-		// clear any prior message BEFORE painting so a paint that throws mid-refresh
+		// Read the count against the current slots before reconcile moves it, and
+		// clear any prior message before painting so a paint that throws mid-refresh
 		// leaves its error surfaced rather than have `hideMessage` clobber it.
 		const countChanged = pageCount !== paintLoop.slots.length;
 		hideMessage();
@@ -166,7 +166,7 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	render(session.pageCount, []);
 
 	// The last place the editor put the caret, re-located after every recompile.
-	// `session.locate` answers against the LAST COMPILED layout and a consumer
+	// `session.locate` answers against the last compiled layout and a consumer
 	// debounces `update`, so a caret typed past that layout's content is off-content
 	// for the whole burst: `focusPosition` no-ops and the pane sits still, and a
 	// caret event is otherwise the only thing that asks again. The re-locate is the

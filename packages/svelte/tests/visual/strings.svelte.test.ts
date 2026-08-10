@@ -3,7 +3,7 @@
 // `strings` key overridden and the rest left English, and one diagnostic re-worded
 // through `formatDiagnostic` with the fallback arm still standing behind it.
 //
-// The key checked in the DOM is an ACCESSIBLE NAME, not decoration, which is the
+// The key checked in the DOM is an accessible name, not decoration, which is the
 // reason the seam exists: an untranslated add trigger does not read as
 // inconsistent to a screen reader, it reads as the wrong language.
 import { describe, it, expect, afterEach } from 'vitest';

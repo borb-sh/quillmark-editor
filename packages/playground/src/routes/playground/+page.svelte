@@ -1,11 +1,11 @@
 <!--
-  The reference SPLIT-PANE SHELL, and the page the site is named for. One
+  The reference split-pane shell, and the page the site is named for. One
   consumer-owned LiveSession drives both surfaces over one seeded document:
     • <VisualEditor> (left): the edit surface; commits land on `doc`.
     • <Preview>      (right): a pure view of the session; never mutates it.
 
   It wires the glue the primitives push outward (ARCHITECTURE §Playground), all
-  through the PUBLIC API; no reach-through:
+  through the public API; no reach-through:
 
     edit ─► (debounced) session.update(doc) ─► preview.refresh(change)
                                             └► diagnostics = session.warnings
@@ -17,21 +17,21 @@
   the preview (it only emits addresses + carets), the preview is unaware of the
   editor (it only surfaces hits). This route is the seam that joins them.
 
-  Recompile is fed by `onChange` ALONE, which covers all three lanes: a prose
+  Recompile is fed by `onChange` alone, which covers all three lanes: a prose
   commit, a scalar/array write, a card operation. A structure op applies at once
   (one per gesture, and the stack moved); prose and field edits debounce, since
   they arrive per keystroke. `onCaretMove` drives the preview's caret and nothing
   else: it fires on a bare arrow key, so a recompile hung off it would recompile
   on every one.
 
-  Under the preset's threshold the split shows ONE track and the switch band says
+  Under the preset's threshold the split shows one track and the switch band says
   which, so the bridge's preview→editor hop reveals the editor as well as placing
   the caret in it: a hit that lands in a hidden pane lands nowhere a reader can see.
   Both panes stay mounted either way: the switch is CSS over a state, never an
   `{#if}` that would take the editor's history with it.
 
   The strip above the panes reads the bridge's outcomes back out (last-hit,
-  active-addr, last-focus, last-change, the change LANE, and the last recovered
+  active-addr, last-focus, last-change, the change lane, and the last recovered
   error), so a round-trip that lands nowhere shows there, as does a failure the
   surfaces recovered from. `inject-diagnostics` stands in for a live
   render-error feed: a real consumer derives external diagnostics from
@@ -175,7 +175,7 @@
 				]);
 				const { Quill, Document } = await init();
 				const tree = await loadUsafMemoTree();
-				// The SCHEMA variants, patched into the tree before the quill is built:
+				// The schema variants, patched into the tree before the quill is built:
 				// `?dateDefault=YYYY-MM-DD` gives the main `date` a literal default (the
 				// reference quill declares a blank one, which ghosts nothing), `?kinds2` a
 				// second card kind, so the add affordance takes its menu branch.
@@ -185,7 +185,7 @@
 				if (params.has('kinds2')) withSecondCardKind(tree);
 				const quill = Quill.fromTree(tree);
 				const doc = quill.seedDocument();
-				// The SEED variants. `?foreign` holds a card whose kind the schema cannot
+				// The seed variants. `?foreign` holds a card whose kind the schema cannot
 				// project: `Document.insertCard` is schema-agnostic where the Quill-bound
 				// writer would reject it, which is the case the recovery shell handles.
 				// `?tips` seeds the guidance channel a quill or consumer supplies (`$ext`,

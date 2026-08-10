@@ -71,7 +71,7 @@
 		border-bottom: var(--qmh-border-width) solid var(--qmh-border);
 	}
 
-	/* How DEEP the band stands is the site's, not the shell's: this is a page's running
+	/* How deep the band stands is the site's, not the shell's: this is a page's running
 	   head above a reading column, so it takes the page's rhythm rather than a tool's. */
 	.head-row {
 		padding-block: var(--qmh-space-3);

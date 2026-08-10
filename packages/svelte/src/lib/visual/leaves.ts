@@ -1,7 +1,7 @@
 // The leaf registry: what a landing verb resolves a `DocPath` to, and the seam the
 // mounted tree registers itself into (VISUAL_EDITOR §"Focus and the preview bridge").
 //
-// TWO LANES BEHIND ONE LOOKUP. Every mounted field registers a {@link FieldControl} —
+// Two lanes behind one lookup. Every mounted field registers a {@link FieldControl} —
 // take the caret, and a box to bloom — which is the whole of what a reveal and a
 // focus need, and the whole of what a form control has. A prose leaf registers its
 // `FieldController` instead: a superset, carrying the codec seam (a caret at a USV
@@ -29,11 +29,11 @@ import type { FieldController } from '../core/codec/index.js';
 export interface FieldControl {
 	focus(): void;
 	/**
-	 * Focus element `index` of a control that HAS elements, resolving the index to the
+	 * Focus element `index` of a control that has elements, resolving the index to the
 	 * element's session id at the call; {@link focus}'s own answer for an index past
 	 * the live list. Absent on every control without elements.
 	 *
-	 * The granularity rides the CALL because the registry stays parent-keyed: a
+	 * The granularity rides the call because the registry stays parent-keyed: a
 	 * per-element key is positional, in a registry whose doctrine is dodging
 	 * positional churn.
 	 */
@@ -44,7 +44,7 @@ export interface FieldControl {
 /**
  * The registry the editor holds and the mounted tree writes into.
  *
- * A LANE IS DROPPED BY ITS OWN OWNER, which is what the symmetric pairs are for: a
+ * A lane is dropped by its own owner, which is what the symmetric pairs are for: a
  * card retyped to a kind that declares the same field name at another type swaps the
  * control under one leaf key without remounting `Field`, so the leaving control and
  * the arriving prose leaf both touch that key with no order between them to rely on.
@@ -81,7 +81,7 @@ export function createLeafRegistry(): LeafRegistry {
 		unregisterControl(key) {
 			controls.delete(key);
 		},
-		// The prose map is read SECOND: a controller is a control, so a leaf answers a
+		// The prose map is read second: a controller is a control, so a leaf answers a
 		// landing without a second entry, and a key the two lanes overlap on during a
 		// retype resolves to the form control the tree is currently rendering.
 		control(key) {

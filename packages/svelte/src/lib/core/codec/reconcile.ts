@@ -2,10 +2,10 @@
 // The content normalizes on write, so `decode ∘ lower` is idempotent only up to
 // normalization: the optimistic PM state and the re-decoded stored content agree
 // after normalize, not byte-for-byte. So the field holds its PM state and
-// re-hydrates ONLY on an EXTERNAL content change (another edit source, a paste, a
+// re-hydrates only on an external content change (another edit source, a paste, a
 // `revise`), gated by canonical-content equality scoped to the leaf's addr: the
 // analog of web-app's whole-document `Document.equals`, narrowed to one field.
-// Caret continuity across the field's OWN edits is the PM `StepMap`, not this.
+// Caret continuity across the field's own edits is the PM `StepMap`, not this.
 import type { Content } from '@quillmark/wasm';
 
 /** Tracks the last content the codec knows for a leaf, to distinguish foreign edits. */

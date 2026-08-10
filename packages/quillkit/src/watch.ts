@@ -57,7 +57,7 @@ export function watchCollection(
 }
 
 /**
- * Run `job` one at a time, chaining onto a SETTLED queue whichever way the last one
+ * Run `job` one at a time, chaining onto a settled queue whichever way the last one
  * went. `build` owns its output directory, so two overlapping packs would race over one
  * tree; and a rejected link left in the chain would answer every later pack with the
  * first failure instead of running it, which a quiver mid-edit reaches on the first

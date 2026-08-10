@@ -1,11 +1,11 @@
-// What the editor EMITS. The editor is unaware of the preview
+// What the editor emits. The editor is unaware of the preview
 // (VISUAL_EDITOR §"Focus and the preview bridge"), so nothing here imports it; what the two share
 // is `/core`'s address vocabulary, which is what lets a consumer wire the bridge
 // as a pass-through rather than a translation.
 import type { DocPath } from '../core/address.js';
 
 /**
- * Which lane an edit came down. The three differ in COST, not in meaning: prose
+ * Which lane an edit came down. The three differ in cost, not in meaning: prose
  * arrives per keystroke and wants a debounce, a structure op arrives once per
  * gesture and does not. A host that recompiles the same way for all three never
  * reads it.
@@ -19,18 +19,18 @@ export type ChangeSource =
 	| 'structure';
 
 /**
- * A card's SESSION key: the editor's own identity for a card instance, `'main'` for
+ * A card's session key: the editor's own identity for a card instance, `'main'` for
  * the main card and an opaque `IdSeq` id (`structure.ts`) for a composable one. It
  * rides beside every address the surface emits, because no address survives a
  * reorder: `Addr` and `DocPath` are both positional, so a host holding
  * `cards.indorsement[2].from` names a different card after one `moveCard`, and
  * silently. The key does not move.
  *
- * SESSION-SCOPED BY CONSTRUCTION. Nothing document-side backs it (the document model
+ * Session-scoped by construction. Nothing document-side backs it (the document model
  * carries no card handle): it is minted at mount and dies with the surface, so it
  * does not survive a reload and a host persisting one is persisting a session key.
  *
- * THE EDITOR OWNS STRUCTURAL MUTATION for the session. The keys track the inserts,
+ * The editor owns structural mutation for the session. The keys track the inserts,
  * moves and removals the editor performs; a host that mutates the card array behind
  * it (its own `doc.insertCard`) desyncs them, and the answer is to re-seed the
  * surface rather than expect the keys to follow. There is nothing document-side to
@@ -38,12 +38,12 @@ export type ChangeSource =
  */
 export type CardId = string;
 
-/** An edit that LANDED on the document, and which lane it came down. */
+/** An edit that landed on the document, and which lane it came down. */
 export interface EditorChange {
 	source: ChangeSource;
 	/**
 	 * Where it landed, in the canonical `DocPath` the preview and every diagnostic
-	 * already speak: a FIELD for the prose and field lanes, the CARD itself
+	 * already speak: a field for the prose and field lanes, the card itself
 	 * (`cards.<kind>[i]`) for a structure op, where the change is the card rather than
 	 * anything inside it. Absent for a card removal and a tips dismissal, which are
 	 * the stack's change rather than a leaf's.

@@ -50,7 +50,7 @@ describe('fieldDomIds', () => {
 	});
 
 	it('separates two editors holding the same field', () => {
-		// The leaf-key space is unique per EDITOR, not per document: two mounted side by
+		// The leaf-key space is unique per editor, not per document: two mounted side by
 		// side both hold `main:subject`, and a duplicate id makes `for` resolve to the
 		// first.
 		expect(fieldDomIds('u1', 'main:subject').control).not.toBe(

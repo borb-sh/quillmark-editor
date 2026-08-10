@@ -3,7 +3,7 @@
 // `listKeymap` returns, not through re-derived copies of them, so a rebinding
 // breaks these.
 //
-// Every mutation is also checked for REPRESENTABILITY: the resulting PM doc is
+// Every mutation is also checked for representability: the resulting PM doc is
 // encoded, pushed through the upstream normalizer, and re-decoded. A command that
 // produces a shape `Content` cannot hold would pass a doc-shape assertion and
 // still lose the user's edit on commit.

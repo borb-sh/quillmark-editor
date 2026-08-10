@@ -5,7 +5,7 @@
 // the drift is named rather than waited out. Zero deps; run via `npm run check:registry`.
 //
 // Not part of `gate`: the release PR carries a bump the registry cannot have yet, and on
-// that branch the drift IS the change. On `main` the same fact is a fault, so this runs on
+// that branch the drift is the change. On `main` the same fact is a fault, so this runs on
 // its own schedule (`registry.yml`), which also keeps it clear of the release run a
 // push-triggered check would race.
 //

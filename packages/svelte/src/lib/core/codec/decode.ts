@@ -4,7 +4,7 @@
 // prefix (`list_item`/`quote` → lists/blockquote), select the block node by
 // `kind`, apply marks over their `[start,end)` USV ranges (PM splits inline nodes
 // at mark boundaries), and lower island slots to leaf nodes (inline in a `para`
-// line, block on an `island` line). Anchors are NOT applied here; they are
+// line, block on an `island` line). Anchors are not applied here; they are
 // decorations (field.ts). Positions throughout are USV; `Array.from` iterates by
 // code point so an astral char is one unit, never a surrogate half.
 import { DOMSerializer, type Mark, type Node as PMNode, type Schema } from 'prosemirror-model';
@@ -41,7 +41,7 @@ interface DecodeOpts {
 }
 
 /**
- * A `Content` as READ-ONLY DOM: decode under `schema`, then the nodes' own `toDOM`.
+ * A `Content` as read-only DOM: decode under `schema`, then the nodes' own `toDOM`.
  * The rendering half of the codec's job with no editing attached (no PM view, no
  * plugins, no `contenteditable`) for chrome that must show content in the same
  * mark vocabulary a leaf edits it in (the tips card). A second renderer over the
@@ -126,7 +126,7 @@ function groupBlocks(
 			continue;
 		}
 		const here = path[depth];
-		// `ContentContainer` is an OPEN set: a bare `here.container === 'x'` does not
+		// `ContentContainer` is an open set: a bare `here.container === 'x'` does not
 		// narrow, so the two arms this schema builds are claimed by the boundary's
 		// guard and a literal check, and everything else is an unknown the inert
 		// wrapper carries (CODEC §Open sets); no branch degrades silently.
@@ -139,7 +139,7 @@ function groupBlocks(
 			while (j < leaves.length) {
 				const c = atDepth(leaves[j], depth);
 				if (!c || !isListItemContainer(c) || c.ordered !== ordered || c.start !== start) break;
-				// An ordinal reset is an ADJACENT SIBLING list (content preserves the
+				// An ordinal reset is an adjacent sibling list (content preserves the
 				// shape): merging it here would re-encode `[0,1,0]` as `[0,1,2]`,
 				// breaking the decode round-trip on the first edit.
 				if (c.ordinal < prevOrd) break;
@@ -167,7 +167,7 @@ function groupBlocks(
 			continue;
 		}
 		// quote and every unknown container share one shape: a wrapper over the run
-		// of leaves carrying the IDENTICAL container here (identity by `containerKey`,
+		// of leaves carrying the identical container here (identity by `containerKey`,
 		// so two adjacent unknowns differing only in `attrs` stay two wrappers).
 		const key = containerKey(here);
 		let j = i + 1;
@@ -209,7 +209,7 @@ function containerKey(c: ContentContainer): string {
 }
 
 /** A single leaf block node (para/heading/code/rule/island, or an unknown kind
- * carried on a paragraph) from its segments. `kind` is an OPEN set, so the two
+ * carried on a paragraph) from its segments. `kind` is an open set, so the two
  * payload-carrying arms read through the boundary's guards; the payload-free arms
  * compare literally, and anything left is unknown. */
 function makeLeaf(schema: Schema, leaf: Leaf, marks: ContentMark[], cursor: IslandCursor): PMNode {
@@ -233,7 +233,7 @@ function makeLeaf(schema: Schema, leaf: Leaf, marks: ContentMark[], cursor: Isla
 	if (isHeadingLine(line)) {
 		return schema.nodes.heading.create({ level: line.level }, inline);
 	}
-	// An unknown kind renders as a paragraph AND rides on it, so it re-encodes
+	// An unknown kind renders as a paragraph and rides on it, so it re-encodes
 	// verbatim rather than flattening to `para` on the field's first edit.
 	const unknown =
 		line.kind === 'para' ? null : { kind: line.kind, attrs: 'attrs' in line ? line.attrs : null };
@@ -241,7 +241,7 @@ function makeLeaf(schema: Schema, leaf: Leaf, marks: ContentMark[], cursor: Isla
 }
 
 /** Consume the next island entry as PM node attrs (text-order matched to slots):
- *  the WHOLE entry, `loss` included, which an island edit has to write back
+ *  the whole entry, `loss` included, which an island edit has to write back
  *  (`islands.ts`). A slot with no entry behind it is a malformed content; the empty
  *  attrs keep the decode total rather than throwing on a read. */
 function islandAttrs(cursor: IslandCursor): IslandNodeAttrs {

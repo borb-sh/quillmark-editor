@@ -1,12 +1,12 @@
-// The click bridge: a click on a page slot resolves pixel -> PDF-pt (the EXACT
+// The click bridge: a click on a page slot resolves pixel -> PDF-pt (the exact
 // inverse of overlay.ts's forward transform, both from geometry.ts) -> an address,
 // surfaced through `onPick`. Also the
 // editor->preview scroll commands (`scrollToField`/`focusPosition`), which
 // place an ephemeral marker at the target's % position and measure it, reading
-// the SAME percent geometry the overlay draws, so zoom and resize need no
+// the same percent geometry the overlay draws, so zoom and resize need no
 // hand-rolled pixel offset of their own.
 //
-// The scroll itself is the SCROLLPORT's, written as `container.scrollTop`, not
+// The scroll itself is the scrollport's, written as `container.scrollTop`, not
 // `marker.scrollIntoView()`: that walks every scrollable ancestor, so a host
 // whose document scrolls (the playground below its split threshold) has the
 // whole page dragged to the preview by a keystroke in the editor. The preview
@@ -43,10 +43,10 @@ export function createBridge(
 ): BridgeController {
 	const unlisten: Array<() => void> = [];
 
-	// TWO RUNGS: `positionAt` over span-tracked content, `fieldAt` over every placement
+	// Two rungs: `positionAt` over span-tracked content, `fieldAt` over every placement
 	// the compile tracks, a strict superset of it (PREVIEW.md §"Click bridge" carries
 	// the measurement). The second fires where a field is placed without its content
-	// being tracked, and the pick carries NO `pos` there: a fabricated `0` would be an
+	// being tracked, and the pick carries no `pos` there: a fabricated `0` would be an
 	// invented offset wearing a real one's type. No third rung hit-tests `regions()`,
 	// whose rects bound ink the field does not fill.
 	if (onPick) {
@@ -93,7 +93,7 @@ export function createBridge(
 		else if (target.right > port.right) container.scrollLeft += target.right - port.right;
 	}
 
-	// Clear of the fold is the target's OWN height of clearance at each edge, not bare
+	// Clear of the fold is the target's own height of clearance at each edge, not bare
 	// intersection: a caret rect flush against one is visible and unusable, and the
 	// next line typed lands past it. Derived from the target rather than a margin
 	// dial, so it scales with zoom exactly as the caret does.
@@ -118,7 +118,7 @@ export function createBridge(
 			if (!region) return;
 			const slot = slots[region.page];
 			if (!slot) return;
-			// The CONTINUOUS hop: one call per keystroke and per arrow key, so it moves
+			// The continuous hop: one call per keystroke and per arrow key, so it moves
 			// the pane only when the caret has left the fold. Centring unconditionally
 			// takes the scrollport back from the user on every one of them, including
 			// the ones that changed nothing about where the caret already was.

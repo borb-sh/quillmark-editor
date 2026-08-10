@@ -3,18 +3,18 @@
 // it renders is PM's own: a leaf node's substitute DOM, holding one nested
 // `EditorView` per cell.
 //
-// A cell is a second content unit inside the first, so it gets the codec's INLINE mode
+// A cell is a second content unit inside the first, so it gets the codec's inline mode
 // (one paragraph, no containers, no islands, marks and input rules intact);
 // `table.ts` owns that translation. A cell edit does not touch the field's text:
 // the projection goes back onto the node's `props` attribute with `setNodeMarkup`,
 // and the field's own `dispatchTransaction` lowers that to an `islandOps` `set`
 // (CODEC §Encode), which is what keeps every anchor in the field.
 //
-// The nested views are NOT the field's: they carry no history (Mod-z routes to the
+// The nested views are not the field's: they carry no history (Mod-z routes to the
 // field's, so one undo stack covers the leaf), no anchor plugin (an anchor in a cell
 // is preserved, never minted), and no placeholder.
 //
-// THE CHROME IS A BAND AND A SELECTION (CODEC §"The table island"), and it raises
+// The chrome is A band and A selection (CODEC §"The table island"), and it raises
 // nothing. Every control is absolutely positioned out of the grid, so the band is in no
 // row and no column of it; `codec/prose.css` draws the band and the selection wash both.
 import { baseKeymap, toggleMark } from 'prosemirror-commands';
@@ -69,7 +69,7 @@ export interface TableChromeStrings {
 	tableColumn: (index: number) => string;
 	/** A cell's accessible name: nothing else names a nested leaf. */
 	tableCell: (row: string, column: string) => string;
-	/** A grip's name. It SELECTS its line, and the verbs are then the selection's
+	/** A grip's name. It selects its line, and the verbs are then the selection's
 	 *  (Backspace, Alt+arrows) or the drag's, so the name is the gesture. Row 0 takes a
 	 *  name of its own for the reason it takes one above: the gesture is every other
 	 *  row's, but the line it names is still the header and not "row 0". */
@@ -82,7 +82,7 @@ export interface TableChromeStrings {
 }
 
 /**
- * The package's English for the island chrome. It lives HERE, beside the surface
+ * The package's English for the island chrome. It lives here, beside the surface
  * that draws it, rather than in the visual tier's table: the codec mounts this
  * chrome and a consumer reaching `createField` directly gets wording with it. The
  * visual `strings` set extends this one, so a consumer overrides these keys beside
@@ -124,7 +124,7 @@ const GRIP: Record<Axis, string[]> = {
 	row: ['M9 5h.01', 'M9 12h.01', 'M9 19h.01', 'M15 5h.01', 'M15 12h.01', 'M15 19h.01']
 };
 
-/** The grip's marks. The stroke is heavy for a chrome glyph because they are DOTS, and a
+/** The grip's marks. The stroke is heavy for a chrome glyph because they are dots, and a
  *  dot drawn at the line weight of a stroke disappears at the size the bar renders. */
 function svg(paths: string[]): SVGElement {
 	const el = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -176,7 +176,7 @@ function cellPlugins(keys: Record<string, Command>) {
 }
 
 /** The band's controls, each of which answers for its own press. Spelled apart from
- *  {@link OWNED} because the pointer router needs them BEFORE it needs the cells: a grip
+ *  {@link owned} because the pointer router needs them before it needs the cells: a grip
  *  is inside the cell it names, so the two selectors overlap on exactly the press whose
  *  reading they disagree about. */
 const CONTROLS = '.qm-table-grip, .qm-table-add';
@@ -239,9 +239,9 @@ interface Line {
  * island can name it: a cell index inside one leaf is not a position in the document's
  * coordinate space, and a custom `Selection` would have to be one to be dispatched.
  *
- * ONE state for both gestures — a grip press is the rectangle covering a whole line —
+ * One state for both gestures — a grip press is the rectangle covering a whole line —
  * because the verb reading it is one verb. What Backspace means is decided by the
- * rectangle's EXTENT rather than by which gesture drew it, so a row swept cell by cell
+ * rectangle's extent rather than by which gesture drew it, so a row swept cell by cell
  * deletes exactly as the row its grip named does.
  */
 interface Cells {
@@ -265,7 +265,7 @@ const spanCells = (a: { r: number; c: number }, b: { r: number; c: number }): Ce
 /** A drag in flight: the line lifted, where the press started, and whether it has
  *  passed the dead zone yet.
  *
- *  `lines` is the geometry, read ONCE when the drag engages. Nothing reflows between
+ *  `lines` is the geometry, read once when the drag engages. Nothing reflows between
  *  the press and the release (the lift is a tone and the drop rule is out of flow), so
  *  a rect per pointermove would re-measure an unchanged table: at 20x8 that is 150
  *  forced layouts an event. */
@@ -275,7 +275,7 @@ interface Drag {
 	engaged: boolean;
 	/** Where the line would land on release, in the same space as `line.index`. */
 	drop: number;
-	/** The last drop index PAINTED, so a move inside the same line draws nothing. */
+	/** The last drop index painted, so a move inside the same line draws nothing. */
 	painted: number;
 	pointerId: number;
 	grip: HTMLButtonElement;
@@ -285,9 +285,9 @@ interface Drag {
 }
 
 /** A block selection in flight: the cell the press landed in, and the cell boxes a
- *  pointer resolves against — measured ONCE at engage, for the reason a line drag
+ *  pointer resolves against — measured once at engage, for the reason a line drag
  *  measures once. `live` is what keeps a press that jitters inside its own cell a
- *  CARET: the gesture becomes a selection only once it has left that cell. */
+ *  caret: the gesture becomes a selection only once it has left that cell. */
 interface Sweep {
 	origin: { r: number; c: number };
 	from: Point;
@@ -327,7 +327,7 @@ class TableIslandView implements NodeView {
 		this.dom.setAttribute('data-island', node.attrs.islandType as string);
 		this.dom.setAttribute('data-island-id', node.attrs.id as string);
 		this.dom.addEventListener('mousedown', this.onPointerDown);
-		// On the DOCUMENT rather than on the island: a `copy` is delivered to the DOM
+		// On the document rather than on the island: a `copy` is delivered to the DOM
 		// selection's own node, and a held rectangle has cleared that selection (a sweep
 		// removes the ranges itself, a grip press moves the focus to a button), so the
 		// event never crosses this subtree at all. What makes one this island's is
@@ -349,7 +349,7 @@ class TableIslandView implements NodeView {
 			return true;
 		}
 		// Same rectangle: reseed only the cells whose value the nested view is not
-		// already showing. The cell that PRODUCED this update projects to exactly what
+		// already showing. The cell that produced this update projects to exactly what
 		// it stored, so it compares equal and keeps its caret; an undo or an external
 		// re-hydrate does not, and takes the fresh state.
 		this.rendered = props;
@@ -364,7 +364,7 @@ class TableIslandView implements NodeView {
 			mounted.view.updateState(fresh);
 			// Best-effort caret continuity, the rule a field's own re-hydrate takes: keep
 			// the offset, clamped into the text that is there now. A fresh state resolves
-			// its selection to the START of the cell, so an undo would otherwise put the
+			// its selection to the start of the cell, so an undo would otherwise put the
 			// caret somewhere the edit it undid never was.
 			const at = Math.min(head, fresh.doc.content.size);
 			mounted.view.dispatch(fresh.tr.setSelection(Selection.near(fresh.doc.resolve(at))));
@@ -374,7 +374,7 @@ class TableIslandView implements NodeView {
 
 	/** The nested views own every event inside a cell or a control; everything else
 	 *  stays PM's, so a key pressed over a selected island still reaches the field's
-	 *  keymap. What a POINTER press means on the rest of the chrome is
+	 *  keymap. What a pointer press means on the rest of the chrome is
 	 *  {@link TableIslandView.onPointerDown}'s and not this one's: `stopEvent` gates
 	 *  the whole subtree, so widening it would take that routing with it. */
 	stopEvent(event: Event): boolean {
@@ -403,11 +403,11 @@ class TableIslandView implements NodeView {
 	 * nearest cell's caret, outside it the document's, and a band control answers for
 	 * itself.
 	 *
-	 * A press IN a cell is a caret and the nested view is taking it; what is armed here
+	 * A press in a cell is a caret and the nested view is taking it; what is armed here
 	 * is only the promotion, since a press that travels into another cell stops being a
 	 * caret and becomes a block. That is the one gesture that has to see a press the
 	 * nested view already owns, which is why it runs ahead of the cell host's guard
-	 * rather than behind it. A CONTROL is the other way round: a grip is inside the cell
+	 * rather than behind it. A control is the other way round: a grip is inside the cell
 	 * it names, so its guard runs ahead of the cell branch, or a grip press would plant a
 	 * caret in that cell and arm a sweep the drag then draws a block with.
 	 *
@@ -416,7 +416,7 @@ class TableIslandView implements NodeView {
 	 * to reach that, and it gates the subtree's keydown and drag routing too.
 	 */
 	private readonly onPointerDown = (event: MouseEvent): void => {
-		// Any other island type is an atom with NO interior: a press on it is
+		// Any other island type is an atom with no interior: a press on it is
 		// unambiguous, and PM's to answer. So is a secondary press, which types nothing.
 		if (!this.rendered || event.button !== 0) return;
 		const target = event.target as Element | null;
@@ -429,7 +429,7 @@ class TableIslandView implements NodeView {
 			// held: a press back into the cell that already has focus raises no `focus`
 			// event, and without this the block would survive to eat the next Backspace.
 			this.clearSelection();
-			// A cell's own padding and its borders are the TABLE's, not the view's: a press
+			// A cell's own padding and its borders are the table's, not the view's: a press
 			// there lands the caret it aimed at rather than nothing.
 			if (!target?.closest?.('.qm-table-cell-host')) {
 				event.preventDefault();
@@ -462,7 +462,7 @@ class TableIslandView implements NodeView {
 		if (best) this.focusCell(best.r, best.c);
 	}
 
-	/** A caret beside the island, on the side the press landed: a GAP CURSOR where the
+	/** A caret beside the island, on the side the press landed: a gap cursor where the
 	 *  document holds no text position there, and the neighbouring block's own edge
 	 *  where it holds one.
 	 *
@@ -574,7 +574,7 @@ class TableIslandView implements NodeView {
 		return this.grips.get(lineKey(line));
 	}
 
-	/** The rectangle a line covers, which is what selecting one MEANS: a grip draws no
+	/** The rectangle a line covers, which is what selecting one means: a grip draws no
 	 *  second kind of selection, it draws this one. */
 	private lineCells(line: Line): Cells {
 		const props = this.props();
@@ -592,7 +592,7 @@ class TableIslandView implements NodeView {
 			: { floor: 0, limit: columnCount(props) - 1 };
 	}
 
-	/** Select a line. The grip takes the FOCUS, because the selection's keys bind
+	/** Select a line. The grip takes the focus, because the selection's keys bind
 	 *  there and need somewhere to land. */
 	private selectLine(line: Line): void {
 		this.select(this.lineCells(line));
@@ -692,9 +692,9 @@ class TableIslandView implements NodeView {
 	}
 
 	/**
-	 * Copy or cut the held rectangle (`clipboard.ts` writes both wire formats). A CUT is
+	 * Copy or cut the held rectangle (`clipboard.ts` writes both wire formats). A cut is
 	 * a copy plus the delete Backspace already means over that rectangle, so what it
-	 * takes out is read by the same EXTENT rule: a covered rank goes, a sub-rectangle
+	 * takes out is read by the same extent rule: a covered rank goes, a sub-rectangle
 	 * clears.
 	 *
 	 * The guard is the whole of what makes a document-level listener this island's. With
@@ -717,9 +717,9 @@ class TableIslandView implements NodeView {
 	};
 
 	/**
-	 * A table pasted INTO a cell is written in at that cell, growing the table to hold
+	 * A table pasted into a cell is written in at that cell, growing the table to hold
 	 * it (`table.ts` §{@link pasteCells}); anything else is the cell's own paste and
-	 * this declines. It lands at the CARET's cell, which over a swept block is the cell
+	 * this declines. It lands at the caret's cell, which over a swept block is the cell
 	 * the press started in — the block's anchor rather than its first corner, a sweep
 	 * running up or left putting those at opposite ends.
 	 *
@@ -735,7 +735,7 @@ class TableIslandView implements NodeView {
 	}
 
 	/**
-	 * What Backspace means over the selection, decided by its EXTENT rather than by the
+	 * What Backspace means over the selection, decided by its extent rather than by the
 	 * gesture that drew it (CODEC §"The table island").
 	 *
 	 * The both-axes arm is the rule's own limit rather than an exception to it: every rank
@@ -756,7 +756,7 @@ class TableIslandView implements NodeView {
 		this.select(held);
 	}
 
-	/** Delete the whole island: an ordinary delete on the OUTER view, so the table goes
+	/** Delete the whole island: an ordinary delete on the outer view, so the table goes
 	 *  the way the node selection's Backspace already took it and rides the same undo
 	 *  stack. The selection is dropped without a repaint: the DOM holding it is about to
 	 *  be gone. */
@@ -807,7 +807,7 @@ class TableIslandView implements NodeView {
 	// ── Drag to reorder ───────────────────────────────────────────────────────
 
 	/**
-	 * Press-and-drag a grip moves its line. The press still SELECTS: the dead zone is
+	 * Press-and-drag a grip moves its line. The press still selects: the dead zone is
 	 * what tells the two apart, so a click that jitters is the gesture it was aimed as
 	 * and only a real travel becomes a drag.
 	 */
@@ -846,7 +846,7 @@ class TableIslandView implements NodeView {
 		this.paintDrop(drag);
 	};
 
-	/** The drag becomes one: lift the line, and measure the table ONCE. */
+	/** The drag becomes one: lift the line, and measure the table once. */
 	private engage(drag: Drag): void {
 		drag.engaged = true;
 		this.dom.classList.add('qm-table-dragging');
@@ -888,7 +888,7 @@ class TableIslandView implements NodeView {
 		const { line, drop, engaged } = drag;
 		this.endDrag();
 		if (!engaged) return;
-		// A CANCEL is not a release: the line stays where it was, and no `click` follows
+		// A cancel is not a release: the line stays where it was, and no `click` follows
 		// it, so arming the guard below would leave it to swallow the next press instead.
 		if (event.type !== 'pointerup') return;
 		// The press that ends a drag is not the press that selects: the click still to
@@ -1001,7 +1001,7 @@ class TableIslandView implements NodeView {
 		for (let r = 1; r < rowCount(props); r++) body.appendChild(this.row(props, r, s));
 		table.append(head, body);
 
-		// The frame is the grid's own box, and the two controls about an AXIS rather than
+		// The frame is the grid's own box, and the two controls about an axis rather than
 		// about a line hang off its edges: an add bar along each trailing edge. A cell
 		// would have served for neither — a table with no body rows has no last row to
 		// hang the row bar in, and a bar spans the whole edge rather than one line of it.
@@ -1019,8 +1019,8 @@ class TableIslandView implements NodeView {
 	 * Where the focus sits, in terms a rebuild can restore it by: a cell's position or a
 	 * grip's line, neither of which is an element that survives one.
 	 *
-	 * A rebuild is what a CHANGED RECTANGLE costs, and the op that changed it usually
-	 * says where the caret lands ({@link TableIslandView.write}'s `focus`). An UNDO says
+	 * A rebuild is what a changed rectangle costs, and the op that changed it usually
+	 * says where the caret lands ({@link TableIslandView.write}'s `focus`). An undo says
 	 * nothing — it is the outer history's transaction, not an op of this view's — so
 	 * without this the DOM under the focus is removed and the focus falls to the
 	 * document body, where the next undo reaches no view at all.
@@ -1061,12 +1061,12 @@ class TableIslandView implements NodeView {
 			const host = el('div', 'qm-table-cell-host');
 			box.appendChild(host);
 
-			// The COLUMN band hangs off the header row; the ROW band off every row's first
+			// The column band hangs off the header row; the row band off every row's first
 			// cell, the header's included. Both are absolutely positioned into the frame's
 			// own padding, so neither is in the grid's layout and neither is a cell of its
 			// own, and the two the header's first cell carries hang off perpendicular edges
 			// and meet at no point. The header takes a grip because a row grip acts on a
-			// ROW and the header is one: it selects, it deletes, and it drags, all by the
+			// row and the header is one: it selects, it deletes, and it drags, all by the
 			// rules every other row is under.
 			if (r === 0)
 				box.appendChild(this.grip({ axis: 'column', index: c }, s.tableSelectColumn(c + 1)));
@@ -1083,8 +1083,8 @@ class TableIslandView implements NodeView {
 		return tr;
 	}
 
-	/** A line's grip, and the whole of that line's chrome: a press SELECTS the line, a
-	 *  press that travels DRAGS it. Both are "this line", asked once with the pointer,
+	/** A line's grip, and the whole of that line's chrome: a press selects the line, a
+	 *  press that travels drags it. Both are "this line", asked once with the pointer,
 	 *  and the dead zone is what tells them apart. */
 	private grip(line: Line, label: string): HTMLButtonElement {
 		const btn = chromeButton('qm-table-grip', label, () => {
@@ -1104,8 +1104,8 @@ class TableIslandView implements NodeView {
 
 	/** A trailing bar: the whole edge past the last line of its axis, and the one way a
 	 *  pointer grows the table. It spans the edge rather than capping it, because what it
-	 *  appends to is the AXIS and not a line. It draws no glyph — the bar arriving under
-	 *  the pointer out past the last line is the claim — so its NAME carries the verb for
+	 *  appends to is the axis and not a line. It draws no glyph — the bar arriving under
+	 *  the pointer out past the last line is the claim — so its name carries the verb for
 	 *  everything that does not read position. */
 	private addBar(axis: Axis, label: string): HTMLButtonElement {
 		const btn = chromeButton('qm-table-add', label, () => {
@@ -1164,7 +1164,7 @@ class TableIslandView implements NodeView {
 	/**
 	 * Commit a new rectangle onto the node. `setNodeMarkup` is an ordinary PM
 	 * transaction, so the field lowers it through the island channel and the whole
-	 * op is one commit and one undo step, which is why every op writes a WHOLE
+	 * op is one commit and one undo step, which is why every op writes a whole
 	 * table rather than mutating the props in place.
 	 */
 	private write(next: TableProps, focus?: { r: number; c: number }): void {
@@ -1196,11 +1196,11 @@ class TableIslandView implements NodeView {
 
 	/**
 	 * A cell's keys. Traversal is the island's link in the leaf's chain
-	 * (VISUAL_EDITOR §Chrome), except that it binds on the NESTED view: the outer
+	 * (VISUAL_EDITOR §Chrome), except that it binds on the nested view: the outer
 	 * keymap never sees a keystroke a cell handled (`stopEvent`).
 	 *
 	 * Enter is the next row, forced: a `TableCell` has one `text` and no line
-	 * concept, and `continues` is a LINE flag with no cell analogue, so a newline in
+	 * concept, and `continues` is a line flag with no cell analogue, so a newline in
 	 * a cell has no representation to be a preference about.
 	 */
 	private cellKeys(r: number, c: number): Record<string, Command> {
@@ -1260,9 +1260,9 @@ class TableIslandView implements NodeView {
 
 	/**
 	 * Tab's traversal: the next (or previous) cell in reading order. Past the last cell
-	 * it APPENDS a row, which is the growth affordance the keyboard has.
+	 * it appends a row, which is the growth affordance the keyboard has.
 	 *
-	 * Before the FIRST cell it declines, and that is the island's keyboard exit: the key
+	 * Before the first cell it declines, and that is the island's keyboard exit: the key
 	 * is not swallowed, so the browser moves the focus out of the grid the way it moved
 	 * it in. Swallowing it would leave Tab no exit at all, forward being the growth above.
 	 */

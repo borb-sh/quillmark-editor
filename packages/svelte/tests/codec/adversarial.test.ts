@@ -1,5 +1,5 @@
-// USV↔UTF-16 drift (an astral char is 1 USV but 2 UTF-16 units) carried through a REAL
-// Document's `applyChange`, so a miscounted offset surfaces as wrong STORED text rather
+// USV↔UTF-16 drift (an astral char is 1 USV but 2 UTF-16 units) carried through a real
+// Document's `applyChange`, so a miscounted offset surfaces as wrong stored text rather
 // than as a unit-test artifact. That end-to-end route is what these add; the position
 // map's own inverse is positions.test.ts, over a strictly wider corpus.
 import { describe, it, expect } from 'vitest';
@@ -24,7 +24,7 @@ describe('codec adversarial — lower∘apply through a real core.Document (inde
 		const oldRt = doc.main.body;
 
 		const bundle = lower(contentEdit(oldRt, rt('a😀Xb'))); // insert 'X' at USV index 2
-		// The delta must be USV-coordinate: retain 2 ('a' + the emoji as ONE unit),
+		// The delta must be USV-coordinate: retain 2 ('a' + the emoji as one unit),
 		// not retain 3 (its UTF-16 width): the exact drift CODEC.md warns about.
 		expect(bundle.delta?.ops).toEqual([{ retain: 2 }, { insert: 'X' }, { retain: 1 }]);
 

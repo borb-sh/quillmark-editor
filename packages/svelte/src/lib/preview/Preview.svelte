@@ -16,10 +16,10 @@
 	import type { EditorErrorHandler } from '../core/errors.js';
 
 	/**
-	 * REMOUNT CONTRACT. `createPreview` binds once in `onMount`; a later change to any
+	 * Remount contract. `createPreview` binds once in `onMount`; a later change to any
 	 * prop it closed over (`session`, `margin`, `overlays`, `onPick`, `onError`,
-	 * `strings`) is NOT observed, and each reports `rebind-ignored` when swapped. Swap
-	 * the session by REMOUNTING (`{#key session}`, as the playground does); drive
+	 * `strings`) is not observed, and each reports `rebind-ignored` when swapped. Swap
+	 * the session by remounting (`{#key session}`, as the playground does); drive
 	 * in-place edits through the `refresh(change)` method, not a prop change.
 	 *
 	 * `onError` is itself once-bound, so a swapped handler means the report of its own
@@ -97,17 +97,17 @@
 <div bind:this={containerEl} class="qm-preview {className ?? ''}" {style} data-qm-root></div>
 
 <style>
-	/* A DETACHED root: the preview is not a descendant of the editor, so it carries
+	/* A detached root: the preview is not a descendant of the editor, so it carries
 	   `data-qm-root` for the page/overlay rungs paint.ts and overlay.ts read
 	   (core/theme.css).
 
-	   The DESK as well as the paper: a sheet is at `--_qm-surface` (paint.ts), so the
-	   tone behind it is the SUNKEN rung and the gutter is the margin the sheet floats
+	   The desk as well as the paper: a sheet is at `--_qm-surface` (paint.ts), so the
+	   tone behind it is the sunken rung and the gutter is the margin the sheet floats
 	   in. Paper is the brighter plane at both poles, exactly as a card is over the
 	   editor's own column, so the two panes step the same way. Both are
 	   the surface's own, so a bare `<div>` is a mounting site. The
 	   padding is safe against the paint loop: a slot is a `width: 100%` child and
-	   measures the CONTENT box, and the container's own `clientWidth` is read only as
+	   measures the content box, and the container's own `clientWidth` is read only as
 	   a change detector, which a constant inset does not disturb. */
 	.qm-preview {
 		box-sizing: border-box;

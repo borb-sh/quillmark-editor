@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// The document swap, driven through a MAIN-CARD leaf, which is the case a hand
+// The document swap, driven through a main-card leaf, which is the case a hand
 // reseed misses: composable cards key on session id and would re-mount on their
 // own, the main card is keyed on nothing, and its prose leaves mount once per
 // stable leaf key with `createField` closing over the `doc` handed to them. So a
@@ -67,7 +67,7 @@ describe('swapping the doc prop', () => {
 
 		const after = subjectLeaf(target);
 		expect(after).not.toBeNull();
-		// A REMOUNT, not a re-render: the node itself is replaced, which is what
+		// A remount, not a re-render: the node itself is replaced, which is what
 		// `createField` running again against `b` looks like from outside.
 		expect(after).not.toBe(before);
 		expect(after?.textContent).toContain('SECOND SUBJECT');

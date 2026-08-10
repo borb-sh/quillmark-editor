@@ -77,7 +77,7 @@ function pick(target: HTMLElement, text: string): void {
 }
 
 /** The schema options the open list draws, in order, each with whether it is offered.
- *  The UNSET sentinel is dropped: it is the clear-to-default affordance, exempt from
+ *  The unset sentinel is dropped: it is the clear-to-default affordance, exempt from
  *  policy, and it ghosts a `default:` that can read identically to a real member (the
  *  reference quill declares an empty-string level, and both render as an em dash). */
 function options(target: HTMLElement): { text: string; disabled: boolean }[] {

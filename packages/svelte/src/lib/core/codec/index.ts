@@ -1,10 +1,10 @@
 // The codec barrel: the bidirectional bridge between one content field (`Content`)
-// and one ProseMirror document (CODEC). Decode (content → PM), lower (PM tr → a
+// and one ProseMirror document (CODEC.md). Decode (content → PM), lower (PM tr → a
 // `ChangeBundle` for `applyChange`), the USV↔PM position map, and the `createField`
 // prose leaf. Consumed by the VisualEditor and the codec test suite.
 
 // ProseMirror's structural base styles and the gap cursor's, then the retint of the
-// hues they mint. Imported HERE because `createField` is what mounts a view: a
+// hues they mint. Imported here because `createField` is what mounts a view: a
 // consumer reaching the codec directly gets them with it, and the order is what makes
 // the retint win.
 import 'prosemirror-view/style/prosemirror.css';
@@ -35,7 +35,7 @@ export { blockSchema, inlineSchema } from './schema.js';
 
 // Decode / encode / positions (tests + VisualEditor).
 //
-// THE BARREL CARRIES WHAT HAS AN OFF-BARREL CALLER, and nothing else. A symbol
+// The barrel carries what has an off-barrel caller, and nothing else. A symbol
 // reached only by relative import within `codec/` stays off it: an export nothing
 // imports is surface that still has to stay honest.
 export { decode, renderContent, usvLength } from './decode.js';

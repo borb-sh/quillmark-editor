@@ -162,7 +162,7 @@ describe('the heading/list shorthands never mint a heading inside an item', () =
 	});
 });
 
-// A code block is the one block a GAP CURSOR will not sit beside, so a fence at the end
+// A code block is the one block a gap cursor will not sit beside, so a fence at the end
 // of a body strands the caret harder than a divider would: no arrow key reaches past it.
 // The rule therefore mints the same exit `---` and a block island do.
 describe('the ` ``` ` fence shorthand', () => {
@@ -188,7 +188,7 @@ describe('the ` ``` ` fence shorthand', () => {
 
 // A list shorthand at the head of an item that already exists is the text an author
 // typed: firing there mints an item whose only content is another item, and Tab is the
-// gesture that nests (under the PREVIOUS sibling, which is the shape a nesting has).
+// gesture that nests (under the previous sibling, which is the shape a nesting has).
 describe('the list shorthands decline at the head of an existing item', () => {
 	/** A view over `- alpha`, caret at the item's own start. */
 	function itemView(): EditorView {

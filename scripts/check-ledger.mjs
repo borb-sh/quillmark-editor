@@ -8,7 +8,7 @@
 // extended it to the content model"), and those are prose about the past, not a claim
 // about this install.
 //
-// What the ledger's TABLE names is left to `tsc`, which fails on a verb the artifact
+// What the ledger's table names is left to `tsc`, which fails on a verb the artifact
 // stopped exporting the moment package code calls it, and to review for a row that
 // outlives its consumer.
 

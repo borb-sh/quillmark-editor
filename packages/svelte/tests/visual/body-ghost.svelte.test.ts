@@ -5,7 +5,7 @@
 // function of `kind`; one wanting them to differ writes a function of `cardId`.
 // Neither is the editor's to decide.
 //
-// The ghosts observed are the INDORSEMENTS'. The reference quill seeds main's body
+// The ghosts observed are the indorsements'. The reference quill seeds main's body
 // from its `body.example`, and a body with content carries no placeholder
 // decoration; main is asked all the same, which is what `seen` is read for.
 import { describe, it, expect, afterEach } from 'vitest';
@@ -65,7 +65,7 @@ describe('the hook is asked per card', () => {
 			}
 		});
 
-		// Two cards of ONE kind, wearing different words.
+		// Two cards of one kind, wearing different words.
 		const drawn = ghosts(target);
 		expect(drawn.length).toBeGreaterThan(1);
 		expect(new Set(drawn).size).toBe(drawn.length);
@@ -91,7 +91,7 @@ describe('the hook is asked per card', () => {
 	});
 
 	it('ghosts the built-in when the hook declines', () => {
-		// No hook set IS the declining hook: the package's own `bodyPlaceholder` returns
+		// No hook set is the declining hook: the package's own `bodyPlaceholder` returns
 		// `undefined`, so this is the same rung a consumer reaches by deferring. The
 		// reference quill declares no body `default:` on any kind, so nothing above the
 		// built-in answers either.

@@ -4,10 +4,10 @@
 // gates' own failure messages, where nothing looks. Zero deps; run via
 // `npm run check:pointers`.
 //
-// Every `.md` the walk finds is a target, keyed by filename: canon, THEMING, CLAUDE, a
+// Every `.md` the walk finds is a target, keyed by filename: canon, THEMING.md, CLAUDE.md, a
 // README. So a pointer at a name the workspace does not carry is a finding rather than a
 // skip, and a new doc is addressable the moment it lands. The sibling quillmark repo's
-// canon is cited by FILENAME (`CARDS.md`) and never with a section, so it passes through
+// canon is cited by filename (`CARDS.md`) and never with a section, so it passes through
 // untouched.
 
 import { readFileSync, readdirSync } from 'node:fs';

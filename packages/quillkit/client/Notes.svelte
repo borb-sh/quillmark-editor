@@ -3,10 +3,10 @@
   consulted, not watched, and a surface that appears and disappears would reflow the
   thing being judged every time a keystroke fixed a field.
 
-  Each row carries its ORIGIN and its address. The address is the point, and it is
+  Each row carries its origin and its address. The address is the point, and it is
   written in one of two spaces: the document's, which the editor routes to a control,
   or the quill's source, which a compile failure names and this band only prints. A row
-  with neither is UNROUTED, naming no place at all, and the summary counts those. A
+  with neither is unrouted, naming no place at all, and the summary counts those. A
   diagnostic detached from what provoked it is a quill's problem, invisible everywhere
   else.
 
@@ -145,7 +145,7 @@
 		color: var(--qmh-alert);
 	}
 
-	/* The engine's own string for what went wrong, so it is a READOUT and not a label:
+	/* The engine's own string for what went wrong, so it is a readout and not a label:
 	   an author matches it against a backend's source, and the label recipe would
 	   uppercase it into something no search finds. It reads at the meta rung anyway,
 	   being the quietest thing in the row it trails. */

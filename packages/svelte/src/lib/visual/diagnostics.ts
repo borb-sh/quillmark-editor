@@ -9,7 +9,7 @@
 //      Routed here by `routeAndResolve` (a `!must_fill` marker yields
 //      `validation::must_fill` at e.g. `cards.indorsement[0].from`).
 // 2. Local commit errors: a `writer.set`/`writer.card(i).set` throw at
-//      commit time (VisualEditor's `commitScalar`). The editor KNOWS the exact
+//      commit time (VisualEditor's `commitScalar`). The editor knows the exact
 //      field/card being committed, so these are keyed directly at the call site
 //      with a `FieldKey`; never parsed from a message. The thrown
 //      `QuillmarkError`'s `diagnostics[0]` carries `code` and a canonical `path`
@@ -19,13 +19,13 @@
 //      prop (`LiveSession.warnings` + render errors via `FieldRegion.field`),
 //      routed by `.path` like #1.
 //
-// FIELD-KEY SPACE. Two addressing schemes meet here: producers #1/#3 speak the
+// Field-key space. Two addressing schemes meet here: producers #1/#3 speak the
 // canonical `DocPath` string (`main.<field>` / `main.body` /
-// `cards.<kind>[<i>].<field>`, `<i>` the ABSOLUTE document-array index:
+// `cards.<kind>[<i>].<field>`, `<i>` the absolute document-array index:
 // `Diagnostic.path`, `ContentHit.field`, and `FieldRegion.field` all share this
 // one grammar). Routing runs on the boundary's own `parseDocPath`, not a
-// hand-rolled parser. The editor's OWN addressing (VisualEditor's
-// `commitScalar`, the `leaves` registry) is STABLE-ID keyed so a diagnostic stays
+// hand-rolled parser. The editor's own addressing (VisualEditor's
+// `commitScalar`, the `leaves` registry) is stable-id keyed so a diagnostic stays
 // pinned to the right card across a reorder (VISUAL_EDITOR §"The address is the
 // spine"); `resolveCardKey` bridges the absolute index → stable id, and
 // `fieldKeyToString` is the one shared string form both sides collapse to for the
@@ -33,11 +33,11 @@
 import type { Diagnostic } from '@quillmark/wasm';
 import { addrForFieldPath } from '../core/address.js';
 
-/** A field's routing address, and `/core`'s `Addr` structurally: an `Addr` IS a
+/** A field's routing address, and `/core`'s `Addr` structurally: an `Addr` is a
  * positional `FieldKey`, so `addrForFieldPath` is the path→key walk and routing
  * carries no second copy of the grammar. `card` is `undefined` for the main card; a
  * composable card slot is a stable session id (the editor's own bookkeeping) once
- * resolved, or an ABSOLUTE document-array index straight off a parsed `DocPath`
+ * resolved, or an absolute document-array index straight off a parsed `DocPath`
  * (resolve via {@link resolveCardKey} before merging with id-keyed sources). `field`
  * `undefined` addresses the body (the field-less leaf). */
 export interface FieldKey {
@@ -51,8 +51,8 @@ export function fieldKeyToString(k: FieldKey): string {
 }
 
 /**
- * Resolve a positional `FieldKey` (an ABSOLUTE document-array index, straight off
- * `addrForFieldPath`) to the editor's stable-id keying using the LIVE `cardIds`
+ * Resolve a positional `FieldKey` (an absolute document-array index, straight off
+ * `addrForFieldPath`) to the editor's stable-id keying using the live `cardIds`
  * array: re-resolved fresh on every call (never cached), the same "resolve only
  * at the point of use" discipline `cardIndexOf` applies to writes (VISUAL_EDITOR
  * §"The address is the spine"). A key already id-keyed (`card` a string) or main
@@ -73,7 +73,7 @@ export interface RoutedDiagnostic {
 
 /**
  * Route a path-keyed producer's raw `Diagnostic[]` (validate / external) to the
- * editor's stable-id keying: the ONE door producers #1/#3 take, `addrForFieldPath`
+ * editor's stable-id keying: the one door producers #1/#3 take, `addrForFieldPath`
  * and `resolveCardKey` in a single pass. An entry drops rather than mis-routes when
  * it carries no `path`, when the path names no single commit address (a nested /
  * array-element one), or when its absolute card index is out of the live `cardIds`.

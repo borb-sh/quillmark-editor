@@ -110,7 +110,7 @@ function makeCountingQuiver(opts: { name: string; catalog: Map<string, string[]>
 
 describe('Quiver quill cache lifecycle', () => {
 	// The quill cache is keyed by ref (not engine): `Quill.fromTree` is engine-free,
-	// so one quill per ref is shared. It is the ONE cache — a tree is held only for
+	// so one quill per ref is shared. It is the one cache — a tree is held only for
 	// the length of the materialization that consumes it.
 	let stub: ReturnType<typeof mockQuillFromTree> | undefined;
 	afterEach(() => {

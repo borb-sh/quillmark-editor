@@ -38,9 +38,9 @@ export function canonDocs(dir) {
 		.map((f) => [join(dir, f), relative(ROOT, join(dir, f))]);
 }
 
-/** A gate's verdict, in two severities. An ERROR is a fault the diff cannot show — a
+/** A gate's verdict, in two severities. An error is a fault the diff cannot show — a
  *  pruned stylesheet, a dangling pointer, a rung that resolves to nothing — and fails the
- *  run. A WARNING is a fault review can see for itself, printed so it stays visible and
+ *  run. A warning is a fault review can see for itself, printed so it stays visible and
  *  never blocking: the shape a rule takes while the thing it is about is still moving.
  *  Warnings print above the `ok` line, so a passing gate still says what it noticed. */
 export function report(label, errors, ok, warnings = []) {

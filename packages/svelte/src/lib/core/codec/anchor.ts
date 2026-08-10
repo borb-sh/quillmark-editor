@@ -1,12 +1,12 @@
 // The anchor for a surface with no element to anchor to: a live reference to what
-// the surface floats over, never a rect measured off it. A range of TEXT is that
+// the surface floats over, never a rect measured off it. A range of text is that
 // case; every other surface passes its own element.
 //
 // `contextElement` is why this is a named type rather than an object literal per call
-// site. floating-ui's `autoUpdate` tracks a DOM ELEMENT: overflow ancestors for
+// site. floating-ui's `autoUpdate` tracks a DOM element: overflow ancestors for
 // scroll, a `ResizeObserver` on the reference, a layout-shift observer. Its
-// `unwrapElement` reaches one from a virtual anchor ONLY through `contextElement`, so
-// dropping the field skips all three, leaving the FLOATING element's own listeners,
+// `unwrapElement` reaches one from a virtual anchor only through `contextElement`, so
+// dropping the field skips all three, leaving the floating element's own listeners,
 // which for a surface portalled to `[data-qm-root]` need not share a scroll container
 // with the editor at all.
 import type { EditorView } from 'prosemirror-view';
@@ -21,7 +21,7 @@ export interface RangeAnchor {
 /**
  * A virtual anchor over one PM range, measured when asked rather than when made.
  *
- * The measure is TOTAL. `coordsAtPos` reads layout, and layout can be gone: a
+ * The measure is total. `coordsAtPos` reads layout, and layout can be gone: a
  * position the document has since invalidated, a leaf inside a collapsed section, a
  * view torn down between a scroll firing and the measure running. `autoUpdate` calls
  * this at moments none of its callers choose, so an unmeasurable anchor returns the

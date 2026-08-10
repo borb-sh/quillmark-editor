@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// A document a consumer LOADED rather than seeded (`Document.fromMarkdown`, the
-// transport door every saved document comes back through) rests as AUTHORED: a
+// A document a consumer loaded rather than seeded (`Document.fromMarkdown`, the
+// transport door every saved document comes back through) rests as authored: a
 // content field holds the string it parsed, not the `Content`. The leaf reads through
 // `reader.getContent`, which decodes by declared type, so it takes both rest forms
 // and an edit lands back in the same document.

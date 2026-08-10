@@ -1,18 +1,18 @@
 // A field's DOM ids. The DOM needs three names per field (the control a `<label
 // for>` points at, the label an `aria-labelledby` control points back to, and the
 // parked description an `aria-describedby` reads) and they are derived from the
-// leaf key so the DOM shares the ONE per-field identity space the registry and
+// leaf key so the DOM shares the one per-field identity space the registry and
 // diagnostics already collapse to (`fieldKeyToString`), rather than minting a
 // second.
 //
 // `uid` is the editor instance's own (`$props.id()`, stable across SSR and
-// hydration). The leaf-key space is unique per EDITOR, not per document: two
+// hydration). The leaf-key space is unique per editor, not per document: two
 // `VisualEditor`s on a page both hold `main:subject`, and a duplicate `id` makes
 // `for` resolve to whichever mounted first.
 
 /**
  * `id` syntax admits far less than a leaf key spends (`main:subject`, `$body`).
- * The escape is INJECTIVE (`-` introduces it, so `-` escapes itself), which a
+ * The escape is injective (`-` introduces it, so `-` escapes itself), which a
  * plain replace-with-dash is not: `a:b` and `a-b` would collapse onto one id.
  */
 function escapeId(key: string): string {

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// `onCaretMove` reports a PLACE, so a transaction that moved the caret nowhere is
+// `onCaretMove` reports a place, so a transaction that moved the caret nowhere is
 // not one to report: a leaf dispatches one caret signal per transaction, and
 // landing a caret where it already sits is a transaction like any other. Driven
 // through `setCaret`, which is the one entry that places a caret on demand and so

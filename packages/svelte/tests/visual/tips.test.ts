@@ -3,7 +3,7 @@
 // the card paints, and the load-bearing one: that a write to the `editor` namespace
 // carries its sibling keys through, so clearing `tips` leaves `title` standing.
 //
-// These exercise `patchEditorExt` ITSELF, the function the editor calls, not a
+// These exercise `patchEditorExt` itself, the function the editor calls, not a
 // restatement of it: the invariant fails silently, so a test asserting a hand-copy
 // would keep passing while the shipped write regressed.
 import { describe, it, expect } from 'vitest';
@@ -79,7 +79,7 @@ describe('patchEditorExt', () => {
 
 	it('drops a key patched to undefined, keeping the rest — on main and on a card', () => {
 		// The dismissal write (`VisualEditor.dismissTips`), and the hazard
-		// `removeExtNamespace` would cause: `tips` and `title` are SIBLING keys of one
+		// `removeExtNamespace` would cause: `tips` and `title` are sibling keys of one
 		// namespace, so clearing the channel by removing the namespace destroys the
 		// rename. Both addresses, since rename writes cards and tips write main.
 		const doc = quill.seedDocument();

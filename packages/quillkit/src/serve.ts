@@ -65,7 +65,7 @@ export function fileFor(mounts: Mount[], url: string): string | null {
 	// falls back to it, so a missing asset is a 404 rather than a page.
 	const at = resolve(root, rest === '' ? 'index.html' : rest);
 
-	// The escape refusal, checked on the RESOLVED path: `%2e%2e`, a doubled separator and
+	// The escape refusal, checked on the resolved path: `%2e%2e`, a doubled separator and
 	// a plain `..` all collapse into one answer here, where a check against the request
 	// text would have to anticipate each spelling.
 	if (!within(root, at)) return null;

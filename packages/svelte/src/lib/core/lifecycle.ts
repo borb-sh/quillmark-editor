@@ -1,5 +1,5 @@
 // `@quillmark/wasm` ships wasm-bindgen's web target: the core build is
-// instantiated by an explicit `await init()`, which RESOLVES TO the classes and
+// instantiated by an explicit `await init()`, which resolves to the classes and
 // free functions — the artifact exports none of them statically, so awaiting is
 // the only way to hold one. Instantiation carries the panic hook on its start
 // section, so a Rust panic reaches JS as a stack trace.

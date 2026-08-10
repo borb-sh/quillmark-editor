@@ -1,19 +1,19 @@
 // Code-block editing: the `code_block` link of the body's key chains.
-// Tab takes LITERAL indentation here rather than a structural edit, and Enter takes
+// Tab takes literal indentation here rather than a structural edit, and Enter takes
 // a newline, because a code block is text the author controls to the character:
 // `whitespace: 'pre'`, `marks: ''` (`schema.ts`).
 //
-// A code block's lines are NOT `Content` lines the codec addresses one by one: a
+// A code block's lines are not `Content` lines the codec addresses one by one: a
 // fence decodes to one `code_block` whose text carries literal `\n`s, and encode
 // spells it back as one `kind: 'code'` line plus a `continues: true` line per extra
 // newline (`decode.ts`, `encode.ts`). So indent/outdent works on offsets inside a
-// single text node, and the whole multi-line edit is ONE transaction: one undo step.
+// single text node, and the whole multi-line edit is one transaction: one undo step.
 //
 // The indent unit is a free choice: a literal tab and leading spaces both survive
 // `importMarkdown` → the upstream normalizer → `decode` → `pmToContent` byte for
 // byte, so nothing downstream re-indents either form. Spaces, because the stored
 // text is what the preview typesets and a space's advance is renderer-independent;
-// two of them, because a memo's typeset column is narrow. Outdent accepts BOTH
+// two of them, because a memo's typeset column is narrow. Outdent accepts both
 // forms regardless: imported content carries whatever its author wrote.
 import type { Schema } from 'prosemirror-model';
 import { TextSelection, type Command, type EditorState } from 'prosemirror-state';
@@ -35,7 +35,7 @@ function codeBlockAt(state: EditorState): { start: number; text: string } | null
 /**
  * Start offsets of the lines the range `[f, t)` covers, in document order.
  *
- * A line whose start IS `t` is excluded on a non-empty range: a selection ending at
+ * A line whose start is `t` is excluded on a non-empty range: a selection ending at
  * a line start does not reach into that line, the editor convention (else selecting
  * whole lines by dragging to the next line's start indents one line too many).
  */
@@ -62,7 +62,7 @@ function outdentWidth(text: string, s: number): number {
 
 /**
  * Tab in a code block: insert one indent unit, or indent every covered line when the
- * selection spans a newline. A single-line selection is REPLACED by the unit: Tab
+ * selection spans a newline. A single-line selection is replaced by the unit: Tab
  * types, the way any other key does.
  */
 const indentInCode: Command = (state, dispatch) => {
@@ -90,7 +90,7 @@ const indentInCode: Command = (state, dispatch) => {
 /**
  * Shift-Tab in a code block: remove one indent level from every covered line.
  *
- * Declines when no covered line carries an indent, so the key is NOT swallowed: it
+ * Declines when no covered line carries an indent, so the key is not swallowed: it
  * falls through to the list link and then out of the leaf, which is the body's
  * keyboard exit from inside a code block (VISUAL_EDITOR §Chrome).
  */
@@ -118,7 +118,7 @@ const outdentInCode: Command = (state, dispatch) => {
  *
  * `Enter` is upstream's `newlineInCode`, and it is load-bearing rather than
  * cosmetic: inside a `list_item > code_block` the list link's `splitListItem`
- * otherwise splits the ITEM in two, each half holding a code block. Every command
+ * otherwise splits the item in two, each half holding a code block. Every command
  * here declines outside a code block, so the list links keep the keys elsewhere.
  */
 export function codeKeymap(schema: Schema): Record<string, Command> {

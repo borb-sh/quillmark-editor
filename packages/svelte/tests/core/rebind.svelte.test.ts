@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// The remount contract on `Preview`: EVERY once-bound prop answers a swap, in one
+// The remount contract on `Preview`: every once-bound prop answers a swap, in one
 // report naming whichever went stale. A guard covering part of a set is what teaches
 // a consumer to read silence on the rest as reactivity, so the set is what is
 // asserted, and the case that costs the guard its worth if it fails is the one where
@@ -115,7 +115,7 @@ describe('Preview', () => {
 		expect(reported).toHaveLength(1);
 		expect(reported[0].severity).toBe('dev');
 		expect(reported[0].message).toContain(prop);
-		// Reported AND thrown: the throw is what reaches a consumer whose handler went
+		// Reported and thrown: the throw is what reaches a consumer whose handler went
 		// stale in the same swap, and it carries the same sentence.
 		expect(thrown?.message).toContain('rebind-ignored');
 		expect(thrown?.message).toContain(prop);
@@ -133,7 +133,7 @@ describe('Preview', () => {
 		props.label = 'Rien à afficher';
 		flushCatching();
 
-		// A language switch IS a swap: the mounted preview keeps its English.
+		// A language switch is a swap: the mounted preview keeps its English.
 		expect(rebinds(errors)).toHaveLength(1);
 		expect(rebinds(errors)[0].message).toContain('strings');
 	});
