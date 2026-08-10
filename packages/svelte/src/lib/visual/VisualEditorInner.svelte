@@ -1054,25 +1054,18 @@
 	 reached by the name rather than by a mark: a card goes anywhere in the stack, not
 	 just after the last one.
 
+	 No inset of its own: the pill and the gap are the same rectangle, and a bare strip is
+	 a band of gutter, so its height is a rhythm rung. The press floor the box gives up is
+	 `.qm-tap-floor`'s (controls.css); what it overhangs is the card's own inset above and
+	 below, which holds no target, so the floor costs a neighbour nothing.
+
+	 Ink is pinned to the label tone in every state, taking back the family's hover step:
+	 the trigger arrives and leaves on opacity, and a tone moving under an opacity already
+	 moving reads as two trips at different speeds.
+
 	 `:global`, because the multi-kind trigger is bits-ui's own element and a `class`
 	 passed to a primitive is a plain string that never picks up the scoping hash:
 	 the same seam the enum trigger is styled through. */
-	/* No inset of its own: the pill and the gap are the same rectangle. A bare strip is
-	   a band of gutter, so its height is a rhythm rung; the marked one stands taller,
-	   below, for the words it holds. The press floor the box gives up is
-	   `.qm-tap-floor`'s (controls.css); what it overhangs here is the card's own inset
-	   above and below, which holds no target of its own, so the floor costs a neighbour
-	   nothing.
-
-	   Rest is nothing at all — not the family's flat button but an invisible one, so
-	   the fill is the whole of what arrives. Ink is pinned to the label tone in every
-	   state, which takes back the family's hover step (`controls.css`): the trigger
-	   arrives and leaves on opacity, and a tone moving under an opacity that is already
-	   moving reads as two trips at different speeds.
-
-	   `:global`, because the multi-kind trigger is bits-ui's own element and a `class`
-	   passed to a primitive is a plain string that never picks up the scoping hash:
-	   the same seam the enum trigger is styled through. */
 	.qm-add-card :global(.qm-add-btn) {
 		display: flex;
 		align-items: center;
@@ -1085,23 +1078,18 @@
 			opacity var(--_qm-reveal),
 			background-color var(--_qm-reveal);
 	}
-	/* The marked strip is the one that holds words at rest, so it takes the height that
-	   centres them and the rungs they are set in: the label rung off the body size the
-	   family's type rule hands every button (`controls.css`), at the weight the surface
-	   names everything else in. Dim rather than absent, since a strip that states itself
-	   has something to be seen at rest. */
+	/* The strip that holds words at rest takes the height that centres them, and rests dim
+	   rather than absent, having something to be seen. */
 	.qm-add-card-marked :global(.qm-add-btn) {
 		height: var(--_qm-tap-min);
 		font-size: var(--_qm-text-label);
 		font-weight: var(--_qm-weight-mid);
 		opacity: var(--_qm-opacity-idle);
 	}
-	/* One arrival, three ways in. Hover is the strip's own, restated here rather than
-	   left to the family, whose rung is a flat button's and whose duration is a trip
-	   inside a box. Keyboard focus, because the fill is the only thing that reads as the
-	   trigger on a bare strip; and an open menu, because it portals out of the strip, so
-	   a pointer moving onto an item has left the row whose hover was drawing the pill
-	   the menu hangs from. */
+	/* One arrival, three ways in. Keyboard focus, because the fill is the only thing that
+	   reads as the trigger on a bare strip; and an open menu, because it portals out of
+	   the strip, so a pointer moving onto an item has left the row whose hover was drawing
+	   the pill the menu hangs from. */
 	.qm-add-card :global(.qm-add-btn:hover),
 	.qm-add-card :global(.qm-add-btn:focus-visible),
 	.qm-add-card :global(.qm-add-btn[data-state='open']) {

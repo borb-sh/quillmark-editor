@@ -168,18 +168,13 @@
 		   stacks over whichever surface rung the cell already draws instead of replacing
 		   it. */
 		--_qm-accent-tint: color-mix(in oklab, var(--_qm-accent) 12%, transparent);
-		/* The danger hue held, for the one control that fills with it: the array's
-		   remove, a slab over the end of the element it drops. The family's neutral
-		   hover rung would read as one more button, which is the one thing a remove
-		   inside a field must not read as. Mixed at the accent tint's strength, so a
-		   held tint is a held tint whichever hue it carries. */
+		/* The danger hue held: what a destructive control fills with where the family's
+		   neutral hover rung would read as one more button. Mixed at the accent tint's
+		   strength, so a held tint is a held tint whichever hue it carries. */
 		--_qm-danger-tint: color-mix(in oklab, var(--_qm-danger) 12%, transparent);
-		/* The card stack's add strip filled: the label ink held, rather than the hover
-		   rung the button family carries. Keyed to the ink because the strip's own ink
-		   never steps — the trigger arrives and leaves on opacity alone — so the fill it
-		   arrives with is that same tone at a strength a surface reads through, and
-		   the two move together at every setting of the dials. Translucent, so it stacks
-		   over whichever surface the stack is mounted on instead of replacing it. */
+		/* The label ink held: what a trigger fills with whose own ink never steps, so
+		   the fill arriving under it is that tone at a strength a surface reads
+		   through. */
 		--_qm-add-fill: color-mix(in oklab, var(--_qm-ink-label) 15%, transparent);
 
 		/* The tips card'S hue: the surface's one exit from the greyscale that is not
@@ -238,27 +233,14 @@
 		   animates over WAAPI and reads it from here. */
 		--_qm-bloom-dwell: 1100ms;
 
-		/* The default, symmetric because an interruption turns these trips around: a
-		   hover leaves before it arrives, a card collapses mid-expand. At `fast` a
-		   curve's shape is under the threshold at which one can be read at all, which is
-		   what one curve buys across every trip that short. */
+		/* One curve, symmetric because an interruption turns these trips around: a hover
+		   leaves before it arrives, a card collapses mid-expand. Every trip at `fast` or
+		   `slow` takes it; a one-way shape is legible only over a longer one. */
 		--_qm-ease-reverse: cubic-bezier(0.4, 0, 0.6, 1);
-		/* The reveal, whole. It is not a third duration rung: a control resting at
-		   nothing and arriving on hover is read as an arrival rather than as a state
-		   change, and at either rung above it is over before it can be read as one, so
-		   what this names is the trip and not a step on a ramp it does not stand on.
-
-		   Assembled rather than left as a duration beside a curve, the way `--_qm-ring`
-		   is and for the same reason: spelled out at a use site the halves each pass the
-		   motion axis while composing a trip nothing else agrees with. Neither is
-		   reachable alone, and that is the point — the curve is weighted to its end,
-		   accelerating out of rest and decelerating a long way into the next one, which
-		   is what makes the arrival settle into its rest instead of stopping at it, and
-		   which turned around mid-flight restarts slow from wherever it had reached. At
-		   `fast` that hitch is the whole trip. Composed, the pairing cannot be written.
-
-		   The card stack's add strip is the whole of what takes it: an empty gutter
-		   becoming a pill the width of the card it opens. */
+		/* A trip rather than a rung, duration and curve composed the way `--_qm-ring`
+		   composes its three: neither half is reachable alone. Weighted to its end, so an
+		   arrival settles into its rest instead of stopping at it, and long enough that a
+		   control resting at nothing reads as arriving rather than as switching. */
 		--_qm-reveal: 500ms cubic-bezier(0.4, 0, 0.2, 1);
 
 		/* ── Geometry ──────────────────────────────────────────────────────────*/

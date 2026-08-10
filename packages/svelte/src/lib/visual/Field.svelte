@@ -282,10 +282,9 @@
 	/* The `full` span, and the base every field starts from: its own row, a plain
 	   stack. Nothing shares the row, so there are no internals to align against.
 
-	   No inset at the end: the right edge is the track's, and every control in a row
-	   ends on it. The one row action the surface has is the array's remove, and it sits
-	   inside its element's box (ArrayField), so there is no column to hold clear and no
-	   field paying width for an action it does not carry. */
+	   No inset at the end: the right edge is the track's and every control in a row ends
+	   on it, a row action sitting inside the element that carries it (ArrayField) rather
+	   than in a column every field would hold clear. */
 	.qm-field {
 		display: flex;
 		flex-direction: column;
