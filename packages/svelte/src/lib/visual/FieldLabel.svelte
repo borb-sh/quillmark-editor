@@ -90,7 +90,7 @@
 
 <style>
 	/* The row, not the label, is the field's grid child: `Field`'s subgrid counts
-	 three tracks and the hint sits beside the label rather than under it.
+	 two tracks and the hint sits beside the label rather than under it.
 
 	 A rung wider than the label's own gap below, so the two separations rank: the
 	 required glyph is part of the name and sits at the tighter one, the guidance

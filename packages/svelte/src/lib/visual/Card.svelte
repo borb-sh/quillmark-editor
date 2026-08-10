@@ -630,8 +630,8 @@
 	 abuts a rule; three places, since three blocks can: an ungrouped block under the
 	 top rule, an ungrouped block over the bottom rule (only reachable because the
 	 accordion's `{#if}` keeps an empty wrapper out of last position), and the last
-	 section's panel when it is open, whose inset is otherwise zero at the bottom and
-	 would stand its final row of controls directly on the stroke. The panel's padding
+	 section's panel when it is open, whose own inset is the rung that clears a heading
+	 below it: what clears a RULE is the card's. The panel's padding
 	 is inside `.qm-group`, so the vertical still runs the full height to the corner.
 	 Ungrouped fields always render first, so the top selector needs no qualifier. */
 	.qm-meta-top > .qm-section {
@@ -667,7 +667,7 @@
 	 pays for a track's own action column as well as the gutters between tracks, since
 	 the reservation is per field now: a rung is `n * (220px + action) + gaps`.
 
-	 A row-sharing field spans three implicit row tracks (Field.svelte), so `row-gap`
+	 A row-sharing field spans two implicit row tracks (Field.svelte), so `row-gap`
 	 here is the gutter BETWEEN field rows; the tighter one inside a field is the
 	 subgrid's own. The grid takes the container's full width; each field insets its
 	 own action column inside the track it lands in. */
@@ -815,9 +815,19 @@
 	/* The widest rung on the left, so an open section's fields stand clear of the
 	 vertical rather than beside it: what the stroke encloses has to read as indented
 	 under the header, and the header's own inset is one rung because the row is a
-	 target where the panel is a block. */
+	 target where the panel is a block.
+
+	 Vertical is one rung at both ends, and the header's symmetric padding is what
+	 makes the two agree: each gap is this inset plus the rung a header hangs by, so a
+	 field list stands the same distance from the header that names it and from the
+	 one that follows. Zero at the bottom would leave the last row nearer the heading
+	 BELOW it than the fields are to each other, and proximity reads a heading that
+	 close as the end of this section rather than the start of the next. The rung is
+	 one step under the card's own inset, so a section ends tighter than the bracket
+	 closing the whole block. The vertical runs to the panel's edge with it, closing
+	 its corner a rung past the last row rather than on it. */
 	.qm-group.qm-open .qm-group-panel-inner {
-		padding: var(--_qm-space-2) 0 0 var(--_qm-space-4);
+		padding: var(--_qm-space-2) 0 var(--_qm-space-2) var(--_qm-space-4);
 	}
 	.qm-body-leaf {
 		display: flex;
