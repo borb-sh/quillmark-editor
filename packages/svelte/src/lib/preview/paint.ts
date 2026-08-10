@@ -68,7 +68,7 @@ export function createPaintLoop(
 
 	function makeSlot(page: number): PageSlot {
 		const size = session.pageSize(page);
-		// The sheet is a PLANE and the desk is the one under it: paper sits at
+		// The sheet is a plane and the desk is the one under it: paper sits at
 		// `--_qm-surface` and the container paints `--_qm-surface-sunken`, so the
 		// edge is where two tones meet and no stroke is drawn around it
 		// (ARCHITECTURE §Styling). It leaves the overlay's no-ink-at-rest rule
@@ -96,7 +96,7 @@ export function createPaintLoop(
 	}
 
 	// Rasterize `slot` into its canvas (creating the canvas if this is its first
-	// paint since mounting). `layoutScale` is derived from the slot's OWN current
+	// paint since mounting). `layoutScale` is derived from the slot's own current
 	// CSS width, so layout width tracks the container per the zoom settled
 	// decision; `canvas.style.*` is then set from the authoritative PaintResult,
 	// never guessed.
@@ -107,7 +107,7 @@ export function createPaintLoop(
 			canvas.className = 'qm-page-canvas';
 			Object.assign(canvas.style, { position: 'absolute', inset: '0', display: 'block' });
 		}
-		// Contextless canvas: bail BEFORE registering, so `updateBand` still sees
+		// Contextless canvas: bail before registering, so `updateBand` still sees
 		// the page as unmounted and retries instead of keeping a blank page.
 		const ctx = canvas.getContext('2d');
 		if (!ctx) return;
@@ -140,7 +140,7 @@ export function createPaintLoop(
 	}
 
 	// Mount pages newly inside [min(visible)-margin, max(visible)+margin], unmount
-	// pages that fell outside it. Only touches pages CHANGING band membership;
+	// pages that fell outside it. Only touches pages changing band membership;
 	// an already-mounted page in the band is left alone (paint contract: an idle
 	// canvas keeps its pixels for free; repainting it here would be pure waste).
 	function updateBand(): Set<number> {
@@ -188,14 +188,14 @@ export function createPaintLoop(
 	}
 
 	// Slots are built on the first `refresh` (the controller calls it immediately),
-	// NOT here: reconcile → `session.pageSize` must run AFTER the controller's
+	// not here: reconcile → `session.pageSize` must run after the controller's
 	// `supportsCanvas`/`pageCount` gate, since a `supportsCanvas: false` compile with
 	// pages would throw on `pageSize` (runtime.d.ts: it succeeds iff `supportsCanvas`)
 	// before the controller can surface its "unsupported" message.
 
 	// ── Keep mounted rasters in step with the display ───────────────────────────
-	// Every paint freezes `canvas.style.width/height` to the box width AT THAT
-	// PAINT (paintSlot). A page that stays mounted while the container's CSS width
+	// Every paint freezes `canvas.style.width/height` to the box width at that
+	// paint (paintSlot). A page that stays mounted while the container's CSS width
 	// or `devicePixelRatio` shifts would otherwise keep a stale raster the %-space
 	// overlay/click math silently drifts off of: the box tracks the container, the
 	// ink does not. Two observers close the gap by repainting mounted pages from
@@ -244,7 +244,7 @@ export function createPaintLoop(
 
 	// `devicePixelRatio` changes (window dragged to a different-DPI monitor, browser
 	// zoom) leave CSS-px width untouched, so the ResizeObserver never sees them;
-	// watch DPR directly. A `(resolution: …dppx)` query pins the CURRENT ratio and
+	// watch DPR directly. A `(resolution: …dppx)` query pins the current ratio and
 	// is therefore one-shot: re-arm it against the new ratio on each change. Guarded
 	// for environments (jsdom) without `matchMedia`.
 	let dprQuery: MediaQueryList | undefined;

@@ -1,6 +1,6 @@
 <!--
  An `object` field → a nested subform over `properties` (declaration order),
- committing the WHOLE object by value on any nested change. SCALAR properties
+ committing the whole object by value on any nested change. Scalar properties
  only: a nested prose/array/object property renders a placeholder instead of
  recursing.
 
@@ -23,7 +23,7 @@
 		properties: Record<string, QuillFieldSchema> | undefined;
 		/** Accessible-name prefix for the property controls. */
 		label?: string;
-		/** The field label's own id. A subform is a GROUP of controls, not one control
+		/** The field label's own id. A subform is a group of controls, not one control
 		 * `for` could reach, so the field's label names the set and each property
 		 * control keeps its own composed `aria-label`. */
 		labelledBy?: string;
@@ -36,7 +36,7 @@
 	const entries = $derived(Object.entries(properties ?? {}));
 	const obj = $derived((value ?? {}) as Record<string, unknown>);
 
-	/** Take the caret: the FIRST property's control, a subform having no single control
+	/** Take the caret: the first property's control, a subform having no single control
 	 * of its own to land on. Resolved off the DOM rather than a ref per property: every
 	 * property is a scalar control the DOM already knows how to focus (the date field's
 	 * segments carry `tabindex`, the `literal` separators between them do not), so a
@@ -52,7 +52,7 @@
 	function commitProp(key: string, v: unknown): void {
 		if (v === undefined) {
 			// A nested control cleared (the unset rung): drop the key so the property
-			// is ABSENT in the committed object (resolving to its own `default:`)
+			// is absent in the committed object (resolving to its own `default:`)
 			// rather than an `undefined` hole carried through `writer.set`.
 			const rest = { ...obj };
 			delete rest[key];

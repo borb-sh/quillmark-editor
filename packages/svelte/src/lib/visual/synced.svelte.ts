@@ -1,6 +1,6 @@
 // The controlled-local reconcile shared by the scalar controls (TextField /
 // NumberField / DateField / BooleanField / EnumField). Each seeds a local from a
-// projection of its `value` prop and reconciles ONLY an external change back into
+// projection of its `value` prop and reconciles only an external change back into
 // the local: own edits stay `untrack`ed, so typing never re-runs the sync and
 // resets the caret. One copy for all five, rather than a character-identical block
 // in each (VISUAL_EDITOR §Surface).
@@ -13,7 +13,7 @@ export interface SyncedLocal<T> {
 }
 
 /**
- * Seed a local from `project` and reconcile only an EXTERNAL change into it.
+ * Seed a local from `project` and reconcile only an external change into it.
  * `project` reads the reactive source (a prop) and maps it to the local's type:
  * ` => value ?? ''`, ` => (value != null ? String(value) : '')`, etc. The
  * seed is `untrack`ed (the ongoing sync is the `$effect`, not the initializer),

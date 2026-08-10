@@ -1,12 +1,12 @@
 // The theme derivation: the public dials → the private `--_qm-*` scale, applied
 // to every `data-qm-root` element (THEMING.md). Imported at every barrel a
 // consumer can enter through — here, `/visual`, `/preview` — because a subpath is
-// what a consumer gets, and a surface reaching a module INSIDE `core/` reaches
+// what a consumer gets, and a surface reaching a module inside `core/` reaches
 // nothing this file imports. One sheet however many barrels name it: the
 // derivation is minted once rather than re-declared per detached root.
 import './theme.css';
 
-// `@quillmark/svelte/core`: what this package OWNS at the substrate seam.
+// `@quillmark/svelte/core`: what this package owns at the substrate seam.
 //
 // The `@quillmark/wasm` API is not re-exported: import it straight from the peer
 // dependency, the single source of truth (quiver states the same rule). The

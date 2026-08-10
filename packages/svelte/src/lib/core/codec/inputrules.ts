@@ -23,8 +23,8 @@ import type { EditorState, Plugin, Transaction } from 'prosemirror-state';
  * before the caret, wrap capture group 1 in `markType` and drop the delimiters.
  * `delimLen` is the delimiter length (opening == closing for every rule here).
  * `match[0]` anatomy is `prefix? open captured close`: the em rule's
- * `(?:^|[^*])` guard consumes ONE non-delimiter prefix char into the match, so
- * positions are derived from the KNOWN delimiter/capture lengths, never from
+ * `(?:^|[^*])` guard consumes one non-delimiter prefix char into the match, so
+ * positions are derived from the known delimiter/capture lengths, never from
  * `indexOf` (which both deletes that prefix char and mis-anchors when it
  * happens to equal the captured text). `[start, end)` spans `match[0]` minus
  * the just-typed text (not yet inserted when the rule fires), so the trailing
@@ -67,7 +67,7 @@ function markInputRule(regexp: RegExp, markType: MarkType, delimLen: number): In
  * nothing. This is the wrap-side route into that shape; the `# ` rule guards the
  * other, in {@link markdownInputRules}.
  *
- * `item` is the second guard, and it is about the GESTURE rather than the shape: the
+ * `item` is the second guard, and it is about the gesture rather than the shape: the
  * rule declines at the start of an item's own first block ({@link openingAnItem}).
  */
 function listWrappingRule(
@@ -111,13 +111,13 @@ function listWrappingRule(
 
 /**
  * Whether `$start` is the head of an item that already exists: offset 0 of a
- * `list_item`'s FIRST block, which is where a list shorthand is the text an author
+ * `list_item`'s first block, which is where a list shorthand is the text an author
  * typed rather than a shorthand at all.
  *
  * Firing there wraps the item's own paragraph in a fresh list, minting an item whose
  * only content is another item — a level with nothing on it. Tab is the indent gesture
- * and lands the shape a nesting is supposed to have, under the PREVIOUS sibling, so
- * what the rule adds here is a second door onto a worse answer. A LATER block of the
+ * and lands the shape a nesting is supposed to have, under the previous sibling, so
+ * what the rule adds here is a second door onto a worse answer. A later block of the
  * item is not this case: wrapping a continuation paragraph is how a sub-list opens
  * under text.
  */
@@ -188,7 +188,7 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 		);
 	}
 	if (schema.nodes.horizontal_rule && schema.nodes.paragraph) {
-		// A divider is a whole block, so this rule REPLACES its textblock rather than
+		// A divider is a whole block, so this rule replaces its textblock rather than
 		// retyping one: `horizontal_rule` holds no content to retype into.
 		const rule = schema.nodes.horizontal_rule;
 		const paragraph = schema.nodes.paragraph;
@@ -197,7 +197,7 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 				/^---$/,
 				(state: EditorState, _match: RegExpMatchArray, start: number, end: number) => {
 					const $start = state.doc.resolve(start);
-					// The block ENTIRELY, not a prefix of one. `[start, end)` is the match minus
+					// The block entirely, not a prefix of one. `[start, end)` is the match minus
 					// the just-typed `-`, so the block holds `--` when this fires; anything else
 					// in it is a paragraph being edited, which a replace would eat.
 					if ($start.parentOffset !== 0 || $start.parent.content.size !== end - start) {
@@ -224,7 +224,7 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 			)
 		);
 	}
-	// `- ` / `1. ` at the start of a block, here or nested inside an item — but NOT at
+	// `- ` / `1. ` at the start of a block, here or nested inside an item — but not at
 	// the start of an item's own first block, where {@link openingAnItem} declines.
 	if (schema.nodes.bullet_list && schema.nodes.paragraph) {
 		rules.push(

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // The prose leaf's two outputs, and the one thing that separates them: `onChange`
-// reports an edit that COMMITTED, `onCaretMove` reports where the caret is now. A
+// reports an edit that committed, `onCaretMove` reports where the caret is now. A
 // bare selection move fires the second and not the first, which is the whole
 // reason a host can drive a recompile off `onChange` without recompiling on every
 // arrow key.
@@ -47,7 +47,7 @@ describe('the prose leaf change signal', () => {
 		expect(changes[0]).toEqual({ field: 'subject' });
 		expect(carets).toHaveLength(1);
 
-		// A caret that only MOVES: the signal a preview follows, and no recompile.
+		// A caret that only moves: the signal a preview follows, and no recompile.
 		view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 3)));
 		expect(changes).toHaveLength(1);
 		expect(carets).toHaveLength(2);
@@ -96,9 +96,9 @@ describe('the prose leaf change signal', () => {
 	});
 
 	it('reports a commit that could not land, and does not signal a change', () => {
-		// A freed document is the reachable way to make BOTH the applyChange and the
+		// A freed document is the reachable way to make both the applyChange and the
 		// install fallback throw: the leaf keeps the optimistic PM state, reports
-		// `commit-lost`, and must NOT tell the host an edit landed.
+		// `commit-lost`, and must not tell the host an edit landed.
 		const errors: EditorError[] = [];
 		const changes: Addr[] = [];
 		const field = createField({

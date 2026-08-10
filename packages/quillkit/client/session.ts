@@ -42,7 +42,7 @@ export async function openRef(
 	ref: string,
 	carry?: string
 ): Promise<Opened> {
-	// BORROWED: `getQuill` caches one quill per canonical ref and hands it to every
+	// Borrowed: `getQuill` caches one quill per canonical ref and hands it to every
 	// caller for the quiver's lifetime, so studio holds it and frees nothing (QUIVER
 	// §getQuill). Studio rewrites no quill bytes, so it needs no quill of its own and
 	// pays for no second materialization.
@@ -52,7 +52,7 @@ export async function openRef(
 	let landed: Carry = { how: 'seeded', stranded: [] };
 	if (carry !== undefined) {
 		try {
-			// The BOUND ingestion door: parse, then conform against the schema in hand,
+			// The bound ingestion door: parse, then conform against the schema in hand,
 			// landing every declared field at its canonical rest. The `conform::*`
 			// diagnostics for the values that would not commit arrive on `warnings`.
 			doc = quill.parse(carry);

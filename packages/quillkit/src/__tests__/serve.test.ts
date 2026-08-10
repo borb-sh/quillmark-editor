@@ -94,7 +94,7 @@ describe('serving', () => {
 });
 
 describe('the escape refusal', () => {
-	// Checked on the RESOLVED path, so every spelling of the same escape collapses into
+	// Checked on the resolved path, so every spelling of the same escape collapses into
 	// one answer rather than each needing to be anticipated.
 	it('refuses paths that leave their mount', async () => {
 		const client = await temp();

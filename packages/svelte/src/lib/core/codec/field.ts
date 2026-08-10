@@ -6,11 +6,11 @@
 //   (b) lower the tr to a `ChangeBundle` (or `overwrite` for a field not yet at
 //       content rest, which has nothing to splice),
 //   (c) commit via `doc.applyChange(addr, bundle)`,
-//   (d) fire `onChange` when the transaction COMMITTED, then `onCaretMove` with
+//   (d) fire `onChange` when the transaction committed, then `onCaretMove` with
 //       the new USV caret, which a bare selection move fires on its own.
 // On an `applyChange` throw the optimistic PM state stays and the failure reports
 // through `onError`: never a crash. Caret continuity across own-edits is the PM
-// `StepMap`; an EXTERNAL content change re-hydrates through `applyExternal`, gated
+// `StepMap`; an external content change re-hydrates through `applyExternal`, gated
 // by `reconcile`.
 import { baseKeymap, toggleMark } from 'prosemirror-commands';
 import { gapCursor } from 'prosemirror-gapcursor';
@@ -57,7 +57,7 @@ export interface CreateFieldOpts {
 	plaintext?: boolean;
 	/** Suppress the markdown-shorthand input rules. */
 	noInputRules?: boolean;
-	/** The island chrome's wording, read LIVE (per render) so a consumer swapping
+	/** The island chrome's wording, read live (per render) so a consumer swapping
 	 *  locale mid-session re-renders rather than freezing it at mount. Absent leaves
 	 *  the package's English; an inline leaf never asks (it holds no island). */
 	tableStrings?: () => TableChromeStrings;
@@ -65,14 +65,14 @@ export interface CreateFieldOpts {
 	 * The slash menu's live state, or `undefined` when it is closed: the channel the
 	 * chrome draws from (`visual/SlashMenu.svelte`).
 	 *
-	 * Its PRESENCE is what mounts the menu at all. The trigger and its keys are the
+	 * Its presence is what mounts the menu at all. The trigger and its keys are the
 	 * leaf's, but a surface only a keyboard can reach (claiming Enter, Escape and the
 	 * arrows with nothing on screen) is worse than no surface, so the door exists
 	 * exactly where something can draw it. A constrained inline leaf never has one:
 	 * it holds no island and no block to convert.
 	 */
 	onSlash?(state: SlashState | undefined): void;
-	/** Accessible name → `aria-label` on the `contenteditable`. For a leaf NOTHING
+	/** Accessible name → `aria-label` on the `contenteditable`. For a leaf nothing
 	 * else names: an array element (the field label plus its 1-based index), the
 	 * card body (no visible label at all). A leaf with a field label takes
 	 * `labelledBy` instead: `for` cannot reach a `contenteditable`, which is not a
@@ -83,7 +83,7 @@ export interface CreateFieldOpts {
 	/** The parked `description` → `aria-describedby`; announced after the name. */
 	describedBy?: string;
 	/** Ghost text shown on the empty leaf: the resolved `default:` a field ghosts,
-	 * or a body's invitation. The INITIAL value; {@link
+	 * or a body's invitation. The initial value; {@link
 	 * FieldController.setPlaceholder} moves it after mount. Empty/absent
 	 * shows no ghost. */
 	placeholder?: string;
@@ -91,7 +91,7 @@ export interface CreateFieldOpts {
 	/** Fired with the new USV caret after an edit or a selection move. */
 	onCaretMove?(addr: Addr, pos: number): void;
 	/**
-	 * Fired after an edit COMMITTED to the document: the leaf's change signal, and
+	 * Fired after an edit committed to the document: the leaf's change signal, and
 	 * the reason it is not `onCaretMove`. That one also fires on a bare selection
 	 * move, so a host driving a recompile off it recompiles on every arrow key.
 	 *
@@ -119,7 +119,7 @@ export interface FieldController {
 	 * its new kind's wording without remounting, which it must not do (the leaf key
 	 * is the card's session id, so a remount would cost the caret).
 	 *
-	 * Refreshes the decoration WITHOUT a transaction: a placeholder is chrome, and
+	 * Refreshes the decoration without a transaction: a placeholder is chrome, and
 	 * a transaction would fire `onCaretMove` at a moment the caret did not move.
 	 */
 	setPlaceholder(text: string | undefined): void;
@@ -139,7 +139,7 @@ export interface FieldController {
 	/** Ids of the anchors within USV range `[from, to]`: a selection's anchor state. */
 	anchorsInRange(from: number, to: number): string[];
 	/**
-	 * Move the slash menu's cursor onto the command `name`: what a POINTER entering an
+	 * Move the slash menu's cursor onto the command `name`: what a pointer entering an
 	 * item calls. The keyboard cursor and the pointer's highlight are one state, so the
 	 * chrome moves the one the keys already drive rather than painting a second.
 	 */
@@ -157,9 +157,9 @@ export interface FieldController {
  * of {@link FieldController}: they are PM internals, and a consumer's contract is the
  * controller's verbs. The format popover is the one caller and it needs both:
  * `view` to name the leaf's own document, `focusedView` to act on wherever the caret
- * actually is, which inside a table island is a NESTED cell view (`table-view.ts`).
+ * actually is, which inside a table island is a nested cell view (`table-view.ts`).
  * The two being different is exactly what tells the popover to withhold its
- * `anchor` button: an anchor is the FIELD's coordinate space, and a cell is not in it.
+ * `anchor` button: an anchor is the field's coordinate space, and a cell is not in it.
  */
 export interface LeafViews {
 	view: EditorView;
@@ -208,8 +208,8 @@ function anchorPlugin(seed: AnchorPos[]): Plugin<AnchorPos[]> {
  *
  * Bound rather than verbatim, because the storage form is not the leaf's business
  * and the verbatim read cannot answer it alone. A field the editor committed rests
- * as `Content`; a field a markdown parse left rests as the authored STRING, and
- * what that string MEANS is the declared type's to say: `richtext` is markdown,
+ * as `Content`; a field a markdown parse left rests as the authored string, and
+ * what that string means is the declared type's to say: `richtext` is markdown,
  * `plaintext` is literal text, and reading one as the other silently eats every
  * `*` the author typed. */
 function readLeaf(reader: DocumentReader, addr: Addr): Content {
@@ -225,9 +225,9 @@ export function emptyContent(): Content {
 /** Whether ops may commit here: the stored value is a `Content` object, so
  * `applyChange` splices exactly the content the leaf read and PM is showing.
  *
- * The two other rest forms both take `overwrite` instead. An UNSET field (`undefined`;
+ * The two other rest forms both take `overwrite` instead. An unset field (`undefined`;
  * a default-only richtext field before its first edit) has nothing to splice.
- * An AUTHORED STRING is the trap: `applyChange` reads it as markdown whatever the
+ * An authored string is the trap: `applyChange` reads it as markdown whatever the
  * declared type is, so on a `plaintext` field its pre-image is not the content the
  * leaf read and a delta computed against that content lands at the wrong offsets.
  * Installing over it costs nothing either way, since content-only marks do not
@@ -269,7 +269,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	// is an assignment plus a re-render rather than a rebuilt plugin stack.
 	let placeholderText = opts.placeholder;
 
-	// The views nested INSIDE this leaf: one per table cell (`table-view.ts`). The
+	// The views nested inside this leaf: one per table cell (`table-view.ts`). The
 	// leaf holds the set because chrome asks the leaf, not the island, which view
 	// holds the caret: the format popover raises over a cell exactly as over the
 	// body, and only the leaf knows both.
@@ -307,7 +307,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			view.updateState(next); // (a) optimistic
 			index = buildLineIndex(next.doc);
 
-			// Commit a content edit OR an anchor mutation. An anchor insert/remove is
+			// Commit a content edit or an anchor mutation. An anchor insert/remove is
 			// zero-width, so `docChanged` is false: the `anchorKey` meta is what
 			// routes it through the same commit path (the diff emits the anchor op).
 			if (tr.docChanged || tr.getMeta(anchorKey)) {
@@ -357,7 +357,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	// Returns whether anything landed: the caller's change signal, which must not
 	// be a property of which branch the commit took.
 	function commitEdit(oldRt: Content, newDoc: PMNode): boolean {
-		// The projection and its text splice, each computed ONCE per keystroke: the gate
+		// The projection and its text splice, each computed once per keystroke: the gate
 		// below, both overwrite fallbacks, and `lower` all read this one `edit`.
 		const edit = contentEdit(oldRt, pmToContent(newDoc));
 		try {
@@ -378,7 +378,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			reconciler.commit(readLeaf(reader, addr));
 			return true;
 		} catch (e) {
-			// Bound the damage: an op path the gates missed leaves the store STALE
+			// Bound the damage: an op path the gates missed leaves the store stale
 			// while PM keeps the edit; and because the reconciler then re-diffs
 			// from that stale content, every later edit re-throws and the field
 			// silently stops persisting. Install the full projection instead
@@ -409,7 +409,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	/** The anchors the plugin currently holds (PM coords); `[]` before the first apply. */
 	const heldAnchors = (): AnchorPos[] => anchorKey.getState(view.state) ?? [];
 
-	/** Anchor positions in the CURRENT (new) doc, as USV. */
+	/** Anchor positions in the current (new) doc, as USV. */
 	function readAnchorsUsv(newDoc: PMNode): AnchorPos[] {
 		return heldAnchors().map((a) => ({ id: a.id, pos: pmToUsv(index, a.pos) }));
 	}
@@ -509,13 +509,13 @@ export function createField(opts: CreateFieldOpts): FieldController {
  * leaf-specific plugins (`afterHistory`: the addressed leaf passes its
  * anchor-position plugin; a by-value array element passes none), the
  * markdown-shorthand input rules, then the field keymap over the base keymap, and
- * last the two that answer to a caret or a selection BESIDE a block: the gap cursor
+ * last the two that answer to a caret or a selection beside a block: the gap cursor
  * and {@link pastAtomPlugin}.
  *
  * A `plaintext` field carries no marks (decode strips them, the keymap suppresses
  * Mod-b/i/u), so it also skips the input rules: `inlineSchema` still declares the
- * mark types, so a `**bold**` rule would apply a strong mark AND eat the literal
- * delimiters. The inline schema has no block nodes, so those rules are the ONLY
+ * mark types, so a `**bold**` rule would apply a strong mark and eat the literal
+ * delimiters. The inline schema has no block nodes, so those rules are the only
  * ones it would add: skip all.
  */
 export function proseLeafPlugins(
@@ -548,10 +548,10 @@ export function proseLeafPlugins(
 }
 
 /**
- * A printable key over a selected atom writes PAST it. A selection is the subject
+ * A printable key over a selected atom writes past it. A selection is the subject
  * of the next command, never a thing armed for
  * replacement: Backspace deletes it, Mod-C copies it, and a character lands beside
- * it. A BLOCK island takes a new paragraph after it, an INLINE one the caret after
+ * it. A block island takes a new paragraph after it, an inline one the caret after
  * the image in the same line: one rule, both node types.
  *
  * PM routes text input over a non-`TextSelection` through `handleTextInput` before
@@ -617,7 +617,7 @@ function placeholderPlugin(read: () => string | undefined): Plugin {
  * The field's keymap: history, mark toggles, and the body's structural keys; Enter
  * suppressed inline.
  *
- * Tab forks on the leaf's ROLE, not on the caret's position. An inline/plaintext
+ * Tab forks on the leaf's role, not on the caret's position. An inline/plaintext
  * leaf is a form field: Tab stays unbound, so field navigation is open for a shell
  * keymap (VISUAL_EDITOR §Settled and open). A block-schema body is a document: Tab
  * is structural, a chain each nested surface prepends to (`keymap.ts`). One key

@@ -4,18 +4,18 @@
    hidden-selection and separator-image guards. It is imported whole; the rules are
    interdependent and which ones a given schema needs is not visible from here.
 
-   What it does NOT carry is a block reset, so without the rules below every leaf
+   What it does not carry is a block reset, so without the rules below every leaf
    inherits the UA `p { margin: 1em 0 }` (32px of margin in a box drawn to hold one
    line), which is enough on its own to make an inline richtext field twice the height
    of the input beside it. The reset lives here rather than per component because every
    prose leaf in the package mounts through the codec (a field, the body, an array
    element) and picks it up without restating it, and a leaf that carries the
    control recipe (`visual/ProseField.svelte`) can then match `.qm-input` by
-   construction instead of by a tuned `min-height`. The source view is NOT one of
+   construction instead of by a tuned `min-height`. The source view is not one of
    them: it is a `<pre>` holding `textContent` (`source/view.ts`), outside
    `.ProseMirror` and so outside every rule in this file.
 
-   It also carries hard-coded VALUES that answer to no rung: a `#8cf` node-selection
+   It also carries hard-coded values that answer to no rung: a `#8cf` node-selection
    outline, twice, and the `-32px` placing a selected list item's. Retinted and
    re-measured here rather than in `theme.css` because a layered rule loses to that
    unlayered stylesheet: equal specificity and a later import is what wins. */
@@ -30,7 +30,7 @@ li.ProseMirror-selectednode::after {
 	left: calc(var(--_qm-space-4) * -1);
 }
 
-/* The GAP CURSOR (`prosemirror-gapcursor`, imported beside this file): a caret
+/* The gap cursor (`prosemirror-gapcursor`, imported beside this file): a caret
    between two blocks, where the document holds no text position for an ordinary one.
    It is what a press beside an island lands, so it is drawn in the surface's ink
    rather than the upstream sheet's `black`, which is the `#8cf` defect again. */
@@ -47,18 +47,18 @@ li.ProseMirror-selectednode::after {
 }
 
 /* One rhythm between sibling blocks, in place of the UA's collapsed pair. Scoped by
-   PARENT rather than by tag, which is what keeps it true as the schema grows: the
+   parent rather than by tag, which is what keeps it true as the schema grows: the
    containers below are every node whose content is `block+` (`schema.ts`), so
    their children are blocks by definition, whatever kinds exist. `ul`/`ol` are
    deliberately absent: a run of list items is tight, and the gap before a list is
    the list's, not each item's.
 
-   AN ITEM IS THE EXCEPTION TO ITS OWN CONTAINER. A list nested under an item is
+   An item is the exception to its own container. A list nested under an item is
    part of the run that omission already keeps tight — `a. …` under `1. …` is the
    next line of one list, not a new block after a paragraph — so an item's children
    take the gap only up to the point where one of them is a list. Written as its own
    arm rather than as a `:not()` over the shared one, because the exception is the
-   ITEM's: a list after a paragraph inside a blockquote is an ordinary sibling pair
+   item's: a list after a paragraph inside a blockquote is an ordinary sibling pair
    and keeps the gap.
 
    A line box is ~22px at the paper size and the body leading, so the rung is a
@@ -84,18 +84,18 @@ li.ProseMirror-selectednode::after {
    emits, minus the four the UA already renders correctly (`strong`, `em`, `u`, `s`)
    and the blockquote above.
 
-   Each rule answers to the REFERENCE QUILL rather than to a browser default or to a
+   Each rule answers to the reference quill rather than to a browser default or to a
    web editor's chrome, because the leaf sits beside a live preview of the same
    content. `usaf_memo` sets `raw` in a monospace face and adds nothing; it renders a
-   heading as a bold RUN-IN prepended to the following paragraph, with the level
-   never read; it gives a link no decoration at all. So a leaf shows that a span IS
-   code and a line IS a heading: never a prediction of the size paper will set it
+   heading as a bold run-in prepended to the following paragraph, with the level
+   never read; it gives a link no decoration at all. So a leaf shows that a span is
+   code and a line is a heading: never a prediction of the size paper will set it
    at, which the package cannot know for a quill it has not seen.
 
-   Scoping is by TAG, and the schema does the rest: `h1`–`h6`, `hr` and the lists
+   Scoping is by tag, and the schema does the rest: `h1`–`h6`, `hr` and the lists
    cannot exist under the inline schema, so no rule for them can land on a `subject`
-   field however that field is mounted. The two MARKS are the exception: `code` and
-   `link` are in both schemas, and a `plaintext` leaf strips them at DECODE while
+   field however that field is mounted. The two marks are the exception: `code` and
+   `link` are in both schemas, and a `plaintext` leaf strips them at decode while
    mounting a schema that still carries them, so a paste can put either in one. The
    rules stand there too, and correctly: they say the leaf holds code, or a link,
    which is exactly what it then holds.
@@ -103,22 +103,22 @@ li.ProseMirror-selectednode::after {
    `visual/TipsCard.svelte` restates the two mark rules by hand, over the same
    `toDOM` output injected outside any view. */
 
-/* Code is a FACE: no chip, no fill, no inset, no size step. The blockquote above
+/* Code is a face: no chip, no fill, no inset, no size step. The blockquote above
    already argues the general form: a span reads as set apart without a fill or a
    second box, on the one surface in the card with no edge of its own. A chip has
    nowhere to come from in any case: the body sits at `--_qm-surface` and the rungs
    either side of it are the field well and the hover lane, so a chip at rest would
    read as a hole in the paper or as a hovered button.
 
-   The withheld properties are DECLARED at their zero, which is what makes the
-   paragraph above true of a MOUNTED leaf: a chip on these tags is an ordinary page
+   The withheld properties are declared at their zero, which is what makes the
+   paragraph above true of a mounted leaf: a chip on these tags is an ordinary page
    rule, so left off, these are the two tags the host draws rather than the surface.
    The other marks are ink, weight and decoration, which the leaf sets or safely
    inherits, so the box is this mark's alone and the zeros are not a reset.
 
-   BOTH tags, where the face alone needs only one: a `code_block` renders `pre > code`
+   Both tags, where the face alone needs only one: a `code_block` renders `pre > code`
    (`schema.ts`), so every character is inside a `code` element and the face reaches it
-   there — but the block's BOX is the `pre`, outside that element and styled by the
+   there — but the block's box is the `pre`, outside that element and styled by the
    host on its own. `pre` still takes no `overflow-x`, because there is no overflow:
    ProseMirror's own stylesheet sets `white-space: pre-wrap` there, so a long line
    wraps. A scroller means overriding that to `pre` inside an editable `code`
@@ -132,10 +132,10 @@ li.ProseMirror-selectednode::after {
 }
 
 /* A link takes the surface's ink (the UA's blue is the `#8cf` defect again) and a
-   DOTTED underline. Dotted rather than solid because `underline` is a mark in the
+   dotted underline. Dotted rather than solid because `underline` is a mark in the
    same schema, and a solid rule renders an authored `<u>` and a link identically in a
    paragraph that can hold both. An underline at all, where the tips card's link takes
-   none, because this leaf is EDITABLE: the `href` is otherwise imperceptible, so
+   none, because this leaf is editable: the `href` is otherwise imperceptible, so
    removing the rule loses an answer rather than ornament. No hue:
    `--_qm-accent` already means focus, and a body of accent-coloured links collides
    with the ring and with the correlation wash. */
@@ -158,13 +158,13 @@ li.ProseMirror-selectednode::after {
    rather than the item: the sibling-gap rule deliberately omits `ul`/`ol`, and
    padding on the container cannot reintroduce what it withholds.
 
-   The MARKERS are the UA's, RECLAIMED rather than inherited. `disc` and `decimal`
+   The markers are the UA's, reclaimed rather than inherited. `disc` and `decimal`
    are right and this restates neither: a host reset (Tailwind's preflight sets
    `list-style: none` on `ol, ul, menu`) is the common case, and against one an
    unstated default is no default at all — bullets and numbers vanish from the leaf
    while the preview beside it still draws them, which is an editor/paper
    divergence on the plainest formatting there is. `revert` over a named type
-   because the UA's markers step by DEPTH (disc, circle, square) and the schema
+   because the UA's markers step by depth (disc, circle, square) and the schema
    nests (`lists.ts`: Tab sinks an item); naming `disc` would flatten that ramp to
    hold the first level. Same reclaim for `strong`/`em`/`u`/`s` above if a reset
    that takes those ever turns up: the positive half states what it leaves to the
@@ -188,25 +188,25 @@ li.ProseMirror-selectednode::after {
 
 /* ── The table island ────────────────────────────────────────────────────────
 
-   The one construct in this file with CHROME in it. The rest of the stylesheet
+   The one construct in this file with chrome in it. The rest of the stylesheet
    states what a block is and lets paper set its size; a table island is edited
    through controls that do not print, so it also has a target floor and a reveal.
    Those live here rather than in `visual/controls.css` for the same reason the
    NodeView is vanilla: the island is inside the leaf, and the leaf is the codec's.
-   What it does NOT restate is the surface's dials: every value below is a `--_qm-*`
+   What it does not restate is the surface's dials: every value below is a `--_qm-*`
    rung, so the island retints with everything else.
 
-   THE BAND IS IN NO TRACK. Every control in it is absolutely positioned inside a real
+   The band is in no track. Every control in it is absolutely positioned inside a real
    data cell or against the grid's frame, hanging into a band the scroller carries as
-   PADDING. So the grid holds the box a paragraph would, the accessibility tree is the
-   data's shape, and a grip still lines up with its line by CONSTRUCTION rather than by
+   padding. So the grid holds the box a paragraph would, the accessibility tree is the
+   data's shape, and a grip still lines up with its line by construction rather than by
    a measured overlay: it is inside the cell it names.
 
-   EACH CONTROL COMES UP ALONE. A grip or a bar is drawn while the pointer is on THAT
+   Each control comes up alone. A grip or a bar is drawn while the pointer is on that
    control, while it holds the focus, or while it is the one the gesture is about — a
    selected line, a lifted one. The target is there the whole time either way, an
    invisible button being hit-tested like any other, so what the reveal decides is what
-   the table LOOKS like under a passing pointer, not what it answers to. */
+   the table looks like under a passing pointer, not what it answers to. */
 
 /* The band, and the whole of what it costs. `padding` opens it on all four sides,
    because each axis begins with a grip and ends with an add bar; the island's negative
@@ -214,7 +214,7 @@ li.ProseMirror-selectednode::after {
    inset from the prose edge instead of a tap target plus one.
 
    `margin-top: 0` overrides the sibling-gap rule rather than going negative: the band
-   ABSORBS the gap, at both ends. A negative margin would hang the band over the
+   absorbs the gap, at both ends. A negative margin would hang the band over the
    neighbouring block, and an `opacity: 0` control is still hit-tested, so it would take
    that block's presses. The `.ProseMirror` qualifier is what makes the override hold
    wherever the island lands: two of the gap rule's arms name a container, so a bare
@@ -239,7 +239,7 @@ li.ProseMirror-selectednode::after {
 	max-width: 100%;
 }
 /* The containing block for everything out of flow, and the reason it exists rather
-   than the scroller serving: an absolute inside a SCROLL container is placed against a
+   than the scroller serving: an absolute inside a scroll container is placed against a
    padding box the scroll then slides out from under it, so a cap pinned to the grid's
    far end would drift into the middle of a scrolled table. The frame is the grid's own
    box and travels with it. */
@@ -253,7 +253,7 @@ li.ProseMirror-selectednode::after {
 	border: var(--_qm-border-width) solid var(--_qm-border);
 	border-radius: var(--_qm-radius-inner);
 }
-/* Two tiers of rule, because a table draws two different things. The FRAME and the
+/* Two tiers of rule, because a table draws two different things. The frame and the
    header's rule are structure and keep the full hairline; the lines between cells are
    rhythm and drop to the faint rung, so the grid reads as one object with divisions
    rather than as a stack of boxes. `separate` with zero spacing rather than
@@ -274,9 +274,9 @@ li.ProseMirror-selectednode::after {
 .qm-table tbody tr:last-child > .qm-table-cell {
 	border-bottom: none;
 }
-/* The header row is the ONE weight distinction the island draws: `header` is a
+/* The header row is the one weight distinction the island draws: `header` is a
    separate field in the model rather than a flag on a row, so the surface says so.
-   It takes a tone with it, which is the same move a field makes: the WELL rung, a
+   It takes a tone with it, which is the same move a field makes: the well rung, a
    band cut into the paper rather than a layer stacked on it, and a rung either way
    rather than a shadow. The rest of a table's type is paper's. */
 .qm-table-header-row .qm-table-cell {
@@ -288,7 +288,7 @@ li.ProseMirror-selectednode::after {
    collapsing to a row of hairlines with nothing to aim at, and the caret is the
    focus indicator here exactly as it is in the leaf: no ring.
 
-   The HEIGHT floor is one line box, named as size times leading so both factors move
+   The height floor is one line box, named as size times leading so both factors move
    with the type ramp (`.qm-prose-block` states the same expression for three). An
    empty row is then the height it will be once typed, so the first keystroke changes
    no geometry. */
@@ -301,11 +301,11 @@ li.ProseMirror-selectednode::after {
 }
 /* A selected island takes the node outline every leaf block does
    (`.ProseMirror-selectednode`, above), and that is the state Escape leaves a cell or a
-   line FOR: the caret is out, the island is what is selected, and Backspace deletes it.
+   line for: the caret is out, the island is what is selected, and Backspace deletes it.
    A caret inside a cell is not that state and does not paint it. */
 
-/* THE SELECTION, washed across the cells it covers: what Backspace acts on, and the
-   only thing on the island that says what the next command is about. The ACCENT held,
+/* The selection, washed across the cells it covers: what Backspace acts on, and the
+   only thing on the island that says what the next command is about. The accent held,
    not the hover rung: a hover is what the pointer is passing over and a selection is
    what the next command will act on, and two states one tone apart on the same surface
    ladder read as the same state at a glance. Translucent, so a selected header cell
@@ -322,9 +322,9 @@ li.ProseMirror-selectednode::after {
    Two control families, one geometry: absolutely positioned out of the grid, a
    `--_qm-tap-min` target whatever is drawn inside it, and no box of their own at rest.
    What differs is which edge each hangs off and what it draws. The grips take the
-   LEADING edges, where a line begins; the add bars take the TRAILING ones, past where
+   leading edges, where a line begins; the add bars take the trailing ones, past where
    the axis ends. Position is the whole of what says which is which: the grip's marks are
-   the only glyph on the island, and they say DRAGGABLE rather than which control this
+   the only glyph on the island, and they say draggable rather than which control this
    is. */
 :is(.qm-table-grip, .qm-table-add) {
 	position: absolute;
@@ -341,7 +341,7 @@ li.ProseMirror-selectednode::after {
    thick where the target is the tap floor. Stated once, so a grip and an add bar cannot
    drift into two shapes.
 
-   ONE tone, not a hover ladder: the control is drawn only while it is the one the
+   One tone, not a hover ladder: the control is drawn only while it is the one the
    pointer is on or the one a gesture is about, so a resting tone under that would be a
    rung nothing ever reaches. The selected grip's tint below is the one exception, and it
    says which line the next command acts on rather than where the pointer is. */
@@ -361,7 +361,7 @@ li.ProseMirror-selectednode::after {
 	width: var(--_qm-space-3);
 	height: var(--_qm-space-3);
 }
-/* A grip runs ALONG the line it names; an add bar runs ACROSS the axis it appends to.
+/* A grip runs along the line it names; an add bar runs across the axis it appends to.
    So the two families map one `data-axis` onto opposite orientations, and orientation
    is the one thing the rule above cannot share with them: a column's grip is as wide as
    its column, and the bar that adds a column is as tall as the table. */
@@ -376,13 +376,13 @@ li.ProseMirror-selectednode::after {
 	height: 100%;
 }
 
-/* ONE grip per line, and it is a BAR rather than a glyph: what a grip acts on is the
+/* One grip per line, and it is a bar rather than a glyph: what a grip acts on is the
    row or column it sits against, and spanning that line says so better than an icon
    could. The bar carries the grip's own marks — two rows of three, the shape a thing
    you can pick up has everywhere else — so the control reads as draggable before it is
    dragged.
 
-   The TARGET is the band and the BAR is drawn inside it: a grip spans its line on one
+   The target is the band and the bar is drawn inside it: a grip spans its line on one
    axis and the tap floor on the other, and the bar is drawn thinner inside that. A grip
    sized to its own bar would be a target the thickness of the mark on it, on a control
    the pointer has to find. */
@@ -407,8 +407,8 @@ li.ProseMirror-selectednode::after {
 	color: var(--_qm-accent);
 }
 
-/* THE ADD BARS: one along each trailing edge, spanning it. A bar rather than a button
-   at the end of the band, because what it appends to is the AXIS and not a line — there
+/* The add bars: one along each trailing edge, spanning it. A bar rather than a button
+   at the end of the band, because what it appends to is the axis and not a line — there
    is no line out past the last one to sit against, and the whole edge is the easiest
    target on the island to hit. They are the grips' mirror in every way but the edge and
    the marks, which is what makes a bar out there read as one more of these rather than
@@ -424,14 +424,14 @@ li.ProseMirror-selectednode::after {
 	top: 100%;
 	height: var(--_qm-tap-min);
 }
-/* THE REVEAL, IN TWO RUNGS, one per question (CODEC §"The table island"). The BAND comes
+/* The reveal, in two rungs, one per question (CODEC §"The table island"). The band comes
    up muted while the pointer is anywhere on the island, answering whether there is one at
-   all; a control raises to full while the pointer is ON it, while it holds the focus, or
+   all; a control raises to full while the pointer is on it, while it holds the focus, or
    while it is what a gesture is about — the selected line's grip, and the lifted one,
    which is drawn through a drag the pointer has travelled off — answering which line.
 
    Opacity rather than absence, so every control keeps its box and is hit-tested wherever
-   it sits. What it does NOT keep is a keyboard route: every grip is in the tab order and
+   it sits. What it does not keep is a keyboard route: every grip is in the tab order and
    no Tab reaches one, the cell traversal claiming the key first (`table-view.ts`
    §`step`), so the band's reach is the pointer's. */
 :is(.qm-table-grip, .qm-table-add) {
@@ -450,13 +450,13 @@ li.ProseMirror-selectednode::after {
 }
 
 /* The ring, on the chrome and nowhere else in this file. A prose leaf's focus indicator
-   is its CARET and a cell's is too, so the outline is dropped there; a control that comes
+   is its caret and a cell's is too, so the outline is dropped there; a control that comes
    up out of nothing has the reveal, and a ring under a keyboard is what says the focus is
-   THERE rather than on the paper behind it. Declared here rather than reached for as
+   there rather than on the paper behind it. Declared here rather than reached for as
    `.qm-focus-ring`: that recipe is the visual tier's stylesheet, and the island is inside
    the leaf, which is the codec's.
 
-   A SELECTED grip takes none. Focus and selection arrive together there — the grip takes
+   A selected grip takes none. Focus and selection arrive together there — the grip takes
    the focus because the selection's keys bind on it — and the tint plus the wash already
    say where the next command lands. A ring on top is a second box around the loudest
    thing on the island, drawn on the press that made the selection: a pointer gesture
@@ -471,7 +471,7 @@ li.ProseMirror-selectednode::after {
 	outline: none;
 }
 
-/* A DRAG in flight. The lifted line reads as picked up by TONE, never a shadow:
+/* A drag in flight. The lifted line reads as picked up by tone, never a shadow:
    elevation is a surface rung here, which says the same thing at both poles. The drop
    rule is the accent, the surface's one saturated ink, spent where a change is about
    to land. */

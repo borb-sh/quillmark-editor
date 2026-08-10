@@ -8,7 +8,7 @@ import { carried } from '../../scripts/carried.mjs';
 // the bin's; the two share a manifest and a `dist`, and meet nowhere else: the tool
 // serves these bytes to a tab and imports none of them.
 //
-// THE PACK, as this repository serves the client over it. `quillkit studio` is the
+// The pack, as this repository serves the client over it. `quillkit studio` is the
 // loop an author runs and this is not a second copy of it: the pack is `build`, which
 // lands a generation whole, and what is left here is the two things a dev server adds
 // and a bin has no use for: the first pack before the server exists, and a repack
@@ -50,7 +50,7 @@ function settle(ms: number, fn: () => void): () => void {
 function quiverSource(): Plugin {
 	// Serialized rather than concurrent: `build` owns its output directory, so two
 	// overlapping packs would race over one tree. Both arms chain, so a pack queues onto
-	// a SETTLED promise whichever way the last one went; a rejected link would answer
+	// a settled promise whichever way the last one went; a rejected link would answer
 	// every later pack with the first failure instead of running it.
 	const run = (): Promise<void> => build(SOURCE, OUT);
 	let queue: Promise<void> = Promise.resolve();
@@ -60,7 +60,7 @@ function quiverSource(): Plugin {
 		name: 'studio:quiver-source',
 		// `configResolved` rather than `buildStart`, and the reason is the serving
 		// layer: Vite mounts its static middleware only for a public directory that
-		// EXISTS when the server is created, which is before any build hook runs. So
+		// exists when the server is created, which is before any build hook runs. So
 		// the first pack lands here, the one hook every mode awaits before that.
 		// `serve` alone: a quiver inside the client would occupy the URL the deploy
 		// writes the author's to.

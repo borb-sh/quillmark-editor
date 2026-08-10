@@ -1,7 +1,7 @@
 // The link prompt's logic, off the popover.
 //
 // The replace case is the one with teeth: a link written over a range that already
-// holds one must REPLACE it, since the `toggleMark` spelling of the same intent
+// holds one must replace it, since the `toggleMark` spelling of the same intent
 // removes it instead (`visual/links.ts`) — on exactly the selection a writer
 // reached the prompt from.
 import { describe, it, expect } from 'vitest';

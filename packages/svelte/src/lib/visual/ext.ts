@@ -4,13 +4,13 @@
 // later, write through the one verb below.
 //
 // Kept out of VisualEditor.svelte so the write the editor performs is the write a
-// test can call: the invariant this module exists to hold fails SILENTLY, and a
+// test can call: the invariant this module exists to hold fails silently, and a
 // test asserting a hand-copy of it would not notice.
 import type { Document, CardAddr } from '@quillmark/wasm';
 
 /**
  * Merge `patch` into `$ext.editor` on the card `addr` targets (absent `card` =
- * main). A key whose patch value is `undefined` is DROPPED; every other key in the
+ * main). A key whose patch value is `undefined` is dropped; every other key in the
  * namespace is carried through untouched.
  *
  * **The namespace is the write unit.** `storeExtNamespace` replaces the namespace

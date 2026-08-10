@@ -1,7 +1,7 @@
-// Shared codec test helpers. A REAL Document is the normalizer: the content
+// Shared codec test helpers. A real Document is the normalizer: the content
 // normalizes on write, so round-trips are idempotent only up to normalization:
 // `normalize` installs a Content and reads it back through the WASM content so
-// tests assert POST-NORMALIZE equality.
+// tests assert post-normalize equality.
 import { expect } from 'vitest';
 import type { Node as PMNode } from 'prosemirror-model';
 import type { EditorView } from 'prosemirror-view';
@@ -61,8 +61,8 @@ export function textblocks(doc: PMNode): { node: PMNode; start: number }[] {
 	return out;
 }
 
-/** A state with the caret at the START of the `index`-th textblock; where every
- * structural key branches, and the only way to address an EMPTY item (it carries
+/** A state with the caret at the start of the `index`-th textblock; where every
+ * structural key branches, and the only way to address an empty item (it carries
  * no text to anchor on). */
 export function atBlock(doc: PMNode, index: number): EditorState {
 	const block = textblocks(doc)[index];
@@ -92,7 +92,7 @@ export function mount(): HTMLElement {
 	return el;
 }
 
-/** Drive one key at a MOUNTED view the way the browser does, through the props the
+/** Drive one key at a mounted view the way the browser does, through the props the
  *  plugin stack registered. `init` carries the modifiers, which prosemirror-keymap
  *  reads off the event rather than off the key name. The `keyDriver` above is the other
  *  half of this: it runs a keymap directly, without a view, where what is under test is
@@ -118,7 +118,7 @@ export function representable(state: EditorState): boolean {
  * through to `baseKeymap` exactly as the plugin stack does (`proseLeafPlugins`
  * mounts `editorKeymap` over `baseKeymap`).
  *
- * One driver for every caller: what a press MEANS does not change with which link
+ * One driver for every caller: what a press means does not change with which link
  * of the chain is under test, so the list keys and the code-block keys drive
  * identically and differ only in the keymap passed in.
  */
@@ -131,7 +131,7 @@ export function keyDriver(keys: Record<string, Command>) {
 		return base ?? state;
 	}
 
-	/** Assert a press's result AND its representability in one place. */
+	/** Assert a press's result and its representability in one place. */
 	function expectPress(state: EditorState, key: string, expected: string): EditorState {
 		const next = press(state, key);
 		expect(shape(next)).toBe(expected);
@@ -143,7 +143,7 @@ export function keyDriver(keys: Record<string, Command>) {
 }
 
 /**
- * The position map's defining property, asserted over EVERY USV offset of `doc`:
+ * The position map's defining property, asserted over every USV offset of `doc`:
  * `pmToUsv ∘ usvToPM` is the identity, and every PM position it produces is in range.
  * The index is built fresh here, so a caller that mutated the doc asserts against the
  * rebuilt map rather than a stale one.

@@ -1,6 +1,6 @@
 /**
  * A consumer's collection, on disk: the reference quiver copied somewhere writable,
- * with `@quillmark/*` resolvable from its OWN tree.
+ * with `@quillmark/*` resolvable from its own tree.
  *
  * That last part is the point rather than setup noise. quillkit ships no runtime
  * dependencies and resolves the packer and the engine out of the collection, so a

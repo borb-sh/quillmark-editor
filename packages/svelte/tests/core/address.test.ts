@@ -109,7 +109,7 @@ describe('elementAddrForFieldPath', () => {
 
 	it('takes only a trailing index under a field', () => {
 		// A whole field, a card, and a body have no element; a deeper nesting names no
-		// single array either. Whether the FIELD is an array is the caller's guard: this
+		// single array either. Whether the field is an array is the caller's guard: this
 		// module holds the grammar and no schema.
 		expect(elementAddrForFieldPath('main.references')).toBeUndefined();
 		expect(elementAddrForFieldPath('main.body')).toBeUndefined();

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// A `plaintext` leaf over a field resting as an authored STRING: the case where the
+// A `plaintext` leaf over a field resting as an authored string: the case where the
 // declared type is the whole difference. The same bytes are markdown under `richtext`
 // and literal text under `plaintext`, so a leaf that picked one codec for both would
 // eat every `*` a plaintext author typed, then commit a delta computed against text
@@ -7,7 +7,7 @@
 //
 // The one suite that does not run on the reference quill, because that quill cannot
 // declare the shape under test: its `plate.typ` hands every field to a vendored Typst
-// package, `plaintext` resolves to CONTENT for a backend exactly as `richtext` does,
+// package, `plaintext` resolves to content for a backend exactly as `richtext` does,
 // and the string-typed slots there coerce with `str()`, which content is not. Retyping
 // a field would be a plate change rather than a fixture change. So the schema is built
 // here and stays minimal: two content fields differing only in declared type, which is
@@ -63,7 +63,7 @@ const viewOf = (f: FieldController): EditorView =>
 	(f as FieldController & { view: EditorView }).view;
 
 const AUTHORED = 'Wing *Motto* Here';
-/** Both content fields authored with the SAME bytes, through the transport door so
+/** Both content fields authored with the same bytes, through the transport door so
  *  neither is conformed. Hand-written rather than round-tripped, because a serialize
  *  would escape the asterisks and the contrast is what escaping erases. */
 const authored = (): Document =>

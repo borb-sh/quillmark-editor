@@ -1,5 +1,5 @@
 // The pure join/ordering/layout math (VisualEditor's projection). Unit-tested
-// in isolation (no runes, no Document) including against the REAL usaf_memo
+// in isolation (no runes, no Document) including against the real usaf_memo
 // schema so the ordering contract and group layout are asserted on the fixture
 // the suite runs against.
 import { describe, it, expect } from 'vitest';
@@ -262,7 +262,7 @@ describe('required', () => {
 });
 
 // The real schema is here to prove the fixture's YAML shapes reach the projection
-// as the synthetic cases above assume. It asserts CONTRACTS, never the fixture's
+// as the synthetic cases above assume. It asserts contracts, never the fixture's
 // inventory: a count, a group list or a field's copy pinned here fails on every
 // edit to the reference quill, and the failure is answered by pasting the new
 // value (CLAUDE.md §Verification).
@@ -295,7 +295,7 @@ describe('against the real usaf_memo schema', () => {
 		const sections = groupSections(models, groupOrder(schema), (g) => groupLabel(schema, g));
 		// Grouped sections follow the registry; an ungrouped one may trail them.
 		expect(sections.map((s) => s.group).filter((g) => g != null)).toEqual(groupOrder(schema));
-		// And it is a PARTITION; every projected field lands in exactly one section.
+		// And it is a partition; every projected field lands in exactly one section.
 		expect(sections.flatMap((s) => s.fields.map((m) => m.name)).sort()).toEqual(
 			models.map((m) => m.name).sort()
 		);

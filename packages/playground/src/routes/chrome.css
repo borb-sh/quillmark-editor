@@ -1,6 +1,6 @@
 /* The playground's own recipes: what more than one route draws that the preset does
    not carry. The endorsed look comes from `@quillmark/svelte/preset`, the workspace
-   shell included, so what is left here is the SITE around it: a width, a pair of calls
+   shell included, so what is left here is the site around it: a width, a pair of calls
    to action, a link in running prose. A run only the front page draws — its display
    thesis — stays in the route, since a recipe with one caller is that route's own.
 
@@ -39,7 +39,7 @@
 		border-color var(--qmh-duration) var(--qmh-ease-reverse);
 }
 
-/* Hover steps the FILL down the ink ladder rather than fading the button out: an opacity
+/* Hover steps the fill down the ink ladder rather than fading the button out: an opacity
    on a filled control lets the page read through what is meant to be solid. */
 .pg-cta:hover {
 	background: var(--qmh-ink-meta);

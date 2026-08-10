@@ -3,7 +3,7 @@
  a full-width rename region, and the reorder/
  delete controls), the grouped field list packed by `ui.group`/`ui.compact`, and
  the body prose leaf. `main` is headerless with no controls. Every prose leaf
- takes a parent-built LIVE address so a card reorder re-targets its commits
+ takes a parent-built live address so a card reorder re-targets its commits
  without a remount.
 -->
 <script lang="ts">
@@ -91,14 +91,14 @@
 	});
 
 	// Inline-editable title: select-all on entry so a title reads as
-	// text you replace, and Enter/Escape as commit/revert. Rename stays LIVE on
+	// text you replace, and Enter/Escape as commit/revert. Rename stays live on
 	// input: `titleAtFocus` is the pre-edit value Escape rolls back to.
 	let titleAtFocus = '';
 	function onTitleFocus(e: FocusEvent): void {
 		titleAtFocus = localTitle;
 		(e.currentTarget as HTMLInputElement).select();
 	}
-	// A mouse press on an UNFOCUSED title would place a caret on mouseup, collapsing
+	// A mouse press on an unfocused title would place a caret on mouseup, collapsing
 	// the focus-time select-all. Take focus manually and suppress that caret so a
 	// click-to-enter selects all too; a press while already focused stays normal, so
 	// clicking mid-title to place the caret still works.
@@ -112,7 +112,7 @@
 	// The rename region extends the title's hit area to the header's free width.
 	// A press on that empty space focuses the input (which selects all, the
 	// same click-to-enter the title itself gets) and preventDefault keeps the press
-	// from starting a text selection on the wrapper. A press ON the input is left to
+	// from starting a text selection on the wrapper. A press on the input is left to
 	// `onTitleMousedown`, which owns the already-focused caret-placement case.
 	function onRenameMousedown(e: MouseEvent): void {
 		const input = (e.currentTarget as HTMLElement).querySelector('input');
@@ -153,7 +153,7 @@
 	const hasMeta = $derived(ungrouped.length > 0 || grouped.length > 0);
 
 	// Ephemeral session state: the open group's id (`null` = all collapsed). Seeded
-	// ONCE from the card's shape (structure.initialExpandedGroup); Card is keyed by
+	// once from the card's shape (structure.initialExpandedGroup); Card is keyed by
 	// stable id, so this survives the VisualEditor re-derive that reassigns `card`
 	// and resets only on a remount (reload). Not reconciled to later section changes:
 	// a retype is the one reshape, and the open group stays where it still exists.
@@ -169,7 +169,7 @@
 	/**
 	 * Move to `next` (`null` = all closed), evacuating focus from the group this
 	 * closes. Every write to `expanded` goes through here: a group also closes when
-	 * ANOTHER opens, which is not a gesture the user aimed at the closing section.
+	 * another opens, which is not a gesture the user aimed at the closing section.
 	 */
 	function setExpanded(next: string | null): void {
 		const closing = expanded;
@@ -239,7 +239,7 @@
 				     not a persistent box. `data-value` falls back to the
 				     placeholder so an empty title still reserves its resolved-title width. -->
 					<span class="qm-card-title-sizer" data-value={localTitle || card.titlePlaceholder}>
-						<!-- `qm-focus-ring` is this control's ONLY focus indicator: the ink step
+						<!-- `qm-focus-ring` is this control's only focus indicator: the ink step
 					     cannot be one, since hover already takes that step. `:focus-visible`, so
 					     a press enters the edit unringed while a tab into it draws one. -->
 						<input
@@ -273,7 +273,7 @@
 		<div class="qm-card-body">
 			<!-- The metadata block, and the thing the bracket brackets: every
 		 field the card has, ungrouped and grouped alike, inside one element whose
-		 top and bottom EDGES are the bracket's two horizontals. Anchoring them here
+		 top and bottom edges are the bracket's two horizontals. Anchoring them here
 		 rather than on the header and on the accordion is what lets an open
 		 section's vertical actually reach them: a rule drawn in the card body's
 		 gap instead would stand clear of where that vertical stops, and the corner
@@ -281,7 +281,7 @@
 		 does not have: a card with no groups still terminates above its body,
 		 because the rule belongs to the fields, not to the sections.
 
-		 Rendered only when there ARE fields: the bracket is a statement about a
+		 Rendered only when there are fields: the bracket is a statement about a
 		 block, so with no block there is nothing to say, and an empty wrapper
 		 between two rules is what collapses them onto each other. -->
 			{#if hasMeta}
@@ -301,12 +301,12 @@
 
 					<!-- Group accordion: each `ui.group` is a collapsible section,
 			     one open at a time. The header toggles; the panel slides via a
-			     0fr↔1fr grid row (the `slow` duration rung). The sections share ONE wrapper
+			     0fr↔1fr grid row (the `slow` duration rung). The sections share one wrapper
 			     with no gap of its own: each header's symmetric padding is the whole
 			     inter-group rhythm. The card body's gap still separates this
 			     block from the ungrouped fields and the body leaf.
 
-			     Rendered only when a card HAS groups, so an empty accordion is not the
+			     Rendered only when a card has groups, so an empty accordion is not the
 			     bracket's last child: the bottom rule's inset belongs to whichever block
 			     actually abuts it, and a zero-height wrapper standing there would take it
 			     from the ungrouped fields that do. -->
@@ -331,7 +331,7 @@
 											size={CHEVRON}
 										/>{section.label}
 									</button>
-									<!-- `inert` is what makes closed mean CLOSED: the panel is clipped, not
+									<!-- `inert` is what makes closed mean closed: the panel is clipped, not
 								     unmounted, so without it every field
 								     in a hidden section keeps its place in the tab order and in the a11y
 								     tree, under a header announcing `aria-expanded="false"`. Paint is
@@ -357,7 +357,7 @@
 		 card is printed on, so a label restates it; and the accessible name
 		 survives on the leaf itself, so the region
 		 is still announced. Unframed is the point rather than a saving: the body is
-		 the ONLY surface in the card at the card's OWN tone, where every other
+		 the only surface in the card at the card's own tone, where every other
 		 typed value sits in a well cut into it, and that is what makes it read as
 		 paper instead of as one more field. The bracket's bottom rule
 		 already does the separating a box was doing. -->
@@ -384,7 +384,7 @@
 	{/if}
 </section>
 
-<!-- A section's fields as ONE grid: shared by the ungrouped block and the accordion
+<!-- A section's fields as one grid: shared by the ungrouped block and the accordion
  panels so both render a group's fields identically. Rows are the
  grid's business: fields carry a span and auto-place, so nothing here re-derives
  structure on resize and a prose leaf's key never moves. -->
@@ -416,8 +416,8 @@
 {/snippet}
 
 <!-- Recovery shell for an un-schemable card: a card whose `kind` has no
- schema (foreign kind, or a schema declaring no `card_kinds`). It stays VISIBLE and
- REMOVABLE (its fields/body/`$ext` remain in the Document) so it is never a data
+ schema (foreign kind, or a schema declaring no `card_kinds`). It stays visible and
+ removable (its fields/body/`$ext` remain in the Document) so it is never a data
  trap. Retyping to a declared kind projects it against that kind on the next
  derive: `setCardKind` swaps the kind and leaves payload and body untouched, so
  no field is dropped; with no kinds to offer, delete is the only exit. -->
@@ -468,13 +468,13 @@
 {/snippet}
 
 <style>
-	/* AN ISLAND, and the tone is the whole of what makes it one: the card is the
+	/* An island, and the tone is the whole of what makes it one: the card is the
 	 base plane and the column behind it is the sunken one, so the edge is where two
 	 planes meet rather than a line drawn around one (ARCHITECTURE §Styling). */
 	.qm-card {
 		border-radius: var(--_qm-radius);
 		/* Uniform inset on every side: a body-shown and a
-		 body-hidden card stay symmetric, every left edge on one gutter. The SAME rung
+		 body-hidden card stay symmetric, every left edge on one gutter. The same rung
 		 as the gap between the card's stacked regions below: the card's inset and its
 		 internal rhythm are one number, so what separates the header from the fields is
 		 what separates the fields from the card's edge. */
@@ -510,7 +510,7 @@
 		margin-right: calc(-1 * (var(--_qm-tap-min) - var(--_qm-glyph-control)) / 2);
 	}
 	/* Reveal the reorder chevrons while the pointer or the caret is in the card
-	 (CardControls owns the default hidden state). Focus is read off the CARD, so a
+	 (CardControls owns the default hidden state). Focus is read off the card, so a
 	 caret in any leaf, the title, or a chevron itself holds the reveal: hover
 	 alone would strand the pair on keyboard and touch. This is the card's whole
 	 active treatment; nothing marks the section itself. */
@@ -524,11 +524,11 @@
 	 header's `align-items: center` so the region is the row's whole height rather
 	 than the input's.
 
-	 It hangs by NOTHING, which is the whole of what the title carrying no box buys:
+	 It hangs by nothing, which is the whole of what the title carrying no box buys:
 	 the first character lands on the card's gutter with the field list, the
 	 bracket's rules and the body's first character, because nothing stands between
 	 the region's edge and the glyph. The stretch is also what
-	 keeps the target legal with the padding gone: WCAG 2.5.8's floor is the ROW's,
+	 keeps the target legal with the padding gone: WCAG 2.5.8's floor is the row's,
 	 which the controls hold at `--_qm-tap-min`, so the input never carried it. */
 	.qm-card-rename {
 		flex: 1;
@@ -564,7 +564,7 @@
 		white-space: pre;
 		min-width: 2ch;
 	}
-	/* The title draws NO box, in any state. A box is
+	/* The title draws no box, in any state. A box is
 	 what says "type here", and a card title is already the one line of a card that
 	 reads as its name; the region's `cursor: text` and the caret that lands on a
 	 press say the rest. A hover-summoned box was also the inverse of the recipe every
@@ -602,7 +602,7 @@
 		gap: var(--_qm-space-3);
 	}
 	/* The metadata bracket: the card's chrome brackets its metadata, and
-	 the body is what falls outside it. Three strokes at ONE rung: the two
+	 the body is what falls outside it. Three strokes at one rung: the two
 	 horizontals here and the open section's vertical below; because a bracket whose
 	 sides disagree on width or tone reads as three unrelated lines rather than as
 	 one figure. That sameness is the whole effect; it is why the vertical takes
@@ -622,16 +622,16 @@
 		border-bottom: var(--_qm-border-width) solid var(--_qm-border);
 	}
 	/* No inset between a horizontal and the accordion, deliberately: an open section's
-	 vertical has to REACH the rule to close a corner against it, and any padding here
+	 vertical has to reach the rule to close a corner against it, and any padding here
 	 is the distance by which it would miss. The accordion needs none anyway: a group
 	 header's symmetric padding is the whole inter-group rhythm.
 
-	 A block of FIELDS has no padding of its own, so it takes the inset wherever it
+	 A block of fields has no padding of its own, so it takes the inset wherever it
 	 abuts a rule; three places, since three blocks can: an ungrouped block under the
 	 top rule, an ungrouped block over the bottom rule (only reachable because the
 	 accordion's `{#if}` keeps an empty wrapper out of last position), and the last
 	 section's panel when it is open, whose own inset is the rung that clears a heading
-	 below it: what clears a RULE is the card's. The panel's padding
+	 below it: what clears a rule is the card's. The panel's padding
 	 is inside `.qm-group`, so the vertical still runs the full height to the corner.
 	 Ungrouped fields always render first, so the top selector needs no qualifier. */
 	.qm-meta-top > .qm-section {
@@ -645,7 +645,7 @@
 	 is its own, so capacity follows the width the fields actually get: a panel's
 	 inset makes that narrower than the card.
 
-	 The ACTION COLUMN is minted here and spent one level down, on the field
+	 The action column is minted here and spent one level down, on the field
 	 (`Field.svelte` holds why it is the field's inset and not this container's). It
 	 is declared on the query container because both of its consumers hang off one:
 	 the fields inside, and the capacity ramp below, which carries the column in its
@@ -668,7 +668,7 @@
 	 the reservation is per field now: a rung is `n * (220px + action) + gaps`.
 
 	 A row-sharing field spans two implicit row tracks (Field.svelte), so `row-gap`
-	 here is the gutter BETWEEN field rows; the tighter one inside a field is the
+	 here is the gutter between field rows; the tighter one inside a field is the
 	 subgrid's own. The grid takes the container's full width; each field insets its
 	 own action column inside the track it lands in. */
 	.qm-fields {
@@ -694,14 +694,14 @@
 	/* Group accordion. The header is a toggle
 	   at the field-label rung; the panel slides via a 0fr↔1fr grid row so the height
 	   animates without a magic max-height. */
-	/* The wrapper carries NO gap: the headers' own padding is the rhythm (see the
+	/* The wrapper carries no gap: the headers' own padding is the rhythm (see the
 	   markup note). */
 	.qm-groups,
 	.qm-group {
 		display: flex;
 		flex-direction: column;
 	}
-	/* The bracket's third stroke, on the SECTION rather than on its panel:
+	/* The bracket's third stroke, on the section rather than on its panel:
 	 spanning the header and the content is what gives it a corner to close into at
 	 the block's edge: a rule that starts below the header has nothing to meet there.
 	 One rung with the two horizontals, held there by `check:style`'s border-width axis.
@@ -715,7 +715,7 @@
 	.qm-group.qm-open {
 		border-left-color: var(--_qm-border);
 	}
-	/* Vertical padding is symmetric and is the TIGHTEST rung that still clears WCAG
+	/* Vertical padding is symmetric and is the tightest rung that still clears WCAG
 	 2.5.8's 24×24 floor over the label rung's line box: the header is the whole row,
 	 so adjacent labels share one rhythm with no dead strip outside the button, and a
 	 rung above the floor is a rung spent per section on a card whose scarce axis is
@@ -727,22 +727,22 @@
 	 inset there is target given back; the left one is inside the button and costs
 	 none.
 
-	 A button by tag and NEITHER button family by recipe: it reads no
+	 A button by tag and neither button family by recipe: it reads no
 	 `--_qm-tap-min` (the padding above already clears the floor) and takes no hover
 	 fill (an ink step, below); so the type a family would have carried is declared
 	 here. `font: inherit` because a UA button inherits no face and `--qm-font` would
-	 stop at this row; then the BODY rung, one step over the field labels beneath it,
+	 stop at this row; then the body rung, one step over the field labels beneath it,
 	 at the tight leading a single line takes. A step, because a section names the
 	 fields under it: at the label rung the two read as one register and the accordion
 	 stops looking like structure — and it is the smallest step there is, the ramp's
 	 own 9/8, so a heading is a heading without becoming a title. It is also the size
-	 the labels are READ at, which is what makes it crisp where the rung below renders
+	 the labels are read at, which is what makes it crisp where the rung below renders
 	 a semibold at 12px and muddies it. Sentence case, and no uppercase: uppercase
 	 costs a heading twice, the word shape a column of them is scanned by and apparent
 	 width, so a long label crowds sooner. Size, weight and leading all sit after
 	 `font`, which is a shorthand that carries `line-height`.
 
-	 On the BUTTON rather than on a span inside it: the row's type is one decision,
+	 On the button rather than on a span inside it: the row's type is one decision,
 	 and a wrapper that carries nothing else is indirection between the header and
 	 its own label. The label is a text run beside the chevron, and flex gives it an
 	 anonymous item either way. */
@@ -770,7 +770,7 @@
 	/* An ink step, not a hue: the three status hues are the only exits from the
 	   greyscale, and a section standing open is not a status anyway.
 
-	   HOVER'S ALONE, though the step suits open as well. `color` is one transition
+	   Hover'S alone, though the step suits open as well. `color` is one transition
 	   declaration, and open is the accordion's gesture where hover is its own, so the two
 	   share a rung and one of them is wrong: an ink step at the slow rung lags the
 	   pointer, and at the fast one it settles 80ms before the panel it belongs to.
@@ -783,7 +783,7 @@
 		transform: rotate(90deg);
 	}
 	/* Sliding panel: the grid track goes 0fr→1fr; the inner clips at min-height 0.
-	 Clipping is the whole of what CSS does here: what a closed panel is OUT of is
+	 Clipping is the whole of what CSS does here: what a closed panel is out of is
 	 `inert`'s to say, on the element. The panel
 	 draws no rule of its own: the vertical is the section's (`.qm-group`), which is
 	 what spans the header too. */
@@ -804,7 +804,7 @@
 		min-height: 0;
 		overflow: hidden;
 		/* Zero when closed, so the insets arrive with the panel: a `0fr` track collapses
-		 the CONTENT, not the padding, and a top inset declared here stands under a
+		 the content, not the padding, and a top inset declared here stands under a
 		 closed header as dead space the header's symmetric padding cannot absorb. The
 		 panel animates its width along with them, and the capacity ramp reads that
 		 width: a closed panel is `inert` and unmeasured either way, so what a rung
@@ -821,7 +821,7 @@
 	 makes the two agree: each gap is this inset plus the rung a header hangs by, so a
 	 field list stands the same distance from the header that names it and from the
 	 one that follows. Zero at the bottom would leave the last row nearer the heading
-	 BELOW it than the fields are to each other, and proximity reads a heading that
+	 below it than the fields are to each other, and proximity reads a heading that
 	 close as the end of this section rather than the start of the next. The rung is
 	 one step under the card's own inset, so a section ends tighter than the bracket
 	 closing the whole block. The vertical runs to the panel's edge with it, closing

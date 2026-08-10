@@ -14,7 +14,7 @@ export interface Lifespan {
 	readonly alive: boolean;
 	/**
 	 * Register work to undo at the end: a registry entry to drop, a timer or frame
-	 * to cancel, a handle to free. Cancellers run in REGISTRATION order, which is
+	 * to cancel, a handle to free. Cancellers run in registration order, which is
 	 * where the order lives. Registering on an ended span runs the canceller at
 	 * once: there is no later run to hold it for.
 	 */
@@ -45,7 +45,7 @@ export function createLifespan(): Lifespan {
 		},
 		end() {
 			if (!alive) return;
-			// Dead BEFORE the cancellers run: one of them may synchronously reach
+			// Dead before the cancellers run: one of them may synchronously reach
 			// something that asks, and a span mid-teardown is not alive.
 			alive = false;
 			for (const cancel of cancels) cancel();

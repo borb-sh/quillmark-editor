@@ -7,7 +7,7 @@
  * It pins quiver's side of three canonical contracts:
  *   1. a core `Quill` from `getQuill` passes straight to `engine.render` — no
  *      boundary-crossing helper is needed (the Engine hides the seam);
- *   2. the Engine CLONES the quill, it never consumes it — the same `Quill`
+ *   2. the Engine clones the quill, it never consumes it — the same `Quill`
  *      renders a second time;
  *   3. a stored document names its quill: `doc.quillRef` is a ref `getQuill`
  *      accepts, and the per-canonical-ref cache answers it with the one
@@ -82,7 +82,7 @@ describe('Engine.render against a quiver quill', () => {
 		}
 
 		// The Engine clones into backend memory and frees the clone — the source
-		// `Quill` is untouched, so a second render with the SAME handle succeeds.
+		// `Quill` is untouched, so a second render with the same handle succeeds.
 		expect(quill.backendId).toBe('typst');
 		const second = quill.seedDocument();
 		try {

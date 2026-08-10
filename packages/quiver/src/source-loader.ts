@@ -22,7 +22,7 @@ import type { QuiverLoader } from './quiver.js';
  *     non-canonical, or a version dir is missing its Quill.yaml sentinel.
  *   - `transport_error` for I/O failures (permissions, etc.).
  *
- * Missing `quills/` directory is NOT an error — the quiver is valid but empty.
+ * Missing `quills/` directory is not an error — the quiver is valid but empty.
  */
 export async function scanSourceQuiver(rootDir: string): Promise<{
 	meta: QuiverMeta;

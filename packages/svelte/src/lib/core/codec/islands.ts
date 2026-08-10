@@ -19,7 +19,7 @@ export const ISLAND_SLOT = '￼';
 // The four island node attributes carry the content entry verbatim: `id` is the
 // stable identity (rebases like an anchor), `islandType` the discriminator, `props`
 // the opaque payload the codec preserves byte-for-byte across a round-trip, and
-// `loss` how faithfully markdown can carry it. `loss` is AUTHORED, not derived:
+// `loss` how faithfully markdown can carry it. `loss` is authored, not derived:
 // `applyChange` stores the class an island op gives it and re-derives nothing, so
 // an entry that did not carry its own would promote a degraded table to lossless
 // on the first cell edit. The default is the class an unknown one reads as, so a
@@ -90,7 +90,7 @@ export function tablePropsOfNode(node: PMNode): TableProps | undefined {
 
 /**
  * A minter over one document: the positional `isl-{n}` sequence continued past the
- * highest id the field already holds, handing out CONSECUTIVE ids, so a caller placing
+ * highest id the field already holds, handing out consecutive ids, so a caller placing
  * several islands at once keeps one minter for the lot. A minted id is this tier's to
  * produce and it is part of the document's canonical bytes (CODEC §Islands), so it is a
  * counter over the projection in hand — never a UUID, never a clock reading, and never a

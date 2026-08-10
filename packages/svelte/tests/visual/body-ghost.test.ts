@@ -1,7 +1,7 @@
 // The empty body's ghost: the three-way precedence `resolveBodyGhost` settles
 // (resolved `default:` › consumer wording › the built-in invitation), and the
 // fixture fact that motivates the fallback existing at all; the reference quill
-// declares NO body `default:` on any kind, so the resolved channel is empty for
+// declares no body `default:` on any kind, so the resolved channel is empty for
 // exactly the cards a user adds. Here the pure resolution is pinned; that the hook
 // feeding its middle rung is asked once per card is `body-ghost.svelte.test.ts`.
 import { describe, it, expect } from 'vitest';

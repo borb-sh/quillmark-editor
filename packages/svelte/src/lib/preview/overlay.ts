@@ -6,7 +6,7 @@
 // bridge.ts's listener on the slot beneath; the overlay is decoration, never an
 // independent click target.
 //
-// The boxes carry NO resting ink. They exist for their geometry (bridge.ts reads
+// The boxes carry no resting ink. They exist for their geometry (bridge.ts reads
 // their rects) and to be bloomed: the preview is the rendered output, so
 // correlation is marked as an event that decays, not as a border the document did
 // not ask for. See `core/bloom.ts` for why the wash resumes rather than restarts.
@@ -18,7 +18,7 @@ import { boxesForField, rectToPercent, applyPercentRect } from './geometry.js';
 export interface OverlayController {
 	/** Re-read geometry and rebuild every box; call after a layout-affecting refresh. */
 	refresh(): void;
-	/** Bloom the boxes at `field` AND under it: transient, and a no-op when `field`
+	/** Bloom the boxes at `field` and under it: transient, and a no-op when `field`
 	 *  is already the marked one. */
 	flashField(field: string): void;
 	destroy(): void;
@@ -35,7 +35,7 @@ export function createOverlay(session: LiveSession, slots: readonly PageSlot[]):
 		return layer;
 	});
 
-	// The marked address, and with it the bloom's start. ONE variable does both jobs:
+	// The marked address, and with it the bloom's start. One variable does both jobs:
 	// the change guard has to outlive the decay (a caret move after the wash ended
 	// must not re-mark the same field), and `bloom` refuses an `elapsed` past the
 	// decay, so a spent flash is inert on every later rebuild and never needs
@@ -47,7 +47,7 @@ export function createOverlay(session: LiveSession, slots: readonly PageSlot[]):
 	/** field → its boxes, rebuilt with them. The bloom's only lookup. */
 	let byField = new Map<string, HTMLElement[]>();
 
-	// The boxes a flash covers: the address's own, plus every one UNDER it, since the
+	// The boxes a flash covers: the address's own, plus every one under it, since the
 	// boxes are keyed as `regions()` names them (`main.references.0`) and an
 	// editor-side signal names the declared field (`main.references`). Resolved per
 	// apply rather than at `flashField`, so a rebuild picks up boxes the recompile
@@ -60,7 +60,7 @@ export function createOverlay(session: LiveSession, slots: readonly PageSlot[]):
 		return els;
 	}
 
-	// Start or RESUME the bloom on whatever boxes exist for it now: one path, because
+	// Start or resume the bloom on whatever boxes exist for it now: one path, because
 	// starting is resuming at ~0. A field surfaces several boxes and they share
 	// `startedAt`, so they bloom in step rather than shimmering unevenly.
 	function applyFlash(): void {

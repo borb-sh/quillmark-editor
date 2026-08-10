@@ -54,7 +54,7 @@ export function descriptorOf(m: ContentMark): Record<string, unknown> {
 /**
  * A stable grouping key for the mark diff: marks sharing a key union into one
  * coverage set. Formatting keys on its type; a link keys on type+url and an
- * unknown on type+attrs, because `applyChange`'s `remove` matches type AND attrs
+ * unknown on type+attrs, because `applyChange`'s `remove` matches type and attrs
  * (verified), so different urls / attrs are independent mark families.
  */
 export function markKey(descriptor: Record<string, unknown>): string {

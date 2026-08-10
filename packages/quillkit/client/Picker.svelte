@@ -4,7 +4,7 @@
   needs no loading state of its own.
 
   An axis holding one value is not a choice, so it is printed rather than offered (a
-  working tree is usually one quill at one version). What stays either way is the FACT,
+  working tree is usually one quill at one version). What stays either way is the fact,
   which quill and which version, since an author has to know what they are looking at.
 
   Native selects where there is something to pick: the picker is chrome around the

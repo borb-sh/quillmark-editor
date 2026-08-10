@@ -29,7 +29,7 @@ export interface SiteOptions {
 }
 
 /**
- * `site` clears its output before writing it, so an out that IS or CONTAINS the
+ * `site` clears its output before writing it, so an out that is or contains the
  * collection or the working directory deletes the thing being laid out. `--out .` and a
  * slipped `--out ..` are one keystroke away and the deletion is unrecoverable.
  *
@@ -37,7 +37,7 @@ export interface SiteOptions {
  * not travel with the packer: this clears a directory quiver never sees, one level above
  * the one it is handed.
  *
- * An out NESTED inside the collection stays allowed: `site/` under the quiver root is
+ * An out nested inside the collection stays allowed: `site/` under the quiver root is
  * the ordinary layout, and nothing of the source is read after the clear.
  */
 export function assertSafeOut(collection: string, out: string): void {

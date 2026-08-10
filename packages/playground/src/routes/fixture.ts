@@ -44,7 +44,7 @@ export function withMainDateDefault(tree: Map<string, Uint8Array>, iso: string):
 }
 
 // The `card_kinds:` map opener, and a second kind to drop under it. The reference
-// quill declares exactly ONE kind, so the add affordance's multi-kind branch (a
+// quill declares exactly one kind, so the add affordance's multi-kind branch (a
 // menu rather than a direct insert) is a code path no fixture reaches.
 // Inserted at the opener rather than appended, so it does not depend on
 // `card_kinds` staying the last block in the file.

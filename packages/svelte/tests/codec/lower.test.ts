@@ -1,6 +1,6 @@
 // Lowering: `lower ∘ apply` matches the optimistic PM up to normalization, and
 // formatting / anchor / unknown marks each survive decode→lower→apply→decode. Uses a
-// REAL Document so `applyChange` actually runs; PM transactions are built on a DOM-free
+// real Document so `applyChange` actually runs; PM transactions are built on a DOM-free
 // EditorState, so this suite runs under node.
 import { describe, it, expect } from 'vitest';
 import { EditorState } from 'prosemirror-state';
@@ -129,7 +129,7 @@ describe('unknown line kind and container round-trip (verbatim)', () => {
 	// The open block vocabulary, from the codec's side: a `kind` and a
 	// `container` this build does not know. Both render as their nearest safe
 	// neighbor (a paragraph; nothing) and both must come back out unchanged; an
-	// edit anywhere in the field restates EVERY line's metadata, so a carrier that
+	// edit anywhere in the field restates every line's metadata, so a carrier that
 	// only survives decode would still lose them on the first keystroke.
 	const openRt: Content = {
 		text: 'a callout line\ninside an aside',

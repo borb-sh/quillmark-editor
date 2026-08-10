@@ -15,7 +15,7 @@
 //            …-timing-function, and the shorthands     a curve off the derived three
 //            transition / transition-property         `all`
 //
-// A LINE MAY MINT ANYWAY, by saying why: a `mint:` comment on it (`/* mint: … */` in
+// A line may mint anyway, by saying why: a `mint:` comment on it (`/* mint: … */` in
 // CSS, `// mint: …` in `.ts`) exempts that line, and the gate counts what it let
 // through. The axes are about a value nothing chose; a value someone chose and gave a
 // reason is the opposite, and trying a number is how the next rung gets found. The
@@ -24,25 +24,25 @@
 //
 // Four rules sit outside the table, being about the scale itself rather than one axis:
 //
-//   · NOTHING casts a shadow, in either scope and in the derivations too: elevation
+//   · nothing casts a shadow, in either scope and in the derivations too: elevation
 //     is a tone rung and a hairline, so the property is illegal rather than one of
 //     its values, which is a shape the table has no column for.
-//   · A private rung is DEFINED only in its scope's derivation — what makes one
+//   · A private rung is defined only in its scope's derivation — what makes one
 //     derivation safe for every surface reading it — and never twice in one rule.
-//   · An app does not REDEFINE a name the preset carries: the app is meant to look
+//   · An app does not redefine a name the preset carries: the app is meant to look
 //     like the endorsed answer, and a local copy is where it stops. A name the preset
 //     lacks (an app's own rail width) is the whole of what a host adds on top.
 //   · Every `--qm-*` dial a surface consumes is documented in THEMING.md, and every
 //     `.qm-*` class a doc promises is carried by something in `src/` — the halves a
-//     consumer is hurt by. The reverse halves WARN, so prose may run ahead of code.
+//     consumer is hurt by. The reverse halves warn, so prose may run ahead of code.
 //
-// MANY SCOPES, one table. The package derives `--_qm-*` from the dials for the
+// Many scopes, one table. The package derives `--_qm-*` from the dials for the
 // surfaces it ships; each app derives its own from the same dials for the page it
 // hosts them on. All are closed scales, so all answer to the same axes: a value that
 // cannot be minted in a card must not become mintable one directory over. The dial
 // census is the exception, being a package-contract claim.
 //
-// Nor does FILE TYPE make a violation legal. Three shapes carry style: a `.svelte`
+// Nor does file type make a violation legal. Three shapes carry style: a `.svelte`
 // `<style>` block, a `.css` file, and `.ts` — `preview/paint.ts` and `overlay.ts`
 // carry declarations inside JS strings. The first two are CSS, so the property name
 // decides which axis owns a line; in `.ts` the axis's own marker stands in for it, and
@@ -60,8 +60,8 @@ const THEMING = join(ROOT, 'packages', 'svelte', 'THEMING.md');
 
 /** The closed scales, each with the tree that reads it and the one file that mints it.
  *  `census` marks the scopes the dial contract is measured over: the package's, since
- *  THEMING.md documents what the PACKAGE consumes, and the preset's, which consumes the
- *  same dials for the page. `host` marks the scales that dress a DOCUMENT rather than a
+ *  THEMING.md documents what the package consumes, and the preset's, which consumes the
+ *  same dials for the page. `host` marks the scales that dress a document rather than a
  *  mounted root, which is the set the conformance rule below runs over. `exclude` is
  *  what keeps a nested scope from being scanned twice: the preset ships from inside
  *  `src/lib`, because `svelte-package` reads no other tree, so without this its
@@ -109,7 +109,7 @@ const COLOR_LITERAL = /#[0-9a-fA-F]{3,8}\b|\b(rgba?|hsla?|hwb|lab|lch|oklab|oklc
 /** A length literal, for the axes whose values are sizes. The rhythm axis keeps its
  *  own narrower shape (`px|rem`); the type and stroke axes count `em` too. */
 const LENGTH_LITERAL = /\b\d*\.?\d+(px|rem|em)\b/;
-// THE `.ts` MARKER LANES. A `.ts` declaration is one string among code, so a marker
+// The `.ts` marker lanes. A `.ts` declaration is one string among code, so a marker
 // on the line stands in for the property name. One marker per axis that has a lane,
 // because the axes want different breadth: colour takes bare `style`, since any
 // property assigned through it can carry a hue, while a geometry axis must not — a
@@ -129,20 +129,20 @@ const STROKE_MARKER = /border(?!-?radius)/i;
  *  suppression is what a gate becomes when nobody has to say anything. The lookahead is
  *  what keeps a CSS comment's own closing delimiter from reading as one. */
 const MINT = /(?:\/\*|\/\/)\s*mint:\s*(?!\*\/)(\S[^*\n]*)/;
-/** A `--x:` DEFINITION — a consumption is `var(--x)`, which has no colon. */
+/** A `--x:` definition — a consumption is `var(--x)`, which has no colon. */
 const privateDef = (prefix) => new RegExp(`(${prefix}[\\w-]+)\\s*:`);
-/** Reading a rung of ANY scale the scope is entitled to. An app reads two: the
+/** Reading a rung of any scale the scope is entitled to. An app reads two: the
  *  preset's, which is most of what it draws with, and its own for what it adds on
  *  top, so a rung-required axis must see both, or every `--qmh-` a migrated app reads
  *  looks like a bare literal. */
 const readsRung = (prefixes) => new RegExp(`var\\((${prefixes.join('|')})`);
 
-// Three shapes of rule. `literal` FORBIDS a pattern — most properties take values a
+// Three shapes of rule. `literal` forbids a pattern — most properties take values a
 // literal cannot be mistaken for, so naming the bad shape is enough. `allowBare`
-// REQUIRES a rung, listing the few values legitimate without one — right where any
+// requires a rung, listing the few values legitimate without one — right where any
 // value at all is a scale decision (a family, a step on the recede ladder), so
-// there is no literal shape to enumerate. `only` REQUIRES one of a fixed set and
-// takes NO rung escape, for the one property where naming a rung is not enough to
+// there is no literal shape to enumerate. `only` requires one of a fixed set and
+// takes no rung escape, for the one property where naming a rung is not enough to
 // make a value safe.
 //
 // A failure reads "`prop` mints a literal — <fix>". `lead` replaces the middle for
@@ -160,11 +160,11 @@ const AXES = [
 		marker: RHYTHM_MARKER
 	},
 	{
-		// Stroke width, which the colour axis below does NOT see: it tests `border-*`
+		// Stroke width, which the colour axis below does not see: it tests `border-*`
 		// for a colour literal, so `border-left: 2px solid var(--_qm-border)` reads a
 		// rung, passes, and renders at a width nothing chose — a divergent width beside
 		// the hairlines with the gate green. Shorthands included, since
-		// that is where the width hides. What this holds is that no width is MINTED;
+		// that is where the width hides. What this holds is that no width is minted;
 		// which rung a width reads is beyond either axis shape, so a border that reads
 		// `--_qm-ring-width` passes here and is review's to catch.
 		props: /^border(-(top|right|bottom|left))?(-width)?$/,
@@ -189,8 +189,8 @@ const AXES = [
 	},
 	{
 		// Leading has no literal shape to forbid — a bare number is exactly what a rung
-		// resolves to, so the rung is REQUIRED instead. The axis fires only on a line
-		// that DECLARES leading; a surface that declares none is covered by the root
+		// resolves to, so the rung is required instead. The axis fires only on a line
+		// that declares leading; a surface that declares none is covered by the root
 		// baseline, since a unitless rung inherits (core/theme.css). `1` is the one bare
 		// value that is not a step on the ramp — a line box collapsed onto its content,
 		// a glyph or a button's one-line label, structural like `opacity: 0`.
@@ -209,7 +209,7 @@ const AXES = [
 		doc: 'THEMING §"The dials"'
 	},
 	{
-		// The `font` SHORTHAND sets family, size and leading in one declaration, past
+		// The `font` shorthand sets family, size and leading in one declaration, past
 		// three axes that each watch a single longhand. It takes no rung escape, which
 		// is what makes it its own entry: `font: 600 12px/1.2 var(--_qm-font)` names a
 		// rung and still mints a size and a leading nothing else is watching. So
@@ -305,7 +305,7 @@ function decomment(text) {
  *  `.ts` declarations live in strings anywhere, so for both the whole file is the
  *  region.
  *
- *  `mints` is read off the region BEFORE the comments are blanked, since the escape is
+ *  `mints` is read off the region before the comments are blanked, since the escape is
  *  itself a comment: index of an exempt line within the region → the reason it gave. */
 function styleRegion(text, file) {
 	const svelte = file.endsWith('.svelte');
@@ -332,14 +332,14 @@ const mints = [];
 let scanned = 0;
 
 for (const scope of SCOPES) {
-	// An app scale sits ON the preset, so both are legible to it; the preset and the
+	// An app scale sits on the preset, so both are legible to it; the preset and the
 	// package each read one scale only.
 	const reads = scope.host && scope.prefix !== '--qmh-' ? [scope.prefix, '--qmh-'] : [scope.prefix];
 	const READS_RUNG = readsRung(reads);
 	const PRIVATE_DEF = privateDef(scope.prefix);
 	// The axis table names the package's rungs; a failure elsewhere points at the same
 	// family under the prefix that scope draws with, and at the doc that states the
-	// rule there. For an app that is the PRESET's prefix rather than its own: the
+	// rule there. For an app that is the preset's prefix rather than its own: the
 	// families the axes name (type, colour, motion) are the endorsed look's, and an
 	// app's own rungs are the handful it adds beside them.
 	const hint = (text) =>
@@ -364,17 +364,17 @@ for (const scope of SCOPES) {
 		region.style.split('\n').forEach((line, i) => {
 			const ln = region.base + i + 1;
 			const fail = (msg) => errors.push(`${file}:${ln}: ${msg}`);
-			// The escape covers the VALUE rules — the axes and the shadow property, which
+			// The escape covers the value rules — the axes and the shadow property, which
 			// are the ones a surface trips by choosing a number. Not the definition rule
 			// below it: minting a rung outside the derivation forks the scale rather than
 			// trying a value in it, which is a different act and has a different answer.
 			const excused = region.mints.get(i);
 			if (excused !== undefined) mints.push(`${file}:${ln}: ${excused}`);
 
-			// Only the package scope feeds the dial census (see SCOPES).
+			// Only the package scope feeds the dial census (see scopes).
 			if (scope.census) for (const m of line.matchAll(/var\(\s*(--qm-[\w-]+)/g)) consumed.add(m[1]);
 
-			// Zero shadows, and BEFORE the derivation exemption, since what is forbidden
+			// Zero shadows, and before the derivation exemption, since what is forbidden
 			// is the property rather than one of its values: elevation is a tone rung and
 			// a hairline, so there is no shadow rung to mint and none to read. The colour
 			// axis sees `box-shadow` but fires only on a hex or a
@@ -391,7 +391,7 @@ for (const scope of SCOPES) {
 					`\`${shade[1]}\` — lift with a surface rung and a hairline, not a shadow (${scope.doc})`
 				);
 
-			if (file === scope.derivation) return; // literals here ARE the defaults
+			if (file === scope.derivation) return; // literals here are the defaults
 
 			const decl = line.match(/^\s*([\w-]+)\s*:\s*([^;]*)/);
 			const prop = decl?.[1] ?? carry;
@@ -424,7 +424,7 @@ for (const scope of SCOPES) {
 	}
 
 	// A rung defined twice is a silent last-wins drop, and CSS raises nothing for it
-	// the way a duplicate object key does — so the check is explicit. Per RULE BLOCK,
+	// the way a duplicate object key does — so the check is explicit. Per rule block,
 	// so a rung a scoped rule legitimately retunes stays legal.
 	const derivation = readFileSync(join(ROOT, scope.derivation), 'utf8');
 	for (const [, block] of derivation.matchAll(/\{([^{}]*)\}/g)) {
@@ -434,7 +434,7 @@ for (const scope of SCOPES) {
 			else seen.add(name);
 	}
 
-	// What each host scale CALLS things, for the conformance rule below: the names
+	// What each host scale calls things, for the conformance rule below: the names
 	// alone, keyed on the suffix after the prefix, which is the concept.
 	// `--qmh-text-label` and `--pg-text-label` are one decision under two names.
 	if (scope.host)
@@ -448,9 +448,9 @@ for (const scope of SCOPES) {
 		});
 }
 
-// THE CONFORMANCE RULE, and it is the one thing no per-scope axis can see: every scope
-// above is checked against ITSELF, its derivation exempt as the place its defaults are
-// minted. The preset is the endorsed answer, so an app REDEFINING a name it carries is
+// The conformance rule, and it is the one thing no per-scope axis can see: every scope
+// above is checked against itself, its derivation exempt as the place its defaults are
+// minted. The preset is the endorsed answer, so an app redefining a name it carries is
 // the claim coming apart: the app is meant to look like the preset, and a local copy is
 // where it stops. What stays legal is a name the preset does not carry (an app's own
 // rail width, its own display size), which is the whole of what a host adds on top —
@@ -466,7 +466,7 @@ for (const { scope, rungs } of hostScales) {
 			);
 }
 
-// The dial census, in two severities. A dial a surface CONSUMES and THEMING.md does not
+// The dial census, in two severities. A dial a surface consumes and THEMING.md does not
 // document cannot be set by the consumer it exists for, and nothing but this looks. The
 // reverse — a documented dial nothing reads, a canon page naming one before it is
 // minted — is prose ahead of its code, which is how the next dial gets described, so it

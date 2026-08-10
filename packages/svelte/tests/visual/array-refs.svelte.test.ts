@@ -7,7 +7,7 @@
 // reference memo's first paint, in the console a consumer is reading to find its own
 // defects. The record is `$state`, so: nothing is logged.
 //
-// The other end is what `$state` costs. It proxies a plain object DEEPLY, and what
+// The other end is what `$state` costs. It proxies a plain object deeply, and what
 // goes in here is a component instance rather than a DOM node (the shape {@link Card}
 // keeps its refs in), so the handle a focus hop calls through is the proxy's. The
 // keyboard paths are driven here to prove `focus()` still lands: silence bought by
@@ -89,8 +89,8 @@ describe('array element refs', () => {
 		const before = inputs(target).length;
 
 		press(inputs(target)[0], 'Enter');
-		// The focus hop is post-flush by construction: a mutation commits the array BY
-		// VALUE, so the row does not exist until the parent has re-derived.
+		// The focus hop is post-flush by construction: a mutation commits the array by
+		// value, so the row does not exist until the parent has re-derived.
 		await settle();
 
 		const after = inputs(target);

@@ -1,5 +1,5 @@
 // The teardown order, at the reach a node suite has: a `Lifespan` is plain logic,
-// so the window a destroy lands in is drivable here without a DOM. What is NOT
+// so the window a destroy lands in is drivable here without a DOM. What is not
 // here is the component wiring (a destroyed PM view, an unmounted array row):
 // that needs a mounted surface, which is the playground's to drive.
 import { describe, it, expect } from 'vitest';

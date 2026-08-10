@@ -1,11 +1,11 @@
 <!--
- A `string` field → text input. Commits a non-empty edit LIVE (on input) via the
+ A `string` field → text input. Commits a non-empty edit live (on input) via the
  parent's typed `writer.set`, so the preview tracks typing. A cleared field is the
- UNSET rung of the commitment ladder (VISUAL_EDITOR §"Structure mirrors the schema"): it
+ unset rung of the commitment ladder (VISUAL_EDITOR §"Structure mirrors the schema"): it
  commits `undefined` (the parent removes the field, ghosted `default:` renders):
- but at `change` (blur), NOT per keystroke, so select-all-and-retype doesn't flash
+ but at `change` (blur), not per keystroke, so select-all-and-retype doesn't flash
  the field through its default between the delete and the first typed char.
- Trade-off (recorded in VISUAL_EDITOR): an explicit empty string OVER a non-empty
+ Trade-off (recorded in VISUAL_EDITOR): an explicit empty string over a non-empty
  default is inexpressible from the UI: clear and unset collapse to one gesture.
 -->
 <script lang="ts">
@@ -15,7 +15,7 @@
 	interface Props {
 		value: string | undefined;
 		placeholder?: string;
-		/** Accessible name for an input NOTHING else names: an array element, whose
+		/** Accessible name for an input nothing else names: an array element, whose
 		 * name is the field label plus its 1-based index. A field's own input takes
 		 * `id` instead and is named by the `<label for>` beside it. */
 		label?: string;

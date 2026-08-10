@@ -4,24 +4,24 @@
 //
 // Five rules, each stated once here and nowhere else:
 //
-//   1. THE GRAPH. `@quillmark/wasm` is external and above everything; `svelte` and
-//      `quiver` are siblings at one tier with NO edge between them, in either
-//      direction; and a node reaching BOTH is composing them, which is the only way
+//   1. The graph. `@quillmark/wasm` is external and above everything; `svelte` and
+//      `quiver` are siblings at one tier with no edge between them, in either
+//      direction; and a node reaching both is composing them, which is the only way
 //      the two meet. Three do: the two apps, and `quillkit`, which carries the client
 //      it serves and so composes them the way an app does, inside a build of its own at
 //      a tier above the pair. Declared dependencies and source specifiers
 //      both, since either alone is half a check: an undeclared import resolves fine in
 //      a workspace, and a declared dependency nothing imports is still a promise.
 //
-//   2. ONE WASM PER PROCESS. A handle minted by one copy of the linear memory and
+//   2. One WASM per process. A handle minted by one copy of the linear memory and
 //      handed to another is foreign, so the count that matters is how many copies meet
-//      inside one process. A package with an IMPORTABLE ENTRY puts its copy in the
-//      importer's process, so it PEERS the artifact and never depends on it, the range
+//      inside one process. A package with an importable entry puts its copy in the
+//      importer's process, so it peers the artifact and never depends on it, the range
 //      is a single `>=` comparator (loose, until 1.0 makes a narrow one honest), and
 //      root `overrides` pins the developed-against version to exactly one. Loose
 //      ranges permit two installs rather than preventing them, which is why the pin is
 //      the half that works.
-//      A package with no importable entry is a BUNDLED TERMINAL: nothing imports it,
+//      A package with no importable entry is a bundled terminal: nothing imports it,
 //      so the copy it bundles meets no other. It depends on the artifact like any
 //      consumer, at build time, and ships no runtime dependencies at all: what it
 //      bundles, a consumer must not install a second time beside a tarball that already
@@ -33,14 +33,14 @@
 //      that bundles nothing at all answers the same way: it names the artifact for
 //      types, ships no runtime dependencies, and holds at most the one copy it resolves.
 //
-//   3. THE `/preview` BUNDLE WEIGHT. A preview consumer does not pull ProseMirror,
+//   3. The `/preview` bundle weight. A preview consumer does not pull ProseMirror,
 //      which is what makes the subpath claim ("a bundler pulls only what the imported
 //      entry reaches") true for the one surface whose audience is not editing. A
 //      direct-import scan is not enough: one relative hop into the codec pulls all of
 //      ProseMirror and no direct scan sees it, so this walks preview's import graph
 //      within `src/lib` and fails on any reached module's forbidden external.
 //
-//   4. THE LOCK'S PLATFORMS. The lock resolves every platform an optional dependency
+//   4. The lock'S platforms. The lock resolves every platform an optional dependency
 //      offers, not the one that wrote it: a lock missing `@rollup/rollup-darwin-arm64`
 //      installs a rollup with no native binary on a Mac, and npm repairs nothing: an
 //      `npm i` reading a lock that is self-consistent for its own platform adds no
@@ -109,7 +109,7 @@ const below = (a, b) => {
 	return false;
 };
 
-/** What a consumer can import: a bare `main`, or an exports map with a MODULE subpath in
+/** What a consumer can import: a bare `main`, or an exports map with a module subpath in
  *  it. An empty map is the seal rather than an omission (it forbids every deep path a
  *  missing map leaves open), so it counts as no entry at all. `./package.json` counts as
  *  none either: it publishes a location rather than a module, so nothing imports through

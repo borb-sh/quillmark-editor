@@ -1,10 +1,10 @@
 // The href logic behind the link prompt, off the component: the parts carrying a
 // data consequence are functions with tests rather than event handlers.
 //
-// `link` is the one mark carrying a VALUE, which is what keeps it off `toggleMark`:
-// that command matches by TYPE (`rangeHasMark(from, to, markType)`), so a second
-// href over a range already holding one REMOVES the mark rather than replacing it.
-// `setLink` spells the mark ops out for that reason, and puts the pair in ONE
+// `link` is the one mark carrying a value, which is what keeps it off `toggleMark`:
+// that command matches by type (`rangeHasMark(from, to, markType)`), so a second
+// href over a range already holding one removes the mark rather than replacing it.
+// `setLink` spells the mark ops out for that reason, and puts the pair in one
 // transaction so the mark diff lowers it as one link family exchanged for another
 // (`codec/marks.ts` keys a link on type+url).
 import type { Command, EditorState } from 'prosemirror-state';
@@ -18,7 +18,7 @@ const ROOTED = /^[/#?]/;
 const ADDRESS = /^[^\s/@]+@[^\s/@]+$/;
 
 /**
- * The href a typed value stands for. A value with no scheme names a HOST, and
+ * The href a typed value stands for. A value with no scheme names a host, and
  * stored verbatim it is a relative href resolving against whatever page the editor
  * is embedded in, so it takes `https://`. A bare address takes `mailto:` instead,
  * the host prefix reading `jane@example.com` as `example.com` with `jane` for
@@ -35,7 +35,7 @@ export function normalizeHref(raw: string): string {
 }
 
 /**
- * The href under the selection: the FIRST link mark it touches, `''` where it
+ * The href under the selection: the first link mark it touches, `''` where it
  * touches none. A selection may span several links; the prompt holds one value, so
  * the first is both what it seeds with and what an apply writes over the whole
  * range.

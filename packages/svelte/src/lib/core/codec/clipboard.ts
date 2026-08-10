@@ -2,12 +2,12 @@
 // reads. The design and the two wire formats are CODEC §"The table island" and
 // §"Markdown at the edges"; what is here is the grammar.
 //
-// WHAT CROSSES IS A RECTANGLE, never a cell. A `<table>` read in is one; the held cell
+// What crosses is A rectangle, never a cell. A `<table>` read in is one; the held cell
 // selection written out is one; a rectangle overlaid onto a table at a cell is one. The
 // wire therefore carries `TableCell[][]` and no coordinates: each end names its own
 // corner.
 //
-// A ROW 0 IS A HEADER, on both sides, which is the model's own rule (`table.ts`
+// A row 0 is A header, on both sides, which is the model's own rule (`table.ts`
 // §`allRows`): whichever row holds index 0 is the header. So a `<table>` with no `<th>`
 // promotes its first row, and a copied rectangle's first row is the header of what it
 // pastes.
@@ -68,10 +68,10 @@ function alignFromDOM(dom: Element): TableAlign {
 /**
  * A `<table>` element as props. `rowspan` is not carried — a merged cell is not a
  * rectangle, so a table with one arrives with the rows below it short and
- * {@link normalizeTable} pads them at the end. `colspan` IS, as the empty cells it
+ * {@link normalizeTable} pads them at the end. `colspan` is, as the empty cells it
  * covers, so the columns after it keep their index.
  *
- * Only the table's OWN rows: a `<tr>` inside a nested table belongs to a cell this
+ * Only the table's own rows: a `<tr>` inside a nested table belongs to a cell this
  * reader is about to flatten, not to a rank of this one.
  */
 export function tableFromDOM(dom: Element): TableProps {
@@ -96,7 +96,7 @@ export function tableFromDOM(dom: Element): TableProps {
 	return normalizeTable({ header, rows: body, aligns });
 }
 
-/** The table a paste is carrying, or `undefined` for a paste that holds none. The FIRST
+/** The table a paste is carrying, or `undefined` for a paste that holds none. The first
  *  one: a clipboard holding a table among other blocks is a document paste, and only a
  *  surface that takes nothing but a table (a cell) reads it this way. */
 export function tableFromClipboard(data: Clipboard | null | undefined): TableProps | undefined {
@@ -147,7 +147,7 @@ const pipeCell = (cell: TableCell): string => cell.text.replaceAll('|', '\\|');
 
 /**
  * A rectangle as pipe rows, delimiter row included: what a plain-text target reads as a
- * table and what markdown carries. The delimiter follows the FIRST row for the reason
+ * table and what markdown carries. The delimiter follows the first row for the reason
  * that row serializes as `<th>` — a pasted rectangle's row 0 is a header.
  */
 export function tableToPipe(block: TableCell[][], aligns: TableAlign[]): string {
@@ -182,7 +182,7 @@ export function writeRectangle(
 /** The `<table>` rule: a clipboard table becomes the island the model already holds
  *  rather than the paragraph its text flattens to. `id` is left empty for
  *  {@link stampIslandIds}, a parse rule having no document to mint against. `loss` is
- *  authored: what this reader produces IS a pipe table, so markdown carries it whole. */
+ *  authored: what this reader produces is a pipe table, so markdown carries it whole. */
 function tableParseRule(): ParseRule {
 	return {
 		tag: 'table',
@@ -229,7 +229,7 @@ export function stampIslandIds(slice: Slice, doc: PMNode): Slice {
 /**
  * The block leaf's clipboard plugin: the table rule on the way in, and the id mint over
  * what it produced. A `clipboardParser` rather than the schema's own `parseDOM`,
- * because what a `<table>` in the DOM means is a question only the CLIPBOARD asks — the
+ * because what a `<table>` in the DOM means is a question only the clipboard asks — the
  * schema's parse rules are also what a re-parse of the editor's own DOM runs through,
  * where an island is already a node and a `<table>` is the chrome drawing one.
  */

@@ -1,7 +1,7 @@
-// The block-atom link: a delete AGAINST an island or a divider selects it, and the
+// The block-atom link: a delete against an island or a divider selects it, and the
 // press after that deletes it.
 //
-// Driven through the COMPOSED chain (`bodyKeymap`) rather than the link alone, because
+// Driven through the composed chain (`bodyKeymap`) rather than the link alone, because
 // what is under test is as much the precedence as the command: a Backspace at the start
 // of a list's first item still lifts the item, whatever sits above the list, and a
 // Backspace against an ordinary block still joins.
@@ -16,7 +16,7 @@ const { press } = keyDriver(keys);
 const TABLE = 'para\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\ntail';
 const RULE = 'para\n\n---\n\ntail';
 
-/** A state with the caret at the END of the `index`-th textblock: where a forward
+/** A state with the caret at the end of the `index`-th textblock: where a forward
  *  delete is about the block's neighbour rather than about a character. */
 function endOf(markdown: string, index: number): EditorState {
 	const doc = decode(md(markdown), blockSchema);

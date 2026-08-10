@@ -18,7 +18,7 @@ import { loadFixtureTree } from '../helpers/fixtures.js';
 const core = await init();
 
 // jsdom implements neither, and mounting the editor reaches both: the card
-// scroll hop and the FLIP the survivors run through.
+// scroll hop and the flip the survivors run through.
 Element.prototype.scrollIntoView ??= () => {};
 Element.prototype.getAnimations ??= () => [];
 
@@ -163,7 +163,7 @@ describe('an object field', () => {
 		type(props[0].querySelector('input')!, 'Wing seal');
 		expect(read(q, doc, 'seal_override')).toEqual({ caption: 'Wing seal' });
 
-		// The second property commits the object BY VALUE, so the first has to ride
+		// The second property commits the object by value, so the first has to ride
 		// along: a commit that carried only the edited key would drop it.
 		type(props[1].querySelector('input')!, '1.5');
 		expect(read(q, doc, 'seal_override')).toEqual({ caption: 'Wing seal', scale: 1.5 });
@@ -189,7 +189,7 @@ describe('an object field', () => {
 		type(props[1].querySelector('input')!, '1.5');
 		expect(read(q, doc, 'seal_override')).toEqual({ caption: 'Wing seal', scale: 1.5 });
 
-		// Cleared to empty: the key goes ABSENT (resolving to its own `default:`)
+		// Cleared to empty: the key goes absent (resolving to its own `default:`)
 		// rather than being committed as `undefined`.
 		type(props[0].querySelector('input')!, '');
 		expect(read(q, doc, 'seal_override')).toEqual({ scale: 1.5 });

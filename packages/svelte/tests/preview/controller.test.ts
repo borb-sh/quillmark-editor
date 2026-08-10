@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // A zero-page session must not be a permanent empty-state stub. These
 // drive the count transitions and assert the "No pages" element and the page
-// slots both track the LIVE count; 0→N escapes the empty state, N→0 returns.
+// slots both track the live count; 0→N escapes the empty state, N→0 returns.
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
 import { createPreview } from '$lib/preview/controller';
 import type { LiveSession, ChangeSet } from '@quillmark/wasm';
@@ -92,10 +92,10 @@ describe('preview controller empty-state across page-count transitions', () => {
 	});
 });
 
-// `locate` answers against the last COMPILED layout, so a caret typed past it is
+// `locate` answers against the last compiled layout, so a caret typed past it is
 // off-content until the compile lands, and the next caret event is the only thing
 // that would ask again. `refresh` has to re-ask (PREVIEW §"Follow-the-caret
-// scroll"); WHERE the scroll ends up is geometry jsdom does not have, so what is
+// scroll"); where the scroll ends up is geometry jsdom does not have, so what is
 // asserted is the query, not a scrollTop.
 describe('a recompile re-locates the followed caret', () => {
 	let container: HTMLDivElement;
@@ -191,7 +191,7 @@ describe('the page slot names its index', () => {
 			[...container.querySelectorAll<HTMLElement>('.qm-page')].map((el) => el.dataset.page);
 		expect(numbers()).toEqual(['0', '1', '2']);
 
-		// The slots a grow REUSES keep the number they were built with, and the ones it
+		// The slots a grow reuses keep the number they were built with, and the ones it
 		// appends continue the run: an index written once at build is only right if the
 		// reconcile never permutes.
 		preview.refresh(change(5));

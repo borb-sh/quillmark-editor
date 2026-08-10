@@ -2,7 +2,7 @@
   Card controls, composable cards only.
   Right-aligned in the header: a move-up/move-down chevron pair revealed while the
   pointer or the caret is in the card (each disabled at its edge), then an
-  always-visible delete. Reorder is BUTTONS, not drag (V1). The card scopes that
+  always-visible delete. Reorder is buttons, not drag (V1). The card scopes that
   reveal, so its condition lives in the parent's CSS; the pair keeps the narrower
   guarantee here, that a focused chevron is a visible one. The card also hangs this
   cluster to land these glyphs on its right gutter, and reads `--_qm-glyph-control`

@@ -302,7 +302,7 @@
 	/* A mounted surface and the name over it; `figure`'s margins go, since the column
 	   places it.
 
-	   STICKY inside its band, because the steps beside it outrun it: the reading column
+	   Sticky inside its band, because the steps beside it outrun it: the reading column
 	   is half again the surface's height, so a step describing the preview would be read
 	   with the preview already scrolled off. The offset clears the running head, which
 	   is what `#get-started` above already measures itself against. */
@@ -316,7 +316,7 @@
 		min-width: 0;
 	}
 
-	/* The mounted component's NAME, and it is an identifier: the same run the reading
+	/* The mounted component's name, and it is an identifier: the same run the reading
 	   column beside it sets `<Preview>` in, so one component is spelled one way on the
 	   page. The label recipe is for a category word and would uppercase it. */
 	.art-name {

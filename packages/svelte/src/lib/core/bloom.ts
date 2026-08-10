@@ -1,12 +1,12 @@
 // The correlation bloom: a soft accent wash that rises over a target and decays to
-// nothing. The editor↔preview address is an EVENT, not a state: the preview claims
+// nothing. The editor↔preview address is an event, not a state: the preview claims
 // to be the rendered output, so it carries no resting ink, and a highlight that
 // outlives the hop that caused it is ink the document did not ask for. Both
 // directions land here: the preview's field boxes bloom themselves (they are already
 // empty rects over the page), an editor leaf blooms a transient child over its
 // surface.
 //
-// OPACITY is the animated property, never the colour. The wash's alpha is a peak
+// Opacity is the animated property, never the colour. The wash's alpha is a peak
 // fixed by `--_qm-accent-wash`, so interpolating 0→1→0 keeps the scale in CSS where
 // `color-mix` resolves, instead of in keyframe values a script would have to
 // pre-resolve and re-resolve on a theme change.
@@ -26,7 +26,7 @@ const WASH = 'var(--_qm-accent-wash)';
 const FALLBACK_MS = 1100;
 
 // Rise fast, hold, then leave slowly: a highlighter's decay, not a linear fade. A
-// keyframe's easing governs the segment that STARTS at it. Under reduced motion the
+// keyframe's easing governs the segment that starts at it. Under reduced motion the
 // ramps are dropped entirely: the wash holds at full for a beat and cuts, which
 // still answers "here" with nothing to track.
 const FRAMES: Keyframe[] = [
@@ -52,12 +52,12 @@ export interface BloomTiming {
 /**
  * Resolve the timing off `el`, so the dwell is single-sourced in CSS.
  *
- * ONE property, both motion preferences: `--_qm-bloom-dwell` already shortens under
+ * One property, both motion preferences: `--_qm-bloom-dwell` already shortens under
  * `prefers-reduced-motion` in the derivation, so what is left to `matchMedia` here is
- * the SHAPE: a hold and a cut carry no ramps, which is a frame list rather than a
+ * the shape: a hold and a cut carry no ramps, which is a frame list rather than a
  * number and the one half CSS cannot hand over.
  *
- * Read ONCE PER BATCH, not per element: `getComputedStyle` forces a style recalc and
+ * Read once per batch, not per element: `getComputedStyle` forces a style recalc and
  * `animate` re-dirties style, so a read inside a loop flushes once per element (~0.15ms
  * each). The rungs inherit, so every element in a batch resolves the same numbers.
  */
@@ -86,10 +86,10 @@ export function bloom(el: HTMLElement, elapsed = 0, timing?: BloomTiming): Anima
 }
 
 /**
- * Bloom over `host`'s CONTENT: an inset child, so the wash neither tints the host's
+ * Bloom over `host`'s content: an inset child, so the wash neither tints the host's
  * own background nor fades the text under it. `host` must be positioned.
  *
- * ONE wash node per host, reused while it lives: two quick landings on the same leaf
+ * One wash node per host, reused while it lives: two quick landings on the same leaf
  * must not stack two alphas over it. No `elapsed` seam: the surfaces that use this
  * (editor leaves) are not rebuilt under the animation the way the preview's boxes are.
  */

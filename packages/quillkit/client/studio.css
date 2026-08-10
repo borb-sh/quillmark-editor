@@ -1,4 +1,4 @@
-/* What studio adds ON TOP of the preset, and nothing the preset already carries:
+/* What studio adds on top of the preset, and nothing the preset already carries:
    `@quillmark/svelte/preset` is the endorsed page scale and the recipes drawn with it,
    imported in `main.ts`, and studio's chrome reads `--qmh-*` throughout (STUDIO.md is
    the language).

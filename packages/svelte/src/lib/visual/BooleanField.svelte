@@ -13,11 +13,11 @@
 	interface Props {
 		value: boolean | undefined;
 		fallback?: boolean;
-		/** Accessible name for a switch NOTHING else names: an object property, whose
+		/** Accessible name for a switch nothing else names: an object property, whose
 		 * name is the field label plus the property's. A field's own switch takes `id`
 		 * instead and is named by the `<label for>` beside it. */
 		label?: string;
-		/** `<label for>` target. `Switch.Root` renders a `<button>`, which IS labelable,
+		/** `<label for>` target. `Switch.Root` renders a `<button>`, which is labelable,
 		 * so the click a label forwards toggles the switch: correct for this control,
 		 * and single-fire: the label is a sibling, not a wrapper, so there is no second
 		 * click bubbling back up to be re-dispatched. */
@@ -30,7 +30,7 @@
 
 	// Local toggle state synced to `value`; own-toggles stay local, only an external
 	// change reconciles back in (see `syncedLocal`). The primitive is driven
-	// CONTROLLED (`checked` + `onCheckedChange`, never `bind:`) so reconciliation
+	// controlled (`checked` + `onCheckedChange`, never `bind:`) so reconciliation
 	// stays the package's: a two-way bind hands the primitive a lane around it,
 	// which repeats the reconciliation hazard in miniature.
 	const local = syncedLocal(() => value ?? fallback ?? false);
@@ -53,7 +53,7 @@
 </span>
 
 <style>
-	/* A primitive renders its OWN element, which a scoped selector cannot reach:
+	/* A primitive renders its own element, which a scoped selector cannot reach:
 	 styled through the wrapper with `:global`. */
 	.qm-switch-wrap :global(.qm-switch) {
 		display: inline-flex;

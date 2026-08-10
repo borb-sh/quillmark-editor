@@ -33,7 +33,7 @@ export interface FieldModel {
 	 * undefined when the field declares none. Chrome-only; never gates. */
 	description: string | undefined;
 	/**
-	 * Required-ness: a field with NO `default:` is "Unendorsed": its
+	 * Required-ness: a field with no `default:` is "Unendorsed": its
 	 * seed carries a `!must_fill` marker (DOCUMENT_MODEL: there is no separate
 	 * `required` axis). Drives a persistent label `*`, complementary to the ghosted
 	 * `default:` (a required field has no default to ghost). Persistent (schema-
@@ -56,7 +56,7 @@ export interface GroupSection {
 /**
  * One card instance projected for rendering: the schema × payload join result
  * the VisualEditor's `$derived` produces and hands to `<Card>`. Positional
- * identity is carried by `id` (a session key), NOT by array index.
+ * identity is carried by `id` (a session key), not by array index.
  */
 export interface CardModel {
 	/** Stable session id (`'main'` for the main card). */
@@ -66,7 +66,7 @@ export interface CardModel {
 	/**
 	 * The card's `kind` has no projectable schema: a foreign kind under
 	 * a schema that declares others, or a card under a schema with no `card_kinds` at
-	 * all. Such a card renders a RECOVERY SHELL (humanized title + retype + delete)
+	 * all. Such a card renders a recovery shell (humanized title + retype + delete)
 	 * instead of a field list, so its content is never dropped or trapped: retyping
 	 * to a declared kind re-projects it, delete removes it. Always `false` for `main`.
 	 */
@@ -80,7 +80,7 @@ export interface CardModel {
 	/**
 	 * Field name → its resolved provenance row (`{ value, source }`), parallel to
 	 * `values` (FIELD_PROVENANCE). The channel that feeds chrome (the ghosted
-	 * `default:` and any authored/default/zero affordance), NEVER the control
+	 * `default:` and any authored/default/zero affordance), never the control
 	 * value. Empty when `quill.resolve` is unavailable.
 	 */
 	provenance: Record<string, ResolvedField>;
@@ -91,7 +91,7 @@ export interface CardModel {
 	 * empty for a card that does: the resolved body `default:` when there is one,
 	 * else the consumer's wording, else the built-in invitation
 	 * ({@link resolveBodyGhost}). A body leaf therefore always has something in it
-	 * to write into, which the inline fields deliberately do not: their ghost IS
+	 * to write into, which the inline fields deliberately do not: their ghost is
 	 * the resolved default, and an invented one would read as a value.
 	 */
 	bodyGhost?: string;
@@ -147,14 +147,14 @@ export function stringifyGhost(ghost: unknown): string | undefined {
 }
 
 /** What a {@link BodyPlaceholder} is told about the body it words. The card's
- *  IDENTITY, not its chrome: `cardId` is what per-card wording keys off, `kind` keys
+ *  identity, not its chrome: `cardId` is what per-card wording keys off, `kind` keys
  *  the consumer's own `quill.schema` for anything richer, and a renamed card must not
  *  shift its ghost. */
 export interface BodyPlaceholderContext {
 	/**
 	 * The card's session key (`CardId`), `'main'` for the main card. Follows its card
 	 * across a reorder and a retype, and is re-minted when the surface re-keys on a new
-	 * document handle. OPAQUE: wording keyed off it hashes it rather than reads it.
+	 * document handle. Opaque: wording keyed off it hashes it rather than reads it.
 	 */
 	cardId: string;
 	/** The card's kind; `'main'` for the main card. */
@@ -166,7 +166,7 @@ export interface BodyPlaceholderContext {
 /**
  * Consumer wording for an empty body, in place of the flat `bodyGhost` string;
  * returning `undefined` takes it. Consulted per card on every derive and never
- * cached, so it must be PURE: a hook sampling a set at random re-rolls on every
+ * cached, so it must be pure: a hook sampling a set at random re-rolls on every
  * keystroke. Per-card wording is a function of `cardId`, per-kind wording a function
  * of `kind`, and either is stable because the function is.
  */
@@ -174,7 +174,7 @@ export type BodyPlaceholder = (ctx: BodyPlaceholderContext) => string | undefine
 
 /**
  * The empty body's ghost: the resolved body `default:`, else the consumer's
- * wording, else the flat built-in. The `default:` WINS because it is the only one
+ * wording, else the flat built-in. The `default:` wins because it is the only one
  * of the three that describes the render: it promises what prints if nothing is
  * written, and wording placed over it would make that promise unreadable. The
  * other two are invitations, and an invitation belongs only where there is no
@@ -189,7 +189,7 @@ export function resolveBodyGhost(
 }
 
 /** Map a field schema to its control (precedence: prose › enum › text › …).
- * An array's ELEMENT control is this over `items`: a missing `items` is a text
+ * An array's element control is this over `items`: a missing `items` is a text
  * element. */
 export function controlKind(f: QuillFieldSchema): ControlKind {
 	switch (f.type) {
@@ -248,7 +248,7 @@ export function fieldModels(cardSchema: QuillCardSchema): FieldModel[] {
 
 /**
  * Group-section order (VISUAL_EDITOR §"Structure mirrors the schema"): the schema's `ui.groups` registry
- * KEY ORDER when present: `QuillCardUi.groups` is a typed `Record` at the
+ * key order when present: `QuillCardUi.groups` is a typed `Record` at the
  * boundary, so this reads it uncast: else the first-appearance order of each
  * field's `ui.group`.
  */
@@ -336,13 +336,13 @@ export interface PlacedField {
 
 /**
  * Whether a field can share a row. `ui.compact` asks; a shape declines when the
- * DOCUMENT sets its height, because a row is as tall as its tallest cell and the cell
+ * document sets its height, because a row is as tall as its tallest cell and the cell
  * beside it does not grow in step: an object nests a whole field set, block richtext
  * (`inline` absent) holds paragraphs, and an array holds however many elements the
  * document carries. Any of them stands its neighbour in a column of whitespace. An
  * inline prose leaf is one line tall and packs like any scalar.
  *
- * An array declines WHATEVER ITS ITEMS ARE: one-line elements make a one-line step,
+ * An array declines whatever its items are: one-line elements make a one-line step,
  * but nothing holds two arrays to the same number of them, so the shorter of a packed
  * pair pays a cell of whitespace for every element the taller one has past it, and
  * pays more of it as the document is filled.
@@ -357,7 +357,7 @@ function packable(f: FieldModel): boolean {
  * Assign each field its span in the section grid. Consecutive packable fields are
  * `cell`s the grid auto-places: capacity and wrapping are the container query's
  * business, so a trailing orphan keeps its column width rather than growing to fill.
- * A packable run of ONE is `lone`: with no row above to align to, one column reads as
+ * A packable run of one is `lone`: with no row above to align to, one column reads as
  * truncated, so it takes half the capacity from column 1. Everything else is `full`.
  *
  * Pure, and stays pure: no width, no measurement, nothing to re-derive on resize.
@@ -416,7 +416,7 @@ export function bodyEnabled(cardSchema: QuillCardSchema | undefined): boolean {
 }
 
 // ── Session identity (VISUAL_EDITOR §"The address is the spine") ─────────────
-// Cards are POSITIONAL in the content and `doc.cards` re-allocates on each read,
+// Cards are positional in the content and `doc.cards` re-allocates on each read,
 // so a stable card-instance key cannot be the card object (a fresh object every
 // derive): it is a session id held in a parallel array, reordered in lockstep
 // with the structure ops and resolved to an index only at the mutation boundary.

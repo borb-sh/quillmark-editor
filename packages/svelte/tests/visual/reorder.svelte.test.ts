@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 // The reorder, driven through the card's own control, and what the surface says
-// about it. A card's ADDRESS does not survive a `moveCard` — `Addr` and `DocPath`
+// about it. A card's address does not survive a `moveCard` — `Addr` and `DocPath`
 // are both positional — so every card-naming payload carries the session `cardId`
 // beside it (VISUAL_EDITOR §"The address is the spine"). What is asserted here is
 // that the two disagree after the move and that the key is the one that stays
-// right: the address a host captured before the reorder now names the OTHER card,
+// right: the address a host captured before the reorder now names the other card,
 // while the key still names the one that moved.
 //
 // The id-keyed commit-error map rides the same fact and is checked with it: a
@@ -22,7 +22,7 @@ const core = await init();
 
 /**
  * The reference quill with the indorsement card's `date` retyped to `datetime`.
- * The only commit the fixture's own schema REFUSES from a mounted control: the V1
+ * The only commit the fixture's own schema refuses from a mounted control: the V1
  * date control emits `YYYY-MM-DD` whatever the declared type, and a `datetime`
  * field coerces none of them (`edit::field_coercion_failed`). Every other control on
  * this quill emits a value its field accepts, so this is the one door to the
@@ -38,7 +38,7 @@ function quillWithDatetimeDate(): Quill {
 	return core.Quill.fromTree(tree);
 }
 
-/** A document with TWO indorsement cards: the seed carries one, the second is inserted. */
+/** A document with two indorsement cards: the seed carries one, the second is inserted. */
 function docWithTwoCards(q: Quill): Document {
 	const doc = q.seedDocument();
 	const card = q.seedCard('indorsement', doc.seedOverlay('indorsement'));
@@ -48,7 +48,7 @@ function docWithTwoCards(q: Quill): Document {
 }
 
 // jsdom implements neither, and a card operation reaches both: the insert/reorder
-// scroll hop (`Card.scrollIntoViewCard`) and the FLIP the removal runs the survivors
+// scroll hop (`Card.scrollIntoViewCard`) and the flip the removal runs the survivors
 // through (`motion.ts`). Stubbed rather than guarded in the source: both are chrome
 // the surface is right to call unconditionally in a browser.
 Element.prototype.scrollIntoView ??= () => {};
@@ -126,22 +126,22 @@ describe('a reorder through the card control', () => {
 		const { target, changes, actives } = mountEditor(q, doc);
 		expect(slots(target)).toHaveLength(2);
 
-		// A host captures the active leaf: a path AND a key, both naming the first card.
+		// A host captures the active leaf: a path and a key, both naming the first card.
 		focusBody(slots(target)[0]);
 		const captured = actives.at(-1)!;
 		expect(captured).toEqual({ field: 'cards.indorsement[0].body', cardId: 'c0' });
 
 		moveDown(slots(target)[0]);
 
-		// The move reports both: where the card LANDED, and which card it was. The path
-		// names the CARD, not the body leaf inside it: a card op is about the card.
+		// The move reports both: where the card landed, and which card it was. The path
+		// names the card, not the body leaf inside it: a card op is about the card.
 		expect(changes.at(-1)).toEqual({
 			source: 'structure',
 			cardId: 'c0',
 			path: 'cards.indorsement[1]'
 		});
 
-		// The trap, pinned. The captured PATH now names the other card; the captured KEY
+		// The trap, pinned. The captured PATH now names the other card; the captured key
 		// still names the one that moved, and the card is where the change said.
 		const after = slots(target);
 		const staleIndex = addrForFieldPath(captured.field)!.card!;

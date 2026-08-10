@@ -72,7 +72,7 @@ function lastRunAtOrBefore(runs: PosRun[], pos: number, coord: (run: PosRun) => 
 export function usvToPM(index: LineIndex, usvPos: number): number {
 	const usv = clamp(usvPos, 0, index.usvEnd);
 	if (usv >= index.usvEnd) return index.usvEnd === 0 ? index.firstContentStart : index.pmEndContent;
-	// The runs TILE the USV space from 0 (every text the walk appends pushes its run
+	// The runs tile the USV space from 0 (every text the walk appends pushes its run
 	// first), so below `usvEnd` the run at or before `usv` is the run that owns it.
 	const run = index.runs[lastRunAtOrBefore(index.runs, usv, usvStartOf)];
 	if (run.kind === 'text') return run.pmStart + utf16OfCodePoints(run.s, usv - run.usvStart);

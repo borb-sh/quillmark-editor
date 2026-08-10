@@ -3,13 +3,13 @@
 // rather than re-`overwrite`ing, so identity anchors rebase through the splice.
 //
 // `pmToContent` is decode's pure inverse; `lower` diffs old→new into ops. A raw `\n`
-// in the `delta` splits a line and a deleted `\n` joins: so ALL text routes through
+// in the `delta` splits a line and a deleted `\n` joins: so all text routes through
 // `delta`, `lineOps` carry per-line `setKind` /
 // `setContainers` / `setContinues` metadata, and an island's payload rides
-// `islandOps`, the one channel that reaches it. Every op reads in ONE coordinate
-// space, the FINAL USV content (delta then island ops applied). `applyChange`
+// `islandOps`, the one channel that reaches it. Every op reads in one coordinate
+// space, the final USV content (delta then island ops applied). `applyChange`
 // auto-rebases existing marks with start-assoc `after` / end-assoc `before`
-// (== `mapPos`) through BOTH text-moving channels, so the mark diff replicates
+// (== `mapPos`) through both text-moving channels, so the mark diff replicates
 // that rebase exactly and is coverage-precise.
 import type { Mark, Node as PMNode } from 'prosemirror-model';
 import { isAnchorMark } from '@quillmark/wasm';
@@ -51,7 +51,7 @@ export interface Scan {
 	usvEnd: number;
 }
 
-/** A working accumulator threaded through the walk. `usvEnd` is the RUNNING USV
+/** A working accumulator threaded through the walk. `usvEnd` is the running USV
  * length of `text`: every run's `usvStart` reads it and every append advances it.
  * It is a counter rather than a measurement of `text` because the walk runs twice
  * per keystroke and `usvLength` is O(n): measuring per run makes the scan
@@ -68,7 +68,7 @@ function appendText(acc: Acc, s: string): void {
 }
 
 /**
- * Walk a PM document once, producing the content projection AND the position-map
+ * Walk a PM document once, producing the content projection and the position-map
  * runs (they share the traversal so they can never disagree). This is the single
  * source both `pmToContent` and the position map draw from.
  */
@@ -116,7 +116,7 @@ function scanBlock(acc: Acc, node: PMNode, nodePos: number, containers: ContentC
 		case 'paragraph':
 		case 'heading': {
 			// One kind value per block: the opening line and its hard-break
-			// continuations read the SAME object, so they cannot disagree.
+			// continuations read the same object, so they cannot disagree.
 			const kind = textblockKind(node);
 			beginLine(acc, contentStart, containers, kind);
 			scanInline(acc, node, contentStart, containers, kind);
@@ -268,12 +268,12 @@ function mergeMarks(raw: ContentMark[]): ContentMark[] {
 interface LowerOpts {
 	/** Anchor decoration positions before the edit (post-nothing); see field.ts. */
 	oldAnchors?: { id: string; pos: number }[];
-	/** Anchor decoration positions after the edit, in FINAL (new) USV coords. */
+	/** Anchor decoration positions after the edit, in final (new) USV coords. */
 	newAnchors?: { id: string; pos: number }[];
 }
 
 /**
- * One old→new content edit with the text splice it implies. BOTH sides are content,
+ * One old→new content edit with the text splice it implies. Both sides are content,
  * never a PM doc: the projection of the new doc (`pmToContent`) is the caller's to
  * hold, because a doc-taking overload re-walks the whole tree, once per keystroke,
  * for a value the caller has in hand.
@@ -282,7 +282,7 @@ interface LowerOpts {
  * and the commit path holds the edit across the lowering. `contentEdit` being its
  * only constructor is what keeps a `delta` from disagreeing with the contents it
  * was diffed from; `lower` is where a slot inside that splice moves to the island
- * channel, so this `delta` is the RAW splice, not always the one committed.
+ * channel, so this `delta` is the raw splice, not always the one committed.
  */
 export interface ContentEdit {
 	readonly oldRt: Content;
@@ -351,7 +351,7 @@ function diffLines(oldRt: Content, newRt: Content): LineOp[] {
 
 /** A line minus its `containers` / `continues` envelope: exactly `setKind`'s
  * payload, which the boundary names `ContentLineKind`. Lifting it whole is what
- * keeps this arm-agnostic: `kind` is an OPEN set, so an arm-by-arm switch would
+ * keeps this arm-agnostic: `kind` is an open set, so an arm-by-arm switch would
  * have to guess at the unknown arm's payload and would drift on every arm
  * upstream adds. */
 function kindPart(l: ContentLine): ContentLineKind {
@@ -387,21 +387,21 @@ interface IslandSplit {
 	 *  when what remains is pure retains (the insert carried nothing else). */
 	delta?: Delta;
 	islandOps: IslandOp[];
-	/** The `insert` ops' positions, ascending, in FINAL coords: what a mark rebase
+	/** The `insert` ops' positions, ascending, in final coords: what a mark rebase
 	 *  shifts through after the delta. */
 	insertedAt: number[];
 }
 
 /**
  * Split the edit's islands off the text splice. `applyChange` throws
- * `IslandSlotInInsert` on a `delta` that types a slot, so a slot NEVER rides the
+ * `IslandSlotInInsert` on a `delta` that types a slot, so a slot never rides the
  * delta: every slot inside the splice's inserted region is stripped from it and
  * placed by `{ op: 'insert', at }`, which carries the backing entry in the same
  * op. Every other island kept its slot, so a changed payload is `{ op: 'set' }`,
- * addressed by the id both sides carry. A DELETED island needs no op at all: the
+ * addressed by the id both sides carry. A deleted island needs no op at all: the
  * delta that removes its slot drops the entry.
  *
- * `at` is the slot's position in the FINAL text: inserts apply left to right, so
+ * `at` is the slot's position in the final text: inserts apply left to right, so
  * by the time the k-th lands, the k slots before it are back in place.
  *
  * The pairing is positional for `insert` and by id for `set`, which is what each
@@ -445,7 +445,7 @@ function slotPositions(text: string): number[] {
 	return out;
 }
 
-/** The splice's inserted region `[start, end)` in FINAL coords. `diffText` emits
+/** The splice's inserted region `[start, end)` in final coords. `diffText` emits
  *  one `[retain?][delete?][insert?][retain?]`, so the leading retain is where the
  *  insert lands and its length is how far it reaches. */
 function insertedRegion(delta: Delta | undefined): { start: number; end: number } {
@@ -457,7 +457,7 @@ function insertedRegion(delta: Delta | undefined): { start: number; end: number 
 }
 
 /** The delta with every island slot removed from its insert, or `undefined` when
- *  that leaves nothing but retains. Retain/delete arithmetic reads the OLD text,
+ *  that leaves nothing but retains. Retain/delete arithmetic reads the old text,
  *  so dropping inserted characters leaves the rest of the splice intact. */
 function withoutSlots(delta: Delta): Delta | undefined {
 	const ops: Delta['ops'] = [];
@@ -481,7 +481,7 @@ function withoutSlots(delta: Delta): Delta | undefined {
  * A post-delta position carried through the bundle's island inserts, which move
  * text exactly as the delta does and rebase marks by the same rule (start-assoc
  * `after`, end-assoc `before`; an anchor is a point and holds `before`). Ascending
- * `at`s apply left to right, so each comparison reads the RUNNING position.
+ * `at`s apply left to right, so each comparison reads the running position.
  */
 function shiftPastIslands(pos: number, insertedAt: number[], assoc: 'before' | 'after'): number {
 	let p = pos;
@@ -507,7 +507,7 @@ function diffMarks(
 	const ops: MarkOp[] = [];
 	// Read the gate once per diff rather than once per mark.
 	const { mapPos } = core();
-	// Rebase old marks through BOTH text-moving channels to final coords, exactly
+	// Rebase old marks through both text-moving channels to final coords, exactly
 	// as `applyChange` does internally (start assoc `after`, end assoc `before`).
 	const rebase = (pos: number, assoc: 'before' | 'after') =>
 		shiftPastIslands(delta ? mapPos(delta, pos, assoc) : pos, insertedAt, assoc);

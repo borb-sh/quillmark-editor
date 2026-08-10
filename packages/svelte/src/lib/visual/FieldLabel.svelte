@@ -1,26 +1,26 @@
 <!--
  A field's label plus its guidance chrome.
 
- IT NAMES THE CONTROL. A real `<label>`, so a click lands the caret in the field:
+ It names the control. A real `<label>`, so a click lands the caret in the field:
  the widest, easiest target in a dense row, and the most conventional affordance a
- form has. `for` reaches a LABELABLE control (the inputs, the enum trigger, the
+ form has. `for` reaches a labelable control (the inputs, the enum trigger, the
  switch) and the browser does the rest; a control `for` cannot reach (the prose
  leaf's `contenteditable`, the date field's segments, an array's N inputs) leaves
  `controlId` unset, points `aria-labelledby` back at this label's own `id`, and
  hands the click to `onActivate`. Both halves are needed: `for` on a non-labelable
- element is inert AND invalid.
+ element is inert and invalid.
 
  Two non-gating label decorations:
  • a persistent required `*` when the field has no `default:`: the
  "Unendorsed"/must_fill set (DOCUMENT_MODEL: no separate `required` axis). Its
  accessible name is "required", so a screen reader announces the word, not the
- glyph; INSIDE the `<label>`, so it names the control along with the text
+ glyph; inside the `<label>`, so it names the control along with the text
  ("Subject required") rather than announcing as a node adjacent to it;
 
  • the `description` as an info marker raising a themed popover
  ({@link FieldHint}).
 
- THE DESCRIPTION DESCRIBES, IT DOES NOT NAME. It is parked in an always-present
+ The description describes, it does not name. It is parked in an always-present
  visually-hidden node here and the control carries `aria-describedby`: name then
  role then description, which is the announcement the markup visually implies. In
  the name it would instead prepend ~110 characters of guidance (the reference
@@ -77,7 +77,7 @@
 		{/if}
 	</label>
 	{#if description}
-		<!-- OUTSIDE the `<label>`, both of them: a trigger inside it would put its own
+		<!-- Outside the `<label>`, both of them: a trigger inside it would put its own
 		 name in the control's, and the parked copy would put all ~110 characters
 		 there. A `<button>` in a label is at least safe from the other hazard:
 		 the spec makes a label's activation behaviour do nothing for a click

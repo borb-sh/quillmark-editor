@@ -1,5 +1,5 @@
 <!--
- An `array` field → an add/remove repeater. Elements commit by VALUE: every
+ An `array` field → an add/remove repeater. Elements commit by value: every
  edit / add / remove rebuilds the whole array and hands it to the parent's typed
  `writer.set(field, wholeArray)` (arrays are not op-addressed). Element control
  by `items.type`: `string` → text input, `richtext` → a prose element
@@ -13,14 +13,14 @@
  the remove sits beyond them, on the right edge the field's track keeps.
 
  Keys carry the list without the mouse: Enter inserts a
- sibling below and takes the caret there, Backspace on an EMPTY element removes it
+ sibling below and takes the caret there, Backspace on an empty element removes it
  and hands focus back up the list.
 
  No reorder: an array's order is fixed at declaration/entry order. Elements
  carry a parallel session-id list, spliced with the values as one operation at
  whatever index a mutation names; so an element holds its id for life and the
  surviving order never permutes, which is what lets a keyed prose element survive an
- insert or a remove ABOVE it rather than remounting.
+ insert or a remove above it rather than remounting.
 -->
 <script lang="ts">
 	import { wording } from './strings.js';
@@ -48,7 +48,7 @@
 		required?: boolean;
 		/** Schema `description`: the label's help affordance. */
 		description?: string;
-		/** The label's own DOM id. An array is a GROUP (N inputs, no single `for`
+		/** The label's own DOM id. An array is a group (N inputs, no single `for`
 		 * target) so the label names the set and each element keeps its indexed
 		 * `aria-label`. */
 		labelId?: string;
@@ -59,14 +59,14 @@
 	let { value, items, label, required, description, labelId, descriptionId, onCommit }: Props =
 		$props();
 
-	// The ELEMENT control is the item schema's own; an array declaring no `items`
+	// The element control is the item schema's own; an array declaring no `items`
 	// has text elements.
 	const control = $derived(items ? controlKind(items) : 'text');
 	const plaintext = $derived(items?.type === 'plaintext');
 	const arr = $derived((value ?? []) as unknown[]);
 
 	// Parallel stable ids, one per element, kept in lockstep with the data below.
-	// Seeded eagerly so a non-empty array renders its rows on the FIRST pass:
+	// Seeded eagerly so a non-empty array renders its rows on the first pass:
 	// an effect-only seed mounts every element editor in a second render.
 	const seq = new IdSeq();
 	// svelte-ignore state_referenced_locally
@@ -89,10 +89,10 @@
 	// is stated on `ProseArrayElement.focus`, which owns it.
 	//
 	// Every path that drops an id deletes its entry: `bind:this` teardown nulls the
-	// VALUE on unmount and leaves the key, so a card that outlives its elements
+	// value on unmount and leaves the key, so a card that outlives its elements
 	// accumulates one dead key per element ever created.
 	//
-	// `$state` for the BINDING's sake, not this component's: nothing here reads `els`
+	// `$state` for the binding's sake, not this component's: nothing here reads `els`
 	// reactively (every read is inside an event handler or a post-flush focus hop), but
 	// `bind:this` into a property of a plain object is a write Svelte cannot track, and
 	// it says so once per element per render. Thirteen lines on one memo's first paint,
@@ -147,7 +147,7 @@
 		// key does: the button under the pointer is part of what it destroys.
 		focusAfterFlush(next[Math.max(k - 1, 0)]);
 	}
-	/** Take the caret: the FIRST element, or the add affordance when the list is empty;
+	/** Take the caret: the first element, or the add affordance when the list is empty;
 	 * which is then the only thing there is to land on, and the next thing the user
 	 * wants anyway. Reached by a label click and by the editor's landing verbs, which
 	 * ask one function so they cannot disagree (`Field`, `leaves.ts`). */
@@ -159,7 +159,7 @@
 		// nothing about focusing it that the DOM does not already know.
 		rootEl?.querySelector<HTMLTextAreaElement>('.qm-array-row textarea')?.focus();
 	}
-	/** Take the caret to element `k`: what a landing on an element ADDRESS resolves to
+	/** Take the caret to element `k`: what a landing on an element address resolves to
 	 * (`leaves.ts`). The index resolves to the element's session id here, at the call,
 	 * never carried as one — an index is stale the moment anything above it splices.
 	 * Past the live list it falls back to {@link focus}: the field is right and the row
@@ -170,10 +170,10 @@
 		else focus();
 	}
 	/** Focus element `id` after the flush, never in the same tick: a mutation commits
-	 * the array BY VALUE, so the parent re-derives and the row does not exist until
+	 * the array by value, so the parent re-derives and the row does not exist until
 	 * then. `undefined` is the empty list: the add affordance.
 	 *
-	 * The commit that schedules this can also remove the CARD holding the field, which
+	 * The commit that schedules this can also remove the card holding the field, which
 	 * unmounts this component inside the window (core/teardown.ts). */
 	async function focusAfterFlush(id: string | undefined): Promise<void> {
 		if (!(await span.resumes(tick()))) return;
@@ -181,7 +181,7 @@
 		else els[id]?.focus();
 	}
 	/** Whether element `k` reads empty to the user. A text element's committed value
-	 * LAGS the input: a cleared field commits at `change`, not per keystroke
+	 * lags the input: a cleared field commits at `change`, not per keystroke
 	 * ({@link TextField}); so the input's own value is the truth; a prose element
 	 * commits every edit, so the committed `Content` is. */
 	function elementEmpty(k: number, target: EventTarget | null): boolean {
@@ -202,7 +202,7 @@
 		} else if (e.key === 'Backspace' && !e.repeat && elementEmpty(k, e.target)) {
 			// Destructive with nothing to undo it, so it takes a deliberate press:
 			// `repeat` is a held key running on past the character it just cleared, and
-			// the emptiness test reads the state BEFORE this keystroke applies; so the
+			// the emptiness test reads the state before this keystroke applies; so the
 			// press that empties an element never also removes it.
 			e.preventDefault();
 			remove(k);
@@ -282,14 +282,14 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space);
-		/* The one field that reaches across the reserved action column: its rows END in
+		/* The one field that reaches across the reserved action column: its rows end in
 		   that column, so an element control stops exactly where the scalar beside it
 		   does and the remove never sits over a long value. The reservation is the
-		   FIELD's inset (Field.svelte), so this cancels it wherever the field landed:
+		   field's inset (Field.svelte), so this cancels it wherever the field landed:
 		   its own row, or one track of a shared one. */
 		margin-right: calc(-1 * var(--action-col));
 	}
-	/* The array's first line IS the row's label line: this component owns the label
+	/* The array's first line is the row's label line: this component owns the label
 	 track (Field.svelte), so the header has to measure what a `.qm-field-label-row`
 	 measures or an array shares a row with a scalar and their labels sit apart. The
 	 label is the same component; what had to give was the add affordance's height,
@@ -322,13 +322,13 @@
 	}
 	/* Chrome, hover fill and target come from `.qm-add-affordance` (controls.css);
 	 what is here is this trigger's own type, box and recede ladder. It rests dim like
-	 the card stack's gap triggers and comes up on hover of the FIELD or on focus: one
+	 the card stack's gap triggers and comes up on hover of the field or on focus: one
 	 trigger at the head of a row of controls is found by looking at the array, not by
 	 grazing its first line.
 
-	 THE BOX IS THE LABEL'S LINE BOX, and the target is the `::after`: the same split
+	 The box is the label'S line box, and the target is the `::after`: the same split
 	 the field label's guidance marker takes, for the same reason and one row over.
-	 This is the other affordance that sits IN a line of text rather than in a row of
+	 This is the other affordance that sits in a line of text rather than in a row of
 	 its own, and the line is a label's, so a
 	 target-sized box would stand the header 8px taller than the `.qm-field-label-row`
 	 beside it in a shared row and put the two labels on different lines. So the family's
@@ -336,7 +336,7 @@
 	 keeps the label's line box, the press keeps the floor. The horizontal edges are the
 	 button's own, the word being already wider than the threshold.
 
-	 The type is the LABEL rung in place of the family's body rung, which the family
+	 The type is the label rung in place of the family's body rung, which the family
 	 invites (controls.css: a caller whose button carries a label restates the rung it
 	 wants). It reads as one more thing on the label line rather than as a control that
 	 wandered up from the row below. */

@@ -22,7 +22,7 @@ describe('list shapes round-trip', () => {
 		mixedBulletInOrdered: md('1. outer\n    - inner'),
 		// list_item is `block+`: Enter inside an item makes a second paragraph.
 		multiParagraphItem: md('- first para\n\n    second para\n\n- next item'),
-		// An item carrying BOTH a nested list and a trailing paragraph.
+		// An item carrying both a nested list and a trailing paragraph.
 		nestedThenParagraph: md('- outer\n    - inner\n\n    tail para'),
 		// Outdenting the middle item of a nested run splits the parent list.
 		splitBySibling: md('- a\n    - b\n- c\n    - d'),
@@ -38,10 +38,10 @@ describe('list shapes round-trip', () => {
 	}
 });
 
-// Two adjacent lists of the SAME type; the shape the cleanup invariant must not
+// Two adjacent lists of the same type; the shape the cleanup invariant must not
 // fuse (`lists.ts` §cleanup). Markdown has no spelling for it (a blank line between
 // two bullet runs makes one loose list), so it cannot come from `md()` and every
-// case above is blind to it. An ordinal DECREASE is the boundary: `decode` breaks
+// case above is blind to it. An ordinal decrease is the boundary: `decode` breaks
 // its run on one, and the upstream normalizer stores it verbatim.
 describe('adjacent same-type lists keep their boundary', () => {
 	const item = (t: string) =>

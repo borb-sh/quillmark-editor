@@ -1,15 +1,15 @@
-/* THE HOST'S DERIVATION: the same public dials in, a closed `--qmh-*` scale for the
-   page AROUND the surfaces out. `core/theme.css` is the same shape one level down
+/* The host'S derivation: the same public dials in, a closed `--qmh-*` scale for the
+   page around the surfaces out. `core/theme.css` is the same shape one level down
    (dials in, `--_qm-*` out), and the two are calibrated against each other: the
    figures here are the figures there (the ground step's two arms, 8% hover, 17%
    border, 45% and 60% ink) and the dial means the same plane in both, so a host plate
    and a card on it land on the same tone at both poles and a host page meets an
-   editor's own column exactly. The WELL under the ground has no counterpart here: a
+   editor's own column exactly. The well under the ground has no counterpart here: a
    host's own controls are boxed and carry a hairline, so nothing on a page needs the
    step an edgeless field does.
 
-   TWO SCALES rather than one because they answer to different roots. `--_qm-*` is
-   declared ON each mounted root, out of reach from an ancestor, so a surface holds its
+   Two scales rather than one because they answer to different roots. `--_qm-*` is
+   declared on each mounted root, out of reach from an ancestor, so a surface holds its
    scale wherever it is dropped. A host scale has the opposite job: it is the document,
    so it is declared at `:root` and everything on the page reads it. A single namespace
    could not be both.
@@ -17,14 +17,14 @@
    Literals live here and nowhere else in the preset: `check:style` runs its axes over
    `recipes.css` beside it, with this file exempt as the place the defaults are minted.
 
-   The poles fall back to the SYSTEM colours, so a host that turns no dial still lands
+   The poles fall back to the system colours, so a host that turns no dial still lands
    where its own unstyled text does — `Canvas` being the plane the UA would have
    painted a page with, which is what a plate should be. The dials sit in front, so
    `--qm-bg`/`--qm-fg` on an ancestor retunes page and surface together. */
 
 :root {
 	/* ── Colour ──────────────────────────────────────────────────────────────── */
-	/* The DIAL is the plate, exactly as it is the card one level down: a plate beside
+	/* The dial is the plate, exactly as it is the card one level down: a plate beside
 	   a mounted editor is the same plane as a card in it, so both read the pole and
 	   the page sinks from it by the same two arms. That is what puts a host page and
 	   an editor's own column on one tone rather than a plane apart. Planes step by
@@ -44,7 +44,7 @@
 	   the underline under a link. */
 	--qmh-border-strong: color-mix(in oklab, var(--qmh-surface), var(--qmh-ink) 40%);
 
-	/* The two hues a host spends, and it spends them on a message. Both read the DIAL,
+	/* The two hues a host spends, and it spends them on a message. Both read the dial,
 	   so a page carries one colour meaning error and one meaning warning rather than a
 	   second pair beside the surfaces'. The dark half is a lift the dials do not carry:
 	   a hue calibrated against white reads as a stain on a dark page. */
@@ -53,7 +53,7 @@
 
 	/* ── Rhythm ──────────────────────────────────────────────────────────────── */
 	/* One base and its multiples, the same four steps the surfaces derive. A host
-	   separating SECTIONS down a page wants steps above these; it derives them from
+	   separating sections down a page wants steps above these; it derives them from
 	   this base rather than minting them, which is what keeps its ramp one ramp. */
 	--qmh-space: var(--qm-space, 0.25rem);
 	--qmh-space-half: calc(var(--qmh-space) / 2);
@@ -69,7 +69,7 @@
 	   so it does not derive from the spacing dial. */
 	--qmh-measure: 34rem;
 
-	/* The floor under a control a THUMB lands on. Hand geometry rather than rhythm, which
+	/* The floor under a control a thumb lands on. Hand geometry rather than rhythm, which
 	   is why it does not derive from the spacing dial either: 44px is where both platform
 	   guidelines and WCAG put a touch target, and a control padded to a pointer's size is
 	   under it whatever rung the padding reads. */
@@ -84,7 +84,7 @@
 	--qmh-font: var(--qm-font, ui-sans-serif, system-ui, sans-serif);
 	--qmh-font-mono: var(--qm-font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
 
-	/* The page's own ramp, and it does NOT read `--qm-font-size`: that dial anchors the
+	/* The page's own ramp, and it does not read `--qm-font-size`: that dial anchors the
 	   surfaces' ramp, which is chrome inside a card, and a page's body text is a
 	   different job at a different size. A host that wants them locked sets both. */
 	--qmh-text: 1rem;
@@ -105,7 +105,7 @@
 	--qmh-ease-reverse: cubic-bezier(0.4, 0, 0.6, 1);
 }
 
-/* Collapse the SCALE, not each transition: every animated recipe reads the rung, so one
+/* Collapse the scale, not each transition: every animated recipe reads the rung, so one
    override reaches all of them with no `*` rule touching mounted package elements. */
 @media (prefers-reduced-motion: reduce) {
 	:root {

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // The click ladder and the scroll's box lookup, driven through real clicks on real
-// slots against a stubbed session. Both are about WHICH query answers and what the
+// slots against a stubbed session. Both are about which query answers and what the
 // answer carries, not about pixels: the transform they ride is `geometry.ts`'s and is
 // tested against a compiled session there.
 //
@@ -102,14 +102,14 @@ describe('scrollToField', () => {
 
 	it('answers for an address whose rect only regions() carries', () => {
 		// `fieldBoxes` is span-bearing-content-only, so a plate-placed scalar has no
-		// union; runtime.d.ts says its box IS the single `regions()` rect.
+		// union; runtime.d.ts says its box is the single `regions()` rect.
 		const bridge = bridgeOver([], [region('main.signature_block')]);
 		expect(bridge.scrollToField('main.signature_block')).toBe(true);
 		bridge.destroy();
 	});
 
 	it('answers for a declared array off the rects of its elements', () => {
-		// Nothing is named `main.references`: the compile tracks its ELEMENTS. A host
+		// Nothing is named `main.references`: the compile tracks its elements. A host
 		// holding the declared path reaches the rows it prints.
 		const bridge = bridgeOver([], [region('main.references.0'), region('main.references.1')]);
 		expect(bridge.scrollToField('main.references')).toBe(true);

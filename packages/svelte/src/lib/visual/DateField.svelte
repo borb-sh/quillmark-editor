@@ -11,26 +11,26 @@
  calendar) rather than `DatePicker`: the segments are the entry affordance, and a
  calendar is a second surface this field does not need.
 
- THE BOUNDARY IS A STRING, AND THE LOCAL IS TOO. The primitive speaks
+ The boundary is A string, and the local is too. The primitive speaks
  `CalendarDate`; the document speaks `YYYY-MM-DD`. `CalendarDate` carries no time
  and no zone, so the round-trip is lossless and no local-midnight shift can occur:
  the hazard that makes `new Date('2026-07-25')` the wrong tool here. Authored
- values are data, not input: `parseDate` THROWS on anything malformed, so a bad
+ values are data, not input: `parseDate` throws on anything malformed, so a bad
  string degrades to an empty field rather than taking the editor down with it.
 
- `syncedLocal` reconciles by IDENTITY, so the local must hold the string, not the
+ `syncedLocal` reconciles by identity, so the local must hold the string, not the
  parsed value: a fresh `CalendarDate` is never `===` the last one, which would
  make every reconcile fire and re-render all seven segments on each commit.
 
- THE GHOST IS THE DEFAULT'S DIGITS, NOT A FORMAT HINT. An unset field
+ The ghost is the default'S digits, not A format hint. An unset field
  carrying a `default:` prints the default's digits in the segments, ghost-toned,
  instead of the primitive's `mm`/`dd`/`yyyy` hints, which say "empty" where the
- rung says "will render 2026-01-01". The ghost is painted in the SEGMENT SNIPPET,
+ rung says "will render 2026-01-01". The ghost is painted in the segment snippet,
  over an unset primitive: substituting the default for `value` instead would make
  the field indistinguishable from an authored one to every path that reads it
  (`areAllSegmentsFilled`, Backspace, the hidden input), and the primitive shadows
  a written-back `value` prop it was not `bind:`-ed to, so re-seating the ghost
- after a clear never lands. `placeholder` (the `DateValue` the segments COUNT
+ after a clear never lands. `placeholder` (the `DateValue` the segments count
  from, never one they display) carries the default too, so arrowing an empty
  segment starts at the render's date rather than today's.
 -->
@@ -45,15 +45,15 @@
 		/** The resolved `default:` in the boundary's currency (`YYYY-MM-DD`): parsed
 		 * for display only, shown while unset, never written. */
 		fallback?: string;
-		/** Accessible name for a field NOTHING else names: an object property, whose
+		/** Accessible name for a field nothing else names: an object property, whose
 		 * name is the field label plus the property's. A field's own date takes
 		 * `labelledBy` instead. */
 		label?: string;
-		/** The field label's own id. `for` CANNOT reach this control: the segment
+		/** The field label's own id. `for` cannot reach this control: the segment
 		 * container is not a labelable element; so the association runs the other way,
 		 * and the label's click comes back through {@link focus}. It lands on the
 		 * container, which the primitive gives `role="group"`: the name belongs to the
-		 * SET of segments, and entering any of them announces it. (bits builds each
+		 * set of segments, and entering any of them announces it. (bits builds each
 		 * segment's own `aria-labelledby` from a `DateField.Label` inside its root:
 		 * unreachable from here, since the field's label is a grid child of the field,
 		 * not of the control.) */
@@ -66,7 +66,7 @@
 
 	let wrapEl: HTMLElement | undefined = $state();
 	/** Take the caret: what the label click, and a parent placing focus here, calls.
-	 * The FIRST segment, not the field: focus lives on a segment (which is why the
+	 * The first segment, not the field: focus lives on a segment (which is why the
 	 * ring is `.qm-focus-ring-within`), and the container holds none. `literal` is the
 	 * separator between segments: present, never focusable. */
 	export function focus(): void {
@@ -85,14 +85,14 @@
 		}
 	}
 
-	// Local value synced to `value` as a STRING (see the identity note above);
+	// Local value synced to `value` as a string (see the identity note above);
 	// own-edits stay local, only an external change reconciles back in. Driven
-	// CONTROLLED (`value` + `onValueChange`, never `bind:`) so reconciliation stays
+	// controlled (`value` + `onValueChange`, never `bind:`) so reconciliation stays
 	// the package's.
 	const local = syncedLocal(() => value?.slice(0, 10) ?? '');
 	const parsed = $derived(toDateValue(local.value));
 	// The date the empty segments ghost, or undefined when there is nothing to ghost:
-	// the field is unset AND the default has a date form. A non-blank local that
+	// the field is unset and the default has a date form. A non-blank local that
 	// fails to parse is AUTHORED-but-malformed, which the empty field states
 	// honestly: the ghost would claim it unset. Held as the parsed value rather than
 	// a boolean so the substitution below narrows on the one fact it needs.
@@ -101,10 +101,10 @@
 
 	// What one segment prints, and whether that text is shown-never-written.
 	//
-	// An UNFILLED segment is always shown-never-written, whether it prints the
+	// An unfilled segment is always shown-never-written, whether it prints the
 	// default's digits or the primitive's own `mm`/`dd`/`yyyy` hint: both state
 	// "nothing authored here". Only an unfilled segment ghosts: a half-entered date
-	// holds digits while the VALUE is still undefined (one unfilled segment unsets
+	// holds digits while the value is still undefined (one unfilled segment unsets
 	// the whole field), so ghosting unconditionally would paint over, and dim, the
 	// digits just typed. The segment's own text is the tell: its unfilled hint is
 	// alphabetic in every locale bits ships (`mm`/`yyyy`, `аа`, `年`), a filled one
@@ -142,7 +142,7 @@
 	>
 		<!-- `data-ghosted` states the rung the way the enum trigger does. The date
 		 primitive emits no per-segment placeholder marker (only bits' `select`
-		 does), so the TONE rides the same attribute, set per segment from the
+		 does), so the tone rides the same attribute, set per segment from the
 		 substitution itself; which is also what keeps a half-typed date's own
 		 digits at full ink while the segments around them ghost. -->
 		<BitsDateField.Input
@@ -153,7 +153,7 @@
 			data-ghosted={ghost ? '' : undefined}
 		>
 			{#snippet children({ segments })}
-				<!-- Keyed by INDEX: `part` repeats (the `literal` separators between
+				<!-- Keyed by index: `part` repeats (the `literal` separators between
 				 segments all carry it) so a part-keyed block collides. -->
 				{#each segments as seg, i (i)}
 					{@const shown = segmentText(seg.part, seg.value)}
@@ -171,7 +171,7 @@
 </span>
 
 <style>
-	/* A primitive renders its OWN element, which a scoped selector cannot reach:
+	/* A primitive renders its own element, which a scoped selector cannot reach:
 	 styled through the wrapper with `:global`. */
 	/* The box is `.qm-control-box` (controls.css), carried on the primitive's own
 	   element beside `.qm-focus-ring-within`; the segments inherit its size and ink
@@ -183,7 +183,7 @@
 		box-sizing: border-box;
 	}
 	/* The ring rides `.qm-focus-ring-within` (controls.css) rather than the plain
-	   marker: focus lives on the SEGMENT, so it rings the field, not the segment
+	   marker: focus lives on the segment, so it rings the field, not the segment
 	   the caret happens to be in. */
 	.qm-date-wrap :global(.qm-date-segment) {
 		padding: 0 var(--_qm-space-half);

@@ -1,6 +1,6 @@
 /**
  * The stamp a bundle carries, measured against a real workspace rather than asserted from
- * the shape of the string: what the stamp is FOR is a consumer holding a tarball nobody
+ * the shape of the string: what the stamp is for is a consumer holding a tarball nobody
  * can `npm ls`, so a coordinate that reads right and names the wrong copy is the failure
  * this suite exists to catch.
  *

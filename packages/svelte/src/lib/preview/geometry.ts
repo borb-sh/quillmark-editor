@@ -1,4 +1,4 @@
-// The one shared pixel<->PDF-pt transform, and the one rule for WHICH rects an
+// The one shared pixel<->PDF-pt transform, and the one rule for which rects an
 // address has. Both the overlay's forward direction (a FieldRegion rect -> CSS % of
 // the page box, overlay.ts) and the bridge's inverse (a CSS px click -> PDF-pt for
 // `positionAt`, bridge.ts) derive from `PageSize` alone here, so they can never
@@ -25,7 +25,7 @@ export interface PdfPoint {
 
 /**
  * An address's boxes: `fieldBoxes`'s union, else its own `regions()` rects, else the
- * rects of everything UNDER it. The one rule the overlay and the scroll both read, so
+ * rects of everything under it. The one rule the overlay and the scroll both read, so
  * an address `regions()` names never draws nothing (PREVIEW.md §"Three
  * responsibilities").
  *
@@ -81,7 +81,7 @@ export function applyPercentRect(el: HTMLElement, pct: PercentRect): void {
 
 /**
  * Inverse: a click at CSS px `(px, py)` within a page element of CSS size
- * `(cssW, cssH)` -> PDF-pt. The EXACT inverse of {@link rectToPercent}: the
+ * `(cssW, cssH)` -> PDF-pt. The exact inverse of {@link rectToPercent}: the
  * fraction `rectToPercent` would place a point's box corner at is the same
  * fraction this reads back from `px/cssW`, `py/cssH`; DPR-independent, since
  * the page element's CSS size (not its canvas backing store) is the only input.

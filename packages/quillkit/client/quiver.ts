@@ -3,7 +3,7 @@
 // content-addressed bundle, fonts dehydrated into a store). The browser consumer path
 // in full, which is what an author-facing surface owes the loader it is a surface for.
 //
-// The base is a RUNTIME fact, taken off the document's own, and nothing here is
+// The base is a runtime fact, taken off the document's own, and nothing here is
 // workspace-relative: the same client serves a dev server, a subpath, and a published
 // deploy unchanged (STUDIO §"A client, and what serves it").
 import { Quiver } from '@quillmark/quiver';

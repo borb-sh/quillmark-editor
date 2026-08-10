@@ -18,7 +18,7 @@ describe('what a Diagnostic carries', () => {
 
 		const byCode = new Map(q.validate(doc).map((d) => [d.code, d]));
 
-		// The constraint AND the value, keyed: what lets a formatter say "pick one of
+		// The constraint and the value, keyed: what lets a formatter say "pick one of
 		// these" in another language without parsing the English it was handed.
 		const enumViolation = byCode.get('validation::enum_violation');
 		expect(enumViolation?.args?.value).toBe('NOT_AN_OPTION');

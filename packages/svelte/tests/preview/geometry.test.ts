@@ -31,7 +31,7 @@ describe('geometry: synthetic round-trip', () => {
 
 	it('clickToPdfPt is the exact inverse of rectToPercent, for points across the page', () => {
 		// Model a point as a zero-size rect so both directions compose through the
-		// SAME forward transform the overlay uses; not a hand-derived inverse.
+		// same forward transform the overlay uses; not a hand-derived inverse.
 		const cssW = 612;
 		const cssH = 792;
 		const points: Array<[number, number]> = [
@@ -117,8 +117,8 @@ describe('geometry: against a real compiled session (usaf_memo)', () => {
 	});
 
 	it('every fieldBoxes rect round-trips through positionAt back to its own field, somewhere in the box', async () => {
-		// NOT the box's geometric center: fieldBoxes unions same-page segments into
-		// ONE rect (PREVIEW.md), so a field whose content is two non-adjacent lines
+		// Not the box's geometric center: fieldBoxes unions same-page segments into
+		// one rect (PREVIEW.md), so a field whose content is two non-adjacent lines
 		// (e.g. main.body, verified empirically: two disjoint line segments with a real
 		// vertical gap between them) has a bounding box whose center legitimately
 		// falls in that gap, off any ink. A grid sample proves the transform is
@@ -174,7 +174,7 @@ describe('boxesForField', () => {
 		({ field, page: 0, rect: [x, 10, x + 100, 30] }) as FieldRegion;
 
 	it("takes an address's own rects over the ones under it", () => {
-		// The descendant rung is a FALLBACK, not a union: an address with rects of its
+		// The descendant rung is a fallback, not a union: an address with rects of its
 		// own never also draws its children's over them.
 		const regions = [region('main.author', 0), region('main.author.0', 200)];
 		expect(boxesForField('main.author', [], regions)).toEqual([regions[0]]);
@@ -205,7 +205,7 @@ describe('geometry: the addresses a compile serves (usaf_memo)', () => {
 				const boxes = boxesForField(field, session.fieldBoxes(field), regions);
 				expect(boxes.length, `no box for ${field}`).toBeGreaterThan(0);
 			}
-			// `main.references` is named by no region: the compile tracks its ELEMENTS.
+			// `main.references` is named by no region: the compile tracks its elements.
 			// A host holding the declared path still reaches the rows it prints.
 			expect(fields).not.toContain('main.references');
 			expect(

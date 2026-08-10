@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // The narrow shell hides the track the reader is not on with `display: none`, and the
-// preview stays MOUNTED behind it (THEMING §"The shell"): a surface that lost its pages
+// preview stays mounted behind it (THEMING §"The shell"): a surface that lost its pages
 // to a tab switch would repaint the whole document on every one. Hiding is what the loop
 // sees as an empty visible set, so these drive that transition directly — the observer is
 // the only thing that reports it, and jsdom has none.
@@ -37,7 +37,7 @@ class FakeIO {
 beforeAll(() => {
 	(globalThis as unknown as { IntersectionObserver: unknown }).IntersectionObserver = FakeIO;
 	// jsdom ships no canvas backend, so `getContext` returns null and the loop reads every
-	// page as one it must not register. What is under test is which pages are MOUNTED, and
+	// page as one it must not register. What is under test is which pages are mounted, and
 	// the pixels are the session's — which is mocked — so a stub context is the whole need.
 	HTMLCanvasElement.prototype.getContext =
 		(() => ({})) as unknown as HTMLCanvasElement['getContext'];

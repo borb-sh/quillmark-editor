@@ -1,20 +1,20 @@
-// The block-atom link of the body's Backspace/Delete chains: a delete AGAINST an
+// The block-atom link of the body's Backspace/Delete chains: a delete against an
 // island or a divider selects it, and the press after that deletes it.
 //
-// This is the neighbour half of the rule the leaf already holds for a key typed OVER a
+// This is the neighbour half of the rule the leaf already holds for a key typed over a
 // selection (CODEC §"The table island"): a selection is the subject of the next
 // command, never a thing armed for replacement. Without it the base keymap's
 // `joinBackward` / `joinForward` reach their "the neighbour is an atom, delete it" arm
 // and a table goes in one keystroke, from the paragraph a table insert parks the caret
 // in — with nothing drawn first to say what is about to go.
 //
-// It runs LAST of the links, after the list ones: a Backspace at the start of a list's
+// It runs last of the links, after the list ones: a Backspace at the start of a list's
 // first item lifts the item, and that stays the item's answer whatever sits above the
 // list.
 import { NodeSelection, TextSelection, type Command } from 'prosemirror-state';
 import type { ResolvedPos, Schema } from 'prosemirror-model';
 
-/** The caret, when it sits at a textblock EDGE with an empty selection: the only place
+/** The caret, when it sits at a textblock edge with an empty selection: the only place
  *  a delete is about a neighbour rather than about a character. `null` everywhere else,
  *  which is where the key keeps its ordinary meaning. */
 function atEdge(state: Parameters<Command>[0], side: -1 | 1): ResolvedPos | null {
