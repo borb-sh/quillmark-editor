@@ -424,18 +424,25 @@ li.ProseMirror-selectednode::after {
 	top: 100%;
 	height: var(--_qm-tap-min);
 }
-/* THE REVEAL, and it is the control's own. A grip or a bar is drawn while the pointer
-   is ON it, while it holds the focus, or while it is what a gesture is about: the
-   selected line's grip, and the lifted one, which is drawn through a drag the pointer
-   has travelled off. Opacity rather than absence, so every control keeps its box and its
-   place in the tab order, and a keyboard reaches the band with no pointer at all.
+/* THE REVEAL, IN TWO RUNGS, one per question (CODEC §"The table island"). The BAND comes
+   up muted while the pointer is anywhere on the island, answering whether there is one at
+   all; a control raises to full while the pointer is ON it, while it holds the focus, or
+   while it is what a gesture is about — the selected line's grip, and the lifted one,
+   which is drawn through a drag the pointer has travelled off — answering which line.
 
-   `:hover` on the CONTROL and not the island: a pointer crossing a table says nothing
-   about which line it is crossing, and a band that comes up whole answers a question
-   with six controls when the pointer has picked out none. */
+   Opacity rather than absence, so every control keeps its box and is hit-tested wherever
+   it sits. What it does NOT keep is a keyboard route: every grip is in the tab order and
+   no Tab reaches one, the cell traversal claiming the key first (`table-view.ts`
+   §`step`), so the band's reach is the pointer's. */
 :is(.qm-table-grip, .qm-table-add) {
 	opacity: 0;
 	transition: opacity var(--_qm-duration-fast) var(--_qm-ease-reverse);
+}
+/* `:where` on the island, so the first rung carries the specificity of the control alone
+   and the second one outranks it. Unwrapped, the descendant selector is the heavier of
+   the two and a hovered grip stays muted under the pointer that is on it. */
+:where(.qm-table-island:hover) :is(.qm-table-grip, .qm-table-add) {
+	opacity: var(--_qm-opacity-muted);
 }
 :is(.qm-table-grip, .qm-table-add):is(:hover, :focus-visible),
 .qm-table-grip:is([aria-pressed='true'], .qm-table-lifted) {
