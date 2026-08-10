@@ -231,8 +231,11 @@
 		{:else}
 			<span></span>
 		{/if}
-		<button type="button" class="qm-add-el qm-add-affordance" bind:this={addEl} onclick={add}
-			>{t.strings.arrayAdd}</button
+		<button
+			type="button"
+			class="qm-add-el qm-add-affordance qm-tap-floor"
+			bind:this={addEl}
+			onclick={add}>{t.strings.arrayAdd}</button
 		>
 	</div>
 	{#each ids as id, k (id)}
@@ -376,34 +379,20 @@
 	 trigger at the head of a row of controls is found by looking at the array, not by
 	 grazing its first line.
 
-	 The box is the label'S line box, and the target is the `::after`: the same split
-	 the field label's guidance marker takes, for the same reason and one row over.
-	 This is the other affordance that sits in a line of text rather than in a row of
-	 its own, and the line is a label's, so a
-	 target-sized box would stand the header 8px taller than the `.qm-field-label-row`
-	 beside it in a shared row and put the two labels on different lines. So the family's
-	 floor comes off the box and goes out of flow, unpainted and centred on it: the row
-	 keeps the label's line box, the press keeps the floor. The horizontal edges are the
-	 button's own, the word being already wider than the threshold.
+	 The box is the label's line box and the target is `.qm-tap-floor`'s (controls.css):
+	 this affordance sits in a line of text rather than in a row of its own, and the line
+	 is a label's, so a target-sized box would stand the header 8px taller than the
+	 `.qm-field-label-row` beside it in a shared row and put the two labels on different
+	 lines.
 
 	 The type is the label rung in place of the family's body rung, which the family
 	 invites (controls.css: a caller whose button carries a label restates the rung it
 	 wants). It reads as one more thing on the label line rather than as a control that
 	 wandered up from the row below. */
 	.qm-add-el {
-		position: relative;
-		min-height: 0;
 		padding: 0 var(--_qm-space);
 		font-size: var(--_qm-text-label);
 		opacity: var(--_qm-opacity-idle);
-	}
-	.qm-add-el::after {
-		content: '';
-		position: absolute;
-		inset-inline: 0;
-		top: 50%;
-		height: var(--_qm-tap-min);
-		transform: translateY(-50%);
 	}
 	.qm-array:hover .qm-add-el,
 	.qm-add-el:focus-visible {

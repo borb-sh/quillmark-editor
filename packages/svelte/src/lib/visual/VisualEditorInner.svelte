@@ -918,7 +918,7 @@
 			{#if kinds.length === 1}
 				<button
 					type="button"
-					class="qm-add-btn qm-add-affordance"
+					class="qm-add-btn qm-add-affordance qm-tap-floor"
 					aria-label={marked ? undefined : merged.addCard}
 					onclick={() => addCard(atIndex, kinds[0])}>{marked ? merged.addCard : ''}</button
 				>
@@ -930,7 +930,7 @@
 			 rules below reach it through `:global`. -->
 				<DropdownMenu.Root>
 					<DropdownMenu.Trigger
-						class="qm-add-btn qm-add-affordance"
+						class="qm-add-btn qm-add-affordance qm-tap-floor"
 						aria-label={marked ? undefined : merged.addCard}
 						>{marked ? merged.addCard : ''}</DropdownMenu.Trigger
 					>
@@ -1059,7 +1059,10 @@
 	 the same seam the enum trigger is styled through. */
 	/* No inset of its own: the pill and the gap are the same rectangle. A bare strip is
 	   a band of gutter, so its height is a rhythm rung; the marked one stands taller,
-	   below, for the words it holds.
+	   below, for the words it holds. The press floor the box gives up is
+	   `.qm-tap-floor`'s (controls.css); what it overhangs here is the card's own inset
+	   above and below, which holds no target of its own, so the floor costs a neighbour
+	   nothing.
 
 	   Rest is nothing at all — not the family's flat button but an invisible one, so
 	   the fill is the whole of what arrives. Ink is pinned to the label tone in every
@@ -1071,31 +1074,16 @@
 	   passed to a primitive is a plain string that never picks up the scoping hash:
 	   the same seam the enum trigger is styled through. */
 	.qm-add-card :global(.qm-add-btn) {
-		position: relative;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		width: 100%;
-		min-height: 0;
 		height: var(--_qm-space-4);
 		color: var(--_qm-ink-label);
 		opacity: 0;
 		transition:
 			opacity var(--_qm-reveal),
 			background-color var(--_qm-reveal);
-	}
-	/* The press floor the box gives up, out of flow and unpainted, centred on it: the
-	   same split the array's add affordance takes and for the same reason, that a
-	   target-sized box is taller than the figure it is drawing. What it overhangs is
-	   the card's own inset above and below, which holds no target of its own, so the
-	   floor costs a neighbour nothing. */
-	.qm-add-card :global(.qm-add-btn::after) {
-		content: '';
-		position: absolute;
-		inset-inline: 0;
-		top: 50%;
-		height: var(--_qm-tap-min);
-		transform: translateY(-50%);
 	}
 	/* The marked strip is the one that holds words at rest, so it takes the height that
 	   centres them and the rungs they are set in: the label rung off the body size the

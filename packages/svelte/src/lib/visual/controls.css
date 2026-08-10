@@ -193,6 +193,42 @@
 		color: var(--_qm-ink);
 	}
 
+	/* The press floor, for a trigger whose drawn box is smaller than the target it owes.
+	 A target is a region of the screen and a box is paint; separating them is what lets
+	 both be right at once. Three triggers need it, and they are the three that stand in a
+	 line of text or in a band of gutter rather than in a row of their own: the field
+	 label's guidance marker, the array's add, and the card stack's add strip. Every other
+	 button has a row to itself and keeps the floor as its box, above.
+
+	 One rule and no variants, because the rule is that the target is the box or the floor,
+	 whichever is larger, which is what `width: 100%` under a `min-width` says: a 13px
+	 glyph takes 24 in both axes, a full-bleed strip takes its own width and 24 of height.
+	 The two hand-written spellings this replaces read as two shapes — one centred on a
+	 glyph, one stretched across a strip — and are the same rule at two sizes of host.
+
+	 Unpainted, so it enlarges the press and not the mark, and out of the accessibility
+	 tree by construction: a pseudo-element has no node.
+
+	 The family's floor comes off in the same rule, because carrying this class is what
+	 giving it up means: a caller that took the `min-*` back by hand could take one and
+	 forget the other. It sits after both families for that — same specificity, so source
+	 order decides. */
+	.qm-tap-floor {
+		position: relative;
+		min-width: 0;
+		min-height: 0;
+	}
+	.qm-tap-floor::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 100%;
+		min-width: var(--_qm-tap-min);
+		height: var(--_qm-tap-min);
+		transform: translate(-50%, -50%);
+	}
+
 	/* A floating list of choices: the enum's listbox and the card stack's kind menu.
 	 Both portal into the nearest `[data-qm-root]`, and both are picked from, so the
 	 surface (its edge, its inset, its ink) and the item (its pad, its radius, the
