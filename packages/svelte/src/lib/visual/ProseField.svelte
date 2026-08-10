@@ -180,8 +180,16 @@
 	 the rule below's, and a second naming of it drifts. Three is what an empty body
 	 costs, which is the only state the floor is ever the height: the ghost takes the
 	 first line, so the opening reads as an invitation with room under it rather than
-	 as a drop. */
-	.qm-prose-block {
+	 as a drop.
+
+	 On the editable rather than on the wrapper around it, which is what makes those
+	 two lines part of the body and not a margin drawn to look like one: height the
+	 wrapper holds is height outside the `contenteditable`, so a press there lands on
+	 the wrapper and the caret stays where it was. Held by the editable, the browser's
+	 own hit test answers the press at the nearest position in the document, which for
+	 a point past the last line is the end of it. The wrapper is the same height either
+	 way: it has no content but this element, so it takes the floor back through it. */
+	.qm-prose-block :global(.ProseMirror) {
 		min-height: calc(1em * var(--_qm-leading-body) * 3);
 	}
 	/* Paper, and the box is what says so. Not `block` alone: `inline` is the quill's to
