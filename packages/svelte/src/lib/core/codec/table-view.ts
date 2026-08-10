@@ -1091,9 +1091,9 @@ class TableIslandView implements NodeView {
 	 *  Out of the tab order, at no cost in reach: a grip follows the cell it hangs in, so
 	 *  a forward Tab is the cell traversal's before the browser gets there and a backward
 	 *  one leaves the grid off cell (0,0) without passing a grip
-	 *  (§{@link TableIslandView.step}). A line's chrome answers to the pointer, and a stop
-	 *  per line buys no key a way to it. Focus is still taken here, by the routes this
-	 *  view owns: a selection, a drag, a rebuild's reseat. */
+	 *  (§{@link TableIslandView.step}). A line's chrome answers to the pointer. Focus is
+	 *  still taken here, by the routes this view owns: a selection, a drag, a rebuild's
+	 *  reseat. */
 	private grip(line: Line, label: string): HTMLButtonElement {
 		const btn = chromeButton('qm-table-grip', label, () => {
 			if (this.suppressClick) this.suppressClick = false;
@@ -1117,10 +1117,11 @@ class TableIslandView implements NodeView {
 	 *  the pointer out past the last line is the claim — so its name carries the verb for
 	 *  everything that does not read position.
 	 *
-	 *  In the tab order, where a grip is not: these two are the keyboard's only route to
-	 *  their verbs, and the column bar the only route to a column at all. They sit after
-	 *  the grid, so the Tab that declines off the last cell lands on them, and the focus
-	 *  rung draws the one it lands on (`codec/prose.css`). */
+	 *  In the tab order, where a grip is not: the column bar is the keyboard's only route
+	 *  to a column at all, and the row bar is that control on the other axis, where Enter
+	 *  at the last row and Tab past the last cell reach the verb from inside a cell. They
+	 *  sit after the grid, so the Tab that declines off the last cell lands on them, and
+	 *  the focus rung draws the one it lands on (`codec/prose.css`). */
 	private addBar(axis: Axis, label: string): HTMLButtonElement {
 		const btn = chromeButton('qm-table-add', label, () => {
 			const props = this.props();
@@ -1278,11 +1279,11 @@ class TableIslandView implements NodeView {
 	 *
 	 * It declines at both ends, and that is the island's keyboard exit: the key is not
 	 * swallowed, so the browser moves the focus out of the grid the way it moved it in.
-	 * Backward that is the first cell; forward it is the last cell of an empty trailing
-	 * row, where a row is on offer and walking off the end of an unwritten one refuses it
-	 * — the reading an empty item's Enter takes in a list (`lists.ts`). Growth that never
-	 * declined leaves Tab no forward exit at all, every press past the last cell
-	 * appending.
+	 * Backward that end is the first cell. Forward it is the last cell of an empty
+	 * trailing row: a row is on offer, and walking off the end of an unwritten one
+	 * refuses it, the reading an empty item's Enter takes in a list (`lists.ts`). Growth
+	 * that never declined leaves Tab no forward exit at all, every press past the last
+	 * cell appending.
 	 */
 	private step(r: number, c: number, dir: 1 | -1): boolean {
 		const props = this.props();

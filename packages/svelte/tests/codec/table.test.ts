@@ -573,8 +573,8 @@ describe('the table NodeView', () => {
 		// Five grips no Tab arrives at, so five stops the document does not spend.
 		for (const axis of ['row', 'column'] as const)
 			for (const grip of grips(field, axis)) expect(grip.tabIndex).toBe(-1);
-		// The caps stay: they are the keyboard's only route to their verbs, and the column
-		// one the only route to a column at all.
+		// The caps stay: the column one is the keyboard's only route to a column at all,
+		// and the row one is that control on the other axis.
 		for (const axis of ['row', 'column'] as const) expect(cap(field, axis).tabIndex).toBe(0);
 		// A grip still takes focus, by the routes the view owns rather than by Tab.
 		grips(field, 'row')[1].click();
