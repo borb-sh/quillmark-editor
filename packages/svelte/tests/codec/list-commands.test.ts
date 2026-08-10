@@ -137,9 +137,9 @@ describe('Enter', () => {
 		expect(next.doc.textBetween(next.selection.from, next.doc.content.size)).toBe('a');
 	});
 
-	// The gesture is the escape from a list nothing above can be typed in, so it
-	// answers on exactly the shapes where a caret cannot already go: a rule and an
-	// island are atoms, and a gap cursor declines beside a list too.
+	// The gesture answers on exactly the shapes where a caret cannot already go, a
+	// rule and an island being atoms; everywhere else Enter is the ordinary split,
+	// so the key means one thing at every item a writer can escape by pressing Up.
 	it('opens a paragraph above a list that follows an atom', () => {
 		expectPress(
 			startOf('---\n\n- a', 0),

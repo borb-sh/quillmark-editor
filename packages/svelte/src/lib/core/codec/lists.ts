@@ -37,11 +37,11 @@ function atItemStart(
 }
 
 /**
- * Whether a caret already fits immediately above the list at `pos`: the node
- * ending there, descended through its last children, is a textblock. `false` where
- * the list opens its parent, or where the block above is an atom (an island, a
- * divider) — the two shapes a gap cursor also declines to sit in, since it asks the
- * same question from the other side (`prosemirror-gapcursor`'s `closedBefore`).
+ * Whether a caret already fits immediately above the list at `pos`. The node ending
+ * there answers for its last child, so a quote counts through its final paragraph;
+ * an atom (an island, a rule) does not, and neither does a list opening its parent.
+ * Those are the shapes `prosemirror-gapcursor` declines too, its `closedBefore`
+ * asking this question from the other side.
  */
 function writableAbove(doc: PMNode, pos: number): boolean {
 	let before = doc.resolve(pos).nodeBefore;
@@ -52,11 +52,10 @@ function writableAbove(doc: PMNode, pos: number): boolean {
 /**
  * Enter at the very start of a top-level list's first item, where nothing above the
  * list takes a caret → an empty paragraph above it, caret staying with the text it
- * pushed down. The whole motive is that there is otherwise nowhere to write: a list
- * that opens a document, or one under an island or a rule, has no text position
- * above it and no gap cursor either. Where a block above DOES take a caret the
- * gesture declines, so the key means the conventional split at every item a writer
- * can already escape by pressing Up.
+ * pushed down. A list that opens a document, or one under an island or a rule, has
+ * nowhere above to write and nothing else that opens one. Where a caret already
+ * fits above, the key is the conventional split instead, at every item alike: an
+ * escape a writer reaches by pressing Up needs no key of its own.
  *
  * Also only where the list itself is not inside an item: in a NESTED list this
  * pushes an empty paragraph into the parent item (`list_item` is `block+`, so the

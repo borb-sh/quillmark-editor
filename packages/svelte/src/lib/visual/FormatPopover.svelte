@@ -206,12 +206,11 @@
 		if (!open) linkPromptOpen = false;
 	});
 
-	// The prompt takes focus itself. The popover's own open-auto-focus is prevented
-	// (see FOCUS DISCIPLINE above) and the prompt replaces the buttons on a surface
-	// that is ALREADY open, so nothing else moves focus off the leaf and the writer
-	// would type the URL into the document. Selected rather than merely focused: the
-	// input is seeded with the href the selection carries, and retyping is the
-	// commonest thing to do to a link that already has one.
+	// The prompt takes its own focus: open-auto-focus is prevented (FOCUS DISCIPLINE
+	// above) and the prompt replaces the buttons on a surface that is ALREADY open,
+	// so nothing else moves focus off the leaf and the URL would be typed into the
+	// document. Selected, not merely focused, because the input arrives seeded and
+	// replacing that value is what the prompt is usually raised for.
 	$effect(() => {
 		if (linkPromptOpen && linkInputEl) {
 			linkInputEl.focus();
@@ -224,11 +223,11 @@
 		e.preventDefault();
 	}
 
-	// A link is a VALUE, so its button raises the prompt rather than toggling: with
-	// no link it reads as "add one", with one it reads as "edit this one", and the
-	// prompt seeded with the existing href is the only place the document's own URL
-	// is legible. Removing it is the prompt's own arm, not a second meaning for the
-	// button — the five value-less marks keep the toggle.
+	// A link is a VALUE, so its button raises the prompt rather than toggling — one
+	// meaning whether or not the selection carries one, and the seeded prompt is the
+	// only place the document's href is legible. Removal is an arm inside the
+	// prompt, not a second meaning for the button. The five value-less marks keep
+	// the toggle.
 	function toggle(name: string): void {
 		const view = activeLeafView();
 		if (!view) return;
@@ -264,9 +263,9 @@
 		sync();
 	}
 
-	/** Apply the typed value, normalized (`links.ts`). A blank one is nothing to
-	 *  apply and closes the prompt: removal has its own arm, and a second door onto
-	 *  it would be a second thing to keep true. */
+	/** Apply the typed value, normalized (`links.ts`). A blank value is nothing to
+	 *  apply and only closes the prompt: removal has its own arm, and a second door
+	 *  onto it would be a second thing to keep true. */
 	function submitLink(): void {
 		const view = activeLeafView();
 		linkPromptOpen = false;

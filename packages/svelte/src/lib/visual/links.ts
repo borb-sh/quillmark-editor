@@ -1,13 +1,14 @@
-// The link prompt's three questions, off the component so each is one function with
-// a test: what a typed value means as an href, what the selection already carries,
-// and how a link is written.
+// The link prompt's answer to a URL: what a typed value means as an href, what the
+// selection reports back, and how one is written over a range. Off the component,
+// so the parts carrying a data consequence are functions with tests rather than
+// event handlers.
 //
 // `link` is the one mark carrying a VALUE, which is what keeps it off `toggleMark`:
 // that command matches by TYPE (`rangeHasMark(from, to, markType)`), so a second
 // href over a range already holding one REMOVES the mark rather than replacing it.
-// Both commands below spell the mark ops out for that reason, and `setLink` puts
-// the pair in ONE transaction so the mark diff lowers it as one link family
-// exchanged for another (`codec/marks.ts` keys a link on type+url).
+// `setLink` spells the mark ops out for that reason, and puts the pair in ONE
+// transaction so the mark diff lowers it as one link family exchanged for another
+// (`codec/marks.ts` keys a link on type+url).
 import type { Command } from 'prosemirror-state';
 import type { EditorState } from 'prosemirror-state';
 
@@ -20,17 +21,15 @@ const ROOTED = /^[/#?]/;
 const ADDRESS = /^[^\s/@]+@[^\s/@]+$/;
 
 /**
- * The href a typed value stands for. A value with no scheme is a HOST, not a path:
- * stored verbatim, `example.com` is a relative href that resolves against whatever
- * page the editor is embedded in, so the link looks right and goes somewhere the
- * writer never named. `https://` is what a bare host means. A bare address takes
- * `mailto:` instead, since the host prefix would read it as `example.com` with
- * `jane` for userinfo — a wrong destination this normalization would itself have
- * minted.
+ * The href a typed value stands for. A value with no scheme names a HOST, and
+ * stored verbatim it is a relative href resolving against whatever page the editor
+ * is embedded in, so it takes `https://`. A bare address takes `mailto:` instead,
+ * the host prefix reading `jane@example.com` as `example.com` with `jane` for
+ * userinfo — a wrong destination this normalization would itself have minted.
  *
- * A rooted value is left alone, being the spelling that asks for the page it is
- * embedded in, and so is anything already carrying a scheme. `''` for a blank
- * value, which is nothing to apply.
+ * A rooted value is left alone, being the spelling that asks for the embedding
+ * page, and so is anything already carrying a scheme. `''` for a blank value, which
+ * is nothing to apply.
  */
 export function normalizeHref(raw: string): string {
 	const value = raw.trim();

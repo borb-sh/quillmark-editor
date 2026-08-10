@@ -1,10 +1,9 @@
-// The link prompt's logic, off the popover: what a typed value means as an href,
-// what the selection reports back, and what writing one does to a range that
-// already holds one.
+// The link prompt's logic, off the popover.
 //
-// The replace case is the one with teeth. `toggleMark` matches by mark TYPE, so the
-// obvious spelling of "apply this href" removes the link on exactly the selection a
-// writer reached the prompt from — which is why `setLink` spells the ops out.
+// The replace case is the one with teeth: a link written over a range that already
+// holds one must REPLACE it, since the `toggleMark` spelling of the same intent
+// removes it instead (`visual/links.ts`) — on exactly the selection a writer
+// reached the prompt from.
 import { describe, it, expect } from 'vitest';
 import { EditorState, TextSelection, type Command } from 'prosemirror-state';
 import type { Node as PMNode } from 'prosemirror-model';
