@@ -2,9 +2,8 @@
 // (resolved `default:` › consumer wording › the built-in invitation), and the
 // fixture fact that motivates the fallback existing at all; the reference quill
 // declares NO body `default:` on any kind, so the resolved channel is empty for
-// exactly the cards a user adds. The caching that makes an impure hook read as
-// deliberate is the editor's, asserted in the playground; here the pure
-// resolution is pinned.
+// exactly the cards a user adds. Here the pure resolution is pinned; that the hook
+// feeding its middle rung is asked once per card is `body-ghost.svelte.test.ts`.
 import { describe, it, expect } from 'vitest';
 import { resolveBodyGhost, ghostDefault, stringifyGhost } from '$lib/visual/structure';
 import { DEFAULT_VISUAL_STRINGS } from '$lib/visual/strings';

@@ -85,7 +85,7 @@ export interface VisualEditorProps {
 	/**
 	 * Every word the surface says, keyed and partial: unset keys take the package's
 	 * English. Several are ACCESSIBLE NAMES rather than decoration, so this is what
-	 * a product shipping in another language replaces. The empty body's per-kind
+	 * a product shipping in another language replaces. The empty body's per-card
 	 * wording is the `bodyPlaceholder` key here rather than a prop of its own.
 	 */
 	strings?: VisualStringsInput;

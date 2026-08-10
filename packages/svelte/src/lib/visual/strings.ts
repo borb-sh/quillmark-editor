@@ -93,10 +93,8 @@ export interface VisualStrings extends TableChromeStrings, SlashStrings {
 	 */
 	bodyGhost: string;
 	/**
-	 * Per-KIND wording, in place of {@link VisualStrings.bodyGhost}; `undefined`
-	 * takes it. Consulted once per kind per session and cached by the editor, so a
-	 * hook that samples a set at random still reads as one deliberate string.
-	 * Impurity is expected, and the cache is what contains it.
+	 * Per-CARD wording, in place of {@link VisualStrings.bodyGhost}; `undefined`
+	 * takes it. Pure and uncached ({@link BodyPlaceholder}).
 	 */
 	bodyPlaceholder: BodyPlaceholder;
 }
