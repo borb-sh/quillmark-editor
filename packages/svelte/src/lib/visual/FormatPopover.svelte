@@ -53,7 +53,7 @@
 	// off-tree, so this component renders standalone too.
 	const t = wording();
 	import { toggleMark } from 'prosemirror-commands';
-	import { TextSelection } from 'prosemirror-state';
+	import { TextSelection, type Command } from 'prosemirror-state';
 	import type { EditorView } from 'prosemirror-view';
 	import type { MarkType } from 'prosemirror-model';
 	import { Popover } from 'bits-ui';
@@ -65,6 +65,7 @@
 		type LeafViews,
 		type RangeAnchor
 	} from '../core/codec/index.js';
+	import { clearLink, hrefInSelection, normalizeHref, setLink } from './links.js';
 	import './controls.css';
 
 	type LeafWithView = FieldController & Partial<LeafViews>;
@@ -96,6 +97,7 @@
 	let anchorAvailable = $state(true);
 	let linkPromptOpen = $state(false);
 	let linkValue = $state('');
+	let linkInputEl = $state<HTMLInputElement | undefined>(undefined);
 	let contentEl = $state<HTMLElement | undefined>(undefined);
 	/** The root to portal INTO: `document.body` escapes the editor's subtree and
 	 * the consumer's dials with it, so a pane-scoped palette misses this surface.
@@ -204,19 +206,36 @@
 		if (!open) linkPromptOpen = false;
 	});
 
+	// The prompt takes its own focus. Nothing else moves it: open-auto-focus is
+	// prevented (FOCUS DISCIPLINE above), and the prompt replaces the buttons on a
+	// surface ALREADY open, so without this the URL is typed into the document.
+	// Selected rather than merely focused, the input arriving seeded and replacing
+	// that value being what the prompt is usually raised for.
+	$effect(() => {
+		if (linkPromptOpen && linkInputEl) {
+			linkInputEl.focus();
+			linkInputEl.select();
+		}
+	});
+
 	/** Swallow the button's mousedown so focus/selection never leave the leaf. */
 	function keepFocus(e: MouseEvent): void {
 		e.preventDefault();
 	}
 
+	// A link is a VALUE, so its button raises the prompt rather than toggling — one
+	// meaning whether or not the selection carries one, and the seeded prompt is the
+	// only place the document's href is legible. Removal is an arm inside the
+	// prompt, not a second meaning for the button. The five value-less marks keep
+	// the toggle.
 	function toggle(name: string): void {
 		const view = activeLeafView();
 		if (!view) return;
 		const type: MarkType | undefined = view.state.schema.marks[name];
 		if (!type) return;
-		if (name === 'link' && !activeMarks.link) {
+		if (name === 'link') {
+			linkValue = hrefInSelection(view.state);
 			linkPromptOpen = true;
-			linkValue = '';
 			return;
 		}
 		toggleMark(type)(view.state, view.dispatch);
@@ -244,21 +263,31 @@
 		sync();
 	}
 
-	function submitLink(): void {
-		const view = activeLeafView();
-		const type = view?.state.schema.marks.link;
+	/** Every exit from the prompt: lower it, run `cmd` if there is one, and hand the
+	 *  leaf back its focus and the surface its buttons. */
+	function closePrompt(cmd?: Command): void {
 		linkPromptOpen = false;
-		if (!view || !type) return;
-		const href = linkValue.trim();
-		if (href) toggleMark(type, { href })(view.state, view.dispatch);
-		view.focus();
+		const view = activeLeafView();
+		if (view) {
+			cmd?.(view.state, view.dispatch);
+			view.focus();
+		}
 		sync();
 	}
 
+	/** Apply the typed value, normalized (`links.ts`). A blank value is nothing to
+	 *  apply and only closes the prompt: removal has its own arm, and a second door
+	 *  onto it would be a second thing to keep true. */
+	function submitLink(): void {
+		closePrompt(setLink(normalizeHref(linkValue)));
+	}
+
+	function removeLink(): void {
+		closePrompt(clearLink);
+	}
+
 	function cancelLink(): void {
-		linkPromptOpen = false;
-		activeLeafView()?.focus();
-		sync();
+		closePrompt();
 	}
 </script>
 
@@ -301,12 +330,24 @@
 								}}
 							>
 								<input
+									bind:this={linkInputEl}
 									class="qm-link-input"
 									type="text"
 									placeholder={t.strings.linkPlaceholder}
+									aria-label={t.strings.formatLink}
 									bind:value={linkValue}
 								/>
 								<button type="submit" class="qm-icon-btn qm-mark-btn">{t.strings.linkApply}</button>
+								<!-- Only where there is a link to remove: an arm that does nothing is
+								     an arm to read past on every other visit to the prompt. -->
+								{#if activeMarks.link}
+									<button
+										type="button"
+										class="qm-icon-btn qm-mark-btn"
+										onmousedown={keepFocus}
+										onclick={removeLink}>{t.strings.linkRemove}</button
+									>
+								{/if}
 								<button
 									type="button"
 									class="qm-icon-btn qm-mark-btn"

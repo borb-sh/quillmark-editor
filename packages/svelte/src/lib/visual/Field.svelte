@@ -181,95 +181,101 @@
 			description={field.description}
 		/>
 	{/if}
-	<div class="qm-field-control" bind:this={controlEl} onfocusin={reportFocus}>
-		{#if field.control === 'prose'}
-			<ProseField
-				{quill}
-				bind:this={proseEl}
-				{doc}
-				{addr}
-				inline={field.inline}
-				plaintext={field.plaintext}
-				labelledBy={domIds.label}
-				{describedBy}
-				{leafKey}
-				{onFocus}
-				{onCaretMove}
-				{onChange}
-				{onError}
-				{leaves}
-			/>
-		{:else if field.control === 'enum'}
-			<EnumField
-				value={value as string | undefined}
-				values={enumValues(field.schema) ?? []}
-				fallback={ghost as string | undefined}
-				id={domIds.control}
-				{describedBy}
-				onCommit={onCommitScalar}
-				{optionAllowed}
-				{enumDisallowed}
-			/>
-		{:else if field.control === 'number'}
-			<NumberField
-				value={value as number | undefined}
-				integer={field.schema.type === 'integer'}
-				fallback={ghost as number | undefined}
-				id={domIds.control}
-				{describedBy}
-				onCommit={onCommitScalar}
-			/>
-		{:else if field.control === 'boolean'}
-			<BooleanField
-				value={value as boolean | undefined}
-				fallback={ghost as boolean | undefined}
-				id={domIds.control}
-				{describedBy}
-				onCommit={onCommitScalar}
-			/>
-		{:else if field.control === 'date'}
-			<DateField
-				bind:this={dateEl}
-				value={value as string | undefined}
-				fallback={defaultStr}
-				labelledBy={domIds.label}
-				{describedBy}
-				onCommit={onCommitScalar}
-			/>
-		{:else if field.control === 'array'}
-			<ArrayField
-				bind:this={arrayEl}
-				value={value as unknown[] | undefined}
-				items={field.schema.items}
-				label={field.label}
-				required={field.required}
-				description={field.description}
-				labelId={domIds.label}
-				descriptionId={domIds.description}
-				onCommit={onCommitScalar}
-			/>
-		{:else if field.control === 'object'}
-			<ObjectField
-				bind:this={objectEl}
-				value={value as Record<string, unknown> | undefined}
-				properties={field.schema.properties}
-				label={field.label}
-				labelledBy={domIds.label}
-				{describedBy}
-				onCommit={onCommitScalar}
-			/>
-		{:else}
-			<TextField
-				value={value as string | undefined}
-				placeholder={defaultStr}
-				id={domIds.control}
-				{describedBy}
-				onCommit={onCommitScalar}
-			/>
-		{/if}
-	</div>
+	<!-- The control and what hangs under it, in ONE grid cell: the diagnostics stack
+	 inside the control's track rather than claiming a track of their own (the subgrid
+	 rule below holds why). One markup for both spans; a field owning its row nests a
+	 level and measures the same. -->
+	<div class="qm-field-stack">
+		<div class="qm-field-control" bind:this={controlEl} onfocusin={reportFocus}>
+			{#if field.control === 'prose'}
+				<ProseField
+					{quill}
+					bind:this={proseEl}
+					{doc}
+					{addr}
+					inline={field.inline}
+					plaintext={field.plaintext}
+					labelledBy={domIds.label}
+					{describedBy}
+					{leafKey}
+					{onFocus}
+					{onCaretMove}
+					{onChange}
+					{onError}
+					{leaves}
+				/>
+			{:else if field.control === 'enum'}
+				<EnumField
+					value={value as string | undefined}
+					values={enumValues(field.schema) ?? []}
+					fallback={ghost as string | undefined}
+					id={domIds.control}
+					{describedBy}
+					onCommit={onCommitScalar}
+					{optionAllowed}
+					{enumDisallowed}
+				/>
+			{:else if field.control === 'number'}
+				<NumberField
+					value={value as number | undefined}
+					integer={field.schema.type === 'integer'}
+					fallback={ghost as number | undefined}
+					id={domIds.control}
+					{describedBy}
+					onCommit={onCommitScalar}
+				/>
+			{:else if field.control === 'boolean'}
+				<BooleanField
+					value={value as boolean | undefined}
+					fallback={ghost as boolean | undefined}
+					id={domIds.control}
+					{describedBy}
+					onCommit={onCommitScalar}
+				/>
+			{:else if field.control === 'date'}
+				<DateField
+					bind:this={dateEl}
+					value={value as string | undefined}
+					fallback={defaultStr}
+					labelledBy={domIds.label}
+					{describedBy}
+					onCommit={onCommitScalar}
+				/>
+			{:else if field.control === 'array'}
+				<ArrayField
+					bind:this={arrayEl}
+					value={value as unknown[] | undefined}
+					items={field.schema.items}
+					label={field.label}
+					required={field.required}
+					description={field.description}
+					labelId={domIds.label}
+					descriptionId={domIds.description}
+					onCommit={onCommitScalar}
+				/>
+			{:else if field.control === 'object'}
+				<ObjectField
+					bind:this={objectEl}
+					value={value as Record<string, unknown> | undefined}
+					properties={field.schema.properties}
+					label={field.label}
+					labelledBy={domIds.label}
+					{describedBy}
+					onCommit={onCommitScalar}
+				/>
+			{:else}
+				<TextField
+					value={value as string | undefined}
+					placeholder={defaultStr}
+					id={domIds.control}
+					{describedBy}
+					onCommit={onCommitScalar}
+				/>
+			{/if}
+		</div>
 
-	<DiagnosticList {diagnostics} />
+		<DiagnosticList {diagnostics} />
+	</div>
 </div>
 
 <style>
@@ -297,20 +303,37 @@
 		padding-right: var(--action-col);
 	}
 	/* A row-sharing field subgrids onto the section's row tracks instead of sizing its
-	 own: three tracks (label, control, diagnostics) taken from the parent, so every
-	 control in a visual row starts at the same y however tall a neighbour's label
-	 wrapped, and one field's diagnostic lifts none of the others out of line. Source
-	 order IS track order; `align-items: start` keeps a short control from stretching
-	 to a taller sibling's track. `row-gap` overrides the section's inter-row gutter
-	 for the tracks this field spans: inside a field the rhythm is tighter than
-	 between rows. */
+	 own: two tracks, the label and the control's stack, taken from the parent, so
+	 every control in a visual row starts at the same y however tall a neighbour's
+	 label wrapped. Source order IS track order; `align-items: start` keeps a short
+	 control from stretching to a taller sibling's track. `row-gap` overrides the
+	 section's inter-row gutter for the tracks this field spans: inside a field the
+	 rhythm is tighter than between rows.
+
+	 Two tracks, and not a third for the diagnostics: a track is permanent where a
+	 diagnostic is occasional, and an empty track still costs the gutter above it, so
+	 a third stands a rung of dead space under every field on the path where nothing
+	 is wrong. That rung is the one place a field's box outruns its ink. It is what
+	 makes a run of row-sharing fields read looser than the arrays and prose leaves
+	 beside them, whose boxes end where their ink does. What a third track buys is the
+	 diagnostics of one row starting at one y; the alignment a row is READ by is the
+	 controls', and the label track holds that. A diagnostic grows its row instead. */
 	.qm-field.cell,
 	.qm-field.lone {
 		display: grid;
-		grid-row: span 3;
+		grid-row: span 2;
 		grid-template-rows: subgrid;
 		row-gap: var(--_qm-space);
 		align-items: start;
+	}
+	/* The stack the control's track holds: the control, and the diagnostics when
+	 there are any. Its gap is the field's own, so a diagnostic sits the same rung
+	 under its control that the control sits under its label. */
+	.qm-field-stack {
+		display: flex;
+		flex-direction: column;
+		gap: var(--_qm-space);
+		min-width: 0;
 	}
 	.qm-field.cell {
 		grid-column: span 1;
