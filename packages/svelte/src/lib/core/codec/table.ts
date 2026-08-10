@@ -49,6 +49,13 @@ export function rowCells(props: TableProps, r: number): TableCell[] {
 	return r === 0 ? props.header : (props.rows[r - 1] ?? []);
 }
 
+/** Whether a row holds no text: what the trailing row answers when Tab asks whether the
+ *  row it would grow from was ever written in (`table-view.ts` §`step`). Text alone, a
+ *  mark over none being nothing a writer can see. */
+export function rowEmpty(props: TableProps, r: number): boolean {
+	return rowCells(props, r).every((cell) => cell.text === '');
+}
+
 /** The cell at `(row, column)`, or the zero cell where the rectangle does not reach. */
 export function cellAt(props: TableProps, r: number, c: number): TableCell {
 	return rowCells(props, r)[c] ?? emptyCell();
