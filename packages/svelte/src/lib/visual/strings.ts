@@ -94,8 +94,7 @@ export interface VisualStrings extends TableChromeStrings, SlashStrings {
 	bodyGhost: string;
 	/**
 	 * Per-CARD wording, in place of {@link VisualStrings.bodyGhost}; `undefined`
-	 * takes it. Pure and uncached: consulted per card on every derive, so the ghost is
-	 * a function of the card it words and nothing else.
+	 * takes it. Pure and uncached ({@link BodyPlaceholder}).
 	 */
 	bodyPlaceholder: BodyPlaceholder;
 }

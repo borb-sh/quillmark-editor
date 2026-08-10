@@ -1,10 +1,9 @@
 // @vitest-environment jsdom
 // The `bodyPlaceholder` hook as the mounted editor asks it: once per card that
 // renders a body, carrying that card's identity, and with nothing kept between
-// calls. The per-card ask is the whole seam — a consumer wanting two empty cards of
-// one kind to read alike writes a function of `kind`, and one wanting them to differ
-// writes a function of `cardId`; neither is the editor's to decide, so what is
-// pinned here is that both are expressible.
+// calls. A consumer wanting two empty cards of one kind to read alike writes a
+// function of `kind`; one wanting them to differ writes a function of `cardId`.
+// Neither is the editor's to decide.
 //
 // The ghosts observed are the INDORSEMENTS'. The reference quill seeds main's body
 // from its `body.example`, and a body with content carries no placeholder
@@ -60,8 +59,8 @@ describe('the hook is asked per card', () => {
 			strings: {
 				bodyPlaceholder: (ctx) => {
 					seen.push(ctx);
-					// A function of the card, which is the shape a wordlist takes here: an
-					// index derived from `cardId` rather than drawn.
+					// Keyed to the card: the answer depends on `cardId` alone, so no two
+					// cards collide.
 					return `Write ${ctx.cardId}…`;
 				}
 			}
@@ -73,8 +72,8 @@ describe('the hook is asked per card', () => {
 		expect(new Set(drawn).size).toBe(drawn.length);
 		expect(drawn.every((g) => /^Write .+…$/.test(g ?? ''))).toBe(true);
 
-		// The main card is asked too, naming itself, though its seeded body draws no
-		// ghost; every other ask carries a distinct session key.
+		// The main card is asked too, naming itself; every other ask carries a distinct
+		// session key.
 		expect(seen.some((s) => s.cardId === 'main' && s.kind === 'main' && s.isMain)).toBe(true);
 		const cards = seen.filter((s) => !s.isMain);
 		expect(cards.every((s) => s.kind === 'indorsement')).toBe(true);
@@ -82,8 +81,7 @@ describe('the hook is asked per card', () => {
 	});
 
 	it('reads as one invitation per kind when the hook is a function of kind', () => {
-		// Same kind, same words, because the function says so and not because the editor
-		// holds the answer.
+		// Same kind, same words, because the function says so.
 		const target = mountEditor({
 			strings: { bodyPlaceholder: (ctx) => (ctx.isMain ? undefined : `Endorse the ${ctx.kind}…`) }
 		});
@@ -94,8 +92,7 @@ describe('the hook is asked per card', () => {
 	});
 
 	it('takes the built-in where the hook declines', () => {
-		// `undefined` is the documented defer, and it defers for THAT card alone: the
-		// editor holds no answer to spread to the next one.
+		// `undefined` is the documented defer; the rung below it is the built-in.
 		const target = mountEditor({ strings: { bodyPlaceholder: () => undefined } });
 
 		const drawn = ghosts(target);
