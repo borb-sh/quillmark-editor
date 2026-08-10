@@ -1,7 +1,8 @@
 // List editing: the body leaf's structural commands, over
 // `prosemirror-schema-list` primitives. Indent/outdent on Tab, and the two
 // structural keys lists redefine: Enter (split, exit an empty item, open a
-// paragraph above) and Backspace (merge, or lift at the list's start).
+// paragraph where nothing above the list takes a caret) and Backspace (merge, or
+// lift at the list's start).
 //
 // Cleanup is COMMAND-LOCAL, never a global pass: `liftToOuterList` joins the
 // boundary it opens and `sinkListItem` reuses the previous item's nested list, so
@@ -10,7 +11,7 @@
 // `Content` marks one, the upstream normalizer stores it verbatim
 // (`tests/codec/list-shapes.test.ts`), and fusing renumbers an imported `1, 2, 1`
 // in a region no edit touched. Reads preserve it; only an edit normalizes.
-import type { NodeType, Schema } from 'prosemirror-model';
+import type { Node as PMNode, NodeType, Schema } from 'prosemirror-model';
 import { liftListItem, sinkListItem, splitListItem } from 'prosemirror-schema-list';
 import type { Command } from 'prosemirror-state';
 import { chainCommands, joinTextblockBackward } from 'prosemirror-commands';
@@ -36,13 +37,31 @@ function atItemStart(
 }
 
 /**
- * Enter at the very start of a top-level list's first item → an empty paragraph
- * above the list, caret staying with the text it pushed down.
+ * Whether a caret already fits immediately above the list at `pos`: the node
+ * ending there, descended through its last children, is a textblock. `false` where
+ * the list opens its parent, or where the block above is an atom (an island, a
+ * divider) — the two shapes a gap cursor also declines to sit in, since it asks the
+ * same question from the other side (`prosemirror-gapcursor`'s `closedBefore`).
+ */
+function writableAbove(doc: PMNode, pos: number): boolean {
+	let before = doc.resolve(pos).nodeBefore;
+	while (before && !before.isTextblock && !before.isAtom) before = before.lastChild;
+	return !!before?.isTextblock;
+}
+
+/**
+ * Enter at the very start of a top-level list's first item, where nothing above the
+ * list takes a caret → an empty paragraph above it, caret staying with the text it
+ * pushed down. The whole motive is that there is otherwise nowhere to write: a list
+ * that opens a document, or one under an island or a rule, has no text position
+ * above it and no gap cursor either. Where a block above DOES take a caret the
+ * gesture declines, so the key means the conventional split at every item a writer
+ * can already escape by pressing Up.
  *
- * Only where the list itself is not inside an item: in a NESTED list this pushes
- * an empty paragraph into the parent item (`list_item` is `block+`, so the shape
- * is representable and wrong), where the conventional split (an empty item above)
- * is what the next link does. An empty first item falls through to that same
+ * Also only where the list itself is not inside an item: in a NESTED list this
+ * pushes an empty paragraph into the parent item (`list_item` is `block+`, so the
+ * shape is representable and wrong), where the conventional split (an empty item
+ * above) is what the next link does. An empty first item falls through to that same
  * link, which exits the list instead.
  */
 function paragraphAboveList(itemType: NodeType, paragraph: NodeType): Command {
@@ -50,6 +69,7 @@ function paragraphAboveList(itemType: NodeType, paragraph: NodeType): Command {
 		const at = atItemStart(state, itemType);
 		if (!at || at.nested || at.itemIndex !== 0) return false;
 		if (state.selection.$from.parent.content.size === 0) return false;
+		if (writableAbove(state.doc, at.listPos)) return false;
 		if (dispatch) dispatch(state.tr.insert(at.listPos, paragraph.create()).scrollIntoView());
 		return true;
 	};
@@ -96,7 +116,7 @@ function mergeIntoPreviousItem(itemType: NodeType): Command {
  * default meaning, which is the body's only keyboard exit and the open seam for a
  * shell structural keymap (VISUAL_EDITOR §Settled and open).
  *
- * `Enter` is a chain in precedence order: the paragraph-above gesture, then
+ * `Enter` is a chain in precedence order: the escape-above gesture, then
  * `splitListItem`, then `liftListItem`. The middle link carries two behaviors of
  * its own: it splits a non-empty item, and on an empty item it either splits the
  * WRAPPING item (a nested empty item, so Enter lifts exactly one level) or bails

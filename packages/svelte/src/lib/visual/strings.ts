@@ -71,6 +71,8 @@ export interface VisualStrings extends TableChromeStrings, SlashStrings {
 	formatAnchorTitle: string;
 	linkPlaceholder: string;
 	linkApply: string;
+	/** The prompt's remove arm, drawn only where the selection carries a link. */
+	linkRemove: string;
 	linkCancel: string;
 
 	// ── Tips card ─────────────────────────────────────────────────────────────
@@ -155,6 +157,7 @@ export const DEFAULT_VISUAL_STRINGS: VisualStrings = {
 	formatAnchorTitle: 'Anchor — an identity handle over the selection',
 	linkPlaceholder: 'https://…',
 	linkApply: 'Apply',
+	linkRemove: 'Remove',
 	linkCancel: 'Cancel',
 	tipsLabel: 'Editor tips',
 	tipsDismiss: 'Dismiss',
