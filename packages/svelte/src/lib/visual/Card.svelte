@@ -643,16 +643,9 @@
 	}
 	/* The two query containers: an ungrouped section, and a group panel's inner. Each
 	 is its own, so capacity follows the width the fields actually get: a panel's
-	 inset makes that narrower than the card.
-
-	 The action column is minted here and spent one level down, on the field
-	 (`Field.svelte` holds why it is the field's inset and not this container's). It
-	 is declared on the query container because both of its consumers hang off one:
-	 the fields inside, and the capacity ramp below, which carries the column in its
-	 own arithmetic because the query reads a box the reservation has not narrowed. */
+	 inset makes that narrower than the card. */
 	.qm-section,
 	.qm-group-panel-inner {
-		--action-col: calc(var(--_qm-tap-min) + var(--_qm-space-2));
 		container-type: inline-size;
 	}
 	/* One grid per section. Capacity is the container's, not JavaScript's:
@@ -662,15 +655,15 @@
 	 instead of growing to fill the line.
 
 	 Capacity steps 1 → 2 → 4, skipping 3: each rung is the width at which a track
-	 still clears the comfortable field minimum (2 needs 32rem, 4 needs 65rem), and
-	 an even capacity is what lets `lone`'s half land on a track boundary. Each rung
-	 pays for a track's own action column as well as the gutters between tracks, since
-	 the reservation is per field now: a rung is `n * (220px + action) + gaps`.
+	 still clears the comfortable field minimum (2 needs 28rem, 4 needs 57rem), and
+	 an even capacity is what lets `lone`'s half land on a track boundary. A rung is
+	 `n * 220px + gaps`, the gutters between tracks being all a track pays over the
+	 minimum: a field ends on its track's own edge, the row action sitting inside the
+	 element that carries it (ArrayField).
 
 	 A row-sharing field spans two implicit row tracks (Field.svelte), so `row-gap`
 	 here is the gutter between field rows; the tighter one inside a field is the
-	 subgrid's own. The grid takes the container's full width; each field insets its
-	 own action column inside the track it lands in. */
+	 subgrid's own. */
 	.qm-fields {
 		--cols: 1;
 		--cols-half: 1;
@@ -679,13 +672,13 @@
 		column-gap: var(--_qm-space-2);
 		row-gap: var(--_qm-space-2);
 	}
-	@container (min-width: 32rem) {
+	@container (min-width: 28rem) {
 		.qm-fields {
 			--cols: 2;
 			--cols-half: 1;
 		}
 	}
-	@container (min-width: 65rem) {
+	@container (min-width: 57rem) {
 		.qm-fields {
 			--cols: 4;
 			--cols-half: 2;

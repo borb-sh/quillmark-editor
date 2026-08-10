@@ -168,6 +168,12 @@
 		   stacks over whichever surface rung the cell already draws instead of replacing
 		   it. */
 		--_qm-accent-tint: color-mix(in oklab, var(--_qm-accent) 12%, transparent);
+		/* The danger hue held, for the one control that fills with it: the array's
+		   remove, a slab over the end of the element it drops. The family's neutral
+		   hover rung would read as one more button, which is the one thing a remove
+		   inside a field must not read as. Mixed at the accent tint's strength, so a
+		   held tint is a held tint whichever hue it carries. */
+		--_qm-danger-tint: color-mix(in oklab, var(--_qm-danger) 12%, transparent);
 
 		/* The tips card'S hue: the surface's one exit from the greyscale that is not
 		   a status, and what the amber and the typewriter face say together is

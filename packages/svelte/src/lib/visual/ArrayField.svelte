@@ -8,9 +8,10 @@
  label header row (space-between with the field label); {@link Field} skips its
  own label for array controls and hands this component the label track with it.
 
- A row ends in the reserved action column (`--action-col`), which the field insets
- and this reaches back across: the element controls stop where a scalar's does and
- the remove sits beyond them, on the right edge the field's track keeps.
+ The remove is inside the element: a slab over the end of the element's own box,
+ taking its two end-side corners. So a row's box is the element's box, an array's rows
+ end where every other field's control does, and no field pays a column of gutter for
+ the one row action the surface has.
 
  Keys carry the list without the mouse: Enter inserts a
  sibling below and takes the caret there, Backspace on an empty element removes it
@@ -269,9 +270,9 @@
 			{/if}
 			<button
 				type="button"
-				class="qm-icon-btn qm-remove"
+				class="qm-icon-btn qm-remove qm-focus-ring"
 				title={t.strings.arrayRemove}
-				onclick={() => remove(k)}><Icon name="x" size={14} /></button
+				onclick={() => remove(k)}><Icon name="x" /></button
 			>
 		</div>
 	{/each}
@@ -282,12 +283,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space);
-		/* The one field that reaches across the reserved action column: its rows end in
-		   that column, so an element control stops exactly where the scalar beside it
-		   does and the remove never sits over a long value. The reservation is the
-		   field's inset (Field.svelte), so this cancels it wherever the field landed:
-		   its own row, or one track of a shared one. */
-		margin-right: calc(-1 * var(--action-col));
 	}
 	/* The array's first line is the row's label line: this component owns the label
 	 track (Field.svelte), so the header has to measure what a `.qm-field-label-row`
@@ -300,19 +295,74 @@
 		justify-content: space-between;
 		gap: var(--_qm-space-2);
 	}
-	/* The element takes the section's tracks, the remove takes the action column, and
-	 the gutter between them is the section's own: the row is that column's only
-	 occupant, so it reads as one more column of the grid rather than a nested layout.
-	 `minmax(0, …)` because an element control must be allowed to be narrower than its
-	 content: a long unbroken value grows the track otherwise, and the edge with it. */
+	/* The row is the element control and nothing beside it: the remove is out of flow
+	 over it, so there is one track and the element takes it, filling the row the way a
+	 scalar fills its field. A grid rather than a block, because an `<input>` and a
+	 `<textarea>` are inline-level and would sit on a baseline, standing the row a
+	 descender taller than the box the slab is measuring itself against; a grid item is
+	 blockified, so the row's height is the element's own. `minmax(0, …)` because an
+	 element control must be allowed to be narrower than its content: a long unbroken
+	 value grows the track otherwise, and the edge with it. */
 	.qm-array-row {
+		position: relative;
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) var(--_qm-tap-min);
-		column-gap: var(--_qm-space-2);
-		align-items: start;
+		grid-template-columns: minmax(0, 1fr);
 	}
+	/* The end inset the slab stands in, taken off whichever box the element control
+	 drew: `.qm-input` is the text element and the JSON textarea, `.qm-control-box` the
+	 prose one. `:global`, because the box belongs to the child component's markup and
+	 the scope class stops at this component's; the descendant `.qm-array-row` is the
+	 whole of what bounds it. The longhand overrides the family's `padding` shorthand
+	 without a specificity fight: this block is unlayered and `controls.css` is not.
+
+	 The inset is the slab's width, so a value stops where the slab starts rather than
+	 running under it; the gap it reads with is the glyph's own centring inside it. */
+	.qm-array-row :global(.qm-input),
+	.qm-array-row :global(.qm-control-box) {
+		padding-inline-end: var(--_qm-tap-min);
+	}
+	/* The slab: the box's end wall, floor to ceiling. `inset-block: 0` is what makes it
+	 one — a height of its own would leave a sliver of well above or below it, and the
+	 corners it is trying to take are the box's. The two start-side corners come off and
+	 the end-side pair keeps `.qm-icon-btn`'s radius, which is the box's own
+	 (`--_qm-radius-inner`), so the fill lands on the field's corner rather than inside
+	 it. All logical: in RTL the slab is the other wall, with the corners that go with
+	 it.
+
+	 It rests dim like the add affordance at the head of the list and comes up on its
+	 own row rather than on the field: a destructive control is offered by the row the
+	 pointer is on, not by every row at once. Hover is where it says destructive —
+	 the family's neutral fill would read as one more button — and the ink goes with the
+	 fill, since a tint alone is a wash under a label-toned glyph. */
 	.qm-remove {
-		align-self: center;
+		position: absolute;
+		inset-block: 0;
+		inset-inline-end: 0;
+		width: var(--_qm-tap-min);
+		color: var(--_qm-ink-label);
+		opacity: var(--_qm-opacity-idle);
+		border-start-start-radius: 0;
+		border-end-start-radius: 0;
+		transition:
+			opacity var(--_qm-duration-fast) var(--_qm-ease-reverse),
+			background-color var(--_qm-duration-fast) var(--_qm-ease-reverse),
+			color var(--_qm-duration-fast) var(--_qm-ease-reverse);
+	}
+	/* The control glyph's rung, taken in CSS as the card controls take it: the size
+	 lives where the rung does rather than in an attribute the markup passes. */
+	.qm-remove :global(svg) {
+		width: var(--_qm-glyph-control);
+		height: var(--_qm-glyph-control);
+	}
+	/* `focus-within` covers the slab's own focus as well as the element's: a row holding
+	 the caret is a row whose remove is reachable. */
+	.qm-array-row:hover .qm-remove,
+	.qm-array-row:focus-within .qm-remove {
+		opacity: 1;
+	}
+	.qm-remove:hover {
+		background: var(--_qm-danger-tint);
+		color: var(--_qm-danger);
 	}
 	/* The JSON element is a `.qm-input` (controls.css): box, focus ring, and all;
 	 what a textarea adds over an input is the face and a floor on its height. */
@@ -359,9 +409,11 @@
 	.qm-add-el:focus-visible {
 		opacity: 1;
 	}
-	/* Touch has no hover: keep a faint always-on affordance so add stays reachable. */
+	/* Touch has no hover: both triggers rest at the muted rung instead, so add and
+	 remove stay reachable where nothing reveals them. */
 	@media (hover: none) {
-		.qm-add-el {
+		.qm-add-el,
+		.qm-remove {
 			opacity: var(--_qm-opacity-muted);
 		}
 	}

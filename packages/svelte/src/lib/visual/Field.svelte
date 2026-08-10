@@ -282,25 +282,16 @@
 	/* The `full` span, and the base every field starts from: its own row, a plain
 	   stack. Nothing shares the row, so there are no internals to align against.
 
-	   The action column is the field'S inset, not the section's:
-	   a row action's tap target plus the grid's own column gutter, held clear at the
-	   end of whatever the field spans. On the section it reserves one trailing column
-	   for the whole grid, which reaches only a field that stops short of it. The array
-	   carries the only row action there is, and it always owns its row (structure.ts
-	   `packable`), so it spans that reservation with every other column: the one field
-	   a section could reserve for is the one it would miss. Per field the reservation
-	   travels with the thing that uses it: one right edge per track, every control in a
-	   row ending on it, and an array reaching back across its own to put its remove
-	   past it (ArrayField). Every field pays the width, including one with no action in
-	   it; a right edge that moved with a field's contents is the raggedness this
-	   removes. */
+	   No inset at the end: the right edge is the track's, and every control in a row
+	   ends on it. The one row action the surface has is the array's remove, and it sits
+	   inside its element's box (ArrayField), so there is no column to hold clear and no
+	   field paying width for an action it does not carry. */
 	.qm-field {
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space);
 		grid-column: 1 / -1;
 		min-width: 0;
-		padding-right: var(--action-col);
 	}
 	/* A row-sharing field subgrids onto the section's row tracks instead of sizing its
 	 own: two tracks, the label and the control's stack, taken from the parent, so
