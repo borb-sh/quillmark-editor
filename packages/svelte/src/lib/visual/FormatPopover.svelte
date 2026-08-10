@@ -53,7 +53,7 @@
 	// off-tree, so this component renders standalone too.
 	const t = wording();
 	import { toggleMark } from 'prosemirror-commands';
-	import { TextSelection } from 'prosemirror-state';
+	import { TextSelection, type Command } from 'prosemirror-state';
 	import type { EditorView } from 'prosemirror-view';
 	import type { MarkType } from 'prosemirror-model';
 	import { Popover } from 'bits-ui';
@@ -263,31 +263,31 @@
 		sync();
 	}
 
+	/** Every exit from the prompt: lower it, run `cmd` if there is one, and hand the
+	 *  leaf back its focus and the surface its buttons. */
+	function closePrompt(cmd?: Command): void {
+		linkPromptOpen = false;
+		const view = activeLeafView();
+		if (view) {
+			cmd?.(view.state, view.dispatch);
+			view.focus();
+		}
+		sync();
+	}
+
 	/** Apply the typed value, normalized (`links.ts`). A blank value is nothing to
 	 *  apply and only closes the prompt: removal has its own arm, and a second door
 	 *  onto it would be a second thing to keep true. */
 	function submitLink(): void {
-		const view = activeLeafView();
-		linkPromptOpen = false;
-		if (!view) return;
-		setLink(normalizeHref(linkValue))(view.state, view.dispatch);
-		view.focus();
-		sync();
+		closePrompt(setLink(normalizeHref(linkValue)));
 	}
 
 	function removeLink(): void {
-		const view = activeLeafView();
-		linkPromptOpen = false;
-		if (!view) return;
-		clearLink(view.state, view.dispatch);
-		view.focus();
-		sync();
+		closePrompt(clearLink);
 	}
 
 	function cancelLink(): void {
-		linkPromptOpen = false;
-		activeLeafView()?.focus();
-		sync();
+		closePrompt();
 	}
 </script>
 

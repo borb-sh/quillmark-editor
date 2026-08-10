@@ -41,10 +41,6 @@ interface Clipboard {
 
 // ── Reading a table in ──────────────────────────────────────────────────────
 
-/** The inline parser, built once: a cell is a `richtext(inline)` content unit, so the
- *  schema that reads one is the schema a cell is edited under. */
-let cellParser: PMDOMParser | undefined;
-
 /**
  * One cell from its `<td>` / `<th>`. The inline schema is the whole normalization: it
  * declares one paragraph, no containers and no islands, so a cell holding blocks
@@ -52,8 +48,9 @@ let cellParser: PMDOMParser | undefined;
  * behind. Whitespace collapses and the ends trim, which is PM's own parse.
  */
 function cellFromDOM(dom: Element): TableCell {
-	cellParser ??= PMDOMParser.fromSchema(inlineSchema);
-	const para = cellParser.parse(dom, { topNode: inlineSchema.nodes.paragraph.create() });
+	const para = PMDOMParser.fromSchema(inlineSchema).parse(dom, {
+		topNode: inlineSchema.nodes.paragraph.create()
+	});
 	return cellFromDoc(inlineSchema.nodes.doc.create(null, para), emptyCell());
 }
 
@@ -218,21 +215,15 @@ export function stampIslandIds(slice: Slice, doc: PMNode): Slice {
 	const mint = islandMinter(doc);
 	const walk = (fragment: Fragment): Fragment => {
 		const out: PMNode[] = [];
-		let changed = false;
 		fragment.forEach((node) => {
-			let next = node;
-			if (node.content.size) {
-				const inner = walk(node.content);
-				if (inner !== node.content) next = node.copy(inner);
-			}
-			if (unstamped(next)) next = next.type.create({ ...next.attrs, id: mint() }, next.content);
-			if (next !== node) changed = true;
-			out.push(next);
+			const next = node.content.size ? node.copy(walk(node.content)) : node;
+			out.push(
+				unstamped(next) ? next.type.create({ ...next.attrs, id: mint() }, next.content) : next
+			);
 		});
-		return changed ? Fragment.fromArray(out) : fragment;
+		return Fragment.fromArray(out);
 	};
-	const content = walk(slice.content);
-	return content === slice.content ? slice : new Slice(content, slice.openStart, slice.openEnd);
+	return new Slice(walk(slice.content), slice.openStart, slice.openEnd);
 }
 
 /**

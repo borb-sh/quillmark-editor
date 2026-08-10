@@ -7,8 +7,7 @@
 // `setLink` spells the mark ops out for that reason, and puts the pair in ONE
 // transaction so the mark diff lowers it as one link family exchanged for another
 // (`codec/marks.ts` keys a link on type+url).
-import type { Command } from 'prosemirror-state';
-import type { EditorState } from 'prosemirror-state';
+import type { Command, EditorState } from 'prosemirror-state';
 
 /** A scheme: a letter, then letters, digits, `+`, `-` or `.`, then `:` (RFC 3986). */
 const SCHEME = /^[a-z][a-z0-9+.-]*:/i;
@@ -50,7 +49,6 @@ export function hrefInSelection(state: EditorState): string {
 		if (href) return false;
 		const mark = type.isInSet(node.marks);
 		if (mark) href = String(mark.attrs.href ?? '');
-		return !href;
 	});
 	return href;
 }
