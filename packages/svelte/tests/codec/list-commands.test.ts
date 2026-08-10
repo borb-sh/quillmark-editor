@@ -124,7 +124,7 @@ describe('Enter', () => {
 		);
 	});
 
-	it('at the start of the first item, opens a paragraph above the list', () => {
+	it('at the start of a list that opens the document, opens a paragraph above it', () => {
 		expectPress(
 			startOf('- a\n- b', 0),
 			'Enter',
@@ -132,9 +132,36 @@ describe('Enter', () => {
 		);
 	});
 
-	it('the paragraph-above gesture keeps the caret with the text it pushed down', () => {
+	it('the escape-above gesture keeps the caret with the text it pushed down', () => {
 		const next = press(startOf('- a', 0), 'Enter');
 		expect(next.doc.textBetween(next.selection.from, next.doc.content.size)).toBe('a');
+	});
+
+	// The gesture answers on exactly the shapes where a caret cannot already go, a
+	// rule and an island being atoms; everywhere else Enter is the ordinary split,
+	// so the key means one thing at every item a writer can escape by pressing Up.
+	it('opens a paragraph above a list that follows an atom', () => {
+		expectPress(
+			startOf('---\n\n- a', 0),
+			'Enter',
+			'doc(horizontal_rule, paragraph, bullet_list(list_item(paragraph("a"))))'
+		);
+	});
+
+	it('declines where the block above the list already takes a caret', () => {
+		expectPress(
+			startOf('intro\n\n- a\n- b', 1),
+			'Enter',
+			'doc(paragraph("intro"), bullet_list(list_item(paragraph), list_item(paragraph("a")), list_item(paragraph("b"))))'
+		);
+	});
+
+	it('declines under a quote, whose last paragraph is a caret position', () => {
+		expectPress(
+			startOf('> quoted\n\n- a', 1),
+			'Enter',
+			'doc(blockquote(paragraph("quoted")), bullet_list(list_item(paragraph), list_item(paragraph("a"))))'
+		);
 	});
 
 	it('at the start of a NESTED first item, splits instead of reaching the parent item', () => {
