@@ -48,6 +48,15 @@ function type(view: EditorView, text: string): void {
 	}
 }
 
+/** Delete `count` characters back from the caret, the way the key does: one
+ *  transaction each, since the trigger recomputes per transaction. */
+function backspace(view: EditorView, count = 1): void {
+	for (let i = 0; i < count; i++) {
+		const head = view.state.selection.head;
+		view.dispatch(view.state.tr.delete(head - 1, head));
+	}
+}
+
 /** Put the caret at a USV offset and type. */
 function typeAt(field: FieldController, view: EditorView, pos: number, text: string): void {
 	field.setCaret(pos);
@@ -113,7 +122,7 @@ describe('the vocabulary is what no shorthand reaches', () => {
 	});
 });
 
-describe('the query filters, and a miss closes', () => {
+describe('the query filters, and a miss draws nothing', () => {
 	it('narrows on the name', () => {
 		const { field, view, state } = leaf('');
 		typeAt(field, view, 0, '/tab');
@@ -121,11 +130,40 @@ describe('the query filters, and a miss closes', () => {
 		field.destroy();
 	});
 
-	it('closes on a query nothing matches, leaving the text as typed', () => {
+	it('draws nothing on a query nothing matches, leaving the text as typed', () => {
 		const { field, view, state } = leaf('');
 		typeAt(field, view, 0, '/zzz');
-		expect(state()).toBeUndefined();
+		expect(state()?.items).toEqual([]);
 		expect(field.getContent().text).toBe('/zzz');
+		field.destroy();
+	});
+
+	it('narrows back in off a typo: the RUN outlives a query the vocabulary missed', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/tabel');
+		expect(state()?.items).toEqual([]);
+		// Backspace to `/tab`, the recovery a writer reaches for.
+		backspace(view, 2);
+		expect(state()?.query).toBe('tab');
+		expect(state()?.items).toEqual(['table']);
+		field.destroy();
+	});
+
+	it('keeps every key with the body while nothing is offered', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/zzz');
+		expect(state()?.items).toEqual([]);
+		// A surface only a keyboard can reach is worse than no surface: the run is live
+		// and undrawn, so it claims none of the keys it claims over offers.
+		for (const key of ['ArrowDown', 'ArrowUp', 'Escape']) {
+			expect(
+				view.someProp('handleKeyDown', (f) => f(view, new KeyboardEvent('keydown', { key })))
+			).toBeFalsy();
+		}
+		press(view, 'Enter');
+		// Enter split the paragraph rather than inserting: no offer, no pick.
+		expect(field.getContent().islands).toHaveLength(0);
+		expect(field.getContent().text).toBe('/zzz\n');
 		field.destroy();
 	});
 
@@ -155,6 +193,18 @@ describe('a dismissal edits no text; a pick consumes exactly the run', () => {
 		press(view, 'Escape');
 		expect(state()).toBeUndefined();
 		expect(field.getContent().text).toBe('/ta');
+		field.destroy();
+	});
+
+	it('an Escape sticks: the run is gone, so typing on does not raise it again', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/ta');
+		press(view, 'Escape');
+		type(view, 'b');
+		// Escape says the `/` was prose. Recomputing the run from the text before the
+		// caret would overrule that on the next keystroke.
+		expect(state()).toBeUndefined();
+		expect(field.getContent().text).toBe('/tab');
 		field.destroy();
 	});
 
