@@ -330,9 +330,8 @@ class TableIslandView implements NodeView {
 		// On the DOCUMENT rather than on the island: a `copy` is delivered to the DOM
 		// selection's own node, and a held rectangle has cleared that selection (a sweep
 		// removes the ranges itself, a grip press moves the focus to a button), so the
-		// event never crosses this subtree at all. {@link TableIslandView.onCopy} guards
-		// on the two things that make it this island's: a rectangle is held, and the focus
-		// is inside.
+		// event never crosses this subtree at all. What makes one this island's is
+		// {@link TableIslandView.onCopy}'s guard.
 		this.dom.ownerDocument.addEventListener('copy', this.onCopy);
 		this.dom.ownerDocument.addEventListener('cut', this.onCopy);
 		this.render();
@@ -698,9 +697,9 @@ class TableIslandView implements NodeView {
 	 * takes out is read by the same EXTENT rule: a covered rank goes, a sub-rectangle
 	 * clears.
 	 *
-	 * The guard is the whole of what makes a document-level listener this island's: no
-	 * rectangle and the event belongs to whatever holds the caret, and a focus outside
-	 * means another surface's copy while a stale rectangle happens to be held here.
+	 * The guard is the whole of what makes a document-level listener this island's. With
+	 * no rectangle the event belongs to whatever holds the caret. With the focus outside,
+	 * it is another surface's copy over a rectangle this island still happens to hold.
 	 */
 	private readonly onCopy = (event: ClipboardEvent): void => {
 		const held = this.selected;
@@ -720,8 +719,9 @@ class TableIslandView implements NodeView {
 	/**
 	 * A table pasted INTO a cell is written in at that cell, growing the table to hold
 	 * it (`table.ts` §{@link pasteCells}); anything else is the cell's own paste and
-	 * this declines. The origin is the caret's cell, which is also a swept rectangle's
-	 * first corner, so a paste over a block lands where the block starts.
+	 * this declines. It lands at the CARET's cell, which over a swept block is the cell
+	 * the press started in — the block's anchor rather than its first corner, a sweep
+	 * running up or left putting those at opposite ends.
 	 *
 	 * Without this arm the cell's inline schema reads the same clipboard as text and
 	 * flattens the table into one cell, which is the destructive case one level down.

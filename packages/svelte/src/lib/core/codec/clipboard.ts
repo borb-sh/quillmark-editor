@@ -1,24 +1,16 @@
-// The table island's clipboard door, both directions (CODEC §"The table island",
-// §"Markdown at the edges"). `TableProps` IS a pipe table — one column count across
-// `header`, every row and `aligns`, cells holding text and marks and no block content
-// — so a reader and a writer over it are small and lossless by construction, and the
-// two are the same grammar seen from opposite sides.
+// The table island's clipboard door, both directions: what a copy writes, a paste
+// reads. The design and the two wire formats are CODEC §"The table island" and
+// §"Markdown at the edges"; what is here is the grammar.
 //
 // WHAT CROSSES IS A RECTANGLE, never a cell. A `<table>` read in is one; the held cell
-// selection written out is one; a rectangle overlaid onto a table at a cell is one. So
-// the wire carries `TableCell[][]` and each end names its own corner.
+// selection written out is one; a rectangle overlaid onto a table at a cell is one. The
+// wire therefore carries `TableCell[][]` and no coordinates: each end names its own
+// corner.
 //
-// TWO WIRE FORMATS, and the HTML one is authoritative. `text/html` carries the marks
-// (the inline schema serializes them, and its own `parseDOM` reads them back) and is
-// what a browser, a spreadsheet and a word processor all speak. `text/plain` carries
-// pipe rows: markdown is LOSSY here (a cell's marks are dropped), which is the warning
-// CODEC §"Markdown at the edges" puts on that door, but a pipe table is what a
-// plain-text target can still read as a table.
-//
-// A ROW 0 IS A HEADER, on both sides. `header: []` is not a table, so a `<table>` with
-// no `<th>` promotes its first row and a copied rectangle's first row is the header of
-// what it pastes. One rule, both directions, and the model's own (`table.ts`
-// §`allRows`): whichever row holds index 0 is the header.
+// A ROW 0 IS A HEADER, on both sides, which is the model's own rule (`table.ts`
+// §`allRows`): whichever row holds index 0 is the header. So a `<table>` with no `<th>`
+// promotes its first row, and a copied rectangle's first row is the header of what it
+// pastes.
 import { DOMParser as PMDOMParser, DOMSerializer, Fragment, Slice } from 'prosemirror-model';
 import type { Node as PMNode, ParseRule, Schema } from 'prosemirror-model';
 import { Plugin } from 'prosemirror-state';
@@ -35,8 +27,8 @@ import {
 } from './table.js';
 import { decode } from './decode.js';
 
-/** The MIME types the two arms use, spelled once: a reader and a writer that disagreed
- *  about which key holds the table would each work alone and never round-trip. */
+/** The two keys, spelled once: a reader and a writer that disagreed about which holds
+ *  the table would each work alone and never round-trip. */
 const HTML = 'text/html';
 const PLAIN = 'text/plain';
 
@@ -119,8 +111,8 @@ export function tableFromClipboard(data: Clipboard | null | undefined): TablePro
 
 // ── Writing a rectangle out ─────────────────────────────────────────────────
 
-/** A cell's inline DOM: the marks the inline schema declares, serialized by the schema
- *  that declares them, which is what makes {@link cellFromDOM} the exact inverse. */
+/** A cell's inline DOM, serialized by the schema that declares its marks, which is what
+ *  makes {@link cellFromDOM} its exact inverse. */
 function cellToDOM(cell: TableCell, owner: Document): Node {
 	const doc = decode(cellContent(cell), inlineSchema);
 	const line = doc.firstChild;
@@ -175,9 +167,9 @@ export function tableToPipe(block: TableCell[][], aligns: TableAlign[]): string 
 	);
 }
 
-/** Put a rectangle on the clipboard, both arms, and claim the event. The caller is a
- *  `copy` / `cut` handler over a selection its own surface holds, which is why the
- *  rectangle arrives already cut out. */
+/** Put a rectangle on the clipboard, both arms. The caller is a `copy` / `cut` handler
+ *  over a selection its own surface holds, so the rectangle arrives already cut out and
+ *  claiming the event is the caller's. */
 export function writeRectangle(
 	data: Clipboard,
 	block: TableCell[][],
@@ -214,16 +206,14 @@ export function tableClipboardParser(schema: Schema): PMDOMParser {
 	return new PMDOMParser(schema, [tableParseRule(), ...PMDOMParser.fromSchema(schema).rules]);
 }
 
-/** An island node with no id yet: what a parse rule produces, a rule having no document
- *  to mint against. */
+/** An island node a parse rule produced, which is the only kind carrying no id. */
 const unstamped = (node: PMNode): boolean =>
 	(node.type.name === 'island_block' || node.type.name === 'island_inline') && !node.attrs.id;
 
 /** Mint an id for every island a paste is carrying. An id is part of the document's
  *  canonical bytes and the channel that addresses an island (CODEC §Islands), so a
- *  pasted island with none reaches the store as an insert nothing can name afterwards,
- *  and two sharing one collide. The minter is one sequence for the whole slice: a paste
- *  placing several tables must not hand them the same number. */
+ *  pasted island with none reaches the store as an insert nothing can name afterwards.
+ *  One minter for the whole slice, or a paste placing two tables hands them one id. */
 export function stampIslandIds(slice: Slice, doc: PMNode): Slice {
 	const mint = islandMinter(doc);
 	const walk = (fragment: Fragment): Fragment => {

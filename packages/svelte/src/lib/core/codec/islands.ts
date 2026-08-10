@@ -90,16 +90,15 @@ export function tablePropsOfNode(node: PMNode): TableProps | undefined {
 
 /**
  * A minter over one document: the positional `isl-{n}` sequence continued past the
- * highest id the field already holds, handing out CONSECUTIVE ids. A minted id is this
- * tier's to produce and it is part of the document's canonical bytes (CODEC §Islands),
- * so it is a counter over the projection in hand — never a UUID, never a clock reading,
- * and never a re-numbering of the ids already there, which are identities.
+ * highest id the field already holds, handing out CONSECUTIVE ids, so a caller placing
+ * several islands at once keeps one minter for the lot. A minted id is this tier's to
+ * produce and it is part of the document's canonical bytes (CODEC §Islands), so it is a
+ * counter over the projection in hand — never a UUID, never a clock reading, and never a
+ * re-numbering of the ids already there, which are identities.
  *
  * Reads the PM doc rather than the stored content because that is what the caller (an
  * insert command, a paste) holds and what the commit will project: an id minted against
- * a stale content could collide with one the same transaction places. A caller placing
- * SEVERAL islands at once keeps one minter for the lot, or they collide with each other
- * instead.
+ * a stale content could collide with one the same transaction places.
  */
 export function islandMinter(doc: PMNode): () => string {
 	let next = 0;

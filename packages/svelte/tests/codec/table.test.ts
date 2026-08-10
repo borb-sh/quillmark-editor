@@ -1074,11 +1074,11 @@ describe('a selection is the subject of the next command', () => {
 
 // ── The clipboard door ──────────────────────────────────────────────────────
 //
-// `TableProps` IS a pipe table, so a reader and a writer over it are the same grammar
-// seen from two sides, and these assert that: what a copy writes, a paste reads. The
-// load-bearing case is the DESTRUCTIVE one — an HTML table parsed against the block
-// schema alone flattens to `ab12`, where the cell boundaries are unrecoverable even as
-// text, which is worse than dropping the paste.
+// `TableProps` IS a pipe table, so a reader and a writer over it are one grammar seen
+// from two sides, and these assert that: what a copy writes, a paste reads. The
+// load-bearing case is the DESTRUCTIVE one. The block schema declares no `parseDOM` for
+// an island, so the clipboard rule is the only thing holding a pasted table's cell
+// boundaries, and `ab12` is unrecoverable even as text — worse than dropping the paste.
 
 /** A clipboard event jsdom can carry: it implements no `DataTransfer`, and what the two
  *  handlers use of one is `getData` / `setData`. The seed is what a paste ARRIVES with;
@@ -1116,8 +1116,8 @@ describe('a table crosses the clipboard as a table', () => {
 			['a', 'b'],
 			['1', '2']
 		]);
-		// The text the old parse produced is gone with it: nothing in the field spells
-		// the cells run together.
+		// And the cells are cells rather than a run of text: nothing in the field spells
+		// them run together.
 		expect(doc.main.body.text).not.toContain('ab12');
 		field.destroy();
 	});
