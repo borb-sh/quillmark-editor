@@ -221,6 +221,32 @@ export function clearCells(
 	});
 }
 
+/**
+ * A rectangle written in at `(r, c)`, the table GROWING to hold whatever runs past its
+ * edges: what a paste into a cell means (`clipboard.ts`). The alternative is clipping
+ * to the rectangle that is there, which silently drops the tail of what the author
+ * copied; growth drops nothing and every added rank is one the ops already remove.
+ *
+ * `aligns` is the table's own throughout: a column keeps its alignment under a paste,
+ * and a column the paste added arrives `none` like any other fresh one.
+ */
+export function pasteCells(
+	props: TableProps,
+	r: number,
+	c: number,
+	block: TableCell[][]
+): TableProps {
+	const rows = allRows(props);
+	const height = Math.max(rows.length, r + block.length);
+	const width = Math.max(columnCount(props), ...block.map((row) => c + row.length));
+	return fromRows(
+		Array.from({ length: height }, (_, i) =>
+			Array.from({ length: width }, (_, j) => block[i - r]?.[j - c] ?? rows[i]?.[j] ?? emptyCell())
+		),
+		props.aligns
+	);
+}
+
 /** Set column `c`'s alignment: the one table capability the content round-trips
  *  today and nothing in the editor could reach. */
 export function setAlign(props: TableProps, c: number, align: TableAlign): TableProps {

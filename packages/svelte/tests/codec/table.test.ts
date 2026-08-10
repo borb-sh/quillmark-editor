@@ -10,7 +10,8 @@
 // every row and column op is asserted install-then-read against its own projection.
 import { describe, it, expect } from 'vitest';
 import { GapCursor } from 'prosemirror-gapcursor';
-import { EditorState, NodeSelection, TextSelection } from 'prosemirror-state';
+import { Slice } from 'prosemirror-model';
+import { EditorState, NodeSelection, Selection, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { createField, decode, blockSchema, inlineSchema } from '$lib/core/codec';
 import type { FieldController, LeafViews } from '$lib/core/codec';
@@ -27,11 +28,13 @@ import {
 	moveRow,
 	newTable,
 	normalizeTable,
+	pasteCells,
 	rowCells,
 	rowCount,
 	setAlign,
 	withCell
 } from '$lib/core/codec/table.js';
+import { tableFromDOM } from '$lib/core/codec/clipboard.js';
 import { mintIslandId } from '$lib/core/codec/islands.js';
 import type { Content, TableCell, TableProps } from '@quillmark/wasm';
 import { mount, press, quill, md } from './_util.js';
@@ -1066,5 +1069,216 @@ describe('a selection is the subject of the next command', () => {
 		expect(doc.main.body.islands).toHaveLength(1); // the image stands
 		expect(doc.main.body.text).toBe('a ￼x b');
 		field.destroy();
+	});
+});
+
+// ── The clipboard door ──────────────────────────────────────────────────────
+//
+// `TableProps` IS a pipe table, so a reader and a writer over it are the same grammar
+// seen from two sides, and these assert that: what a copy writes, a paste reads. The
+// load-bearing case is the DESTRUCTIVE one — an HTML table parsed against the block
+// schema alone flattens to `ab12`, where the cell boundaries are unrecoverable even as
+// text, which is worse than dropping the paste.
+
+/** A clipboard event jsdom can carry: it implements no `DataTransfer`, and what the two
+ *  handlers use of one is `getData` / `setData`. The seed is what a paste ARRIVES with;
+ *  the same object is what a copy is read back off. */
+function clipboard(kind: 'copy' | 'cut' | 'paste', seed: Record<string, string> = {}) {
+	const held: Record<string, string> = { ...seed };
+	const event = new Event(kind, { bubbles: true, cancelable: true });
+	Object.defineProperty(event, 'clipboardData', {
+		value: {
+			getData: (type: string) => held[type] ?? '',
+			setData: (type: string, value: string) => {
+				held[type] = value;
+			}
+		}
+	});
+	return { event: event as ClipboardEvent, held };
+}
+
+/** The `<table>` element of an HTML string, which is what a reader takes. */
+function tableEl(html: string): Element {
+	return new DOMParser().parseFromString(html, 'text/html').querySelector('table')!;
+}
+
+const PASTED = '<table><tr><th>a</th><th>b</th></tr><tr><td>1</td><td>2</td></tr></table>';
+
+describe('a table crosses the clipboard as a table', () => {
+	it('an HTML table pasted into the body is an island, not a flattened paragraph', () => {
+		const { doc, field } = tableLeaf(LETTERED);
+		const outer = outerView(field);
+		outer.dispatch(outer.state.tr.setSelection(Selection.atEnd(outer.state.doc)));
+		outer.pasteHTML(PASTED, clipboard('paste').event);
+		const islands = doc.main.body.islands;
+		expect(islands).toHaveLength(2);
+		expect(grid(islands[1].props as TableProps)).toEqual([
+			['a', 'b'],
+			['1', '2']
+		]);
+		// The text the old parse produced is gone with it: nothing in the field spells
+		// the cells run together.
+		expect(doc.main.body.text).not.toContain('ab12');
+		field.destroy();
+	});
+
+	it('a pasted island takes a minted id, and two in one paste take different ones', () => {
+		const { doc, field } = tableLeaf(LETTERED);
+		const outer = outerView(field);
+		outer.dispatch(outer.state.tr.setSelection(Selection.atEnd(outer.state.doc)));
+		outer.pasteHTML(PASTED + PASTED, clipboard('paste').event);
+		const ids = doc.main.body.islands.map((isl) => isl.id);
+		// The field's own sequence continued: an id is part of the document's canonical
+		// bytes and the channel that addresses an island, so a pasted one with none
+		// reaches the store as an insert nothing can name.
+		expect(ids).toEqual(['isl-0', 'isl-1', 'isl-2']);
+		field.destroy();
+	});
+
+	it('a header is whatever row lands at index 0, `header: []` being no table', () => {
+		// No `<th>` anywhere: the first row is promoted, which is the model's own rule.
+		const props = tableFromDOM(tableEl('<table><tr><td>a</td><td>b</td></tr></table>'));
+		expect(grid(props)).toEqual([['a', 'b']]);
+	});
+
+	it('a colspan becomes the cells it covers, so the columns after it keep their index', () => {
+		const props = tableFromDOM(
+			tableEl(
+				'<table><tr><th>h</th><th>i</th><th>j</th></tr>' +
+					'<tr><td colspan="2">wide</td><td>tail</td></tr></table>'
+			)
+		);
+		expect(grid(props)).toEqual([
+			['h', 'i', 'j'],
+			['wide', '', 'tail']
+		]);
+	});
+
+	it("a column's alignment comes off its header cell, either spelling", () => {
+		const props = tableFromDOM(
+			tableEl(
+				'<table><tr><th align="right">a</th><th style="text-align: center">b</th>' +
+					'<th>c</th></tr></table>'
+			)
+		);
+		expect(props.aligns).toEqual(['right', 'center', 'none']);
+	});
+
+	it('a cell keeps its marks and loses its blocks: the inline schema is the whole rule', () => {
+		const props = tableFromDOM(
+			tableEl(
+				'<table><tr><td><strong>bold</strong> rest</td><td><p>one</p><p>two</p></td></tr></table>'
+			)
+		);
+		expect(props.header[0]).toEqual({
+			text: 'bold rest',
+			marks: [{ start: 0, end: 4, type: 'strong' }]
+		});
+		// A cell has one `text` and no line concept, so a block inside one has nowhere to
+		// land: what survives is its text.
+		expect(props.header[1].text).toBe('onetwo');
+	});
+
+	it('a copy over a selected row writes the rectangle, both wire formats', () => {
+		const { field } = tableLeaf(LETTERED);
+		grips(field, 'row')[1].click();
+		const { event, held } = clipboard('copy');
+		field.el.querySelector('.qm-table-island')!.dispatchEvent(event);
+		expect(event.defaultPrevented).toBe(true);
+		// The plain arm is a pipe table in its own right, delimiter row and alignment
+		// included: what a plain-text target reads as a table.
+		expect(held['text/plain']).toBe('| a1 | a2 |\n| :--- | ---: |');
+		expect(held['text/html']).toContain('<th');
+		field.destroy();
+	});
+
+	it('what a copy writes, a paste reads: the rectangle round-trips whole', () => {
+		const marked = withCell(LETTERED, 1, 0, {
+			text: 'bold',
+			marks: [{ start: 0, end: 4, type: 'strong' }]
+		});
+		const { field } = tableLeaf(marked);
+		grips(field, 'row')[1].click();
+		const { event, held } = clipboard('copy');
+		field.el.querySelector('.qm-table-island')!.dispatchEvent(event);
+		const back = tableFromDOM(tableEl(held['text/html']));
+		expect(back.header).toEqual(rowCells(marked, 1));
+		expect(back.aligns).toEqual(['left', 'right']);
+		field.destroy();
+	});
+
+	it('a cut takes the rank the extent rule names, which is the copy plus its Backspace', () => {
+		const { field } = tableLeaf(LETTERED);
+		grips(field, 'row')[1].click();
+		const { event, held } = clipboard('cut');
+		field.el.querySelector('.qm-table-island')!.dispatchEvent(event);
+		expect(held['text/plain']).toContain('a1');
+		expect(grid(leafProps(field))).toEqual([
+			['h1', 'h2'],
+			['b1', 'b2']
+		]);
+		field.destroy();
+	});
+
+	it('a copy with no rectangle held is not the island’s to answer', () => {
+		const { field } = tableLeaf(LETTERED);
+		cellViews(field)[0].focus();
+		const { event, held } = clipboard('copy');
+		field.el.querySelector('.qm-table-island')!.dispatchEvent(event);
+		// The caret's own copy, which belongs to the nested view: nothing written and
+		// nothing claimed.
+		expect(held).toEqual({});
+		expect(event.defaultPrevented).toBe(false);
+		field.destroy();
+	});
+
+	it('a table pasted INTO a cell is written in at that cell, growing the table to hold it', () => {
+		const { field } = tableLeaf(LETTERED);
+		const view = cellViews(field)[3]; // row 1, column 1
+		view.focus();
+		view.pasteHTML(PASTED, clipboard('paste', { 'text/html': PASTED }).event);
+		expect(grid(leafProps(field))).toEqual([
+			['h1', 'h2', ''],
+			['a1', 'a', 'b'],
+			['b1', '1', '2']
+		]);
+		// The alignment the table already carried is the COLUMN's and survives; the
+		// column the paste added arrives unaligned like any other fresh one.
+		expect(leafProps(field).aligns).toEqual(['left', 'right', 'none']);
+		field.destroy();
+	});
+
+	it('a paste that carries no table is the cell’s own', () => {
+		const { field } = tableLeaf(LETTERED);
+		const view = cellViews(field)[0];
+		view.focus();
+		const claimed = view.someProp('handlePaste', (f) =>
+			f(view, clipboard('paste', { 'text/plain': 'plain' }).event, Slice.empty)
+		);
+		expect(claimed).toBeFalsy();
+		field.destroy();
+	});
+});
+
+describe('a rectangle written in at a cell', () => {
+	it('overlays where it lands and grows the table past its edges', () => {
+		const block = [
+			[cell('x'), cell('y')],
+			[cell('z'), cell('w')]
+		];
+		expect(grid(pasteCells(LETTERED, 2, 1, block))).toEqual([
+			['h1', 'h2', ''],
+			['a1', 'a2', ''],
+			['b1', 'x', 'y'],
+			['', 'z', 'w']
+		]);
+	});
+
+	it('lands on the header like any other row, index 0 being a row', () => {
+		expect(grid(pasteCells(LETTERED, 0, 0, [[cell('X')]]))).toEqual([
+			['X', 'h2'],
+			['a1', 'a2'],
+			['b1', 'b2']
+		]);
 	});
 });

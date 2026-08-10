@@ -29,12 +29,14 @@ import {
 	type Command
 } from 'prosemirror-state';
 import { EditorView, type NodeView, type NodeViewConstructor } from 'prosemirror-view';
-import type { TableProps } from '@quillmark/wasm';
+import type { TableCell, TableProps } from '@quillmark/wasm';
+import { tableFromClipboard, writeRectangle } from './clipboard.js';
 import { decode } from './decode.js';
 import { inputRulesPlugin } from './inputrules.js';
 import { tablePropsOfNode } from './islands.js';
 import { inlineSchema } from './schema.js';
 import {
+	allRows,
 	cellAt,
 	cellContent,
 	cellEqual,
@@ -48,6 +50,7 @@ import {
 	moveColumn,
 	moveRow,
 	normalizeTable,
+	pasteCells,
 	rowCells,
 	rowCount,
 	shapeEqual,
@@ -324,6 +327,14 @@ class TableIslandView implements NodeView {
 		this.dom.setAttribute('data-island', node.attrs.islandType as string);
 		this.dom.setAttribute('data-island-id', node.attrs.id as string);
 		this.dom.addEventListener('mousedown', this.onPointerDown);
+		// On the DOCUMENT rather than on the island: a `copy` is delivered to the DOM
+		// selection's own node, and a held rectangle has cleared that selection (a sweep
+		// removes the ranges itself, a grip press moves the focus to a button), so the
+		// event never crosses this subtree at all. {@link TableIslandView.onCopy} guards
+		// on the two things that make it this island's: a rectangle is held, and the focus
+		// is inside.
+		this.dom.ownerDocument.addEventListener('copy', this.onCopy);
+		this.dom.ownerDocument.addEventListener('cut', this.onCopy);
 		this.render();
 	}
 
@@ -379,6 +390,8 @@ class TableIslandView implements NodeView {
 
 	destroy(): void {
 		this.dom.removeEventListener('mousedown', this.onPointerDown);
+		this.dom.ownerDocument.removeEventListener('copy', this.onCopy);
+		this.dom.ownerDocument.removeEventListener('cut', this.onCopy);
 		this.endDrag();
 		this.endSweep();
 		this.teardownCells();
@@ -664,6 +677,61 @@ class TableIslandView implements NodeView {
 				index: Math.max(floor, Math.min(line.index + by, limit))
 			});
 		};
+	}
+
+	// ── The clipboard ─────────────────────────────────────────────────────────
+
+	/** The held rectangle's cells, read off the stored props. The rectangle is the unit
+	 *  that crosses the clipboard, which is why it is also the unit the verbs read. */
+	private heldBlock(held: Cells): TableCell[][] {
+		const props = this.props();
+		return Array.from({ length: held.r1 - held.r0 + 1 }, (_, i) =>
+			Array.from({ length: held.c1 - held.c0 + 1 }, (_, j) =>
+				cellAt(props, held.r0 + i, held.c0 + j)
+			)
+		);
+	}
+
+	/**
+	 * Copy or cut the held rectangle (`clipboard.ts` writes both wire formats). A CUT is
+	 * a copy plus the delete Backspace already means over that rectangle, so what it
+	 * takes out is read by the same EXTENT rule: a covered rank goes, a sub-rectangle
+	 * clears.
+	 *
+	 * The guard is the whole of what makes a document-level listener this island's: no
+	 * rectangle and the event belongs to whatever holds the caret, and a focus outside
+	 * means another surface's copy while a stale rectangle happens to be held here.
+	 */
+	private readonly onCopy = (event: ClipboardEvent): void => {
+		const held = this.selected;
+		const data = event.clipboardData;
+		const owner = this.dom.ownerDocument;
+		if (!held || !data || !this.dom.contains(owner.activeElement)) return;
+		writeRectangle(
+			data,
+			this.heldBlock(held),
+			this.props().aligns.slice(held.c0, held.c1 + 1),
+			owner
+		);
+		event.preventDefault();
+		if (event.type === 'cut') this.deleteSelection();
+	};
+
+	/**
+	 * A table pasted INTO a cell is written in at that cell, growing the table to hold
+	 * it (`table.ts` §{@link pasteCells}); anything else is the cell's own paste and
+	 * this declines. The origin is the caret's cell, which is also a swept rectangle's
+	 * first corner, so a paste over a block lands where the block starts.
+	 *
+	 * Without this arm the cell's inline schema reads the same clipboard as text and
+	 * flattens the table into one cell, which is the destructive case one level down.
+	 */
+	private pasteIntoCell(r: number, c: number, event: ClipboardEvent): boolean {
+		const props = tableFromClipboard(event.clipboardData);
+		if (!props) return false;
+		this.clearSelection();
+		this.write(pasteCells(this.props(), r, c, allRows(props)));
+		return true;
 	}
 
 	/**
@@ -1073,6 +1141,7 @@ class TableIslandView implements NodeView {
 				const now = this.props();
 				this.write(withCell(now, r, c, cellFromDoc(next.doc, cellAt(now, r, c))));
 			},
+			handlePaste: (_view, event) => this.pasteIntoCell(r, c, event),
 			handleDOMEvents: {
 				focus: () => {
 					this.clearSelection();
