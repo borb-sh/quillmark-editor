@@ -193,6 +193,33 @@
 		color: var(--_qm-ink);
 	}
 
+	/* The press floor, for a trigger standing in a line of text or a band of gutter
+	 rather than in a row of its own, whose drawn box is therefore smaller than the target
+	 it owes. A target is a region of the screen and a box is paint; separating them is
+	 what lets both be right at once. The target is the box or the floor, whichever is
+	 larger, which is what `width: 100%` under a `min-width` says. Unpainted, so it
+	 enlarges the press and not the mark, and out of the accessibility tree by
+	 construction: a pseudo-element has no node.
+
+	 The family's floor comes off in the same rule, carrying this class being what giving
+	 it up means. It sits after both families for that: same specificity, so source order
+	 decides. */
+	.qm-tap-floor {
+		position: relative;
+		min-width: 0;
+		min-height: 0;
+	}
+	.qm-tap-floor::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 100%;
+		min-width: var(--_qm-tap-min);
+		height: var(--_qm-tap-min);
+		transform: translate(-50%, -50%);
+	}
+
 	/* A floating list of choices: the enum's listbox and the card stack's kind menu.
 	 Both portal into the nearest `[data-qm-root]`, and both are picked from, so the
 	 surface (its edge, its inset, its ink) and the item (its pad, its radius, the

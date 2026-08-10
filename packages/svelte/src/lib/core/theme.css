@@ -168,6 +168,14 @@
 		   stacks over whichever surface rung the cell already draws instead of replacing
 		   it. */
 		--_qm-accent-tint: color-mix(in oklab, var(--_qm-accent) 12%, transparent);
+		/* The danger hue held: what a destructive control fills with where the family's
+		   neutral hover rung would read as one more button. Mixed at the accent tint's
+		   strength, so a held tint is a held tint whichever hue it carries. */
+		--_qm-danger-tint: color-mix(in oklab, var(--_qm-danger) 12%, transparent);
+		/* The label ink held: what a trigger fills with whose own ink never steps, so
+		   the fill arriving under it is that tone at a strength a surface reads
+		   through. */
+		--_qm-add-fill: color-mix(in oklab, var(--_qm-ink-label) 15%, transparent);
 
 		/* The tips card'S hue: the surface's one exit from the greyscale that is not
 		   a status, and what the amber and the typewriter face say together is
@@ -226,10 +234,14 @@
 		--_qm-bloom-dwell: 1100ms;
 
 		/* One curve, symmetric because an interruption turns these trips around: a hover
-		   leaves before it arrives, a card collapses mid-expand. The one-way pair a scale
-		   like this often carries is minted when a trip long enough to read one arrives;
-		   the popover's pop is the nearest and at `fast` it is under that threshold. */
+		   leaves before it arrives, a card collapses mid-expand. Every trip at `fast` or
+		   `slow` takes it; a one-way shape is legible only over a longer one. */
 		--_qm-ease-reverse: cubic-bezier(0.4, 0, 0.6, 1);
+		/* A trip rather than a rung, duration and curve composed the way `--_qm-ring`
+		   composes its three: neither half is reachable alone. Weighted to its end, so an
+		   arrival settles into its rest instead of stopping at it, and long enough that a
+		   control resting at nothing reads as arriving rather than as switching. */
+		--_qm-reveal: 500ms cubic-bezier(0.4, 0, 0.2, 1);
 
 		/* ── Geometry ──────────────────────────────────────────────────────────*/
 		/* One stroke width for every edge the chrome draws: a card's, a control's,

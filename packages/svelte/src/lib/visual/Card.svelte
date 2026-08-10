@@ -514,11 +514,9 @@
 		padding-bottom: var(--_qm-space-3);
 	}
 	/* Two query containers, one per kind of section, so capacity follows the width the
-	 fields actually get: a panel's inset makes that narrower than the card. `--action-col`
-	 is minted here and spent one level down, on the field (Field.svelte). */
+	 fields actually get: a panel's inset makes that narrower than the card. */
 	.qm-section,
 	.qm-group-panel-inner {
-		--action-col: calc(var(--_qm-tap-min) + var(--_qm-space-2));
 		container-type: inline-size;
 	}
 	/* Capacity is the container's, not JavaScript's: nothing measures, so there is no
@@ -526,8 +524,8 @@
 
 	 It steps 1 → 2 → 4, skipping 3: each rung is the width at which a track still clears
 	 the comfortable field minimum, and an even capacity is what lets `lone`'s half land
-	 on a track boundary. The reservation is per field, so a rung is
-	 `n * (220px + action) + gaps`. */
+	 on a track boundary. A field ends on its track's own edge, so a rung is
+	 `n * 220px + gaps`. */
 	.qm-fields {
 		--cols: 1;
 		--cols-half: 1;
@@ -536,13 +534,13 @@
 		column-gap: var(--_qm-space-2);
 		row-gap: var(--_qm-space-2);
 	}
-	@container (min-width: 32rem) {
+	@container (min-width: 28rem) {
 		.qm-fields {
 			--cols: 2;
 			--cols-half: 1;
 		}
 	}
-	@container (min-width: 65rem) {
+	@container (min-width: 57rem) {
 		.qm-fields {
 			--cols: 4;
 			--cols-half: 2;

@@ -88,7 +88,7 @@
 <button
 	bind:this={triggerEl}
 	type="button"
-	class="qm-field-hint qm-icon-btn qm-focus-ring"
+	class="qm-field-hint qm-icon-btn qm-focus-ring qm-tap-floor"
 	aria-label="{label} guidance"
 	aria-expanded={open}
 	aria-describedby={describedBy}
@@ -180,11 +180,8 @@
 	 most of the field's label-to-control gap: the hover fill landing on the input's
 	 top border, the focus ring crossing it.
 
-	 So the box is the glyph and the target is the `::after` below. A target is a
-	 region of the screen, not a paint box, and separating them is what lets both be
-	 correct at once: the row keeps the line box's height and the press keeps the
-	 floor. Every other glyph button has a row to itself and keeps the floor as its
-	 box.
+	 So the box is the glyph and the target is `.qm-tap-floor`'s (controls.css), which
+	 carries that split and the giving-up of the family floor together.
 
 	 It takes no fill either: the ink step below says hover, and the surface itself
 	 opens on it. */
@@ -193,23 +190,8 @@
 		color: var(--_qm-ink-ghost);
 		/* Not the family's `pointer`: the glyph raises guidance, it does not act. */
 		cursor: help;
-		position: relative;
-		min-width: 0;
-		min-height: 0;
 		padding: 0;
 		background: none;
-	}
-	/* The tap floor, out of flow and centred on the glyph: WCAG 2.5.8 measures the
-	 target, and this is it. Unpainted, so it enlarges the press and not the mark, and
-	 out of the accessibility tree by construction: a pseudo-element has no node. */
-	.qm-field-hint::after {
-		content: '';
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		width: var(--_qm-tap-min);
-		height: var(--_qm-tap-min);
-		transform: translate(-50%, -50%);
 	}
 	.qm-field-hint:hover,
 	.qm-field-hint:focus-visible {
