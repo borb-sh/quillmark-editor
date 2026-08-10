@@ -166,6 +166,26 @@ describe('a dismissal edits no text; a pick consumes exactly the run', () => {
 		field.destroy();
 	});
 
+	it('losing the focus closes it, so the run cannot outlive the surface drawing it', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/ta');
+		expect(state()).toBeDefined();
+		// A blur dispatches no transaction, so the recompute never sees it: without this
+		// dismissal the run survives a click into another field while the chrome's own
+		// outside-press layer closes the menu, and a click back onto the same caret
+		// restores neither — the run is unchanged, so no report fires and the menu stays
+		// shut over an Enter it is still claiming.
+		view.dom.dispatchEvent(new FocusEvent('blur'));
+		expect(state()).toBeUndefined();
+		expect(field.getContent().text).toBe('/ta');
+		// And Enter is the body's again: it splits the block, where a live run would have
+		// consumed the text and inserted a table.
+		press(view, 'Enter');
+		expect(field.getContent().islands).toHaveLength(0);
+		expect(field.getContent().text).toBe('/ta\n');
+		field.destroy();
+	});
+
 	it('an undo closes it', () => {
 		const { field, view, state } = leaf('');
 		typeAt(field, view, 0, '/ta');

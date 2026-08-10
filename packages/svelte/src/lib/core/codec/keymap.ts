@@ -3,10 +3,11 @@
 //
 // A body is a document, so its structural keys are STRUCTURAL; a surface nested in
 // it that owns a key more locally joins the chain rather than rewriting the binding.
-// Precedence is inner surface first: the `code_block` link, then the
-// list links. Each link declines outside its surface, so the first link that claims
-// the key gets it; and where none does, the key is not swallowed at all and leaves
-// the body a keyboard exit.
+// Precedence is inner surface first: the `code_block` link, then the list links, then
+// the block-atom link, which is about a NEIGHBOUR rather than about the surface the
+// caret is in and so answers last. Each link declines outside its surface, so the
+// first link that claims the key gets it; and where none does, the key is not
+// swallowed at all and leaves the body a keyboard exit.
 //
 // A table island's cell traversal is NOT a link here: it binds on the NESTED cell
 // view (`table-view.ts`), a keymap over a different document, so a key a cell
@@ -17,6 +18,7 @@
 import type { Schema } from 'prosemirror-model';
 import { chainCommands } from 'prosemirror-commands';
 import type { Command } from 'prosemirror-state';
+import { atomKeymap } from './atoms.js';
 import { codeKeymap } from './code.js';
 import { listKeymap } from './lists.js';
 import { slashKeymap } from './slash.js';
@@ -45,5 +47,5 @@ function chainKeymaps(...maps: Record<string, Command>[]): Record<string, Comman
  * no visible reason. */
 export function bodyKeymap(schema: Schema, slash?: boolean): Record<string, Command> {
 	const links = slash ? [slashKeymap()] : [];
-	return chainKeymaps(...links, codeKeymap(schema), listKeymap(schema));
+	return chainKeymaps(...links, codeKeymap(schema), listKeymap(schema), atomKeymap(schema));
 }

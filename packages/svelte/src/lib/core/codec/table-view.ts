@@ -346,12 +346,18 @@ class TableIslandView implements NodeView {
 		for (const mounted of this.cells) {
 			const stored = cellAt(props, mounted.r, mounted.c);
 			if (cellEqual(stored, cellFromDoc(mounted.view.state.doc, stored))) continue;
-			mounted.view.updateState(
-				EditorState.create({
-					doc: decode(cellContent(stored), inlineSchema),
-					plugins: cellPlugins(this.cellKeys(mounted.r, mounted.c))
-				})
-			);
+			const head = mounted.view.state.selection.head;
+			const fresh = EditorState.create({
+				doc: decode(cellContent(stored), inlineSchema),
+				plugins: cellPlugins(this.cellKeys(mounted.r, mounted.c))
+			});
+			mounted.view.updateState(fresh);
+			// Best-effort caret continuity, the rule a field's own re-hydrate takes: keep
+			// the offset, clamped into the text that is there now. A fresh state resolves
+			// its selection to the START of the cell, so an undo would otherwise put the
+			// caret somewhere the edit it undid never was.
+			const at = Math.min(head, fresh.doc.content.size);
+			mounted.view.dispatch(fresh.tr.setSelection(Selection.near(fresh.doc.resolve(at))));
 		}
 		return true;
 	}
@@ -705,15 +711,16 @@ class TableIslandView implements NodeView {
 		this.selectLine({ axis: 'row', index: Math.min(held.r0, rowCount(this.props()) - 1) });
 	}
 
-	/** Drop the columns the selection covers, and select what took the first one's place.
-	 *  Neither this nor {@link TableIslandView.dropRows} can empty the table: a rectangle
-	 *  covering every rank of its axis spans the other one too, which is the island arm
-	 *  above, so a rank always survives here. */
+	/** Drop the columns the selection covers, and select what took the first one's place —
+	 *  the row arm's rule, spelled the same way, since a rank going is a rank going on
+	 *  either axis. Neither this nor {@link TableIslandView.dropRows} can empty the table:
+	 *  a rectangle covering every rank of its axis spans the other one too, which is the
+	 *  island arm above, so a rank always survives here. */
 	private dropColumns(held: Cells): void {
 		let props = this.props();
 		for (let c = held.c1; c >= held.c0; c--) props = deleteColumn(props, c);
 		this.write(props);
-		this.selectLine({ axis: 'column', index: Math.max(0, held.c0 - 1) });
+		this.selectLine({ axis: 'column', index: Math.min(held.c0, columnCount(this.props()) - 1) });
 	}
 
 	/** Move the line and keep it selected: a move whose selection did not travel would
@@ -807,12 +814,15 @@ class TableIslandView implements NodeView {
 		}
 	}
 
-	private readonly onGripUp = (): void => {
+	private readonly onGripUp = (event: PointerEvent): void => {
 		const drag = this.drag;
 		if (!drag) return;
 		const { line, drop, engaged } = drag;
 		this.endDrag();
 		if (!engaged) return;
+		// A CANCEL is not a release: the line stays where it was, and no `click` follows
+		// it, so arming the guard below would leave it to swallow the next press instead.
+		if (event.type !== 'pointerup') return;
 		// The press that ends a drag is not the press that selects: the click still to
 		// come would re-select the line the drag just moved off.
 		this.suppressClick = true;
@@ -896,6 +906,7 @@ class TableIslandView implements NodeView {
 	}
 
 	private render(): void {
+		const seat = this.focusedSeat();
 		this.endDrag();
 		this.endSweep();
 		this.teardownCells();
@@ -933,6 +944,40 @@ class TableIslandView implements NodeView {
 		this.frame = frame;
 		this.dom.appendChild(scroller);
 		this.paintSelection();
+		this.reseat(seat);
+	}
+
+	/**
+	 * Where the focus sits, in terms a rebuild can restore it by: a cell's position or a
+	 * grip's line, neither of which is an element that survives one.
+	 *
+	 * A rebuild is what a CHANGED RECTANGLE costs, and the op that changed it usually
+	 * says where the caret lands ({@link TableIslandView.write}'s `focus`). An UNDO says
+	 * nothing — it is the outer history's transaction, not an op of this view's — so
+	 * without this the DOM under the focus is removed and the focus falls to the
+	 * document body, where the next undo reaches no view at all.
+	 */
+	private focusedSeat(): { cell?: { r: number; c: number }; line?: Line } | undefined {
+		const held = this.cells.find((m) => m.view.hasFocus());
+		if (held) return { cell: { r: held.r, c: held.c } };
+		const active = this.dom.ownerDocument.activeElement;
+		for (const [key, grip] of this.grips) {
+			if (grip !== active) continue;
+			const [axis, index] = key.split(':');
+			return { line: { axis: axis as Axis, index: Number(index) } };
+		}
+		return undefined;
+	}
+
+	/** Put the focus back where {@link TableIslandView.focusedSeat} found it, clamped into
+	 *  the rectangle that is there now: the seat's line may be the one the rebuild
+	 *  removed. A caller that has a landing of its own overrides this by running after. */
+	private reseat(seat: { cell?: { r: number; c: number }; line?: Line } | undefined): void {
+		if (seat?.cell) return this.focusCell(seat.cell.r, seat.cell.c);
+		if (!seat?.line) return;
+		const { floor, limit } = this.bounds(seat.line.axis, this.props());
+		const index = Math.max(floor, Math.min(seat.line.index, limit));
+		this.gripFor({ axis: seat.line.axis, index })?.focus();
 	}
 
 	/** One table row: its cells, each carrying whatever chrome hangs off it. */
@@ -1127,14 +1172,8 @@ class TableIslandView implements NodeView {
 			Delete: erase,
 			ArrowUp: walk('up'),
 			ArrowDown: walk('down'),
-			Tab: () => {
-				this.step(r, c, 1);
-				return true;
-			},
-			'Shift-Tab': () => {
-				this.step(r, c, -1);
-				return true;
-			},
+			Tab: () => this.step(r, c, 1),
+			'Shift-Tab': () => this.step(r, c, -1),
 			Enter: () => {
 				const props = this.props();
 				if (r === rowCount(props) - 1) this.write(insertRow(props, r), { r: r + 1, c });
@@ -1150,10 +1189,16 @@ class TableIslandView implements NodeView {
 		};
 	}
 
-	/** Tab's traversal: the next (or previous) cell in reading order. Past the last
-	 *  cell it APPENDS a row, which is the growth affordance the keyboard has; before
-	 *  the first it declines and the caret stays. */
-	private step(r: number, c: number, dir: 1 | -1): void {
+	/**
+	 * Tab's traversal: the next (or previous) cell in reading order. Past the last cell
+	 * it APPENDS a row, which is the growth affordance the keyboard has.
+	 *
+	 * Before the FIRST cell it declines, and that is the island's keyboard exit: the key
+	 * is not swallowed, so the browser moves the focus out of the grid the way it moved
+	 * it in. Swallowing it instead left Tab with no way out at all — every press forward
+	 * grew the table, and every press back stalled on the header's first cell.
+	 */
+	private step(r: number, c: number, dir: 1 | -1): boolean {
 		const props = this.props();
 		const cols = columnCount(props);
 		const rows = rowCount(props);
@@ -1166,12 +1211,10 @@ class TableIslandView implements NodeView {
 			nr = r - 1;
 			nc = cols - 1;
 		}
-		if (nr < 0) return;
-		if (nr >= rows) {
-			this.write(insertRow(props, r), { r: nr, c: 0 });
-			return;
-		}
-		this.focusCell(nr, nc);
+		if (nr < 0) return false;
+		if (nr >= rows) this.write(insertRow(props, r), { r: nr, c: 0 });
+		else this.focusCell(nr, nc);
+		return true;
 	}
 }
 
