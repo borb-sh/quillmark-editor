@@ -66,7 +66,6 @@
 		stringifyGhost,
 		resolveBodyGhost,
 		NO_RESOLVED_ROWS,
-		type BodyPlaceholder,
 		type CardModel,
 		type ResolvedCardRows
 	} from './structure.js';
@@ -545,33 +544,6 @@
 		};
 	}
 
-	// ── The empty-body ghost's consumer wording ─────────────────────────────────
-	// The hook is consulted once per KIND and its answer kept for the session, which
-	// is the whole determinism guarantee: a hook that samples a witty set at random
-	// is impure by design, and this cache is what makes its answer look chosen:
-	// same string for every card of a kind, and the same one after a remount or any
-	// re-derive. Keyed by kind rather than by card id deliberately: two empty cards
-	// that are the same kind ARE the same invitation, and disagreeing ghosts read as
-	// a glitch. Retyping a card crosses to another key and re-asks, which is right:
-	// it is a different card now. Plain (non-`$state`) on purpose: memoization, so
-	// filling it during a derive must not feed back into one.
-	let ghostHook: BodyPlaceholder | undefined;
-	const ghostByKind = new Map<string, string | undefined>();
-	function customBodyGhost(kind: string, isMain: boolean): string | undefined {
-		const bodyPlaceholder = merged.bodyPlaceholder;
-		// A swapped hook invalidates every answer the old one gave.
-		if (bodyPlaceholder !== ghostHook) {
-			ghostByKind.clear();
-			ghostHook = bodyPlaceholder;
-		}
-		if (!bodyPlaceholder) return undefined;
-		// `main` is not a `card_kinds` key, so a kind that spells it collides without
-		// the flag in the key.
-		const key = `${isMain ? '1' : '0'}\0${kind}`;
-		if (!ghostByKind.has(key)) ghostByKind.set(key, bodyPlaceholder({ kind, isMain }));
-		return ghostByKind.get(key);
-	}
-
 	// ── The derived card tree (schema × payload join) ───────────────────────────
 	function buildCard(
 		id: string,
@@ -611,11 +583,13 @@
 			// back to an invitation where a scalar shows nothing, because an empty body
 			// is a surface to write on and an empty control is a value not yet given.
 			// Asked only for a card that HAS a body, so the hook is never consulted
-			// about one that renders none.
+			// about one that renders none. The hook is PURE by contract, so it is called
+			// straight from the derive and its answer kept nowhere: a ghost holds still
+			// across a re-derive because the function does.
 			bodyGhost: hasBody
 				? resolveBodyGhost(
 						stringifyGhost(ghostDefault(rows.body ?? undefined)),
-						customBodyGhost(kind, isMain),
+						merged.bodyPlaceholder?.({ cardId: id, kind, isMain }),
 						merged.bodyGhost
 					)
 				: undefined

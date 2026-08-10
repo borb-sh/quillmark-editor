@@ -147,9 +147,16 @@ export function stringifyGhost(ghost: unknown): string | undefined {
 }
 
 /** What a {@link BodyPlaceholder} is told about the body it words. The card's
- *  IDENTITY, not its chrome: `kind` keys the consumer's own `quill.schema` for
- *  anything richer, and a renamed card must not shift its ghost. */
+ *  IDENTITY, not its chrome: `cardId` is what per-card wording keys off, `kind` keys
+ *  the consumer's own `quill.schema` for anything richer, and a renamed card must not
+ *  shift its ghost. */
 export interface BodyPlaceholderContext {
+	/**
+	 * The card's session key (`CardId`), `'main'` for the main card. Follows its card
+	 * across a reorder and a retype, and is re-minted when the surface re-keys on a new
+	 * document handle. OPAQUE: wording keyed off it hashes it rather than reads it.
+	 */
+	cardId: string;
 	/** The card's kind; `'main'` for the main card. */
 	kind: string;
 	/** The main card: whose `kind` is not a `card_kinds` key. */
@@ -157,16 +164,16 @@ export interface BodyPlaceholderContext {
 }
 
 /**
- * Consumer wording for an empty body, per KIND, in place of the flat `bodyGhost`
- * string; returning `undefined` takes it. Consulted ONCE PER KIND per session and
- * cached by the editor, so a hook that samples a set at random still reads as one
- * deliberate string: two empty cards of a kind ghost the same, and a remount does
- * not re-roll. Impurity is expected, and the cache is what contains it.
+ * Consumer wording for an empty body, in place of the flat `bodyGhost` string;
+ * returning `undefined` takes it. Consulted per card on every derive and never
+ * cached, so it must be PURE: a hook sampling a set at random re-rolls on every
+ * keystroke. Per-card wording is a function of `cardId`, per-kind wording a function
+ * of `kind`, and either is stable because the function is.
  */
 export type BodyPlaceholder = (ctx: BodyPlaceholderContext) => string | undefined;
 
 /**
- * The empty body's ghost: the resolved body `default:`, else per-kind consumer
+ * The empty body's ghost: the resolved body `default:`, else the consumer's
  * wording, else the flat built-in. The `default:` WINS because it is the only one
  * of the three that describes the render: it promises what prints if nothing is
  * written, and wording placed over it would make that promise unreadable. The

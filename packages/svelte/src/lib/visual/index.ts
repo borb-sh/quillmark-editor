@@ -28,7 +28,7 @@ export type { CreateFieldOpts, FieldController } from '../core/codec/index.js';
 // What the surface SAYS, and how it words a diagnostic. `strings` is keyed and
 // partial (unset keys take the package's English) and `DEFAULT_VISUAL_STRINGS` is
 // that English, exported so a consumer can compose against it rather than restate
-// it. The empty body's per-kind hook is the `bodyPlaceholder` key inside it.
+// it. The empty body's per-card hook is the `bodyPlaceholder` key inside it.
 export { DEFAULT_VISUAL_STRINGS } from './strings.js';
 export type { VisualStrings, VisualStringsInput, FormatDiagnostic } from './strings.js';
 export type { BodyPlaceholder, BodyPlaceholderContext } from './structure.js';
