@@ -1032,13 +1032,13 @@
 	 by position, so reveal and hit region are the full-bleed row rather than a word
 	 to aim at in the middle of it. It takes the editor's gap back on both sides, so
 	 it is not a control sitting in the gutter; it is the gutter: what separates two
-	 cards is the trigger's own height at the tap floor and nothing else, and the
-	 pill it fills on hover is edge to edge the space the new card opens into. No
-	 band is held back as miss-tolerance: gutter that reads as the trigger and
-	 inserts nothing unsays what the fill claims, so a press anywhere between two
-	 cards inserts. Absorbed rather than removed, because `gap` is also what separates
-	 the one seam no strip sits in: every card from the next under a quill declaring no
-	 kinds, where the affordance does not render at all. */
+	 cards is the trigger's own height and nothing else, and the pill it fills on hover
+	 is edge to edge the space the new card opens into. No band is held back as
+	 miss-tolerance: gutter that reads as the trigger and inserts nothing unsays what
+	 the fill claims, so a press anywhere between two cards inserts. Absorbed rather
+	 than removed, because `gap` is also what separates the one seam no strip sits in:
+	 every card from the next under a quill declaring no kinds, where the affordance
+	 does not render at all. */
 	.qm-add-card {
 		display: flex;
 		margin-top: calc(var(--_qm-space-2) * -1);
@@ -1057,28 +1057,67 @@
 	 `:global`, because the multi-kind trigger is bits-ui's own element and a `class`
 	 passed to a primitive is a plain string that never picks up the scoping hash:
 	 the same seam the enum trigger is styled through. */
+	/* No inset of its own: the pill and the gap are the same rectangle. A bare strip is
+	   a band of gutter, so its height is a rhythm rung; the marked one stands taller,
+	   below, for the words it holds.
+
+	   Rest is nothing at all — not the family's flat button but an invisible one, so
+	   the fill is the whole of what arrives. Ink is pinned to the label tone in every
+	   state, which takes back the family's hover step (`controls.css`): the trigger
+	   arrives and leaves on opacity, and a tone moving under an opacity that is already
+	   moving reads as two trips at different speeds.
+
+	   `:global`, because the multi-kind trigger is bits-ui's own element and a `class`
+	   passed to a primitive is a plain string that never picks up the scoping hash:
+	   the same seam the enum trigger is styled through. */
 	.qm-add-card :global(.qm-add-btn) {
-		/* No inset of its own: the pill and the gap are the same rectangle, and the tap
-		   floor is the whole of the height, which is what the marked strip's words
-		   centre in. */
+		position: relative;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		width: 100%;
+		min-height: 0;
+		height: var(--_qm-space-4);
+		color: var(--_qm-ink-label);
+		opacity: 0;
+		transition:
+			opacity var(--_qm-duration-reveal) var(--_qm-ease-settle),
+			background-color var(--_qm-duration-reveal) var(--_qm-ease-settle);
 	}
-	/* Words at rest, so the marked strip restates the rung they take: the label rung,
-	   chrome's size, off the body size the family's type rule hands every button
-	   (`controls.css`), which is the size the fields above are read at. */
+	/* The press floor the box gives up, out of flow and unpainted, centred on it: the
+	   same split the array's add affordance takes and for the same reason, that a
+	   target-sized box is taller than the figure it is drawing. What it overhangs is
+	   the card's own inset above and below, which holds no target of its own, so the
+	   floor costs a neighbour nothing. */
+	.qm-add-card :global(.qm-add-btn::after) {
+		content: '';
+		position: absolute;
+		inset-inline: 0;
+		top: 50%;
+		height: var(--_qm-tap-min);
+		transform: translateY(-50%);
+	}
+	/* The marked strip is the one that holds words at rest, so it takes the height that
+	   centres them and the rungs they are set in: the label rung off the body size the
+	   family's type rule hands every button (`controls.css`), at the weight the surface
+	   names everything else in. Dim rather than absent, since a strip that states itself
+	   has something to be seen at rest. */
 	.qm-add-card-marked :global(.qm-add-btn) {
+		height: var(--_qm-tap-min);
 		font-size: var(--_qm-text-label);
+		font-weight: var(--_qm-weight-mid);
+		opacity: var(--_qm-opacity-idle);
 	}
-	/* The two engaged states the shared `:hover` rung does not cover, both filling the
-	   same pill it does. Keyboard focus, because the fill is the only thing that reads
-	   as the trigger on a bare strip; and an open menu, because it portals out of the
-	   strip, so a pointer moving onto an item has left the row whose hover was drawing
-	   the pill the menu hangs from. */
+	/* One arrival, three ways in. Hover is the strip's own, restated here rather than
+	   left to the family, whose rung is a flat button's and whose duration is a trip
+	   inside a box. Keyboard focus, because the fill is the only thing that reads as the
+	   trigger on a bare strip; and an open menu, because it portals out of the strip, so
+	   a pointer moving onto an item has left the row whose hover was drawing the pill
+	   the menu hangs from. */
+	.qm-add-card :global(.qm-add-btn:hover),
 	.qm-add-card :global(.qm-add-btn:focus-visible),
 	.qm-add-card :global(.qm-add-btn[data-state='open']) {
-		background: var(--_qm-surface-hover);
+		opacity: 1;
+		background: var(--_qm-add-fill);
 	}
 </style>

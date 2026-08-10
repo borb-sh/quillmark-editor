@@ -174,6 +174,13 @@
 		   inside a field must not read as. Mixed at the accent tint's strength, so a
 		   held tint is a held tint whichever hue it carries. */
 		--_qm-danger-tint: color-mix(in oklab, var(--_qm-danger) 12%, transparent);
+		/* The card stack's add strip filled: the label ink held, rather than the hover
+		   rung the button family carries. Keyed to the ink because the strip's own ink
+		   never steps — the trigger arrives and leaves on opacity alone — so the fill it
+		   arrives with is that same tone at a strength a surface reads through, and
+		   the two move together at every setting of the dials. Translucent, so it stacks
+		   over whichever surface the stack is mounted on instead of replacing it. */
+		--_qm-add-fill: color-mix(in oklab, var(--_qm-ink-label) 15%, transparent);
 
 		/* The tips card'S hue: the surface's one exit from the greyscale that is not
 		   a status, and what the amber and the typewriter face say together is
@@ -222,20 +229,33 @@
 		--_qm-ring-offset: 1px;
 
 		/* ── Motion ──────────────────────────────────────────────────────────────
-		   Two rungs, by what the trip disturbs: `fast` stays inside the element's own
-		   box, `slow` moves the layout around it. */
+		   Three rungs. Two by what the trip disturbs: `fast` stays inside the element's
+		   own box, `slow` moves the layout around it. `reveal` is neither, which is what
+		   makes it a third: a control resting at nothing that arrives on hover is read
+		   as an arrival rather than as a state change, and at either rung above it is
+		   over before it can be read as one. The card stack's add strip is the one trip
+		   of that shape, an empty gutter becoming a pill the width of the card it
+		   opens. */
 		--_qm-duration-fast: 120ms;
 		--_qm-duration-slow: 200ms;
+		--_qm-duration-reveal: 500ms;
 		/* The bloom's whole rise-hold-decay, and deliberately not a third rung. A
 		   custom property rather than a constant in `core/bloom.ts` because that module
 		   animates over WAAPI and reads it from here. */
 		--_qm-bloom-dwell: 1100ms;
 
-		/* One curve, symmetric because an interruption turns these trips around: a hover
-		   leaves before it arrives, a card collapses mid-expand. The one-way pair a scale
-		   like this often carries is minted when a trip long enough to read one arrives;
-		   the popover's pop is the nearest and at `fast` it is under that threshold. */
+		/* The default, symmetric because an interruption turns these trips around: a
+		   hover leaves before it arrives, a card collapses mid-expand. At `fast` a
+		   curve's shape is under the threshold at which one can be read at all, which is
+		   what one curve buys across every trip that short. */
 		--_qm-ease-reverse: cubic-bezier(0.4, 0, 0.6, 1);
+		/* The one-way half, for a trip long enough to read a shape: `reveal`, and only
+		   `reveal`. Weighted to its end — it accelerates out of rest and decelerates a
+		   long way into the next one — so an arrival settles into its rest instead of
+		   stopping at it. Turned around mid-flight it restarts slow from wherever it
+		   had reached, which is the hitch the symmetric rung above exists to avoid and
+		   the reason this one is confined to the trip that can afford it. */
+		--_qm-ease-settle: cubic-bezier(0.4, 0, 0.2, 1);
 
 		/* ── Geometry ──────────────────────────────────────────────────────────*/
 		/* One stroke width for every edge the chrome draws: a card's, a control's,
