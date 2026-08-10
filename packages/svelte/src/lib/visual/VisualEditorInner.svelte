@@ -1081,8 +1081,8 @@
 		color: var(--_qm-ink-label);
 		opacity: 0;
 		transition:
-			opacity var(--_qm-duration-reveal) var(--_qm-ease-settle),
-			background-color var(--_qm-duration-reveal) var(--_qm-ease-settle);
+			opacity var(--_qm-reveal),
+			background-color var(--_qm-reveal);
 	}
 	/* The press floor the box gives up, out of flow and unpainted, centred on it: the
 	   same split the array's add affordance takes and for the same reason, that a
