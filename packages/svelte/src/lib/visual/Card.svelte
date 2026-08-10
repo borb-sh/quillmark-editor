@@ -591,6 +591,9 @@
 	}
 	.qm-group-header :global(.qm-group-chevron) {
 		flex-shrink: 0;
+		display: block;
+		transform: rotate(0deg);
+		transform-origin: center;
 		transition: transform var(--_qm-duration-slow) var(--_qm-ease-reverse);
 	}
 	/* Hover's alone, though the ink step suits open as well: `color` is one transition

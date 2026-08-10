@@ -545,18 +545,40 @@ describe('the table NodeView', () => {
 		field.destroy();
 	});
 
-	it('Shift-Tab before the FIRST cell declines, which is the island’s keyboard exit', () => {
+	it('Tab declines at both ends, which is the island’s keyboard exit', () => {
 		const { field } = tableLeaf(LETTERED);
-		const first = cellViews(field)[0];
-		first.focus();
-		const claimed = first.someProp('handleKeyDown', (f) =>
-			f(first, new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true }))
-		);
-		// Unclaimed, so the browser moves the focus out of the grid the way it moved it
-		// in: swallowing it would leave Tab no way out of a table at all, forward being
-		// the growth affordance.
-		expect(claimed).toBeFalsy();
+		const claims = (view: EditorView, init: KeyboardEventInit = {}) =>
+			view.someProp('handleKeyDown', (f) =>
+				f(view, new KeyboardEvent('keydown', { key: 'Tab', ...init }))
+			);
+		// Backward, the first cell. Unclaimed, so the browser moves the focus out of the
+		// grid the way it moved it in.
+		expect(claims(cellViews(field)[0], { shiftKey: true })).toBeFalsy();
 		expect(leafProps(field).rows).toHaveLength(2);
+		field.destroy();
+		// Forward, the last cell of an empty trailing row: growth is an offer, and walking
+		// off the end of an unwritten row refuses it. Without the decline every forward
+		// press appends and a writer never reaches the block below.
+		const offered = tableLeaf(
+			normalizeTable({ ...LETTERED, rows: [...LETTERED.rows, [emptyCell(), emptyCell()]] })
+		).field;
+		const views = cellViews(offered);
+		expect(claims(views[views.length - 1])).toBeFalsy();
+		expect(leafProps(offered).rows).toHaveLength(3);
+		offered.destroy();
+	});
+
+	it('what sits in the tab order is what a key reaches', () => {
+		const { field } = tableLeaf(LETTERED);
+		// Five grips no Tab arrives at, so five stops the document does not spend.
+		for (const axis of ['row', 'column'] as const)
+			for (const grip of grips(field, axis)) expect(grip.tabIndex).toBe(-1);
+		// The caps stay: the column one is the keyboard's only route to a column at all,
+		// and the row one is that control on the other axis.
+		for (const axis of ['row', 'column'] as const) expect(cap(field, axis).tabIndex).toBe(0);
+		// A grip still takes focus, by the routes the view owns rather than by Tab.
+		grips(field, 'row')[1].click();
+		expect(field.el.ownerDocument.activeElement).toBe(grips(field, 'row')[1]);
 		field.destroy();
 	});
 
