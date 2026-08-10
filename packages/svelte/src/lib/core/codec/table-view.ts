@@ -1195,8 +1195,7 @@ class TableIslandView implements NodeView {
 	 *
 	 * Before the FIRST cell it declines, and that is the island's keyboard exit: the key
 	 * is not swallowed, so the browser moves the focus out of the grid the way it moved
-	 * it in. Swallowing it instead left Tab with no way out at all — every press forward
-	 * grew the table, and every press back stalled on the header's first cell.
+	 * it in. Swallowing it would leave Tab no exit at all, forward being the growth above.
 	 */
 	private step(r: number, c: number, dir: 1 | -1): boolean {
 		const props = this.props();

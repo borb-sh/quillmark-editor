@@ -181,7 +181,7 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 					const tr = state.tr.delete(start, end).setBlockType(start, start, code);
 					const at = tr.doc.resolve(start).after();
 					if (!tr.doc.nodeAt(at)) tr.insert(at, paragraph.create());
-					// The caret stays in the fence: the exit is for later, not for now.
+					// The caret stays in the fence, not in the exit it minted.
 					return tr;
 				}
 			)

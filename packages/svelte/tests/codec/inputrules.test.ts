@@ -170,7 +170,7 @@ describe('the ` ``` ` fence shorthand', () => {
 		const view = mountView();
 		type(view, '```');
 		expect(view.state.doc.toString()).toBe('doc(code_block, paragraph)');
-		// The caret stays in the fence: the exit is for later, not for now.
+		// The caret stays in the fence, not in the exit it minted.
 		expect(view.state.selection.$from.parent.type.name).toBe('code_block');
 		view.destroy();
 	});

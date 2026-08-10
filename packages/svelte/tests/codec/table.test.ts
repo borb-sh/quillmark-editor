@@ -550,8 +550,8 @@ describe('the table NodeView', () => {
 			f(first, new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true }))
 		);
 		// Unclaimed, so the browser moves the focus out of the grid the way it moved it
-		// in. Swallowed instead, Tab had no way out of a table at all: forward it grew
-		// one, backward it stalled here.
+		// in: swallowing it would leave Tab no way out of a table at all, forward being
+		// the growth affordance.
 		expect(claimed).toBeFalsy();
 		expect(leafProps(field).rows).toHaveLength(2);
 		field.destroy();
