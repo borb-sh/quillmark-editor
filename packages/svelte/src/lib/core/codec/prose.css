@@ -289,9 +289,9 @@ li.ProseMirror-selectednode::after {
    focus indicator here exactly as it is in the leaf: no ring.
 
    The height floor is one line box, named as size times leading so both factors move
-   with the type ramp (`.qm-prose-block` states the same expression for three). An
-   empty row is then the height it will be once typed, so the first keystroke changes
-   no geometry. */
+   with the type ramp (`.qm-prose-block` states the same floor against `1em`, whichever
+   rung that leaf sets). An empty row is then the height it will be once typed,
+   so the first keystroke changes no geometry. */
 .qm-table-cell-host {
 	min-width: 4rem;
 	min-height: calc(var(--_qm-text-body) * var(--_qm-leading-body));

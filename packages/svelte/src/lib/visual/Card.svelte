@@ -442,13 +442,18 @@
 	}
 	/* Autosize: the ::after mirrors the text into the same grid cell as the input, so the
 	 overlaid input tracks its content width. Both carry the same nothing for a box model
-	 and inherit the same type tokens, which is what makes the two measure alike. */
+	 and inherit the same type tokens, which is what makes the two measure alike.
+
+	 The rung, weight and leading are the group header's, down to the ink and its hover
+	 step below: a card title and a section header are the same act — a name over a block
+	 of fields — so they read as one register and the hierarchy between them is position's
+	 rather than a size step's. */
 	.qm-card-title-sizer {
 		display: inline-grid;
 		align-items: center;
 		min-width: 0;
 		max-width: 100%;
-		font-size: var(--_qm-text-title);
+		font-size: var(--_qm-text-body);
 		font-weight: var(--_qm-weight-mid);
 		line-height: var(--_qm-leading-tight);
 		font-family: inherit;
@@ -641,7 +646,7 @@
 	}
 	/* One typographic role with the editable title above. */
 	.qm-card-title-static {
-		font-size: var(--_qm-text-title);
+		font-size: var(--_qm-text-body);
 		font-weight: var(--_qm-weight-mid);
 		line-height: var(--_qm-leading-tight);
 		color: var(--_qm-ink-label);

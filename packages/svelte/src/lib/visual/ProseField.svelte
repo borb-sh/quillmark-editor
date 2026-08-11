@@ -153,16 +153,15 @@
 		/* Containing block for the arrival wash's inset child (`core/bloom.ts`). */
 		position: relative;
 	}
-	/* A leaf the inline schema does not constrain is prose rather than a cell in a row of
-	 controls, so it opens at three line boxes and grows: the ghost takes the first,
-	 leaving room under it. `1em`, not a size rung, which is the rule below's to name.
+	/* A leaf the inline schema does not constrain grows, and opens at one line box: the
+	 empty leaf is the height its first line will take, so the first keystroke displaces
+	 nothing below it. `1em`, not a size rung, which is the rule below's to name.
 
-	 On the editable rather than on the wrapper, which is what makes those lines part of
-	 the body: height the wrapper holds is height outside the `contenteditable`, where a
-	 press lands no caret. Inside it, the browser answers a press past the last line at
-	 the end of it. */
+	 On the editable rather than on the wrapper, which is what makes that line part of the
+	 body: height the wrapper holds is height outside the `contenteditable`, where a press
+	 lands no caret. */
 	.qm-prose-block :global(.ProseMirror) {
-		min-height: calc(1em * var(--_qm-leading-body) * 3);
+		min-height: calc(1em * var(--_qm-leading-body));
 	}
 	/* Paper, and the withheld box is what says so. Not `block` alone: `inline` is the
 	 quill's to declare, so a schema omitting it on a richtext field puts a block leaf in

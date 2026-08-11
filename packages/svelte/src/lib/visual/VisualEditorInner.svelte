@@ -976,7 +976,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
-		padding: var(--_qm-space-4);
+		padding: var(--_qm-space-5);
 		background: var(--_qm-surface-sunken);
 		color: var(--_qm-ink);
 	}
