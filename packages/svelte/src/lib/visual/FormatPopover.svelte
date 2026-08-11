@@ -19,19 +19,15 @@
  transient `selectionchange` events first). `focusout` keeps the popover honest
  when focus leaves the leaf.
 
- A press is the other half of that, and it is what makes the surface a reaction to
- a selection rather than to a pointer: a drag fires `selectionchange` on every
- frame, so a surface driven by that alone rises on the first character and then
- rides the cursor across the text it is covering. `pointerdown` lowers it and holds
- it down; `pointerup` releases the hold and syncs once, against the selection the
- gesture landed on. Keyboard selection is untouched: nothing holds, so each
- Shift-arrow syncs as it fires.
+ A press holds it down, which is what makes the surface answer a selection rather
+ than a pointer: a drag fires `selectionchange` on every frame, so a surface driven
+ by that alone rises on the first character and rides the cursor across the text it
+ is covering. Keyboard selection holds nothing, so a Shift-arrow syncs as it fires.
 
  Nothing here watches scroll. `sync` decides whether the surface is up, which a
  scroll does not change; where it sits is the anchor's own question, and the anchor
  answers it by measuring when floating-ui asks rather than by being handed a rect
- (`codec/anchor.ts`). What it measures is the selection the reader sees, so the
- surface rests over the highlight rather than over either end of it.
+ (`codec/anchor.ts`).
 
  Focus discipline. Three failure modes a naive Popover.Content invites:
  (1) its default `trapFocus` (true) redirects any focus landing outside its
@@ -85,7 +81,6 @@
 	}
 	let { getActiveLeaf }: Props = $props();
 
-	/** Mark size: the shared control-glyph rule for the popover icons. */
 	const GLYPH = 15;
 	/** The six content formatting marks. `anchor` is a seventh, drawn separately below:
 	 *  a decoration toggle rather than a PM `toggleMark`. One string per mark carries both
@@ -100,15 +95,13 @@
 	]);
 
 	let open = $state(false);
-	/** A pointer is down somewhere other than this surface: the selection is being made
-	 *  rather than made, so `sync` holds until the release (`onPointerDown`). */
+	/** A pointer is down outside this surface: the selection is still being made. */
 	let pressed = false;
 	/** Whether the selection is in the field's coordinate space, which an anchor needs
 	 *  and a table cell is not (see `sync`). */
 	let anchorAvailable = $state(true);
 	let linkPromptOpen = $state(false);
-	/** Whether the selection carried a link when the prompt was raised, which is the
-	 *  whole of what the removal arm is conditioned on. */
+	/** Whether the selection carried a link when the prompt was raised. */
 	let linkPresent = $state(false);
 	let linkValue = $state('');
 	let linkInputEl = $state<HTMLInputElement | undefined>(undefined);
@@ -132,7 +125,6 @@
 		return leaf?.focusedView?.() ?? leaf?.view;
 	}
 
-	/** Recompute open/anchor from the active leaf's current PM selection. */
 	function sync(): void {
 		const insidePopover =
 			!!contentEl && !!document.activeElement && contentEl.contains(document.activeElement);
@@ -140,7 +132,6 @@
 		// Costs nothing to hold: the anchor minted below goes on measuring while this
 		// returns early, so a surface frozen here still tracks the selection it covers.
 		if (insidePopover) return;
-		// A pointer gesture in progress owns the selection until it is released.
 		if (pressed) return;
 		const leaf = getActiveLeaf() as LeafWithView | undefined;
 		const view = leaf?.focusedView?.() ?? leaf?.view;
@@ -165,9 +156,8 @@
 		open = true;
 	}
 
-	/** Whether the selection covers something to format. A run of whitespace is a
-	 *  selection the pointer makes by accident, at the end of a line or between two
-	 *  words, and every mark over it is invisible. */
+	/** Whitespace alone is a selection the pointer makes by accident, at the end of a
+	 *  line or between two words, and every mark over it is invisible. */
 	function hasText(view: EditorView): boolean {
 		const { from, to } = view.state.selection;
 		return view.state.doc.textBetween(from, to, ' ', ' ').trim().length > 0;
@@ -198,9 +188,8 @@
 	}
 
 	function onPointerDown(e: PointerEvent): void {
-		// The surface's own presses are its buttons' (`keepFocus` swallows them); a press
-		// landing on it is not a gesture over the document, and holding on one would
-		// strand the surface down with no release to raise it.
+		// A press on the surface is not a selection gesture, and lowering it here would
+		// take the button out from under the pointer before its click.
 		if (contentEl?.contains(e.target as Node)) return;
 		pressed = true;
 		open = false;
@@ -214,8 +203,8 @@
 	$effect(() => {
 		document.addEventListener('selectionchange', deferredSync);
 		document.addEventListener('focusout', deferredSync);
-		// Capture, so a gesture is seen whatever a view in the middle of it does with the
-		// event; `pointercancel` is the release a drag off the window never sends.
+		// Capture, so the gesture is seen whatever a view in the middle of it does with
+		// the event. `pointercancel` is the release a gesture the browser takes over gets.
 		document.addEventListener('pointerdown', onPointerDown, true);
 		document.addEventListener('pointerup', onPointerUp, true);
 		document.addEventListener('pointercancel', onPointerUp, true);
@@ -327,12 +316,11 @@
 
 <Popover.Root bind:open>
 	<Popover.Portal to={portalTarget}>
-		<!-- The boundary a flip is measured against is the root the surface portals into,
-		 which is also the box that clips it where the consumer scrolls one (`.qm-pane`).
-		 Left at the default it is the viewport, and a selection on the pane's first
-		 visible line raises the surface into the room above the pane, where the pane's
-		 own `overflow` cuts it: a popover positioned exactly where it cannot be seen.
-		 `[]` for a leaf mounted outside any root, which is the default spelled out. -->
+		<!-- A flip is measured against the root the surface portals into, which is the box
+		 that clips it where the consumer scrolls one (`.qm-pane`). The default boundary is
+		 the viewport, which knows nothing of that: a selection on the pane's first visible
+		 line raises the surface into the room above, where the pane's `overflow` cuts
+		 it. -->
 		<Popover.Content
 			customAnchor={anchor ?? null}
 			collisionBoundary={portalTarget ?? []}
@@ -447,13 +435,11 @@
 		gap: var(--_qm-space-half);
 	}
 	/* Chrome, type, target floor, hover fill and disabled recede come from
-	 `.qm-icon-btn` (controls.css); what is here is this surface's own inset, and the ink,
-	 stated because the family deliberately declares none: its callers disagree, and a
-	 popover over content reads at the card's.
+	 `.qm-icon-btn` (controls.css). The ink is stated because the family deliberately
+	 declares none: its callers disagree, and a popover over content reads at the card's.
 
-	 No state for a mark the selection already carries. The buttons are verbs — one press
-	 toggles, whatever the run underneath is wearing — and a run may carry a mark over part
-	 of itself, which a two-state button has no third face for. */
+	 No state for a mark the selection already carries: a run may carry one over part of
+	 itself, which a two-state button has no third face for. */
 	.qm-mark-btn {
 		padding: var(--_qm-space) var(--_qm-space-2);
 		color: var(--_qm-ink);

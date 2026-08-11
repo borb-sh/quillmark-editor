@@ -18,7 +18,6 @@ export interface RangeAnchor {
 	getBoundingClientRect: () => DOMRect;
 }
 
-/** A measured box, in the plain numbers a `node` environment can hold. */
 interface Box {
 	left: number;
 	top: number;
@@ -41,15 +40,12 @@ function caretBox(view: EditorView, pos: number): Box {
 }
 
 /**
- * The box the highlight paints: a DOM `Range` over the same span, whose bounds union
- * every line it covers.
+ * The box the highlight paints, and not the two ends' caret boxes: a selection that
+ * wraps has its head and its anchor on opposite sides of the block, so their union
+ * names a rectangle no text is under.
  *
- * The two ends' caret boxes are not that box. A selection that wraps has its head and
- * its anchor on opposite sides of the block, so their union names a rectangle no text
- * is under, and a surface centred on it sits off the selection it belongs to.
- *
- * A range measuring to nothing falls back to that union: a leaf the view draws no text
- * for has no painted box, and an anchor of zero is worse than an approximate one.
+ * A range measuring to nothing falls back to that union. A leaf the view draws no text
+ * for has no painted box, and an approximate anchor beats one of zero.
  */
 function selectionBox(view: EditorView, from: number, to: number): Box {
 	const range = document.createRange();
@@ -71,8 +67,7 @@ function selectionBox(view: EditorView, from: number, to: number): Box {
  * none of its callers choose, so an unmeasurable anchor returns the last rect that
  * measured rather than throwing out of floating-ui's positioning pass.
  *
- * `from === to` is a caret, which is what the slash menu hangs off; a span is the
- * selection a reader sees (`selectionBox`).
+ * `from === to` is a caret, which is what the slash menu hangs off.
  */
 export function rangeAnchor(view: EditorView, from: number, to: number): RangeAnchor {
 	// Plain numbers, not a `DOMRect`: this runs at construction, and the codec's suite

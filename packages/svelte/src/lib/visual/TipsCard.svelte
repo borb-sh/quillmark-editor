@@ -97,19 +97,18 @@
 	 paints over the rest. The two read as one block, which is what document-level
 	 guidance is: the main card's, not a card of its own. Still in-flow, no lift.
 
-	 It carries the card's own hairline for the same reason, and the tuck is what makes
-	 the four sides one figure: the top stroke and the top of each side run under `main`,
-	 so what is left of the slip's edge starts at the card's bottom corners and closes
-	 beneath the tip.
+	 It takes the card's hairline, and the tuck makes the two outlines one: the slip's top
+	 stroke and the tops of its sides run under `main`, so what shows starts at the card's
+	 bottom corners.
 
 	 The bottom corners take the inner rung where the card above takes the outer: a slip
 	 is cut crisper than the thing it is tucked under, at every setting of the dial.
 
 	 The insets are asymmetric so the ink is not: the top takes the tuck back, and the
 	 bottom gives up a rung to the foot's control, whose box stands on the tap floor
-	 rather than on its own one-line label. The horizontal is the card's own plus the
-	 body's margin (ProseField), so the tip starts under the prose it is guidance for and
-	 not under the fields. */
+	 rather than on its own one-line label. The horizontal is the card's inset plus the
+	 body's margin (ProseField), so the tip starts under the prose rather than under the
+	 fields. */
 	.qm-tips {
 		margin-top: calc(var(--_qm-radius) * -1);
 		border: var(--_qm-border-width) solid var(--_qm-border);

@@ -167,10 +167,8 @@
 	.qm-prose-block:not(.qm-control-box) {
 		font-size: var(--_qm-text-paper);
 	}
-	/* The margin paper gets and a field does not: the body starts one rung further in
-	 than the controls above it, which is the difference between a page and a form. On the
-	 editable, so the strip is somewhere a press lands a caret; the card's own inset would
-	 be dead width. */
+	/* Paper's margin, which a field has none of. On the editable, so a press in the strip
+	 lands a caret; carried by the card's inset it would be dead width. */
 	.qm-prose-block:not(.qm-control-box) :global(.ProseMirror) {
 		padding-inline: var(--_qm-space-2);
 	}

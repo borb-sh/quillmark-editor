@@ -390,11 +390,10 @@
 {/snippet}
 
 <style>
-	/* An island: the card is the base plane and the column behind it is the sunken one,
-	 and the hairline closes it (ARCHITECTURE §Styling). One rung with the bracket inside
-	 it and the open section's vertical, so the card's edge and its figure are the same
-	 stroke. The inset is the same rung as the gap, so what separates the header from the
-	 fields is what separates the fields from the card's edge. */
+	/* An island: the card is the base plane, the column behind it the sunken one, and the
+	 hairline closes it (ARCHITECTURE §Styling). The inset is the same rung as the gap, so
+	 what separates the header from the fields is what separates the fields from the
+	 card's edge. */
 	.qm-card {
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
@@ -641,8 +640,7 @@
 		flex-direction: column;
 		gap: var(--_qm-space);
 	}
-	/* The state reads in the stroke's pattern, not in its presence: every card is closed
-	 by a hairline, and this one's is cut. */
+	/* The state is in the stroke's pattern, every card being closed by one already. */
 	.qm-card.qm-unschemable {
 		border-style: dashed;
 	}

@@ -186,12 +186,9 @@
 		   the surface and the ink a consumer already tuned, so the card follows a
 		   brand untold. The mixes are faint on purpose: a warmth, not a badge.
 
-		   The one group mixed in sRGB, and the reason is the opposite of the greyscale's
-		   above: these carry a hue and the greyscale carries none. oklab holds perceived
-		   lightness across a mix and spends the chroma to do it, which is right where the
-		   endpoints are two greys and wrong here — at both poles it lands the ink a
-		   channel short of warm and the card reads as grey text on grey paper. sRGB
-		   interpolates the amber straight, which is the warmth these rungs exist for. */
+		   The one group mixed in sRGB. oklab holds perceived lightness across a mix and
+		   spends chroma to do it, which is right where both endpoints are grey and wrong
+		   for a hue: at either pole it lands the ink a channel short of warm. */
 		--_qm-tips: #e88c0a;
 		--_qm-tips-surface: color-mix(in srgb, var(--_qm-surface), var(--_qm-tips) 3%);
 		--_qm-tips-ink: color-mix(in srgb, var(--_qm-ink), var(--_qm-tips) 24%);
