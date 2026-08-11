@@ -9,19 +9,6 @@
  mounted against. That is what makes them plain state rather than something
  threaded through a generation token.
 
- It owns:
- • structure: the schema × payload join, re-derived from the live `Document`;
- • stable card identity: a session-id array reordered in lockstep with the
- content, resolved to an index only at the mutation boundary;
- • commit routing: prose leaves lower to `applyChange` (in the codec); scalars/
- arrays/objects go through the typed `writer`; structure through the mutators;
- • focus + the bridge outputs (`onActiveLeafChange`, `onCaretMove`) and the
- `setCaret(at)` entry wired to the preview;
- • the one formatting popover (`FormatPopover`, mounted once, observing the
- active leaf via `getActiveLeaf`) and diagnostics routing (`diagnostics.ts`:
- quill.validate + local commit errors + the external `diagnostics` prop,
- merged into `diagByKey` and threaded to each `<Field>`/card body).
-
  Reactivity across the WASM handle. The `Document` is opaque to Svelte, so a
  `revision` counter is bumped after every scalar/structure mutation and the card
  tree is `$derived` by re-reading `doc.main`/`doc.cards`/`quill.schema`. Prose
@@ -131,10 +118,9 @@
 	// svelte-ignore state_referenced_locally
 	let cardIds = $state<string[]>(seq.take(doc.cardCount));
 
-	// Local commit-error diagnostics (VISUAL_EDITOR §Diagnostics, producer #2):
-	// one slot per field key, replaced on each failed `commitScalar`, cleared on
-	// the next successful one for that field. Id-keyed (not positional) so an
-	// error stays pinned to its field across a card reorder.
+	// Local commit-error diagnostics (VISUAL_EDITOR §Diagnostics, producer #2),
+	// id-keyed rather than positional so an error stays pinned to its field across a
+	// card reorder.
 	let commitErrors = $state(new Map<string, RoutedDiagnostic>());
 	/** Edit the commit-error map copy-on-write: a `$state` Map is not deeply
 	 * reactive, so a mutation in place re-derives nothing. */
@@ -152,13 +138,9 @@
 	 * `proseChanged`, which does not bump the revision (bumping it would re-derive
 	 * and remount every leaf, costing the caret on every keystroke).
 	 *
-	 * `cardId` is passed rather than derived from `at`: the sites below hold the id
-	 * already, and the removal has no address to derive one from. `at` is an `Addr` for
-	 * a leaf and a card index for a structure op, whose subject is the card rather than
-	 * anything inside it; either way the path is minted here, after the bump, because
-	 * an op's own index is only addressable against the tree the bump re-derived (an
-	 * insert's card does not exist in the previous one, and a retype's kind is the
-	 * previous kind).
+	 * The path is minted here, after the bump, because an op's own index is only
+	 * addressable against the tree the bump re-derived: an insert's card does not exist
+	 * in the previous one, and a retype's kind is the previous kind.
 	 */
 	function bump(source: ChangeSource, cardId?: CardId, at?: Addr | number): void {
 		revision++;
@@ -166,15 +148,13 @@
 			at == null ? undefined : typeof at === 'number' ? cardPath(at, liveKinds()) : pathFor(at);
 		onChange?.({ source, cardId, path });
 	}
-	/** Resolve a stable card id to its current content index, or -1 if gone: read
-	 * at the mutation boundary, never cached (VISUAL_EDITOR §"The address is the spine"). */
+	/** Read at the mutation boundary, never cached (VISUAL_EDITOR §"The address is the
+	 * spine"). */
 	function cardIndexOf(id: string): number {
 		return cardIds.indexOf(id);
 	}
-	/** The inverse, for the two signals that arrive as an address and nothing else
-	 * (a focus, a prose commit): `'main'` for a main address, else the live id at
-	 * that index. Resolved at the emit site off the same array the mutation boundary
-	 * reads, never cached. */
+	/** The inverse, for the two signals that arrive as an address and nothing else (a
+	 * focus, a prose commit), off the same array the mutation boundary reads. */
 	function cardIdOf(addr: Addr): CardId {
 		return addr.card == null ? 'main' : cardIds[addr.card];
 	}
@@ -274,35 +254,28 @@
 	}
 
 	// ── Commit routing ──────────────────────────────────────────────────────────
-	// Scalars / arrays / objects → the typed writer (schema-checked). Prose leaves
-	// commit themselves via the codec (applyChange) and do not pass through here.
-	// A scalar control commits `undefined` for a cleared entry: the unset lane
-	// below (`doc.removeField`), not a write.
+	// Scalars / arrays / objects → the typed writer (schema-checked); a cleared entry
+	// arrives as `undefined` and takes the unset lane instead. Prose leaves commit
+	// themselves via the codec (applyChange) and do not pass through here.
 	//
-	// A bad value makes `writer.set` throw a `QuillmarkError`, whose
-	// `diagnostics[0]` carries a `code` and a canonical `path` (e.g.
-	// `edit::field_coercion_failed` at `main.font_size`, or `edit::unknown_field`). The
-	// editor already knows the field/card being committed, so it keys the entry
-	// from that address: id-keyed so it survives a later card reorder, never
-	// parsed from the positional path; while surfacing the thrown diagnostic
-	// verbatim (its `code`/`message`) as the payload (VISUAL_EDITOR §Diagnostics,
-	// producer #2). It is stashed in `commitErrors`; a subsequent successful commit
-	// for the same field clears it. Nothing here gates: the value is not written
-	// (the document is unchanged on throw, per the boundary's own transactional
-	// contract) and editing continues.
+	// A bad value makes `writer.set` throw a `QuillmarkError` whose `diagnostics[0]`
+	// carries a `code` and a canonical `path` (`edit::field_coercion_failed` at
+	// `main.font_size`, `edit::unknown_field`). That diagnostic is surfaced verbatim,
+	// under a key minted from the address being committed rather than parsed from the
+	// positional path, so it survives a later card reorder. Nothing gates: the document
+	// is unchanged on throw, per the boundary's transactional contract, and editing
+	// continues.
 	function commitScalar(id: string, isMain: boolean, name: string, value: unknown): void {
 		const key: FieldKey = { card: isMain ? undefined : id, field: name };
 		const keyStr = fieldKeyToString(key);
 		try {
 			if (value === undefined) {
-				// The unset rung of the commitment ladder (a cleared scalar control,
-				// VISUAL_EDITOR §"Structure mirrors the schema"): remove the field so the
-				// engine's authored › `default:` › zero-fill resolve renders the
-				// default, rather than baking a snapshot the schema can't track
-				// (canon SCHEMAS.md: the engine never persists a default; nor do we).
-				// Removal writes no value, so there is nothing for a schema to conform:
-				// it goes through the quill-free `doc.removeField` (bare string = main
-				// `{ field }`; `{ card, field }` for a card), not the typed writer.
+				// The unset rung of the commitment ladder (VISUAL_EDITOR §"Structure mirrors
+				// the schema"): removing the field leaves the engine's authored › `default:`
+				// › zero-fill resolve to render the default, where writing one bakes a
+				// snapshot the schema cannot track (canon SCHEMAS.md: the engine never
+				// persists a default; nor do we). Removal writes no value, so there is
+				// nothing for a schema to conform and the lane is the quill-free one.
 				if (isMain) {
 					doc.removeField(name);
 				} else {
@@ -349,8 +322,6 @@
 	 * Coalesced on a single pending id: two quick adds resolve their `tick()` in
 	 * order, the earlier one sees a newer pending id and drops out, so one smooth
 	 * scroll runs to the last card rather than two fighting over the same scroller.
-	 * The two guards below answer different questions: the span, whether this surface
-	 * is still there; the pending id, whether this continuation is still the current one.
 	 */
 	let pendingScrollId: string | null = null;
 	async function scrollCardIntoView(id: string, block: ScrollLogicalPosition): Promise<void> {
@@ -372,8 +343,8 @@
 			const id = seq.next();
 			cardIds = [...cardIds.slice(0, atIndex), id, ...cardIds.slice(atIndex)];
 			bump('structure', id, atIndex);
-			// `center` for an insert: the new card is the subject, and centring it shows
-			// the neighbours it landed between.
+			// Centred: the new card is the subject, and the neighbours it landed between
+			// are what say where it went.
 			void scrollCardIntoView(id, 'center');
 			return id;
 		} catch (e) {
@@ -412,8 +383,8 @@
 		w.splice(to, 0, x);
 		cardIds = w;
 		bump('structure', id, to);
-		// `nearest` for a reorder: the card was already in view and only needs to stay
-		// there, so a card that never left the viewport does not move it at all.
+		// `nearest`: the card was already in view and only needs to stay there, so one
+		// that never left the viewport moves it not at all.
 		void scrollCardIntoView(id, 'nearest');
 	}
 	function removeCardById(id: string): void {
@@ -425,18 +396,15 @@
 			activeCardId = undefined;
 			activeAddr = undefined;
 		}
-		// Drop any commit-error diagnostics id-keyed to the now-gone card: id-keying
-		// (VISUAL_EDITOR §"The address is the spine") avoids mis-attributing them to
-		// whichever card next takes this position, but an orphaned entry would
-		// otherwise sit in the map forever (ids are never reused).
+		// Ids are never reused, so an entry keyed to the gone card is unreachable rather
+		// than mis-attributed to whichever card takes this position: it needs dropping
+		// because nothing else will ever clear it.
 		if ([...commitErrors.keys()].some((k) => k.startsWith(`${id}:`)))
 			editCommitErrors((m) => {
 				for (const k of [...m.keys()]) if (k.startsWith(`${id}:`)) m.delete(k);
 			});
-		// No addr: the removed card has no address left, and the surviving cards'
-		// addresses all shifted. The stack changed, not a leaf. The id still names
-		// which card went, which is the one thing a host keying on it needs, and the
-		// only handle the removal leaves it.
+		// No addr: the removed card has none left and every survivor's shifted. The
+		// stack changed, not a leaf, and the id is the only handle the removal leaves.
 		bump('structure', id);
 	}
 	function retypeCardById(id: string, kind: string): void {
@@ -460,11 +428,8 @@
 		patchEditorExt(doc, { card: i }, { title });
 		bump('structure', id, i);
 	}
-	/**
-	 * Clear the tips channel: the dismissal write, and the only write
-	 * tips make. `undefined` drops the key while `title` and any later sibling ride
-	 * through; `ext.ts` holds why that matters.
-	 */
+	/** The only write tips make. `undefined` drops the key while `title` and any later
+	 *  sibling ride through; `ext.ts` holds why that matters. */
 	function dismissTips(): void {
 		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
 		// Document-level chrome, not a leaf's: no addr, as for a card removal, and no
@@ -511,11 +476,9 @@
 		}
 	});
 
-	// Merge all three producers: validate() + external (both positional `.path`,
-	// resolved to the live stable-id keying) + local commit errors (already
-	// id-keyed). Precedence is errors-before-warnings within a field's list
-	// (mergeDiagnostics sorts; nothing is dropped: diagnostics never gate, so
-	// nothing here hides one either).
+	// All three producers. The two positional ones resolve their `.path` to the live
+	// stable-id keying; commit errors are id-keyed already. Nothing is dropped:
+	// diagnostics never gate, so nothing here hides one either.
 	const diagByKey = $derived.by(() => {
 		const fromValidate = routeAndResolve(validation, cardIds);
 		const fromExternal = routeAndResolve(diagnostics, cardIds);
@@ -537,8 +500,6 @@
 			retype: (kind: string) => retypeCardById(id, kind),
 			rename: (title: string) => renameCardById(id, title),
 			diagFor: (field?: string) => diagByKey.get(leafKey(field)),
-			// Bind the consumer policy hook to this field's resolved addr;
-			// no hook → every option allowed.
 			enumAllowed: (field: string, value: string) =>
 				enumOptionAllowed?.(makeAddr(id, isMain, field), value) ?? true
 		};
@@ -569,7 +530,6 @@
 			id,
 			isMain,
 			kind,
-			// No schema for this kind → a recovery shell, not a field list.
 			// `main` always resolves `schema.main`, so it is never unschemable.
 			unschemable: !isMain && !cardSchema,
 			titleOverride: extEditor?.title ?? '',
@@ -578,14 +538,11 @@
 			provenance: provenanceMap(rows.fields),
 			sections,
 			hasBody,
-			// The body ghosts its resolved `default:` exactly as a scalar does: the
-			// same text-ghost projection `<Field>` applies to a field's row; and falls
-			// back to an invitation where a scalar shows nothing, because an empty body
-			// is a surface to write on and an empty control is a value not yet given.
-			// Asked only for a card that has a body, so the hook is never consulted
-			// about one that renders none. The hook is pure by contract, so it is called
-			// straight from the derive and its answer kept nowhere: a ghost holds still
-			// across a re-derive because the function does.
+			// The body ghosts its resolved `default:` exactly as a scalar does, and falls
+			// back to an invitation where a scalar shows nothing: an empty body is a
+			// surface to write on where an empty control is a value not yet given. The
+			// hook is pure by contract, so its answer is kept nowhere — a ghost holds
+			// still across a re-derive because the function does.
 			bodyGhost: hasBody
 				? resolveBodyGhost(
 						stringifyGhost(ghostDefault(rows.body ?? undefined)),
@@ -599,8 +556,8 @@
 	const model = $derived.by(() => {
 		revision; // re-derive on every mutation
 		const schema = quill.schema;
-		const main = doc.main; // allocate once
-		const cards = doc.cards; // allocate once
+		const main = doc.main;
+		const cards = doc.cards;
 		// The provenance channel (FIELD_PROVENANCE): one whole-doc resolve per
 		// derive, feeding the ghosted `default:` only. Guarded: provenance is
 		// chrome, so a resolve failure degrades to no ghosts, never a blank form.
@@ -617,10 +574,10 @@
 		}
 		const byCard = resolvedByCardIndex(resolved);
 		return {
-			// Tips are DOCUMENT-level, not a property of the main card: they
-			// hang off `main`'s `$ext` because that is where a document-scoped `$ext`
-			// lives, and the model says so at the root rather than making every card
-			// carry a field one card renders.
+			// Tips are document-level, not a property of the main card: they hang off
+			// `main`'s `$ext` because that is where a document-scoped `$ext` lives, and
+			// the model says so at the root rather than making every card carry a field
+			// one card renders.
 			tips: tipsChannel((main.ext?.editor as { tips?: unknown } | undefined)?.tips),
 			main: buildCard('main', true, 'main', main, schema.main, {
 				fields: resolved?.main.fields ?? [],
@@ -648,11 +605,6 @@
 	 * tick as the reveal would go nowhere and report nothing. The consumer's
 	 * `onPick` ignores the promise: awaiting it is for a caller that wants to
 	 * observe where the caret went.
-	 *
-	 * A destroy lands inside this one: `leaf` is looked up before the flush and
-	 * dispatched into after it, and a PM view destroyed in that window throws on the
-	 * dispatch. A consumer's `onPick` outlives the surface it points at too, so the
-	 * span is asked on the way in as well as after the await.
 	 */
 	export async function setCaret(at: Landing): Promise<void> {
 		const found = await revealLeaf(at.field);
@@ -664,10 +616,10 @@
 		// report it, treat as exact) places the caret. An absent `pos` is the placement
 		// rung and reaches the same floor.
 		land(found, at.granularity === 'segment' ? undefined : at.pos);
-		// The arrival cue, unguarded: a preview click is one discrete act, and its
-		// commonest target is the leaf already focused (where landing a caret changes
-		// nothing on screen) or one off-screen, where the browser's focus-scroll moves
-		// the page and leaves the caret to be hunted for in a long form.
+		// Unconditional: a preview click is one discrete act, and its commonest target
+		// is the leaf already focused (where landing a caret changes nothing on screen)
+		// or one off-screen, where the browser's focus-scroll moves the page and leaves
+		// the caret to be hunted for.
 		bloomInside(found.control.el);
 	}
 	/** The active leaf's controller: the formatting popover's observation seam.
@@ -688,13 +640,11 @@
 	 *
 	 * The target comes back with the handle because the caller needs its key to ask for
 	 * the codec lane (`leaves.prose`), and minting it twice would be two parses of one
-	 * path. The reveal itself is the key's: a group holds the field, and an element
-	 * address opens the same group its array sits in.
+	 * path.
 	 *
-	 * A destroy lands inside this: the field is looked up before the flush and
-	 * dispatched into after it, and a PM view destroyed in that window throws on the
-	 * dispatch. A consumer's call outlives the surface it points at too, so the span is
-	 * asked on the way in as well as after the await.
+	 * A destroy lands inside the flush, and a PM view destroyed in that window throws on
+	 * the dispatch that follows. A consumer's call outlives the surface it points at
+	 * too, so the span is asked on the way in as well as after the await.
 	 */
 	async function revealLeaf(field: DocPath): Promise<Landed | undefined> {
 		if (!span.alive) return undefined;
@@ -708,15 +658,11 @@
 	}
 
 	/**
-	 * Put the caret in a revealed target, at the finest grain it can take.
-	 *
-	 * - An element address focuses that row, with no caret inside it: an array element
-	 *   is no `createField` leaf and its handle is a bare focus.
-	 * - A prose leaf with a `pos` takes the caret at that USV offset.
-	 * - Everything else takes the focus alone: the offset is a position in rendered
-	 *   content and a form control has no coordinate to spend it in (an
-	 *   `<input type="number">` refuses a selection outright), which is also the whole
-	 *   of what a click on plate-placed ink can mean.
+	 * Put the caret in a revealed target, at the finest grain it can take: a USV offset
+	 * in a prose leaf, a bare focus everywhere else. An array element is no
+	 * `createField` leaf, and a form control has no coordinate to spend an offset in (an
+	 * `<input type="number">` refuses a selection outright), which is also the whole of
+	 * what a click on plate-placed ink can mean.
 	 */
 	function land(found: Landed, pos: number | undefined): void {
 		if (found.element != null && found.control.focusElement) {
@@ -730,26 +676,18 @@
 	}
 
 	// ── The verbs, as instance exports ──────────────────────────────────────────
-	// The same functions the card's own chrome calls, reached through `bind:this`: a
-	// host toolbar, command palette or shortcut wants the door the card header gets,
-	// and every one of them reports through `onChange` exactly as the click does.
-	// They speak the public vocabulary — a `DocPath` for a place, a `CardId` for a
-	// card — so a host drives them with what the hooks handed it.
+	// The same functions the card's own chrome calls, reached through `bind:this`, and
+	// they speak the public vocabulary — a `DocPath` for a place, a `CardId` for a card
+	// — so a host drives them with what the hooks handed it.
 	//
 	// A target the surface does not hold is a no-op that reports `target-unknown` at
-	// `dev`: a key from a previous session or a card already removed, or a path naming
-	// no declared field — an element path (`main.references.0`) whose array is
-	// undeclared or unmounted included, that being the only way one misses. `setCaret`
-	// reports it too, being the verb a preview click drives: a landing that resolved
-	// nothing is indistinguishable from one that landed, and a consumer wiring the
-	// bridge reads the difference off nothing else.
+	// `dev`: a key from a previous session, a card already removed, a path naming no
+	// declared field. `setCaret` reports it too, being the verb a preview click drives:
+	// a landing that resolved nothing is indistinguishable from one that landed, and a
+	// consumer wiring the bridge reads the difference off nothing else.
 
-	/**
-	 * Reveal and focus the field at `field`, without placing a caret inside it. Any
-	 * mounted field: a prose leaf takes its view's focus, a form control takes the same
-	 * handoff a click on its label does (`Field`, `leaves.ts`), and an element address
-	 * takes its own row.
-	 */
+	/** Reveal and focus the field at `field`, placing no caret inside it: a form control
+	 *  takes the same handoff a click on its label does (`Field`, `leaves.ts`). */
 	export async function focusField(field: DocPath): Promise<void> {
 		const found = await revealLeaf(field);
 		if (!found) return missed(`no mounted field at ${field}`, field);
@@ -765,8 +703,7 @@
 		if (!holds(cardId)) return;
 		removeCardById(cardId);
 	}
-	/** Move a card one slot. The step the reorder control takes, and the one the
-	 *  surface animates; at either edge it is a no-op. */
+	/** One slot: the step the reorder control takes, and the one the surface animates. */
 	export function moveCard(cardId: CardId, dir: -1 | 1): void {
 		if (!holds(cardId)) return;
 		moveCardById(cardId, dir);
@@ -795,9 +732,8 @@
 	type Landed = LeafTarget & { control: FieldControl };
 
 	/**
-	 * Map a landing's `field` (a canonical `DocPath`) to a mounted target: the
-	 * `addrForFieldPath` route the diagnostics take, the absolute card index resolved
-	 * to its live stable id, then the shared `fieldKeyToString` form.
+	 * Map a landing's `field` to a mounted target, by the `addrForFieldPath` route the
+	 * diagnostics take.
 	 *
 	 * Two rungs, because the boundary mints addresses at a finer granularity than
 	 * `Addr` can name: a `richtext[]` element surfaces as `main.references.0`, which
@@ -819,8 +755,7 @@
 		return resolved ? { key: fieldKeyToString(resolved), element: element.index } : undefined;
 	}
 
-	/** Whether `addr` names a field this document renders as an array repeater: the
-	 *  guard the element rung stands on. Asked of `controlKind`, so what the ladder
+	/** The guard the element rung stands on. Asked of `controlKind`, so what the ladder
 	 *  tests is the control the tree mounted — the one holding a `focusElement` — and
 	 *  not a second reading of the schema beside it. */
 	function isArrayField(addr: Addr): boolean {
@@ -843,7 +778,6 @@
 			card={model.main}
 			{doc}
 			{quill}
-			index={-1}
 			isFirst={true}
 			isLast={true}
 			{kinds}
@@ -856,10 +790,9 @@
 			{leaves}
 		/>
 
-		<!-- The tips card: a fixed slot after `main`, ahead of the cards, so
-		 document-level guidance reads as document-level and never displaces a field.
-		 Absent when the channel is empty; which is what dismissal makes it, so the
-		 card leaves for good (VISUAL_EDITOR §"Card operations"). -->
+		<!-- A fixed slot after `main`, ahead of the cards, so document-level guidance
+		 reads as document-level and never displaces a field. Dismissal empties the
+		 channel, so the card leaves for good (VISUAL_EDITOR §"Card operations"). -->
 		{#if model.tips.length}
 			<TipsCard tips={model.tips} onDismiss={dismissTips} {onError} />
 		{/if}
@@ -877,7 +810,6 @@
 				card={c}
 				{doc}
 				{quill}
-				index={i}
 				isFirst={i === 0}
 				isLast={i === model.cards.length - 1}
 				{kinds}
@@ -896,13 +828,12 @@
 
 <FormatPopover {getActiveLeaf} />
 
-<!-- Cards always render; the add affordance is gated on the schema declaring
- `card_kinds`, since there is nothing to seed otherwise. A card already in the
- document shows regardless of its kind: a kind with no schema (foreign, or a
- schema with no `card_kinds` at all) degrades to a recovery shell inside <Card>
- (retype + delete), never gated away, so its content is neither dropped nor
- trapped. The gate lives here rather than at each call site: the strip is one
- decision, and two copies of it drift into a stack with a gap at one end. -->
+<!-- The add affordance is gated on the schema declaring `card_kinds`, there being
+ nothing to seed otherwise. Cards render regardless: a kind with no schema degrades to
+ a recovery shell inside <Card> (retype + delete), never gated away, so its content is
+ neither dropped nor trapped. The gate lives here rather than at each call site: the
+ strip is one decision, and two copies of it drift into a stack with a gap at one
+ end. -->
 {#snippet addAffordance(atIndex: number)}
 	{#if kinds.length}
 		<!-- The strip past the last card is the append point, the one a reader looks for
@@ -954,15 +885,14 @@
 {/snippet}
 
 <style>
-	/* The private scale lands via `data-qm-root` on the root element above: this is
-	 a detached root, one of those core/theme.css applies the derivation to. The
-	 root rule also carries the baseline font and colour, so nothing here restates
-	 them. Nothing here mints; `check:style` enforces that. */
-	/* The column, not only the cards in it: the gutter the stack sits in and the tone
-	   behind it are the surface's own, so a bare `<div>` is a mounting site and
-	   nothing is owed before the editor looks right. Consumer CSS is unlayered and
-	   beats all of it, which is how a host that wants the column back takes it.
-	   `border-box`, so a height from the caller is the height this draws.
+	/* A detached root, carrying `data-qm-root` for the derivation core/theme.css applies
+	   to one — the baseline font and colour included, so nothing here restates them.
+
+	   The column, not only the cards in it: the gutter the stack sits in and the tone
+	   behind it are the surface's own, so a bare `<div>` is a mounting site and nothing
+	   is owed before the editor looks right. Consumer CSS is unlayered and beats all of
+	   it, which is how a host that wants the column back takes it. `border-box`, so a
+	   height from the caller is the height this draws.
 
 	   The sunken rung, which is what makes a card an island: the cards are the base
 	   plane and this is the one they float on, so the gutter reads as ground rather
@@ -975,30 +905,26 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
-		padding: var(--_qm-space-4);
+		padding: var(--_qm-space-5);
 		background: var(--_qm-surface-sunken);
 		color: var(--_qm-ink);
 	}
-	/* A fixed-height pane, which the stack is not by default, and the four popovers
-	   are the reason: each resolves its portal target with
-	   `closest('[data-qm-root]')`, which is this element, so an `overflow` here
-	   clips the menu a leaf raised. Mounted in a page that scrolls, nothing clips;
-	   mounted in a pane that does, the host says so and takes the clipping it would
-	   have had from its own scrolling frame either way. The tail rides with the
-	   scroller because it is only meaningful under one: dead space below the last
-	   card, so it can be read mid-pane rather than against the bottom edge.
+	/* Opt-in, and the four popovers are the reason: each resolves its portal target with
+	   `closest('[data-qm-root]')`, which is this element, so an `overflow` here clips the
+	   menu a leaf raised. Mounted in a page that scrolls, nothing clips; mounted in a
+	   pane that does, the host says so and takes the clipping it would have had from its
+	   own scrolling frame either way. The tail rides with the scroller because it is only
+	   meaningful under one: dead space below the last card, so it can be read mid-pane
+	   rather than against the bottom edge.
 
-	   The height is what makes the rest of the rule mean anything, and it is the
-	   pane's rather than a number of ours: `overflow` on a box that grows to its
-	   content never has anything to scroll, so the stack would run past the pane
-	   and be clipped by whatever the host frames it with. Taking the pane's height
-	   is the whole of what `.qm-pane` claims (THEMING §"Drop it in": the surface
-	   becomes its own scroll container), and it resolves to `auto` — today's page
-	   behaviour, so a class on a mounting site with no height of its own changes
-	   nothing. The cards below do not shrink to fit it: a flex item's automatic
-	   minimum floors each at its own height, so the stack overflows and scrolls
-	   rather than squashing. `.qm-preview` states the same thing for the same
-	   reason, unconditionally, having no page form to keep. */
+	   The height is what makes the rest of the rule mean anything, and it is the pane's
+	   rather than a number of ours: `overflow` on a box that grows to its content never
+	   has anything to scroll, so the stack would run past the pane and be clipped by
+	   whatever the host frames it with. Taking the pane's height is the whole of what
+	   `.qm-pane` claims (THEMING §"Drop it in"), and it resolves to `auto` on a mounting
+	   site with no height of its own, which is the page form kept. The cards do not
+	   shrink to fit: a flex item's automatic minimum floors each at its own height, so
+	   the stack overflows and scrolls rather than squashing. */
 	.qm-editor.qm-pane {
 		height: 100%;
 		overflow: auto;
@@ -1027,31 +953,26 @@
 		flex-direction: column;
 		gap: var(--_qm-space-2);
 	}
-	/* The strip between two blocks, and the whole of it is the target: a gap is found
-	 by position, so reveal and hit region are the full-bleed row rather than a word
-	 to aim at in the middle of it. It takes the editor's gap back on both sides, so
-	 it is not a control sitting in the gutter; it is the gutter: what separates two
-	 cards is the trigger's own height and nothing else, and the pill it fills on hover
-	 is edge to edge the space the new card opens into. No band is held back as
-	 miss-tolerance: gutter that reads as the trigger and inserts nothing unsays what
-	 the fill claims, so a press anywhere between two cards inserts. Absorbed rather
-	 than removed, because `gap` is also what separates the one seam no strip sits in:
-	 every card from the next under a quill declaring no kinds, where the affordance
-	 does not render at all. */
+	/* The strip between two blocks, and the whole of it is the target: a gap is found by
+	 position, so reveal and hit region are the full-bleed row rather than a word to aim
+	 at in the middle of it. Taking the editor's gap back on both sides is what makes it
+	 the gutter rather than a control sitting in one, and the pill it fills on hover is
+	 edge to edge the space the new card opens into. No band is held back as
+	 miss-tolerance: gutter that reads as the trigger and inserts nothing unsays what the
+	 fill claims. Absorbed rather than removed, because `gap` is also what separates the
+	 one seam no strip sits in: every card from the next under a quill declaring no
+	 kinds, where the affordance does not render at all. */
 	.qm-add-card {
 		display: flex;
 		margin-top: calc(var(--_qm-space-2) * -1);
 		margin-bottom: calc(var(--_qm-space-2) * -1);
 	}
-	/* Unboxed, like every button, and not dashed: a
-	 dashed edge is the placeholder idiom ("nothing is here yet") which on a button
-	 reads as disabled or as a drop target. It stays honest in one place, the
-	 un-schemable card (`Card.svelte`), which is a state rather than a control. A bare
-	 trigger rests invisible, so the fill is the whole of what it shows: the pill fills
-	 the strip because the strip is what was pressed, and the strip is the gap, so the
-	 fill is the card-to-be drawn where it will land. Every gap is an equal entry point,
-	 reached by the name rather than by a mark: a card goes anywhere in the stack, not
-	 just after the last one.
+	/* Unboxed, like every button, and not dashed: a dashed edge is the placeholder idiom
+	 ("nothing is here yet"), which on a button reads as disabled or as a drop target. It
+	 stays honest in one place, the un-schemable card (`Card.svelte`), which is a state
+	 rather than a control. A bare trigger rests invisible, so the fill is the whole of
+	 what it shows: the pill fills the strip because the strip is what was pressed, and
+	 the strip is the gap, so the fill is the card-to-be drawn where it will land.
 
 	 No inset of its own: the pill and the gap are the same rectangle, and a bare strip is
 	 a band of gutter, so its height is a rhythm rung. The press floor the box gives up is

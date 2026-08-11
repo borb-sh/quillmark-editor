@@ -81,13 +81,11 @@
 				{/each}
 			</div>
 		{/if}
-		<!-- One button, and its action is where the cursor stands: the set is walked,
-		     and its end is the exit. -->
 		<button type="button" class="qm-icon-btn qm-tips-action" onclick={advance}>
 			{#if isLast}
-				{t.strings.tipsDismiss} <Icon name="x" size={GLYPH} />
+				{t.strings.tipsDismiss} <Icon name="trash-2" size={GLYPH} />
 			{:else}
-				{t.strings.tipsNext} <Icon name="chevron-right" size={GLYPH} />
+				{t.strings.tipsNext} <Icon name="arrow-right" size={GLYPH} />
 			{/if}
 		</button>
 	</div>
@@ -100,41 +98,36 @@
 	 guidance is: the main card's, not a card of its own. Still in-flow, no edge, no
 	 lift.
 
-	 A typewritten slip, and that is the whole of the treatment: the monospace face and
-	 a warmth over the card's own surface, which together say draft rather than
-	 document. Both come off the tips rungs (`core/theme.css`), which are mixes over
-	 the surface and the ink the consumer already tuned, so the card cannot end up less
-	 legible than the editor around it.
+	 The bottom corners take the inner rung where the card above takes the outer: a slip
+	 is cut crisper than the thing it is tucked under, at every setting of the dial.
 
-	 The top inset takes the tuck back, so the space above the tip is the space below
-	 the foot.
-
-	 The reading rungs, size and leading both: a tip is a passage that wraps, so it
-	 takes the size a field's value is read at rather than the label rung a line of
-	 chrome would take. */
+	 The insets are asymmetric so the ink is not: the top takes the tuck back, and the
+	 bottom gives up a rung to the foot's control, whose box stands on the tap floor
+	 rather than on its own one-line label. */
 	.qm-tips {
 		margin-top: calc(var(--_qm-radius) * -1);
-		border-radius: 0 0 var(--_qm-radius) var(--_qm-radius);
-		padding: calc(var(--_qm-space-3) + var(--_qm-radius)) var(--_qm-space-3) var(--_qm-space-3);
+		border-radius: 0 0 var(--_qm-radius-inner) var(--_qm-radius-inner);
+		padding: calc(var(--_qm-space-3) + var(--_qm-radius)) var(--_qm-space-3) var(--_qm-space-2);
 		background: var(--_qm-tips-surface);
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
-		font-family: var(--_qm-font-mono);
+		font-family: var(--_qm-tips-font);
 		font-size: var(--_qm-text-body);
 		line-height: var(--_qm-leading-body);
 		color: var(--_qm-tips-ink);
 	}
+	/* One line held open, so the foot does not step up under a shorter tip. */
+	.qm-tips-body {
+		min-height: calc(var(--_qm-leading-body) * 1em);
+	}
 	/* The rendered tip is injected DOM (the codec's `toDOM` output), so its element
 	 styles are `:global`: the compiler never sees these tags in the markup. Restated
 	 from `core/codec/prose.css`, which is where they are argued and which cannot reach
-	 here: its selectors are scoped to `.ProseMirror` and a tip is not a view. Two
-	 deliberate divergences, and both follow from the card being read rather than
-	 edited: the link takes no underline, since a hidden `href` costs its reader
-	 nothing; and `code` takes a chip where a leaf gives it a face, since the face is
-	 already the card's own and a token like `- ` has nothing else to set it apart.
-	 `pre-wrap` is what keeps the significant space inside such a token: collapsed, the
-	 chip closes on the word after it. */
+	 here: its selectors are scoped to `.ProseMirror` and a tip is not a view. The one
+	 divergence: `code` takes a chip and a warmer ink where a leaf gives it a face, the
+	 face here being the card's own already. `pre-wrap` keeps the significant space
+	 inside a token like `- `; collapsed, the chip closes on the word after it. */
 	.qm-tips-body :global(p) {
 		margin: 0;
 	}
@@ -142,12 +135,14 @@
 		font-family: inherit;
 		font-size: inherit;
 		white-space: pre-wrap;
-		padding: 0 var(--_qm-space-half);
+		padding: 0 var(--_qm-space);
 		border-radius: var(--_qm-radius-inner);
-		background: var(--_qm-tips-chip);
+		background: var(--_qm-tips-fill);
+		color: var(--_qm-tips-ink-warm);
 	}
 	.qm-tips-body :global(a) {
 		color: inherit;
+		text-decoration: underline;
 	}
 	.qm-tips-foot {
 		display: flex;
@@ -158,49 +153,51 @@
 	.qm-tips-dots {
 		display: flex;
 		align-items: center;
+		gap: var(--_qm-space-half);
 		margin-right: auto;
 	}
-	/* Random access to the set, and the pitch is the tap floor: 2.5.8's spacing
-	 exception measures centre distance, which is the number the floor already fixes,
-	 so a tighter row of dots buys nothing it does not immediately owe back. Target and
-	 mark are therefore not one rectangle (the floor is the button, the dot is drawn
-	 inside it), which is also why the hover reads on the mark rather than filling the
-	 box a `.qm-icon-btn` would. */
+	/* Random access to the set, drawn as one cluster: a row of marks spaced to the tap
+	 floor reads as a row of controls. So the target is the mark plus its padding, under
+	 the floor, which 2.5.8 allows on the equivalent-control exception rather than on
+	 the spacing one — the foot's button clears the floor and walks the whole set from
+	 the tip the card opens on, so no tip is reachable only by a dot. State is three
+	 steps of one ink on the recede ladder, never a second hue and never a size: a dot
+	 that grew would move the row it sits in. */
 	.qm-tips-dot {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		box-sizing: border-box;
-		min-width: var(--_qm-tap-min);
-		min-height: var(--_qm-tap-min);
-		border: none;
-		background: transparent;
-		cursor: pointer;
-	}
-	/* Three steps of one ink on the recede ladder (rest, hover, current), never a
-	 second hue and never a size: a dot that grew would move the row it sits in. */
-	.qm-tips-dot::before {
-		content: '';
+		box-sizing: content-box;
 		width: 5px;
 		height: 5px;
+		padding: var(--_qm-space-half);
+		border: none;
 		border-radius: var(--_qm-radius-pill);
 		background: currentColor;
+		background-clip: content-box;
 		opacity: var(--_qm-opacity-idle);
+		cursor: pointer;
 		transition: opacity var(--_qm-duration-fast) var(--_qm-ease-reverse);
 	}
-	.qm-tips-dot:hover::before {
+	.qm-tips-dot:hover {
 		opacity: var(--_qm-opacity-muted);
 	}
-	.qm-tips-dot[aria-current='true']::before {
+	.qm-tips-dot[aria-current='true'] {
 		opacity: 1;
 	}
-	/* Box and disabled state come from `.qm-icon-btn` (controls.css); the foot's
-	   button carries a label, so it widens its inset and stays on the card's own type
-	   and ink rather than the family's body rung and the callers' own colours. */
+	/* Box and disabled state come from `.qm-icon-btn` (controls.css); what this
+	   overrides is everything the family sets for a glyph among callers of its own
+	   colour, a labelled control on a warm card wanting none of it. The hover included:
+	   the family's neutral step would read as lent from the document above. Unlayered,
+	   so it beats the base rule without out-specifying it. */
 	.qm-tips-action {
 		padding: var(--_qm-space-half) var(--_qm-space-2);
 		font-family: inherit;
 		font-size: inherit;
 		color: inherit;
+		transition:
+			color var(--_qm-duration-fast) var(--_qm-ease-reverse),
+			background-color var(--_qm-duration-fast) var(--_qm-ease-reverse);
+	}
+	.qm-tips-action:hover {
+		color: var(--_qm-tips-ink-warm);
+		background: var(--_qm-tips-fill);
 	}
 </style>

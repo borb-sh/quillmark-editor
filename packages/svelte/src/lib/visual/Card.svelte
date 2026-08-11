@@ -1,8 +1,7 @@
 <!--
- One card block: the header (composable cards only), the field list grouped by
- `ui.group`/`ui.compact`, and the body prose leaf. `main` is headerless with no
- controls. Every prose leaf takes a parent-built live address, so a card reorder
- re-targets its commits without a remount.
+ One card block, its fields grouped by `ui.group`/`ui.compact`. `main` is headerless
+ and takes no controls. Every prose leaf takes a parent-built live address, so a card
+ reorder re-targets its commits without a remount.
 -->
 <script lang="ts">
 	import { wording } from './strings.js';
@@ -43,7 +42,6 @@
 		card: CardModel;
 		doc: Document;
 		quill: Quill;
-		index: number;
 		isFirst: boolean;
 		isLast: boolean;
 		kinds: string[];
@@ -61,7 +59,6 @@
 		card,
 		doc,
 		quill,
-		index,
 		isFirst,
 		isLast,
 		kinds,
@@ -91,8 +88,8 @@
 		(e.currentTarget as HTMLInputElement).select();
 	}
 	// A press on an unfocused title would place a caret on mouseup, collapsing the
-	// focus-time select-all. Take focus manually and suppress that caret; a press while
-	// already focused stays normal, so clicking mid-title to place the caret still works.
+	// focus-time select-all. A press while already focused stays normal, so clicking
+	// mid-title to place the caret still works.
 	function onTitleMousedown(e: MouseEvent): void {
 		const el = e.currentTarget as HTMLInputElement;
 		if (document.activeElement !== el) {
@@ -100,9 +97,8 @@
 			el.focus();
 		}
 	}
-	// A press on the region's empty width enters the title edit; preventDefault keeps it
-	// from starting a text selection on the wrapper. A press on the input itself is left
-	// to `onTitleMousedown`, which owns the already-focused caret-placement case.
+	// A press on the region's empty width enters the title edit, and starts no text
+	// selection on the wrapper. A press on the input itself is `onTitleMousedown`'s.
 	function onRenameMousedown(e: MouseEvent): void {
 		const input = (e.currentTarget as HTMLElement).querySelector('input');
 		if (!input || e.target === input) return;
@@ -136,10 +132,10 @@
 	// paint as a single stroke of twice the width.
 	const hasMeta = $derived(ungrouped.length > 0 || grouped.length > 0);
 
-	// Ephemeral session state, seeded once from the card's shape. Card is keyed by stable
-	// id, so this survives the VisualEditor re-derive that reassigns `card` and resets
-	// only on a remount. Not reconciled to later section changes: a retype is the one
-	// reshape, and the open group stays where it still exists.
+	// Seeded once from the card's shape. Card is keyed by stable id, so this survives the
+	// VisualEditor re-derive that reassigns `card` and resets only on a remount. Not
+	// reconciled to later section changes: a retype is the one reshape, and the open
+	// group stays where it still exists.
 	// svelte-ignore state_referenced_locally
 	let expanded = $state<string | null>(initialExpandedGroup(card.sections));
 	let headers = $state<Record<string, HTMLButtonElement | undefined>>({});
@@ -162,10 +158,10 @@
 	}
 
 	/**
-	 * Open the group holding leaf `key`, if this card has one: a caret placed in a
-	 * collapsed panel does not land at all. `VisualEditor.setCaret` calls this on every
-	 * card and then waits a flush before landing, since `inert` clears when the panel
-	 * renders open, not when `expanded` is assigned.
+	 * Open the group holding leaf `key`: a caret placed in a collapsed panel does not
+	 * land at all. `VisualEditor.setCaret` calls this on every card and then waits a
+	 * flush before landing, since `inert` clears when the panel renders open, not when
+	 * `expanded` is assigned.
 	 *
 	 * A call, not a prop: a reveal is an event, and modelling it as state needs a
 	 * fresh-identity wrapper to re-fire and an `untrack` to keep the per-keystroke
@@ -232,11 +228,10 @@
 		{/if}
 
 		<div class="qm-card-body">
-			<!-- Every field the card has, ungrouped and grouped alike, inside one element
-		 whose top and bottom edges are the bracket's two horizontals. Anchored here
-		 rather than on the header and on the accordion so an open section's vertical
-		 reaches them, and so a card with no groups still terminates above its body. An
-		 empty wrapper between the two rules would collapse them onto each other. -->
+			<!-- One element whose top and bottom edges are the bracket's two horizontals.
+		 Anchored here rather than on the header and on the accordion so an open section's
+		 vertical reaches them, and so a card with no groups still terminates above its
+		 body. -->
 			{#if hasMeta}
 				<div
 					class="qm-card-meta"
@@ -442,13 +437,17 @@
 	}
 	/* Autosize: the ::after mirrors the text into the same grid cell as the input, so the
 	 overlaid input tracks its content width. Both carry the same nothing for a box model
-	 and inherit the same type tokens, which is what makes the two measure alike. */
+	 and inherit the same type tokens, which is what makes the two measure alike.
+
+	 The type is the group header's, down to the ink and its hover step below: a card
+	 title and a section header both name a block of fields, so they read as one register
+	 and what ranks them is position rather than a size step. */
 	.qm-card-title-sizer {
 		display: inline-grid;
 		align-items: center;
 		min-width: 0;
 		max-width: 100%;
-		font-size: var(--_qm-text-title);
+		font-size: var(--_qm-text-body);
 		font-weight: var(--_qm-weight-mid);
 		line-height: var(--_qm-leading-tight);
 		font-family: inherit;
@@ -620,11 +619,17 @@
 	 The clip box takes the inline inset, which costs a shut panel no height and holds the
 	 queried width still. The block inset goes on the content, where a `0fr` track clips
 	 it: declared one box out it collapses the content but not itself, and stands under a
-	 shut header as dead space. Neither is animated, and neither is qualified by open. */
+	 shut header as dead space. Neither is animated, and neither is qualified by open.
+
+	 A field ends on the clip box at the end edge, where no inset hides its ring the way
+	 the start edge's does. The pad carries the clip past it and the margin takes the same
+	 distance back, so the width the fields are packed and queried at is unmoved. */
 	.qm-group-panel-inner {
 		min-height: 0;
 		overflow: hidden;
 		padding-inline-start: var(--_qm-space-4);
+		padding-inline-end: var(--_qm-ring-reach);
+		margin-inline-end: calc(-1 * var(--_qm-ring-reach));
 	}
 	.qm-group-panel-inner > .qm-fields {
 		padding-block: var(--_qm-space-2);
@@ -641,7 +646,7 @@
 	}
 	/* One typographic role with the editable title above. */
 	.qm-card-title-static {
-		font-size: var(--_qm-text-title);
+		font-size: var(--_qm-text-body);
 		font-weight: var(--_qm-weight-mid);
 		line-height: var(--_qm-leading-tight);
 		color: var(--_qm-ink-label);
