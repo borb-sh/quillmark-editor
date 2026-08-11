@@ -184,16 +184,20 @@
 		   draft (VISUAL_EDITOR §"Card operations"). A literal rather than a dial
 		   because there is nothing left to turn: the rungs under it mix over
 		   the surface and the ink a consumer already tuned, so the card follows a
-		   brand untold. The mixes are faint on purpose: a warmth, not a badge. */
+		   brand untold. The mixes are faint on purpose: a warmth, not a badge.
+
+		   The one group mixed in sRGB. oklab holds perceived lightness across a mix and
+		   spends chroma to do it, which is right where both endpoints are grey and wrong
+		   for a hue: at either pole it lands the ink a channel short of warm. */
 		--_qm-tips: #e88c0a;
-		--_qm-tips-surface: color-mix(in oklab, var(--_qm-surface), var(--_qm-tips) 4%);
-		--_qm-tips-ink: color-mix(in oklab, var(--_qm-ink), var(--_qm-tips) 24%);
+		--_qm-tips-surface: color-mix(in srgb, var(--_qm-surface), var(--_qm-tips) 3%);
+		--_qm-tips-ink: color-mix(in srgb, var(--_qm-ink), var(--_qm-tips) 24%);
 		/* The ink and the amber stepped up, and the pair is spent on the two runs that
 		   are not the sentence: a token in a tip, and the foot's control under the
 		   pointer. One rung each rather than one per run, a chip and a hover four
 		   percent apart being a number with no second decision under it. */
-		--_qm-tips-ink-warm: color-mix(in oklab, var(--_qm-ink), var(--_qm-tips) 45%);
-		--_qm-tips-fill: color-mix(in oklab, var(--_qm-tips) 12%, transparent);
+		--_qm-tips-ink-warm: color-mix(in srgb, var(--_qm-ink), var(--_qm-tips) 45%);
+		--_qm-tips-fill: color-mix(in srgb, var(--_qm-tips) 12%, transparent);
 		/* The typewriter, the half of the slip the amber cannot carry: a modern mono
 		   reads as code where a Courier reads as typed. Its own rung rather than
 		   `--_qm-font-mono`, the chrome's readout face, which a consumer turns for

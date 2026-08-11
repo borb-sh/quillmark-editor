@@ -390,11 +390,12 @@
 {/snippet}
 
 <style>
-	/* An island, and the tone is the whole of what makes it one: the card is the base
-	 plane and the column behind it is the sunken one (ARCHITECTURE §Styling). The inset
-	 is the same rung as the gap, so what separates the header from the fields is what
-	 separates the fields from the card's edge. */
+	/* An island: the card is the base plane, the column behind it the sunken one, and the
+	 hairline closes it (ARCHITECTURE §Styling). The inset is the same rung as the gap, so
+	 what separates the header from the fields is what separates the fields from the
+	 card's edge. */
 	.qm-card {
+		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
 		padding: var(--_qm-space-3);
 		background: var(--_qm-surface);
@@ -639,10 +640,9 @@
 		flex-direction: column;
 		gap: var(--_qm-space);
 	}
-	/* The one card that draws an edge at all: an ordinary card is a plane, so a stroke
-	 around this one is a state rather than heavier chrome. */
+	/* The state is in the stroke's pattern, every card being closed by one already. */
 	.qm-card.qm-unschemable {
-		border: var(--_qm-border-width) dashed var(--_qm-border);
+		border-style: dashed;
 	}
 	/* One typographic role with the editable title above. */
 	.qm-card-title-static {

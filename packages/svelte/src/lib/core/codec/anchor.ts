@@ -18,14 +18,54 @@ export interface RangeAnchor {
 	getBoundingClientRect: () => DOMRect;
 }
 
+interface Box {
+	left: number;
+	top: number;
+	right: number;
+	bottom: number;
+}
+
+function union(a: Box, b: Box): Box {
+	return {
+		left: Math.min(a.left, b.left),
+		top: Math.min(a.top, b.top),
+		right: Math.max(a.right, b.right),
+		bottom: Math.max(a.bottom, b.bottom)
+	};
+}
+
+function caretBox(view: EditorView, pos: number): Box {
+	const { left, top, right, bottom } = view.coordsAtPos(pos);
+	return { left, top, right, bottom };
+}
+
+/**
+ * The box the highlight paints, and not the two ends' caret boxes: a selection that
+ * wraps has its head and its anchor on opposite sides of the block, so their union
+ * names a rectangle no text is under.
+ *
+ * A range measuring to nothing falls back to that union. A leaf the view draws no text
+ * for has no painted box, and an approximate anchor beats one of zero.
+ */
+function selectionBox(view: EditorView, from: number, to: number): Box {
+	const range = document.createRange();
+	const start = view.domAtPos(from);
+	const end = view.domAtPos(to);
+	range.setStart(start.node, start.offset);
+	range.setEnd(end.node, end.offset);
+	const { left, top, right, bottom, width, height } = range.getBoundingClientRect();
+	if (width || height) return { left, top, right, bottom };
+	return union(caretBox(view, from), caretBox(view, to));
+}
+
 /**
  * A virtual anchor over one PM range, measured when asked rather than when made.
  *
- * The measure is total. `coordsAtPos` reads layout, and layout can be gone: a
- * position the document has since invalidated, a leaf inside a collapsed section, a
- * view torn down between a scroll firing and the measure running. `autoUpdate` calls
- * this at moments none of its callers choose, so an unmeasurable anchor returns the
- * last rect that measured rather than throwing out of floating-ui's positioning pass.
+ * The measure is total. It reads layout, and layout can be gone: a position the
+ * document has since invalidated, a leaf inside a collapsed section, a view torn down
+ * between a scroll firing and the measure running. `autoUpdate` calls this at moments
+ * none of its callers choose, so an unmeasurable anchor returns the last rect that
+ * measured rather than throwing out of floating-ui's positioning pass.
  *
  * `from === to` is a caret, which is what the slash menu hangs off.
  */
@@ -33,19 +73,12 @@ export function rangeAnchor(view: EditorView, from: number, to: number): RangeAn
 	// Plain numbers, not a `DOMRect`: this runs at construction, and the codec's suite
 	// is a `node` environment with no DOM in it. The `DOMRect` is minted in the measure,
 	// which is a layout read and browser-only by construction.
-	let last = { left: 0, top: 0, right: 0, bottom: 0 };
+	let last: Box = { left: 0, top: 0, right: 0, bottom: 0 };
 	return {
 		contextElement: view.dom,
 		getBoundingClientRect: () => {
 			try {
-				const a = view.coordsAtPos(from);
-				const b = view.coordsAtPos(to);
-				last = {
-					left: Math.min(a.left, b.left),
-					top: Math.min(a.top, b.top),
-					right: Math.max(a.right, b.right),
-					bottom: Math.max(a.bottom, b.bottom)
-				};
+				last = from === to ? caretBox(view, from) : selectionBox(view, from, to);
 			} catch {
 				// unmeasurable: keep the last good rect
 			}

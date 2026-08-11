@@ -95,19 +95,25 @@
 	/* Attached to `main`, not a block beside it: a square top pulled up by the radius,
 	 so its background fills the notches `main`'s rounded bottom corners cut and `main`
 	 paints over the rest. The two read as one block, which is what document-level
-	 guidance is: the main card's, not a card of its own. Still in-flow, no edge, no
-	 lift.
+	 guidance is: the main card's, not a card of its own. Still in-flow, no lift.
+
+	 It takes the card's hairline, and the tuck makes the two outlines one: the slip's top
+	 stroke and the tops of its sides run under `main`, so what shows starts at the card's
+	 bottom corners.
 
 	 The bottom corners take the inner rung where the card above takes the outer: a slip
 	 is cut crisper than the thing it is tucked under, at every setting of the dial.
 
 	 The insets are asymmetric so the ink is not: the top takes the tuck back, and the
 	 bottom gives up a rung to the foot's control, whose box stands on the tap floor
-	 rather than on its own one-line label. */
+	 rather than on its own one-line label. The horizontal is the card's inset plus the
+	 body's margin (ProseField), so the tip starts under the prose rather than under the
+	 fields. */
 	.qm-tips {
 		margin-top: calc(var(--_qm-radius) * -1);
+		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: 0 0 var(--_qm-radius-inner) var(--_qm-radius-inner);
-		padding: calc(var(--_qm-space-3) + var(--_qm-radius)) var(--_qm-space-3) var(--_qm-space-2);
+		padding: calc(var(--_qm-space-3) + var(--_qm-radius)) var(--_qm-space-5) var(--_qm-space-2);
 		background: var(--_qm-tips-surface);
 		display: flex;
 		flex-direction: column;

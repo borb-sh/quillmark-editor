@@ -19,10 +19,15 @@
  transient `selectionchange` events first). `focusout` keeps the popover honest
  when focus leaves the leaf.
 
- Nothing here watches scroll. `sync` decides whether the surface is up and what
- its buttons read, which a scroll changes neither of; where it sits is the
- anchor's own question, and the anchor answers it by measuring when floating-ui
- asks rather than by being handed a rect (`codec/anchor.ts`).
+ A press holds it down, which is what makes the surface answer a selection rather
+ than a pointer: a drag fires `selectionchange` on every frame, so a surface driven
+ by that alone rises on the first character and rides the cursor across the text it
+ is covering. Keyboard selection holds nothing, so a Shift-arrow syncs as it fires.
+
+ Nothing here watches scroll. `sync` decides whether the surface is up, which a
+ scroll does not change; where it sits is the anchor's own question, and the anchor
+ answers it by measuring when floating-ui asks rather than by being handed a rect
+ (`codec/anchor.ts`).
 
  Focus discipline. Three failure modes a naive Popover.Content invites:
  (1) its default `trapFocus` (true) redirects any focus landing outside its
@@ -76,7 +81,6 @@
 	}
 	let { getActiveLeaf }: Props = $props();
 
-	/** Mark size: the shared control-glyph rule for the popover icons. */
 	const GLYPH = 15;
 	/** The six content formatting marks. `anchor` is a seventh, drawn separately below:
 	 *  a decoration toggle rather than a PM `toggleMark`. One string per mark carries both
@@ -91,11 +95,14 @@
 	]);
 
 	let open = $state(false);
-	let activeMarks = $state<Record<string, boolean>>({});
+	/** A pointer is down outside this surface: the selection is still being made. */
+	let pressed = false;
 	/** Whether the selection is in the field's coordinate space, which an anchor needs
 	 *  and a table cell is not (see `sync`). */
 	let anchorAvailable = $state(true);
 	let linkPromptOpen = $state(false);
+	/** Whether the selection carried a link when the prompt was raised. */
+	let linkPresent = $state(false);
 	let linkValue = $state('');
 	let linkInputEl = $state<HTMLInputElement | undefined>(undefined);
 	let contentEl = $state<HTMLElement | undefined>(undefined);
@@ -118,7 +125,6 @@
 		return leaf?.focusedView?.() ?? leaf?.view;
 	}
 
-	/** Recompute open/anchor/active-marks from the active leaf's current PM selection. */
 	function sync(): void {
 		const insidePopover =
 			!!contentEl && !!document.activeElement && contentEl.contains(document.activeElement);
@@ -126,6 +132,7 @@
 		// Costs nothing to hold: the anchor minted below goes on measuring while this
 		// returns early, so a surface frozen here still tracks the selection it covers.
 		if (insidePopover) return;
+		if (pressed) return;
 		const leaf = getActiveLeaf() as LeafWithView | undefined;
 		const view = leaf?.focusedView?.() ?? leaf?.view;
 		// A non-empty text selection. A node selection is non-empty too and has nothing
@@ -133,7 +140,7 @@
 		// Escape out of a table cell lands.
 		const selection = view?.state.selection;
 		const formattable = selection instanceof TextSelection && !selection.empty;
-		if (!view || !view.hasFocus() || !formattable) {
+		if (!view || !view.hasFocus() || !formattable || !hasText(view)) {
 			open = false;
 			linkPromptOpen = false;
 			return;
@@ -141,25 +148,19 @@
 		portalTarget = view.dom.closest<HTMLElement>('[data-qm-root]') ?? undefined;
 		const { from, to } = view.state.selection;
 		anchor = rangeAnchor(view, from, to);
-		const marks: Record<string, boolean> = {};
-		for (const m of MARKS) {
-			const type = view.state.schema.marks[m.name];
-			marks[m.name] = !!type && view.state.doc.rangeHasMark(from, to, type);
-		}
-		// `anchor` is a decoration, not a PM mark (CODEC §Marks): its active state is
-		// whether the selection covers an identity anchor, read off the leaf in USV.
-		//
-		// A selection inside a table cell is not in that coordinate space at all: the
-		// field's position map holds one `atom` run for the whole island, so there is
+		// A selection inside a table cell is not in the field's coordinate space at all:
+		// the field's position map holds one `atom` run for the whole island, so there is
 		// no USV offset to mint an anchor at. The button is withheld rather than
 		// disabled, because what it would toggle does not exist there (CODEC §Islands).
 		anchorAvailable = !!leaf && view === leaf.view;
-		if (leaf && anchorAvailable) {
-			const sel = leaf.selectionRange();
-			marks.anchor = leaf.anchorsInRange(sel.from, sel.to).length > 0;
-		}
-		activeMarks = marks;
 		open = true;
+	}
+
+	/** Whitespace alone is a selection the pointer makes by accident, at the end of a
+	 *  line or between two words, and every mark over it is invisible. */
+	function hasText(view: EditorView): boolean {
+		const { from, to } = view.state.selection;
+		return view.state.doc.textBetween(from, to, ' ', ' ').trim().length > 0;
 	}
 
 	// A burst of DOM events (verified: browser "select all" processing fires
@@ -186,12 +187,33 @@
 		});
 	}
 
+	function onPointerDown(e: PointerEvent): void {
+		// A press on the surface is not a selection gesture, and lowering it here would
+		// take the button out from under the pointer before its click.
+		if (contentEl?.contains(e.target as Node)) return;
+		pressed = true;
+		open = false;
+	}
+	function onPointerUp(): void {
+		if (!pressed) return;
+		pressed = false;
+		deferredSync();
+	}
+
 	$effect(() => {
 		document.addEventListener('selectionchange', deferredSync);
 		document.addEventListener('focusout', deferredSync);
+		// Capture, so the gesture is seen whatever a view in the middle of it does with
+		// the event. `pointercancel` is the release a gesture the browser takes over gets.
+		document.addEventListener('pointerdown', onPointerDown, true);
+		document.addEventListener('pointerup', onPointerUp, true);
+		document.addEventListener('pointercancel', onPointerUp, true);
 		return () => {
 			document.removeEventListener('selectionchange', deferredSync);
 			document.removeEventListener('focusout', deferredSync);
+			document.removeEventListener('pointerdown', onPointerDown, true);
+			document.removeEventListener('pointerup', onPointerUp, true);
+			document.removeEventListener('pointercancel', onPointerUp, true);
 			// A burst-coalescing rAF may still be in flight at teardown; cancel it so
 			// `sync()` never runs against the destroyed component.
 			if (pending) cancelAnimationFrame(rafHandle);
@@ -235,6 +257,7 @@
 		if (!type) return;
 		if (name === 'link') {
 			linkValue = hrefInSelection(view.state);
+			linkPresent = linkValue.length > 0;
 			linkPromptOpen = true;
 			return;
 		}
@@ -293,8 +316,14 @@
 
 <Popover.Root bind:open>
 	<Popover.Portal to={portalTarget}>
+		<!-- A flip is measured against the root the surface portals into, which is the box
+		 that clips it where the consumer scrolls one (`.qm-pane`). The default boundary is
+		 the viewport, which knows nothing of that: a selection on the pane's first visible
+		 line raises the surface into the room above, where the pane's `overflow` cuts
+		 it. -->
 		<Popover.Content
 			customAnchor={anchor ?? null}
+			collisionBoundary={portalTarget ?? []}
 			side="top"
 			align="center"
 			trapFocus={false}
@@ -340,7 +369,7 @@
 								<button type="submit" class="qm-icon-btn qm-mark-btn">{t.strings.linkApply}</button>
 								<!-- Only where there is a link to remove: an arm that does nothing is
 								     an arm to read past on every other visit to the prompt. -->
-								{#if activeMarks.link}
+								{#if linkPresent}
 									<button
 										type="button"
 										class="qm-icon-btn qm-mark-btn"
@@ -364,7 +393,6 @@
 									<button
 										type="button"
 										class="qm-icon-btn qm-mark-btn"
-										class:active={activeMarks[m.name]}
 										title={m.title}
 										aria-label={m.title}
 										onmousedown={keepFocus}
@@ -375,7 +403,6 @@
 									<button
 										type="button"
 										class="qm-icon-btn qm-mark-btn"
-										class:active={activeMarks.anchor}
 										title={t.strings.formatAnchorTitle}
 										aria-label={t.strings.formatAnchor}
 										onmousedown={keepFocus}
@@ -408,20 +435,14 @@
 		gap: var(--_qm-space-half);
 	}
 	/* Chrome, type, target floor, hover fill and disabled recede come from
-	 `.qm-icon-btn` (controls.css); what is here is this surface's own. The border is
-	 drawn transparent rather than absent so the active inversion adds no width and
-	 shifts no glyph, and the ink is stated because the family deliberately declares
-	 none: its callers disagree, and a popover over content reads at the card's. */
+	 `.qm-icon-btn` (controls.css). The ink is stated because the family deliberately
+	 declares none: its callers disagree, and a popover over content reads at the card's.
+
+	 No state for a mark the selection already carries: a run may carry one over part of
+	 itself, which a two-state button has no third face for. */
 	.qm-mark-btn {
-		border: var(--_qm-border-width) solid transparent;
 		padding: var(--_qm-space) var(--_qm-space-2);
 		color: var(--_qm-ink);
-	}
-	/* Active is an ink inversion, the one state on this surface a hover fill cannot
-	   say: a mark already carried is not a mark under the pointer. */
-	.qm-mark-btn.active {
-		background: var(--_qm-ink);
-		color: var(--_qm-surface);
 	}
 	.qm-link-prompt {
 		display: flex;
