@@ -532,7 +532,7 @@
 		display: grid;
 		grid-template-columns: repeat(var(--cols), 1fr);
 		column-gap: var(--_qm-space-2);
-		row-gap: var(--_qm-space-2);
+		row-gap: var(--_qm-space-3);
 	}
 	@container (min-width: 28rem) {
 		.qm-fields {
