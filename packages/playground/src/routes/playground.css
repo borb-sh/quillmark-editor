@@ -20,6 +20,14 @@
 	--pg-space-16: calc(var(--qmh-space) * 16);
 	--pg-space-24: calc(var(--qmh-space) * 24);
 
+	/* ── The running head ────────────────────────────────────────────────────── */
+	/* The band the shell's head stands in, from the top of the viewport down: what a
+	   sticky surface holds under, what a jump target clears, and what the front page's
+	   first screen comes off. A ramp step rather than the head's own height, which is a
+	   line of chrome type and no rung at all — the three rules want one number, and the
+	   nearest step over the head is it. */
+	--pg-head: var(--pg-space-16);
+
 	/* ── The reading column ──────────────────────────────────────────────────── */
 	/* One page width for the whole shell; a per-route maximum would step the running
 	   head in and out over the surface it sits above. The column a passage wraps at is
