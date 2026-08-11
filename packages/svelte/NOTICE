@@ -6,9 +6,9 @@ Copyright 2026 Nibs
 This package contains SVG glyph geometry derived from Lucide, carried in source
 rather than installed.
 
-`visual/icons/nodes.ts` holds thirteen verbatim from @lucide/svelte 1.28.0:
-chevron-right, chevron-down, chevron-up, bold, italic, underline, strikethrough,
-code, link, hash, info, plus and x.
+`visual/icons/nodes.ts` holds sixteen verbatim from @lucide/svelte 1.28.0:
+chevron-right, arrow-right, chevron-down, chevron-up, bold, italic, underline,
+strikethrough, code, link, hash, info, plus, x, trash-2 and minus.
 
 `core/codec/table-view.ts` holds a plus and four text-alignment glyphs derived
 from an earlier release of the same project.
@@ -31,9 +31,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 --------------------------------------------------------------------------------
 
-Ten of those glyphs — chevron-down, chevron-right, chevron-up, code, hash, info,
-italic, link, plus and x — are derived from the Feather project and carry its
-license as well.
+Thirteen of those glyphs — arrow-right, chevron-down, chevron-right, chevron-up,
+code, hash, info, italic, link, minus, plus, trash-2 and x — are drawn exactly as
+the Feather project draws them and carry its license as well.
 
 The MIT License (MIT)
 
