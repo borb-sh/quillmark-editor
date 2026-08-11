@@ -20,6 +20,24 @@
 	padding-inline: var(--pg-space-6);
 }
 
+/* ── The document's scroll ─────────────────────────────────────────────────── */
+
+/* The front page's first screen holds an action that scrolls to the quickstart below
+   it: animated, or what it lands on reads as a second page rather than the rest of this
+   one. The document scroller is the shell's — a route owns no `html` — and the tool
+   route parks it, so this reaches the one page that scrolls. Reduced motion takes the
+   cut, which the preset's duration collapse does not reach: a scroll is the UA's, not a
+   transition. */
+html {
+	scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+}
+
 /* ── Calls to action ───────────────────────────────────────────────────────── */
 
 /* The one filled element in the playground: the front page's first action, opening the

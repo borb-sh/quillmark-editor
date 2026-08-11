@@ -250,8 +250,10 @@
 
 	{#if status.phase === 'ready'}
 		<!-- The bridge, read back out: each hop's last outcome, so a round-trip that
-		     lands nowhere shows here. -->
-		<div class="qm-panel strip">
+		     lands nowhere shows here. A row of labelled readouts and no plate: the label
+		     and readout runs already say this is chrome, and a plate spends a fill, a
+		     hairline and two rungs of the panes' height saying it again. -->
+		<div class="strip">
 			<span class="stat"
 				><span class="qm-label">active</span>
 				<span class="qm-readout" data-testid="active-addr">{activeAddr}</span></span
