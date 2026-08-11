@@ -84,7 +84,6 @@ describe('Preview', () => {
 		const { errors } = mountSurface(Preview, {
 			session: mockSession(),
 			margin: 16,
-			overlays: true,
 			strings: { noPages: 'Nothing to show' }
 		});
 		flushSync();
@@ -94,14 +93,12 @@ describe('Preview', () => {
 	it.each([
 		['session', () => mockSession()],
 		['margin', () => 48],
-		['overlays', () => false],
 		['onPick', () => () => {}],
 		['strings', () => ({ noPages: 'Rien à afficher' })]
 	])('reports %s swapped in place, once, at dev severity', (prop, next) => {
 		const { props, errors } = mountSurface(Preview, {
 			session: mockSession(),
 			margin: 16,
-			overlays: true,
 			onPick: () => {},
 			strings: { noPages: 'Nothing to show' }
 		});
@@ -158,17 +155,17 @@ describe('Preview', () => {
 		const { props, errors } = mountSurface(Preview, {
 			session: mockSession(),
 			margin: 16,
-			overlays: true
+			onPick: () => {}
 		});
 
 		props.margin = 48;
-		props.overlays = false;
+		props.onPick = () => {};
 		flushCatching();
 
 		const reported = rebinds(errors);
 		expect(reported).toHaveLength(1);
 		expect(reported[0].message).toContain('margin');
-		expect(reported[0].message).toContain('overlays');
+		expect(reported[0].message).toContain('onPick');
 	});
 
 	it('goes on painting the session it bound, after the throw', () => {

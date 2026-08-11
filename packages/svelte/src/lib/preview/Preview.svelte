@@ -1,7 +1,7 @@
 <!--
   `@quillmark/svelte/preview`'s Svelte wrapper: mounts `createPreview` over a
   container div on mount and tears it down on unmount. No logic beyond wiring;
-  paint.ts/overlay.ts/bridge.ts/controller.ts own the behavior. Exposes the
+  paint.ts/bridge.ts/controller.ts own the behavior. Exposes the
   `PreviewController` verbs as instance methods (`bind:this`) for a consumer
   that drives `refresh`/`scrollToField`/`focusPosition`/`setZoom` imperatively
   (e.g. after `session.apply` elsewhere).
@@ -17,8 +17,8 @@
 
 	/**
 	 * Remount contract. `createPreview` binds once in `onMount`; a later change to any
-	 * prop it closed over (`session`, `margin`, `overlays`, `onPick`, `onError`,
-	 * `strings`) is not observed, and each reports `rebind-ignored` when swapped. Swap
+	 * prop it closed over (`session`, `margin`, `onPick`, `onError`, `strings`) is not
+	 * observed, and each reports `rebind-ignored` when swapped. Swap
 	 * the session by remounting (`{#key session}`, as the playground does); drive
 	 * in-place edits through the `refresh(change)` method, not a prop change.
 	 *
@@ -35,7 +35,6 @@
 		 *  not this attribute. */
 		style?: string;
 		margin?: number;
-		overlays?: boolean;
 		onPick?: (at: Landing) => void;
 		/** A page paint the backend refused; the error message state shows either way. */
 		onError?: EditorErrorHandler;
@@ -43,22 +42,13 @@
 		strings?: PreviewStringsInput;
 	}
 
-	let {
-		session,
-		margin,
-		overlays,
-		onPick,
-		onError,
-		strings,
-		class: className,
-		style
-	}: Props = $props();
+	let { session, margin, onPick, onError, strings, class: className, style }: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let controller: PreviewController | undefined;
 
 	guardRebind(
-		() => ({ session, margin, overlays, onPick, onError, strings }),
+		() => ({ session, margin, onPick, onError, strings }),
 		'Remount the preview ({#key session}) to rebind.'
 	);
 
@@ -67,7 +57,6 @@
 		controller = createPreview(session, {
 			container: containerEl,
 			margin,
-			overlays,
 			onPick,
 			onError,
 			strings
@@ -98,8 +87,7 @@
 
 <style>
 	/* A detached root: the preview is not a descendant of the editor, so it carries
-	   `data-qm-root` for the page/overlay rungs paint.ts and overlay.ts read
-	   (core/theme.css).
+	   `data-qm-root` for the page rungs paint.ts reads (core/theme.css).
 
 	   The desk as well as the paper: a sheet is at `--_qm-surface` (paint.ts), so the
 	   tone behind it is the sunken rung and the gutter is the margin the sheet floats

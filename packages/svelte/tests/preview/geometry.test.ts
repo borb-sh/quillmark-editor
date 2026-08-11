@@ -1,8 +1,8 @@
 // The shared pixel<->PDF-pt transform (src/lib/preview/geometry.ts), tested both
 // as pure math (synthetic rects, exact round-trip) and against a real compiled
 // session (subject's fieldBoxes rect -> % -> a simulated click at its center ->
-// positionAt), proving the overlay's forward transform and the bridge's inverse
-// never drift apart. No canvas needed; geometry and positionAt are session
+// positionAt), proving the forward transform and its inverse never drift
+// apart. No canvas needed; geometry and positionAt are session
 // queries, so this runs in Node against the real Typst backend.
 //
 // geometry.ts is reached directly (not through the `$lib/preview` barrel, which
@@ -31,7 +31,7 @@ describe('geometry: synthetic round-trip', () => {
 
 	it('clickToPdfPt is the exact inverse of rectToPercent, for points across the page', () => {
 		// Model a point as a zero-size rect so both directions compose through the
-		// same forward transform the overlay uses; not a hand-derived inverse.
+		// same forward transform the scroll uses; not a hand-derived inverse.
 		const cssW = 612;
 		const cssH = 792;
 		const points: Array<[number, number]> = [
@@ -103,8 +103,8 @@ describe('geometry: against a real compiled session (usaf_memo)', () => {
 		const engine = new Engine();
 		const session = await engine.open(quill, doc);
 		try {
-			// subject -> 2 boxes (page 0 header + page 1 continuation),
-			// same span; the exact case overlay.ts's "group by field" exists for.
+			// subject -> 2 boxes (page 0 header + page 1 continuation), same span: the
+			// case that makes `field` non-unique, and `scrollToField` a first-box rule.
 			const boxes = session.fieldBoxes('main.subject');
 			expect(boxes.length).toBeGreaterThanOrEqual(2);
 			const pages = new Set(boxes.map((b) => b.page));

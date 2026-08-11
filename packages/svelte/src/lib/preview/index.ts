@@ -6,7 +6,7 @@
 // re-export, not a refactor: it may reach `/core` (the shared WASM boundary) and
 // nothing else. Enforced by `check:deps`, which walks the subpath's import graph.
 
-// The theme derivation, which the page slots and the overlay read through `var()`.
+// The theme derivation, which the page slots read through `var()`.
 // Imported at the barrel because a subpath is what a consumer gets: this surface
 // reaches modules inside `core/` and never its entry, so a sheet hanging off that
 // entry arrives only for a consumer importing `/core` for some other reason. The
