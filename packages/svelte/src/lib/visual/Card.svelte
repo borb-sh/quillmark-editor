@@ -622,11 +622,9 @@
 	 it: declared one box out it collapses the content but not itself, and stands under a
 	 shut header as dead space. Neither is animated, and neither is qualified by open.
 
-	 The end edge is the one side where a field ends on the clip box, so a focus ring there
-	 is cut where the start edge's inset hides it. The pair below carries the clip box past
-	 the content by the ring's reach and takes the same distance back off the margin, so the
-	 mark survives and the content box — the width the fields are packed and queried at — is
-	 where it was. */
+	 A field ends on the clip box at the end edge, where no inset hides its ring the way
+	 the start edge's does. The pad carries the clip past it and the margin takes the same
+	 distance back, so the width the fields are packed and queried at is unmoved. */
 	.qm-group-panel-inner {
 		min-height: 0;
 		overflow: hidden;

@@ -475,8 +475,7 @@ li.ProseMirror-selectednode::after {
 
 /* A drag in flight. The lifted line reads as picked up by tone, never a shadow:
    elevation is a surface rung here, which says the same thing at both poles. The drop
-   rule is the accent, the ink the surface keeps for a state rather than for text,
-   spent where a change is about to land. */
+   rule is the accent, the ink the surface keeps for a state rather than for text. */
 .qm-table-dragging .qm-table-cell.qm-table-lifted {
 	background: var(--_qm-surface-raised);
 	opacity: var(--_qm-opacity-muted);
