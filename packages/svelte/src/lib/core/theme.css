@@ -265,6 +265,7 @@
 		--_qm-space-2: calc(var(--_qm-space) * 2);
 		--_qm-space-3: calc(var(--_qm-space) * 3);
 		--_qm-space-4: calc(var(--_qm-space) * 4);
+		--_qm-space-5: calc(var(--_qm-space) * 5);
 		/* A rung because the two axes are two decisions and the ladder alone cannot hold
 		   them together: `check:style`'s rhythm axis sees each box read a rung, never that
 		   they read the same one, which is the drift `visual/controls.css` already names
