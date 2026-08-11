@@ -21,7 +21,7 @@
 	],
 	"author": "Quillmark Contributors",
 	"engines": {
-		"node": ">=22"
+		"node": ">=24"
 	},
 	"exports": {
 		".": {

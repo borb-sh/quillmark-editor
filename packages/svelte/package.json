@@ -23,7 +23,7 @@
 	"author": "Quillmark Contributors",
 	"type": "module",
 	"engines": {
-		"node": ">=22"
+		"node": ">=24"
 	},
 	"svelte": "./dist/index.js",
 	"types": "./dist/index.d.ts",
