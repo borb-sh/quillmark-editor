@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.3.0 - 2026-08-11
+
 ## v0.2.0 - 2026-08-09
 
 **The `@quillmark/wasm` peer floor is `>=0.103.0-0`**, where the init gate is the only door to the classes. `Quill`, `Document`, `importMarkdown`, `exportMarkdown`, `rebase`, `mapPos`, `parseDocPath` and `formatDocPath` are not static exports of the artifact; `init()` resolves to them, so `const { Quill, Document } = await init()` is what a host writes in place of the value import beside it. `Engine`, `MAIN_CARD_ADDR`, `isQuillmarkError` and the open-set guards are unchanged, as are the `Quill` / `Document` **type** exports, so an annotation and an `import type` compile untouched.
