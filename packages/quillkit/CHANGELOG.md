@@ -4,6 +4,10 @@
 
 ## Unreleased
 
+## v0.2.1 - 2026-08-11
+
+Carries `@quillmark/svelte` 0.3.0, `@quillmark/quiver` 0.21.0, `@quillmark/wasm` 0.103.0.
+
 ## v0.2.0 - 2026-08-11
 
 Carries `@quillmark/svelte` 0.3.0, `@quillmark/quiver` 0.21.0, `@quillmark/wasm` 0.103.0.
