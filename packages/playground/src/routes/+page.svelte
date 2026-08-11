@@ -1,7 +1,7 @@
 <!--
   The front page, one scroll in two parts: a first screen carrying the thesis and
-  the two actions off it, and the quickstart under it, in two columns — the steps
-  down the reading column, the surfaces they reach standing beside them
+  its two actions, and the quickstart under it, in two columns — the steps down the
+  reading column, the surfaces they reach standing beside them
   (PLAYGROUND §"The routes").
 
   Two documents off one quill: one the preview's session paints, one the editor
@@ -148,8 +148,8 @@
 						<Preview {session} margin={0} onPick={(at) => (lastHit = at)} />
 					{/if}
 				</div>
-				<!-- The click round-trip, which is the one claim in the column beside this that
-				     no sample can show and no static page can either. -->
+				<!-- The click round-trip: the one claim in the column beside this that no sample
+				     can show. -->
 				<figcaption class="caption">
 					<span class="qm-label">Pick</span>
 					<span class="qm-readout" data-testid="demo-hit">
@@ -195,8 +195,8 @@
 </main>
 
 <style>
-	/* One scroll, two parts: a screen that says what this is, and the quickstart it
-	   scrolls into. */
+	/* Nothing above the first screen: it centres in what the head leaves, and a pad over
+	   it would push that centring down. */
 	.landing {
 		display: flex;
 		flex-direction: column;
@@ -205,9 +205,9 @@
 	}
 
 	/* The first screen: a thesis, two actions, no mount (PLAYGROUND §"Two jobs on one
-	   page"). It takes the viewport less the running head, so everything else is under
-	   the fold; the small viewport unit, because mobile chrome expanding must not push
-	   the actions off the screen they are the point of. Centred there and held to the
+	   page"). It takes the small viewport less the running head, so everything else is
+	   under the fold and mobile chrome expanding cannot push the actions off the screen
+	   they are the point of. Centred there and held to the
 	   measure at the page's start edge, which is the column every step below reads down:
 	   the scroll to the quickstart runs down one column rather than across the page. */
 	.hero {
@@ -268,10 +268,9 @@
 		align-items: start;
 	}
 
-	/* A hairline over each band marks where one thing gives way to the next: the
-	   quickstart's says the first screen has ended, an inner band's that one surface has
-	   given way to the next. Nothing under the last, so the page ends at the final band
-	   rather than at a closing rule. */
+	/* A hairline over each band marks a handover: the quickstart's says the first screen
+	   has ended, an inner band's that one surface has given way to the next. Nothing
+	   under the last, so the page ends at the final band rather than at a closing rule. */
 	.band {
 		border-top: var(--qmh-border-width) solid var(--qmh-border);
 		padding-top: var(--pg-space-8);
@@ -333,8 +332,7 @@
 		min-width: 0;
 	}
 
-	/* The one place on the page a session is described in words, and it is here only
-	   while the boundary is not open, so at rest the mount stands alone in the column. */
+	/* `.art` spaces its own children, so the paragraph's margin would double the gap. */
 	.phase {
 		margin: 0;
 	}
