@@ -6,7 +6,7 @@
 // hazard: an astral char is two UTF-16 units but one USV), an `nl` run for a
 // content `\n` spanning a PM block boundary or hard break, and an `atom` run for a
 // `U+FFFC` island slot. `ContentHit.pos` / `FieldRegion.span` reach a PM caret
-// through `usvToPM`; the preview overlay runs `pmToUsv` in reverse.
+// through `usvToPM`; a caret signal to the preview runs `pmToUsv` in reverse.
 import type { Node as PMNode } from 'prosemirror-model';
 import { scanDoc, type PosRun } from './encode.js';
 

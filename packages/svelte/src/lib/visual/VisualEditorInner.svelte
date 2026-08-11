@@ -616,10 +616,10 @@
 		// report it, treat as exact) places the caret. An absent `pos` is the placement
 		// rung and reaches the same floor.
 		land(found, at.granularity === 'segment' ? undefined : at.pos);
-		// Unconditional, unlike the preview side's change-guarded bloom: a preview click
-		// is one discrete act, and its commonest target is the leaf already focused
-		// (where landing a caret changes nothing on screen) or one off-screen, where the
-		// browser's focus-scroll moves the page and leaves the caret to be hunted for.
+		// Unconditional: a preview click is one discrete act, and its commonest target
+		// is the leaf already focused (where landing a caret changes nothing on screen)
+		// or one off-screen, where the browser's focus-scroll moves the page and leaves
+		// the caret to be hunted for.
 		bloomInside(found.control.el);
 	}
 	/** The active leaf's controller: the formatting popover's observation seam.

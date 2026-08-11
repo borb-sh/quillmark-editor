@@ -1,9 +1,8 @@
-// The click bridge: a click on a page slot resolves pixel -> PDF-pt (the exact
-// inverse of overlay.ts's forward transform, both from geometry.ts) -> an address,
-// surfaced through `onPick`. Also the
-// editor->preview scroll commands (`scrollToField`/`focusPosition`), which
-// place an ephemeral marker at the target's % position and measure it, reading
-// the same percent geometry the overlay draws, so zoom and resize need no
+// The click bridge: a click on a page slot resolves pixel -> PDF-pt (geometry.ts's
+// inverse transform) -> an address, surfaced through `onPick`. Also the
+// editor->preview scroll commands (`scrollToField`/`focusPosition`), which place an
+// ephemeral marker at the target's % position and measure it, reading the same
+// percent geometry through the forward transform, so zoom and resize need no
 // hand-rolled pixel offset of their own.
 //
 // The scroll itself is the scrollport's, written as `container.scrollTop`, not
@@ -108,8 +107,8 @@ export function createBridge(
 			if (!box) return false;
 			const slot = slots[box.page];
 			if (!slot) return false;
-			// A discrete act ("show me this field"), so it centres every time: the
-			// asymmetry the bloom draws between a continuous signal and a one-shot one.
+			// A discrete act ("show me this field"), so it centres every time, unlike
+			// the continuous hop below.
 			centre(measure(slot, rectToPercent(box.rect, slot.size)));
 			return true;
 		},

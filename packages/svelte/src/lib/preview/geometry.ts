@@ -1,7 +1,7 @@
 // The one shared pixel<->PDF-pt transform, and the one rule for which rects an
-// address has. Both the overlay's forward direction (a FieldRegion rect -> CSS % of
-// the page box, overlay.ts) and the bridge's inverse (a CSS px click -> PDF-pt for
-// `positionAt`, bridge.ts) derive from `PageSize` alone here, so they can never
+// address has. Both the forward direction (a FieldRegion rect -> CSS % of the page
+// box, what the scroll marker is placed at) and the inverse (a CSS px click ->
+// PDF-pt for `positionAt`) derive from `PageSize` alone here, so they can never
 // drift apart; the correctness seam PREVIEW.md calls out. Pure: no DOM, no session;
 // safe to unit-test against known geometry (tests/preview/geometry.test.ts).
 import type { FieldRegion, PageSize } from '@quillmark/wasm';
@@ -25,9 +25,8 @@ export interface PdfPoint {
 
 /**
  * An address's boxes: `fieldBoxes`'s union, else its own `regions()` rects, else the
- * rects of everything under it. The one rule the overlay and the scroll both read, so
- * an address `regions()` names never draws nothing (PREVIEW.md §"Three
- * responsibilities").
+ * rects of everything under it. What the scroll reads, so an address `regions()`
+ * names is never one the preview cannot place (PREVIEW.md §"Two responsibilities").
  *
  * `fieldBoxes` answers `[]` for a scalar reference the plate places without tracking
  * its content and for a `richtext[]` element; runtime.d.ts says what such a field's
@@ -49,8 +48,8 @@ export function boxesForField(
 
 /**
  * Forward: a PDF-pt rect -> CSS % of the page box. Percent positioning tracks
- * the page's displayed size across DPR and container resize for free; this is
- * what the overlay draws (overlay.ts).
+ * the page's displayed size across DPR and container resize for free, so the
+ * scroll's measurement needs no zoom or DPR term of its own (bridge.ts).
  */
 export function rectToPercent(rect: PdfRect, pageSize: PageSize): PercentRect {
 	const [x0, y0, x1, y1] = rect;
@@ -64,10 +63,9 @@ export function rectToPercent(rect: PdfRect, pageSize: PageSize): PercentRect {
 }
 
 /**
- * Position `el` absolutely at `pct` (the % rect this module produces); the one
- * `PercentRect` → `element.style` write, shared by the overlay's field boxes and
- * the bridge's scroll marker so the positioning convention lives in one place.
- * The caller sets any box chrome (border, background) on top.
+ * Position `el` absolutely at `pct` (the % rect this module produces): the one
+ * `PercentRect` → `element.style` write, so the positioning convention lives beside
+ * the transform that produces it rather than at the caller placing a marker.
  */
 export function applyPercentRect(el: HTMLElement, pct: PercentRect): void {
 	Object.assign(el.style, {

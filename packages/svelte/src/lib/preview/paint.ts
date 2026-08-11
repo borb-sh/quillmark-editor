@@ -1,8 +1,8 @@
 // The paint + scroll-virtualization loop: one <canvas> per visible-plus-margin
 // page, mounted/unmounted as the container scrolls so live memory stays bounded
 // (`session.paint` re-rasterizes in full every call; never pool a canvas across
-// pages, per the paint contract). Builds the per-page slot elements overlay.ts
-// and bridge.ts attach their own DOM/listeners to; owns `pageSize` caching and
+// pages, per the paint contract). Builds the per-page slot elements bridge.ts
+// attaches its own listeners to; owns `pageSize` caching and
 // slot-count reconciliation across an `apply` (`ChangeSet.pageCount` can differ
 // from the previous compile; pages can be added or removed). A ResizeObserver
 // plus a DPR media-query listener repaint mounted pages when the container's CSS
@@ -10,7 +10,7 @@
 // page box it fills.
 import type { LiveSession, PageSize } from '@quillmark/wasm';
 
-/** One page's DOM slot: the box overlay.ts/bridge.ts position against, plus its cached geometry. */
+/** One page's DOM slot: the box bridge.ts measures against, plus its cached geometry. */
 export interface PageSlot {
 	readonly page: number;
 	readonly size: PageSize;
@@ -71,9 +71,9 @@ export function createPaintLoop(
 		// The sheet is a plane and the desk is the one under it: paper sits at
 		// `--_qm-surface` and the container paints `--_qm-surface-sunken`, so the
 		// edge is where two tones meet and no stroke is drawn around it
-		// (ARCHITECTURE §Styling). It leaves the overlay's no-ink-at-rest rule
-		// untouched, since a boundary that is not painted is not a mark on the page
-		// (PREVIEW §Overlay). `border-box` costs nothing here and keeps a slot a
+		// (ARCHITECTURE §Styling). It leaves the no-ink rule untouched, since a
+		// boundary that is not painted is not a mark on the page (PREVIEW §"Two
+		// responsibilities"). `border-box` costs nothing here and keeps a slot a
 		// consumer insets from measuring wider than its paper.
 		const el = document.createElement('div');
 		el.className = 'qm-page';
@@ -182,7 +182,7 @@ export function createPaintLoop(
 			slots[i] = { ...slots[i], size };
 			// Keep the page box's shape in step with the re-read size: a recompile
 			// can change a page's dimensions without changing the count, and every
-			// %-space overlay/click transform assumes box shape matches PageSize.
+			// %-space click/scroll transform assumes box shape matches PageSize.
 			slots[i].el.style.aspectRatio = `${size.widthPt} / ${size.heightPt}`;
 		}
 	}
@@ -197,7 +197,7 @@ export function createPaintLoop(
 	// Every paint freezes `canvas.style.width/height` to the box width at that
 	// paint (paintSlot). A page that stays mounted while the container's CSS width
 	// or `devicePixelRatio` shifts would otherwise keep a stale raster the %-space
-	// overlay/click math silently drifts off of: the box tracks the container, the
+	// click/scroll math silently drifts off of: the box tracks the container, the
 	// ink does not. Two observers close the gap by repainting mounted pages from
 	// their current box; canvases are `position:absolute`, so a repaint can't feed
 	// back into layout (and thus can't re-trigger the resize observer).

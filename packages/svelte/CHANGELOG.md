@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+The preview's field-box overlay is gone, and with it the correlation bloom: a caret move or a `scrollToField` washed the address's boxes over the rendered page, which is ink on the surface a user proofs against, driven by a signal that fires per keystroke. Nothing replaces it — correlating the two panes on the page is unbuilt. `PreviewOptions.overlays` and the `<Preview overlays>` prop are removed, as are the `.qm-field-box` elements and their `data-qm-field` attribute; a consumer drawing its own overlay targets `.qm-page` and `data-page` as before. The scroll commands are unaffected: they measure a throwaway marker and never read a box. The editor's own arrival wash stays, so a landing on a leaf still blooms inside it.
+
 ## v0.3.0 - 2026-08-11
 
 ## v0.2.0 - 2026-08-09
