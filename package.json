@@ -4,9 +4,9 @@
 	"description": "The JS tier downstream of the @quillmark/wasm artifact.",
 	"license": "Apache-2.0",
 	"type": "module",
-	"packageManager": "npm@10.9.7",
+	"packageManager": "npm@11.17.0",
 	"engines": {
-		"node": ">=22"
+		"node": ">=24"
 	},
 	"workspaces": [
 		"packages/*"
