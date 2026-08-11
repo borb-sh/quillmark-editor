@@ -102,12 +102,10 @@
 	</section>
 
 	<section id="get-started" class="tutorial band">
-		<h2 class="qm-label">Get started</h2>
-
 		<div class="split">
 			<div class="col">
 				<article class="step">
-					<h3 class="qm-label">01 · Install</h3>
+					<h2 class="qm-label">01 · Install</h2>
 					<p>
 						<code>@quillmark/svelte</code> provides the surfaces;
 						<code>@quillmark/wasm</code> is the engine they read.
@@ -116,7 +114,7 @@
 				</article>
 
 				<article class="step">
-					<h3 class="qm-label">02 · Session</h3>
+					<h2 class="qm-label">02 · Session</h2>
 					<p>
 						A quill is a template's file tree; a document is the content in it. Opening the two
 						compiles the first page and returns the session handle both surfaces read.
@@ -125,7 +123,7 @@
 				</article>
 
 				<article class="step">
-					<h3 class="qm-label">03 · Preview</h3>
+					<h2 class="qm-label">03 · Preview</h2>
 					<p>
 						<code>&lt;Preview&gt;</code> paints the session's pages to canvas and resolves a click to
 						the content under it, so the compiled page is addressable and not just displayed.
@@ -135,36 +133,38 @@
 			</div>
 
 			<figure class="art">
-				<figcaption class="art-head">
-					<span class="art-name">&lt;Preview&gt;</span>
-					{#if status.phase === 'loading'}
-						<span data-testid="status" class="qm-status">Opening the reference quill…</span>
-					{:else if status.phase === 'error'}
-						<span data-testid="status" class="qm-status qm-status-error"
-							>Error: {status.message}</span
-						>
-					{/if}
-				</figcaption>
+				<!-- The boundary's phase, and only while there is one: at rest the painted page
+				     says the session is open, and the step beside it says which surface painted
+				     it. -->
+				{#if status.phase === 'loading'}
+					<p data-testid="status" class="qm-status phase">Opening the reference quill…</p>
+				{:else if status.phase === 'error'}
+					<p data-testid="status" class="qm-status qm-status-error phase">
+						Error: {status.message}
+					</p>
+				{/if}
 				<div class="qm-frame demo-frame">
 					{#if session}
 						<Preview {session} margin={0} onPick={(at) => (lastHit = at)} />
 					{/if}
 				</div>
-				<p class="caption">
+				<!-- The click round-trip, which is the one claim in the column beside this that
+				     no sample can show and no static page can either. -->
+				<figcaption class="caption">
 					<span class="qm-label">Pick</span>
 					<span class="qm-readout" data-testid="demo-hit">
 						{lastHit
 							? `${lastHit.field}${lastHit.pos == null ? '' : ` @ ${lastHit.pos}`}`
 							: 'click anywhere on the page'}
 					</span>
-				</p>
+				</figcaption>
 			</figure>
 		</div>
 
 		<div class="split band">
 			<div class="col">
 				<article class="step">
-					<h3 class="qm-label">04 · Edit</h3>
+					<h2 class="qm-label">04 · Edit</h2>
 					<p>
 						<code>&lt;VisualEditor&gt;</code> builds its controls from the quill's schema: a prose
 						editor for a prose field, a control for a value field, a card per block.
@@ -175,20 +175,17 @@
 				</article>
 			</div>
 
-			<figure class="art">
-				<figcaption class="art-head">
-					<span class="art-name">&lt;VisualEditor&gt;</span>
-				</figcaption>
+			<div class="art">
 				<div class="qm-frame demo-frame">
 					{#if VisualEditor && editDoc && quillHandle}
 						<VisualEditor class="qm-pane" doc={editDoc} quill={quillHandle} />
 					{/if}
 				</div>
-			</figure>
+			</div>
 		</div>
 
 		<article class="step closing band">
-			<h3 class="qm-label">Next</h3>
+			<h2 class="qm-label">Next</h2>
 			<p>
 				Both surfaces on one session, with the caret bridged in both directions:
 				<a class="pg-link" href="{base}/playground">the playground</a>.
@@ -318,8 +315,9 @@
 		overflow-x: auto;
 	}
 
-	/* A mounted surface and the name over it; `figure`'s margins go, since the column
-	   places it.
+	/* A mounted surface, and nothing named over it: the step beside it sets the
+	   component in the same run, and a caption would be that name a second time.
+	   `figure`'s margins go, since the column places it.
 
 	   Sticky inside its band, because the steps beside it outrun it: the reading column
 	   is half again the surface's height, so a step describing the preview would be read
@@ -335,27 +333,10 @@
 		min-width: 0;
 	}
 
-	/* The mounted component's name, and it is an identifier: the same run the reading
-	   column beside it sets `<Preview>` in, so one component is spelled one way on the
-	   page. The label recipe is for a category word and would uppercase it. */
-	.art-name {
-		font-family: var(--qmh-font-mono);
-		font-size: var(--qmh-text-label);
-		line-height: var(--qmh-leading-tight);
-		color: var(--qmh-ink-meta);
-	}
-
-	/* The surface's name, and the boundary's phase off the end of the line while it is
-	   not open: the only place on the page a session is described in words. */
-	.art-head {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: var(--qmh-space-2) var(--qmh-space-4);
-	}
-
-	.art-head .qm-status {
-		margin-inline-start: auto;
+	/* The one place on the page a session is described in words, and it is here only
+	   while the boundary is not open, so at rest the mount stands alone in the column. */
+	.phase {
+		margin: 0;
 	}
 
 	/* A demo frame states a height and nothing else. The gutter, the tone and the desk
