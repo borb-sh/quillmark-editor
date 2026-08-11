@@ -327,8 +327,15 @@
 
 <Popover.Root bind:open>
 	<Popover.Portal to={portalTarget}>
+		<!-- The boundary a flip is measured against is the root the surface portals into,
+		 which is also the box that clips it where the consumer scrolls one (`.qm-pane`).
+		 Left at the default it is the viewport, and a selection on the pane's first
+		 visible line raises the surface into the room above the pane, where the pane's
+		 own `overflow` cuts it: a popover positioned exactly where it cannot be seen.
+		 `[]` for a leaf mounted outside any root, which is the default spelled out. -->
 		<Popover.Content
 			customAnchor={anchor ?? null}
+			collisionBoundary={portalTarget ?? []}
 			side="top"
 			align="center"
 			trapFocus={false}
