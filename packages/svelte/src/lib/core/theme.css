@@ -182,16 +182,26 @@
 		/* The tips card'S hue: the surface's one exit from the greyscale that is not
 		   a status, and what the amber and the typewriter face say together is
 		   draft (VISUAL_EDITOR §"Card operations"). A literal rather than a dial
-		   because there is nothing left to turn: the three rungs under it mix over
+		   because there is nothing left to turn: the rungs under it mix over
 		   the surface and the ink a consumer already tuned, so the card follows a
 		   brand untold. The mixes are faint on purpose: a warmth, not a badge. */
 		--_qm-tips: #e88c0a;
 		--_qm-tips-surface: color-mix(in oklab, var(--_qm-surface), var(--_qm-tips) 4%);
 		--_qm-tips-ink: color-mix(in oklab, var(--_qm-ink), var(--_qm-tips) 24%);
-		/* The chip behind a token in a tip. The card's own face is already
-		   monospace, so a `code` run needs a fill to read as literal text rather
-		   than as the sentence around it. */
-		--_qm-tips-chip: color-mix(in oklab, var(--_qm-tips) 12%, transparent);
+		/* The ink and the amber stepped up, and the pair is spent on the two runs that
+		   are not the sentence: a token in a tip, and the foot's control under the
+		   pointer. One rung each rather than one per run, a chip and a hover four
+		   percent apart being a number with no second decision under it. */
+		--_qm-tips-ink-warm: color-mix(in oklab, var(--_qm-ink), var(--_qm-tips) 45%);
+		--_qm-tips-fill: color-mix(in oklab, var(--_qm-tips) 12%, transparent);
+		/* The typewriter, the half of the slip the amber cannot carry: a modern mono
+		   reads as code where a Courier reads as typed. Its own rung rather than
+		   `--_qm-font-mono`, the chrome's readout face, which a consumer turns for
+		   tabular figures and not to dress this card. Courier Prime leads and is nobody's
+		   system font, so a host that loads it lands on it and every other host falls to
+		   the Courier the platform already carries; the package fetches nothing, a preset
+		   costing a network request being one a consumer cannot decline. */
+		--_qm-tips-font: 'Courier Prime', 'Courier New', Courier, ui-monospace, monospace;
 
 		/* ── Ratios and effects ──────────────────────────────────────────────────
 		   No palette fixes these, so they are their own rungs. There is no shadow

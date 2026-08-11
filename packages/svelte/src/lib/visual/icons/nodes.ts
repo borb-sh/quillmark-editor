@@ -12,6 +12,10 @@ export type IconNode = readonly (readonly [string, Record<string, string>])[];
 
 export const ICONS = {
 	'chevron-right': [['path', { d: 'm9 18 6-6-6-6' }]],
+	'arrow-right': [
+		['path', { d: 'M5 12h14' }],
+		['path', { d: 'm12 5 7 7-7 7' }]
+	],
 	'chevron-down': [['path', { d: 'm6 9 6 6 6-6' }]],
 	'chevron-up': [['path', { d: 'm18 15-6-6-6 6' }]],
 	bold: [['path', { d: 'M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8' }]],
@@ -55,6 +59,13 @@ export const ICONS = {
 	x: [
 		['path', { d: 'M18 6 6 18' }],
 		['path', { d: 'm6 6 12 12' }]
+	],
+	'trash-2': [
+		['path', { d: 'M10 11v6' }],
+		['path', { d: 'M14 11v6' }],
+		['path', { d: 'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6' }],
+		['path', { d: 'M3 6h18' }],
+		['path', { d: 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2' }]
 	],
 	minus: [['path', { d: 'M5 12h14' }]]
 } as const satisfies Record<string, IconNode>;
