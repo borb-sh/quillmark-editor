@@ -136,7 +136,7 @@ li.ProseMirror-selectednode::after {
    same schema, and a solid rule renders an authored `<u>` and a link identically in a
    paragraph that can hold both. An underline at all, where the tips card's link takes
    none, because this leaf is editable: the `href` is otherwise imperceptible, so
-   removing the rule loses an answer rather than ornament. No hue:
+   removing the rule loses an answer rather than ornament. No tone of its own:
    `--_qm-accent` already means focus, and a body of accent-coloured links collides
    with the ring and with the correlation wash. */
 .ProseMirror a {
@@ -475,8 +475,8 @@ li.ProseMirror-selectednode::after {
 
 /* A drag in flight. The lifted line reads as picked up by tone, never a shadow:
    elevation is a surface rung here, which says the same thing at both poles. The drop
-   rule is the accent, the surface's one saturated ink, spent where a change is about
-   to land. */
+   rule is the accent, the ink the surface keeps for a state rather than for text,
+   spent where a change is about to land. */
 .qm-table-dragging .qm-table-cell.qm-table-lifted {
 	background: var(--_qm-surface-raised);
 	opacity: var(--_qm-opacity-muted);

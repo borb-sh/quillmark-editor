@@ -620,11 +620,19 @@
 	 The clip box takes the inline inset, which costs a shut panel no height and holds the
 	 queried width still. The block inset goes on the content, where a `0fr` track clips
 	 it: declared one box out it collapses the content but not itself, and stands under a
-	 shut header as dead space. Neither is animated, and neither is qualified by open. */
+	 shut header as dead space. Neither is animated, and neither is qualified by open.
+
+	 The end edge is the one side where a field ends on the clip box, so a focus ring there
+	 is cut where the start edge's inset hides it. The pair below carries the clip box past
+	 the content by the ring's reach and takes the same distance back off the margin, so the
+	 mark survives and the content box — the width the fields are packed and queried at — is
+	 where it was. */
 	.qm-group-panel-inner {
 		min-height: 0;
 		overflow: hidden;
 		padding-inline-start: var(--_qm-space-4);
+		padding-inline-end: var(--_qm-ring-reach);
+		margin-inline-end: calc(-1 * var(--_qm-ring-reach));
 	}
 	.qm-group-panel-inner > .qm-fields {
 		padding-block: var(--_qm-space-2);

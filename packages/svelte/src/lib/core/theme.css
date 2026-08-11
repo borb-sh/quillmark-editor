@@ -86,7 +86,13 @@
 		   off it, and the column is a step down. */
 		--_qm-bg: var(--qm-bg, light-dark(#fff, #272729));
 		--_qm-fg: var(--qm-fg, light-dark(#1c1c1c, #d7dadc));
-		--_qm-accent: var(--qm-accent, #2563eb);
+		/* Neutral, like every other default here: the surface spends no hue on a state
+		   it can draw in grey, and focus is the state it draws most often. Two literals
+		   under `light-dark()` rather than a mix off the poles, because what a ring owes
+		   is a contrast floor and not a distance: these clear WCAG 2.4.11's 3:1 against
+		   the card at both poles (4.8:1 light, 5.8:1 dark) where a fixed step off `--qm-fg`
+		   clears it at one and grazes it at the other. A brand hue is a dial away. */
+		--_qm-accent: var(--qm-accent, light-dark(#71717a, #a1a1aa));
 		--_qm-danger: var(--qm-danger, #c5221f);
 		--_qm-warning: var(--qm-warning, #b25000);
 		--_qm-font: var(--qm-font, ui-sans-serif, system-ui, sans-serif);
@@ -213,8 +219,10 @@
 		   ring, and on what state, is the other half: a rule, `.qm-focus-ring` in
 		   `visual/controls.css`, since a rung each control reassembles is a scale
 		   only up to the point where it is assembled. One width: focus is the only
-		   state that draws a ring anywhere, so there is no held-back tier under it. */
-		--_qm-ring-width: 2px;
+		   state that draws a ring anywhere, so there is no held-back tier under it. Half
+		   a step under two, which is where a ring stops reading as a second border on a
+		   card whose every other edge is a hairline. */
+		--_qm-ring-width: 1.5px;
 		/* Every ring the surface draws, whatever the state under it: focus and selection
 		   alike, which is why the name carries neither. Assembled here because the parts
 		   spelled out at a use site pass every axis — each reads a rung — while drawing a
@@ -222,6 +230,11 @@
 		   indicator is the ring's thickness without being a ring. */
 		--_qm-ring: var(--_qm-ring-width) solid var(--_qm-accent);
 		--_qm-ring-offset: 1px;
+		/* How far the ring stands outside the box it rings. A rung because it is what a
+		   clip box has to carry past its content for a focused control inside it to keep
+		   the whole mark: the two parts read together, at the one place they are summed,
+		   rather than re-added wherever something clips. */
+		--_qm-ring-reach: calc(var(--_qm-ring-width) + var(--_qm-ring-offset));
 
 		/* ── Motion ──────────────────────────────────────────────────────────────
 		   Two rungs, by what the trip disturbs: `fast` stays inside the element's own
