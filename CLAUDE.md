@@ -31,7 +31,7 @@ A gate holds what a diff cannot show — a stylesheet a bundler pruned, a rung t
 
 ## Verification
 
-Vitest is the whole committed suite (real WASM under node; each package's `vitest.config.ts` documents its setup), and CI runs it in full. The playground is the surface for what a unit test cannot reach (canvas paint, scroll virtualization, DPR, the click round-trip), and `npm run dev:studio` or `quillkit studio` for the repack loop, driven by hand or headlessly for the change in front of you. Chromium is preinstalled (`/opt/pw-browsers/chromium`, `PLAYWRIGHT_BROWSERS_PATH` preset; never run `playwright install`).
+Vitest is the whole committed suite (real WASM under node; each package's `vitest.config.ts` documents its setup), and CI runs it in full. The playground is the surface for what a unit test cannot reach (canvas paint, scroll virtualization, DPR, the click round-trip), and `npm run dev:studio` or `quillkit studio` for the repack loop, driven by hand or headlessly. Chromium is preinstalled (`/opt/pw-browsers/chromium`, `PLAYWRIGHT_BROWSERS_PATH` preset; never run `playwright install`).
 
 Nothing browser-driven is committed: a browser assertion over chrome restates a doctrine value (a leading rung, a control height, a gutter) outside the CSS that single-sources it, so it fails on every retune of a dial it does not own, and the failure is answered by pasting the new number; what survives that is a suite of numbers agreeing with themselves.
 
