@@ -532,7 +532,7 @@
 		display: grid;
 		grid-template-columns: repeat(var(--cols), 1fr);
 		column-gap: var(--_qm-space-2);
-		row-gap: var(--_qm-space-2);
+		row-gap: var(--_qm-space-3);
 	}
 	@container (min-width: 28rem) {
 		.qm-fields {
@@ -596,10 +596,11 @@
 		transform-origin: center;
 		transition: transform var(--_qm-duration-slow) var(--_qm-ease-reverse);
 	}
-	/* Hover's alone, though the ink step suits open as well: `color` is one transition
-	 declaration and the two gestures want different rungs. Open has another cue in the
-	 chevron's rotation; hover, a big borderless target drawing no box, has none. */
-	.qm-group-header:hover {
+	/* Open shares hover's ink step: a big borderless target draws no box, so the ink is
+	 the only cue an open section keeps once the pointer leaves it. The chevron's
+	 rotation is the other cue, and stays open-only below. */
+	.qm-group-header:hover,
+	.qm-group.qm-open .qm-group-header {
 		color: var(--_qm-ink);
 	}
 	.qm-group.qm-open .qm-group-header :global(.qm-group-chevron) {
