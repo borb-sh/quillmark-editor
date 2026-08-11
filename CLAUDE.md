@@ -6,7 +6,7 @@ Start at each package's `prose/canon/INDEX.md` for what the package is and its s
 
 ## Prose
 
-Comments and docs are dense, present-tense, unsold: state what is, not how it got here or what was considered. A claim is verified against the code or left unsaid: wrong is worse than missing, and a hand-kept list is a claim. A markdown paragraph is one line, never hard-wrapped. No GitHub issue numbers in comments or docs. The `dense-prose` skill is the full rule set, run as an explicit pass, not assumed reading.
+Most comments should not exist; the ones that do are dense, present-tense, unsold: state what is, not how it got here or what was considered. A claim is verified against the code or left unsaid: wrong is worse than missing, and a hand-kept list is a claim. A markdown paragraph is one line, never hard-wrapped. No GitHub issue numbers in comments or docs. The `dense-prose` skill is the full rule set, run as an explicit pass, not assumed reading.
 
 ## Commands
 

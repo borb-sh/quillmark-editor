@@ -274,7 +274,7 @@
 				type="button"
 				class="qm-icon-btn qm-remove qm-focus-ring"
 				title={t.strings.arrayRemove}
-				onclick={() => remove(k)}><Icon name="x" /></button
+				onclick={() => remove(k)}><Icon name="minus" /></button
 			>
 		</div>
 	{/each}

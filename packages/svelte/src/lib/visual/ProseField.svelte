@@ -1,9 +1,8 @@
 <!--
- One content prose leaf: a Svelte mount of the codec's `createField`
- (VISUAL_EDITOR §Surface), which owns the PM state, the history and the
- per-keystroke commit, so this wrapper is wiring and registration. `addr` is a
- live object the parent builds, so a card reorder re-targets this leaf's commits
- with the caret riding the untouched view.
+ A Svelte mount of the codec's `createField` (VISUAL_EDITOR §Surface), which owns the
+ PM state, the history and the per-keystroke commit, leaving this wrapper wiring and
+ registration. `addr` is a live object the parent builds, so a card reorder re-targets
+ this leaf's commits with the caret riding the untouched view.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -41,8 +40,7 @@
 		/** Ghost shown on the empty leaf: an inline leaf's resolved `default:` or
 		 * nothing, a body's always text (`resolveBodyGhost`). */
 		placeholder?: string;
-		/** Stable identity for the registry, stamped on the DOM node so a remount is
-		 *  visible as one. */
+		/** Registry identity, stamped on the DOM node so a remount is visible as one. */
 		leafKey: string;
 		onFocus?: (addr: Addr) => void;
 		onCaretMove?: (addr: Addr, pos: number) => void;
@@ -79,9 +77,9 @@
 	// locale swap reaches a mounted table without remounting the leaf and losing the caret.
 	const t = wording();
 
-	/** The insert menu's live state, pushed by the leaf's trigger plugin: the menu is
-	 * the leaf's surface rather than the shell's (VISUAL_EDITOR §Chrome). A constrained
-	 * leaf never receives one, the trigger mounting on the block schema alone. */
+	/** Pushed by the leaf's trigger plugin: the menu is the leaf's surface rather than
+	 * the shell's (VISUAL_EDITOR §Chrome). A constrained leaf never receives one, the
+	 * trigger mounting on the block schema alone. */
 	let slash: SlashState | undefined = $state();
 
 	// The codec's own schema predicate (`createField`: `plaintext` implies `inline`), so
@@ -91,8 +89,8 @@
 
 	let controller: FieldController | undefined;
 
-	/** Take the caret: what the label's click calls. The controller's focus, not the
-	 * container's, which leaves the PM selection unplaced. */
+	/** What the label's click calls. The controller's focus, not the container's, which
+	 * leaves the PM selection unplaced. */
 	export function focus(): void {
 		controller?.focus();
 	}
@@ -153,16 +151,15 @@
 		/* Containing block for the arrival wash's inset child (`core/bloom.ts`). */
 		position: relative;
 	}
-	/* A leaf the inline schema does not constrain is prose rather than a cell in a row of
-	 controls, so it opens at three line boxes and grows: the ghost takes the first,
-	 leaving room under it. `1em`, not a size rung, which is the rule below's to name.
+	/* A leaf the inline schema does not constrain grows, and opens at one line box: the
+	 empty leaf is the height its first line will take, so the first keystroke displaces
+	 nothing below it. `1em`, not a size rung, which is the rule below's to name.
 
-	 On the editable rather than on the wrapper, which is what makes those lines part of
-	 the body: height the wrapper holds is height outside the `contenteditable`, where a
-	 press lands no caret. Inside it, the browser answers a press past the last line at
-	 the end of it. */
+	 On the editable rather than on the wrapper, which is what makes that line part of the
+	 body: height the wrapper holds is height outside the `contenteditable`, where a press
+	 lands no caret. */
 	.qm-prose-block :global(.ProseMirror) {
-		min-height: calc(1em * var(--_qm-leading-body) * 3);
+		min-height: calc(1em * var(--_qm-leading-body));
 	}
 	/* Paper, and the withheld box is what says so. Not `block` alone: `inline` is the
 	 quill's to declare, so a schema omitting it on a richtext field puts a block leaf in

@@ -19,7 +19,7 @@ beforeAll(() => {
 	(globalThis as unknown as { IntersectionObserver: unknown }).IntersectionObserver = NoopIO;
 });
 
-/** A report-only session stub: only the geometry verbs the loop/overlay call at build. */
+/** A report-only session stub: only the geometry verbs the loop calls at build. */
 function mockSession(pageCount: number, supportsCanvas = true): LiveSession {
 	return {
 		pageCount,

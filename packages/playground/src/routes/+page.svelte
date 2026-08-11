@@ -1,6 +1,8 @@
 <!--
-  The front page, in two columns: the thesis and the steps down the reading
-  column, the surfaces they reach standing beside them (PLAYGROUND §"The routes").
+  The front page, one scroll in two parts: a first screen carrying the thesis and
+  its two actions, and the quickstart under it, in two columns — the steps down the
+  reading column, the surfaces they reach standing beside them
+  (PLAYGROUND §"The routes").
 
   Two documents off one quill: one the preview's session paints, one the editor
   holds. No apply loop runs here, so a shared document would let typing in the
@@ -86,128 +88,135 @@
 <svelte:head><title>quillmark — editor and live preview</title></svelte:head>
 
 <main class="pg-width landing">
-	<div class="split">
-		<div class="col">
-			<div class="hero">
-				<h1>Editor + live preview for Quillmark</h1>
-				<p class="lede">
-					A visual editor for the document and a canvas preview of the compiled page, sharing one
-					session. An edit repaints the page; a click on the page moves the caret.
-				</p>
-				<div class="actions">
-					<a class="pg-cta" href="{base}/playground">Open the playground</a>
-					<a class="pg-cta-quiet" href="#get-started">Get started</a>
-					<a class="pg-link" href="https://github.com/borb-sh/quillmark-js">Source</a>
+	<section class="hero">
+		<h1>Editor + live preview for Quillmark</h1>
+		<p class="lede">
+			A visual editor for the document and a canvas preview of the compiled page, sharing one
+			session. An edit repaints the page; a click on the page moves the caret.
+		</p>
+		<div class="actions">
+			<a class="pg-cta" href="{base}/playground">Open the playground</a>
+			<a class="pg-cta-quiet" href="#get-started">Get started</a>
+			<a class="pg-link" href="https://github.com/borb-sh/quillmark-js">Source</a>
+		</div>
+	</section>
+
+	<section id="get-started" class="tutorial band">
+		<div class="split">
+			<div class="col">
+				<article class="step">
+					<h2 class="qm-label">01 · Install</h2>
+					<p>
+						<code>@quillmark/svelte</code> provides the surfaces;
+						<code>@quillmark/wasm</code> is the engine they read.
+					</p>
+					<pre class="qm-readout sample">{INSTALL}</pre>
+				</article>
+
+				<article class="step">
+					<h2 class="qm-label">02 · Session</h2>
+					<p>
+						A quill is a template's file tree; a document is the content in it. Opening the two
+						compiles the first page and returns the session handle both surfaces read.
+					</p>
+					<pre class="qm-readout sample">{OPEN_SESSION}</pre>
+				</article>
+
+				<article class="step">
+					<h2 class="qm-label">03 · Preview</h2>
+					<p>
+						<code>&lt;Preview&gt;</code> paints the session's pages to canvas and resolves a click to
+						the content under it, so the compiled page is addressable and not just displayed.
+					</p>
+					<pre class="qm-readout sample">{PREVIEW}</pre>
+				</article>
+			</div>
+
+			<figure class="art">
+				<!-- The boundary's phase, and only while there is one: at rest the painted page
+				     says the session is open, and the step beside it says which surface painted
+				     it. -->
+				{#if status.phase === 'loading'}
+					<p data-testid="status" class="qm-status phase">Opening the reference quill…</p>
+				{:else if status.phase === 'error'}
+					<p data-testid="status" class="qm-status qm-status-error phase">
+						Error: {status.message}
+					</p>
+				{/if}
+				<div class="qm-frame demo-frame">
+					{#if session}
+						<Preview {session} margin={0} onPick={(at) => (lastHit = at)} />
+					{/if}
+				</div>
+				<!-- The click round-trip: the one claim in the column beside this that no sample
+				     can show. -->
+				<figcaption class="caption">
+					<span class="qm-label">Pick</span>
+					<span class="qm-readout" data-testid="demo-hit">
+						{lastHit
+							? `${lastHit.field}${lastHit.pos == null ? '' : ` @ ${lastHit.pos}`}`
+							: 'click anywhere on the page'}
+					</span>
+				</figcaption>
+			</figure>
+		</div>
+
+		<div class="split band">
+			<div class="col">
+				<article class="step">
+					<h2 class="qm-label">04 · Edit</h2>
+					<p>
+						<code>&lt;VisualEditor&gt;</code> builds its controls from the quill's schema: a prose
+						editor for a prose field, a control for a value field, a card per block.
+						<code>onChange</code> fires when an edit lands; applying it to the session returns the pages
+						the preview repaints.
+					</p>
+					<pre class="qm-readout sample">{VISUAL}</pre>
+				</article>
+			</div>
+
+			<div class="art">
+				<div class="qm-frame demo-frame">
+					{#if VisualEditor && editDoc && quillHandle}
+						<VisualEditor class="qm-pane" doc={editDoc} quill={quillHandle} />
+					{/if}
 				</div>
 			</div>
-
-			<h2 id="get-started" class="qm-label">Get started</h2>
-
-			<article class="step">
-				<h3 class="qm-label">01 · Install</h3>
-				<p>
-					<code>@quillmark/svelte</code> provides the surfaces;
-					<code>@quillmark/wasm</code> is the engine they read.
-				</p>
-				<pre class="qm-readout sample">{INSTALL}</pre>
-			</article>
-
-			<article class="step">
-				<h3 class="qm-label">02 · Session</h3>
-				<p>
-					A quill is a template's file tree; a document is the content in it. Opening the two
-					compiles the first page and returns the session handle both surfaces read.
-				</p>
-				<pre class="qm-readout sample">{OPEN_SESSION}</pre>
-			</article>
-
-			<article class="step">
-				<h3 class="qm-label">03 · Preview</h3>
-				<p>
-					<code>&lt;Preview&gt;</code> paints the session's pages to canvas and resolves a click to the
-					content under it, so the compiled page is addressable and not just displayed.
-				</p>
-				<pre class="qm-readout sample">{PREVIEW}</pre>
-			</article>
 		</div>
 
-		<figure class="art">
-			<figcaption class="art-head">
-				<span class="art-name">&lt;Preview&gt;</span>
-				{#if status.phase === 'loading'}
-					<span data-testid="status" class="qm-status">Opening the reference quill…</span>
-				{:else if status.phase === 'error'}
-					<span data-testid="status" class="qm-status qm-status-error">Error: {status.message}</span
-					>
-				{/if}
-			</figcaption>
-			<div class="qm-frame demo-frame">
-				{#if session}
-					<Preview {session} margin={0} onPick={(at) => (lastHit = at)} />
-				{/if}
-			</div>
-			<p class="caption">
-				<span class="qm-label">Pick</span>
-				<span class="qm-readout" data-testid="demo-hit">
-					{lastHit
-						? `${lastHit.field}${lastHit.pos == null ? '' : ` @ ${lastHit.pos}`}`
-						: 'click anywhere on the page'}
-				</span>
+		<article class="step closing band">
+			<h2 class="qm-label">Next</h2>
+			<p>
+				Both surfaces on one session, with the caret bridged in both directions:
+				<a class="pg-link" href="{base}/playground">the playground</a>.
 			</p>
-		</figure>
-	</div>
-
-	<div class="split band">
-		<div class="col">
-			<article class="step">
-				<h3 class="qm-label">04 · Edit</h3>
-				<p>
-					<code>&lt;VisualEditor&gt;</code> builds its controls from the quill's schema: a prose
-					editor for a prose field, a control for a value field, a card per block.
-					<code>onChange</code> fires when an edit lands; applying it to the session returns the pages
-					the preview repaints.
-				</p>
-				<pre class="qm-readout sample">{VISUAL}</pre>
-			</article>
-		</div>
-
-		<figure class="art">
-			<figcaption class="art-head">
-				<span class="art-name">&lt;VisualEditor&gt;</span>
-			</figcaption>
-			<div class="qm-frame demo-frame">
-				{#if VisualEditor && editDoc && quillHandle}
-					<VisualEditor class="qm-pane" doc={editDoc} quill={quillHandle} />
-				{/if}
-			</div>
-		</figure>
-	</div>
-
-	<article class="step closing band">
-		<h3 class="qm-label">Next</h3>
-		<p>
-			Both surfaces on one session, with the caret bridged in both directions:
-			<a class="pg-link" href="{base}/playground">the playground</a>.
-		</p>
-	</article>
+		</article>
+	</section>
 </main>
 
 <style>
-	/* Two bands down the page, each a reading column and the surface its steps mount.
-	   The thesis opens that column rather than taking a band of its own, so a stranger
-	   lands on a sentence with the painted page beside it, and the surface takes the
-	   width a full-page hero would leave empty. */
+	/* Nothing above the first screen: it centres in what the head leaves, and a pad over
+	   it would push that centring down. */
 	.landing {
 		display: flex;
 		flex-direction: column;
 		gap: var(--pg-space-8);
-		padding-block: var(--pg-space-12) var(--pg-space-16);
+		padding-block-end: var(--pg-space-16);
 	}
 
+	/* The first screen: a thesis, two actions, no mount (PLAYGROUND §"Two jobs on one
+	   page"). It takes the small viewport less the running head, so everything else is
+	   under the fold and mobile chrome expanding cannot push the actions off the screen
+	   they are the point of. Centred there and held to the
+	   measure at the page's start edge, which is the column every step below reads down:
+	   the scroll to the quickstart runs down one column rather than across the page. */
 	.hero {
 		display: flex;
 		flex-direction: column;
+		justify-content: center;
 		gap: var(--qmh-space-4);
+		min-height: calc(100svh - var(--pg-head));
+		max-width: var(--qmh-measure);
 	}
 
 	/* The site's one display run, and the only route that draws one: the thesis a
@@ -236,10 +245,15 @@
 	}
 
 	/* ── The quickstart ─────────────────────────────────────────────────────── */
-	/* The anchor clears the running head, which sits over whatever the jump lands
-	   on. */
-	#get-started {
-		scroll-margin-top: var(--pg-space-16);
+	/* What the first screen's second action scrolls to: bands down the page, each a
+	   reading column and the surface its steps mount. The margin clears the running
+	   head, which sits over whatever a jump lands on; the motion is the document's
+	   (`chrome.css`). */
+	.tutorial {
+		display: flex;
+		flex-direction: column;
+		gap: var(--pg-space-8);
+		scroll-margin-top: var(--pg-head);
 	}
 
 	/* The two columns: the reading column at its measure, and what is left of the page
@@ -254,7 +268,8 @@
 		align-items: start;
 	}
 
-	/* A hairline over each band marks where one surface gives way to the next; nothing
+	/* A hairline over each band marks a handover: the quickstart's says the first screen
+	   has ended, an inner band's that one surface has given way to the next. Nothing
 	   under the last, so the page ends at the final band rather than at a closing rule. */
 	.band {
 		border-top: var(--qmh-border-width) solid var(--qmh-border);
@@ -299,16 +314,17 @@
 		overflow-x: auto;
 	}
 
-	/* A mounted surface and the name over it; `figure`'s margins go, since the column
-	   places it.
+	/* A mounted surface, and nothing named over it: the step beside it sets the
+	   component in the same run, and a caption would be that name a second time.
+	   `figure`'s margins go, since the column places it.
 
 	   Sticky inside its band, because the steps beside it outrun it: the reading column
 	   is half again the surface's height, so a step describing the preview would be read
-	   with the preview already scrolled off. The offset clears the running head, which
-	   is what `#get-started` above already measures itself against. */
+	   with the preview already scrolled off. The offset is the head's band, the rung the
+	   scroll margin above reads too. */
 	.art {
 		position: sticky;
-		top: var(--pg-space-16);
+		top: var(--pg-head);
 		display: flex;
 		flex-direction: column;
 		gap: var(--qmh-space-2);
@@ -316,27 +332,9 @@
 		min-width: 0;
 	}
 
-	/* The mounted component's name, and it is an identifier: the same run the reading
-	   column beside it sets `<Preview>` in, so one component is spelled one way on the
-	   page. The label recipe is for a category word and would uppercase it. */
-	.art-name {
-		font-family: var(--qmh-font-mono);
-		font-size: var(--qmh-text-label);
-		line-height: var(--qmh-leading-tight);
-		color: var(--qmh-ink-meta);
-	}
-
-	/* The surface's name, and the boundary's phase off the end of the line while it is
-	   not open: the only place on the page a session is described in words. */
-	.art-head {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: var(--qmh-space-2) var(--qmh-space-4);
-	}
-
-	.art-head .qm-status {
-		margin-inline-start: auto;
+	/* `.art` spaces its own children, so the paragraph's margin would double the gap. */
+	.phase {
+		margin: 0;
 	}
 
 	/* A demo frame states a height and nothing else. The gutter, the tone and the desk

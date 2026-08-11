@@ -6,7 +6,7 @@ A thin overview, the two headline surfaces, and the supporting docs for the shar
 
 - [ARCHITECTURE.md](ARCHITECTURE.md): the package at a glance; surfaces, substrate, data flow, the subpath public API, the styling system, the playground shell.
 - [VISUAL_EDITOR.md](VISUAL_EDITOR.md): the federated WYSIWYG (shape/composition).
-- [PREVIEW.md](PREVIEW.md): the live preview (paint, overlay, click bridge).
+- [PREVIEW.md](PREVIEW.md): the live preview (paint, click bridge).
 - [CODEC.md](CODEC.md): content (`Content`) ↔ ProseMirror.
 - [DOCUMENT_MODEL.md](DOCUMENT_MODEL.md): boundary ledger: the exact `@quillmark/wasm` surface V1 consumes, its canon homes, and stability. Not a model doc; the `Document` is quillmark's.
 - [HOSTING.md](HOSTING.md): the seam a consumer owns: the markdown↔handle round trip, handle ownership and teardown, the recompile schedule, and what makes a field addressable.

@@ -86,7 +86,9 @@
 		   off it, and the column is a step down. */
 		--_qm-bg: var(--qm-bg, light-dark(#fff, #272729));
 		--_qm-fg: var(--qm-fg, light-dark(#1c1c1c, #d7dadc));
-		--_qm-accent: var(--qm-accent, #2563eb);
+		/* Neutral: the surface spends no hue on a state it can draw in grey. The pair
+		   clears WCAG 2.4.11's 3:1 against the card at both poles, at 4.8:1 and 5.8:1. */
+		--_qm-accent: var(--qm-accent, light-dark(#71717a, #a1a1aa));
 		--_qm-danger: var(--qm-danger, #c5221f);
 		--_qm-warning: var(--qm-warning, #b25000);
 		--_qm-font: var(--qm-font, ui-sans-serif, system-ui, sans-serif);
@@ -156,9 +158,9 @@
 		--_qm-ink: var(--_qm-fg);
 		--_qm-ink-label: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 35%);
 		--_qm-ink-ghost: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 60%);
-		/* The correlation wash (`core/bloom.ts`). Its alpha is a peak, not a tint: the
-		   wash animates from and back to zero, never held, so it reads at pane scale
-		   over the preview's paper while the paper rests clean. */
+		/* The arrival wash (`core/bloom.ts`). Its alpha is a peak, not a tint: the
+		   wash animates from and back to zero, never held, so it reads over the leaf it
+		   lands on while the leaf rests clean. */
 		--_qm-accent-wash: color-mix(in oklab, var(--_qm-accent) 18%, transparent);
 		/* The accent held: what a selected line of a table is tinted with, and what its
 		   grip is filled with, so the two ends of one gesture are one colour. A second
@@ -180,16 +182,26 @@
 		/* The tips card'S hue: the surface's one exit from the greyscale that is not
 		   a status, and what the amber and the typewriter face say together is
 		   draft (VISUAL_EDITOR §"Card operations"). A literal rather than a dial
-		   because there is nothing left to turn: the three rungs under it mix over
+		   because there is nothing left to turn: the rungs under it mix over
 		   the surface and the ink a consumer already tuned, so the card follows a
 		   brand untold. The mixes are faint on purpose: a warmth, not a badge. */
 		--_qm-tips: #e88c0a;
 		--_qm-tips-surface: color-mix(in oklab, var(--_qm-surface), var(--_qm-tips) 4%);
 		--_qm-tips-ink: color-mix(in oklab, var(--_qm-ink), var(--_qm-tips) 24%);
-		/* The chip behind a token in a tip. The card's own face is already
-		   monospace, so a `code` run needs a fill to read as literal text rather
-		   than as the sentence around it. */
-		--_qm-tips-chip: color-mix(in oklab, var(--_qm-tips) 12%, transparent);
+		/* The ink and the amber stepped up, and the pair is spent on the two runs that
+		   are not the sentence: a token in a tip, and the foot's control under the
+		   pointer. One rung each rather than one per run, a chip and a hover four
+		   percent apart being a number with no second decision under it. */
+		--_qm-tips-ink-warm: color-mix(in oklab, var(--_qm-ink), var(--_qm-tips) 45%);
+		--_qm-tips-fill: color-mix(in oklab, var(--_qm-tips) 12%, transparent);
+		/* The typewriter, the half of the slip the amber cannot carry: a modern mono
+		   reads as code where a Courier reads as typed. Its own rung rather than
+		   `--_qm-font-mono`, the chrome's readout face, which a consumer turns for
+		   tabular figures and not to dress this card. Courier Prime leads and is nobody's
+		   system font, so a host that loads it lands on it and every other host falls to
+		   the Courier the platform already carries; the package fetches nothing, a preset
+		   costing a network request being one a consumer cannot decline. */
+		--_qm-tips-font: 'Courier Prime', 'Courier New', Courier, ui-monospace, monospace;
 
 		/* ── Ratios and effects ──────────────────────────────────────────────────
 		   No palette fixes these, so they are their own rungs. There is no shadow
@@ -213,15 +225,18 @@
 		   ring, and on what state, is the other half: a rule, `.qm-focus-ring` in
 		   `visual/controls.css`, since a rung each control reassembles is a scale
 		   only up to the point where it is assembled. One width: focus is the only
-		   state that draws a ring anywhere, so there is no held-back tier under it. */
-		--_qm-ring-width: 2px;
-		/* Every ring the surface draws, whatever the state under it: focus and selection
-		   alike, which is why the name carries neither. Assembled here because the parts
-		   spelled out at a use site pass every axis — each reads a rung — while drawing a
-		   ring nothing else agrees with. The width stays separately reachable: a drop
-		   indicator is the ring's thickness without being a ring. */
+		   state that draws a ring anywhere, so there is no held-back tier under it.
+		   Sub-pixel, because at two it reads as a second border on a card whose every
+		   other edge is a hairline. */
+		--_qm-ring-width: 1.5px;
+		/* Every ring the surface draws, focus and selection alike, which is why the name
+		   carries neither. Assembled here because the parts spelled out at a use site pass
+		   every axis — each reads a rung — while drawing a ring nothing else agrees with. */
 		--_qm-ring: var(--_qm-ring-width) solid var(--_qm-accent);
 		--_qm-ring-offset: 1px;
+		/* What a clip box carries past its content for a focused control inside it to
+		   keep the whole mark. */
+		--_qm-ring-reach: calc(var(--_qm-ring-width) + var(--_qm-ring-offset));
 
 		/* ── Motion ──────────────────────────────────────────────────────────────
 		   Two rungs, by what the trip disturbs: `fast` stays inside the element's own
@@ -265,6 +280,7 @@
 		--_qm-space-2: calc(var(--_qm-space) * 2);
 		--_qm-space-3: calc(var(--_qm-space) * 3);
 		--_qm-space-4: calc(var(--_qm-space) * 4);
+		--_qm-space-5: calc(var(--_qm-space) * 5);
 		/* A rung because the two axes are two decisions and the ladder alone cannot hold
 		   them together: `check:style`'s rhythm axis sees each box read a rung, never that
 		   they read the same one, which is the drift `visual/controls.css` already names
