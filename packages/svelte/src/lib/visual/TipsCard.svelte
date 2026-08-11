@@ -81,8 +81,6 @@
 				{/each}
 			</div>
 		{/if}
-		<!-- One button, and its action is where the cursor stands: the set is walked,
-		     and its end is the exit. -->
 		<button type="button" class="qm-icon-btn qm-tips-action" onclick={advance}>
 			{#if isLast}
 				{t.strings.tipsDismiss} <Icon name="trash-2" size={GLYPH} />
@@ -100,26 +98,16 @@
 	 guidance is: the main card's, not a card of its own. Still in-flow, no edge, no
 	 lift.
 
-	 A typewritten slip, and that is the whole of the treatment: the Courier face and
-	 a warmth over the card's own surface, which together say draft rather than
-	 document. Both come off the tips rungs (`core/theme.css`), which are mixes over
-	 the surface and the ink the consumer already tuned, so the card cannot end up less
-	 legible than the editor around it.
-
 	 The bottom corners take the inner rung where the card above takes the outer: a slip
-	 is cut, so its corners are crisper than the corners of the thing it is tucked
-	 under, and the relationship holds at every setting of the dial.
+	 is cut crisper than the thing it is tucked under, at every setting of the dial.
 
-	 The top inset takes the tuck back, so the space above the tip is the space below
-	 the foot.
-
-	 The reading rungs, size and leading both: a tip is a passage that wraps, so it
-	 takes the size a field's value is read at rather than the label rung a line of
-	 chrome would take. */
+	 The insets are asymmetric so the ink is not: the top takes the tuck back, and the
+	 bottom gives up a rung to the foot's control, whose box stands on the tap floor
+	 rather than on its own one-line label. */
 	.qm-tips {
 		margin-top: calc(var(--_qm-radius) * -1);
 		border-radius: 0 0 var(--_qm-radius-inner) var(--_qm-radius-inner);
-		padding: calc(var(--_qm-space-3) + var(--_qm-radius)) var(--_qm-space-3) var(--_qm-space-3);
+		padding: calc(var(--_qm-space-3) + var(--_qm-radius)) var(--_qm-space-3) var(--_qm-space-2);
 		background: var(--_qm-tips-surface);
 		display: flex;
 		flex-direction: column;
@@ -129,8 +117,7 @@
 		line-height: var(--_qm-leading-body);
 		color: var(--_qm-tips-ink);
 	}
-	/* One line's worth held open, so the card keeps its height while the text under it
-	 swaps and the foot does not step up to meet a shorter tip. */
+	/* One line held open, so the foot does not step up under a shorter tip. */
 	.qm-tips-body {
 		min-height: calc(var(--_qm-leading-body) * 1em);
 	}
@@ -138,12 +125,9 @@
 	 styles are `:global`: the compiler never sees these tags in the markup. Restated
 	 from `core/codec/prose.css`, which is where they are argued and which cannot reach
 	 here: its selectors are scoped to `.ProseMirror` and a tip is not a view. The one
-	 divergence follows from the card being read rather than edited: `code` takes a chip
-	 and a warmer ink where a leaf gives it a face, since the face is already the card's
-	 own and a token like `- ` has nothing else to set it apart. `pre-wrap` is what
-	 keeps the significant space inside such a token: collapsed, the chip closes on the
-	 word after it. The link keeps its underline and takes no hue: the card carries one
-	 colour, and the underline is what is left to say a run is a link. */
+	 divergence: `code` takes a chip and a warmer ink where a leaf gives it a face, the
+	 face here being the card's own already. `pre-wrap` keeps the significant space
+	 inside a token like `- `; collapsed, the chip closes on the word after it. */
 	.qm-tips-body :global(p) {
 		margin: 0;
 	}
@@ -172,13 +156,13 @@
 		gap: var(--_qm-space-half);
 		margin-right: auto;
 	}
-	/* Random access to the set, drawn as one cluster: the dots report where in the set
-	 the tip stands, and a row spaced to the tap floor is wide enough that it reads as
-	 a row of controls instead. So the target is the mark plus its padding, under the
-	 floor, which 2.5.8 allows here on the equivalent-control exception rather than on
-	 the spacing one: the foot's button is over the floor and walks the whole set from
-	 the tip the card opens on, so every tip a dot reaches is reachable without one.
-	 `content-box` is what keeps the padding target and the 5px mark one element. */
+	/* Random access to the set, drawn as one cluster: a row of marks spaced to the tap
+	 floor reads as a row of controls. So the target is the mark plus its padding, under
+	 the floor, which 2.5.8 allows on the equivalent-control exception rather than on
+	 the spacing one — the foot's button clears the floor and walks the whole set from
+	 the tip the card opens on, so no tip is reachable only by a dot. State is three
+	 steps of one ink on the recede ladder, never a second hue and never a size: a dot
+	 that grew would move the row it sits in. */
 	.qm-tips-dot {
 		box-sizing: content-box;
 		width: 5px;
@@ -186,8 +170,6 @@
 		padding: var(--_qm-space-half);
 		border: none;
 		border-radius: var(--_qm-radius-pill);
-		/* Three steps of one ink on the recede ladder (rest, hover, current), never a
-		 second hue and never a size: a dot that grew would move the row it sits in. */
 		background: currentColor;
 		background-clip: content-box;
 		opacity: var(--_qm-opacity-idle);
@@ -200,13 +182,11 @@
 	.qm-tips-dot[aria-current='true'] {
 		opacity: 1;
 	}
-	/* Box and disabled state come from `.qm-icon-btn` (controls.css); the foot's
-	   button carries a label, so it widens its inset and stays on the card's own type
-	   and ink rather than the family's body rung and the callers' own colours. The
-	   hover is the card's too — warmer ink over the amber held — where the family's is
-	   the neutral surface step: a control that answered in grey on a warm slip would
-	   read as one lent from the document above. Unlayered, so it beats the base rule
-	   without out-specifying it. */
+	/* Box and disabled state come from `.qm-icon-btn` (controls.css); what this
+	   overrides is everything the family sets for a glyph among callers of its own
+	   colour, a labelled control on a warm card wanting none of it. The hover included:
+	   the family's neutral step would read as lent from the document above. Unlayered,
+	   so it beats the base rule without out-specifying it. */
 	.qm-tips-action {
 		padding: var(--_qm-space-half) var(--_qm-space-2);
 		font-family: inherit;

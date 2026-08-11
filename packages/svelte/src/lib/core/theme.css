@@ -186,26 +186,19 @@
 		--_qm-tips: #e88c0a;
 		--_qm-tips-surface: color-mix(in oklab, var(--_qm-surface), var(--_qm-tips) 4%);
 		--_qm-tips-ink: color-mix(in oklab, var(--_qm-ink), var(--_qm-tips) 24%);
-		/* The ink stepped warm, which the card spends on the two runs that are not the
-		   sentence: a token inside a tip, and the foot's control under the pointer.
-		   One rung for both, because a second step four percent away is a number with
-		   no second decision under it. */
+		/* The ink and the amber stepped up, and the pair is spent on the two runs that
+		   are not the sentence: a token in a tip, and the foot's control under the
+		   pointer. One rung each rather than one per run, a chip and a hover four
+		   percent apart being a number with no second decision under it. */
 		--_qm-tips-ink-warm: color-mix(in oklab, var(--_qm-ink), var(--_qm-tips) 45%);
-		/* The amber held, and the same two runs take it as their fill: the chip behind a
-		   token, and the foot's hover. The card's own face is already the typewriter, so
-		   a `code` run needs a fill to read as literal text rather than as the sentence
-		   around it; and a control on a warm card that answered in the family's neutral
-		   hover would read as borrowed from the document above. */
 		--_qm-tips-fill: color-mix(in oklab, var(--_qm-tips) 12%, transparent);
-		/* The typewriter, and it is the half of the slip the amber cannot carry: a
-		   modern mono reads as code where a Courier reads as typed. Its own rung rather
-		   than `--_qm-font-mono`, which is the chrome's readout face and answers to a
-		   dial: a consumer setting a mono for tabular figures is not dressing this card.
-		   Courier Prime leads the stack and is nobody's system font — a host that loads
-		   it (the reference app does) lands on it exactly, and every other host falls to
-		   the Courier the platform already has, which is the same genre a step coarser.
-		   The package requests no font itself; a preset that costs a network request is
-		   one a consumer cannot decline. */
+		/* The typewriter, the half of the slip the amber cannot carry: a modern mono
+		   reads as code where a Courier reads as typed. Its own rung rather than
+		   `--_qm-font-mono`, the chrome's readout face, which a consumer turns for
+		   tabular figures and not to dress this card. Courier Prime leads and is nobody's
+		   system font, so a host that loads it lands on it and every other host falls to
+		   the Courier the platform already carries; the package fetches nothing, a preset
+		   costing a network request being one a consumer cannot decline. */
 		--_qm-tips-font: 'Courier Prime', 'Courier New', Courier, ui-monospace, monospace;
 
 		/* ── Ratios and effects ──────────────────────────────────────────────────
