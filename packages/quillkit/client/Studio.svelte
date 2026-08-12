@@ -95,6 +95,21 @@
 	/** What the strip names: the throw's place if it carried one, else its first note. */
 	const halt = $derived(stalled ? (placed ?? thrown[0]) : undefined);
 
+	/** Why the document in hand crossed into the open holding it. A repack is a fact
+	 *  about the quill and an import is a fact about the document, and the landing is the
+	 *  same either way, so the occasion is held here rather than in the carry. */
+	let crossed = $state.raw<'repack' | 'import'>('repack');
+
+	/** What the head says about a document that crossed: what moved, and what became of
+	 *  it. A seed says nothing — an open session says it by painting the page. */
+	const crossing = $derived.by(() => {
+		if (!open || open.carry.how === 'seeded') return undefined;
+		const took = open.carry.how === 'carried';
+		return crossed === 'import'
+			? `Imported · document ${took ? 'landed' : 'reseeded'}`
+			: `Repacked · document ${took ? 'carried' : 'reseeded'}`;
+	});
+
 	function syncNotes(): void {
 		notes = collect([
 			{ origin: 'render', diags: thrown },
@@ -206,6 +221,7 @@
 		}
 		if (!at) return `quiver "${catalog?.name}" holds no quills`;
 		panel = undefined;
+		crossed = 'import';
 		picked = at;
 		held = undefined;
 		await mount(`${at.name}@${at.version}`, text);
@@ -227,6 +243,7 @@
 	 * moved under it; a ref that vanished falls back to whatever the catalog now holds.
 	 */
 	async function reload(): Promise<void> {
+		crossed = 'repack';
 		const carry = open ? open.doc.toMarkdown() : held;
 		let next: Catalog;
 		try {
@@ -398,12 +415,11 @@
 					     as text for the repack that fixes it. -->
 					<span class="qm-status" data-testid="held">Document held</span>
 				{/if}
-			{:else if open && open.carry.how !== 'seeded'}
+			{:else if crossing}
 				<!-- An open session says so by painting the page, so the only word here is
-				     what a repack did to the document that was already in hand. -->
-				<span class="qm-status" data-testid="phase"
-					>Repacked · document {open.carry.how === 'carried' ? 'carried' : 'reseeded'}</span
-				>
+				     what moved under the document that was already in hand, and what became
+				     of it. -->
+				<span class="qm-status" data-testid="phase">{crossing}</span>
 			{/if}
 		</span>
 	</header>
