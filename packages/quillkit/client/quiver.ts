@@ -14,8 +14,7 @@ import { Quiver } from '@quillmark/quiver';
 export interface Catalog {
 	/** The quiver's own name, from `Quiver.yaml`. */
 	name: string;
-	/** What the collection says it is, when it says anything: the one sentence on the
-	 *  page a reader arriving cold did not write. */
+	/** What the collection says it is, from `Quiver.yaml`. */
 	description: string | undefined;
 	/** Every quill it holds, versions newest first. */
 	quills: { name: string; versions: string[] }[];

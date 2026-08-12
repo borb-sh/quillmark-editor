@@ -17,7 +17,6 @@
 	--st-notes: 14rem;
 
 	/* How wide a panel stands. Wider than the reading measure its prose holds to, because
-	   the other panel holds a document's markdown, which is read by its lines rather than
-	   by its sentences and wraps badly at a column meant for prose. */
+	   the other panel holds markdown, which is read by its lines. */
 	--st-panel: 52rem;
 }

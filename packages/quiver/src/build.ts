@@ -199,9 +199,6 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 			}
 		}
 
-		// The description rides the manifest rather than the pointer: it is what the
-		// collection says it is, and the manifest is the document that carries the
-		// collection's identity and is digest-checked against the name that reached it.
 		const manifest = {
 			version: MANIFEST_VERSION,
 			name: meta.name,

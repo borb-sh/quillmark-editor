@@ -28,13 +28,13 @@ Studio also sheds the playground's *site*: one screen, with no router, no readin
 
 The front door and the document's doors are panels over the workspace, not bands in it.
 
-That is the one shape available. Studio spends the whole screen on the two mounts, so anything wanting a paragraph or a control row either takes height from them for every reader forever, or takes none and is opened when it is wanted. A landing before the picker costs the author, who has one quiver and typed the verb, a click every boot to be told what they already know. A band above the split spends the surfaces' own height on prose read once. A separate route is reached by nobody. A panel costs a boot nothing, spends no height, and is outside the split — which is the whole of what the split asked for.
+Studio spends the whole screen on the two mounts, so anything wanting a paragraph or a control row either takes height from them for every reader forever or takes none and is opened. The three standing shapes each spend something: a landing before the picker costs the author, who has one quiver and typed the verb, a click every boot to be told what they know; a band above the split spends the surfaces' own height on prose read once; a separate route is reached by nobody. A panel costs a boot nothing and spends no height.
 
-What it costs is a click, so the click has to be worth taking, and the head carries what a reader must not have to find: the quiver's own sentence beside its name, truncating to whatever the controls leave. That line is the only prose on the page its author wrote, and it is what makes the panel behind it an elaboration rather than the first thing anybody is told.
+What it costs is a click, so the head carries what a reader must not have to find: the quiver's own sentence beside its name, truncating to whatever the controls leave. That line is the only prose on the page its author wrote, and it is what makes the panel behind it an elaboration rather than the first thing anybody is told.
 
-**Two controls, and the author uses neither on the loop.** The rule they answer to is not that studio gains no chrome — it gained two buttons — but that the loop gains no step: nothing opens on boot, nothing is dismissed, nothing is stored, and an author who never presses either is where they were. That is also why the panels are mounted only while open: the markdown door reads the document as it then stands, and a panel kept mounted would hold whatever the last one did.
+**Two controls, and the loop gains no step.** Nothing opens on boot, nothing is dismissed, nothing is stored, and an author who presses neither is where they were. The panels are mounted only while open for the same reason the document is not stored: the markdown door reads the document as it then stands, and a panel kept mounted would hold whatever the last opening did.
 
-The panel's own drawing is studio's, not the preset's. The preset's shell is the pinned bands and the split — where a band ends, what a track may shrink to — and a panel stands over that rather than among it, so nothing here restates a number the preset owns. Native `<dialog>` carries the top layer, the focus trap and the escape key; what studio writes is the scrim's tone and the plate's box. A second consumer wanting one is what would promote it.
+The panel's drawing is studio's, not the preset's. The preset's shell is the pinned bands and the split — where a band ends, what a track may shrink to — and a panel stands over that rather than among it, so nothing here restates a number the preset owns. Native `<dialog>` carries the top layer, the focus trap and the escape key; what studio writes is the scrim's tone and the plate's box. A second consumer wanting one is what would promote it.
 
 ## A client, and what serves it
 
@@ -76,11 +76,13 @@ Canonical markdown out, the same markdown in, through one panel. A visitor who f
 
 **In is the carry with a different source.** `quill.parse` is the bound ingestion door and the repack loop already runs it: parse, conform against the schema in hand, strand what will not take with `conform::*` diagnostics. An import lands through exactly that, so what an import strands is read where a repack's stranding is read, and this door writes no landing, no stranding and no band of its own.
 
+The panel's text is editable, since replacing it is how a document comes in, and it is not a second editor: what is typed there reaches the document only on apply, all at once, through that same conform. The surface that routes a diagnostic to the control it is about is the editor pane, which is what a `path` address is for.
+
 **The file names its own quill, and is believed.** `doc.quillRef` is persisted in the markdown and read before anything is opened against it (`Document.fromMarkdown`, which needs no quill). A ref this quiver holds is the one the document lands in and the picker follows it: the document says what it is, and landing it somewhere else to spare the reader a moved control would strand every field to make a point about the picker. A ref the quiver does not hold has nothing to honour, so the quill on screen takes it and the conform names what would not fit.
 
 **Markdown, not the storage DTO.** `toJson()` / `fromJson` is the versioned DTO and would reconstitute exactly rather than re-conform. It is not in DOCUMENT_MODEL's table, which is the one place the version coupling to `@quillmark/wasm` is recorded, so a file a reader keeps would ride a coupling nothing records and move under a wasm bump with nothing to notice. Markdown is readable by whoever saved it, unchanged into the CLI or a quiver repo, and re-conformed on the way in — which is what is wanted when the schema moved under a stored document, and a loss only when it did not.
 
-**Neither half is the write door.** Both move a DOCUMENT, which studio mints, edits and frees on every keystroke. Nothing reaches a `Quill.yaml`, a plate or a quiver, so the rule below stands unamended and the protocol it defers stays deferred.
+**Neither half is the write door.** Both move a DOCUMENT, which studio mints, edits and frees on every keystroke. Nothing reaches a `Quill.yaml`, a plate or a quiver, so the rule below stands unamended.
 
 The one refusal that is not a stranding is markdown that will not parse at all: it never becomes a document, so it has no diagnostics to route and no session to land in. That is said at the door, beside the text that caused it, and the document on screen stands.
 

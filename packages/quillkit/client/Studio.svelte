@@ -101,7 +101,7 @@
 	let crossed = $state.raw<'repack' | 'import'>('repack');
 
 	/** What the head says about a document that crossed: what moved, and what became of
-	 *  it. A seed says nothing — an open session says it by painting the page. */
+	 *  it. A seed says nothing. */
 	const crossing = $derived.by(() => {
 		if (!open || open.carry.how === 'seeded') return undefined;
 		const took = open.carry.how === 'carried';
@@ -176,8 +176,7 @@
 	}
 
 	// ── The doors ───────────────────────────────────────────────────────────────
-	/** Which panel is open, if either. Neither is drawn until it is asked for, so the
-	 *  author who never opens one pays a boot nothing for them. */
+	/** Which panel is open, if either. */
 	let panel = $state.raw<'about' | 'markdown' | undefined>();
 
 	/** The document as text, taken when the door opened rather than tracked: an edit
@@ -198,12 +197,10 @@
 	 * Land `text` as the document, which is the repack's carry with a different source.
 	 * Resolves to what refused it, or to `undefined` once it is mounted.
 	 *
-	 * The file names its own quill, so it is read for that first: a ref this quiver holds
-	 * is the one the document lands in, the picker following it, since the ref is the
-	 * document's own statement about what it is. A ref the quiver does not hold has
-	 * nothing to honour, so the quill on screen takes it and the conform names what would
-	 * not fit. Markdown that will not parse at all lands nowhere: it never becomes a
-	 * document, so it has no stranding to read and the refusal stays at the door.
+	 * The file names its own quill and is believed: a ref this quiver holds is the one it
+	 * lands in, the picker following. A ref the quiver does not hold has nothing to
+	 * honour, so the quill on screen takes it and the conform names what would not fit
+	 * (STUDIO §"The document has a door").
 	 */
 	async function applyMarkdown(text: string): Promise<string | undefined> {
 		let at = picked;
@@ -383,9 +380,7 @@
 		{#if catalog}
 			<Picker {catalog} {picked} disabled={busy} onPick={pick} />
 		{/if}
-		<!-- The two doors, opened rather than stood on: a reader who arrived at a link
-		     needs both, and the author who typed the verb pays a boot nothing for a control
-		     they do not press. -->
+		<!-- The two doors, opened rather than stood on (STUDIO §"Opened, not stood on"). -->
 		<span class="doors">
 			<button
 				class="qm-control"
@@ -504,14 +499,8 @@
 	<Notes {notes} />
 </div>
 
-<!-- Both panels are mounted only while open, which is what makes every opening a fresh
-     read: the markdown door seeds its draft from the document as it stands, and a stale
-     one is the only thing it could otherwise hold.
-
-     What the reader who arrived at a link was never told, and the author already knows:
-     what a quiver is, what the two panes are, and that the left one is typed into. Studio
-     speaks for itself here; the quiver's own line is above it, and is the only sentence on
-     this page its author wrote (STUDIO §"Opened, not stood on"). -->
+<!-- Mounted only while open, which is what makes every opening a fresh read: the markdown
+     door seeds its draft from the document as it then stands. -->
 {#if panel === 'about'}
 	<Panel title="About this studio" open onClose={() => (panel = undefined)}>
 		<div class="about">
@@ -580,16 +569,16 @@
 		color: var(--qmh-ghost);
 	}
 
-	/* The doors stand together, between the picker and the phase: they are about the page
-	   rather than about the quill, so they take neither end of the band. */
+	/* Between the picker and the phase: the doors are about the page rather than the
+	   quill, so they take neither end of the band. */
 	.doors {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--qmh-space-2);
 	}
 
-	/* The panel's prose, which is the one place in studio that is read rather than
-	   scanned: a reading measure, body leading, and the paragraph spacing a page has. */
+	/* The one place in studio that is read rather than scanned, so it holds to a reading
+	   measure where the rest of the chrome holds to the band it is in. */
 	.about {
 		display: flex;
 		flex-direction: column;

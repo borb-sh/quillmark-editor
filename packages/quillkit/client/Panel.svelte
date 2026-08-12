@@ -1,19 +1,16 @@
 <!--
   A panel over the workspace: what studio says at length, said somewhere that is not the
-  screen. Studio spends the whole viewport on the two mounts, so anything wanting a
-  paragraph either takes height from them permanently or takes none at all and is opened;
-  this is the second (STUDIO §"Opened, not stood on").
+  screen (STUDIO §"Opened, not stood on").
 
-  Native `<dialog>`, so the modal behaviours are the platform's: the top layer, the focus
-  trap, the escape key, and the inertness of everything behind it. What is written here is
-  the scrim's tone and the plate's box, since the preset carries no dialog — its shell is
-  the pinned bands and the split, and a panel stands over those rather than among them.
+  Native `<dialog>`, so the top layer, the focus trap, the escape key and the inertness
+  behind it are the platform's. What is written here is the scrim's tone and the plate's
+  box, the preset carrying no dialog.
 -->
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
 	interface Props {
-		/** What the panel is: its heading, and what announces it. */
+		/** The panel's heading, and what announces it. */
 		title: string;
 		open: boolean;
 		/** Called for every way it closes, the escape key and the scrim included, so the
@@ -26,8 +23,8 @@
 
 	let el = $state.raw<HTMLDialogElement | undefined>();
 
-	// The element is the state and the prop follows it: `showModal` is what puts a dialog
-	// in the top layer, and no attribute does it.
+	// The element is the state and the prop follows it: only `showModal` puts a dialog in
+	// the top layer, and no attribute does.
 	$effect(() => {
 		if (!el) return;
 		if (open && !el.open) el.showModal();
@@ -35,9 +32,8 @@
 	});
 </script>
 
-<!-- The dialog fills the viewport and centres the plate, so a click that lands on the
-     dialog itself landed outside the plate: one target test, and no element in the
-     markup whose only job is to catch it. -->
+<!-- The dialog fills the viewport and centres the plate, so a click on the dialog itself
+     landed outside the plate. -->
 <dialog
 	bind:this={el}
 	class="panel"

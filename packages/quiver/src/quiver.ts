@@ -34,11 +34,7 @@ let create!: (
 export class Quiver {
 	readonly name: string;
 
-	/**
-	 * What `Quiver.yaml` says this collection is, when it says anything: one sentence,
-	 * authored, and the only thing a surface over a quiver can print about it that the
-	 * quiver itself wrote. `undefined` where the field is absent.
-	 */
+	/** What `Quiver.yaml` says the collection is; `undefined` where the field is absent. */
 	readonly description: string | undefined;
 
 	readonly #catalog: ReadonlyMap<string, readonly string[]>;

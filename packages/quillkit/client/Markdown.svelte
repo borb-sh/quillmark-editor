@@ -1,36 +1,29 @@
 <!--
-  The document's two doors, which are one door: canonical Quillmark markdown out, the same
-  markdown in (STUDIO §"The document has a door").
+  The document's two doors, which are one panel: canonical Quillmark markdown out, the
+  same markdown in (STUDIO §"The document has a door").
 
-  Out is the text itself — selectable, and downloadable as the file the CLI and a quiver
-  repo read unchanged. In is `apply`, which is the repack's carry with a different source:
-  the landing, the stranding and the notes band are the ones already written, so nothing
-  here parses, conforms or reports.
-
-  Neither half touches the authored layout. Both move a DOCUMENT, which studio mints and
-  frees on every keystroke, so the door rule governing bytes into a quill is untouched.
+  Nothing here parses, conforms or reports. `apply` hands the text to the caller, which
+  lands it through the repack's own carry.
 -->
 <script lang="ts">
 	interface Props {
 		/** The document as it stands: its canonical markdown, or the text a failed open
 		 *  left held. */
 		text: string;
-		/** What a download is called. The ref, which is what the file names itself by. */
+		/** The document's ref, which names the download. */
 		ref: string;
-		/** Land this text as the document, resolving to what refused it. The caller answers
-		 *  for what lands and for what it strands; what never became a document comes back
-		 *  here, since the panel is where the text that caused it still is. */
+		/** Land this text as the document, resolving to what refused it. What landed and
+		 *  what it stranded are the caller's to report; what never became a document is
+		 *  said here, beside the text that caused it. */
 		onApply: (text: string) => Promise<string | undefined>;
 	}
 
 	let { text, ref, onApply }: Props = $props();
 
-	/** The draft: what the panel opened with, edited or replaced. Studio's document is
-	 *  untouched until `apply`, so closing the panel discards this and nothing else.
-	 *
-	 *  Seeded once, which is the whole of the coupling: the panel is mounted for as long
-	 *  as it is open, so "once" is "every time it opens", against the document as it then
-	 *  stands. */
+	/** What the panel opened with, edited or replaced; studio's document is untouched
+	 *  until `apply`, so closing the panel discards this and nothing else. Seeded once per
+	 *  mount, and the panel is mounted only while open, so every opening reads the
+	 *  document as it then stands. */
 	// svelte-ignore state_referenced_locally
 	let draft = $state(text);
 
@@ -66,11 +59,8 @@
 </script>
 
 <div class="doors">
-	<!-- Editable, because replacing the text is how a document comes in, and a textarea is
-	     the control a paste lands in without a second one to hold it. It is not a second
-	     editor: what is typed here reaches the document through `apply`, all at once and
-	     through the same conform the repack loop runs, and the surface that routes a
-	     diagnostic to its control is the pane behind this panel. -->
+	<!-- Editable, since replacing the text is how a document comes in. Not a second
+	     editor: what is typed reaches the document only through `apply`, all at once. -->
 	<textarea
 		class="qm-readout source"
 		data-testid="markdown-source"

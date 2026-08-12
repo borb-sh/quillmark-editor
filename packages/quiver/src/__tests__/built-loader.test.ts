@@ -198,8 +198,7 @@ describe('loadBuiltQuiver — happy path', () => {
 		expect(q.description).toBe('A sample quiver');
 	});
 
-	// The fixtures above are all version 1, which is the same document without the
-	// field: a reader of this generation still reads what the last one packed.
+	// The fixtures are version 1, so this is the back-compat read too.
 	it('a manifest without a description carries undefined', async () => {
 		expect((await loadMinimal()).description).toBeUndefined();
 	});
@@ -415,7 +414,14 @@ describe('loadBuiltQuiver — invalid manifest', () => {
 
 	it('a non-string description → quiver_invalid', async () => {
 		await expect(
-			loadBuiltQuiver(await transportWith({ version: 2, name: 'test', description: 7, quills: [] }))
+			loadBuiltQuiver(
+				await transportWith({
+					version: MANIFEST_VERSION,
+					name: 'test',
+					description: 7,
+					quills: []
+				})
+			)
 		).rejects.toThrow(expect.objectContaining({ code: 'quiver_invalid' }));
 	});
 

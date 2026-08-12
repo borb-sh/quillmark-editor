@@ -235,8 +235,6 @@ function parseManifest(raw: string): BuiltManifest {
 			`Manifest version must be a positive integer, got ${JSON.stringify(version)}`
 		);
 	}
-	// The closed document's own announcement: a manifest written by a newer packer says
-	// so here, where the refusal can name the upgrade, rather than as an unknown key.
 	if (version > MANIFEST_VERSION) {
 		throw new QuiverError(
 			'quiver_invalid',
