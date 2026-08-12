@@ -2,11 +2,11 @@
    page around the surfaces out. `core/theme.css` is the same shape one level down
    (dials in, `--_qm-*` out), and the two are calibrated against each other: the
    figures here are the figures there (the ground step's two arms, 8% hover, 17%
-   border, 45% and 60% ink, the ring's width) and the dial means the same plane in
-   both, so a host plate and a card on it land on the same tone at both poles and a
-   host page meets an editor's own column exactly. The well under the ground has no counterpart here: a
-   host's own controls are boxed and carry a hairline, so nothing on a page needs the
-   step an edgeless field does.
+   border, 45% and 60% ink, the ring's width, the status hues at both poles) and the
+   dial means the same plane in both, so a host plate and a card on it land on the same
+   tone at both poles and a host page meets an editor's own column exactly. The well
+   under the ground has no counterpart here: a host's own controls are boxed and carry a
+   hairline, so nothing on a page needs the step an edgeless field does.
 
    Two scales rather than one because they answer to different roots. `--_qm-*` is
    declared on each mounted root, out of reach from an ancestor, so a surface holds its
@@ -44,12 +44,13 @@
 	   the underline under a link. */
 	--qmh-border-strong: color-mix(in oklab, var(--qmh-surface), var(--qmh-ink) 40%);
 
-	/* The two hues a host spends, and it spends them on a message. Both read the dial,
-	   so a page carries one colour meaning error and one meaning warning rather than a
-	   second pair beside the surfaces'. The dark half is a lift the dials do not carry:
-	   a hue calibrated against white reads as a stain on a dark page. */
-	--qmh-alert: light-dark(var(--qm-danger, #c5221f), #ff9c94);
-	--qmh-warn: light-dark(var(--qm-warning, #b25000), #e0b44c);
+	/* The two hues a host spends, and it spends them on a message. The figures are the
+	   surfaces' own, so a page carries one colour meaning error and one meaning warning
+	   rather than a second pair beside the surfaces'. Each pole is its own figure: a hue
+	   calibrated against white reads as a stain on a dark page. The dial sits in front
+	   of the pair, as every pole's does, so a host that turns one owns both schemes. */
+	--qmh-alert: var(--qm-danger, light-dark(#c5221f, #ff9c94));
+	--qmh-warn: var(--qm-warning, light-dark(#b25000, #e0b44c));
 
 	/* ── Rhythm ──────────────────────────────────────────────────────────────── */
 	/* One base and its multiples, the same four steps the surfaces derive. A host
