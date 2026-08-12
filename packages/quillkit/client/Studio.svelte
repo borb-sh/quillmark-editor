@@ -29,7 +29,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import { Engine } from '@quillmark/wasm';
-	import type { Diagnostic } from '@quillmark/wasm';
+	import type { CoreSurface, Diagnostic, Document } from '@quillmark/wasm';
 	import type { Quiver } from '@quillmark/quiver';
 	import { init } from '@quillmark/svelte/core';
 	import type { EditorError, Landing, Place } from '@quillmark/svelte/core';
@@ -37,6 +37,8 @@
 	import { VisualEditor } from '@quillmark/svelte/visual';
 	import type { EditorChange } from '@quillmark/svelte/visual';
 	import Picker from './Picker.svelte';
+	import Panel from './Panel.svelte';
+	import Markdown from './Markdown.svelte';
 	import Notes from './Notes.svelte';
 	import { catalogOf, openQuiver, type Catalog } from './quiver';
 	import { close, openRef, type Opened } from './session';
@@ -55,10 +57,11 @@
 		| { kind: 'ready' }
 		| { kind: 'failed'; message: string };
 
-	// The engine and the quiver are held, not tracked: nothing in the markup reads
-	// them, and the surfaces read the handles under `open`.
+	// The engine, the quiver and the core surface are held, not tracked: nothing in the
+	// markup reads them, and the surfaces read the handles under `open`.
 	let engine: Engine | undefined;
 	let quiver: Quiver | undefined;
+	let core: CoreSurface | undefined;
 
 	let phase = $state.raw<Phase>({ kind: 'booting' });
 	let catalog = $state.raw<Catalog | undefined>();
@@ -155,6 +158,58 @@
 			phase = { kind: 'failed', message: messageOf(err) };
 		}
 		syncNotes();
+	}
+
+	// ── The doors ───────────────────────────────────────────────────────────────
+	/** Which panel is open, if either. Neither is drawn until it is asked for, so the
+	 *  author who never opens one pays a boot nothing for them. */
+	let panel = $state.raw<'about' | 'markdown' | undefined>();
+
+	/** The document as text, taken when the door opened rather than tracked: an edit
+	 *  mutates the document in place and reassigns nothing, so a derivation over it would
+	 *  hold whatever the last remount produced. */
+	let sourceText = $state.raw<string | undefined>();
+
+	/** Whether there is a document to read at all: the session's, or the text a failed
+	 *  open left held. */
+	const carrying = $derived(open !== undefined || held !== undefined);
+
+	function openMarkdown(): void {
+		sourceText = open ? open.doc.toMarkdown() : held;
+		panel = 'markdown';
+	}
+
+	/**
+	 * Land `text` as the document, which is the repack's carry with a different source.
+	 * Resolves to what refused it, or to `undefined` once it is mounted.
+	 *
+	 * The file names its own quill, so it is read for that first: a ref this quiver holds
+	 * is the one the document lands in, the picker following it, since the ref is the
+	 * document's own statement about what it is. A ref the quiver does not hold has
+	 * nothing to honour, so the quill on screen takes it and the conform names what would
+	 * not fit. Markdown that will not parse at all lands nowhere: it never becomes a
+	 * document, so it has no stranding to read and the refusal stays at the door.
+	 */
+	async function applyMarkdown(text: string): Promise<string | undefined> {
+		let at = picked;
+		let probe: Document | undefined;
+		try {
+			// Quill-free, so the ref is read before anything is opened against it.
+			probe = core!.Document.fromMarkdown(text);
+			const [name, version] = probe.quillRef.split('@');
+			if (catalog?.quills.some((q) => q.name === name && q.versions.includes(version!)))
+				at = { name: name!, version: version! };
+		} catch (err) {
+			return messageOf(err);
+		} finally {
+			probe?.free();
+		}
+		if (!at) return `quiver "${catalog?.name}" holds no quills`;
+		panel = undefined;
+		picked = at;
+		held = undefined;
+		await mount(`${at.name}@${at.version}`, text);
+		return undefined;
 	}
 
 	/** A pick is a different document, so nothing crosses: the picked quill seeds its
@@ -266,7 +321,7 @@
 				// `init` instantiates the core and latches the surface the editor's codec
 				// reads synchronously. The quiver awaits the same memoized gate to
 				// materialize a quill.
-				await init();
+				core = await init();
 				quiver = await openQuiver();
 				const next = catalogOf(quiver);
 				catalog = next;
@@ -311,6 +366,24 @@
 		{#if catalog}
 			<Picker {catalog} {picked} disabled={busy} onPick={pick} />
 		{/if}
+		<!-- The two doors, opened rather than stood on: a reader who arrived at a link
+		     needs both, and the author who typed the verb pays a boot nothing for a control
+		     they do not press. -->
+		<span class="doors">
+			<button
+				class="qm-control"
+				type="button"
+				data-testid="open-about"
+				onclick={() => (panel = 'about')}>About</button
+			>
+			<button
+				class="qm-control"
+				type="button"
+				data-testid="open-markdown"
+				disabled={!carrying}
+				onclick={openMarkdown}>Markdown</button
+			>
+		</span>
 		<span class="state">
 			{#if phase.kind === 'booting'}
 				<span class="qm-status" data-testid="phase">Opening…</span>
@@ -415,6 +488,48 @@
 	<Notes {notes} />
 </div>
 
+<!-- Both panels are mounted only while open, which is what makes every opening a fresh
+     read: the markdown door seeds its draft from the document as it stands, and a stale
+     one is the only thing it could otherwise hold.
+
+     What the reader who arrived at a link was never told, and the author already knows:
+     what a quiver is, what the two panes are, and that the left one is typed into. Studio
+     speaks for itself here; the quiver's own line is above it, and is the only sentence on
+     this page its author wrote (STUDIO §"Opened, not stood on"). -->
+{#if panel === 'about'}
+	<Panel title="About this studio" open onClose={() => (panel = undefined)}>
+		<div class="about">
+			{#if catalog}
+				<p class="qm-label">quiver</p>
+				<p class="said">
+					<strong>{catalog.name}</strong>{#if catalog.description}&nbsp;— {catalog.description}{/if}
+				</p>
+			{/if}
+			<p class="said">
+				A <strong>quill</strong> is a document template: a schema saying what fields a document has,
+				and a layout that paints them. A <strong>quiver</strong> is a versioned collection of them, and
+				this page is one quill of it, worked live.
+			</p>
+			<p class="said">
+				The left pane is the document, <strong>typed into</strong>; the right is that same document
+				as the quill paints it. One document, two views — a keystroke on the left repaints the
+				right, and a click on the right puts the caret where it came from. Anything either of them
+				will not accept is listed in the band under both.
+			</p>
+			<p class="said">
+				Nothing here is saved: the document lives in this tab, and a reload seeds a fresh one.
+				<strong>Markdown</strong> is the door it leaves and returns through.
+			</p>
+		</div>
+	</Panel>
+{/if}
+
+{#if panel === 'markdown' && sourceText !== undefined && picked}
+	<Panel title="Document markdown" open onClose={() => (panel = undefined)}>
+		<Markdown text={sourceText} ref={`${picked.name}@${picked.version}`} onApply={applyMarkdown} />
+	</Panel>
+{/if}
+
 <style>
 	/* The shell's shape is the preset's: the pinned bands, the row a band puts its parts
 	   on, the split's tracks (THEMING §"The shell"). What each band is made of is studio's,
@@ -447,6 +562,31 @@
 	   read once and not watched. */
 	.engine {
 		color: var(--qmh-ghost);
+	}
+
+	/* The doors stand together, between the picker and the phase: they are about the page
+	   rather than about the quill, so they take neither end of the band. */
+	.doors {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--qmh-space-2);
+	}
+
+	/* The panel's prose, which is the one place in studio that is read rather than
+	   scanned: a reading measure, body leading, and the paragraph spacing a page has. */
+	.about {
+		display: flex;
+		flex-direction: column;
+		gap: var(--qmh-space-3);
+		max-width: var(--qmh-measure);
+		overflow-y: auto;
+		min-height: 0;
+	}
+
+	.said {
+		margin: 0;
+		line-height: var(--qmh-leading-body);
+		color: var(--qmh-ink);
 	}
 
 	/* The phase reads off the end of the line, so the picker holds its position when

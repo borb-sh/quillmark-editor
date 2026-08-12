@@ -36,7 +36,7 @@ export async function fromDir(pathOrFileUrl: string): Promise<Quiver> {
 		? fileURLToPath(new URL('.', pathOrFileUrl))
 		: pathOrFileUrl;
 	const { meta, catalog } = await scanSourceQuiver(dir);
-	return createQuiver(meta.name, catalog, new SourceLoader(dir));
+	return createQuiver(meta.name, meta.description, catalog, new SourceLoader(dir));
 }
 
 /**

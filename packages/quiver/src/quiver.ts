@@ -24,10 +24,22 @@ export interface QuiverLoader {
  * Exported as `createQuiver` for this package's loaders and reachable from no
  * entry in `exports`, so a consumer holds the factories and nothing else.
  */
-let create!: (name: string, catalog: Map<string, string[]>, loader: QuiverLoader) => Quiver;
+let create!: (
+	name: string,
+	description: string | undefined,
+	catalog: Map<string, string[]>,
+	loader: QuiverLoader
+) => Quiver;
 
 export class Quiver {
 	readonly name: string;
+
+	/**
+	 * What `Quiver.yaml` says this collection is, when it says anything: one sentence,
+	 * authored, and the only thing a surface over a quiver can print about it that the
+	 * quiver itself wrote. `undefined` where the field is absent.
+	 */
+	readonly description: string | undefined;
 
 	readonly #catalog: ReadonlyMap<string, readonly string[]>;
 	readonly #loader: QuiverLoader;
@@ -45,14 +57,20 @@ export class Quiver {
 	 * `Quiver.fromBuiltFiles`, or `fromDir` / `fromBuiltDir` from
 	 * `@quillmark/quiver/node`), which is what names the thing being read.
 	 */
-	private constructor(name: string, catalog: Map<string, string[]>, loader: QuiverLoader) {
+	private constructor(
+		name: string,
+		description: string | undefined,
+		catalog: Map<string, string[]>,
+		loader: QuiverLoader
+	) {
 		this.name = name;
+		this.description = description;
 		this.#catalog = new Map(catalog);
 		this.#loader = loader;
 	}
 
 	static {
-		create = (name, catalog, loader) => new Quiver(name, catalog, loader);
+		create = (name, description, catalog, loader) => new Quiver(name, description, catalog, loader);
 	}
 
 	/**

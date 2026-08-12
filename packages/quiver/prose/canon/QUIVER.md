@@ -47,6 +47,8 @@ The property belongs here rather than to whatever is serving, because the direct
 
 **The pointer states the format, and is the one document here that reads past what it knows.** Skew is the ordinary case rather than the broken one: a collection is packed by whatever copy of this package the author's CI installs, and read by the copy frozen inside whichever client is laid over it. `latest.json` is what a reader of any age fetches first, so it is where a format change announces itself. That works only if unknown keys pass through, since a pointer parsed strictly refuses the announcement along with everything else. A `format` above the reader's is named as such, with the upgrade named too; absent means a build from before the marker, which is format 1. The manifest behind it stays closed, carrying its own `version` and rejecting fields it does not know: it is reached only once the format is agreed.
 
+That closure is what makes the manifest's `version` load-bearing rather than decorative. A field added to a closed document is a field an older reader rejects as an unknown key, naming neither what happened nor what to do; the version is what that reader reads first instead, and a manifest above its own is refused with the upgrade named, the way the pointer's format is. So an addition here moves the number, and a reader takes every version up to its own: version 2 carries the quiver's `description`, and version 1 is the same document without it.
+
 The fetch is skippable by holding the answer. `fromBuiltUrl(url, { seed })` reads the map before the network, so a deployment carrying `latest.json` closes the layer above the one `no-cache` closes: which catalog the process reads is settled by what shipped rather than by what a cache returns.
 
 Seeded bytes are checked exactly as fetched bytes are, because the check reads the digest in the name and a name arrives the same way whoever holds it. A deployment shipping one generation's pointer beside another's manifest fails on the digest rather than serving a catalog nobody packed.
@@ -72,6 +74,8 @@ One narrower verb sits beside it: `resolve(ref)` returns the canonical ref witho
 The quill cache is the only one. A fetched tree lives for the length of the materialization that consumes it and no longer: a second cache holding trees would buy a retry after a `Quill.fromTree` throw its refetch, which is a round-trip saved on the path where the quill is broken, against a cache to evict, coalesce and reason about on every path where it is not.
 
 `resolve` is **sync**, and so are `quillNames()` and `versionsOf()`: the catalog is materialized as the quiver is built (`fromBuiltUrl` fetches `latest.json`, `fromDir` scans the source tree), and `QuiverLoader` carries one verb, `loadTree`, which resolution never reaches. A promise there would price I/O the design does not admit.
+
+`name` and `description` are what `Quiver.yaml` says the collection is, and both reach the class by the same road: parsed off the source tree, written into the manifest by `build`, read back out of it by every built loader. A surface over a quiver has no other authored sentence to print — everything else it can show about a collection is a name a directory happens to carry.
 
 ## The render boundary
 

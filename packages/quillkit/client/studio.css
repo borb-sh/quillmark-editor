@@ -15,4 +15,9 @@
 	   showing before it competes with the surface it is about. The one height studio
 	   states, the panes taking whatever the bands leave. */
 	--st-notes: 14rem;
+
+	/* How wide a panel stands. Wider than the reading measure its prose holds to, because
+	   the other panel holds a document's markdown, which is read by its lines rather than
+	   by its sentences and wraps badly at a column meant for prose. */
+	--st-panel: 52rem;
 }

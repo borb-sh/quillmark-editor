@@ -8,6 +8,8 @@ The surface a quill author looks at their quiver through: pick a quill, edit, wa
 
 Two readers, one client. The author works mid-edit, locally, against files on disk, and the loop below is theirs. A deployed quiver is frozen at a commit, so the reader who arrives at a URL (a reviewer following a branch, someone evaluating a quiver) gets the picker, the surfaces and the errors over one built quiver, with nothing to repack. One client rather than two: it is the same client an `npx quillkit studio` over a working tree serves.
 
+What the two readers do not share is what they arrive knowing, and that is answered by two doors rather than by a second client. The author typed the verb and needs neither; the reader followed a link, and is owed a page that says what it is and a document that can leave it. Both are opened rather than stood on, so the client that carries them is the client the author already had.
+
 **Studio is the noun, not the verb.** It is a client rather than a package: `client/` beside the bin's `src/` under one manifest, no verb of its own, and `quillkit studio` is how the surface is reached ([QUILLKIT.md](QUILLKIT.md)). The name still has a job the tool's cannot do: the deployed thing a reviewer arrives at is a studio, and "the collection's site" names a directory rather than a surface.
 
 ## Looked at, not blocked on
@@ -20,7 +22,19 @@ Both mount the same surfaces over the same reference quill, and the distinction 
 
 That separation reaches the drawing, not only the contents. Both are one session under two surfaces in a pinned shell, so the shape of the screen is one thing taken out of the preset; what fills it is not. A page showing its instruments stands its mounts apart, framed, so each reads as one of several things on it. Studio spends the whole screen on the two mounts: they run to the viewport's edges and meet at a hairline, because the surface is the subject and every pixel of chrome around it is a pixel not spent on the quill.
 
-Studio also sheds the playground's front-door job: one screen rather than a site, with no router, no reading column and no landing page. The author arrives having typed the verb, so there is no quickstart to carry.
+Studio also sheds the playground's *site*: one screen, with no router, no reading column and no landing page. What it does not shed is the front-door job itself, which the deployed half is the whole reason for — a reader arriving at a link has had no contact with any of this, and a page that answers only the author is a page that answers half its readers.
+
+## Opened, not stood on
+
+The front door and the document's doors are panels over the workspace, not bands in it.
+
+That is the one shape available. Studio spends the whole screen on the two mounts, so anything wanting a paragraph or a control row either takes height from them for every reader forever, or takes none and is opened when it is wanted. A landing before the picker costs the author, who has one quiver and typed the verb, a click every boot to be told what they already know. A band above the split spends the surfaces' own height on prose read once. A separate route is reached by nobody. A panel costs a boot nothing, spends no height, and is outside the split — which is the whole of what the split asked for.
+
+What it costs is a click, so the click has to be worth taking, and the head carries what a reader must not have to find: the quiver's own sentence beside its name, truncating to whatever the controls leave. That line is the only prose on the page its author wrote, and it is what makes the panel behind it an elaboration rather than the first thing anybody is told.
+
+**Two controls, and the author uses neither on the loop.** The rule they answer to is not that studio gains no chrome — it gained two buttons — but that the loop gains no step: nothing opens on boot, nothing is dismissed, nothing is stored, and an author who never presses either is where they were. That is also why the panels are mounted only while open: the markdown door reads the document as it then stands, and a panel kept mounted would hold whatever the last one did.
+
+The panel's own drawing is studio's, not the preset's. The preset's shell is the pinned bands and the split — where a band ends, what a track may shrink to — and a panel stands over that rather than among it, so nothing here restates a number the preset owns. Native `<dialog>` carries the top layer, the focus trap and the escape key; what studio writes is the scrim's tone and the plate's box. A second consumer wanting one is what would promote it.
 
 ## A client, and what serves it
 
@@ -44,15 +58,31 @@ A browser cannot read the source layout, so studio ends at a built artifact behi
 
 The threshold is the test of that, and studio states none: under it the split shows one track, `.qm-switch` says which, and the caret bridge reveals the editor when a hit crosses into it. The seam is what makes the number unnecessary here: it is the split's own gap closed to a stroke with the border behind it, so it appears and goes with the second track. Drawn on a pane instead, it would outlive the pane beside it and stand against the viewport, and studio would restate the preset's widths to say when not to draw it.
 
-Studio draws with `@quillmark/svelte/preset`, the same import a third-party consumer makes; `studio.css` adds one height beyond the endorsed look, the depth the notes band opens to.
+Studio draws with `@quillmark/svelte/preset`, the same import a third-party consumer makes; `studio.css` adds two lengths beyond the endorsed look, the depth the notes band opens to and the width a panel stands at. Both are how much of a thing is worth showing rather than rhythm, which is why neither is a rung the preset could have carried.
 
 ## The document is the blueprint's
 
-Studio holds one document and it is the schema's own: `seedDocument()` over the `example:` values in `Quill.yaml`. There is no door in and no door out: no file it is read from, none it is written to, and nothing of studio's own that outlives the tab.
+Studio holds one document and it starts as the schema's own: `seedDocument()` over the `example:` values in `Quill.yaml`. Nothing of studio's outlives the tab — no file it is read from at boot, none it writes, no store it reseeds from.
 
 **Reload is the reseed.** A boot seeds, and the carry keeps a running session on the document in hand, so an `example:` edited mid-session does not appear until the page reloads. F5 is the whole of that verb, and it costs a keystroke rather than a control.
 
 **What that costs.** The failures that only a long list, a wrapping value or an empty optional reveal are invisible here, and to `quillkit test` with it: neither renders a document the schema did not write. The corpus *is* the `example:` block, so an author buys that coverage by writing examples that are uncomfortable rather than tidy.
+
+## The document has a door
+
+Canonical markdown out, the same markdown in, through one panel. A visitor who fills a memo out has something to close the tab on, and a document on disk opens in the surface built to judge documents without a working tree behind it.
+
+**Out is the string the loop already takes.** `toMarkdown()` is what the repack carries, and a failed open holds that same string, so the door covers the state where a quill will not compile — which is the state an author most wants a document out of.
+
+**In is the carry with a different source.** `quill.parse` is the bound ingestion door and the repack loop already runs it: parse, conform against the schema in hand, strand what will not take with `conform::*` diagnostics. An import lands through exactly that, so what an import strands is read where a repack's stranding is read, and this door writes no landing, no stranding and no band of its own.
+
+**The file names its own quill, and is believed.** `doc.quillRef` is persisted in the markdown and read before anything is opened against it (`Document.fromMarkdown`, which needs no quill). A ref this quiver holds is the one the document lands in and the picker follows it: the document says what it is, and landing it somewhere else to spare the reader a moved control would strand every field to make a point about the picker. A ref the quiver does not hold has nothing to honour, so the quill on screen takes it and the conform names what would not fit.
+
+**Markdown, not the storage DTO.** `toJson()` / `fromJson` is the versioned DTO and would reconstitute exactly rather than re-conform. It is not in DOCUMENT_MODEL's table, which is the one place the version coupling to `@quillmark/wasm` is recorded, so a file a reader keeps would ride a coupling nothing records and move under a wasm bump with nothing to notice. Markdown is readable by whoever saved it, unchanged into the CLI or a quiver repo, and re-conformed on the way in — which is what is wanted when the schema moved under a stored document, and a loss only when it did not.
+
+**Neither half is the write door.** Both move a DOCUMENT, which studio mints, edits and frees on every keystroke. Nothing reaches a `Quill.yaml`, a plate or a quiver, so the rule below stands unamended and the protocol it defers stays deferred.
+
+The one refusal that is not a stranding is markdown that will not parse at all: it never becomes a document, so it has no diagnostics to route and no session to land in. That is said at the door, beside the text that caused it, and the document on screen stands.
 
 ## The document survives the quill
 
@@ -93,7 +123,7 @@ The band is under the panes rather than over them: it is consulted, not watched,
 
 ## Not
 
-A Typst IDE: studio shows a quill, it does not edit the plate or the schema. Not a CMS: no auth, no persistence, no multi-doc management, matching the playground's own limit. Not a gate: `quillkit test` is blocked on, studio is looked at, and `quillkit studio` gates nothing. Not a tool: the client carries no verb, so every door onto it is one the bin beside it opens.
+A Typst IDE: studio shows a quill, it does not edit the plate or the schema. Not a CMS: no auth, no persistence, no multi-doc management, matching the playground's own limit — a document leaves as a file the reader keeps, which is the converse of studio keeping it. Not a gate: `quillkit test` is blocked on, studio is looked at, and `quillkit studio` gates nothing. Not a tool: the client carries no verb, so every door onto it is one the bin beside it opens.
 
 ## The door rule, for what comes next
 

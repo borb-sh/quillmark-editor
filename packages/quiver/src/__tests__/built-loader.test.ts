@@ -13,7 +13,7 @@ import { loadBuiltQuiver } from '../built-loader.js';
 import { packFiles } from '../bundle.js';
 import { NAME_DIGEST_LENGTH, sha256Hex } from '../digest.js';
 import { QuiverError } from '../errors.js';
-import { POINTER_FORMAT } from '../format.js';
+import { MANIFEST_VERSION, POINTER_FORMAT } from '../format.js';
 import type { BuiltTransport, FetchOptions } from '../built-loader.js';
 import { mockQuillFromTree } from './helpers/mock-engine.js';
 
@@ -184,6 +184,24 @@ describe('loadBuiltQuiver — happy path', () => {
 		const q = await loadMinimal();
 		expect(q.versionsOf('memo')).toEqual(['1.1.0', '1.0.0']);
 		expect(q.versionsOf('resume')).toEqual(['2.0.0']);
+	});
+
+	it("carries the manifest's description", async () => {
+		const q = await loadBuiltQuiver(
+			await transportWith({
+				version: MANIFEST_VERSION,
+				name: 'sample',
+				description: 'A sample quiver',
+				quills: []
+			})
+		);
+		expect(q.description).toBe('A sample quiver');
+	});
+
+	// The fixtures above are all version 1, which is the same document without the
+	// field: a reader of this generation still reads what the last one packed.
+	it('a manifest without a description carries undefined', async () => {
+		expect((await loadMinimal()).description).toBeUndefined();
 	});
 });
 
@@ -376,9 +394,28 @@ describe('loadBuiltQuiver — invalid pointer', () => {
 });
 
 describe('loadBuiltQuiver — invalid manifest', () => {
-	it('version !== 1 → quiver_invalid', async () => {
+	it('a version above the reader names the upgrade', async () => {
 		await expect(
-			loadBuiltQuiver(await transportWith({ version: 2, name: 'test', quills: [] }))
+			loadBuiltQuiver(
+				await transportWith({ version: MANIFEST_VERSION + 1, name: 'test', quills: [] })
+			)
+		).rejects.toThrow(
+			expect.objectContaining({
+				code: 'quiver_invalid',
+				message: expect.stringContaining('Upgrade')
+			})
+		);
+	});
+
+	it('a non-integer version → quiver_invalid', async () => {
+		await expect(
+			loadBuiltQuiver(await transportWith({ version: '1', name: 'test', quills: [] }))
+		).rejects.toThrow(expect.objectContaining({ code: 'quiver_invalid' }));
+	});
+
+	it('a non-string description → quiver_invalid', async () => {
+		await expect(
+			loadBuiltQuiver(await transportWith({ version: 2, name: 'test', description: 7, quills: [] }))
 		).rejects.toThrow(expect.objectContaining({ code: 'quiver_invalid' }));
 	});
 

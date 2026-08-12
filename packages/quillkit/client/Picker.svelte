@@ -37,6 +37,15 @@
 
 <div class="picker">
 	<span class="qm-label">{catalog.name}</span>
+	{#if catalog.description}
+		<!-- The collection's own sentence, beside its name because that is what it names.
+		     The one line on this page a reader arriving cold did not have to be told, and
+		     the only one its author wrote; the panel behind `About` holds it untruncated
+		     with the rest of what that reader is missing. -->
+		<span class="said" data-testid="quiver-said" title={catalog.description}
+			>{catalog.description}</span
+		>
+	{/if}
 	<!-- A `<label>` where there is a control for it to name, a `<div>` where the value is
 	     printed: a label naming nothing is worse than the markup it saves. -->
 	{#if catalog.quills.length > 1}
@@ -98,5 +107,20 @@
 		display: flex;
 		align-items: center;
 		gap: var(--qmh-space);
+	}
+
+	/* The one run of authored prose in the chrome, and the only part of this band that
+	   yields: it truncates to whatever the controls beside it leave, because a sentence
+	   pushing the picker off the line costs the author the control they came for. Read in
+	   full one click away, which is what makes the truncation affordable. */
+	.said {
+		flex: 0 1 auto;
+		min-width: 0;
+		font-size: var(--qmh-text-meta);
+		line-height: var(--qmh-leading-tight);
+		color: var(--qmh-ghost);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 </style>
