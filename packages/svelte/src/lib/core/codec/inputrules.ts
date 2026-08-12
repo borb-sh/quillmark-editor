@@ -243,6 +243,8 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 			)
 		);
 	}
+	// No item guard: a quote wrapping an item's own first block is a container the
+	// content holds, where a list wrapping one is an item whose only content is an item.
 	if (schema.nodes.blockquote) {
 		rules.push(wrappingInputRule(/^\s*>\s$/, schema.nodes.blockquote));
 	}

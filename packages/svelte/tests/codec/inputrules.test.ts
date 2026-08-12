@@ -8,6 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { EditorState, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { blockSchema, inputRulesPlugin } from '$lib/core/codec';
+import { representable } from './_util.js';
 
 function mountView(): EditorView {
 	const state = EditorState.create({
@@ -242,6 +243,19 @@ describe('the list shorthands decline at the head of an existing item', () => {
 		const view = mountView();
 		type(view, '- one');
 		expect(view.state.doc.toString()).toBe('doc(bullet_list(list_item(paragraph("one"))))');
+		view.destroy();
+	});
+
+	// `> ` is the one block shorthand that fires here: what it wraps the item's paragraph
+	// in is a container the content holds, which is the whole of why the guard stops at
+	// the list rules.
+	it('`> ` fires, a quote inside an item being a shape the content holds', () => {
+		const view = itemView();
+		type(view, '> ');
+		expect(view.state.doc.toString()).toBe(
+			'doc(bullet_list(list_item(blockquote(paragraph("alpha")))))'
+		);
+		expect(representable(view.state)).toBe(true);
 		view.destroy();
 	});
 });
