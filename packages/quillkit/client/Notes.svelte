@@ -18,9 +18,14 @@
 
 	interface Props {
 		notes: NoteSet;
+		/** Open the document's source. The band is where what a document will not do is
+		 *  already read, so it is where the door onto the document stands. */
+		onEditSource: () => void;
+		/** Inert with no document to read: a boot that never opened has none. */
+		canEditSource: boolean;
 	}
 
-	let { notes }: Props = $props();
+	let { notes, onEditSource, canEditSource }: Props = $props();
 
 	const errors = $derived(notes.all.filter((n) => n.severity === 'error').length);
 	const warnings = $derived(notes.all.length - errors);
@@ -39,6 +44,19 @@
 				<span class="qm-label" data-testid="note-unrouted">{notes.unrouted} unrouted</span>
 			{/if}
 		{/if}
+		<!-- Inside the summary, so the band carries the door without standing a second
+		     one; the click is stopped because every other click on this row toggles the
+		     disclosure. -->
+		<button
+			class="qm-control door"
+			type="button"
+			data-testid="edit-source"
+			disabled={!canEditSource}
+			onclick={(e) => {
+				e.preventDefault();
+				onEditSource();
+			}}>Edit source</button
+		>
 	</summary>
 
 	{#if notes.all.length > 0}
@@ -90,6 +108,12 @@
 
 	.count.alert {
 		color: var(--qmh-alert);
+	}
+
+	/* Off the end of the row, so the counts keep their position as they change and the
+	   one control in the band is where a control is looked for. */
+	.door {
+		margin-inline-start: auto;
 	}
 
 	/* Bounded, because a quill with thirty must-fill fields would otherwise take the

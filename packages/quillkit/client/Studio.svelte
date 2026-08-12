@@ -37,7 +37,6 @@
 	import { VisualEditor } from '@quillmark/svelte/visual';
 	import type { EditorChange } from '@quillmark/svelte/visual';
 	import Picker from './Picker.svelte';
-	import Panel from './Panel.svelte';
 	import Markdown from './Markdown.svelte';
 	import Notes from './Notes.svelte';
 	import { catalogOf, openQuiver, type Catalog } from './quiver';
@@ -95,20 +94,10 @@
 	/** What the strip names: the throw's place if it carried one, else its first note. */
 	const halt = $derived(stalled ? (placed ?? thrown[0]) : undefined);
 
-	/** Why the document in hand crossed into the open holding it. A repack is a fact
-	 *  about the quill and an import is a fact about the document, and the landing is the
-	 *  same either way, so the occasion is held here rather than in the carry. */
-	let crossed = $state.raw<'repack' | 'import'>('repack');
-
-	/** What the head says about a document that crossed: what moved, and what became of
-	 *  it. A seed says nothing. */
-	const crossing = $derived.by(() => {
-		if (!open || open.carry.how === 'seeded') return undefined;
-		const took = open.carry.how === 'carried';
-		return crossed === 'import'
-			? `Imported · document ${took ? 'landed' : 'reseeded'}`
-			: `Repacked · document ${took ? 'carried' : 'reseeded'}`;
-	});
+	/** Whether a repack put the document where it is. An import lands through the same
+	 *  carry, and says nothing: a repack happens to the author, and an import is a thing
+	 *  the reader just did. */
+	let repacked = $state.raw(false);
 
 	function syncNotes(): void {
 		notes = collect([
@@ -175,22 +164,19 @@
 		syncNotes();
 	}
 
-	// ── The doors ───────────────────────────────────────────────────────────────
-	/** Which panel is open, if either. */
-	let panel = $state.raw<'about' | 'markdown' | undefined>();
-
-	/** The document as text, taken when the door opened rather than tracked: an edit
-	 *  mutates the document in place and reassigns nothing, so a derivation over it would
-	 *  hold whatever the last remount produced. */
+	// ── The door ────────────────────────────────────────────────────────────────
+	/** The document as text while the door is open, taken when it opened rather than
+	 *  tracked: an edit mutates the document in place and reassigns nothing, so a
+	 *  derivation over it would hold whatever the last remount produced. Undefined is the
+	 *  door being shut. */
 	let sourceText = $state.raw<string | undefined>();
 
 	/** Whether there is a document to read at all: the session's, or the text a failed
 	 *  open left held. */
 	const carrying = $derived(open !== undefined || held !== undefined);
 
-	function openMarkdown(): void {
+	function openSource(): void {
 		sourceText = open ? open.doc.toMarkdown() : held;
-		panel = 'markdown';
 	}
 
 	/**
@@ -217,8 +203,8 @@
 			probe?.free();
 		}
 		if (!at) return `quiver "${catalog?.name}" holds no quills`;
-		panel = undefined;
-		crossed = 'import';
+		sourceText = undefined;
+		repacked = false;
 		picked = at;
 		held = undefined;
 		await mount(`${at.name}@${at.version}`, text);
@@ -240,7 +226,7 @@
 	 * moved under it; a ref that vanished falls back to whatever the catalog now holds.
 	 */
 	async function reload(): Promise<void> {
-		crossed = 'repack';
+		repacked = true;
 		const carry = open ? open.doc.toMarkdown() : held;
 		let next: Catalog;
 		try {
@@ -380,22 +366,12 @@
 		{#if catalog}
 			<Picker {catalog} {picked} disabled={busy} onPick={pick} />
 		{/if}
-		<!-- The two doors, opened rather than stood on (STUDIO §"Opened, not stood on"). -->
-		<span class="doors">
-			<button
-				class="qm-control"
-				type="button"
-				data-testid="open-about"
-				onclick={() => (panel = 'about')}>About</button
-			>
-			<button
-				class="qm-control"
-				type="button"
-				data-testid="open-markdown"
-				disabled={!carrying}
-				onclick={openMarkdown}>Markdown</button
-			>
-		</span>
+		<!-- What the two panes are, for the reader who did not type the verb. A label
+		     rather than a sentence: it is the same fact the panes' own accessible names
+		     carry, said where a sighted reader meets it, and it is about studio's own
+		     screen rather than about the document model, so it cannot go stale under a
+		     schema (STUDIO §"Opened, not stood on"). -->
+		<span class="qm-label panes-are" data-testid="panes-are">edit left · paint right</span>
 		<span class="state">
 			{#if phase.kind === 'booting'}
 				<span class="qm-status" data-testid="phase">Opening…</span>
@@ -410,11 +386,12 @@
 					     as text for the repack that fixes it. -->
 					<span class="qm-status" data-testid="held">Document held</span>
 				{/if}
-			{:else if crossing}
+			{:else if repacked && open && open.carry.how !== 'seeded'}
 				<!-- An open session says so by painting the page, so the only word here is
-				     what moved under the document that was already in hand, and what became
-				     of it. -->
-				<span class="qm-status" data-testid="phase">{crossing}</span>
+				     what a repack did to the document that was already in hand. -->
+				<span class="qm-status" data-testid="phase"
+					>Repacked · document {open.carry.how === 'carried' ? 'carried' : 'reseeded'}</span
+				>
 			{/if}
 		</span>
 	</header>
@@ -496,43 +473,18 @@
 		</div>
 	{/if}
 
-	<Notes {notes} />
+	<Notes {notes} onEditSource={openSource} canEditSource={carrying} />
 </div>
 
-<!-- Mounted only while open, which is what makes every opening a fresh read: the markdown
-     door seeds its draft from the document as it then stands. -->
-{#if panel === 'about'}
-	<Panel title="About this studio" open onClose={() => (panel = undefined)}>
-		<div class="about">
-			{#if catalog}
-				<p class="qm-label">quiver</p>
-				<p class="said">
-					<strong>{catalog.name}</strong>{#if catalog.description}&nbsp;— {catalog.description}{/if}
-				</p>
-			{/if}
-			<p class="said">
-				A <strong>quill</strong> is a document template: a schema saying what fields a document has,
-				and a layout that paints them. A <strong>quiver</strong> is a versioned collection of them, and
-				this page is one quill of it, worked live.
-			</p>
-			<p class="said">
-				The left pane is the document, <strong>typed into</strong>; the right is that same document
-				as the quill paints it. One document, two views — a keystroke on the left repaints the
-				right, and a click on the right puts the caret where it came from. Anything either of them
-				will not accept is listed in the band under both.
-			</p>
-			<p class="said">
-				Nothing here is saved: the document lives in this tab, and a reload seeds a fresh one.
-				<strong>Markdown</strong> is the door it leaves and returns through.
-			</p>
-		</div>
-	</Panel>
-{/if}
-
-{#if panel === 'markdown' && sourceText !== undefined && picked}
-	<Panel title="Document markdown" open onClose={() => (panel = undefined)}>
-		<Markdown text={sourceText} ref={`${picked.name}@${picked.version}`} onApply={applyMarkdown} />
-	</Panel>
+<!-- Mounted only while open, which is what makes every opening a fresh read of the
+     document as it then stands. -->
+{#if sourceText !== undefined && picked}
+	<Markdown
+		text={sourceText}
+		ref={`${picked.name}@${picked.version}`}
+		onApply={applyMarkdown}
+		onClose={() => (sourceText = undefined)}
+	/>
 {/if}
 
 <style>
@@ -569,29 +521,10 @@
 		color: var(--qmh-ghost);
 	}
 
-	/* Between the picker and the phase: the doors are about the page rather than the
-	   quill, so they take neither end of the band. */
-	.doors {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--qmh-space-2);
-	}
-
-	/* The one place in studio that is read rather than scanned, so it holds to a reading
-	   measure where the rest of the chrome holds to the band it is in. */
-	.about {
-		display: flex;
-		flex-direction: column;
-		gap: var(--qmh-space-3);
-		max-width: var(--qmh-measure);
-		overflow-y: auto;
-		min-height: 0;
-	}
-
-	.said {
-		margin: 0;
-		line-height: var(--qmh-leading-body);
-		color: var(--qmh-ink);
+	/* The quietest run in the band: the reader who needs it has not read anything else
+	   here, and the author reads past it once. */
+	.panes-are {
+		color: var(--qmh-ghost);
 	}
 
 	/* The phase reads off the end of the line, so the picker holds its position when

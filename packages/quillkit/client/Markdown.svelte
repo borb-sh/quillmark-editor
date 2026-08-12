@@ -4,6 +4,11 @@
 
   Nothing here parses, conforms or reports. `apply` hands the text to the caller, which
   lands it through the repack's own carry.
+
+  Mounted only while open, so `showModal` on mount is the whole of the lifecycle and the
+  draft below is seeded against the document as it then stands. Native `<dialog>` carries
+  the top layer, the focus trap and the escape key; what is written here is the scrim's
+  tone and the plate's box, the preset carrying no dialog.
 -->
 <script lang="ts">
 	interface Props {
@@ -16,14 +21,17 @@
 		 *  what it stranded are the caller's to report; what never became a document is
 		 *  said here, beside the text that caused it. */
 		onApply: (text: string) => Promise<string | undefined>;
+		/** Called for every way it closes, the escape key and the scrim included. */
+		onClose: () => void;
 	}
 
-	let { text, ref, onApply }: Props = $props();
+	let { text, ref, onApply, onClose }: Props = $props();
+
+	let el = $state.raw<HTMLDialogElement | undefined>();
+	$effect(() => el?.showModal());
 
 	/** What the panel opened with, edited or replaced; studio's document is untouched
-	 *  until `apply`, so closing the panel discards this and nothing else. Seeded once per
-	 *  mount, and the panel is mounted only while open, so every opening reads the
-	 *  document as it then stands. */
+	 *  until `apply`, so closing the panel discards this and nothing else. */
 	// svelte-ignore state_referenced_locally
 	let draft = $state(text);
 
@@ -58,55 +66,106 @@
 	}
 </script>
 
-<div class="doors">
-	<!-- Editable, since replacing the text is how a document comes in. Not a second
-	     editor: what is typed reaches the document only through `apply`, all at once. -->
-	<textarea
-		class="qm-readout source"
-		data-testid="markdown-source"
-		spellcheck="false"
-		rows="16"
-		aria-label="Document markdown"
-		bind:value={draft}
-	></textarea>
+<!-- The dialog fills the viewport and centres the plate, so a click on the dialog itself
+     landed outside the plate. -->
+<dialog
+	bind:this={el}
+	class="panel"
+	aria-label="Document source"
+	onclose={onClose}
+	onclick={(e) => e.target === el && onClose()}
+>
+	<div class="qm-panel plate">
+		<header class="head">
+			<h2 class="qm-label">{ref}</h2>
+			<button class="qm-control" type="button" data-testid="markdown-close" onclick={onClose}
+				>Close</button
+			>
+		</header>
 
-	{#if refused}
-		<p class="qm-status qm-status-error" data-testid="markdown-refused">{refused}</p>
-	{/if}
+		<!-- Editable, since replacing the text is how a document comes in. Not a second
+		     editor: what is typed reaches the document only through `apply`, all at once. -->
+		<textarea
+			class="qm-readout source"
+			data-testid="markdown-source"
+			spellcheck="false"
+			rows="16"
+			aria-label="Document markdown"
+			bind:value={draft}
+		></textarea>
 
-	<div class="row">
-		<button class="qm-control" type="button" data-testid="markdown-download" onclick={download}
-			>Download</button
-		>
-		<!-- The input is the control; the label is what it looks like, since a file input
-		     draws a button this page does not draw. -->
-		<label class="qm-control file">
-			Open file…
-			<input
-				type="file"
-				accept=".md,text/markdown,text/plain"
-				data-testid="markdown-open"
-				onchange={(e) => readFile(e.currentTarget)}
-			/>
-		</label>
-		<!-- Inert until the text differs from the document: applying what is already
-		     mounted would reseed a session to land the document it is holding. -->
-		<button
-			class="qm-control"
-			type="button"
-			data-testid="markdown-apply"
-			disabled={!dirty}
-			onclick={async () => (refused = await onApply(draft))}>Apply</button
-		>
+		{#if refused}
+			<p class="qm-status qm-status-error" data-testid="markdown-refused">{refused}</p>
+		{/if}
+
+		<div class="row">
+			<button class="qm-control" type="button" data-testid="markdown-download" onclick={download}
+				>Download</button
+			>
+			<!-- The input is the control; the label is what it looks like, since a file input
+			     draws a button this page does not draw. -->
+			<label class="qm-control file">
+				Open file…
+				<input
+					type="file"
+					accept=".md,text/markdown,text/plain"
+					data-testid="markdown-open"
+					onchange={(e) => readFile(e.currentTarget)}
+				/>
+			</label>
+			<!-- Inert until the text differs from the document: applying what is already
+			     mounted would reseed a session to land the document it is holding. -->
+			<button
+				class="qm-control"
+				type="button"
+				data-testid="markdown-apply"
+				disabled={!dirty}
+				onclick={async () => (refused = await onApply(draft))}>Apply</button
+			>
+		</div>
 	</div>
-</div>
+</dialog>
 
 <style>
-	.doors {
+	/* The dialog is the room, not the plate: it takes the viewport so the scrim is
+	   clickable everywhere, and the plate inside it is what has a size. The element's own
+	   box is stripped of the shape a dialog comes with. */
+	.panel {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-sizing: border-box;
+		width: 100%;
+		max-width: 100%;
+		height: 100%;
+		max-height: 100%;
+		padding: var(--qmh-space-4);
+		border: none;
+		background: none;
+		overflow: hidden;
+	}
+
+	.panel::backdrop {
+		/* mint: a scrim is a tone between two planes, and the host scale carries no
+		   opacity rung — the recede ladder is the package's own. */
+		background: color-mix(in srgb, var(--qmh-page) 80%, transparent);
+	}
+
+	.plate {
 		display: flex;
 		flex-direction: column;
 		gap: var(--qmh-space-3);
+		width: 100%;
+		max-width: var(--st-panel);
+		max-height: 100%;
 		min-height: 0;
+	}
+
+	.head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--qmh-space-4);
 	}
 
 	/* The block readout, made typable: `pre.qm-readout`'s plate on a control carrying its
