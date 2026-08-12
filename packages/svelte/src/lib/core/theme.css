@@ -89,8 +89,16 @@
 		/* Neutral: the surface spends no hue on a state it can draw in grey. The pair
 		   clears WCAG 2.4.11's 3:1 against the card at both poles, at 4.8:1 and 5.8:1. */
 		--_qm-accent: var(--qm-accent, light-dark(#71717a, #a1a1aa));
-		--_qm-danger: var(--qm-danger, #c5221f);
-		--_qm-warning: var(--qm-warning, #b25000);
+		/* The two hues the surface does spend, and it spends them on a state. Each pole
+		   is its own figure rather than one ink shown twice: a hue calibrated against
+		   white reads as a stain on a dark card. All four clear WCAG 1.4.3's 4.5:1
+		   against the card, which is the bar the label rung asks for and the one the
+		   glyphs drawn in these hues clear on the way past 1.4.11's 3:1 — 5.8:1 and
+		   5.2:1 light, 7.4:1 and 7.7:1 dark. The figures are the host scale's
+		   (`preset/scale.css`), so a page's status line and a card's diagnostic carry
+		   one colour meaning error and one meaning warning. */
+		--_qm-danger: var(--qm-danger, light-dark(#c5221f, #ff9c94));
+		--_qm-warning: var(--qm-warning, light-dark(#b25000, #e0b44c));
 		--_qm-font: var(--qm-font, ui-sans-serif, system-ui, sans-serif);
 		--_qm-font-mono: var(--qm-font-mono, ui-monospace, monospace);
 
