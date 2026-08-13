@@ -4,14 +4,15 @@
 // Each of the three open sets gets an inert carrier so an unrecognized value
 // survives a round-trip: the `unknown` mark, the paragraph's `unknown` attribute,
 // and the `unknown_container` node. `blockSchema` is the full field; `inlineSchema`
-// is the constrained single-textblock form for `richtext(inline)` / `plaintext`
-// (one paragraph, no block split, no containers, no islands): same decode/lower/
-// position machinery, narrower shape. Anchors are not marks here (decorations).
+// is the constrained single-textblock form for `richtext(inline)` (one paragraph,
+// no block split, no containers, no islands) and `plaintextSchema` is that one
+// without marks: same decode/lower/position machinery, narrower shape. Anchors are
+// not marks here (decorations).
 import { Schema } from 'prosemirror-model';
 import type { MarkSpec, NodeSpec } from 'prosemirror-model';
 import { islandBlockSpec, islandInlineSpec } from './islands.js';
 
-// ── Marks (shared by both schemas; plaintext mounts none) ───────────────────
+// ── Marks (the block and inline schemas share them; plaintext declares none) ─
 const marks: Record<string, MarkSpec> = {
 	// Order matters: it fixes mark-set sort order and parse precedence. `link`
 	// last so it wraps outermost; `unknown` after it, non-exclusive so several
@@ -141,21 +142,36 @@ export const blockSchema = new Schema({
 	marks
 });
 
+// ── The constrained inline nodes (both inline schemas) ──────────────────────
+// `doc: "paragraph"` (exactly one child) is what makes an Enter a no-op at the
+// model level: there is no second block for a split to land.
+const inlineNodes: Record<string, NodeSpec> = {
+	doc: { content: 'paragraph' },
+	paragraph: { content: 'inline*', toDOM: () => ['p', 0] },
+	text: { group: 'inline' }
+};
+
+/** The constrained inline schema: one paragraph, no block splitting, no
+ *  containers, no islands, and the full mark set (a `richtext(inline)` field, and
+ *  a table cell, which is the same content unit). */
+export const inlineSchema = new Schema({ nodes: inlineNodes, marks });
+
 /**
- * The constrained inline schema: one paragraph, no block splitting, no
- * containers, no islands. `doc: "paragraph"` (exactly one child) is what makes an
- * Enter a no-op at the model level: there is no second block for a split to land.
- * Marks are present; `plaintext` fields strip them at decode and mount no
- * mark input (a schema-level distinction the field draws, per CODEC §Inline mode).
+ * The inline schema with no mark types at all: a `plaintext` field, whose value is
+ * literal text the boundary refuses to coerce back once it carries a mark.
+ *
+ * Declaring none is what makes that structural rather than a rule each path
+ * restates: `toggleMark` has no type to apply, the mark input rules build nothing,
+ * a paste parses its marks away, and `decode` drops any a stray content arrives
+ * carrying (CODEC §Inline mode).
  */
-export const inlineSchema = new Schema({
-	nodes: {
-		doc: { content: 'paragraph' },
-		paragraph: { content: 'inline*', toDOM: () => ['p', 0] },
-		text: { group: 'inline' }
-	},
-	marks
-});
+export const plaintextSchema = new Schema({ nodes: inlineNodes, marks: {} });
+
+/** Whether `schema` can carry formatting at all: false for {@link plaintextSchema}
+ *  alone. What a mark command asks before it offers itself. */
+export function hasMarks(schema: Schema): boolean {
+	return Object.keys(schema.marks).length > 0;
+}
 
 /** True for the constrained inline schema (no block containers); decode branches on it. */
 export function isInlineSchema(schema: Schema): boolean {

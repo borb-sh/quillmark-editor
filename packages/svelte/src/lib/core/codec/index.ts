@@ -30,8 +30,9 @@ export type { TableChromeStrings } from './table-view.js';
 export { DEFAULT_SLASH_STRINGS } from './slash.js';
 export type { SlashState, SlashStrings } from './slash.js';
 
-// Schemas (the decode/encode target; the VisualEditor mounts them).
-export { blockSchema, inlineSchema } from './schema.js';
+// Schemas (the decode/encode target; the VisualEditor mounts them). `hasMarks` is
+// what a mark surface asks before offering itself over a leaf.
+export { blockSchema, inlineSchema, plaintextSchema, hasMarks } from './schema.js';
 
 // Decode / encode / positions (tests + VisualEditor).
 //

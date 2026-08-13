@@ -1,7 +1,7 @@
 // Decode: idempotence up to normalization, overlapping-mark inline splits, island
 // round-trip, and the inline/plaintext constraints.
 import { describe, it, expect } from 'vitest';
-import { decode, pmToContent, blockSchema, inlineSchema } from '$lib/core/codec';
+import { decode, pmToContent, blockSchema, inlineSchema, plaintextSchema } from '$lib/core/codec';
 import type { Content } from '@quillmark/wasm';
 import { md, normalize, contentEqual, titleContent, bodyContent } from './_util.js';
 
@@ -99,8 +99,10 @@ describe('inline / plaintext constraints', () => {
 		expect(hasStrong).toBe(true);
 	});
 
-	it('plaintext strips marks', () => {
-		const doc = decode(md('plain **bold** *em*'), inlineSchema, { plaintext: true });
+	// A content carrying marks under the mark-free schema: what an older build's
+	// popover left on a plaintext field, and what has to open rather than throw.
+	it('the plaintext schema strips marks', () => {
+		const doc = decode(md('plain **bold** *em*'), plaintextSchema);
 		const anyMark = doc.child(0).children.some((n) => n.marks.length > 0);
 		expect(anyMark).toBe(false);
 		expect(doc.child(0).textContent).toBe('plain bold em');

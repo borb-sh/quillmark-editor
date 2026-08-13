@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**A `plaintext` field no longer offers formatting.** Its leaf mounts a schema declaring no mark types, so the selection popover withholds itself over one — the way it never rises over the input a `string` field draws — `Mod-b`/`i`/`u` bind nothing, the markdown shorthands build no rule, and a paste lands as literal text. Formatting one was previously accepted by the commit and refused at render (`cannot coerce <plaintext> to type plaintext at <field>`), so an ordinary click broke the document with nothing on the write side able to catch it: a mark has to be unreachable rather than rejected. A value already carrying one opens as its text and drops the mark on its next commit, so a document an earlier build marked heals by being edited.
+
 ## v0.4.0 - 2026-08-13
 
 **The `@quillmark/wasm` peer floor is `>=0.104.0-0`, where an array element's address is bracketed.** `FieldRegion.field` and `ContentHit.field` spell an element `main.keywords[0]` where 0.103 spelled it `main.keywords.0`, which is the spelling `Diagnostic.path` and `formatDocPath` already used: one address for one place, joining on string equality. Both hooks are typed `string`, so nothing upstream reports this — a consumer matching an address's children by prefix needs the `[` opener beside the `.`, and any heuristic reading a trailing all-digit field name as a lost index is dead.

@@ -47,7 +47,7 @@
 		const pmDoc = decode(value, inlineSchema);
 		const state = EditorState.create({
 			doc: pmDoc,
-			plugins: proseLeafPlugins(inlineSchema, { inline: true, plaintext: false })
+			plugins: proseLeafPlugins(inlineSchema, { inline: true })
 		});
 		const mounted = new EditorView(containerEl, {
 			state,

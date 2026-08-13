@@ -10,9 +10,10 @@
 // in nothing else. So the schema is built here and stays minimal: two content fields
 // differing only in declared type, which is the entire variable.
 import { describe, it, expect } from 'vitest';
-import { init, type Document, type Quill } from '@quillmark/wasm';
-import { createField } from '$lib/core/codec';
+import { init, type Content, type Document, type Quill } from '@quillmark/wasm';
+import { createField, hasMarks } from '$lib/core/codec';
 import type { FieldController } from '$lib/core/codec';
+import { TextSelection } from 'prosemirror-state';
 import type { EditorView } from 'prosemirror-view';
 
 const core = await init();
@@ -144,6 +145,86 @@ describe('a plaintext leaf over an authored string', () => {
 		view.dispatch(view.state.tr.insertText('?', 2));
 		expect(errors).toEqual([]);
 		expect(field.getContent().text).toBe(`!?${AUTHORED}`);
+
+		field.destroy();
+		doc.free();
+	});
+});
+
+describe('a plaintext leaf carries no marks', () => {
+	// The field's value is literal text, and the boundary refuses to coerce a marked
+	// content back to `plaintext` — the document renders with an error instead. The
+	// commit path does not catch it (`applyChange` takes the mark op), so the mark must
+	// be unreachable rather than rejected: the leaf mounts a schema declaring no mark
+	// types, which is one mechanism covering every path that could mint one.
+	function plaintextField(doc: Document, onError?: (code: string) => void): FieldController {
+		return createField({
+			doc,
+			quill: probeQuill(),
+			addr: { field: 'note' },
+			container: mount(),
+			plaintext: true,
+			onError: (e) => onError?.(e.code)
+		});
+	}
+
+	it('has no mark type for a format command to apply', () => {
+		const doc = authored();
+		const field = plaintextField(doc);
+		const { schema } = viewOf(field).state;
+
+		// The two lookups the format popover makes: whether to raise at all, and the
+		// type its button would toggle (`FormatPopover.sync` / `toggle`). Every one of
+		// the six is fetched by name off the view's schema, so `strong` stands for the set.
+		expect(hasMarks(schema)).toBe(false);
+		expect(schema.marks.strong).toBeUndefined();
+
+		field.destroy();
+		doc.free();
+	});
+
+	it('parses a pasted mark away, keeping the text', () => {
+		const doc = authored();
+		const field = plaintextField(doc);
+		const view = viewOf(field);
+		view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 1, 1)));
+		// jsdom implements no `ClipboardEvent`, and the paste path reads nothing off the
+		// one `pasteHTML` wants: a bare event carries it.
+		view.pasteHTML(
+			'<p><strong>bold</strong> plain</p>',
+			new Event('paste', { bubbles: true, cancelable: true }) as ClipboardEvent
+		);
+
+		expect(field.getContent().marks).toHaveLength(0);
+		expect(field.getContent().text).toBe(`bold plain${AUTHORED}`);
+
+		field.destroy();
+		doc.free();
+	});
+
+	it('opens a value that already carries one, and drops it on the next commit', () => {
+		// The state an older build left behind: a strong mark on a plaintext field, which
+		// renders as a coercion error. Decode strips it, so the leaf shows the text, and
+		// the first keystroke commits the stripped content back.
+		const doc = authored();
+		const marked: Content = {
+			text: AUTHORED,
+			lines: [{ containers: [], kind: 'para' }],
+			marks: [{ type: 'strong', start: 0, end: 4 }],
+			islands: []
+		};
+		doc.overwrite('note', marked);
+		expect((doc.getStored('note') as Content).marks).toHaveLength(1);
+
+		const codes: string[] = [];
+		const field = plaintextField(doc, (c) => codes.push(c));
+		const view = viewOf(field);
+		expect(view.state.doc.textContent).toBe(AUTHORED);
+
+		view.dispatch(view.state.tr.insertText('!', 1));
+		expect(codes).toEqual([]);
+		expect((doc.getStored('note') as Content).marks).toHaveLength(0);
+		expect(field.getContent().text).toBe(`!${AUTHORED}`);
 
 		field.destroy();
 		doc.free();

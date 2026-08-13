@@ -143,7 +143,9 @@ A carrier is dropped only by an **explicit** conversion (retyping the paragraph 
 
 ## Inline mode
 
-`richtext(inline)` and `plaintext` fields are single-paragraph, container-free, island-free. The codec runs a constrained PM schema (one textblock, no block splitting, Enter suppressed); `plaintext` additionally strips all marks. Same decode / lower / position machinery, narrower schema.
+`richtext(inline)` and `plaintext` fields are single-paragraph, container-free, island-free. The codec runs a constrained PM schema (one textblock, no block splitting, Enter suppressed); `plaintext` runs that schema **declaring no mark types at all**. Same decode / lower / position machinery, narrower schema.
+
+**A plaintext field's mark-freedom is the schema's, not a rule per path.** The boundary refuses to coerce a marked content back to `plaintext`, and the refusal lands at render, where no commit-time gate catches it — so a mark has to be unreachable rather than rejected. Declaring none is what makes it so: a format command finds no type to apply and the surface offering it withholds itself (VISUAL_EDITOR §Chrome), the shorthand rules build nothing, a paste parses its marks away, and a browser's own `Mod-b` binds nothing. Anchors go with them: an identity anchor is a mark on the wire whatever it is in PM. Decode drops any mark a content arrives carrying, so a value an older build marked opens as its text and heals on the next commit rather than throwing on the read.
 
 **A plaintext field's codec is the boundary's, reached through `reader.getContent`.** Its rest form is the literal string, and its content is that string verbatim: the leaf never parses it, and `importMarkdown` on it would consume the delimiters the author is entitled to. The write side stays the content-object round-trip via `overwrite` / `applyChange`, which the mark-free inline schema keeps conforming. The reference quill declares both types (`subtitle` plaintext, `epigraph` inline richtext) but no two fields differing in nothing else, so the mode's suite builds a two-field schema of its own, the only one in the package that does: the declared type is the whole variable.
 

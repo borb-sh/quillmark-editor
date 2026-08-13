@@ -113,11 +113,12 @@ describe('field-level reconciliation', () => {
 	});
 });
 
-describe('plaintext fields mount no markdown input rules', () => {
-	// `inlineSchema` still declares the mark types, so a `**x**` rule reaching a
-	// plaintext field would apply a strong mark and eat the delimiters its author is
-	// entitled to. The rule is triggered the way a keystroke does: via `handleTextInput`
-	// with the char that completes the pattern.
+describe('plaintext fields fire no markdown input rules', () => {
+	// A `**x**` rule reaching a plaintext field would apply a strong mark and eat the
+	// delimiters its author is entitled to. `plaintextSchema` declares no mark types, so
+	// the rule is never built (`markdownInputRules` guards each on its type). The rule is
+	// triggered the way a keystroke does: via `handleTextInput` with the char that
+	// completes the pattern.
 	function fireClosingStar(view: EditorView): unknown {
 		const pos = view.state.selection.head;
 		// `handleTextInput(view, from, to, text, deflt)`; the input-rules plugin
@@ -136,7 +137,7 @@ describe('plaintext fields mount no markdown input rules', () => {
 		});
 		const view = viewOf(field);
 		view.dispatch(view.state.tr.insertText('**x*', 1)); // literal; the closing `*` fires the rule
-		expect(fireClosingStar(view)).toBeFalsy(); // no input-rules plugin → not intercepted
+		expect(fireClosingStar(view)).toBeFalsy(); // no rule to match → not intercepted
 		view.dispatch(view.state.tr.insertText('*', view.state.selection.head));
 		const rt = doc.getStored('colophon') as { text: string; marks: unknown[] };
 		expect(rt.text).toBe('**x**');
@@ -144,7 +145,7 @@ describe('plaintext fields mount no markdown input rules', () => {
 		field.destroy();
 	});
 
-	it('a non-plaintext inline field DOES fire it (proving the guard is what suppresses it)', () => {
+	it('a non-plaintext inline field DOES fire it (proving the schema is what suppresses it)', () => {
 		const doc = quill().seedDocument();
 		const field = createField({
 			doc,
