@@ -15,16 +15,15 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(HERE, '..', '..', '..', '..');
 
 /** The one reference quill (dev fixture, never published). */
-export const USAF_MEMO_ROOT = join(REPO_ROOT, 'fixtures', 'quills', 'usaf_memo', '0.2.0');
+const ROOT = join(REPO_ROOT, 'fixtures', 'quills', 'specimen', '1.0.0');
 
 /**
- * Walk `root` into a `Map` keyed by `"/"`-joined paths relative to it; binary
- * bytes intact (fonts/seals are read as raw `Uint8Array`, never decoded). The
- * version directory is quill content throughout: the schema snapshot the repo
- * keeps for diffing lives beside `quills/`, not inside it, so there is nothing
- * here to skip.
+ * The reference quill's tree, keyed by `"/"`-joined paths relative to its root;
+ * binary bytes intact (the fonts and the letterhead mark are read as raw
+ * `Uint8Array`, never decoded). The version directory is quill content throughout,
+ * so there is nothing here to skip.
  */
-export function loadFixtureTree(root: string = USAF_MEMO_ROOT): Map<string, Uint8Array> {
+export function loadFixtureTree(): Map<string, Uint8Array> {
 	const tree = new Map<string, Uint8Array>();
 	const walk = (dir: string): void => {
 		for (const name of readdirSync(dir)) {
@@ -32,12 +31,11 @@ export function loadFixtureTree(root: string = USAF_MEMO_ROOT): Map<string, Uint
 			if (statSync(abs).isDirectory()) {
 				walk(abs);
 			} else {
-				const key = relative(root, abs).split(sep).join('/');
-				tree.set(key, new Uint8Array(readFileSync(abs)));
+				tree.set(relative(ROOT, abs).split(sep).join('/'), new Uint8Array(readFileSync(abs)));
 			}
 		}
 	};
-	walk(root);
+	walk(ROOT);
 	return tree;
 }
 

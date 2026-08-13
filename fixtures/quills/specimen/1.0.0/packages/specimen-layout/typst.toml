@@ -1,0 +1,8 @@
+[package]
+name = "specimen-layout"
+version = "1.0.0"
+compiler = "0.14.0"
+entrypoint = "src/lib.typ"
+authors = ["quillmark-js"]
+license = "Apache-2.0"
+description = "Page furniture for the workspace's reference quill. A vendored @local package, so the fixture carries a package tree and fonts of its own."

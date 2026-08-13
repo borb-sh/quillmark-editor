@@ -5,7 +5,7 @@
 // through `setCaret`, which is the one entry that places a caret on demand and so
 // the one that can ask for the same place twice.
 //
-// The memo spans leaves, which is what a per-leaf guard cannot do: leaving a place
+// The document spans leaves, which is what a per-leaf guard cannot do: leaving a place
 // and coming back to the same offset in it is two moves, and a consumer following
 // the caret has to hear both.
 import { describe, it, expect, afterEach } from 'vitest';
@@ -70,10 +70,10 @@ describe('the caret signal reports places, not transactions', () => {
 		await editor.setCaret(at('main.body', 3));
 		places.length = 0;
 
-		await editor.setCaret(at('main.subject', 3));
+		await editor.setCaret(at('main.title', 3));
 		await editor.setCaret(at('main.body', 3));
 		expect(places).toEqual([
-			{ field: 'main.subject', pos: 3 },
+			{ field: 'main.title', pos: 3 },
 			{ field: 'main.body', pos: 3 }
 		]);
 	});

@@ -38,7 +38,7 @@
 	/* ── Containers ──────────────────────────────────────────────────────────── */
 	/* The height of a front-page demo frame, and the one number here staked to the
 	   fixture rather than to the layout: it sits under a painted page by design, since
-	   usaf_memo is two pages and a frame shorter than one of them makes scrolling swap
+	   the reference quill is two pages and a frame shorter than one of them makes scrolling swap
 	   which page is mounted, so the paint loop's bound can be checked by hand. The
 	   ceiling is the page itself (~1053px at the fixture's scale), so this can grow but
 	   not double. */

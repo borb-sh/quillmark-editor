@@ -18,16 +18,16 @@ import { quill } from '../helpers/fixtures.js';
 
 const core = await init();
 
-/** A document whose `subject` is `text`, seeded off the reference quill. */
+/** A document whose `title` is `text`, seeded off the reference quill. */
 function docWith(q: Quill, text: string): Document {
 	const doc = q.seedDocument();
-	q.writer(doc).set('subject', text);
+	q.writer(doc).set('title', text);
 	return doc;
 }
 
-/** The main card's `subject` leaf, by the key the registry stamps on it. */
-function subjectLeaf(target: HTMLElement): HTMLElement | null {
-	return target.querySelector('[data-leaf-key$="subject"]');
+/** The main card's `title` leaf, by the key the registry stamps on it. */
+function titleLeaf(target: HTMLElement): HTMLElement | null {
+	return target.querySelector('[data-leaf-key$="title"]');
 }
 
 let cleanup: (() => void) | undefined;
@@ -58,14 +58,14 @@ describe('swapping the doc prop', () => {
 		const b = docWith(q, 'SECOND SUBJECT');
 		const { target, props } = mountEditor(q, a);
 
-		const before = subjectLeaf(target);
+		const before = titleLeaf(target);
 		expect(before).not.toBeNull();
 		expect(before?.textContent).toContain('FIRST SUBJECT');
 
 		props.doc = b;
 		flushSync();
 
-		const after = subjectLeaf(target);
+		const after = titleLeaf(target);
 		expect(after).not.toBeNull();
 		// A remount, not a re-render: the node itself is replaced, which is what
 		// `createField` running again against `b` looks like from outside.

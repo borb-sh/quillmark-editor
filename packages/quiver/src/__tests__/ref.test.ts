@@ -3,30 +3,30 @@ import { parseQuillRef } from '../ref.js';
 import { QuiverError } from '../errors.js';
 
 describe('parseQuillRef — valid refs', () => {
-	it('parses bare name: usaf_memo', () => {
-		const result = parseQuillRef('usaf_memo');
-		expect(result.name).toBe('usaf_memo');
+	it('parses bare name: specimen', () => {
+		const result = parseQuillRef('specimen');
+		expect(result.name).toBe('specimen');
 		expect(result.selector).toBeUndefined();
 		expect(result.selectorDepth).toBeUndefined();
 	});
 
-	it('parses name@major: usaf_memo@1', () => {
-		const result = parseQuillRef('usaf_memo@1');
-		expect(result.name).toBe('usaf_memo');
+	it('parses name@major: specimen@1', () => {
+		const result = parseQuillRef('specimen@1');
+		expect(result.name).toBe('specimen');
 		expect(result.selector).toBe('1');
 		expect(result.selectorDepth).toBe(1);
 	});
 
-	it('parses name@major.minor: usaf_memo@1.2', () => {
-		const result = parseQuillRef('usaf_memo@1.2');
-		expect(result.name).toBe('usaf_memo');
+	it('parses name@major.minor: specimen@1.2', () => {
+		const result = parseQuillRef('specimen@1.2');
+		expect(result.name).toBe('specimen');
 		expect(result.selector).toBe('1.2');
 		expect(result.selectorDepth).toBe(2);
 	});
 
-	it('parses name@x.y.z: usaf_memo@1.2.3', () => {
-		const result = parseQuillRef('usaf_memo@1.2.3');
-		expect(result.name).toBe('usaf_memo');
+	it('parses name@x.y.z: specimen@1.2.3', () => {
+		const result = parseQuillRef('specimen@1.2.3');
+		expect(result.name).toBe('specimen');
 		expect(result.selector).toBe('1.2.3');
 		expect(result.selectorDepth).toBe(3);
 	});

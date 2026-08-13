@@ -99,7 +99,7 @@ describe('the trigger is a word boundary', () => {
 		const field = createField({
 			doc,
 			quill: quill(),
-			addr: { field: 'subject' },
+			addr: { field: 'title' },
 			container: mount(),
 			inline: true,
 			onSlash: (state) => reports.push(state)

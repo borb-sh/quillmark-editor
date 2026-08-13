@@ -5,9 +5,10 @@
 // function of `kind`; one wanting them to differ writes a function of `cardId`.
 // Neither is the editor's to decide.
 //
-// The ghosts observed are the indorsements'. The reference quill seeds main's body
-// from its `body.example`, and a body with content carries no placeholder
-// decoration; main is asked all the same, which is what `seen` is read for.
+// The ghosts observed are the notes'. The reference quill seeds main's body from
+// its `body.example`, and a body with content carries no placeholder decoration;
+// main is asked all the same, which is what `seen` is read for. `note` is the kind
+// declaring no body example, so every note in the stack mounts an empty leaf.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
@@ -24,12 +25,12 @@ afterEach(() => {
 	cleanup = undefined;
 });
 
-/** Mount over a document carrying one added indorsement beyond the seed, so the kind
+/** Mount over a document carrying one added note beyond the seed, so the kind
  *  appears more than once and per-card wording has something to distinguish. */
 function mountEditor(props: Partial<VisualEditorProps> = {}) {
 	const q = quill();
 	const doc = q.seedDocument();
-	const card = q.seedCard('indorsement', doc.seedOverlay('indorsement'));
+	const card = q.seedCard('note', doc.seedOverlay('note'));
 	if (card) doc.insertCard(card, doc.cardCount);
 	const target = document.createElement('div');
 	document.body.appendChild(target);
@@ -74,20 +75,20 @@ describe('the hook is asked per card', () => {
 		// The main card is asked too, naming itself; every other ask carries a distinct
 		// session key.
 		expect(seen.some((s) => s.cardId === 'main' && s.kind === 'main' && s.isMain)).toBe(true);
-		const cards = seen.filter((s) => !s.isMain);
-		expect(cards.every((s) => s.kind === 'indorsement')).toBe(true);
-		expect(new Set(cards.map((s) => s.cardId)).size).toBeGreaterThan(1);
+		const notes = seen.filter((s) => s.kind === 'note');
+		expect(notes.length).toBeGreaterThan(1);
+		expect(new Set(notes.map((s) => s.cardId)).size).toBe(notes.length);
 	});
 
 	it('reads as one invitation per kind when the hook is a function of kind', () => {
 		// Same kind, same words, because the function says so.
 		const target = mountEditor({
-			strings: { bodyPlaceholder: (ctx) => `Endorse the ${ctx.kind}…` }
+			strings: { bodyPlaceholder: (ctx) => `Say something about the ${ctx.kind}…` }
 		});
 
 		const drawn = ghosts(target);
 		expect(drawn.length).toBeGreaterThan(1);
-		expect(new Set(drawn)).toEqual(new Set(['Endorse the indorsement…']));
+		expect(new Set(drawn)).toEqual(new Set(['Say something about the note…']));
 	});
 
 	it('ghosts the built-in when the hook declines', () => {
