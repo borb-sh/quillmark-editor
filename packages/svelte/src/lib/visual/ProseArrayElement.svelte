@@ -19,7 +19,6 @@
 
 	interface Props {
 		value: Content;
-		plaintext?: boolean;
 		/** Accessible name for the editable region (the array has no per-element label). */
 		label?: string;
 		onChange: (rt: Content) => void;
@@ -28,7 +27,7 @@
 		 * keymap, so the state it reads is the one this keystroke has yet to change. */
 		onKey?: (e: KeyboardEvent) => void;
 	}
-	let { value, plaintext, label, onChange, onKey }: Props = $props();
+	let { value, label, onChange, onKey }: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let view: EditorView | undefined;
@@ -45,10 +44,10 @@
 		// plugin stack a `createField` leaf mounts (shared `proseLeafPlugins`), minus
 		// the anchor-position plugin (element anchors are dropped on the array's value
 		// write, per the header). Its own `dispatchTransaction` hands `Content` up.
-		const pmDoc = decode(value, inlineSchema, { plaintext: !!plaintext });
+		const pmDoc = decode(value, inlineSchema);
 		const state = EditorState.create({
 			doc: pmDoc,
-			plugins: proseLeafPlugins(inlineSchema, { inline: true, plaintext: !!plaintext })
+			plugins: proseLeafPlugins(inlineSchema, { inline: true, plaintext: false })
 		});
 		const mounted = new EditorView(containerEl, {
 			state,

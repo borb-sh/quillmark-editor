@@ -2,7 +2,7 @@
  An `array` field → an add/remove repeater. Elements commit by value: every
  edit / add / remove rebuilds the whole array and hands it to the parent's typed
  `writer.set(field, wholeArray)` (arrays are not op-addressed). Element control
- by `items.type`: `string` → text input, `richtext` → a prose element
+ by `items.type`: `string` / `plaintext` → text input, `richtext` → a prose element
  ({@link ProseArrayElement}), `object` → a minimal JSON editor, keeping the prior
  element value on an entry that does not parse. The add affordance sits in the
  label header row (space-between with the field label); {@link Field} skips its
@@ -59,10 +59,16 @@
 	let { value, items, label, required, description, labelId, descriptionId, onCommit }: Props =
 		$props();
 
-	// The element control is the item schema's own; an array declaring no `items`
-	// has text elements.
-	const control = $derived(items ? controlKind(items) : 'text');
-	const plaintext = $derived(items?.type === 'plaintext');
+	// The element control is the item schema's own, with one departure: a `plaintext`
+	// element is a text input where the scalar field of that type is a prose leaf. A
+	// `plaintext` value rests as its literal string (canon SCHEMAS.md §"Content fields
+	// rest per codec"), and the read that decodes a resting value to `Content` addresses
+	// a field, never an element (`getContent`; borb-sh/quillmark#1243), so a string is
+	// what the row is handed and a string is what it commits. The prose element stays
+	// the `richtext` arm, whose elements rest as `Content` and have one.
+	//
+	// An array declaring no `items` has text elements.
+	const control = $derived(items && items.type !== 'plaintext' ? controlKind(items) : 'text');
 	const arr = $derived((value ?? []) as unknown[]);
 
 	// Parallel stable ids, one per element, kept in lockstep with the data below.
@@ -243,7 +249,6 @@
 				<ProseArrayElement
 					bind:this={els[id]}
 					value={(arr[k] ?? emptyElement()) as Content}
-					{plaintext}
 					label={label != null ? `${label} ${k + 1}` : undefined}
 					onChange={(rt) => commitElement(k, rt)}
 					onKey={(e) => onElementKey(e, k)}
