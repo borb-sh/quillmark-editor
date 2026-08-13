@@ -38,7 +38,7 @@ import { anchorsFromContent, type AnchorPos } from './marks.js';
 import { createReconciler, type Reconciler } from './reconcile.js';
 import { inputRulesPlugin } from './inputrules.js';
 import { bodyKeymap } from './keymap.js';
-import { blockSchema, inlineSchema } from './schema.js';
+import { blockSchema, inlineSchema, plaintextSchema } from './schema.js';
 import { DEFAULT_TABLE_STRINGS, tableNodeView, type TableChromeStrings } from './table-view.js';
 import { focusSlashItem, runSlashItem, slashPlugin, type SlashState } from './slash.js';
 
@@ -53,7 +53,8 @@ export interface CreateFieldOpts {
 	container: HTMLElement;
 	/** Constrained single-textblock schema (a `richtext(inline)` field). */
 	inline?: boolean;
-	/** Inline + marks/islands stripped (a `plaintext` field). Implies `inline`. */
+	/** The mark-free inline schema (a `plaintext` field): literal text, no formatting
+	 *  and no anchors. Implies `inline`. */
 	plaintext?: boolean;
 	/** Suppress the markdown-shorthand input rules. */
 	noInputRules?: boolean;
@@ -254,7 +255,10 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	const { doc, addr, container } = opts;
 	const inline = !!opts.inline || !!opts.plaintext;
 	const plaintext = !!opts.plaintext;
-	const schema: Schema = inline ? inlineSchema : blockSchema;
+	// The declared type picks the schema, and the schema is the whole of what
+	// `plaintext` suppresses: no mark types to toggle, to paste in, or to mint a
+	// shorthand with (`schema.ts`).
+	const schema: Schema = plaintext ? plaintextSchema : inline ? inlineSchema : blockSchema;
 	// Bound once and held: the reader is a `{quill, doc}` pair that reads live, so
 	// every read below sees the commit before it.
 	const reader: DocumentReader = opts.quill.reader(doc);
@@ -329,7 +333,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	});
 
 	function buildState(rt: Content): EditorState {
-		const pmDoc: PMNode = decode(rt, schema, { plaintext });
+		const pmDoc: PMNode = decode(rt, schema);
 		const anchors = plaintext ? [] : anchorsFromContent(rt);
 		// Seed anchor plugin positions in PM coords via a fresh index over pmDoc.
 		const seedIndex = buildLineIndex(pmDoc);
@@ -341,7 +345,6 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			doc: pmDoc,
 			plugins: proseLeafPlugins(schema, {
 				inline,
-				plaintext,
 				slash,
 				noInputRules: opts.noInputRules,
 				// Always installed, so a leaf that mounts without a ghost can still be
@@ -512,17 +515,15 @@ export function createField(opts: CreateFieldOpts): FieldController {
  * last the two that answer to a caret or a selection beside a block: the gap cursor
  * and {@link pastAtomPlugin}.
  *
- * A `plaintext` field carries no marks (decode strips them, the keymap suppresses
- * Mod-b/i/u), so it also skips the input rules: `inlineSchema` still declares the
- * mark types, so a `**bold**` rule would apply a strong mark and eat the literal
- * delimiters. The inline schema has no block nodes, so those rules are the only
- * ones it would add: skip all.
+ * Every mark-shaped plugin reads the schema rather than a flag: over
+ * `plaintextSchema` the shorthand rules build nothing (each is guarded on its mark
+ * type) and the toggles bind no key, so a `**bold**` keeps the delimiters its author
+ * typed without a second rule saying so.
  */
 export function proseLeafPlugins(
 	schema: Schema,
 	opts: {
 		inline: boolean;
-		plaintext: boolean;
 		/** The slash menu's report channel; absent mounts no menu and leaves
 		 *  Enter/Escape/the arrows to the links below (`keymap.ts`). */
 		slash?: (state: SlashState | undefined) => void;
@@ -536,8 +537,8 @@ export function proseLeafPlugins(
 ): Plugin[] {
 	const list: Plugin[] = [history(), ...(opts.afterHistory ?? [])];
 	if (opts.slash) list.push(slashPlugin(opts.slash));
-	if (!opts.noInputRules && !opts.plaintext) list.push(inputRulesPlugin(schema));
-	list.push(keymap(editorKeymap(schema, opts.inline, opts.plaintext, !!opts.slash)));
+	if (!opts.noInputRules) list.push(inputRulesPlugin(schema));
+	list.push(keymap(editorKeymap(schema, opts.inline, !!opts.slash)));
 	list.push(keymap(baseKeymap));
 	// All three answer to something only a block leaf holds: an inline leaf is one
 	// textblock with no island, no gap to put a cursor in, and nowhere for a pasted
@@ -615,7 +616,8 @@ function placeholderPlugin(read: () => string | undefined): Plugin {
 
 /**
  * The field's keymap: history, mark toggles, and the body's structural keys; Enter
- * suppressed inline.
+ * suppressed inline. The toggles are bound per mark type the schema declares, so a
+ * plaintext leaf leaves Mod-b/i/u to the browser.
  *
  * Tab forks on the leaf's role, not on the caret's position. An inline/plaintext
  * leaf is a form field: Tab stays unbound, so field navigation is open for a shell
@@ -623,22 +625,15 @@ function placeholderPlugin(read: () => string | undefined): Plugin {
  * is structural, a chain each nested surface prepends to (`keymap.ts`). One key
  * never means two things within one surface.
  */
-function editorKeymap(
-	schema: Schema,
-	inline: boolean,
-	plaintext: boolean,
-	slash?: boolean
-): Record<string, Command> {
+function editorKeymap(schema: Schema, inline: boolean, slash?: boolean): Record<string, Command> {
 	const map: Record<string, Command> = {
 		'Mod-z': undo,
 		'Mod-y': redo,
 		'Shift-Mod-z': redo
 	};
-	if (!plaintext) {
-		if (schema.marks.strong) map['Mod-b'] = toggleMark(schema.marks.strong);
-		if (schema.marks.em) map['Mod-i'] = toggleMark(schema.marks.em);
-		if (schema.marks.underline) map['Mod-u'] = toggleMark(schema.marks.underline);
-	}
+	if (schema.marks.strong) map['Mod-b'] = toggleMark(schema.marks.strong);
+	if (schema.marks.em) map['Mod-i'] = toggleMark(schema.marks.em);
+	if (schema.marks.underline) map['Mod-u'] = toggleMark(schema.marks.underline);
 	if (inline) {
 		// One textblock only: swallow Enter so no second block is attempted.
 		map['Enter'] = () => true;

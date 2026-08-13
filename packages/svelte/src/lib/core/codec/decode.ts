@@ -11,7 +11,7 @@ import { DOMSerializer, type Mark, type Node as PMNode, type Schema } from 'pros
 import type { Content, ContentContainer, ContentLine, ContentMark } from '@quillmark/wasm';
 import { ISLAND_SLOT, type IslandNodeAttrs } from './islands.js';
 import { descriptorOf, markKey, pmMarkFromContent } from './marks.js';
-import { isInlineSchema } from './schema.js';
+import { hasMarks, isInlineSchema } from './schema.js';
 import { isAnchorMark, isCodeLine, isHeadingLine, isListItemContainer } from '@quillmark/wasm';
 
 /** Code points of `s` (USV units): the iteration granularity the content speaks. */
@@ -35,11 +35,6 @@ interface Leaf {
 /** A live cursor over the island entries, consumed in text (document) order. */
 type IslandCursor = { i: number; rt: Content };
 
-interface DecodeOpts {
-	/** Strip all marks (a `plaintext` field). */
-	plaintext?: boolean;
-}
-
 /**
  * A `Content` as read-only DOM: decode under `schema`, then the nodes' own `toDOM`.
  * The rendering half of the codec's job with no editing attached (no PM view, no
@@ -50,12 +45,12 @@ interface DecodeOpts {
  * `DOMSerializer.fromSchema` memoizes on the schema, so repeat calls build no
  * serializer.
  */
-export function renderContent(rt: Content, schema: Schema, opts: DecodeOpts = {}): Node {
-	return DOMSerializer.fromSchema(schema).serializeFragment(decode(rt, schema, opts).content);
+export function renderContent(rt: Content, schema: Schema): Node {
+	return DOMSerializer.fromSchema(schema).serializeFragment(decode(rt, schema).content);
 }
 
 /** Decode a `Content` to a PM document under `schema`. */
-export function decode(rt: Content, schema: Schema, opts: DecodeOpts = {}): PMNode {
+export function decode(rt: Content, schema: Schema): PMNode {
 	const lineTexts = rt.text.split('\n');
 	// Per-line USV start: line i begins after all earlier lines and their `\n`s.
 	const starts: number[] = [];
@@ -64,7 +59,11 @@ export function decode(rt: Content, schema: Schema, opts: DecodeOpts = {}): PMNo
 		starts.push(acc);
 		acc += usvLength(lineTexts[i]) + 1; // +1 for the `\n` boundary
 	}
-	const marks = opts.plaintext ? [] : rt.marks.filter((m) => !isAnchorMark(m));
+	// A mark-free schema (`plaintextSchema`) has nothing to apply them with, and a
+	// plaintext field that acquired one anyway — an older build's popover, a hand-
+	// written document — is exactly the content that must open and then heal on the
+	// next commit, not throw here.
+	const marks = hasMarks(schema) ? rt.marks.filter((m) => !isAnchorMark(m)) : [];
 	const cursor: IslandCursor = { i: 0, rt };
 
 	if (isInlineSchema(schema)) {
