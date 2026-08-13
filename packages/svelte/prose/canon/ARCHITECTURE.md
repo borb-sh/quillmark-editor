@@ -54,7 +54,7 @@ The rule spanning all three: **a component reads a rung, it does not mint a valu
 
 ### A plane is a tone, not an outline
 
-**A surface in the flow is lifted off what it sits on by its fill, never by a line drawn around it.** The field well and the preview's sheet read as planes because the plane beneath them is a different tone, and neither draws an edge. Elevation is that tone plus, where the thing floats, a hairline — never a shadow, which states a light source the poles do not carry and which `check:style` forbids outright.
+**A surface in the flow is lifted off what it sits on by its fill, never by a line drawn around it.** The field well and the preview's sheet read as planes because the plane beneath them is a different tone, and neither draws an edge. Elevation is that tone plus, where the thing floats, a hairline and `--_qm-lift` — an offset-free halo, which states occlusion where an offset would state a light source the poles do not carry. `check:style` holds both halves: the rung's offsets at zero, and the rung as the only shadow any surface casts.
 
 The card carries the hairline anyway, and it is the one block in the flow that does. Not to lift it — the tone does that, and at the light pole a white card on the ground needs no help — but because the card is the unit the stack is counted in, and the stack is dense: a card of ten fields ends at a gap two rungs wide and the next one starts, so where one island stops is a boundary the eye has to find and the tone alone puts it a channel away from the ground.
 
@@ -64,7 +64,7 @@ Four kinds of stroke survive, and each says something a fill cannot:
 
 - **A stroke that structures**: the metadata bracket, a subform's rule, a blockquote's, a table's frame and its interior divisions, an `hr`. These draw a figure — a relationship between blocks — where a fill would draw a box.
 - **A stroke that closes a block**: the card's, and the tips slip's tucked under it. One rung, `--_qm-border`, the same the bracket and the open section's vertical read, so a card and the figure inside it are one hand.
-- **A stroke on something floating**: a menu, a popover, the table island's alignment cluster. There is no plane under them to step off, since what they hang over is content they did not choose, so the edge is the whole of the separation and the raised rung is what carries it in dark.
+- **A stroke on something floating**: a menu, a popover, the table island's alignment cluster. There is no plane under them to step off, since what they hang over is content they did not choose, so the edge and `--_qm-lift` are the separation, and the raised rung joins them in dark, where a tone still has somewhere to go.
 - **A stroke that is a state**: the dashed edge on an un-schemable card. It reads against the solid one every other card carries.
 
 The cost of a redundant line is paid per instance and lands hardest where the surface is densest: a card of ten fields drawing ten more rectangles is ten statements of a thing the tone already made, and every one of them competes with the bracket, which the card draws on purpose.

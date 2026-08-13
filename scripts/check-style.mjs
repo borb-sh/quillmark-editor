@@ -24,9 +24,11 @@
 //
 // Four rules sit outside the table, being about the scale itself rather than one axis:
 //
-//   · nothing casts a shadow, in either scope and in the derivations too: elevation
-//     is a tone rung and a hairline, so the property is illegal rather than one of
-//     its values, which is a shape the table has no column for.
+//   · A shadow is the lift rung or it is nothing, in either scope and in the
+//     derivations too: an offset states a light source no pole carries, so what is
+//     legal is one spelling rather than a range of values, which is a shape the table
+//     has no column for. `text-shadow` carries no rung at all — a glyph floats over
+//     nothing.
 //   · A private rung is defined only in its scope's derivation — what makes one
 //     derivation safe for every surface reading it — and never twice in one rule.
 //   · An app does not redefine a name the preset carries: the app is meant to look
@@ -344,6 +346,8 @@ for (const scope of SCOPES) {
 	// app's own rungs are the handful it adds beside them.
 	const hint = (text) =>
 		scope.prefix === '--_qm-' ? text : text.replaceAll('--_qm-', reads.at(-1));
+	// The one shadow value a scope may spend: the lift rung off whichever scale it reads.
+	const LIFT_RUNG = new RegExp(`^var\\(\\s*(?:${reads.join('|')})lift\\s*\\)$`);
 
 	for (const full of sources(scope.dir, scope.exclude)) {
 		const file = relative(ROOT, full);
@@ -374,22 +378,43 @@ for (const scope of SCOPES) {
 			// Only the package scope feeds the dial census (see scopes).
 			if (scope.census) for (const m of line.matchAll(/var\(\s*(--qm-[\w-]+)/g)) consumed.add(m[1]);
 
-			// Zero shadows, and before the derivation exemption, since what is forbidden
-			// is the property rather than one of its values: elevation is a tone rung and
-			// a hairline, so there is no shadow rung to mint and none to read. The colour
-			// axis sees `box-shadow` but fires only on a hex or a
-			// colour function, so `0 1px 4px black` and one mixed from `var()` rungs both
-			// walk through it; that gap is why this sits outside the table. Both
-			// spellings, since `preview/paint.ts` carries declarations as JS strings.
-			const shade = line.match(/^\s*(box-shadow|text-shadow|boxShadow|textShadow)\s*:\s*([^;,]*)/);
-			if (
-				shade &&
-				excused === undefined &&
-				!/^'?(none|inherit|initial|unset|revert)'?$/.test(shade[2].trim())
-			)
-				fail(
-					`\`${shade[1]}\` — lift with a surface rung and a hairline, not a shadow (${scope.doc})`
-				);
+			// A shadow states occlusion or it states a light source, and only the first
+			// survives the poles: an offset is what fixes where the light is. So the
+			// property is legal in one spelling — the lift rung — and the derivation that
+			// mints it is held to zero offsets, the half no use site can show. Both halves
+			// sit before the derivation exemption, since what they hold is the shape of
+			// the value rather than a number in it. `text-shadow` carries no rung: a glyph
+			// floats over nothing. The colour axis sees both properties but fires only on
+			// a hex or a colour function, so `0 1px 4px black` and one mixed from `var()`
+			// rungs both walk through it; that gap is why this sits outside the table.
+			// Both spellings, since `preview/paint.ts` carries declarations as JS strings.
+			const lift = line.match(new RegExp(`^\\s*${scope.prefix}lift\\s*:\\s*([^;]*)`));
+			if (lift) {
+				// Layer by layer, colour functions flattened away first: a comma inside
+				// `color-mix()` does not open a second shadow.
+				let layers = lift[1];
+				while (/\([^()]*\)/.test(layers)) layers = layers.replace(/\([^()]*\)/g, '');
+				if (layers.split(',').some((layer) => !/^\s*0\s+0\s/.test(layer)))
+					fail(
+						`\`${scope.prefix}lift\` — a lift states occlusion, so every layer opens \`0 0\` (${scope.doc})`
+					);
+			}
+
+			const shade = line.match(/^\s*(box-shadow|text-shadow|boxShadow|textShadow)\s*:\s*([^;]*)/);
+			if (shade && excused === undefined) {
+				// A `.ts` declaration ends in a comma inside an object literal, and its value
+				// is quoted; neither is part of the value the rules below read.
+				const value = shade[2]
+					.trim()
+					.replace(/,$/, '')
+					.trim()
+					.replace(/^['"]|['"]$/g, '');
+				const lifts = /^(box-shadow|boxShadow)$/.test(shade[1]) && LIFT_RUNG.test(value);
+				if (!lifts && !/^(none|inherit|initial|unset|revert)$/.test(value))
+					fail(
+						`\`${shade[1]}\` — a floating surface lifts with ${hint('`var(--_qm-lift)`')} and nothing else casts (${scope.doc})`
+					);
+			}
 
 			if (file === scope.derivation) return; // literals here are the defaults
 

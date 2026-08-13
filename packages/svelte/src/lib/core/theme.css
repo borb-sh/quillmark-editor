@@ -142,8 +142,8 @@
 		   under it.
 
 		   `raised` is a no-op at the light pole, where the card is already white
-		   and there is nowhere further to go, so a floating surface separates on
-		   its hairline in light and on the step in dark. */
+		   and there is nowhere further to go, so a floating surface separates on its
+		   hairline and `--_qm-lift` in light, and the step joins them in dark. */
 		--_qm-surface: var(--_qm-bg);
 		--_qm-surface-sunken: light-dark(
 			oklab(from var(--_qm-bg) calc(l - 0.0214) calc(a - 0.00065) calc(b - 0.00158)),
@@ -216,16 +216,21 @@
 		--_qm-tips-font: 'Courier Prime', 'Courier New', Courier, ui-monospace, monospace;
 
 		/* ── Ratios and effects ──────────────────────────────────────────────────
-		   No palette fixes these, so they are their own rungs. There is no shadow
-		   rung: elevation is a tone rung and a hairline, which say the same thing at
-		   both poles, where a shadow's offset states a light source the poles do not
-		   carry. `check:style` forbids the property outright,
-		   here as well as over the surfaces, so the absence is gated rather than
-		   remembered. */
+		   No palette fixes these, so they are their own rungs. */
 		--_qm-blur: 8px;
 		/* The popover's translucency: the raised surface mixed toward transparent, so
 		   the page reads faintly through the pill. */
 		--_qm-surface-popover: color-mix(in oklab, var(--_qm-surface-raised) 82%, transparent);
+		/* What a surface with no plane under it lifts on. A tone rung cannot carry that at
+		   both poles: `raised` is a no-op against a white card (§Colour), so in light the
+		   hairline is otherwise the whole separation over the body prose these float on.
+		   Offset-free is the whole of it: an offset states where the light is and no pole
+		   carries that, where a halo states occlusion. Toward black at both poles for the
+		   same reason — a crevice is darker than what surrounds it in a dark room too — so
+		   the cue means one thing whichever way the scale runs. Spent only on what portals;
+		   `check:style` holds the offsets at zero here and the rung as the only shadow
+		   anywhere. */
+		--_qm-lift: 0 0 12px color-mix(in oklab, #000 16%, transparent);
 		/* The recede ladder: a hover-revealed or disabled affordance at rest, and a
 		   muted one. Opacity recedes toward whatever is behind, so these invert
 		   correctly given the element's own colour is a rung. */

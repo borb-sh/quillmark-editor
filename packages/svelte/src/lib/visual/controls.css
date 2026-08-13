@@ -242,13 +242,15 @@
 
 	 A floating surface is the one place a hairline is still load-bearing: it hangs
 	 over content the surface did not choose, so there is no plane under it for a
-	 tone to step off (ARCHITECTURE §Styling). It takes the raised rung as well, which
-	 is a real step in dark and nothing in light, where the edge is the whole of it. */
+	 tone to step off (ARCHITECTURE §Styling). The edge and `--_qm-lift` carry it
+	 there, and the raised rung joins them in dark, where a tone still has somewhere
+	 to go. */
 	.qm-menu-surface {
 		padding: var(--_qm-space-half);
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
 		background: var(--_qm-surface-raised);
+		box-shadow: var(--_qm-lift);
 		font-size: var(--_qm-text-body);
 		color: var(--_qm-ink);
 	}
@@ -291,6 +293,7 @@
 		-webkit-backdrop-filter: blur(var(--_qm-blur));
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
+		box-shadow: var(--_qm-lift);
 		animation: qm-pop-in var(--_qm-duration-fast) var(--_qm-ease-reverse);
 	}
 	.qm-popover-surface[data-ending-style] {
