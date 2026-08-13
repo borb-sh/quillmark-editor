@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.4.2 - 2026-08-13
+
 ## v0.4.1 - 2026-08-13
 
 **A `plaintext` field no longer offers formatting.** Its leaf mounts a schema declaring no mark types, so the selection popover withholds itself over one — the way it never rises over the input a `string` field draws — `Mod-b`/`i`/`u` bind nothing, the markdown shorthands build no rule, and a paste lands as literal text. Formatting one was previously accepted by the commit and refused at render (`cannot coerce <plaintext> to type plaintext at <field>`), so an ordinary click broke the document with nothing on the write side able to catch it: a mark has to be unreachable rather than rejected. A value already carrying one opens as its text and drops the mark on its next commit, so a document an earlier build marked heals by being edited.
