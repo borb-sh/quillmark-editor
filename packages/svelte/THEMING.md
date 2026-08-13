@@ -80,7 +80,7 @@ Declared before our sheet it fixes the order outright; declared after, `qm` is a
 
 Ink steps `fg → bg` and the borders and hover fills step `bg → fg`, mixed in **oklab**, so inverting the two poles inverts all of them together.
 
-**Planes are the exception**, and deliberately: the raised plane is the brighter one in both schemes, which is what makes a card read as a card rather than as a differently-tinted page. So the column under the cards sinks from `--qm-bg` toward shadow and a floating surface rises from it toward light, and neither reads the ink pole. Each direction takes a step sized to the scheme it is in, which is why pinning a dark palette while your `color-scheme` still says light leaves the column barely off its cards — the one case §"Make it yours" tells you to pin the scheme alongside the poles.
+**Planes are the exception**, and deliberately: the raised plane is the brighter one in both schemes, which is what makes a card read as a card rather than as a differently-tinted page. So the column under the cards sinks from `--qm-bg` toward shadow and a floating surface rises from it toward light, and neither reads the ink pole. How far each steps is a function of the card's own lightness — a dark card has to spend more before the plane above it reads as lifted — so a palette pinned at neither pole takes a proportionate step without being told which scheme it is in.
 
 Which way the poles default is **your `color-scheme`**, not the operating system's. Declare the scheme your app is in and the surface lands on it, along with native chrome, which reads the same property:
 
@@ -108,7 +108,9 @@ Setting the poles yourself wins over the default in both schemes, so a fixed pal
 
 That cuts both ways for the status hues: `--qm-danger` and `--qm-warning` each default to a pair calibrated against the card at both poles, and one pinned value replaces both arms, so a red measured against white carries into the dark scheme unmeasured. Pin them under your own scheme rule (`.dark { --qm-danger: … }`) where the colour your app means by error is itself scheme-aware.
 
-A palette **pinned against** your own scheme is the one case needing a second line: the surfaces follow your dials, but native chrome follows `color-scheme`, so pin it with them (`.my-editor { color-scheme: dark }`). Skip that line and what the browser paints — the selection highlight, the scrollbar, the spinner — stays on whichever scheme the host inherits.
+A palette **pinned against** your own scheme still wants a second line, for a smaller reason than it used to be: the planes read your card's lightness, so the surface itself lands right either way, but the poles' own defaults, the status hues and native chrome all still read `color-scheme`. Pin it with them (`.my-editor { color-scheme: dark }`). Skip that line and what the browser paints — the selection highlight, the scrollbar, the spinner — stays on whichever scheme the host inherits, and a status hue you left to us is measured against the wrong card.
+
+Pinning **one mount** rather than a page is the `style` prop, which lands on the same root: `<Preview style="color-scheme: dark" />`. There is no `scheme` prop, and deliberately — an inline declaration of ours would be the one thing your own CSS could not beat.
 
 No JS runs and no media query: the derivation resolves through the cascade at paint time, so there is no `dark` prop and no mode toggle. The consumer's palette decides.
 
@@ -200,4 +202,4 @@ The derived surface scale (surface / border / ink rungs, the blur radius, the po
 
 ## Requirements
 
-`@layer`, `color-mix()` and `light-dark()`: Baseline since 2022, 2023 and 2024 respectively. `@property` is the one feature the surface does not require: where it is missing, an invalid length dial collapses the surface rather than falling back.
+`@layer`, `color-mix()`, `light-dark()` and relative colour syntax (`oklab(from …)`): Baseline since 2022, 2023, 2024 and 2024 respectively — the last is what lets a plane step by the card's own lightness. `@property` is the one feature the surface does not require: where it is missing, an invalid length dial collapses the surface rather than falling back.

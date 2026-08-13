@@ -662,7 +662,7 @@
 		color: var(--_qm-ink-label);
 	}
 	.qm-recovery-muted {
-		color: var(--_qm-ink-ghost);
+		color: var(--_qm-ink-label);
 	}
 	.qm-recovery-retype {
 		display: inline-flex;

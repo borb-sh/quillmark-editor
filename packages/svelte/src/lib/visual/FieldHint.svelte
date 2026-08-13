@@ -186,8 +186,8 @@
 	 It takes no fill either: the ink step below says hover, and the surface itself
 	 opens on it. */
 	.qm-field-hint {
-		/* The marker recedes to the label's ghost tone; the surface carries the text. */
-		color: var(--_qm-ink-ghost);
+		/* The marker recedes to the label rung; the surface carries the text. */
+		color: var(--_qm-ink-label);
 		/* Not the family's `pointer`: the glyph raises guidance, it does not act. */
 		cursor: help;
 		padding: 0;

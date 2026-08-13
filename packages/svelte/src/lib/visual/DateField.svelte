@@ -198,6 +198,6 @@
 	 never written, either way. The marker is the component's own (see the snippet):
 	 the date primitive emits no placeholder attribute of its own. */
 	.qm-date-wrap :global(.qm-date-segment[data-ghosted]) {
-		color: var(--_qm-ink-ghost);
+		color: var(--_qm-ink-label);
 	}
 </style>
