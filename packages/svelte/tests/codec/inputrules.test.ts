@@ -8,6 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { EditorState, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { blockSchema, inputRulesPlugin } from '$lib/core/codec';
+import { representable } from './_util.js';
 
 function mountView(): EditorView {
 	const state = EditorState.create({
@@ -128,11 +129,11 @@ describe('mark input rules fire with exact positions', () => {
 	});
 });
 
-// `list_item` is `block+`, so `list_item > heading` is representable; and renders
-// as nothing (the reference quill typesets an item's blocks as body paragraphs).
-// Both routes into the shape are closed: the list shorthands normalize a heading
-// they wrap, and `# ` declines inside an item.
-describe('the heading/list shorthands never mint a heading inside an item', () => {
+// `list_item` is `block+`, so `list_item > heading` is a shape the content holds and
+// `importMarkdown` produces from `- # title`. A rule declining there would refuse to
+// author what a document can arrive carrying, so `# ` fires inside an item. The wrap
+// side still retypes a heading it wraps, which the standard does not yet cover.
+describe('`# ` inside an item', () => {
 	it('`- ` typed in a heading wraps it as a PARAGRAPH item', () => {
 		const view = mountView();
 		type(view, '## title');
@@ -144,12 +145,13 @@ describe('the heading/list shorthands never mint a heading inside an item', () =
 		view.destroy();
 	});
 
-	it('`# ` inside a list item stays literal text', () => {
+	it('fires, minting the heading the content holds', () => {
 		const view = mountView();
 		type(view, '- item');
 		view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 3)));
 		type(view, '# ');
-		expect(view.state.doc.toString()).toBe('doc(bullet_list(list_item(paragraph("# item"))))');
+		expect(view.state.doc.toString()).toBe('doc(bullet_list(list_item(heading("item"))))');
+		expect(representable(view.state)).toBe(true);
 		view.destroy();
 	});
 
@@ -244,6 +246,19 @@ describe('the list shorthands decline at the head of an existing item', () => {
 		expect(view.state.doc.toString()).toBe('doc(bullet_list(list_item(paragraph("one"))))');
 		view.destroy();
 	});
+
+	// `> ` is the one block shorthand that fires here: what it wraps the item's paragraph
+	// in is a container the content holds, which is the whole of why the guard stops at
+	// the list rules.
+	it('`> ` fires, a quote inside an item being a shape the content holds', () => {
+		const view = itemView();
+		type(view, '> ');
+		expect(view.state.doc.toString()).toBe(
+			'doc(bullet_list(list_item(blockquote(paragraph("alpha")))))'
+		);
+		expect(representable(view.state)).toBe(true);
+		view.destroy();
+	});
 });
 
 // `---` replaces its whole block, which is what the other block shorthands never do:
@@ -276,12 +291,16 @@ describe('the `---` divider shorthand', () => {
 		view.destroy();
 	});
 
-	it('stays literal inside a list item', () => {
+	// A divider in an item is the heading case again: the content holds it and
+	// `importMarkdown` produces it, so the rule authors it rather than declining.
+	it("fires inside a list item, replacing the item's own first block", () => {
 		const view = mountView();
-		type(view, '- item');
-		view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 3)));
+		type(view, '- ');
 		type(view, '---');
-		expect(view.state.doc.toString()).toBe('doc(bullet_list(list_item(paragraph("---item"))))');
+		expect(view.state.doc.toString()).toBe(
+			'doc(bullet_list(list_item(horizontal_rule, paragraph)))'
+		);
+		expect(representable(view.state)).toBe(true);
 		view.destroy();
 	});
 });
