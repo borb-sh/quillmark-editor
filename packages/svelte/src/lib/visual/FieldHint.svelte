@@ -46,6 +46,13 @@
 	 * along with the editor's subtree. `undefined` falls back to bits-ui's default. */
 	const portalTarget = $derived(triggerEl?.closest<HTMLElement>('[data-qm-root]') ?? undefined);
 
+	/** What the surface stays inside: the field's own card and the root it portals into.
+	 * floating-ui intersects the two, so a flip answers to whichever is tighter. Empty
+	 * falls back to the primitive's default, the surface's own clipping ancestors. */
+	const bounds = $derived(
+		[triggerEl?.closest<HTMLElement>('[data-qm-card]'), portalTarget].filter((el) => el != null)
+	);
+
 	/** Placement, re-measured on each opening: the surface rides the label rung beside
 	 * the glyph, or stands over the field. */
 	let beside = $state(false);
@@ -132,11 +139,18 @@
  neighbour's control instead, which reaching for it dismisses. -->
 <!-- `align="center"` for the rung, `"start"` over the field: centred, a surface taller
  than the glyph's line box would hang half its height onto the field's own control. -->
+<!-- Both are preferences, and the card is what refuses them: its first field has no room
+ above its label inside one, so standing over that field puts the surface on the ground
+ above the card, reading as the neighbour's rather than as this field's. Refused, the
+ placement reverses and the surface goes under the field, over the control it describes:
+ the overlap the fork above spends a probe to avoid, and the only one left where there is
+ nothing above to stand over. -->
 
 <Popover.Root bind:open>
 	<Popover.Portal to={portalTarget}>
 		<Popover.Content
 			customAnchor={triggerEl ?? null}
+			collisionBoundary={bounds}
 			side={beside ? 'right' : 'top'}
 			align={beside ? 'center' : 'start'}
 			sideOffset={6}
