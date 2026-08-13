@@ -37,6 +37,13 @@
 
 <div class="picker">
 	<span class="qm-label">{catalog.name}</span>
+	{#if catalog.description}
+		<!-- The collection's own sentence, beside the name it names. `About` holds it
+		     untruncated (STUDIO §"Opened, not stood on"). -->
+		<span class="said" data-testid="quiver-said" title={catalog.description}
+			>{catalog.description}</span
+		>
+	{/if}
 	<!-- A `<label>` where there is a control for it to name, a `<div>` where the value is
 	     printed: a label naming nothing is worse than the markup it saves. -->
 	{#if catalog.quills.length > 1}
@@ -98,5 +105,19 @@
 		display: flex;
 		align-items: center;
 		gap: var(--qmh-space);
+	}
+
+	/* The only part of this band that yields: it truncates to whatever the controls beside
+	   it leave, a sentence pushing the picker off the line costing the author the control
+	   they came for. */
+	.said {
+		flex: 0 1 auto;
+		min-width: 0;
+		font-size: var(--qmh-text-meta);
+		line-height: var(--qmh-leading-tight);
+		color: var(--qmh-ghost);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 </style>

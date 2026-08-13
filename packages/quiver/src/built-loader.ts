@@ -10,7 +10,7 @@ import { QuiverError } from './errors.js';
 import { unpackFiles } from './bundle.js';
 import { isCanonicalSemver, compareSemver } from './semver.js';
 import { NAME_DIGEST_LENGTH, sha256Hex } from './digest.js';
-import { POINTER_FORMAT } from './format.js';
+import { MANIFEST_VERSION, POINTER_FORMAT } from './format.js';
 import type { Quiver, QuiverLoader } from './quiver.js';
 import { createQuiver } from './quiver.js';
 
@@ -24,8 +24,8 @@ interface BuiltQuillEntry {
 }
 
 interface BuiltManifest {
-	version: 1;
 	name: string;
+	description: string | undefined;
 	quills: BuiltQuillEntry[];
 }
 
@@ -226,17 +226,32 @@ function parseManifest(raw: string): BuiltManifest {
 	}
 
 	const obj = parsed as Record<string, unknown>;
-	assertNoUnknownKeys(obj, ['version', 'name', 'quills'], 'manifest');
+	assertNoUnknownKeys(obj, ['version', 'name', 'description', 'quills'], 'manifest');
 
-	if (obj['version'] !== 1) {
+	const version = obj['version'];
+	if (typeof version !== 'number' || !Number.isInteger(version) || version < 1) {
 		throw new QuiverError(
 			'quiver_invalid',
-			`Manifest version must be 1, got ${String(obj['version'])}`
+			`Manifest version must be a positive integer, got ${JSON.stringify(version)}`
+		);
+	}
+	if (version > MANIFEST_VERSION) {
+		throw new QuiverError(
+			'quiver_invalid',
+			`This quiver's manifest is version ${version} and this loader reads ${MANIFEST_VERSION}. ` +
+				`Upgrade @quillmark/quiver, or for a served client the client itself, which carries the copy that reads this.`
 		);
 	}
 
 	if (typeof obj['name'] !== 'string' || obj['name'].length === 0) {
 		throw new QuiverError('quiver_invalid', 'Manifest must have a non-empty string "name" field');
+	}
+
+	if (obj['description'] !== undefined && typeof obj['description'] !== 'string') {
+		throw new QuiverError(
+			'quiver_invalid',
+			`Manifest "description" must be a string if present, got ${typeof obj['description']}`
+		);
 	}
 
 	if (!Array.isArray(obj['quills'])) {
@@ -306,8 +321,8 @@ function parseManifest(raw: string): BuiltManifest {
 	}
 
 	return {
-		version: 1,
 		name: obj['name'] as string,
+		description: obj['description'] as string | undefined,
 		quills
 	};
 }
@@ -380,5 +395,10 @@ export async function loadBuiltQuiver(transport: BuiltTransport): Promise<Quiver
 		index.set(key, entry);
 	}
 
-	return createQuiver(manifest.name, catalogOf(index), new BuiltLoader(transport, index));
+	return createQuiver(
+		manifest.name,
+		manifest.description,
+		catalogOf(index),
+		new BuiltLoader(transport, index)
+	);
 }

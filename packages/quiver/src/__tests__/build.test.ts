@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { buildQuiver } from '../build.js';
 import { unpackFiles } from '../bundle.js';
 import { NAME_DIGEST_LENGTH, sha256Hex } from '../digest.js';
-import { POINTER_FORMAT } from '../format.js';
+import { MANIFEST_VERSION, POINTER_FORMAT } from '../format.js';
 
 const SAMPLE_FIXTURE = new URL('./fixtures/sample-quiver', import.meta.url).pathname;
 
@@ -45,6 +45,14 @@ async function seedSourceQuiver(
 			await writeFile(fontPath, font.content);
 		}
 	}
+}
+
+/** The manifest the pointer names, parsed. */
+async function manifestOf(out: string): Promise<Record<string, unknown>> {
+	const ptr = JSON.parse(await readFile(join(out, 'latest.json'), 'utf-8')) as {
+		manifest: string;
+	};
+	return JSON.parse(await readFile(join(out, ptr.manifest), 'utf-8')) as Record<string, unknown>;
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -143,6 +151,26 @@ describe('buildQuiver — font dehydration & deduplication', () => {
 
 		expect(Object.keys(bundleFiles)).toContain('Quill.yaml');
 		expect(Object.keys(bundleFiles)).not.toContain('fonts/font.otf');
+	});
+
+	it("carries Quiver.yaml's description into the manifest", async () => {
+		const out = tempDir();
+		tmpDirs.push(out);
+		await buildQuiver(SAMPLE_FIXTURE, out);
+
+		const manifest = await manifestOf(out);
+		expect(manifest.version).toBe(MANIFEST_VERSION);
+		expect(manifest.description).toBe('A sample quiver for testing');
+	});
+
+	it('omits the description a Quiver.yaml does not carry', async () => {
+		const src = tempDir();
+		const out = tempDir();
+		tmpDirs.push(src, out);
+		await seedSourceQuiver(src, { quills: [{ name: 'quillA', version: '1.0.0' }] });
+		await buildQuiver(src, out);
+
+		expect(await manifestOf(out)).not.toHaveProperty('description');
 	});
 });
 

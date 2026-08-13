@@ -42,6 +42,11 @@ describe('node entry — the factories', () => {
 		const fixture = new URL('./fixtures/sample-quiver', import.meta.url).pathname;
 		expect(await fromDir(fixture)).toBeInstanceOf(MainQuiver);
 	});
+
+	it("carries Quiver.yaml's description off a source tree", async () => {
+		const fixture = new URL('./fixtures/sample-quiver', import.meta.url).pathname;
+		expect((await fromDir(fixture)).description).toBe('A sample quiver for testing');
+	});
 });
 
 /**

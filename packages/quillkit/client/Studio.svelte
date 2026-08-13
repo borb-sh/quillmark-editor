@@ -1,6 +1,6 @@
 <!--
   Studio, whole: a quiver's quills worked live. Pick a quill, edit, watch it paint,
-  read the errors.
+  read what it will not do.
 
   One consumer-owned `LiveSession` over one document, under two surfaces:
     • <VisualEditor> (left): the edit surface; commits land on `open.doc`.
@@ -11,7 +11,7 @@
   them.
 
     edit ─► (debounced) session.update(doc) ─► preview.refresh(change)
-                                            └► notes = every producer, merged
+                                            └► diagnostics = every producer, merged,
     preview click ─► onPick(at) ─► editor.setCaret(at)
                                       └► shown = 1   (reveal, under the threshold)
     editor caret  ─► onCaretMove(at)  ─► preview.focusPosition(at)
@@ -29,7 +29,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import { Engine } from '@quillmark/wasm';
-	import type { Diagnostic } from '@quillmark/wasm';
+	import type { CoreSurface, Diagnostic, Document } from '@quillmark/wasm';
 	import type { Quiver } from '@quillmark/quiver';
 	import { init } from '@quillmark/svelte/core';
 	import type { EditorError, Landing, Place } from '@quillmark/svelte/core';
@@ -37,10 +37,10 @@
 	import { VisualEditor } from '@quillmark/svelte/visual';
 	import type { EditorChange } from '@quillmark/svelte/visual';
 	import Picker from './Picker.svelte';
-	import Notes from './Notes.svelte';
+	import Markdown from './Markdown.svelte';
 	import { catalogOf, openQuiver, type Catalog } from './quiver';
 	import { close, openRef, type Opened } from './session';
-	import { collect, diagnosticsOf, messageOf, placeOf, type NoteSet } from './notes';
+	import { collect, diagnosticsOf, messageOf, placeOf } from './notes';
 
 	/** The dev server's signal that a repack landed. */
 	const REPACKED = 'studio:quiver-repacked';
@@ -55,10 +55,11 @@
 		| { kind: 'ready' }
 		| { kind: 'failed'; message: string };
 
-	// The engine and the quiver are held, not tracked: nothing in the markup reads
-	// them, and the surfaces read the handles under `open`.
+	// The engine, the quiver and the core surface are held, not tracked: nothing in the
+	// markup reads them, and the surfaces read the handles under `open`.
 	let engine: Engine | undefined;
 	let quiver: Quiver | undefined;
+	let core: CoreSurface | undefined;
 
 	let phase = $state.raw<Phase>({ kind: 'booting' });
 	let catalog = $state.raw<Catalog | undefined>();
@@ -78,7 +79,8 @@
 	/** What the last carry stranded. Held for the open and dropped at the first edit:
 	 *  from then on the schema producer speaks for the document's current state. */
 	let carried = $state.raw<Diagnostic[]>([]);
-	let notes = $state.raw<NoteSet>({ all: [], unrouted: 0, diagnostics: [] });
+	/** Every producer's diagnostics, merged, for the editor to route by `path`. */
+	let notes = $state.raw<Diagnostic[]>([]);
 
 	/** The first diagnostic of the throw naming a place in the quill's source. A compile
 	 *  failure carries one and nothing the schema says does, so this is the line the
@@ -92,13 +94,18 @@
 	/** What the strip names: the throw's place if it carried one, else its first note. */
 	const halt = $derived(stalled ? (placed ?? thrown[0]) : undefined);
 
+	/** Whether a repack put the document where it is. An import lands through the same
+	 *  carry, and says nothing: a repack happens to the author, and an import is a thing
+	 *  the reader just did. */
+	let repacked = $state.raw(false);
+
 	function syncNotes(): void {
 		notes = collect([
-			{ origin: 'render', diags: thrown },
-			{ origin: 'schema', diags: open ? open.quill.validate(open.doc) : [] },
-			{ origin: 'render', diags: open ? open.session.warnings : [] },
-			{ origin: 'carried', diags: carried },
-			{ origin: 'surface', diags: recovered }
+			thrown,
+			open ? open.quill.validate(open.doc) : [],
+			open ? open.session.warnings : [],
+			carried,
+			recovered
 		]);
 	}
 
@@ -147,14 +154,61 @@
 		} catch (err) {
 			if (mine !== turn) return;
 			// A quill that does not open is the case an author most needs read to them, so
-			// the diagnostics land in the notes band and the panes stay empty. The
-			// document waits it out as text.
+			// the panes go and the room they had says why. The document waits it out as
+			// text.
 			held = carry;
 			thrown = diagnosticsOf(err);
 			carried = [];
 			phase = { kind: 'failed', message: messageOf(err) };
 		}
 		syncNotes();
+	}
+
+	// ── The door ────────────────────────────────────────────────────────────────
+	/** The document as text while the door is open, taken when it opened rather than
+	 *  tracked: an edit mutates the document in place and reassigns nothing, so a
+	 *  derivation over it would hold whatever the last remount produced. Undefined is the
+	 *  door being shut. */
+	let sourceText = $state.raw<string | undefined>();
+
+	/** Whether there is a document to read at all: the session's, or the text a failed
+	 *  open left held. */
+	const carrying = $derived(open !== undefined || held !== undefined);
+
+	function openSource(): void {
+		sourceText = open ? open.doc.toMarkdown() : held;
+	}
+
+	/**
+	 * Land `text` as the document, which is the repack's carry with a different source.
+	 * Resolves to what refused it, or to `undefined` once it is mounted.
+	 *
+	 * The file names its own quill and is believed: a ref this quiver holds is the one it
+	 * lands in, the picker following. A ref the quiver does not hold has nothing to
+	 * honour, so the quill on screen takes it and the conform names what would not fit
+	 * (STUDIO §"The document has a door").
+	 */
+	async function applyMarkdown(text: string): Promise<string | undefined> {
+		let at = picked;
+		let probe: Document | undefined;
+		try {
+			// Quill-free, so the ref is read before anything is opened against it.
+			probe = core!.Document.fromMarkdown(text);
+			const [name, version] = probe.quillRef.split('@');
+			if (catalog?.quills.some((q) => q.name === name && q.versions.includes(version!)))
+				at = { name: name!, version: version! };
+		} catch (err) {
+			return messageOf(err);
+		} finally {
+			probe?.free();
+		}
+		if (!at) return `quiver "${catalog?.name}" holds no quills`;
+		sourceText = undefined;
+		repacked = false;
+		picked = at;
+		held = undefined;
+		await mount(`${at.name}@${at.version}`, text);
+		return undefined;
 	}
 
 	/** A pick is a different document, so nothing crosses: the picked quill seeds its
@@ -172,6 +226,7 @@
 	 * moved under it; a ref that vanished falls back to whatever the catalog now holds.
 	 */
 	async function reload(): Promise<void> {
+		repacked = true;
 		const carry = open ? open.doc.toMarkdown() : held;
 		let next: Catalog;
 		try {
@@ -266,7 +321,7 @@
 				// `init` instantiates the core and latches the surface the editor's codec
 				// reads synchronously. The quiver awaits the same memoized gate to
 				// materialize a quill.
-				await init();
+				core = await init();
 				quiver = await openQuiver();
 				const next = catalogOf(quiver);
 				catalog = next;
@@ -311,6 +366,14 @@
 		{#if catalog}
 			<Picker {catalog} {picked} disabled={busy} onPick={pick} />
 		{/if}
+		<!-- The document's one door (STUDIO §"Opened, not stood on"). -->
+		<button
+			class="qm-control"
+			type="button"
+			data-testid="edit-source"
+			disabled={!carrying}
+			onclick={openSource}>Edit source</button
+		>
 		<span class="state">
 			{#if phase.kind === 'booting'}
 				<span class="qm-status" data-testid="phase">Opening…</span>
@@ -318,14 +381,14 @@
 				<span class="qm-status" data-testid="phase">Opening {phase.ref}…</span>
 			{:else if phase.kind === 'failed'}
 				<!-- The head says the state; what went wrong is a sentence, and it belongs
-				     where the panes were and in the notes band, not on one line of chrome. -->
+				     where the panes were rather than on one line of chrome. -->
 				<span class="qm-status qm-status-error" data-testid="phase">Open failed</span>
 				{#if held}
 					<!-- The document is not gone with the quill that would not open: it waits
 					     as text for the repack that fixes it. -->
 					<span class="qm-status" data-testid="held">Document held</span>
 				{/if}
-			{:else if open && open.carry.how !== 'seeded'}
+			{:else if repacked && open && open.carry.how !== 'seeded'}
 				<!-- An open session says so by painting the page, so the only word here is
 				     what a repack did to the document that was already in hand. -->
 				<span class="qm-status" data-testid="phase"
@@ -368,7 +431,7 @@
 						bind:this={editorRef}
 						doc={open.doc}
 						quill={open.quill}
-						diagnostics={notes.diagnostics}
+						diagnostics={notes}
 						onCaretMove={handleCaretMove}
 						onChange={handleChange}
 						onError={handleSurfaceError}
@@ -398,8 +461,8 @@
 			</div>
 		</div>
 	{:else}
-		<!-- Nothing is mounted, so the room the panes had says why: the message where
-		     the paint would be, and the notes band below it with the code and the hint. -->
+		<!-- Nothing is mounted, so the room the panes had says why: the message where the
+		     paint would be, and the line of source it failed at under it. -->
 		<div class="vacant">
 			{#if phase.kind === 'failed'}
 				<p class="reason" data-testid="reason">{phase.message}</p>
@@ -411,9 +474,18 @@
 			{/if}
 		</div>
 	{/if}
-
-	<Notes {notes} />
 </div>
+
+<!-- Mounted only while open, which is what makes every opening a fresh read of the
+     document as it then stands. -->
+{#if sourceText !== undefined && picked}
+	<Markdown
+		text={sourceText}
+		ref={`${picked.name}@${picked.version}`}
+		onApply={applyMarkdown}
+		onClose={() => (sourceText = undefined)}
+	/>
+{/if}
 
 <style>
 	/* The shell's shape is the preset's: the pinned bands, the row a band puts its parts

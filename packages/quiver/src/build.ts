@@ -9,7 +9,7 @@
 import { QuiverError } from './errors.js';
 import { packFiles } from './bundle.js';
 import { NAME_DIGEST_LENGTH } from './digest.js';
-import { POINTER_FORMAT } from './format.js';
+import { MANIFEST_VERSION, POINTER_FORMAT } from './format.js';
 
 /** Font file extensions recognised by the builder (case-insensitive). */
 const FONT_EXT = /\.(ttf|otf|woff|woff2)$/i;
@@ -200,8 +200,9 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 		}
 
 		const manifest = {
-			version: 1 as const,
+			version: MANIFEST_VERSION,
 			name: meta.name,
+			...(meta.description === undefined ? {} : { description: meta.description }),
 			quills: manifestQuills
 		};
 

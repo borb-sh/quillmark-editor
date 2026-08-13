@@ -9,3 +9,14 @@
  * `version` instead.
  */
 export const POINTER_FORMAT = 1;
+
+/**
+ * The manifest's shape, stated in the document and refused to be read past. Version 2
+ * carries the quiver's `description`; version 1 is the same document without it.
+ *
+ * The manifest is closed, so a field added to it is a field an older reader rejects as an
+ * unknown key, naming neither what happened nor what to do. The version is what that
+ * reader reads first instead, and a manifest above its own is refused with the upgrade
+ * named.
+ */
+export const MANIFEST_VERSION = 2;

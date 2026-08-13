@@ -8,6 +8,8 @@ The surface a quill author looks at their quiver through: pick a quill, edit, wa
 
 Two readers, one client. The author works mid-edit, locally, against files on disk, and the loop below is theirs. A deployed quiver is frozen at a commit, so the reader who arrives at a URL (a reviewer following a branch, someone evaluating a quiver) gets the picker, the surfaces and the errors over one built quiver, with nothing to repack. One client rather than two: it is the same client an `npx quillkit studio` over a working tree serves.
 
+What the two readers do not share is what they arrive knowing, and that is answered by two lines in the head rather than by a second client. The author typed the verb and reads past both; the reader followed a link, and is owed a page that says what it is and a document that can leave it.
+
 **Studio is the noun, not the verb.** It is a client rather than a package: `client/` beside the bin's `src/` under one manifest, no verb of its own, and `quillkit studio` is how the surface is reached ([QUILLKIT.md](QUILLKIT.md)). The name still has a job the tool's cannot do: the deployed thing a reviewer arrives at is a studio, and "the collection's site" names a directory rather than a surface.
 
 ## Looked at, not blocked on
@@ -20,7 +22,21 @@ Both mount the same surfaces over the same reference quill, and the distinction 
 
 That separation reaches the drawing, not only the contents. Both are one session under two surfaces in a pinned shell, so the shape of the screen is one thing taken out of the preset; what fills it is not. A page showing its instruments stands its mounts apart, framed, so each reads as one of several things on it. Studio spends the whole screen on the two mounts: they run to the viewport's edges and meet at a hairline, because the surface is the subject and every pixel of chrome around it is a pixel not spent on the quill.
 
-Studio also sheds the playground's front-door job: one screen rather than a site, with no router, no reading column and no landing page. The author arrives having typed the verb, so there is no quickstart to carry.
+Studio also sheds the playground's *site*: one screen, with no router, no reading column and no landing page. What it does not shed is the front-door job itself, which the deployed half is the whole reason for — a reader arriving at a link has had no contact with any of this, and a page that answers only the author is a page that answers half its readers.
+
+## Opened, not stood on
+
+The reader who followed a link has had no contact with any of this, and what they are owed is one line and one door. Studio spends the whole screen on the two mounts, so what it says to them is said in the bands that already exist or not at all: a landing before the picker costs the author, who has one quiver and typed the verb, a click every boot to be told what they know; a band above the split spends the surfaces' own height on prose read once; a separate route is reached by nobody.
+
+So the head carries it, next to the picker that is already there: the quiver's own sentence, beside its name, truncating to whatever the controls leave. It is the only prose on this page its author wrote, and the reason studio does not have to explain what a quiver is.
+
+What the two panes are is not said. A form on the left and a page on the right, one repainting as the other is typed into, is a thing the screen demonstrates in a keystroke, and a label naming them is chrome standing on the mounts to restate what the mounts already show. The panes keep their accessible names, which is where the fact is owed and where it costs nothing.
+
+**Studio does not define its own vocabulary.** A paragraph here explaining what a quill is would be prose nobody with authority over the document model reviewed, compiled into a client and wrong in every deployed studio the moment the model moves. Wrong is worse than missing, so what studio says about itself is limited to what studio itself is: its two panes, its one document, its own screen. Everything else on the page is something a quill author wrote.
+
+**One control, and the loop gains no step.** The document's door stands in the head, beside the picker, which is the one band studio draws that is already about what is being held rather than about what is on screen. Nothing opens on boot, nothing is dismissed, nothing is stored, and an author who never presses it is where they were.
+
+The panel behind it is mounted only while open, for the same reason the document is not stored: it reads the document as it then stands, and one kept mounted would hold whatever the last opening did. Its drawing is studio's, not the preset's — the preset's shell is the pinned bands and the split, and a panel stands over that rather than among it, so nothing here restates a number the preset owns. Native `<dialog>` carries the top layer, the focus trap and the escape key; what studio writes is the scrim's tone and the plate's box. A second consumer wanting one is what would promote it.
 
 ## A client, and what serves it
 
@@ -44,15 +60,33 @@ A browser cannot read the source layout, so studio ends at a built artifact behi
 
 The threshold is the test of that, and studio states none: under it the split shows one track, `.qm-switch` says which, and the caret bridge reveals the editor when a hit crosses into it. The seam is what makes the number unnecessary here: it is the split's own gap closed to a stroke with the border behind it, so it appears and goes with the second track. Drawn on a pane instead, it would outlive the pane beside it and stand against the viewport, and studio would restate the preset's widths to say when not to draw it.
 
-Studio draws with `@quillmark/svelte/preset`, the same import a third-party consumer makes; `studio.css` adds one height beyond the endorsed look, the depth the notes band opens to.
+Studio draws with `@quillmark/svelte/preset`, the same import a third-party consumer makes; `studio.css` adds one width beyond the endorsed look, what the source panel stands at. It is how much of a document is worth showing at once rather than rhythm, which is why it is not a rung the preset could have carried.
 
 ## The document is the blueprint's
 
-Studio holds one document and it is the schema's own: `seedDocument()` over the `example:` values in `Quill.yaml`. There is no door in and no door out: no file it is read from, none it is written to, and nothing of studio's own that outlives the tab.
+Studio holds one document and it starts as the schema's own: `seedDocument()` over the `example:` values in `Quill.yaml`. Nothing of studio's outlives the tab — no file it is read from at boot, none it writes, no store it reseeds from.
 
 **Reload is the reseed.** A boot seeds, and the carry keeps a running session on the document in hand, so an `example:` edited mid-session does not appear until the page reloads. F5 is the whole of that verb, and it costs a keystroke rather than a control.
 
 **What that costs.** The failures that only a long list, a wrapping value or an empty optional reveal are invisible here, and to `quillkit test` with it: neither renders a document the schema did not write. The corpus *is* the `example:` block, so an author buys that coverage by writing examples that are uncomfortable rather than tidy.
+
+## The document has a door
+
+Canonical markdown out, the same markdown in, through one panel. A visitor who fills a memo out has something to close the tab on, and a document on disk opens in the surface built to judge documents without a working tree behind it.
+
+**Out is the string the loop already takes.** `toMarkdown()` is what the repack carries, and a failed open holds that same string, so the door covers the state where a quill will not compile — which is the state an author most wants a document out of.
+
+**In is the carry with a different source.** `quill.parse` is the bound ingestion door and the repack loop already runs it: parse, conform against the schema in hand, strand what will not take with `conform::*` diagnostics. An import lands through exactly that, so what an import strands is read where a repack's stranding is read — on the controls it is about — and this door writes no landing and no stranding of its own.
+
+The panel's text is editable, since replacing it is how a document comes in, and it is not a second editor: what is typed there reaches the document only on apply, all at once, through that same conform. The surface that routes a diagnostic to the control it is about is the editor pane, which is what a `path` address is for.
+
+**The file names its own quill, and is believed.** `doc.quillRef` is persisted in the markdown and read before anything is opened against it (`Document.fromMarkdown`, which needs no quill). A ref this quiver holds is the one the document lands in and the picker follows it: the document says what it is, and landing it somewhere else to spare the reader a moved control would strand every field to make a point about the picker. A ref the quiver does not hold has nothing to honour, so the quill on screen takes it and the conform names what would not fit.
+
+**Markdown, not the storage DTO.** `toJson()` / `fromJson` is the versioned DTO and would reconstitute exactly rather than re-conform. It is not in DOCUMENT_MODEL's table, which is the one place the version coupling to `@quillmark/wasm` is recorded, so a file a reader keeps would ride a coupling nothing records and move under a wasm bump with nothing to notice. Markdown is readable by whoever saved it, unchanged into the CLI or a quiver repo, and re-conformed on the way in — which is what is wanted when the schema moved under a stored document, and a loss only when it did not.
+
+**Neither half is the write door.** Both move a DOCUMENT, which studio mints, edits and frees on every keystroke. Nothing reaches a `Quill.yaml`, a plate or a quiver, so the rule below stands unamended.
+
+The one refusal that is not a stranding is markdown that will not parse at all: it never becomes a document, so it has no diagnostics to route and no session to land in. That is said at the door, beside the text that caused it, and the document on screen stands.
 
 ## The document survives the quill
 
@@ -64,7 +98,7 @@ What crosses is the document, as its canonical markdown, landed through the boun
 - an additive schema change keeps it and defaults the new fields;
 - an incompatible one strands what the schema will not take, with the `conform::*` diagnostics naming each stranded value.
 
-**Showing what stranded is the point**, so those diagnostics are a labelled group in the errors band rather than a swallowed load warning. They describe the document as it *arrived*, so they are dropped at the first edit and the schema producer speaks for it from then on.
+**Showing what stranded is the point**, so those diagnostics reach the controls they name rather than being swallowed as a load warning. They describe the document as it *arrived*, so they are dropped at the first edit and the schema producer speaks for it from then on.
 
 Two edges the loop turns on. A ref that went away under the author (a version directory renamed) leaves the document nothing to land in, so whatever the catalog now holds is seeded instead. And a quill that will not **open**, the state an author reloads through most often with a plate mid-fix, keeps the document as text rather than eating it: the panes go empty, the errors say why, and the next repack that compiles gets it back.
 
@@ -74,26 +108,19 @@ A *pick*, unlike a repack, carries nothing. A different quill is a different doc
 
 ## The errors
 
-Four producers say something about the document in hand, and an author reading them wants one list:
-
-| Origin | What it is |
-| --- | --- |
-| `schema` | `quill.validate(doc)`: the schema's verdict on the document |
-| `render` | the compile: `session.warnings`, and the diagnostics a throw carries |
-| `carried` | the `conform::*` set a repack stranded |
-| `surface` | what an editor or a preview recovered from |
+Four producers say something about the document in hand — `quill.validate(doc)`, the compile (`session.warnings` and the diagnostics a throw carries), the `conform::*` set a repack stranded, and what a surface recovered from. They overlap by design, a must-fill field being a schema verdict and a render warning both, so the set is merged and deduplicated before anything reads it: one field's one problem is one thing on screen.
 
 A throw is unwrapped rather than reported as one line: a `QuillmarkError` carries every diagnostic, and a broken plate is the case that matters.
 
-Every note keeps its **address**, and that is the load-bearing column. An address is written in one of two spaces. `path` is the document's: the editor routes a diagnostic to its control by it. `location` is the quill's source, a file, a line and a column, which a compile failure carries and nothing the schema says does; it routes to nothing here and is what an author opens their other editor at. A note with neither is **unrouted**: it names no place at all, and the summary counts those. A diagnostic detached from what provoked it is a quill's problem, and nothing else in the toolchain shows it.
+**A diagnostic is shown where it is about, and nowhere else.** There is no list. An address is written in one of two spaces, and each has a surface: `path` is the document's, and the editor routes a diagnostic to its control by it; `location` is the quill's source — a file, a line and a column, which a compile failure carries and nothing the schema says does — and the strip over the paint names it, which is what an author opens their other editor at.
 
-The band is under the panes rather than over them: it is consulted, not watched, and a surface that appears and disappears would reflow the thing being judged every time a keystroke fixed a field.
+What that costs is the third shape. A diagnostic carrying neither address reaches nothing, and studio does not show it. A quill emitting one has a problem worth knowing about, and studio is no longer where it is found; `quillkit test` is blocked on and is where a quill's own faults are answered for.
 
-**A document that will not compile is a state of the paint, not a row under it.** The session is transactional, so the last good paint stays on screen and stops answering the document. That is what a failed open reports one pane over, so it takes the same register: the failure at the surface it is about, carrying the place to open. The paint stays whole underneath, being the only evidence of what the plate did before it stopped compiling, and the strip is laid over rather than stacked above, so breaking a plate and fixing it do not resize what is being judged. The band still lists the diagnostics, one list being its job.
+**A document that will not compile is a state of the paint.** The session is transactional, so the last good paint stays on screen and stops answering the document. That is what a failed open reports one pane over, so it takes the same register: the failure at the surface it is about, carrying the place to open. The paint stays whole underneath, being the only evidence of what the plate did before it stopped compiling, and the strip is laid over rather than stacked above, so breaking a plate and fixing it do not resize what is being judged.
 
 ## Not
 
-A Typst IDE: studio shows a quill, it does not edit the plate or the schema. Not a CMS: no auth, no persistence, no multi-doc management, matching the playground's own limit. Not a gate: `quillkit test` is blocked on, studio is looked at, and `quillkit studio` gates nothing. Not a tool: the client carries no verb, so every door onto it is one the bin beside it opens.
+A Typst IDE: studio shows a quill, it does not edit the plate or the schema. Not a CMS: no auth, no persistence, no multi-doc management, matching the playground's own limit — a document leaves as a file the reader keeps, which is the converse of studio keeping it. Not a gate: `quillkit test` is blocked on, studio is looked at, and `quillkit studio` gates nothing. Not a tool: the client carries no verb, so every door onto it is one the bin beside it opens.
 
 ## The door rule, for what comes next
 

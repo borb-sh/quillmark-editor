@@ -102,7 +102,7 @@ function makeCountingQuiver(opts: { name: string; catalog: Map<string, string[]>
 			]);
 		}
 	};
-	const quiver = createQuiver(opts.name, opts.catalog, loader);
+	const quiver = createQuiver(opts.name, undefined, opts.catalog, loader);
 	return { quiver, loaderCalls: () => calls };
 }
 
