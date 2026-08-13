@@ -185,9 +185,13 @@
 	}
 </script>
 
+<!-- `data-qm-card` names the island for a floating surface that has to stay inside one
+ ({@link FieldHint}). A surface portals to `[data-qm-root]`, so the card is not its
+ ancestor and nothing else marks the box its guidance belongs in. -->
 <section
 	bind:this={el}
 	class="qm-card"
+	data-qm-card
 	class:qm-main={card.isMain}
 	class:qm-unschemable={card.unschemable}
 >
