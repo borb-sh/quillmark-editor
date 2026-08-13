@@ -8,17 +8,25 @@
  by value (`writer.set(field, arrayWithElementReplaced)`). Anchors within an
  element are dropped on that value write: acceptable for inline refs. Mounts
  once per stable element id (no reset on the parent's re-derive).
+
+ A transport-door document rests each element as the authored string. A scalar
+ leaf reads that through `getContent`; `getContent` names a field, never an
+ element, so this row calls the boundary's `importMarkdown` itself. That is
+ the richtext codec, which is this row's `items` type; `decode` is the PM
+ mapping and assumes `Content`. A string here is the missing element read,
+ not a codec failure.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { EditorState } from 'prosemirror-state';
 	import { EditorView } from 'prosemirror-view';
 	import { decode, pmToContent, inlineSchema, proseLeafPlugins } from '../core/codec/index.js';
+	import { core } from '../core/lifecycle.js';
 	import './controls.css';
 	import type { Content } from '@quillmark/wasm';
 
 	interface Props {
-		value: Content;
+		value: Content | string;
 		/** Accessible name for the editable region (the array has no per-element label). */
 		label?: string;
 		onChange: (rt: Content) => void;
@@ -44,7 +52,8 @@
 		// plugin stack a `createField` leaf mounts (shared `proseLeafPlugins`), minus
 		// the anchor-position plugin (element anchors are dropped on the array's value
 		// write, per the header). Its own `dispatchTransaction` hands `Content` up.
-		const pmDoc = decode(value, inlineSchema);
+		const rt = typeof value === 'string' ? core().importMarkdown(value) : value;
+		const pmDoc = decode(rt, inlineSchema);
 		const state = EditorState.create({
 			doc: pmDoc,
 			plugins: proseLeafPlugins(inlineSchema, { inline: true })

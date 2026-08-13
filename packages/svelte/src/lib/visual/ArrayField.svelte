@@ -65,7 +65,8 @@
 	// rest per codec"), and the read that decodes a resting value to `Content` addresses
 	// a field, never an element (`getContent`; borb-sh/quillmark#1243), so a string is
 	// what the row is handed and a string is what it commits. The prose element stays
-	// the `richtext` arm, whose elements rest as `Content` and have one.
+	// the `richtext` arm: `Content` after a bound load or a commit, the authored
+	// string through the transport door, lowered in the row for the same reason.
 	//
 	// An array declaring no `items` has text elements.
 	const control = $derived(items && items.type !== 'plaintext' ? controlKind(items) : 'text');
@@ -197,10 +198,15 @@
 	}
 	/** Whether element `k` reads empty to the user. A text element's committed value
 	 * lags the input: a cleared field commits at `change`, not per keystroke
-	 * ({@link TextField}); so the input's own value is the truth; a prose element
-	 * commits every edit, so the committed `Content` is. */
+	 * ({@link TextField}); so the input's own value is the truth. A prose element
+	 * commits every edit, so the committed `Content` is; an authored string, the
+	 * transport-door rest, is empty when it has no characters. */
 	function elementEmpty(k: number, target: EventTarget | null): boolean {
-		if (control === 'prose') return !(arr[k] as Content | undefined)?.text;
+		if (control === 'prose') {
+			const el = arr[k];
+			if (typeof el === 'string') return el.length === 0;
+			return !(el as Content | undefined)?.text;
+		}
 		return target instanceof HTMLInputElement && !target.value;
 	}
 	/**
@@ -258,7 +264,7 @@
 				{#if control === 'prose'}
 					<ProseArrayElement
 						bind:this={els[id]}
-						value={(arr[k] ?? emptyElement()) as Content}
+						value={(arr[k] ?? emptyElement()) as Content | string}
 						label={label != null ? `${label} ${k + 1}` : undefined}
 						onChange={(rt) => commitElement(k, rt)}
 						onKey={(e) => onElementKey(e, k)}
