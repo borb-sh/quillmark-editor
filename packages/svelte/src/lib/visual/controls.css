@@ -106,12 +106,13 @@
 		width: 100%;
 		box-sizing: border-box;
 	}
-	/* The native placeholder is the ghost rung, not the UA's own grey: a text or
-	   number control's placeholder is the resolved `default:` (Field's `defaultStr`)
-	   and reads as shown-never-written the same way the prose leaf's empty-state
-	   ghost does (`ProseField`). */
+	/* The native placeholder is the label rung, not the UA's own grey: a text or
+	   number control's placeholder is the resolved `default:` (Field's `defaultStr`),
+	   which is content and reads at a content's contrast. What says shown-never-written
+	   is the step from the `ink` a written value takes, the same step the prose leaf's
+	   empty state reads (`ProseField`). */
 	.qm-input::placeholder {
-		color: var(--_qm-ink-ghost);
+		color: var(--_qm-ink-label);
 	}
 
 	/* The second recipe, and it is not the box above: a field is a box because you

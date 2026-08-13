@@ -179,11 +179,13 @@
 	.qm-prose :global(.ProseMirror) {
 		outline: none;
 	}
-	/* Empty-leaf ghost, at the scalar ghost rung: a node decoration's data attr, so it
-	 stays out of the document; `float`/`height: 0` keep it from displacing the caret. */
+	/* Empty-leaf ghost, at the rung every scalar's placeholder takes: a node decoration's
+	 data attr, so it stays out of the document; `float`/`height: 0` keep it from
+	 displacing the caret. The italic is what a leaf with no written neighbour has
+	 instead of the step to `ink`. */
 	.qm-prose :global(.ProseMirror .qm-prose-placeholder::before) {
 		content: attr(data-placeholder);
-		color: var(--_qm-ink-ghost);
+		color: var(--_qm-ink-label);
 		font-style: italic;
 		float: left;
 		height: 0;

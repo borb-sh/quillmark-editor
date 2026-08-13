@@ -144,7 +144,7 @@
 	}
 	.qm-unsupported {
 		font-size: var(--_qm-text-body);
-		color: var(--_qm-ink-ghost);
+		color: var(--_qm-ink-label);
 		font-style: italic;
 	}
 </style>
