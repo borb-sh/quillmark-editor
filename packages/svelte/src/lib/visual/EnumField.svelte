@@ -1,6 +1,6 @@
 <!--
- A `string`+`enum` (or `type: 'enum'`) field → a styled listbox over `enum ??
- values`, on bits-ui. When nothing is authored the list shows a distinct unset
+ A `type: enum` field → a styled listbox over its `values`, on bits-ui. When
+ nothing is authored the list shows a distinct unset
  sentinel that ghosts the `default:` (muted, shown-never-written), distinguishable
  from an authored pick and re-selectable; so re-picking the default fires a
  change. The sentinel commits nothing; any real pick: including the
@@ -164,7 +164,7 @@
 	/* Shown-never-written: the closed control reads muted while unset, matching the
 	   ghosted placeholder the text/number controls show. */
 	.qm-select-wrap :global(.qm-select[data-ghosted]) {
-		color: var(--_qm-ink-ghost);
+		color: var(--_qm-ink-label);
 	}
 	/* The open list is `.qm-menu-surface` and its rows `.qm-menu-item` (controls.css):
 	 the lift, the inset and the highlight are the shared menu recipe. What a listbox
@@ -184,6 +184,6 @@
 		cursor: default;
 	}
 	.qm-select-ghost {
-		color: var(--_qm-ink-ghost);
+		color: var(--_qm-ink-label);
 	}
 </style>

@@ -39,13 +39,13 @@ Two guardrails hold across both: the playground consumes only the public subpath
 
 ## Fixture variants
 
-The reference quill on disk reaches some branches and not others: it declares one card kind, a blank date default, no guidance channel, and no card whose kind the schema cannot project. The variants that reach them are **query flags on `/playground`**, read once at mount: `?kinds2`, `?dateDefault=YYYY-MM-DD` (schema, patched into the tree before the quill is built), `?tips`, `?foreign` (seeds, applied to the document after). They carry no chrome, because the only reader is a hand driving the harness, and a switch for one would be a control on the landing page for everyone else.
+The reference quill declares a field for every control and three card kinds, so the schema reaches the branches a harness is for. Two branches are not a schema's to declare — a guidance channel a consumer supplies, and a card whose kind the schema cannot project — and those are **query flags on `/playground`**, read once at mount and applied to the seeded document: `?tips`, `?foreign`. They carry no chrome, because the only reader is a hand driving the harness, and a switch for one would be a control on the landing page for everyone else.
 
 ## Quiver, not bundler
 
 Every route opens its session over the reference quill from a **quiver**, not from the bundler: no Typst source or font bytes in the JS bundle. This is the workspace's one edge to `@quillmark/quiver`; the library has none, so the app is where the two tiers meet.
 
-One `Quiver` serves the page. Its quill cache is per canonical ref and lives as long as the quiver does, so a client-side navigation between routes reuses one materialization rather than paying for its own. Routes mint and free their own `Quill` from the tree when schema variants rewrite bytes a materialized quill has no seam for.
+One `Quiver` serves the page. Its quill cache is per canonical ref and lives as long as the quiver does, so a client-side navigation between routes reuses one materialization rather than paying for its own. Routes mint and free their own `Quill` from the tree the quiver hands back, so a route holds the handles it frees.
 
 ## Links
 

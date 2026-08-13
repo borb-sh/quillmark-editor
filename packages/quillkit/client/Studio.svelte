@@ -512,13 +512,13 @@
 	}
 
 	.slash {
-		color: var(--qmh-ghost);
+		color: var(--qmh-ink-meta);
 	}
 
 	/* Beside the mark, in the ghost the mark's own slash takes: a fact about the build,
 	   read once and not watched. */
 	.engine {
-		color: var(--qmh-ghost);
+		color: var(--qmh-ink-meta);
 	}
 
 	/* The phase reads off the end of the line, so the picker holds its position when

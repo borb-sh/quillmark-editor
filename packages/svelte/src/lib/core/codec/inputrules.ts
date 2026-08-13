@@ -61,11 +61,10 @@ function markInputRule(regexp: RegExp, markType: MarkType, delimLen: number): In
  * `heading` being wrapped becomes a `paragraph` first.
  *
  * `list_item` is `block+`, so `list_item > heading` is *representable* and a bare
- * wrap mints it (a shape no quill renders): the reference quill derives an item's
- * numbering and indent from the container path and typesets the item's blocks as
- * body paragraphs (`usaf_memo`'s `render-body`), where a heading resolves to
- * nothing. This is the wrap-side route into that shape; the `# ` rule guards the
- * other, in {@link markdownInputRules}.
+ * wrap mints it — a shape markdown has no spelling for, so nothing downstream is
+ * obliged to typeset it and the gesture that made it cannot be read back. This is
+ * the wrap-side route into it; the `# ` rule guards the other, in
+ * {@link markdownInputRules}.
  *
  * `item` is the second guard, and it is about the gesture rather than the shape: the
  * rule declines at the start of an item's own first block ({@link openingAnItem}).

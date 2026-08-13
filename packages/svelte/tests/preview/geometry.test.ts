@@ -1,6 +1,6 @@
 // The shared pixel<->PDF-pt transform (src/lib/preview/geometry.ts), tested both
 // as pure math (synthetic rects, exact round-trip) and against a real compiled
-// session (subject's fieldBoxes rect -> % -> a simulated click at its center ->
+// session (title's fieldBoxes rect -> % -> a simulated click at its center ->
 // positionAt), proving the forward transform and its inverse never drift
 // apart. No canvas needed; geometry and positionAt are session
 // queries, so this runs in Node against the real Typst backend.
@@ -66,15 +66,15 @@ describe('geometry: synthetic round-trip', () => {
 	});
 });
 
-describe('geometry: against a real compiled session (usaf_memo)', () => {
-	it('forward-transforms a subject fieldBox to %, then inverse-transforms its center back to a positionAt hit on subject', async () => {
+describe('geometry: against a real compiled session (specimen)', () => {
+	it('forward-transforms a title fieldBox to %, then inverse-transforms its center back to a positionAt hit on title', async () => {
 		const tree = loadFixtureTree();
 		const quill = core.Quill.fromTree(tree);
 		const doc = quill.seedDocument();
 		const engine = new Engine();
 		const session = await engine.open(quill, doc);
 		try {
-			const boxes = session.fieldBoxes('main.subject');
+			const boxes = session.fieldBoxes('main.title');
 			expect(boxes.length).toBeGreaterThan(0);
 			const box = boxes[0];
 			const pageSize = session.pageSize(box.page);
@@ -88,7 +88,7 @@ describe('geometry: against a real compiled session (usaf_memo)', () => {
 
 			const pt = clickToPdfPt(centerPx, centerPy, cssW, cssH, pageSize);
 			const hit = session.positionAt(box.page, pt.x, pt.y);
-			expect(hit?.field).toBe('main.subject');
+			expect(hit?.field).toBe('main.title');
 		} finally {
 			session.free();
 			doc.free();
@@ -96,16 +96,16 @@ describe('geometry: against a real compiled session (usaf_memo)', () => {
 		}
 	});
 
-	it('subject surfaces multiple fieldBoxes across pages (header + continuation)', async () => {
+	it('title surfaces multiple fieldBoxes across pages (letterhead + colophon)', async () => {
 		const tree = loadFixtureTree();
 		const quill = core.Quill.fromTree(tree);
 		const doc = quill.seedDocument();
 		const engine = new Engine();
 		const session = await engine.open(quill, doc);
 		try {
-			// subject -> 2 boxes (page 0 header + page 1 continuation), same span: the
+			// title -> 2 boxes (page 0 letterhead + page 1 colophon), same span: the
 			// case that makes `field` non-unique, and `scrollToField` a first-box rule.
-			const boxes = session.fieldBoxes('main.subject');
+			const boxes = session.fieldBoxes('main.title');
 			expect(boxes.length).toBeGreaterThanOrEqual(2);
 			const pages = new Set(boxes.map((b) => b.page));
 			expect(pages.size).toBeGreaterThanOrEqual(2);
@@ -123,7 +123,7 @@ describe('geometry: against a real compiled session (usaf_memo)', () => {
 		// vertical gap between them) has a bounding box whose center legitimately
 		// falls in that gap, off any ink. A grid sample proves the transform is
 		// correct everywhere it's exercised, without assuming a geometry the API
-		// never promised (that promise is `subject`-specific, tested above).
+		// never promised (that promise is `title`-specific, tested above).
 		const tree = loadFixtureTree();
 		const quill = core.Quill.fromTree(tree);
 		const doc = quill.seedDocument();
@@ -176,20 +176,23 @@ describe('boxesForField', () => {
 	it("takes an address's own rects over the ones under it", () => {
 		// The descendant rung is a fallback, not a union: an address with rects of its
 		// own never also draws its children's over them.
-		const regions = [region('main.author', 0), region('main.author[0]', 200)];
-		expect(boxesForField('main.author', [], regions)).toEqual([regions[0]]);
-		expect(boxesForField('main.author[0]', [], regions)).toEqual([regions[1]]);
+		const regions = [region('main.authors', 0), region('main.authors[0]', 200)];
+		expect(boxesForField('main.authors', [], regions)).toEqual([regions[0]]);
+		expect(boxesForField('main.authors[0]', [], regions)).toEqual([regions[1]]);
 	});
 
 	it('reads both boundary characters, and neither as a bare prefix', () => {
-		// An element is bracketed and a nested key dotted, so the descendant rung needs
-		// both openers; `main.author_note` is neither and stays out.
+		// An element is bracketed (`keywords`, a declared array) and a nested key dotted
+		// (`contact`, a declared object), so the descendant rung needs both openers.
+		// A name that merely starts with one is not under it.
 		const regions = [
-			region('main.author[0]', 0),
-			region('main.author.city', 100),
-			region('main.author_note', 200)
+			region('main.keywords[0]', 0),
+			region('main.keywords_note', 100),
+			region('main.contact.city', 200),
+			region('main.contact_note', 300)
 		];
-		expect(boxesForField('main.author', [], regions)).toEqual([regions[0], regions[1]]);
+		expect(boxesForField('main.keywords', [], regions)).toEqual([regions[0]]);
+		expect(boxesForField('main.contact', [], regions)).toEqual([regions[2]]);
 	});
 
 	it('prefers the union the compile did make', () => {
@@ -198,7 +201,7 @@ describe('boxesForField', () => {
 	});
 });
 
-describe('geometry: the addresses a compile serves (usaf_memo)', () => {
+describe('geometry: the addresses a compile serves (specimen)', () => {
 	it('gives every regions() address a box, and a declared array one off its elements', async () => {
 		const quill = core.Quill.fromTree(loadFixtureTree());
 		const doc = quill.seedDocument();
@@ -210,18 +213,20 @@ describe('geometry: the addresses a compile serves (usaf_memo)', () => {
 			// The fixture has to reach both fallback shapes for this to mean anything: a
 			// span-less scalar reference, and a `richtext[]` element.
 			expect(fields).toContain('main.signature_block');
-			expect(fields).toContain('main.references[0]');
+			expect(fields).toContain('main.keywords[0]');
 
 			for (const field of fields) {
 				const boxes = boxesForField(field, session.fieldBoxes(field), regions);
 				expect(boxes.length, `no box for ${field}`).toBeGreaterThan(0);
 			}
-			// `main.references` is named by no region: the compile tracks its elements.
-			// A host holding the declared path still reaches the rows it prints.
-			expect(fields).not.toContain('main.references');
+			// `main.keywords` is named by no region: the compile tracks its elements.
+			// A host holding the declared path still reaches every row it prints, so the
+			// fallback's count is the element count, whatever the fixture seeds.
+			expect(fields).not.toContain('main.keywords');
+			const elements = fields.filter((f) => f.startsWith('main.keywords['));
 			expect(
-				boxesForField('main.references', session.fieldBoxes('main.references'), regions).length
-			).toBe(2);
+				boxesForField('main.keywords', session.fieldBoxes('main.keywords'), regions).length
+			).toBe(elements.length);
 		} finally {
 			session.free();
 			doc.free();

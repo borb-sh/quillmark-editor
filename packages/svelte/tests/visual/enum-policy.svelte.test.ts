@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 // The enum-option policy's two arms and the authored-value escape (VISUAL_EDITOR
 // §"Enum policy"), driven the way a pointer opens the listbox and judged on the rows
-// it draws. `classification` is the case the distinction exists for, and the six
-// levels the reference quill declares leave a deployment carrying three with both
-// kinds of row in one list.
+// it draws. `status` is the case the distinction exists for, and the six stages the
+// reference quill declares leave a deployment carrying three with both kinds of row
+// in one list.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
 import type { Addr, Document, Quill } from '@quillmark/wasm';
@@ -16,9 +16,9 @@ import { quill } from '../helpers/fixtures.js';
 // beside it is never reached.
 Element.prototype.hasPointerCapture ??= () => false;
 
-/** The levels this deployment does not carry, in the reference quill's own set. */
-const WITHHELD = ['CONFIDENTIAL', 'SECRET', 'TOP SECRET'];
-const allowedLevels = (_addr: Addr, value: string) => !WITHHELD.includes(value);
+/** The stages this deployment does not carry, in the reference quill's own set. */
+const WITHHELD = ['approved', 'final', 'withdrawn'];
+const allowedStages = (_addr: Addr, value: string) => !WITHHELD.includes(value);
 
 let cleanup: (() => void) | undefined;
 afterEach(() => {
@@ -79,7 +79,7 @@ function pick(target: HTMLElement, text: string): void {
 /** The schema options the open list draws, in order, each with whether it is offered.
  *  The unset sentinel is dropped: it is the clear-to-default affordance, exempt from
  *  policy, and it ghosts a `default:` that can read identically to a real member (the
- *  reference quill declares an empty-string level, and both render as an em dash). */
+ *  reference quill declares an empty-string stage, and both render as an em dash). */
 function options(target: HTMLElement): { text: string; disabled: boolean }[] {
 	return [...target.querySelectorAll<HTMLElement>('.qm-select-item')]
 		.filter((el) => !el.querySelector('.qm-select-ghost'))
@@ -93,11 +93,11 @@ const texts = (target: HTMLElement) => options(target).map((o) => o.text);
 
 describe("enumDisallowed: 'disable'", () => {
 	it('is the default, and draws a refused option greyed in place', () => {
-		const target = mountEditor({ enumOptionAllowed: allowedLevels });
-		openList(target, 'Classification');
+		const target = mountEditor({ enumOptionAllowed: allowedStages });
+		openList(target, 'Status');
 
 		// The whole schema set, order intact: nothing is stripped.
-		expect(texts(target)).toEqual(['—', 'UNCLASSIFIED', 'CUI', ...WITHHELD]);
+		expect(texts(target)).toEqual(['—', 'draft', 'in_review', ...WITHHELD]);
 		expect(
 			options(target)
 				.filter((o) => o.disabled)
@@ -107,7 +107,7 @@ describe("enumDisallowed: 'disable'", () => {
 
 	it('offers every option when no hook is set', () => {
 		const target = mountEditor();
-		openList(target, 'Classification');
+		openList(target, 'Status');
 
 		expect(options(target).some((o) => o.disabled)).toBe(false);
 	});
@@ -115,53 +115,53 @@ describe("enumDisallowed: 'disable'", () => {
 
 describe("enumDisallowed: 'hide'", () => {
 	it('leaves a refused option out of the list', () => {
-		const target = mountEditor({ enumOptionAllowed: allowedLevels, enumDisallowed: 'hide' });
-		openList(target, 'Classification');
+		const target = mountEditor({ enumOptionAllowed: allowedStages, enumDisallowed: 'hide' });
+		openList(target, 'Status');
 
-		expect(texts(target)).toEqual(['—', 'UNCLASSIFIED', 'CUI']);
+		expect(texts(target)).toEqual(['—', 'draft', 'in_review']);
 	});
 
 	it('draws the authored value anyway, disabled, and no other out-of-policy row', () => {
 		// Authored before the mount, the way a stored document arrives: the deployment
-		// stopped carrying the level after this document was written.
+		// stopped carrying the stage after this document was written.
 		const target = mountEditor(
-			{ enumOptionAllowed: allowedLevels, enumDisallowed: 'hide' },
-			(q, doc) => q.writer(doc).set('classification', 'SECRET')
+			{ enumOptionAllowed: allowedStages, enumDisallowed: 'hide' },
+			(q, doc) => q.writer(doc).set('status', 'final')
 		);
-		const trigger = openList(target, 'Classification');
+		const trigger = openList(target, 'Status');
 
-		expect(texts(target)).toEqual(['—', 'UNCLASSIFIED', 'CUI', 'SECRET']);
+		expect(texts(target)).toEqual(['—', 'draft', 'in_review', 'final']);
 		expect(
 			options(target)
 				.filter((o) => o.disabled)
 				.map((o) => o.text)
-		).toEqual(['SECRET']);
+		).toEqual(['final']);
 		// The closed control says what the document says, under either policy.
-		expect(trigger.textContent).toContain('SECRET');
+		expect(trigger.textContent).toContain('final');
 	});
 
 	it('drops the row once the document no longer holds it', () => {
 		const target = mountEditor(
-			{ enumOptionAllowed: allowedLevels, enumDisallowed: 'hide' },
-			(q, doc) => q.writer(doc).set('classification', 'SECRET')
+			{ enumOptionAllowed: allowedStages, enumDisallowed: 'hide' },
+			(q, doc) => q.writer(doc).set('status', 'final')
 		);
-		openList(target, 'Classification');
-		pick(target, 'CUI');
+		openList(target, 'Status');
+		pick(target, 'in_review');
 
-		openList(target, 'Classification');
-		expect(texts(target)).toEqual(['—', 'UNCLASSIFIED', 'CUI']);
+		openList(target, 'Status');
+		expect(texts(target)).toEqual(['—', 'draft', 'in_review']);
 	});
 });
 
 describe('the policy reaches a card field', () => {
-	it('applies to an indorsement enum, not only the main card', () => {
+	it('applies to a section enum, not only the main card', () => {
 		const target = mountEditor({
-			enumOptionAllowed: (_addr, value) => value !== 'separate_page',
+			enumOptionAllowed: (_addr, value) => value !== 'aside',
 			enumDisallowed: 'hide'
 		});
-		openList(target, 'Format');
+		openList(target, 'Layout');
 
-		expect(texts(target)).toEqual(['standard', 'informal']);
+		expect(texts(target)).toEqual(['prose', 'callout']);
 	});
 });
 
@@ -174,11 +174,11 @@ describe('the hook is asked per option, at the field it draws', () => {
 				return true;
 			}
 		});
-		openList(target, 'Classification');
+		openList(target, 'Status');
 
-		const asked = seen.filter((s) => s.addr.field === 'classification');
+		const asked = seen.filter((s) => s.addr.field === 'status');
 		expect(asked.map((s) => s.value)).toEqual(
-			expect.arrayContaining(['UNCLASSIFIED', 'CUI', 'SECRET'])
+			expect.arrayContaining(['draft', 'in_review', 'final'])
 		);
 	});
 });

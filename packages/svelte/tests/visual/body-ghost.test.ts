@@ -44,16 +44,16 @@ describe('resolveBodyGhost', () => {
 });
 
 describe('the reference quill body channel', () => {
-	it('resolves no body default on main, nor on a freshly added indorsement', () => {
+	it('resolves no body default on main, nor on a freshly added note', () => {
 		// The add path is the exact sequence `addCard` runs, against the real schema.
 		const q = quill();
 		const doc = q.seedDocument();
-		const card = q.seedCard('indorsement', doc.seedOverlay('indorsement'));
+		const card = q.seedCard('note', doc.seedOverlay('note'));
 		expect(card).toBeTruthy();
 		doc.insertCard(card!, doc.cardCount);
 
 		const resolved = q.resolve(doc);
-		expect(resolved.cards.at(-1)?.kind).toBe('indorsement');
+		expect(resolved.cards.at(-1)?.kind).toBe('note');
 		for (const body of [resolved.main.body, resolved.cards.at(-1)?.body]) {
 			const ghost = stringifyGhost(ghostDefault(body ?? undefined));
 			expect(ghost).toBeUndefined();

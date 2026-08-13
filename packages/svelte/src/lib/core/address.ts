@@ -101,7 +101,7 @@ export function cardPath(index: number, kinds: readonly string[]): DocPath | und
 /**
  * The inverse: a canonical `DocPath` back to the `Addr` the document verbs take, or
  * `undefined` for a path that names no single commit address — a nested or
- * array-element path (`main.references[0]`, which {@link elementAddrForFieldPath}
+ * array-element path (`main.keywords[0]`, which {@link elementAddrForFieldPath}
  * takes instead), a field-rooted one, or a malformed one. A bare card and a `.body`
  * terminal both land on the field-less `{card: i}` the body leaf answers to.
  *
@@ -114,7 +114,7 @@ export function addrForFieldPath(path: DocPath): Addr | undefined {
 }
 
 /**
- * An array element's address, split: `main.references[0]` lands here, and anything
+ * An array element's address, split: `main.keywords[0]` lands here, and anything
  * {@link addrForFieldPath} can name — or whose trailing segment is not an index —
  * does not. `regions()`, `positionAt` and `formatDocPath` all spell the index
  * segment bracketed, so there is one spelling to read and none to bridge.

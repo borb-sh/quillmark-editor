@@ -115,7 +115,7 @@
 		min-width: 0;
 		font-size: var(--qmh-text-meta);
 		line-height: var(--qmh-leading-tight);
-		color: var(--qmh-ghost);
+		color: var(--qmh-ink-meta);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;

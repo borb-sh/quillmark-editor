@@ -84,16 +84,17 @@ li.ProseMirror-selectednode::after {
    emits, minus the four the UA already renders correctly (`strong`, `em`, `u`, `s`)
    and the blockquote above.
 
-   Each rule answers to the reference quill rather than to a browser default or to a
+   Each rule answers to the leaf's own job rather than to a browser default or to a
    web editor's chrome, because the leaf sits beside a live preview of the same
-   content. `usaf_memo` sets `raw` in a monospace face and adds nothing; it renders a
-   heading as a bold run-in prepended to the following paragraph, with the level
-   never read; it gives a link no decoration at all. So a leaf shows that a span is
-   code and a line is a heading: never a prediction of the size paper will set it
-   at, which the package cannot know for a quill it has not seen.
+   content. A leaf shows *that* a span is code and a line is a heading: never a
+   prediction of the size paper will set it at, which the package cannot know for a
+   quill it has not seen. The reference quill is the case in point — it sets `raw` in
+   the face it bundles, scales a heading by its level and colours it, and gives a link
+   no decoration at all — and mirroring any of that here would be a guess about the
+   next quill.
 
    Scoping is by tag, and the schema does the rest: `h1`–`h6`, `hr` and the lists
-   cannot exist under the inline schema, so no rule for them can land on a `subject`
+   cannot exist under the inline schema, so no rule for them can land on an inline
    field however that field is mounted. The two marks are the exception: `code` and
    `link` are in both schemas, and a `plaintext` leaf strips them at decode while
    mounting a schema that still carries them, so a paste can put either in one. The

@@ -4,7 +4,7 @@
 
 ## Unreleased
 
-**The `@quillmark/wasm` peer floor is `>=0.104.0-0`, where an array element's address is bracketed.** `FieldRegion.field` and `ContentHit.field` spell an element `main.references[0]` where 0.103 spelled it `main.references.0`, which is the spelling `Diagnostic.path` and `formatDocPath` already used: one address for one place, joining on string equality. Both hooks are typed `string`, so nothing upstream reports this — a consumer matching an address's children by prefix needs the `[` opener beside the `.`, and any heuristic reading a trailing all-digit field name as a lost index is dead.
+**The `@quillmark/wasm` peer floor is `>=0.104.0-0`, where an array element's address is bracketed.** `FieldRegion.field` and `ContentHit.field` spell an element `main.keywords[0]` where 0.103 spelled it `main.keywords.0`, which is the spelling `Diagnostic.path` and `formatDocPath` already used: one address for one place, joining on string equality. Both hooks are typed `string`, so nothing upstream reports this — a consumer matching an address's children by prefix needs the `[` opener beside the `.`, and any heuristic reading a trailing all-digit field name as a lost index is dead.
 
 The two places this package read one move with it. The preview's box fallback matches both opening characters, so a declared array still reaches the rows it prints. `elementAddrForFieldPath` reads the index segment alone: it took either spelling because the boundary minted one and formatted the other, and there is no longer a second spelling to bridge.
 

@@ -80,14 +80,14 @@ describe('formatDiagnostic', () => {
 	const validation: Diagnostic = {
 		severity: 'error',
 		code: 'validation::must_fill',
-		path: 'main.subject',
-		message: 'subject must be filled'
+		path: 'main.title',
+		message: 'title must be filled'
 	};
 
 	it('takes the formatter when it words the diagnostic', () => {
 		const format = (d: Diagnostic) =>
 			d.code === 'validation::must_fill' ? `Champ requis : ${d.path}` : undefined;
-		expect(diagnosticText(validation, format)).toBe('Champ requis : main.subject');
+		expect(diagnosticText(validation, format)).toBe('Champ requis : main.title');
 	});
 
 	it('falls back to the message when the formatter declines', () => {
@@ -113,8 +113,8 @@ describe('formatDiagnostic', () => {
 				{
 					severity: 'error',
 					code: 'validation::type_mismatch',
-					path: 'main.subject',
-					message: `field \`main.subject\` is \`richtext\` but the value is an array. ${hint}`,
+					path: 'main.title',
+					message: `field \`main.title\` is \`richtext\` but the value is an array. ${hint}`,
 					hint
 				}
 			],

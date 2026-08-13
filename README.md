@@ -33,7 +33,7 @@ npm run check:ledger       # the stated `@quillmark/wasm` pin against the instal
 npm run check:bundle       # the shipped scales, in a built consumer
 ```
 
-Everything runs against the one reference quill, [`fixtures/quills/usaf_memo/0.2.0`](fixtures/quills/usaf_memo), a dev fixture at the workspace root, never published.
+Everything runs against the one reference quill, [`fixtures/quills/specimen/1.0.0`](fixtures/quills/specimen), a dev fixture at the workspace root, never published: it declares a field for every control the tier draws and three card kinds, so a surface is exercised against a schema rather than against a mock.
 
 ## Canon
 

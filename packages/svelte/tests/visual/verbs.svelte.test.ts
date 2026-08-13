@@ -66,61 +66,66 @@ const leafKeys = (slot: HTMLElement) =>
 describe('the card verbs', () => {
 	it('insert, move, retype and remove, all reported as the click is', () => {
 		const q = quill();
-		const doc = q.seedDocument(); // one indorsement card, from the seed
+		const doc = q.seedDocument();
 		const { target, editor, changes } = mountEditor(q, doc);
-		expect(slots(target)).toHaveLength(1);
+		// The blueprint seeds one card per declared kind; the verbs are asserted
+		// against that count rather than a number pinned to the fixture's inventory.
+		const seeded = slots(target).length;
+		expect(seeded).toBeGreaterThan(0);
+		const newId = `c${seeded}`;
 
 		// The insert hands back the key, which is what a host tracking the new card
 		// needs and the only thing the click path had no way to give it.
-		const id = editor.insertCard('indorsement');
+		const id = editor.insertCard('section');
 		flushSync();
-		expect(id).toBe('c1');
-		expect(slots(target)).toHaveLength(2);
+		expect(id).toBe(newId);
+		expect(slots(target)).toHaveLength(seeded + 1);
 		expect(changes.at(-1)).toEqual({
 			source: 'structure',
-			cardId: 'c1',
-			path: 'cards.indorsement[1]'
+			cardId: newId,
+			path: `cards.section[${seeded}]`
 		});
 
 		editor.moveCard(id!, -1);
 		flushSync();
 		expect(changes.at(-1)).toEqual({
 			source: 'structure',
-			cardId: 'c1',
-			path: 'cards.indorsement[0]'
+			cardId: newId,
+			path: `cards.section[${seeded - 1}]`
 		});
-		expect(leafKeys(slots(target)[0])).toContain('c1:$body');
+		expect(leafKeys(slots(target)[seeded - 1])).toContain(`${newId}:$body`);
 
-		editor.setKind(id!, 'indorsement');
+		editor.setKind(id!, 'note');
 		flushSync();
-		expect(changes.at(-1)?.cardId).toBe('c1');
+		expect(changes.at(-1)?.cardId).toBe(newId);
 
 		editor.removeCard(id!);
 		flushSync();
-		expect(changes.at(-1)).toEqual({ source: 'structure', cardId: 'c1', path: undefined });
-		expect(slots(target)).toHaveLength(1);
+		expect(changes.at(-1)).toEqual({ source: 'structure', cardId: newId, path: undefined });
+		expect(slots(target)).toHaveLength(seeded);
 		expect(leafKeys(slots(target)[0])).toContain('c0:$body');
 	});
 
 	it('inserts at a given index, and clamps one outside the stack', () => {
 		const q = quill();
 		const { target, editor } = mountEditor(q, q.seedDocument());
+		const seeded = slots(target).length;
 
-		editor.insertCard('indorsement', 0);
+		const first = editor.insertCard('section', 0);
 		flushSync();
-		expect(leafKeys(slots(target)[0])).toContain('c1:$body');
+		expect(leafKeys(slots(target)[0])).toContain(`${first}:$body`);
 
 		// Past the end lands at the end rather than throwing or dropping the card.
-		editor.insertCard('indorsement', 99);
+		const last = editor.insertCard('section', 99);
 		flushSync();
-		expect(leafKeys(slots(target)[2])).toContain('c2:$body');
+		expect(leafKeys(slots(target)[seeded + 1])).toContain(`${last}:$body`);
 	});
 
 	it('focuses a leaf by its path', async () => {
 		const q = quill();
 		const { target, editor } = mountEditor(q, q.seedDocument());
 
-		await editor.focusField('cards.indorsement[0].body');
+		await editor.focusField('cards.section[0].body');
 		await tick();
 
 		const focused = document.activeElement;
@@ -129,7 +134,7 @@ describe('the card verbs', () => {
 	});
 });
 
-// A memo's scalar fields are its front matter, and the preview reports a region for
+// A document's scalar fields are its front matter, and the preview reports a region for
 // them (`session.regions()` names `main.signature_block` beside `main.body`), so a
 // landing that reached content leaves only covered the smaller half of the bridge.
 describe('the landing verbs over a form control', () => {
@@ -137,14 +142,14 @@ describe('the landing verbs over a form control', () => {
 		const q = quill();
 		const { target, editor, errors } = mountEditor(q, q.seedDocument());
 
-		// `letterhead` is not the initially-expanded group, so the control starts inside
+		// `meta` is not the initially-expanded group, so the control starts inside
 		// an `inert` panel: the reveal is half of the landing, not a nicety.
 		const header = [...target.querySelectorAll<HTMLElement>('.qm-group-header')].find((h) =>
-			h.textContent?.includes('Letterhead')
+			h.textContent?.includes('Metadata')
 		);
 		expect(header?.getAttribute('aria-expanded')).toBe('false');
 
-		await editor.focusField('main.letterhead_title');
+		await editor.focusField('main.tracking_id');
 		await tick();
 
 		expect(header?.getAttribute('aria-expanded')).toBe('true');
@@ -164,11 +169,11 @@ describe('the landing verbs over a form control', () => {
 		const { editor, errors } = mountEditor(q, q.seedDocument());
 
 		// The array's own answer to "focus this field", the one its label click takes.
-		await editor.focusField('main.memo_for');
+		await editor.focusField('main.authors');
 		await tick();
 		expect(document.activeElement?.closest('.qm-array-row')).not.toBeNull();
 
-		await editor.focusField('main.date');
+		await editor.focusField('main.issued');
 		await tick();
 		expect(document.activeElement?.getAttribute('data-segment')).toBeTruthy();
 
@@ -179,15 +184,15 @@ describe('the landing verbs over a form control', () => {
 		const q = quill();
 		const { editor, active } = mountEditor(q, q.seedDocument());
 
-		await editor.focusField('main.letterhead_title');
+		await editor.focusField('main.tracking_id');
 		await tick();
-		expect(active.at(-1)).toEqual({ field: 'main.letterhead_title', cardId: 'main' });
+		expect(active.at(-1)).toEqual({ field: 'main.tracking_id', cardId: 'main' });
 
 		// An array of `richtext`: the element is a PM view with no controller of its own,
 		// and the report is the wrapper's bubbling `focusin` like every other control's.
-		await editor.focusField('main.references');
+		await editor.focusField('main.keywords');
 		await tick();
-		expect(active.at(-1)).toEqual({ field: 'main.references', cardId: 'main' });
+		expect(active.at(-1)).toEqual({ field: 'main.keywords', cardId: 'main' });
 	});
 
 	it('lands a preview hit on a control by focusing it, placing no caret', async () => {
@@ -196,7 +201,7 @@ describe('the landing verbs over a form control', () => {
 
 		// A `pos` a control has no coordinate to spend: the field is revealed and
 		// focused, which is the whole of what a click on plate-placed ink can mean.
-		await editor.setCaret({ field: 'main.letterhead_title', pos: 3 });
+		await editor.setCaret({ field: 'main.tracking_id', pos: 3 });
 		await tick();
 
 		expect(document.activeElement?.tagName).toBe('INPUT');
@@ -217,7 +222,7 @@ describe('the landing verbs over a form control', () => {
 	});
 });
 
-// An array element address (`main.references[0]`) is a granularity `Addr` cannot name
+// An array element address (`main.keywords[0]`) is a granularity `Addr` cannot name
 // and the registry is not keyed at: the ladder reads the trailing index segment under
 // a field the schema declares an array, reveals the parent, and takes the row.
 describe('a landing on an array element', () => {
@@ -225,12 +230,12 @@ describe('a landing on an array element', () => {
 		const q = quill();
 		const { editor, errors } = mountEditor(q, q.seedDocument());
 
-		await editor.setCaret({ field: 'main.references[1]', pos: 4 });
+		await editor.setCaret({ field: 'main.keywords[1]', pos: 4 });
 		await tick();
 
 		// The element's own accessible name is `label` + its 1-based index, so this
 		// distinguishes the row from the one a bare `focusField` would land on.
-		expect(document.activeElement?.getAttribute('aria-label')).toBe('References 2');
+		expect(document.activeElement?.getAttribute('aria-label')).toBe('Keywords 2');
 		expect(errors).toHaveLength(0);
 	});
 
@@ -240,10 +245,10 @@ describe('a landing on an array element', () => {
 
 		// A landing off a compile the document has moved past: the field is right and
 		// the row is gone, so the array's own focus answer stands.
-		await editor.focusField('main.references[9]');
+		await editor.focusField('main.keywords[9]');
 		await tick();
 
-		expect(document.activeElement?.getAttribute('aria-label')).toBe('References 1');
+		expect(document.activeElement?.getAttribute('aria-label')).toBe('Keywords 1');
 		expect(errors).toHaveLength(0);
 	});
 });
@@ -255,12 +260,13 @@ describe('a verb handed a target the surface does not hold', () => {
 
 		editor.removeCard('c99');
 		editor.moveCard('c99', 1);
-		editor.setKind('c99', 'indorsement');
+		const seeded = slots(target).length;
+		editor.setKind('c99', 'section');
 		await editor.focusField('main.no_such_field');
 		flushSync();
 
 		// Nothing moved and nothing was reported as a change: the document is untouched.
-		expect(slots(target)).toHaveLength(1);
+		expect(slots(target)).toHaveLength(seeded);
 		expect(changes).toHaveLength(0);
 		expect(errors.map((e) => e.code)).toEqual(Array(4).fill('target-unknown'));
 		expect(errors.every((e) => e.severity === 'dev')).toBe(true);
@@ -273,9 +279,9 @@ describe('a verb handed a target the surface does not hold', () => {
 
 		// The element rung is schema-guarded: a trailing index under a field that is no
 		// array is a nested address the tree mounts nothing at, and reading it as a row
-		// would land the caret in a field the path does not name. `letterhead_title` is
+		// would land the caret in a field the path does not name. `tracking_id` is
 		// a string; `no_such_field` is nothing at all.
-		await editor.focusField('main.letterhead_title.0');
+		await editor.focusField('main.tracking_id.0');
 		await editor.setCaret({ field: 'main.no_such_field.0', pos: 0 });
 		flushSync();
 

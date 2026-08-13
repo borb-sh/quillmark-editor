@@ -34,7 +34,7 @@ describe('the prose leaf change signal', () => {
 		const field = createField({
 			doc,
 			quill: quill(),
-			addr: { field: 'subject' },
+			addr: { field: 'title' },
 			container: mount(),
 			inline: true,
 			onChange: (addr) => changes.push(addr),
@@ -44,7 +44,7 @@ describe('the prose leaf change signal', () => {
 
 		view.dispatch(view.state.tr.insertText('X', 1));
 		expect(changes).toHaveLength(1);
-		expect(changes[0]).toEqual({ field: 'subject' });
+		expect(changes[0]).toEqual({ field: 'title' });
 		expect(carets).toHaveLength(1);
 
 		// A caret that only moves: the signal a preview follows, and no recompile.
@@ -56,24 +56,24 @@ describe('the prose leaf change signal', () => {
 	});
 
 	it('fires onChange on the FIRST edit to an unset field, which installs', () => {
-		// `tag_line` is declared with a `default:` and no stored value, so the first
+		// `colophon` is declared with a `default:` and no stored value, so the first
 		// edit goes down the install branch rather than applyChange. The host's
 		// change signal must not be a property of which branch the commit took.
 		const changes: Addr[] = [];
 		const field = createField({
 			doc,
 			quill: quill(),
-			addr: { field: 'tag_line' },
+			addr: { field: 'colophon' },
 			container: mount(),
 			inline: true,
 			onChange: (addr) => changes.push(addr)
 		});
-		expect(doc.getStored({ field: 'tag_line' })).toBeUndefined();
+		expect(doc.getStored({ field: 'colophon' })).toBeUndefined();
 
 		const view = viewOf(field);
 		view.dispatch(view.state.tr.insertText('hello', 1));
 
-		expect(doc.getStored({ field: 'tag_line' })).toBeDefined();
+		expect(doc.getStored({ field: 'colophon' })).toBeDefined();
 		expect(changes).toHaveLength(1);
 		field.destroy();
 	});
@@ -104,7 +104,7 @@ describe('the prose leaf change signal', () => {
 		const field = createField({
 			doc,
 			quill: quill(),
-			addr: { field: 'subject' },
+			addr: { field: 'title' },
 			container: mount(),
 			inline: true,
 			onChange: (addr) => changes.push(addr),

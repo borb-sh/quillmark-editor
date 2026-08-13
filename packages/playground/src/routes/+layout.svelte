@@ -91,7 +91,7 @@
 	}
 
 	.slash {
-		color: var(--qmh-ghost);
+		color: var(--qmh-ink-meta);
 	}
 
 	.nav {

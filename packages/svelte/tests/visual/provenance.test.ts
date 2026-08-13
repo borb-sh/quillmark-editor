@@ -1,7 +1,7 @@
 // The provenance channel (FIELD_PROVENANCE): `quill.resolve(doc)` mapped to the
 // editor's name-keyed `provenance` map and the ghosted `default:` it feeds. The
 // pure helpers are unit-tested; the resolve behavior is asserted against the real
-// usaf_memo schema, so the authored↔default flip the ghost turns on is pinned to
+// specimen schema, so the authored↔default flip the ghost turns on is pinned to
 // the fixture the suite runs against, not a mock.
 import { describe, it, expect } from 'vitest';
 import type { ResolvedField, Resolved } from '@quillmark/wasm';
@@ -71,34 +71,28 @@ describe('the ghost projection', () => {
 	});
 });
 
-describe('resolve over the real usaf_memo schema', () => {
+describe('resolve over the real specimen schema', () => {
 	it('reports unset declared defaults as `default`-sourced with the schema value', () => {
 		const doc = quill().seedDocument();
 		const main = provenanceMap(quill().resolve(doc).main.fields);
-		expect(main.letterhead_title).toMatchObject({
-			source: 'default',
-			value: 'DEPARTMENT OF THE AIR FORCE'
-		});
-		expect(main.font_size).toMatchObject({ source: 'default', value: 12 });
-		expect(main.letterhead_seal).toMatchObject({ source: 'default', value: 'dow' });
+		expect(main.tracking_id).toMatchObject({ source: 'default', value: 'SPEC-0001' });
+		expect(main.font_size).toMatchObject({ source: 'default', value: 10.5 });
+		expect(main.accent).toMatchObject({ source: 'default', value: 'slate' });
 		// The ghost the control shows for each unset field is that resolved default.
-		expect(ghostDefault(main.letterhead_title)).toBe('DEPARTMENT OF THE AIR FORCE');
+		expect(ghostDefault(main.tracking_id)).toBe('SPEC-0001');
 	});
 
 	it('flips a field to `authored` (no ghost) once a value is stored, back on clear', () => {
 		const doc = quill().seedDocument();
-		doc.storeField('letterhead_title', 'ACME MEMORANDUMS');
+		doc.storeField('tracking_id', 'ACME-9');
 		const authored = provenanceMap(quill().resolve(doc).main.fields);
-		expect(authored.letterhead_title).toMatchObject({
-			source: 'authored',
-			value: 'ACME MEMORANDUMS'
-		});
+		expect(authored.tracking_id).toMatchObject({ source: 'authored', value: 'ACME-9' });
 		// An authored field ghosts nothing; the control shows its own value.
-		expect(ghostDefault(authored.letterhead_title)).toBeUndefined();
+		expect(ghostDefault(authored.tracking_id)).toBeUndefined();
 
-		doc.removeField('letterhead_title');
+		doc.removeField('tracking_id');
 		const cleared = provenanceMap(quill().resolve(doc).main.fields);
-		expect(cleared.letterhead_title.source).toBe('default');
-		expect(ghostDefault(cleared.letterhead_title)).toBe('DEPARTMENT OF THE AIR FORCE');
+		expect(cleared.tracking_id.source).toBe('default');
+		expect(ghostDefault(cleared.tracking_id)).toBe('SPEC-0001');
 	});
 });

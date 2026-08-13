@@ -1,0 +1,325 @@
+quill:
+  name: specimen
+  version: 1.0.0
+  backend: typst
+  description: The workspace's reference quill. Declares every schema shape the JS tier draws a control for.
+
+typst:
+  plate_file: plate.typ
+
+main:
+  ui:
+    # Map form, so a group can override its label; `content` and `layout` take
+    # none and are humanized from the id instead.
+    groups:
+      identity:
+        title: Who and what
+      content: {}
+      layout: {}
+      meta:
+        title: Metadata
+  body:
+    example: |
+      The body is a full block leaf: paragraphs, emphasis, and the containers the
+      codec round-trips.
+
+      - A bullet, to place a list container.
+      - A second one, so the list has a sibling to nest against.
+
+      A closing paragraph, far enough down the page that the body's boxes are two
+      disjoint segments rather than one run.
+  fields:
+    title:
+      type: richtext
+      inline: true
+      example: The Specimen Quill
+      ui:
+        group: identity
+      description: The document's title. Placed in the letterhead and again on the colophon page, so its regions span pages.
+
+    subtitle:
+      type: plaintext
+      inline: true
+      default: ""
+      example: A reference document
+      ui:
+        group: identity
+        compact: true
+      description: Plaintext, so markdown delimiters typed here are the text rather than markup.
+
+    authors:
+      type: array
+      items:
+        type: string
+      default: []
+      example:
+        - Ada Lovelace
+        - Grace Hopper
+      ui:
+        group: identity
+        compact: true
+      description: "Strings. Asks for `ui.compact` and is declined: an array grows with the document, and a row is as tall as its tallest cell."
+
+    contact:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Who to write to.
+        email:
+          type: string
+          description: Where to write.
+        reply_by:
+          type: date
+          description: When a reply is wanted.
+        listed:
+          type: boolean
+          description: Print the address in the letterhead.
+      default: {}
+      ui:
+        title: Point of contact
+        group: identity
+      description: A nested subform, one property per control it draws. The one field labelled by a `ui.title` override rather than by its humanized key.
+
+    signature_block:
+      type: array
+      items:
+        type: string
+      example:
+        - A. LOVELACE
+        - Author
+      ui:
+        group: identity
+      description: Signed by. Placed through the helper's `signature-field`, so its region comes from a widget rather than from glyph spans.
+
+    abstract:
+      type: richtext
+      example: |
+        A block richtext leaf: it holds paragraphs, so it never shares a row however
+        compact it asks to be.
+      ui:
+        group: content
+      description: The standing summary. Block richtext — no `inline`, so the leaf takes the block floor.
+
+    keywords:
+      type: array
+      items:
+        type: richtext
+        inline: true
+      default: []
+      example:
+        - "*Schema* shapes"
+        - "**Regions** and geometry"
+      ui:
+        group: content
+      description: An array whose items are themselves richtext. Each element is tracked as its own region (`main.keywords[0]`); the array itself is named by none.
+
+    errata:
+      type: array
+      items:
+        type: plaintext
+      default: []
+      example:
+        - "Fig. 2 is mislabelled — the **asterisks** here are the text, not emphasis."
+        - "Page 4 gives the wrong year."
+      ui:
+        group: content
+      description: Corrections, verbatim. A `plaintext` item rests as its literal string, so a row is a text input and markdown inside one is text.
+
+    epigraph:
+      type: richtext
+      inline: true
+      default: "*Everything here exists to be tested.*"
+      ui:
+        group: content
+      description: An inline richtext leaf carrying a literal default, so an unset one has a ghost to show.
+
+    columns:
+      type: integer
+      default: 1
+      ui:
+        group: layout
+        compact: true
+      description: How many columns the body is set in.
+
+    font_size:
+      type: number
+      default: 10.5
+      ui:
+        group: layout
+        compact: true
+      description: Body text size in points; decimals allowed.
+
+    draft_watermark:
+      type: boolean
+      default: false
+      ui:
+        group: layout
+        compact: true
+      description: Stamp DRAFT across the page. Also bound to a checkbox widget, so a boolean reaches the region table.
+
+    accent:
+      type: enum
+      values:
+        - slate
+        - ink
+        - rust
+      default: slate
+      ui:
+        group: layout
+        compact: true
+      description: "The rule and heading colour. Every member is a value, so the only way to unset it is the control's own clear affordance — the contrast the field below draws."
+
+    status:
+      type: enum
+      values:
+        - ""
+        - draft
+        - in_review
+        - approved
+        - final
+        - withdrawn
+      default: draft
+      ui:
+        group: meta
+        compact: true
+      description: "Where the document is in its life. Carries a blank member, which reads in the list exactly as the clear-to-default affordance does and is a written value all the same."
+
+    issued:
+      type: date
+      default: "2026-01-15"
+      ui:
+        group: meta
+        compact: true
+      description: YYYY-MM-DD. A literal default, so the date control has a ghost to show.
+
+    revised_at:
+      type: datetime
+      default: ""
+      ui:
+        group: meta
+        compact: true
+      description: When the document was last revised. Blank to omit.
+
+    tracking_id:
+      type: string
+      default: SPEC-0001
+      ui:
+        group: meta
+        compact: true
+      description: A free-text handle. A bare string with no closed domain, so a text input.
+
+    revisions:
+      type: array
+      items:
+        type: object
+        properties:
+          note:
+            type: string
+          pages:
+            type: integer
+      default: []
+      ui:
+        group: meta
+      description: "The revision log. An array of objects, whose elements the editor hands a JSON pane: it has no control that draws a whole object inline."
+
+    colophon:
+      type: richtext
+      inline: true
+      default: ""
+      description: Set in the bundled monospace face at the foot of the last page. The one field declaring no `ui.group`, so it lands in the trailing ungrouped section.
+
+card_kinds:
+  section:
+    description: A titled division of the document. Its `ui.title` is a `{field}` template, so editing `heading` retitles the card.
+    ui:
+      title: "{heading}"
+      groups:
+        structure: {}
+        style:
+          title: Set in
+    fields:
+      heading:
+        type: string
+        example: Findings
+        ui:
+          group: structure
+          compact: true
+        description: The section's heading, and the card's own title.
+      lead:
+        type: richtext
+        inline: true
+        default: ""
+        example: What the section *found*, in one line.
+        ui:
+          group: structure
+        description: A standfirst under the heading.
+      layout:
+        type: enum
+        values:
+          - prose
+          - callout
+          - aside
+        default: prose
+        ui:
+          group: style
+          compact: true
+        description: Run the section as prose, box it as a callout, or set it small in the margin.
+      numbered:
+        type: boolean
+        default: true
+        ui:
+          group: style
+          compact: true
+        description: Number the heading.
+      reviewed_at:
+        type: datetime
+        default: ""
+        ui:
+          group: style
+          compact: true
+        description: When the section was last reviewed, to the minute.
+    body:
+      example: |
+        Section bodies are leaves of their own, addressed per card.
+
+  note:
+    description: A short aside. Its title is a literal and its fields are ungrouped, so the card renders no accordion. Its body declares no example, so a fresh one seeds empty — the leaf the ghost exists for.
+    ui:
+      title: Marginal note
+    fields:
+      label:
+        type: string
+        default: Note
+        description: The word set in the margin.
+      tone:
+        type: enum
+        values:
+          - neutral
+          - warning
+        default: neutral
+        ui:
+          compact: true
+        description: How loudly the aside is set.
+
+  signoff:
+    description: Who signed, and when. The kind that renders no body leaf at all.
+    ui:
+      title: Sign-off
+    body:
+      enabled: false
+    fields:
+      signature_block:
+        type: array
+        items:
+          type: string
+        example:
+          - G. HOPPER
+          - Reviewer
+        description: "Line 1: name as signed. Line 2: role."
+      signed_on:
+        type: date
+        default: ""
+        ui:
+          compact: true
+        description: YYYY-MM-DD. Blank renders a fill-in line.

@@ -17,10 +17,10 @@ describe('substrate chain', () => {
 		expect(tree.has('Quill.yaml')).toBe(true);
 
 		const quill = core.Quill.fromTree(tree);
-		expect(quill.metadata.name).toBe('usaf_memo');
+		expect(quill.metadata.name).toBe('specimen');
 		expect(quill.backendId).toBe('typst');
 		expect(Object.keys(quill.schema.main.fields).length).toBeGreaterThan(0);
-		expect(quill.schema.card_kinds).toHaveProperty('indorsement');
+		expect(quill.schema.card_kinds).toHaveProperty('section');
 
 		const doc = quill.seedDocument();
 		// Composed from the quill's own metadata; the contract is `name@version`,
@@ -41,12 +41,12 @@ describe('substrate chain', () => {
 		quill.free();
 	});
 
-	it('preserves binary fixture bytes (fonts/seals arrive as raw bytes)', () => {
+	it('preserves binary fixture bytes (the mark and the fonts arrive as raw bytes)', () => {
 		const tree = loadFixtureTree();
-		const seal = tree.get('assets/dow_seal.png');
-		expect(seal).toBeInstanceOf(Uint8Array);
+		const mark = tree.get('assets/mark.png');
+		expect(mark).toBeInstanceOf(Uint8Array);
 		// PNG magic number; proves the byte path did not decode/re-encode as text.
-		expect(Array.from(seal!.slice(0, 4))).toEqual([0x89, 0x50, 0x4e, 0x47]);
+		expect(Array.from(mark!.slice(0, 4))).toEqual([0x89, 0x50, 0x4e, 0x47]);
 	});
 
 	it('opens and frees repeatedly without a handle leak', async () => {
