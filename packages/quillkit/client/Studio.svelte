@@ -1,6 +1,6 @@
 <!--
   Studio, whole: a quiver's quills worked live. Pick a quill, edit, watch it paint,
-  read the errors.
+  read what it will not do.
 
   One consumer-owned `LiveSession` over one document, under two surfaces:
     • <VisualEditor> (left): the edit surface; commits land on `open.doc`.
@@ -11,7 +11,7 @@
   them.
 
     edit ─► (debounced) session.update(doc) ─► preview.refresh(change)
-                                            └► notes = every producer, merged
+                                            └► diagnostics = every producer, merged,
     preview click ─► onPick(at) ─► editor.setCaret(at)
                                       └► shown = 1   (reveal, under the threshold)
     editor caret  ─► onCaretMove(at)  ─► preview.focusPosition(at)
@@ -38,10 +38,9 @@
 	import type { EditorChange } from '@quillmark/svelte/visual';
 	import Picker from './Picker.svelte';
 	import Markdown from './Markdown.svelte';
-	import Notes from './Notes.svelte';
 	import { catalogOf, openQuiver, type Catalog } from './quiver';
 	import { close, openRef, type Opened } from './session';
-	import { collect, diagnosticsOf, messageOf, placeOf, type NoteSet } from './notes';
+	import { collect, diagnosticsOf, messageOf, placeOf } from './notes';
 
 	/** The dev server's signal that a repack landed. */
 	const REPACKED = 'studio:quiver-repacked';
@@ -80,7 +79,8 @@
 	/** What the last carry stranded. Held for the open and dropped at the first edit:
 	 *  from then on the schema producer speaks for the document's current state. */
 	let carried = $state.raw<Diagnostic[]>([]);
-	let notes = $state.raw<NoteSet>({ all: [], unrouted: 0, diagnostics: [] });
+	/** Every producer's diagnostics, merged, for the editor to route by `path`. */
+	let notes = $state.raw<Diagnostic[]>([]);
 
 	/** The first diagnostic of the throw naming a place in the quill's source. A compile
 	 *  failure carries one and nothing the schema says does, so this is the line the
@@ -101,11 +101,11 @@
 
 	function syncNotes(): void {
 		notes = collect([
-			{ origin: 'render', diags: thrown },
-			{ origin: 'schema', diags: open ? open.quill.validate(open.doc) : [] },
-			{ origin: 'render', diags: open ? open.session.warnings : [] },
-			{ origin: 'carried', diags: carried },
-			{ origin: 'surface', diags: recovered }
+			thrown,
+			open ? open.quill.validate(open.doc) : [],
+			open ? open.session.warnings : [],
+			carried,
+			recovered
 		]);
 	}
 
@@ -154,8 +154,8 @@
 		} catch (err) {
 			if (mine !== turn) return;
 			// A quill that does not open is the case an author most needs read to them, so
-			// the diagnostics land in the notes band and the panes stay empty. The
-			// document waits it out as text.
+			// the panes go and the room they had says why. The document waits it out as
+			// text.
 			held = carry;
 			thrown = diagnosticsOf(err);
 			carried = [];
@@ -366,12 +366,14 @@
 		{#if catalog}
 			<Picker {catalog} {picked} disabled={busy} onPick={pick} />
 		{/if}
-		<!-- What the two panes are, for the reader who did not type the verb. A label
-		     rather than a sentence: it is the same fact the panes' own accessible names
-		     carry, said where a sighted reader meets it, and it is about studio's own
-		     screen rather than about the document model, so it cannot go stale under a
-		     schema (STUDIO §"Opened, not stood on"). -->
-		<span class="qm-label panes-are" data-testid="panes-are">edit left · paint right</span>
+		<!-- The document's one door (STUDIO §"Opened, not stood on"). -->
+		<button
+			class="qm-control"
+			type="button"
+			data-testid="edit-source"
+			disabled={!carrying}
+			onclick={openSource}>Edit source</button
+		>
 		<span class="state">
 			{#if phase.kind === 'booting'}
 				<span class="qm-status" data-testid="phase">Opening…</span>
@@ -379,7 +381,7 @@
 				<span class="qm-status" data-testid="phase">Opening {phase.ref}…</span>
 			{:else if phase.kind === 'failed'}
 				<!-- The head says the state; what went wrong is a sentence, and it belongs
-				     where the panes were and in the notes band, not on one line of chrome. -->
+				     where the panes were rather than on one line of chrome. -->
 				<span class="qm-status qm-status-error" data-testid="phase">Open failed</span>
 				{#if held}
 					<!-- The document is not gone with the quill that would not open: it waits
@@ -429,7 +431,7 @@
 						bind:this={editorRef}
 						doc={open.doc}
 						quill={open.quill}
-						diagnostics={notes.diagnostics}
+						diagnostics={notes}
 						onCaretMove={handleCaretMove}
 						onChange={handleChange}
 						onError={handleSurfaceError}
@@ -459,8 +461,8 @@
 			</div>
 		</div>
 	{:else}
-		<!-- Nothing is mounted, so the room the panes had says why: the message where
-		     the paint would be, and the notes band below it with the code and the hint. -->
+		<!-- Nothing is mounted, so the room the panes had says why: the message where the
+		     paint would be, and the line of source it failed at under it. -->
 		<div class="vacant">
 			{#if phase.kind === 'failed'}
 				<p class="reason" data-testid="reason">{phase.message}</p>
@@ -472,8 +474,6 @@
 			{/if}
 		</div>
 	{/if}
-
-	<Notes {notes} onEditSource={openSource} canEditSource={carrying} />
 </div>
 
 <!-- Mounted only while open, which is what makes every opening a fresh read of the
@@ -518,12 +518,6 @@
 	/* Beside the mark, in the ghost the mark's own slash takes: a fact about the build,
 	   read once and not watched. */
 	.engine {
-		color: var(--qmh-ghost);
-	}
-
-	/* The quietest run in the band: the reader who needs it has not read anything else
-	   here, and the author reads past it once. */
-	.panes-are {
 		color: var(--qmh-ghost);
 	}
 

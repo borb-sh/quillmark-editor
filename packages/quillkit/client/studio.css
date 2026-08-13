@@ -4,19 +4,15 @@
    the language).
 
    Studio has one screen, no reading column and no display type, and that screen is drawn
-   as the preset's `.qm-workspace`, so what it adds to the endorsed look is one height.
+   as the preset's `.qm-workspace`, so what it adds to the endorsed look is one width.
 
    Literals live here and nowhere else under `src`: `check:style` runs its axes over this
    scope too, with this file exempt as the place these defaults are minted, and its
    conformance rule fails a rung that restates one of the preset's. */
 
 :root {
-	/* What the notes band takes when it is open. Not rhythm: how much of a list is worth
-	   showing before it competes with the surface it is about. The one height studio
-	   states, the panes taking whatever the bands leave. */
-	--st-notes: 14rem;
-
-	/* How wide a panel stands. Wider than the reading measure its prose holds to, because
-	   the other panel holds markdown, which is read by its lines. */
+	/* How wide the source panel stands. Not rhythm: how much of a document is worth
+	   showing at once, which is a measure in lines rather than in sentences and so is
+	   wider than the reading measure. */
 	--st-panel: 52rem;
 }
