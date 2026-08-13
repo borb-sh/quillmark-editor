@@ -1,5 +1,5 @@
 // The pure join/ordering/layout math (VisualEditor's projection). Unit-tested
-// in isolation (no runes, no Document) including against the real usaf_memo
+// in isolation (no runes, no Document) including against the real specimen
 // schema so the ordering contract and group layout are asserted on the fixture
 // the suite runs against.
 import { describe, it, expect } from 'vitest';
@@ -266,7 +266,7 @@ describe('required', () => {
 // inventory: a count, a group list or a field's copy pinned here fails on every
 // edit to the reference quill, and the failure is answered by pasting the new
 // value (CLAUDE.md §Verification).
-describe('against the real usaf_memo schema', () => {
+describe('against the real specimen schema', () => {
 	const main = () => quill().schema.main;
 
 	it('projects fields in declaration order, with the real shapes mapping to controls', () => {
@@ -276,17 +276,17 @@ describe('against the real usaf_memo schema', () => {
 		const byName = Object.fromEntries(models.map((m) => [m.name, m]));
 		// One of each shape the synthetic table covers: an inline richtext leaf, an
 		// enum, and an array whose items are themselves richtext.
-		expect(byName.subject.control).toBe('prose');
-		expect(byName.subject.inline).toBe(true);
-		expect(byName.classification.control).toBe('enum');
-		expect(byName.references.control).toBe('array');
-		expect(byName.references.schema.items?.type).toBe('richtext');
+		expect(byName.title.control).toBe('prose');
+		expect(byName.title.inline).toBe(true);
+		expect(byName.status.control).toBe('enum');
+		expect(byName.keywords.control).toBe('array');
+		expect(byName.keywords.schema.items?.type).toBe('richtext');
 	});
 
 	it('threads a field schema description into the model verbatim', () => {
 		const byName = Object.fromEntries(fieldModels(main()).map((m) => [m.name, m]));
-		expect(byName.memo_from.description).toBe(byName.memo_from.schema.description);
-		expect(byName.memo_from.description).toBeTruthy(); // the fixture declares one to thread
+		expect(byName.authors.description).toBe(byName.authors.schema.description);
+		expect(byName.authors.description).toBeTruthy(); // the fixture declares one to thread
 	});
 
 	it('sections every field into the declared group order, losing none', () => {

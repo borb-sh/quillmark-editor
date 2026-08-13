@@ -4,7 +4,7 @@
 // `ArrayField` keeps its elements' focus handles in a record keyed by element id and
 // binds into it with `bind:this={els[id]}`. A plain object makes that a write Svelte
 // cannot track, and it says so once per element per render — thirteen lines on the
-// reference memo's first paint, in the console a consumer is reading to find its own
+// reference quill's first paint, in the console a consumer is reading to find its own
 // defects. The record is `$state`, so: nothing is logged.
 //
 // The other end is what `$state` costs. It proxies a plain object deeply, and what
@@ -20,11 +20,11 @@ import { quill } from '../helpers/fixtures.js';
 
 const core = await init();
 
-// The reference memo's `main.memo_for` is `string[]`, so its elements are `TextField`s:
+// The reference quill's `main.authors` is `string[]`, so its elements are `TextField`s:
 // the array control with a component instance behind each row. Located by the
 // accessible name each element carries (`${label} ${index + 1}`, ArrayField), the field
-// declaring no `ui.title` so the label is `humanize('memo_for')`.
-const ELEMENT_LABEL = 'Memo for ';
+// declaring no `ui.title` so the label is `humanize('authors')`.
+const ELEMENT_LABEL = 'Authors ';
 
 let cleanup: (() => void) | undefined;
 afterEach(() => {
@@ -50,7 +50,7 @@ function inputs(target: HTMLElement): HTMLInputElement[] {
 		...target.querySelectorAll<HTMLInputElement>(`input[aria-label^="${ELEMENT_LABEL}"]`)
 	];
 	if (found.length === 0)
-		throw new Error(`fixture drift: no \`${ELEMENT_LABEL.trim()}\` array elements on the memo`);
+		throw new Error(`fixture drift: no \`${ELEMENT_LABEL.trim()}\` array elements on the quill`);
 	return found;
 }
 

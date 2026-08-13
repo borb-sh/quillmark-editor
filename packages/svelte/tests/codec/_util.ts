@@ -42,9 +42,9 @@ export function md(markdown: string): Content {
 	return core.importMarkdown(markdown);
 }
 
-/** The reference quill's seeded `subject` (inline richtext) content. */
-export function subjectContent(): Content {
-	return freshDoc().getStored('subject') as Content;
+/** The reference quill's seeded `title` (inline richtext) content. */
+export function titleContent(): Content {
+	return freshDoc().getStored('title') as Content;
 }
 /** The reference quill's seeded main body content. */
 export function bodyContent(): Content {

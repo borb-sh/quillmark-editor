@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import { decode, pmToContent, blockSchema, inlineSchema } from '$lib/core/codec';
 import type { Content } from '@quillmark/wasm';
-import { md, normalize, contentEqual, subjectContent, bodyContent } from './_util.js';
+import { md, normalize, contentEqual, titleContent, bodyContent } from './_util.js';
 
 /** decode → pmToContent, both sides normalized through the real content. */
 function reContent(rt: Content): Content {
@@ -26,7 +26,7 @@ describe('decode idempotence (up to normalization)', () => {
 		strike: md('~~struck~~ and plain'),
 		underline: md('<u>underlined</u> text'),
 		astral: md('emoji 😀 and 漢字 **bold 🎉**'),
-		realSubject: subjectContent(),
+		realTitle: titleContent(),
 		realBody: bodyContent()
 	};
 	for (const [name, rt] of Object.entries(cases)) {

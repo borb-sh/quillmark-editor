@@ -125,7 +125,7 @@ import '@quillmark/svelte/preset';
 ```html
 <body class="qm-page">
 	<p class="qm-label">quill</p>
-	<pre class="qm-readout">usaf_memo@0.2.0</pre>
+	<pre class="qm-readout">specimen@1.0.0</pre>
 </body>
 ```
 

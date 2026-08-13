@@ -12,37 +12,30 @@
 // card rather than staying at the index.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
-import { init, type Document, type Quill } from '@quillmark/wasm';
+import type { Document, Quill } from '@quillmark/wasm';
 import { addrForFieldPath } from '$lib/core';
 import type { ActiveLeaf, EditorChange } from '$lib/visual';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
-import { loadFixtureTree } from '../helpers/fixtures.js';
-
-const core = await init();
+import { quill } from '../helpers/fixtures.js';
 
 /**
- * The reference quill with the indorsement card's `date` retyped to `datetime`.
- * The only commit the fixture's own schema refuses from a mounted control: the V1
- * date control emits `YYYY-MM-DD` whatever the declared type, and a `datetime`
- * field coerces none of them (`edit::field_coercion_failed`). Every other control on
- * this quill emits a value its field accepts, so this is the one door to the
- * commit-error lane that a driven surface can walk through.
+ * A document holding exactly two `section` cards: the blueprint seeds one card per
+ * kind, so the others are dropped and a second section inserted beside the first.
+ * A pair is the smallest stack a reorder is visible in.
+ *
+ * `section` is also the kind carrying the fixture's card-side `datetime`
+ * (`reviewed_at`), which is the one commit a mounted control cannot satisfy: the V1
+ * date control emits `YYYY-MM-DD` whatever the declared type, and a `datetime` field
+ * coerces none of them (`edit::field_coercion_failed`). Every other control emits a
+ * value its field accepts, so this is the door to the commit-error lane.
  */
-function quillWithDatetimeDate(): Quill {
-	const tree = loadFixtureTree();
-	const yaml = new TextDecoder().decode(tree.get('Quill.yaml')!);
-	const patched = yaml.replace(/(  date:\n {8}type: )date/, '$1datetime');
-	if (patched === yaml)
-		throw new Error('fixture drift: indorsement.date is no longer `type: date`');
-	tree.set('Quill.yaml', new Uint8Array(Buffer.from(patched, 'utf8')));
-	return core.Quill.fromTree(tree);
-}
-
-/** A document with two indorsement cards: the seed carries one, the second is inserted. */
 function docWithTwoCards(q: Quill): Document {
 	const doc = q.seedDocument();
-	const card = q.seedCard('indorsement', doc.seedOverlay('indorsement'));
-	if (!card) throw new Error('fixture drift: the quill seeds no indorsement card');
+	for (let i = doc.cardCount - 1; i >= 0; i--) {
+		if (doc.card(i).kind !== 'section') doc.removeCard(i);
+	}
+	const card = q.seedCard('section', doc.seedOverlay('section'));
+	if (!card) throw new Error('fixture drift: the quill seeds no section card');
 	doc.insertCard(card, 1);
 	return doc;
 }
@@ -121,7 +114,7 @@ function removeCard(slot: HTMLElement): void {
 
 describe('a reorder through the card control', () => {
 	it('moves the key with the card and leaves the address behind', () => {
-		const q = quillWithDatetimeDate();
+		const q = quill();
 		const doc = docWithTwoCards(q);
 		const { target, changes, actives } = mountEditor(q, doc);
 		expect(slots(target)).toHaveLength(2);
@@ -129,7 +122,7 @@ describe('a reorder through the card control', () => {
 		// A host captures the active leaf: a path and a key, both naming the first card.
 		focusBody(slots(target)[0]);
 		const captured = actives.at(-1)!;
-		expect(captured).toEqual({ field: 'cards.indorsement[0].body', cardId: 'c0' });
+		expect(captured).toEqual({ field: 'cards.section[0].body', cardId: 'c0' });
 
 		moveDown(slots(target)[0]);
 
@@ -138,7 +131,7 @@ describe('a reorder through the card control', () => {
 		expect(changes.at(-1)).toEqual({
 			source: 'structure',
 			cardId: 'c0',
-			path: 'cards.indorsement[1]'
+			path: 'cards.section[1]'
 		});
 
 		// The trap, pinned. The captured PATH now names the other card; the captured key
@@ -150,7 +143,7 @@ describe('a reorder through the card control', () => {
 	});
 
 	it('carries a refused commit with the card, not with the index', () => {
-		const q = quillWithDatetimeDate();
+		const q = quill();
 		const doc = docWithTwoCards(q);
 		const { target } = mountEditor(q, doc);
 
@@ -174,7 +167,7 @@ describe('a reorder through the card control', () => {
 
 describe('a removal', () => {
 	it('names the card it removed, and no address', () => {
-		const q = quillWithDatetimeDate();
+		const q = quill();
 		const doc = docWithTwoCards(q);
 		const { target, changes } = mountEditor(q, doc);
 

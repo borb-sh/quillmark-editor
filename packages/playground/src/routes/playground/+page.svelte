@@ -35,10 +35,10 @@
   error), so a round-trip that lands nowhere shows there, as does a failure the
   surfaces recovered from. `inject-diagnostics` stands in for a live
   render-error feed: a real consumer derives external diagnostics from
-  `session.warnings` (wired here, `[]` for usaf_memo) plus render errors.
+  `session.warnings` (wired here, `[]` for the reference quill) plus render errors.
 
-  The fixture variants are query flags with no chrome: schema or seed changes read
-  once at mount, for the branches the reference quill on disk reaches none of
+  The seed variants are query flags with no chrome: seed changes read once at mount,
+  for the branches the reference quill on disk reaches none of
   (PLAYGROUND §"Fixture variants").
 -->
 <script lang="ts">
@@ -47,7 +47,7 @@
 	import type { Landing, Place, EditorError } from '@quillmark/svelte/core';
 	import type { ActiveLeaf, EditorChange } from '@quillmark/svelte/visual';
 	import { Preview } from '@quillmark/svelte/preview';
-	import { loadUsafMemoTree, withMainDateDefault, withSecondCardKind } from '../fixture';
+	import { loadSpecimenTree } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
 	type VisualEditorComponent = typeof import('@quillmark/svelte/visual').VisualEditor;
@@ -174,16 +174,8 @@
 					import('@quillmark/svelte/visual')
 				]);
 				const { Quill, Document } = await init();
-				const tree = await loadUsafMemoTree();
-				// The schema variants, patched into the tree before the quill is built:
-				// `?dateDefault=YYYY-MM-DD` gives the main `date` a literal default (the
-				// reference quill declares a blank one, which ghosts nothing), `?kinds2` a
-				// second card kind, so the add affordance takes its menu branch.
 				const params = new URLSearchParams(window.location.search);
-				const dateDefault = params.get('dateDefault');
-				if (dateDefault) withMainDateDefault(tree, dateDefault);
-				if (params.has('kinds2')) withSecondCardKind(tree);
-				const quill = Quill.fromTree(tree);
+				const quill = Quill.fromTree(await loadSpecimenTree());
 				const doc = quill.seedDocument();
 				// The seed variants. `?foreign` holds a card whose kind the schema cannot
 				// project: `Document.insertCard` is schema-agnostic where the Quill-bound

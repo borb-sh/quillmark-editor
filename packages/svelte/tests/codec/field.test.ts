@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// The standalone prose leaf: a `createField` over a real usaf_memo `subject` (inline)
+// The standalone prose leaf: a `createField` over a real `specimen` `title` (inline)
 // and body edits via applyChange; the caret survives own-edits through the PM StepMap;
 // an external content change re-hydrates and the leaf's own edit does not.
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -15,29 +15,29 @@ function viewOf(f: FieldController): EditorView {
 	return (f as FieldController & { view: EditorView }).view;
 }
 
-describe('createField over a real usaf_memo leaf', () => {
+describe('createField over a real specimen leaf', () => {
 	let doc: Document;
 	beforeEach(() => {
 		doc = quill().seedDocument();
 	});
 
-	it('edits the inline `subject` field via applyChange', () => {
+	it('edits the inline `title` field via applyChange', () => {
 		const caret: number[] = [];
 		const field = createField({
 			doc,
 			quill: quill(),
-			addr: { field: 'subject' },
+			addr: { field: 'title' },
 			container: mount(),
 			inline: true,
 			onCaretMove: (_addr, pos) => caret.push(pos)
 		});
-		const before = (doc.getStored('subject') as { text: string }).text;
+		const before = (doc.getStored('title') as { text: string }).text;
 		const view = viewOf(field);
 		// Place the caret after the first char (USV 1), then type "X" there;
 		// the caret advances to USV 2 as real typing would.
 		field.setCaret(1);
 		view.dispatch(view.state.tr.insertText('X', view.state.selection.head));
-		const after = (doc.getStored('subject') as { text: string }).text;
+		const after = (doc.getStored('title') as { text: string }).text;
 		expect(after).not.toBe(before);
 		expect(after[0]).toBe(before[0]);
 		expect(after[1]).toBe('X');
@@ -62,7 +62,7 @@ describe('createField over a real usaf_memo leaf', () => {
 		const field = createField({
 			doc,
 			quill: quill(),
-			addr: { field: 'subject' },
+			addr: { field: 'title' },
 			container: mount()
 		});
 		const view = viewOf(field);
@@ -83,7 +83,7 @@ describe('field-level reconciliation', () => {
 		const field = createField({
 			doc,
 			quill: quill(),
-			addr: { field: 'subject' },
+			addr: { field: 'title' },
 			container: mount()
 		});
 		const view = viewOf(field);
@@ -96,12 +96,12 @@ describe('field-level reconciliation', () => {
 
 		// A foreign edit straight to the content (another source), then applyExternal.
 		doc.applyChange(
-			{ field: 'subject' },
+			{ field: 'title' },
 			{
 				delta: {
 					ops: [
 						{ insert: 'EXT ' },
-						{ retain: (doc.getStored('subject') as { text: string }).text.length }
+						{ retain: (doc.getStored('title') as { text: string }).text.length }
 					]
 				}
 			}
@@ -130,7 +130,7 @@ describe('plaintext fields mount no markdown input rules', () => {
 		const field = createField({
 			doc,
 			quill: quill(),
-			addr: { field: 'tag_line' }, // default-only → decodes empty, first edit installs
+			addr: { field: 'colophon' }, // default-only → decodes empty, first edit installs
 			container: mount(),
 			plaintext: true
 		});
@@ -138,7 +138,7 @@ describe('plaintext fields mount no markdown input rules', () => {
 		view.dispatch(view.state.tr.insertText('**x*', 1)); // literal; the closing `*` fires the rule
 		expect(fireClosingStar(view)).toBeFalsy(); // no input-rules plugin → not intercepted
 		view.dispatch(view.state.tr.insertText('*', view.state.selection.head));
-		const rt = doc.getStored('tag_line') as { text: string; marks: unknown[] };
+		const rt = doc.getStored('colophon') as { text: string; marks: unknown[] };
 		expect(rt.text).toBe('**x**');
 		expect(rt.marks).toHaveLength(0);
 		field.destroy();
@@ -149,14 +149,14 @@ describe('plaintext fields mount no markdown input rules', () => {
 		const field = createField({
 			doc,
 			quill: quill(),
-			addr: { field: 'tag_line' },
+			addr: { field: 'colophon' },
 			container: mount(),
 			inline: true
 		});
 		const view = viewOf(field);
 		view.dispatch(view.state.tr.insertText('**x*', 1));
 		expect(fireClosingStar(view)).toBe(true); // the rule intercepts and transforms
-		const rt = doc.getStored('tag_line') as { text: string; marks: { type: string }[] };
+		const rt = doc.getStored('colophon') as { text: string; marks: { type: string }[] };
 		expect(rt.text).toBe('x');
 		expect(rt.marks.some((m) => m.type === 'strong')).toBe(true);
 		field.destroy();
@@ -166,23 +166,23 @@ describe('plaintext fields mount no markdown input rules', () => {
 describe('createField over an ABSENT declared richtext field', () => {
 	it('installs on the first edit (applyChange throws on absent), then applyChanges', () => {
 		const doc = quill().seedDocument();
-		// `tag_line` is `default:`-only, so it is absent from the seed.
-		expect(doc.getStored('tag_line')).toBeUndefined();
+		// `colophon` is `default:`-only, so it is absent from the seed.
+		expect(doc.getStored('colophon')).toBeUndefined();
 		const field = createField({
 			doc,
 			quill: quill(),
-			addr: { field: 'tag_line' },
+			addr: { field: 'colophon' },
 			container: mount(),
 			inline: true
 		});
 		const view = viewOf(field);
 		// First edit → the codec installs the field (creating it).
 		view.dispatch(view.state.tr.insertText('Motto', 1));
-		expect((doc.getStored('tag_line') as { text: string } | undefined)?.text).toBe('Motto');
+		expect((doc.getStored('colophon') as { text: string } | undefined)?.text).toBe('Motto');
 		// Second edit → the field is now present, so it lowers to applyChange and lands.
 		field.setCaret(5);
 		view.dispatch(view.state.tr.insertText('!', view.state.selection.head));
-		expect((doc.getStored('tag_line') as { text: string }).text).toBe('Motto!');
+		expect((doc.getStored('colophon') as { text: string }).text).toBe('Motto!');
 		field.destroy();
 	});
 });
@@ -263,12 +263,12 @@ describe('createField accessible name (a11y follow-up)', () => {
 		const field = createField({
 			doc,
 			quill: quill(),
-			addr: { field: 'subject' },
+			addr: { field: 'title' },
 			container: mount(),
 			inline: true,
-			label: 'Subject'
+			label: 'Title'
 		});
-		expect(viewOf(field).dom.getAttribute('aria-label')).toBe('Subject');
+		expect(viewOf(field).dom.getAttribute('aria-label')).toBe('Title');
 		field.destroy();
 	});
 
@@ -277,7 +277,7 @@ describe('createField accessible name (a11y follow-up)', () => {
 		const field = createField({
 			doc,
 			quill: quill(),
-			addr: { field: 'subject' },
+			addr: { field: 'title' },
 			container: mount(),
 			inline: true
 		});
@@ -295,18 +295,26 @@ describe('the empty-leaf ghost', () => {
 		viewOf(f).dom.querySelector('.qm-prose-placeholder')?.getAttribute('data-placeholder') ?? null;
 
 	/** A freshly added card's body: empty, which the seeded main body is not.
-	 *  This is the very leaf the fallback exists for. */
+	 *  This is the very leaf the fallback exists for. `note` is the kind declaring no
+	 *  body `example`, so its seed carries nothing for the ghost to hide behind. */
 	function emptyBodyDoc(): Document {
 		const q = quill();
 		const doc = q.seedDocument();
-		const card = q.seedCard('indorsement', doc.seedOverlay('indorsement'));
+		const card = q.seedCard('note', doc.seedOverlay('note'));
 		doc.insertCard(card!, doc.cardCount);
 		return doc;
 	}
-	const CARD_BODY = { card: 0 };
+	/** The card just added: the last one, whatever the blueprint seeded ahead of it. */
+	const cardBody = (doc: Document) => ({ card: doc.cardCount - 1 });
 
 	function emptyBody(doc: Document, placeholder?: string): FieldController {
-		return createField({ doc, quill: quill(), addr: CARD_BODY, container: mount(), placeholder });
+		return createField({
+			doc,
+			quill: quill(),
+			addr: cardBody(doc),
+			container: mount(),
+			placeholder
+		});
 	}
 
 	it('decorates an empty leaf with the ghost, and no leaf without one', () => {
@@ -323,7 +331,7 @@ describe('the empty-leaf ghost', () => {
 		const field = createField({
 			doc,
 			quill: quill(),
-			addr: CARD_BODY,
+			addr: cardBody(doc),
 			container: mount(),
 			placeholder: 'Write…',
 			onCaretMove: (_a, p) => caret.push(p)

@@ -25,7 +25,7 @@ const viewOf = (f: FieldController): EditorView =>
 function loaded(): { q: Quill; doc: Document } {
 	const q = quill();
 	const seed = q.seedDocument();
-	q.writer(seed).set('subject', 'Reloaded subject');
+	q.writer(seed).set('title', 'Reloaded title');
 	const doc = core.Document.fromMarkdown(seed.toMarkdown());
 	seed.free();
 	return { q, doc };
@@ -36,7 +36,7 @@ describe('a document loaded from markdown', () => {
 		// The asymmetry this whole file exists for. Asserted rather than assumed:
 		// it is a boundary fact, and the leaf's tolerance is only correct while it holds.
 		const { doc } = loaded();
-		expect(typeof doc.getStored({ field: 'subject' })).toBe('string');
+		expect(typeof doc.getStored({ field: 'title' })).toBe('string');
 		expect(typeof doc.getStored({})).toBe('object');
 		doc.free();
 	});
@@ -55,18 +55,18 @@ describe('a document loaded from markdown', () => {
 		const field = createField({
 			doc,
 			quill: q,
-			addr: { field: 'subject' },
+			addr: { field: 'title' },
 			container: mount(),
 			inline: true
 		});
-		expect(field.getContent().text).toContain('Reloaded subject');
+		expect(field.getContent().text).toContain('Reloaded title');
 
 		// The half a tolerant read alone would not buy: the commit has to land too,
 		// and it brings the field to content rest, so the authored shape is transient.
 		const view = viewOf(field);
 		view.dispatch(view.state.tr.insertText('!', 1));
-		expect(doc.toMarkdown()).toContain('!Reloaded subject');
-		expect(typeof doc.getStored({ field: 'subject' })).toBe('object');
+		expect(doc.toMarkdown()).toContain('!Reloaded title');
+		expect(typeof doc.getStored({ field: 'title' })).toBe('object');
 
 		field.destroy();
 		doc.free();
@@ -106,15 +106,13 @@ describe('a document loaded from markdown', () => {
 		// is the property that lets the leaf stop asking which door built its document.
 		const q = quill();
 		const seed = q.seedDocument();
-		q.writer(seed).set('subject', 'Reloaded subject');
+		q.writer(seed).set('title', 'Reloaded title');
 		const md = seed.toMarkdown();
 		const parsed = q.parse(md);
 		const transported = core.Document.fromMarkdown(md);
 
-		expect(typeof parsed.getStored({ field: 'subject' })).toBe('object');
-		expect(q.reader(parsed).getContent('subject')).toEqual(
-			q.reader(transported).getContent('subject')
-		);
+		expect(typeof parsed.getStored({ field: 'title' })).toBe('object');
+		expect(q.reader(parsed).getContent('title')).toEqual(q.reader(transported).getContent('title'));
 
 		transported.free();
 		parsed.free();

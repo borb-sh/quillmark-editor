@@ -13,7 +13,7 @@ describe('what a Diagnostic carries', () => {
 	it('hands the validation lane the offending value under `args`', () => {
 		const q = quill();
 		const doc = q.seedDocument();
-		doc.storeField('classification', 'NOT_AN_OPTION');
+		doc.storeField('status', 'NOT_AN_OPTION');
 		doc.storeField('font_size', 'not a number');
 
 		const byCode = new Map(q.validate(doc).map((d) => [d.code, d]));
@@ -22,7 +22,7 @@ describe('what a Diagnostic carries', () => {
 		// these" in another language without parsing the English it was handed.
 		const enumViolation = byCode.get('validation::enum_violation');
 		expect(enumViolation?.args?.value).toBe('NOT_AN_OPTION');
-		expect(enumViolation?.args?.allowed).toContain('UNCLASSIFIED');
+		expect(enumViolation?.args?.allowed).toContain('in_review');
 
 		// `sourceToken` is the authored token verbatim, which is the half the document
 		// at `path` cannot supply: validation runs post-coercion.
@@ -40,9 +40,7 @@ describe('what a Diagnostic carries', () => {
 		// from a formatter is the correct answer rather than a concession.
 		let thrown: unknown;
 		try {
-			core.Document.fromMarkdown(
-				'~~~\n$quill: usaf_memo@0.2.0\nsubject: [unclosed\n~~~\n\nBody.\n'
-			);
+			core.Document.fromMarkdown('~~~\n$quill: specimen@1.0.0\ntitle: [unclosed\n~~~\n\nBody.\n');
 		} catch (e) {
 			thrown = e;
 		}

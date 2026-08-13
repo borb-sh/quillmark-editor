@@ -38,9 +38,9 @@ const core = await init();
 // compiles to a valid PDF.
 const RENDER_FIXTURE = fileURLToPath(new URL('./fixtures/render-quiver', import.meta.url));
 
-// The workspace's reference quiver: `usaf_memo@0.2.0`, a published-shape quill
-// with a Typst package tree, image assets, and seven fonts the build dehydrates
-// into `store/`.
+// The workspace's reference quiver: `specimen@1.0.0`, a published-shape quill with
+// a Typst package tree, an image asset, and five fonts the build dehydrates into
+// `store/`.
 const REFERENCE_QUIVER = fileURLToPath(new URL('../../../../fixtures', import.meta.url));
 
 describe('Engine.render against a quiver quill', () => {
@@ -141,10 +141,10 @@ describe('the reference quill, source → build → fetch → render', () => {
 
 	it('packs the reference quiver and renders it back out of the artifact', async () => {
 		const built = await fromBuiltDir(join(outDir, 'packed'));
-		expect(built.quillNames()).toEqual(['usaf_memo']);
-		expect(built.resolve('usaf_memo')).toBe('usaf_memo@0.2.0');
+		expect(built.quillNames()).toEqual(['specimen']);
+		expect(built.resolve('specimen')).toBe('specimen@1.0.0');
 
-		const quill = await built.getQuill('usaf_memo');
+		const quill = await built.getQuill('specimen');
 		expect(quill.backendId).toBe('typst');
 
 		// The fonts left the bundle at build time and came back from `store/` on
@@ -169,8 +169,8 @@ describe('the reference quill, source → build → fetch → render', () => {
 		// Zip, dehydrate, fetch, rehydrate: the quill that comes back out is the
 		// quill that went in. A build that drops, truncates, or reorders a file
 		// shows up here rather than as a typesetting error downstream.
-		const source = await (await fromDir(REFERENCE_QUIVER)).getQuill('usaf_memo@0.2.0');
-		const built = await (await fromBuiltDir(join(outDir, 'packed'))).getQuill('usaf_memo@0.2.0');
+		const source = await (await fromDir(REFERENCE_QUIVER)).getQuill('specimen@1.0.0');
+		const built = await (await fromBuiltDir(join(outDir, 'packed'))).getQuill('specimen@1.0.0');
 
 		const before = source.toTree();
 		const after = built.toTree();
