@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**The `@quillmark/wasm` peer floor is `>=0.104.0-0`.** Nothing here reads a field address or a schema domain, so the release's breaks land outside this package; the floor moves because a quiver hands out `Quill` handles the consumer's copy of the artifact has to be able to parse. A quill authoring the retired `enum:` modifier now fails at `getQuill` rather than at a control.
+
 ## v0.21.0 - 2026-08-11
 
 ## v0.20.0 - 2026-08-09

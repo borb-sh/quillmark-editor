@@ -111,7 +111,7 @@ describe('scrollToField', () => {
 	it('answers for a declared array off the rects of its elements', () => {
 		// Nothing is named `main.references`: the compile tracks its elements. A host
 		// holding the declared path reaches the rows it prints.
-		const bridge = bridgeOver([], [region('main.references.0'), region('main.references.1')]);
+		const bridge = bridgeOver([], [region('main.references[0]'), region('main.references[1]')]);
 		expect(bridge.scrollToField('main.references')).toBe(true);
 		bridge.destroy();
 	});

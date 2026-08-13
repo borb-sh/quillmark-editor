@@ -736,12 +736,11 @@
 	 * diagnostics take.
 	 *
 	 * Two rungs, because the boundary mints addresses at a finer granularity than
-	 * `Addr` can name: a `richtext[]` element surfaces as `main.references.0`, which
-	 * the grammar reads as a field literally named `"0"`. The second rung reads that
-	 * trailing segment as an index, under a field the schema declares an array — which
-	 * is why the ladder is the editor's (VISUAL_EDITOR.md §Surface): the preview
-	 * carries no schema, and truncating the address there is worse than guessing, since
-	 * `pos` is an offset into the element's own content.
+	 * `Addr` can name: a `richtext[]` element surfaces as `main.references[0]`. The
+	 * second rung reads that trailing index segment under a field the schema declares
+	 * an array — which is why the ladder is the editor's (VISUAL_EDITOR.md §Surface):
+	 * the preview carries no schema, and truncating the address there is worse than
+	 * guessing, since `pos` is an offset into the element's own content.
 	 */
 	function leafTargetFor(field: DocPath): LeafTarget | undefined {
 		const direct = addrForFieldPath(field);

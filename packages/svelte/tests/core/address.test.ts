@@ -89,22 +89,19 @@ describe('addrForFieldPath', () => {
 });
 
 describe('elementAddrForFieldPath', () => {
-	it('reads both spellings of the index the boundary emits', () => {
-		// `regions()` / `positionAt` mint the dotted form, which the grammar reads as a
-		// field literally named "0"; `formatDocPath` spells the index segment with
-		// brackets. One address, and this is where the two meet.
-		expect(elementAddrForFieldPath('main.references.0')).toEqual({
-			field: { field: 'references' },
-			index: 0
-		});
+	it('reads the bracketed index the boundary emits', () => {
 		expect(elementAddrForFieldPath('main.references[0]')).toEqual({
 			field: { field: 'references' },
 			index: 0
 		});
-		expect(elementAddrForFieldPath('cards.indorsement[1].signature_block.2')).toEqual({
+		expect(elementAddrForFieldPath('cards.indorsement[1].signature_block[2]')).toEqual({
 			field: { card: 1, field: 'signature_block' },
 			index: 2
 		});
+	});
+
+	it('does not read a dotted trailing digit as an index', () => {
+		expect(elementAddrForFieldPath('main.references.0')).toBeUndefined();
 	});
 
 	it('takes only a trailing index under a field', () => {

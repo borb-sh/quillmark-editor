@@ -56,7 +56,7 @@ describe('routeAndResolve', () => {
 			routeAndResolve(
 				[
 					{ severity: 'error', message: 'no path' },
-					err('unplaceable', 'main.references.0'),
+					err('unplaceable', 'main.references[0]'),
 					err('gone', 'cards.indorsement[9].from')
 				],
 				cardIds

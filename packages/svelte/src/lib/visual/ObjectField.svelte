@@ -11,7 +11,7 @@
 -->
 <script lang="ts">
 	import type { QuillFieldSchema } from '@quillmark/wasm';
-	import { controlKind, enumValues, humanize } from './structure.js';
+	import { controlKind, humanize } from './structure.js';
 	import TextField from './TextField.svelte';
 	import EnumField from './EnumField.svelte';
 	import NumberField from './NumberField.svelte';
@@ -79,7 +79,7 @@
 				<EnumField
 					label={propLabel}
 					value={obj[key] as string | undefined}
-					values={enumValues(sub) ?? []}
+					values={sub.values ?? []}
 					fallback={sub.default as string | undefined}
 					onCommit={(v) => commitProp(key, v)}
 				/>

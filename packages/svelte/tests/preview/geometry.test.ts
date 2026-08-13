@@ -176,14 +176,25 @@ describe('boxesForField', () => {
 	it("takes an address's own rects over the ones under it", () => {
 		// The descendant rung is a fallback, not a union: an address with rects of its
 		// own never also draws its children's over them.
-		const regions = [region('main.author', 0), region('main.author.0', 200)];
+		const regions = [region('main.author', 0), region('main.author[0]', 200)];
 		expect(boxesForField('main.author', [], regions)).toEqual([regions[0]]);
-		expect(boxesForField('main.author.0', [], regions)).toEqual([regions[1]]);
+		expect(boxesForField('main.author[0]', [], regions)).toEqual([regions[1]]);
+	});
+
+	it('reads both boundary characters, and neither as a bare prefix', () => {
+		// An element is bracketed and a nested key dotted, so the descendant rung needs
+		// both openers; `main.author_note` is neither and stays out.
+		const regions = [
+			region('main.author[0]', 0),
+			region('main.author.city', 100),
+			region('main.author_note', 200)
+		];
+		expect(boxesForField('main.author', [], regions)).toEqual([regions[0], regions[1]]);
 	});
 
 	it('prefers the union the compile did make', () => {
 		const boxes = [region('main.body', 0)];
-		expect(boxesForField('main.body', boxes, [region('main.body.9', 200)])).toBe(boxes);
+		expect(boxesForField('main.body', boxes, [region('main.body[9]', 200)])).toBe(boxes);
 	});
 });
 
@@ -199,7 +210,7 @@ describe('geometry: the addresses a compile serves (usaf_memo)', () => {
 			// The fixture has to reach both fallback shapes for this to mean anything: a
 			// span-less scalar reference, and a `richtext[]` element.
 			expect(fields).toContain('main.signature_block');
-			expect(fields).toContain('main.references.0');
+			expect(fields).toContain('main.references[0]');
 
 			for (const field of fields) {
 				const boxes = boxesForField(field, session.fieldBoxes(field), regions);

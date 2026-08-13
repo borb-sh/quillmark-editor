@@ -81,8 +81,8 @@ main:
       description: The full organization name of your unit.
 
     letterhead_seal:
-      type: string
-      enum:
+      type: enum
+      values:
         - dow
         - dod
       default: dow
@@ -109,8 +109,8 @@ main:
       description: "Organizational motto at the bottom of the page. Supports Markdown emphasis (e.g. *italics*, **bold**)."
 
     classification:
-      type: string
-      enum:
+      type: enum
+      values:
         - ""
         - UNCLASSIFIED
         - CUI
@@ -211,8 +211,8 @@ main:
       description: List attachments in the order they are mentioned in the memo. Briefly describe each; do not use 'as stated' or abbreviations.
 
     memo_style:
-      type: string
-      enum:
+      type: enum
+      values:
         - usaf
         - daf
       default: usaf
@@ -270,8 +270,8 @@ card_kinds:
           compact: true
         description: "Line 1: Name in UPPERCASE as signed, grade, and service. Line 2: Duty title."
       format:
-        type: string
-        enum:
+        type: enum
+        values:
           - standard
           - informal
           - separate_page
@@ -281,8 +281,8 @@ card_kinds:
           compact: true
         description: "'standard' (formal, same page), 'informal' (less formal routing), or 'separate_page' (begins on a new page)."
       action:
-        type: string
-        enum:
+        type: enum
+        values:
           - ""
           - undecided
           - approve
