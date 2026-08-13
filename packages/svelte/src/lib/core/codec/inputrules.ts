@@ -64,23 +64,17 @@ function markInputRule(regexp: RegExp, markType: MarkType, delimLen: number): In
 }
 
 /**
- * `wrappingInputRule` (whose body this mirrors), plus one normalization: a
- * `heading` being wrapped becomes a `paragraph` first.
+ * `wrappingInputRule` (whose body this mirrors), plus one guard: the rule declines at
+ * the start of an item's own first block ({@link openingAnItem}).
  *
- * `list_item` is `block+`, so `list_item > heading` is *representable* and a bare
- * wrap mints it (a shape no quill renders): the reference quill derives an item's
- * numbering and indent from the container path and typesets the item's blocks as
- * body paragraphs (`usaf_memo`'s `render-body`), where a heading resolves to
- * nothing. This is the wrap-side route into that shape; the `# ` rule guards the
- * other, in {@link markdownInputRules}.
- *
- * `item` is the second guard, and it is about the gesture rather than the shape: the
- * rule declines at the start of an item's own first block ({@link openingAnItem}).
+ * The block it wraps keeps its type. `list_item` is `block+`, so a wrapped `heading`
+ * stays one — the shape `- # title` imports as, and the shape the `# ` rule mints from
+ * inside an item. Retyping it to a paragraph would spend a level the author typed on a
+ * gesture that asked for a list.
  */
 function listWrappingRule(
 	regexp: RegExp,
 	listType: NodeType,
-	paragraph: NodeType,
 	item: NodeType | undefined,
 	getAttrs?: (match: RegExpMatchArray) => Attrs | null,
 	joinPredicate?: (match: RegExpMatchArray, node: PMNode) => boolean
@@ -91,10 +85,6 @@ function listWrappingRule(
 			if (openingAnItem(state.doc.resolve(start), item)) return null;
 			const attrs = getAttrs ? getAttrs(match) : null;
 			const tr = state.tr.delete(start, end);
-			// Positions survive the retype: same content, same size.
-			if (tr.doc.resolve(start).parent.type !== paragraph) {
-				tr.setBlockType(start, start, paragraph);
-			}
 			const $start = tr.doc.resolve(start);
 			const range = $start.blockRange();
 			const wrapping = range && findWrapping(range, listType, attrs);
@@ -226,17 +216,14 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 	}
 	// `- ` / `1. ` at the start of a block, here or nested inside an item — but not at
 	// the start of an item's own first block, where {@link openingAnItem} declines.
-	if (schema.nodes.bullet_list && schema.nodes.paragraph) {
-		rules.push(
-			listWrappingRule(/^\s*([-+*])\s$/, schema.nodes.bullet_list, schema.nodes.paragraph, item)
-		);
+	if (schema.nodes.bullet_list) {
+		rules.push(listWrappingRule(/^\s*([-+*])\s$/, schema.nodes.bullet_list, item));
 	}
-	if (schema.nodes.ordered_list && schema.nodes.paragraph) {
+	if (schema.nodes.ordered_list) {
 		rules.push(
 			listWrappingRule(
 				/^(\d+)\.\s$/,
 				schema.nodes.ordered_list,
-				schema.nodes.paragraph,
 				item,
 				(match) => ({ start: +match[1] }),
 				(match, node) => node.childCount + (node.attrs.start as number) === +match[1]

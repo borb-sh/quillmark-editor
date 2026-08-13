@@ -131,21 +131,34 @@ describe('mark input rules fire with exact positions', () => {
 
 // `list_item` is `block+`, so `list_item > heading` is a shape the content holds and
 // `importMarkdown` produces from `- # title`. A rule declining there would refuse to
-// author what a document can arrive carrying, so `# ` fires inside an item. The wrap
-// side still retypes a heading it wraps, which the standard does not yet cover.
-describe('`# ` inside an item', () => {
-	it('`- ` typed in a heading wraps it as a PARAGRAPH item', () => {
+// author what a document can arrive carrying, so `# ` fires inside an item — and the
+// wrap side reaches the same shape from the other end rather than retyping past it.
+describe('`list_item > heading`, from both routes', () => {
+	it('`- ` typed in a heading wraps it as a HEADING item', () => {
 		const view = mountView();
 		type(view, '## title');
 		expect(view.state.doc.toString()).toBe('doc(heading("title"))');
 		// Back to the block start, then the list shorthand.
 		view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 1)));
 		type(view, '- ');
-		expect(view.state.doc.toString()).toBe('doc(bullet_list(list_item(paragraph("title"))))');
+		expect(view.state.doc.toString()).toBe('doc(bullet_list(list_item(heading("title"))))');
+		expect(view.state.doc.child(0).child(0).child(0).attrs.level).toBe(2);
+		expect(representable(view.state)).toBe(true);
 		view.destroy();
 	});
 
-	it('fires, minting the heading the content holds', () => {
+	it('`1. ` keeps the heading too, and carries the list its start', () => {
+		const view = mountView();
+		type(view, '### deep');
+		view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 1)));
+		type(view, '2. ');
+		expect(view.state.doc.toString()).toBe('doc(ordered_list(list_item(heading("deep"))))');
+		expect(view.state.doc.child(0).attrs.start).toBe(2);
+		expect(representable(view.state)).toBe(true);
+		view.destroy();
+	});
+
+	it('`# ` fires, minting the heading the content holds', () => {
 		const view = mountView();
 		type(view, '- item');
 		view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 3)));
