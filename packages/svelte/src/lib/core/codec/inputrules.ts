@@ -5,6 +5,13 @@
 // block rule with no guard of its own reuses `wrappingInputRule`, and the rest mirror
 // an upstream body around one. These produce transactions the codec already lowers:
 // they add no new lowering surface.
+//
+// A rule declines only where what it would mint is unrepresentable, or is a shape
+// another gesture owns — never on how a quill renders it. What a quill typesets is not
+// knowable here (a quill this build has not seen is the open-sets case, CODEC §"Open
+// sets"), and a construct that arrives through `importMarkdown` must stay authorable or
+// a document opens carrying a shape the editor refuses to make. So one guard survives:
+// `- ` / `1. ` at the head of an existing item, where Tab owns the nesting.
 import { InputRule, inputRules, wrappingInputRule } from 'prosemirror-inputrules';
 import type {
 	Attrs,
@@ -60,11 +67,10 @@ function markInputRule(regexp: RegExp, markType: MarkType, delimLen: number): In
  * `wrappingInputRule` (whose body this mirrors), plus one normalization: a
  * `heading` being wrapped becomes a `paragraph` first.
  *
- * `list_item` is `block+`, so `list_item > heading` is *representable* and a bare
- * wrap mints it — a shape markdown has no spelling for, so nothing downstream is
- * obliged to typeset it and the gesture that made it cannot be read back. This is
- * the wrap-side route into it; the `# ` rule guards the other, in
- * {@link markdownInputRules}.
+ * `list_item` is `block+`, so `list_item > heading` is *representable*, and `# `
+ * inside the item is the gesture that mints it ({@link markdownInputRules}). A wrap
+ * keeping the heading would be a second door onto that shape, so `- ` / `1. ` mint a
+ * paragraph item wherever they fire.
  *
  * `item` is the second guard, and it is about the gesture rather than the shape: the
  * rule declines at the start of an item's own first block ({@link openingAnItem}).
@@ -140,18 +146,16 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 	// Block shorthands (only where the schema has the node; the inline schema
 	// omits them, so this stays a no-op there).
 	if (schema.nodes.heading) {
-		// `textblockTypeInputRule`'s body plus one guard: inside a list item, `# `
-		// declines (null) and stays literal text, rather than minting the unrenderable
-		// `list_item > heading` {@link listWrappingRule} normalizes away on the wrap side.
+		// `textblockTypeInputRule`'s body. It fires inside a list item like anywhere else:
+		// `list_item > heading` is a shape the content holds and `importMarkdown` produces
+		// from `- # title`, so a rule that declined there would refuse to author what a
+		// document can arrive carrying.
 		const heading = schema.nodes.heading;
 		rules.push(
 			new InputRule(
 				/^(#{1,6})\s$/,
 				(state: EditorState, match: RegExpMatchArray, start: number, end: number) => {
 					const $start = state.doc.resolve(start);
-					for (let d = $start.depth; d > 0; d--) {
-						if (item && $start.node(d).type === item) return null;
-					}
 					if (!$start.node(-1).canReplaceWith($start.index(-1), $start.indexAfter(-1), heading)) {
 						return null;
 					}
@@ -202,11 +206,6 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 					if ($start.parentOffset !== 0 || $start.parent.content.size !== end - start) {
 						return null;
 					}
-					// The `# ` rule's guard, for its reason: `list_item` is `block+`, so a
-					// divider inside an item is representable and renders to nothing.
-					for (let d = $start.depth; d > 0; d--) {
-						if (item && $start.node(d).type === item) return null;
-					}
 					if (!$start.node(-1).canReplaceWith($start.index(-1), $start.indexAfter(-1), rule)) {
 						return null;
 					}
@@ -242,6 +241,8 @@ export function markdownInputRules(schema: Schema): InputRule[] {
 			)
 		);
 	}
+	// No item guard: a quote wrapping an item's own first block is a container the
+	// content holds, where a list wrapping one is an item whose only content is an item.
 	if (schema.nodes.blockquote) {
 		rules.push(wrappingInputRule(/^\s*>\s$/, schema.nodes.blockquote));
 	}

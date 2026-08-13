@@ -5,13 +5,10 @@
 // eat every `*` a plaintext author typed, then commit a delta computed against text
 // the document never held.
 //
-// The one suite that does not run on the reference quill, because that quill cannot
-// declare the shape under test: its `plate.typ` hands every field to a vendored Typst
-// package, `plaintext` resolves to content for a backend exactly as `richtext` does,
-// and the string-typed slots there coerce with `str()`, which content is not. Retyping
-// a field would be a plate change rather than a fixture change. So the schema is built
-// here and stays minimal: two content fields differing only in declared type, which is
-// the entire variable.
+// The one suite that does not run on the reference quill: that quill declares both
+// types (`subtitle` plaintext, `epigraph` inline richtext) but no two fields differing
+// in nothing else. So the schema is built here and stays minimal: two content fields
+// differing only in declared type, which is the entire variable.
 import { describe, it, expect } from 'vitest';
 import { init, type Document, type Quill } from '@quillmark/wasm';
 import { createField } from '$lib/core/codec';
