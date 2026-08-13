@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+The carried `@quillmark/wasm` is 0.104.0. The studio and `test` name no field address and read no schema domain, so the release's breaks reach neither; a quill under test that authors the retired `enum:` modifier now fails to parse, which is the studio reporting what the engine will.
+
 ## v0.2.1 - 2026-08-11
 
 Carries `@quillmark/svelte` 0.3.0, `@quillmark/quiver` 0.21.0, `@quillmark/wasm` 0.103.0.

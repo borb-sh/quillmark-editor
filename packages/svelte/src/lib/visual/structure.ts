@@ -199,9 +199,7 @@ export function controlKind(f: QuillFieldSchema): ControlKind {
 		case 'enum':
 			return 'enum';
 		case 'string':
-			// Either spelling of a closed domain (the `enum` modifier or `values`)
-			// promotes a string to a select; a bare string is a text input.
-			return enumValues(f) ? 'enum' : 'text';
+			return 'text';
 		case 'number':
 		case 'integer':
 			return 'number';
@@ -217,11 +215,6 @@ export function controlKind(f: QuillFieldSchema): ControlKind {
 		default:
 			return 'text';
 	}
-}
-
-/** The closed value domain of an enum/enum-string field, or undefined. */
-export function enumValues(f: QuillFieldSchema): string[] | undefined {
-	return f.enum ?? f.values;
 }
 
 /** `foo_bar` → `Foo bar`: the label fallback when a field declares no `ui.title`. */

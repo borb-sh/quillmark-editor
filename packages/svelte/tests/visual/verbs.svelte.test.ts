@@ -222,32 +222,19 @@ describe('the landing verbs over a form control', () => {
 	});
 });
 
-// An array element address (`main.keywords.0`) is a granularity `Addr` cannot name
-// and the registry is not keyed at: the ladder reads the trailing segment as an index
-// under a field the schema declares an array, reveals the parent, and takes the row.
+// An array element address (`main.keywords[0]`) is a granularity `Addr` cannot name
+// and the registry is not keyed at: the ladder reads the trailing index segment under
+// a field the schema declares an array, reveals the parent, and takes the row.
 describe('a landing on an array element', () => {
 	it('takes the row the address names rather than the first', async () => {
 		const q = quill();
 		const { editor, errors } = mountEditor(q, q.seedDocument());
 
-		await editor.setCaret({ field: 'main.keywords.1', pos: 4 });
+		await editor.setCaret({ field: 'main.keywords[1]', pos: 4 });
 		await tick();
 
 		// The element's own accessible name is `label` + its 1-based index, so this
 		// distinguishes the row from the one a bare `focusField` would land on.
-		expect(document.activeElement?.getAttribute('aria-label')).toBe('Keywords 2');
-		expect(errors).toHaveLength(0);
-	});
-
-	it('reads both spellings of the index the boundary emits', async () => {
-		const q = quill();
-		const { editor, errors } = mountEditor(q, q.seedDocument());
-
-		// `regions()` and `positionAt` mint `main.keywords.0`; `formatDocPath` spells
-		// the same address `main.keywords[0]`. Both are the same row.
-		await editor.focusField('main.keywords[1]');
-		await tick();
-
 		expect(document.activeElement?.getAttribute('aria-label')).toBe('Keywords 2');
 		expect(errors).toHaveLength(0);
 	});
@@ -258,7 +245,7 @@ describe('a landing on an array element', () => {
 
 		// A landing off a compile the document has moved past: the field is right and
 		// the row is gone, so the array's own focus answer stands.
-		await editor.focusField('main.keywords.9');
+		await editor.focusField('main.keywords[9]');
 		await tick();
 
 		expect(document.activeElement?.getAttribute('aria-label')).toBe('Keywords 1');

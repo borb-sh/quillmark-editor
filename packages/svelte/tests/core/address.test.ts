@@ -69,7 +69,7 @@ describe('addrForFieldPath', () => {
 
 	it('rejects a path that names no single commit address', () => {
 		// A nested / array-element path, a field-rooted one, and a malformed one.
-		expect(addrForFieldPath('main.references.0')).toBeUndefined();
+		expect(addrForFieldPath('main.keywords.0')).toBeUndefined();
 		expect(addrForFieldPath('recipients[0].name')).toBeUndefined();
 		expect(addrForFieldPath('')).toBeUndefined();
 		expect(addrForFieldPath('cards.indorsement[x].from')).toBeUndefined();
@@ -89,29 +89,26 @@ describe('addrForFieldPath', () => {
 });
 
 describe('elementAddrForFieldPath', () => {
-	it('reads both spellings of the index the boundary emits', () => {
-		// `regions()` / `positionAt` mint the dotted form, which the grammar reads as a
-		// field literally named "0"; `formatDocPath` spells the index segment with
-		// brackets. One address, and this is where the two meet.
-		expect(elementAddrForFieldPath('main.references.0')).toEqual({
-			field: { field: 'references' },
+	it('reads the bracketed index the boundary emits', () => {
+		expect(elementAddrForFieldPath('main.keywords[0]')).toEqual({
+			field: { field: 'keywords' },
 			index: 0
 		});
-		expect(elementAddrForFieldPath('main.references[0]')).toEqual({
-			field: { field: 'references' },
-			index: 0
-		});
-		expect(elementAddrForFieldPath('cards.indorsement[1].signature_block.2')).toEqual({
+		expect(elementAddrForFieldPath('cards.indorsement[1].signature_block[2]')).toEqual({
 			field: { card: 1, field: 'signature_block' },
 			index: 2
 		});
+	});
+
+	it('does not read a dotted trailing digit as an index', () => {
+		expect(elementAddrForFieldPath('main.keywords.0')).toBeUndefined();
 	});
 
 	it('takes only a trailing index under a field', () => {
 		// A whole field, a card, and a body have no element; a deeper nesting names no
 		// single array either. Whether the field is an array is the caller's guard: this
 		// module holds the grammar and no schema.
-		expect(elementAddrForFieldPath('main.references')).toBeUndefined();
+		expect(elementAddrForFieldPath('main.keywords')).toBeUndefined();
 		expect(elementAddrForFieldPath('main.body')).toBeUndefined();
 		expect(elementAddrForFieldPath('cards.indorsement[1]')).toBeUndefined();
 		expect(elementAddrForFieldPath('main.author.name')).toBeUndefined();

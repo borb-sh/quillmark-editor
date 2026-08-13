@@ -18,7 +18,7 @@
 	import type { EditorErrorHandler } from '../core/errors.js';
 	import type { LeafRegistry } from './leaves.js';
 	import type { FieldModel, FieldSpan } from './structure.js';
-	import { enumValues, ghostDefault, stringifyGhost } from './structure.js';
+	import { ghostDefault, stringifyGhost } from './structure.js';
 	import type { FieldDomIds } from './domid.js';
 	import ProseField from './ProseField.svelte';
 	import TextField from './TextField.svelte';
@@ -207,7 +207,7 @@
 			{:else if field.control === 'enum'}
 				<EnumField
 					value={value as string | undefined}
-					values={enumValues(field.schema) ?? []}
+					values={field.schema.values ?? []}
 					fallback={ghost as string | undefined}
 					id={domIds.control}
 					{describedBy}

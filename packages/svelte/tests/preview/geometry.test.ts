@@ -176,14 +176,28 @@ describe('boxesForField', () => {
 	it("takes an address's own rects over the ones under it", () => {
 		// The descendant rung is a fallback, not a union: an address with rects of its
 		// own never also draws its children's over them.
-		const regions = [region('main.authors', 0), region('main.authors.0', 200)];
+		const regions = [region('main.authors', 0), region('main.authors[0]', 200)];
 		expect(boxesForField('main.authors', [], regions)).toEqual([regions[0]]);
-		expect(boxesForField('main.authors.0', [], regions)).toEqual([regions[1]]);
+		expect(boxesForField('main.authors[0]', [], regions)).toEqual([regions[1]]);
+	});
+
+	it('reads both boundary characters, and neither as a bare prefix', () => {
+		// An element is bracketed (`keywords`, a declared array) and a nested key dotted
+		// (`contact`, a declared object), so the descendant rung needs both openers.
+		// A name that merely starts with one is not under it.
+		const regions = [
+			region('main.keywords[0]', 0),
+			region('main.keywords_note', 100),
+			region('main.contact.city', 200),
+			region('main.contact_note', 300)
+		];
+		expect(boxesForField('main.keywords', [], regions)).toEqual([regions[0]]);
+		expect(boxesForField('main.contact', [], regions)).toEqual([regions[2]]);
 	});
 
 	it('prefers the union the compile did make', () => {
 		const boxes = [region('main.body', 0)];
-		expect(boxesForField('main.body', boxes, [region('main.body.9', 200)])).toBe(boxes);
+		expect(boxesForField('main.body', boxes, [region('main.body[9]', 200)])).toBe(boxes);
 	});
 });
 
@@ -199,7 +213,7 @@ describe('geometry: the addresses a compile serves (specimen)', () => {
 			// The fixture has to reach both fallback shapes for this to mean anything: a
 			// span-less scalar reference, and a `richtext[]` element.
 			expect(fields).toContain('main.signature_block');
-			expect(fields).toContain('main.keywords.0');
+			expect(fields).toContain('main.keywords[0]');
 
 			for (const field of fields) {
 				const boxes = boxesForField(field, session.fieldBoxes(field), regions);
@@ -209,7 +223,7 @@ describe('geometry: the addresses a compile serves (specimen)', () => {
 			// A host holding the declared path still reaches every row it prints, so the
 			// fallback's count is the element count, whatever the fixture seeds.
 			expect(fields).not.toContain('main.keywords');
-			const elements = fields.filter((f) => f.startsWith('main.keywords.'));
+			const elements = fields.filter((f) => f.startsWith('main.keywords['));
 			expect(
 				boxesForField('main.keywords', session.fieldBoxes('main.keywords'), regions).length
 			).toBe(elements.length);

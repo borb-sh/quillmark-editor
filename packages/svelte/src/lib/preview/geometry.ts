@@ -32,9 +32,10 @@ export interface PdfPoint {
  * its content and for a `richtext[]` element; runtime.d.ts says what such a field's
  * box is, a single `regions()` rect. The third rung is that sentence one granularity
  * down — an array's ink is its elements' — and is a fallback, not a union, so an
- * address with rects of its own never also draws its children's. The `.` keeps the
- * prefix a path boundary: `main.references` matches `main.references.0`, not
- * `main.references_note`.
+ * address with rects of its own never also draws its children's. The boundary
+ * character (`.` for a nested field, `[` for an array element) keeps the prefix a
+ * path boundary: `main.keywords` matches `main.keywords[0]`, not
+ * `main.keywords_note`.
  */
 export function boxesForField(
 	field: string,
@@ -43,7 +44,8 @@ export function boxesForField(
 ): readonly FieldRegion[] {
 	if (boxes.length) return boxes;
 	const own = regions.filter((r) => r.field === field);
-	return own.length ? own : regions.filter((r) => r.field.startsWith(`${field}.`));
+	if (own.length) return own;
+	return regions.filter((r) => r.field.startsWith(`${field}.`) || r.field.startsWith(`${field}[`));
 }
 
 /**

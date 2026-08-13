@@ -112,7 +112,7 @@ main:
         - "**Regions** and geometry"
       ui:
         group: content
-      description: An array whose items are themselves richtext. Each element is tracked as its own region (`main.keywords.0`); the array itself is named by none.
+      description: An array whose items are themselves richtext. Each element is tracked as its own region (`main.keywords[0]`); the array itself is named by none.
 
     errata:
       type: array
@@ -159,8 +159,8 @@ main:
       description: Stamp DRAFT across the page. Also bound to a checkbox widget, so a boolean reaches the region table.
 
     accent:
-      type: string
-      enum:
+      type: enum
+      values:
         - slate
         - ink
         - rust
@@ -168,7 +168,7 @@ main:
       ui:
         group: layout
         compact: true
-      description: "The rule and heading colour. Declared the deprecated way, `type: string` with an `enum` modifier, which the projection still promotes to a select."
+      description: "The rule and heading colour. Every member is a value, so the only way to unset it is the control's own clear affordance — the contrast the field below draws."
 
     status:
       type: enum
@@ -183,7 +183,7 @@ main:
       ui:
         group: meta
         compact: true
-      description: "Where the document is in its life. Declared the current way — `type: enum` with `values` — and carrying a blank member, which reads in the list exactly as the clear-to-default affordance above it does."
+      description: "Where the document is in its life. Carries a blank member, which reads in the list exactly as the clear-to-default affordance does and is a written value all the same."
 
     issued:
       type: date
@@ -293,8 +293,8 @@ card_kinds:
         default: Note
         description: The word set in the margin.
       tone:
-        type: string
-        enum:
+        type: enum
+        values:
           - neutral
           - warning
         default: neutral

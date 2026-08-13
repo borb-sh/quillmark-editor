@@ -101,7 +101,7 @@ export function cardPath(index: number, kinds: readonly string[]): DocPath | und
 /**
  * The inverse: a canonical `DocPath` back to the `Addr` the document verbs take, or
  * `undefined` for a path that names no single commit address — a nested or
- * array-element path (`main.references.0`, which {@link elementAddrForFieldPath}
+ * array-element path (`main.keywords[0]`, which {@link elementAddrForFieldPath}
  * takes instead), a field-rooted one, or a malformed one. A bare card and a `.body`
  * terminal both land on the field-less `{card: i}` the body leaf answers to.
  *
@@ -114,31 +114,19 @@ export function addrForFieldPath(path: DocPath): Addr | undefined {
 }
 
 /**
- * An array element's address, split. `main.references.0` and `main.references[0]`
- * both land here; anything {@link addrForFieldPath} can name, and anything whose
- * trailing segment is not an index, does not.
- *
- * Both spellings, because the boundary mints one and formats the other: `regions()`
- * and `positionAt` emit `main.references.0`, which `parseDocPath` reads as a field
- * literally named `"0"`, while `formatDocPath` spells the index segment
- * `main.references[0]`. A trailing all-digits field name is therefore an index that
- * lost its brackets — but only under a field the schema declares an array, the
- * caller's guard to apply: this module holds the grammar and no schema.
+ * An array element's address, split: `main.keywords[0]` lands here, and anything
+ * {@link addrForFieldPath} can name — or whose trailing segment is not an index —
+ * does not. `regions()`, `positionAt` and `formatDocPath` all spell the index
+ * segment bracketed, so there is one spelling to read and none to bridge.
  */
 export function elementAddrForFieldPath(path: DocPath): ElementAddr | undefined {
 	const segs = segsOf(path);
 	if (!segs) return undefined;
 	const last = segs[segs.length - 1];
-	const index =
-		last?.seg === 'index'
-			? last.index
-			: last?.seg === 'field' && /^\d+$/.test(last.name)
-				? Number(last.name)
-				: undefined;
-	if (index == null) return undefined;
+	if (last?.seg !== 'index') return undefined;
 	const field = addrForSegs(segs.slice(0, -1));
 	// A body has no elements: the parent must name a field.
-	return field?.field != null ? { field, index } : undefined;
+	return field?.field != null ? { field, index: last.index } : undefined;
 }
 
 /** An array element's address: the array's `Addr`, and which element of it. */

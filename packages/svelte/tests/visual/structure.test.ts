@@ -6,7 +6,6 @@ import { describe, it, expect } from 'vitest';
 import type { QuillFieldSchema } from '@quillmark/wasm';
 import {
 	controlKind,
-	enumValues,
 	humanize,
 	fieldModels,
 	groupOrder,
@@ -28,7 +27,6 @@ describe('controlKind', () => {
 		expect(controlKind(f({ type: 'richtext' }))).toBe('prose');
 		expect(controlKind(f({ type: 'plaintext' }))).toBe('prose');
 		expect(controlKind(f({ type: 'string' }))).toBe('text');
-		expect(controlKind(f({ type: 'string', enum: ['a', 'b'] }))).toBe('enum');
 		expect(controlKind(f({ type: 'enum', values: ['a'] }))).toBe('enum');
 		expect(controlKind(f({ type: 'number' }))).toBe('number');
 		expect(controlKind(f({ type: 'integer' }))).toBe('number');
@@ -37,11 +35,6 @@ describe('controlKind', () => {
 		expect(controlKind(f({ type: 'datetime' }))).toBe('date');
 		expect(controlKind(f({ type: 'array' }))).toBe('array');
 		expect(controlKind(f({ type: 'object' }))).toBe('object');
-	});
-	it('reads the enum domain from enum or values', () => {
-		expect(enumValues(f({ type: 'string', enum: ['x'] }))).toEqual(['x']);
-		expect(enumValues(f({ type: 'enum', values: ['y'] }))).toEqual(['y']);
-		expect(enumValues(f({ type: 'string' }))).toBeUndefined();
 	});
 });
 
