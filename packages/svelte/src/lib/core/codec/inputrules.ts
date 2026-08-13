@@ -67,11 +67,10 @@ function markInputRule(regexp: RegExp, markType: MarkType, delimLen: number): In
  * `wrappingInputRule` (whose body this mirrors), plus one normalization: a
  * `heading` being wrapped becomes a `paragraph` first.
  *
- * `list_item` is `block+`, so `list_item > heading` is *representable* and a bare
- * wrap mints it — a shape markdown has no spelling for, so nothing downstream is
- * obliged to typeset it and the gesture that made it cannot be read back. This is
- * the wrap-side route into it; the `# ` rule guards the other, in
- * {@link markdownInputRules}.
+ * `list_item` is `block+`, so `list_item > heading` is *representable*, and `# `
+ * inside the item is the gesture that mints it ({@link markdownInputRules}). A wrap
+ * keeping the heading would be a second door onto that shape, so `- ` / `1. ` mint a
+ * paragraph item wherever they fire.
  *
  * `item` is the second guard, and it is about the gesture rather than the shape: the
  * rule declines at the start of an item's own first block ({@link openingAnItem}).

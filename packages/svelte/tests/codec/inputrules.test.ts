@@ -131,8 +131,8 @@ describe('mark input rules fire with exact positions', () => {
 
 // `list_item` is `block+`, so `list_item > heading` is a shape the content holds and
 // `importMarkdown` produces from `- # title`. A rule declining there would refuse to
-// author what a document can arrive carrying, so `# ` fires inside an item. The wrap
-// side still retypes a heading it wraps, which the standard does not yet cover.
+// author what a document can arrive carrying, so `# ` fires inside an item — and is
+// the one gesture that mints the shape, the wrap side retyping a heading it wraps.
 describe('`# ` inside an item', () => {
 	it('`- ` typed in a heading wraps it as a PARAGRAPH item', () => {
 		const view = mountView();
