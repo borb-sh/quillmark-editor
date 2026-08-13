@@ -107,6 +107,7 @@
 	const els: Record<string, { focus: () => void } | undefined> = $state({});
 	let addEl: HTMLButtonElement | undefined = $state();
 	let rootEl: HTMLElement | undefined = $state();
+	let rowsEl: HTMLElement | undefined = $state();
 
 	// The awaited flush below is the only work that outlives a gesture here, so the
 	// span carries no cancellers: it is the liveness `focusAfterFlush` asks for.
@@ -164,6 +165,14 @@
 		// The JSON element registers no controller: it is a plain textarea, with
 		// nothing about focusing it that the DOM does not already know.
 		rootEl?.querySelector<HTMLTextAreaElement>('.qm-array-row textarea')?.focus();
+	}
+	/** The box an arrival wash blooms in (`leaves.ts`, `core/bloom.ts`): the elements,
+	 * not the header above them. This component owns the field's label, so the wrapper
+	 * `Field` blooms every other control inside would wash the label here too. Empty,
+	 * the box is `display: none` and the landing is answered by the focus the add
+	 * affordance takes. */
+	export function washBox(): HTMLElement | undefined {
+		return rowsEl;
 	}
 	/** Take the caret to element `k`: what a landing on an element address resolves to
 	 * (`leaves.ts`). The index resolves to the element's session id here, at the call,
@@ -243,46 +252,48 @@
 			onclick={add}>{t.strings.arrayAdd}</button
 		>
 	</div>
-	{#each ids as id, k (id)}
-		<div class="qm-array-row">
-			{#if control === 'prose'}
-				<ProseArrayElement
-					bind:this={els[id]}
-					value={(arr[k] ?? emptyElement()) as Content}
-					label={label != null ? `${label} ${k + 1}` : undefined}
-					onChange={(rt) => commitElement(k, rt)}
-					onKey={(e) => onElementKey(e, k)}
-				/>
-			{:else if control === 'object'}
-				<textarea
-					class="qm-input qm-json qm-focus-ring"
-					aria-label={label != null ? `${label} ${k + 1}` : undefined}
-					value={JSON.stringify(arr[k] ?? {})}
-					onchange={(e) => {
-						try {
-							commitElement(k, JSON.parse((e.currentTarget as HTMLTextAreaElement).value));
-						} catch {
-							/* keep prior value on invalid JSON */
-						}
-					}}
-				></textarea>
-			{:else}
-				<TextField
-					bind:this={els[id]}
-					value={String(arr[k] ?? '')}
-					label={label != null ? `${label} ${k + 1}` : undefined}
-					onCommit={(v) => commitElement(k, v)}
-					onKey={(e) => onElementKey(e, k)}
-				/>
-			{/if}
-			<button
-				type="button"
-				class="qm-icon-btn qm-remove qm-focus-ring"
-				title={t.strings.arrayRemove}
-				onclick={() => remove(k)}><Icon name="minus" /></button
-			>
-		</div>
-	{/each}
+	<div class="qm-array-rows" class:empty={ids.length === 0} bind:this={rowsEl}>
+		{#each ids as id, k (id)}
+			<div class="qm-array-row">
+				{#if control === 'prose'}
+					<ProseArrayElement
+						bind:this={els[id]}
+						value={(arr[k] ?? emptyElement()) as Content}
+						label={label != null ? `${label} ${k + 1}` : undefined}
+						onChange={(rt) => commitElement(k, rt)}
+						onKey={(e) => onElementKey(e, k)}
+					/>
+				{:else if control === 'object'}
+					<textarea
+						class="qm-input qm-json qm-focus-ring"
+						aria-label={label != null ? `${label} ${k + 1}` : undefined}
+						value={JSON.stringify(arr[k] ?? {})}
+						onchange={(e) => {
+							try {
+								commitElement(k, JSON.parse((e.currentTarget as HTMLTextAreaElement).value));
+							} catch {
+								/* keep prior value on invalid JSON */
+							}
+						}}
+					></textarea>
+				{:else}
+					<TextField
+						bind:this={els[id]}
+						value={String(arr[k] ?? '')}
+						label={label != null ? `${label} ${k + 1}` : undefined}
+						onCommit={(v) => commitElement(k, v)}
+						onKey={(e) => onElementKey(e, k)}
+					/>
+				{/if}
+				<button
+					type="button"
+					class="qm-icon-btn qm-remove qm-focus-ring"
+					title={t.strings.arrayRemove}
+					onclick={() => remove(k)}><Icon name="minus" /></button
+				>
+			</div>
+		{/each}
+	</div>
 </div>
 
 <style>
@@ -301,6 +312,24 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--_qm-space-2);
+	}
+	/* The elements, in a box of their own: the arrival wash blooms here rather than over
+	 the wrapper `Field` hands this component (`washBox`), which is the label's box too.
+	 Positioned for the wash's inset child, and rounded to the rung a row's own box
+	 draws, the way `.qm-field-control` is for every other control.
+
+	 `display: none` when there are no elements, so the header does not stand a gap above
+	 an empty box; a wash over it then paints nothing, which is what an array with
+	 nothing in it has to show. */
+	.qm-array-rows {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: var(--_qm-space);
+		border-radius: var(--_qm-radius-inner);
+	}
+	.qm-array-rows.empty {
+		display: none;
 	}
 	/* A grid rather than a block: an `<input>` and a `<textarea>` are inline-level and
 	 would sit on a baseline, standing the row a descender taller than the box the slab

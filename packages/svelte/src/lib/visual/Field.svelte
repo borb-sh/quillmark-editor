@@ -117,7 +117,14 @@
 	// object on its first property.
 	let proseEl = $state<{ focus: () => void } | undefined>();
 	let dateEl = $state<{ focus: () => void } | undefined>();
-	let arrayEl = $state<{ focus: () => void; focusElement: (k: number) => void } | undefined>();
+	let arrayEl = $state<
+		| {
+				focus: () => void;
+				focusElement: (k: number) => void;
+				washBox: () => HTMLElement | undefined;
+		  }
+		| undefined
+	>();
 	let objectEl = $state<{ focus: () => void } | undefined>();
 	function focusControl(): void {
 		const owner = proseEl ?? dateEl ?? arrayEl ?? objectEl;
@@ -135,7 +142,11 @@
 
 	/**
 	 * This field's landing handle. The wrapper is the bloom host rather than the
-	 * control: `bloomInside` appends an inset child and an `<input>` holds none.
+	 * control: `bloomInside` appends an inset child and an `<input>` holds none. The
+	 * label is outside it, and stays out of the wash: an arrival marks where the caret
+	 * landed, which is the control. The one control that owns its label is the array, so
+	 * that one names its own box (`ArrayField.washBox`), read at the bloom the way
+	 * `focusElement` is read at the call.
 	 *
 	 * A prose leaf is absent here — it registers its own controller from inside
 	 * `ProseField`, carrying the codec seam this handle has no half of — and reactive
@@ -150,10 +161,13 @@
 		if (field.control === 'prose' || !controlEl || !leaves) return;
 		const key = leafKey;
 		const registry = leaves;
+		const wrapper = controlEl;
 		registry.registerControl(key, {
 			focus: focusControl,
 			focusElement: field.control === 'array' ? focusElement : undefined,
-			el: controlEl
+			get el() {
+				return arrayEl?.washBox() ?? wrapper;
+			}
 		});
 		return () => registry.unregisterControl(key);
 	});
