@@ -6,8 +6,7 @@
 //
 // Three producers (VISUAL_EDITOR §Diagnostics):
 // 1. `quill.validate(doc)`: `Diagnostic[]`, `.path` a canonical `DocPath`.
-//      Routed here by `routeAndResolve` (a `!must_fill` marker yields
-//      `validation::must_fill` at e.g. `cards.indorsement[0].from`).
+//      Routed here by `routeAndResolve`, less what `inlineShown` withholds.
 // 2. Local commit errors: a `writer.set`/`writer.card(i).set` throw at
 //      commit time (VisualEditor's `commitScalar`). The editor knows the exact
 //      field/card being committed, so these are keyed directly at the call site
@@ -69,6 +68,23 @@ export function resolveCardKey(key: FieldKey, cardIds: readonly string[]): Field
 export interface RoutedDiagnostic {
 	key: FieldKey;
 	diagnostic: Diagnostic;
+}
+
+/**
+ * Whether a validation diagnostic is the surface's to show under a control
+ * (VISUAL_EDITOR §Diagnostics). Obligation is not: the label's `*` already states
+ * it, from the same schema, for the same cells, and it states it whether or not the
+ * cell has been answered — so the warning is a second copy of a mark on screen, once
+ * per obliged field, on every document nobody has finished. That is every obliged
+ * field of a fresh seed, which is what a consumer's first mount is.
+ *
+ * Withheld from the boundary's own validation lane only. A consumer's `diagnostics`
+ * prop passes whole: what a host hands the surface, the host asked to see. And
+ * nothing is suppressed at the source — `quill.validate(doc)` is the completeness
+ * read, unchanged and still the host's to make.
+ */
+export function inlineShown(d: Diagnostic): boolean {
+	return d.code !== 'validation::must_fill';
 }
 
 /**

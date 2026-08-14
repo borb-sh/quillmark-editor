@@ -1,7 +1,7 @@
 <!--
- One element of an array-of-`richtext` field (fixture `keywords`). Array
- elements are not `applyChange`-addressable: `Addr.field` is a flat name, so
- `keywords[0]` has no op address. So
+ One element of an array of `richtext` (fixture `keywords`) or `plaintext`
+ (`errata`). Array elements are not `applyChange`-addressable: `Addr.field` is a
+ flat name, so `keywords[0]` has no op address. So
  this is not a `createField` leaf: it mounts a minimal PM view over the codec's
  decode/encode + inline schema, and on every edit hands the re-encoded
  `Content` up to the parent {@link ArrayField}, which commits the whole array
@@ -9,24 +9,35 @@
  element are dropped on that value write: acceptable for inline refs. Mounts
  once per stable element id (no reset on the parent's re-derive).
 
- A transport-door document rests each element as the authored string. A scalar
- leaf reads that through `getContent`; `getContent` names a field, never an
- element, so this row calls the boundary's `importMarkdown` itself. That is
- the richtext codec, which is this row's `items` type; `decode` is the PM
- mapping and assumes `Content`. A string here is the missing element read,
- not a codec failure.
+ The content is read, not passed: `reader.getContentAt(addr, [k])` decodes an
+ element through the codec its `items` type declares, so what the element rests
+ as — the content object, a `plaintext` literal, the authored string a transport
+ door left — stops being this row's business. Read once, at mount, since that is
+ when this leaf takes its state.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { EditorState } from 'prosemirror-state';
 	import { EditorView } from 'prosemirror-view';
-	import { decode, pmToContent, inlineSchema, proseLeafPlugins } from '../core/codec/index.js';
-	import { core } from '../core/lifecycle.js';
+	import {
+		decode,
+		pmToContent,
+		inlineSchema,
+		plaintextSchema,
+		proseLeafPlugins
+	} from '../core/codec/index.js';
 	import './controls.css';
 	import type { Content } from '@quillmark/wasm';
 
 	interface Props {
-		value: Content | string;
+		/** This element's content, read at mount (`ArrayField`, through the boundary's
+		 * element read). A thunk rather than a value: the parent re-derives per
+		 * revision and this leaf takes its state once, so a value prop would be a
+		 * boundary read per row per render, all but one of them discarded. */
+		content: () => Content;
+		/** The mark-free schema (a `plaintext` item): literal text, no formatting,
+		 * exactly as the scalar field of that type mounts. */
+		plaintext?: boolean;
 		/** Accessible name for the editable region (the array has no per-element label). */
 		label?: string;
 		onChange: (rt: Content) => void;
@@ -35,7 +46,7 @@
 		 * keymap, so the state it reads is the one this keystroke has yet to change. */
 		onKey?: (e: KeyboardEvent) => void;
 	}
-	let { value, label, onChange, onKey }: Props = $props();
+	let { content, plaintext = false, label, onChange, onKey }: Props = $props();
 
 	let containerEl: HTMLDivElement | undefined = $state();
 	let view: EditorView | undefined;
@@ -57,11 +68,15 @@
 		// plugin stack a `createField` leaf mounts (shared `proseLeafPlugins`), minus
 		// the anchor-position plugin (element anchors are dropped on the array's value
 		// write, per the header). Its own `dispatchTransaction` hands `Content` up.
-		const rt = typeof value === 'string' ? core().importMarkdown(value) : value;
-		const pmDoc = decode(rt, inlineSchema);
+		//
+		// The schema is the declared type's, as `createField` picks it: `plaintext`
+		// declares no mark types, so there is nothing to toggle, to paste in, or to
+		// mint a shorthand with.
+		const schema = plaintext ? plaintextSchema : inlineSchema;
+		const pmDoc = decode(content(), schema);
 		const state = EditorState.create({
 			doc: pmDoc,
-			plugins: proseLeafPlugins(inlineSchema, { inline: true })
+			plugins: proseLeafPlugins(schema, { inline: true })
 		});
 		const mounted = new EditorView(containerEl, {
 			state,

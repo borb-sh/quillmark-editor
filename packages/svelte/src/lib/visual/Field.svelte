@@ -265,6 +265,7 @@
 					description={field.description}
 					labelId={domIds.label}
 					descriptionId={domIds.description}
+					elementContent={(i) => quill.reader(doc).getContentAt(addr, [i])}
 					onCommit={onCommitScalar}
 				/>
 			{:else if field.control === 'object'}

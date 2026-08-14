@@ -217,7 +217,7 @@ function readLeaf(reader: DocumentReader, addr: Addr): Content {
 	return reader.getContent(addr) ?? emptyContent();
 }
 
-/** The canonical empty `Content`: one empty `para` line. The zero value a prose
+/** The canonical empty `Content`: one empty `para` line. The empty a prose
  * leaf (or an array's prose element) seeds from. */
 export function emptyContent(): Content {
 	return { text: '', lines: [{ containers: [], kind: 'para' }], marks: [], islands: [] };

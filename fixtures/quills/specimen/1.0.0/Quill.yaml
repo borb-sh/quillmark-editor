@@ -173,17 +173,17 @@ main:
     status:
       type: enum
       values:
-        - ""
         - draft
         - in_review
         - approved
         - final
         - withdrawn
       default: draft
+      must_fill: true
       ui:
         group: meta
         compact: true
-      description: "Where the document is in its life. Carries a blank member, which reads in the list exactly as the clear-to-default affordance does and is a written value all the same."
+      description: "Where the document is in its life. Defaulted and obliged both, the pair the `must_fill` axis exists for: `draft` is safe to render, and which stage this is remains a human's call. The one field whose control ghosts a default under a required `*`."
 
     issued:
       type: date

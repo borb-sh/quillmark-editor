@@ -11,8 +11,8 @@
  element is inert and invalid.
 
  Two non-gating label decorations:
- • a persistent required `*` when the field has no `default:`: the
- "Unendorsed"/must_fill set (DOCUMENT_MODEL: no separate `required` axis). Its
+ • a persistent required `*` for a field the schema obliges (`must_fill`, which
+ derives from a missing `default:`; DOCUMENT_MODEL). Its
  accessible name is "required", so a screen reader announces the word, not the
  glyph; inside the `<label>`, so it names the control along with the text
  ("Subject required") rather than announcing as a node adjacent to it;

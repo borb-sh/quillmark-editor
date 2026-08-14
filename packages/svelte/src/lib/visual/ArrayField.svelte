@@ -2,11 +2,12 @@
  An `array` field → an add/remove repeater. Elements commit by value: every
  edit / add / remove rebuilds the whole array and hands it to the parent's typed
  `writer.set(field, wholeArray)` (arrays are not op-addressed). Element control
- by `items.type`: `string` / `plaintext` → text input, `richtext` → a prose element
+ by `items.type`: `richtext` / `plaintext` → a prose element
  ({@link ProseArrayElement}), `object` → a minimal JSON editor, keeping the prior
- element value on an entry that does not parse. The add affordance sits in the
- label header row (space-between with the field label); {@link Field} skips its
- own label for array controls and hands this component the label track with it.
+ element value on an entry that does not parse, everything else → a text input. The
+ add affordance sits in the label header row (space-between with the field label);
+ {@link Field} skips its own label for array controls and hands this component the
+ label track with it.
 
  The remove is inside the element: a slab over the end of the element's own box, taking
  its two end-side corners. So a row's box is the element's box, and an array's rows end
@@ -54,22 +55,31 @@
 		labelId?: string;
 		/** Where the description parks, for the group's `aria-describedby`. */
 		descriptionId?: string;
+		/** Element `i`'s content, decoded by the boundary through the codec `items`
+		 * names (`Field`, `reader.getContentAt`). Asked only for a content-typed
+		 * element: on any other the read is not content and throws. `undefined` for a
+		 * row the stored value does not reach — a slot this control has spliced in and
+		 * whose commit has yet to land, or was refused. */
+		elementContent: (i: number) => Content | undefined;
 		onCommit: (arr: unknown[]) => void;
 	}
-	let { value, items, label, required, description, labelId, descriptionId, onCommit }: Props =
-		$props();
+	let {
+		value,
+		items,
+		label,
+		required,
+		description,
+		labelId,
+		descriptionId,
+		elementContent,
+		onCommit
+	}: Props = $props();
 
-	// The element control is the item schema's own, with one departure: a `plaintext`
-	// element is a text input where the scalar field of that type is a prose leaf. A
-	// `plaintext` value rests as its literal string (canon SCHEMAS.md §"Content fields
-	// rest per codec"), and the read that decodes a resting value to `Content` addresses
-	// a field, never an element (`getContent`; borb-sh/quillmark#1243), so a string is
-	// what the row is handed and a string is what it commits. The prose element stays
-	// the `richtext` arm: `Content` after a bound load or a commit, the authored
-	// string through the transport door, lowered in the row for the same reason.
-	//
-	// An array declaring no `items` has text elements.
-	const control = $derived(items && items.type !== 'plaintext' ? controlKind(items) : 'text');
+	// The element control is the item schema's own, with no departure: a content-typed
+	// element mounts the prose leaf its scalar field mounts, reading through
+	// `elementContent` whatever the element rests as. An array declaring no `items`
+	// has text elements.
+	const control = $derived(items ? controlKind(items) : 'text');
 	const arr = $derived((value ?? []) as unknown[]);
 
 	// Parallel stable ids, one per element, kept in lockstep with the data below.
@@ -264,7 +274,8 @@
 				{#if control === 'prose'}
 					<ProseArrayElement
 						bind:this={els[id]}
-						value={(arr[k] ?? emptyElement()) as Content | string}
+						content={() => elementContent(k) ?? emptyContent()}
+						plaintext={items?.type === 'plaintext'}
 						label={label != null ? `${label} ${k + 1}` : undefined}
 						onChange={(rt) => commitElement(k, rt)}
 						onKey={(e) => onElementKey(e, k)}

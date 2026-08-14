@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+The carried `@quillmark/wasm` is 0.105.0. A quill under test declaring `""` among an enum's `values:` now fails to load, the blank being the engine's to supply; and the studio's notes gain a `must_fill` warning per obliged cell the document leaves unauthored, which is the studio reporting the completeness signal a consumer's editor will show.
+
 The studio's paint stops following the caret when the focus lands on a leaf that reports none: a click into any form control left it following the leaf the focus left, and each keystroke typed into the control scrolled the paint back there. The bridge wires `onActiveLeafChange={preview.endFollow}` beside the caret hop it already had.
 
 ## v0.2.2 - 2026-08-13

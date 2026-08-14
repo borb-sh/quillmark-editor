@@ -58,6 +58,7 @@
 	} from './structure.js';
 	import {
 		fieldKeyToString,
+		inlineShown,
 		resolveCardKey,
 		routeAndResolve,
 		mergeDiagnostics,
@@ -280,7 +281,7 @@
 			if (value === undefined) {
 				// The unset rung of the commitment ladder (VISUAL_EDITOR §"Structure mirrors
 				// the schema"): removing the field leaves the engine's authored › `default:`
-				// › zero-fill resolve to render the default, where writing one bakes a
+				// › blank-fill resolve to render the default, where writing one bakes a
 				// snapshot the schema cannot track (canon SCHEMAS.md: the engine never
 				// persists a default; nor do we). Removal writes no value, so there is
 				// nothing for a schema to conform and the lane is the quill-free one.
@@ -485,10 +486,12 @@
 	});
 
 	// All three producers. The two positional ones resolve their `.path` to the live
-	// stable-id keying; commit errors are id-keyed already. Nothing is dropped:
-	// diagnostics never gate, so nothing here hides one either.
+	// stable-id keying; commit errors are id-keyed already. Nothing is dropped for
+	// being unwelcome — diagnostics never gate — but the obligation warning is
+	// withheld from the boundary's lane, the label's `*` being where the surface
+	// states that (`inlineShown`).
 	const diagByKey = $derived.by(() => {
-		const fromValidate = routeAndResolve(validation, cardIds);
+		const fromValidate = routeAndResolve(validation.filter(inlineShown), cardIds);
 		const fromExternal = routeAndResolve(diagnostics, cardIds);
 		return mergeDiagnostics(fromValidate, fromExternal, [...commitErrors.values()]);
 	});

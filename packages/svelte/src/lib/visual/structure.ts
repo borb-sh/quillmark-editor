@@ -33,12 +33,12 @@ export interface FieldModel {
 	 * undefined when the field declares none. Chrome-only; never gates. */
 	description: string | undefined;
 	/**
-	 * Required-ness: a field with no `default:` is "Unendorsed": its
-	 * seed carries a `!must_fill` marker (DOCUMENT_MODEL: there is no separate
-	 * `required` axis). Drives a persistent label `*`, complementary to the ghosted
-	 * `default:` (a required field has no default to ghost). Persistent (schema-
-	 * derived, survives filling); the on-commit `must_fill` `validate` warning
-	 * remains the unmet-ness signal. Label chrome only; never gates.
+	 * Required-ness: the schema's `must_fill` obligation, which derives from
+	 * `default:`'s absence when the field declares none (DOCUMENT_MODEL). Drives a
+	 * persistent label `*`; a field can carry both it and a ghosted `default:`,
+	 * since the two axes are independent. Persistent (schema-derived, survives
+	 * filling); the `must_fill` `validate` warning remains the unmet-ness signal.
+	 * Label chrome only; never gates.
 	 */
 	required: boolean;
 	/** Prose-leaf flags (only meaningful when `control === 'prose'` / array items). */
@@ -233,7 +233,7 @@ export function fieldModels(cardSchema: QuillCardSchema): FieldModel[] {
 		compact: !!schema.ui?.compact,
 		label: schema.ui?.title ?? humanize(name),
 		description: schema.description,
-		required: schema.default === undefined,
+		required: schema.must_fill ?? schema.default === undefined,
 		inline: !!schema.inline,
 		plaintext: schema.type === 'plaintext'
 	}));

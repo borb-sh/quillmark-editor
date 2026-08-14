@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 // The enum-option policy's two arms and the authored-value escape (VISUAL_EDITOR
 // §"Enum policy"), driven the way a pointer opens the listbox and judged on the rows
-// it draws. `status` is the case the distinction exists for, and the six stages the
-// reference quill declares leave a deployment carrying three with both kinds of row
+// it draws. `status` is the case the distinction exists for, and the five stages the
+// reference quill declares leave a deployment carrying two with both kinds of row
 // in one list.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
@@ -78,8 +78,7 @@ function pick(target: HTMLElement, text: string): void {
 
 /** The schema options the open list draws, in order, each with whether it is offered.
  *  The unset sentinel is dropped: it is the clear-to-default affordance, exempt from
- *  policy, and it ghosts a `default:` that can read identically to a real member (the
- *  reference quill declares an empty-string stage, and both render as an em dash). */
+ *  policy. */
 function options(target: HTMLElement): { text: string; disabled: boolean }[] {
 	return [...target.querySelectorAll<HTMLElement>('.qm-select-item')]
 		.filter((el) => !el.querySelector('.qm-select-ghost'))
@@ -97,7 +96,7 @@ describe("enumDisallowed: 'disable'", () => {
 		openList(target, 'Status');
 
 		// The whole schema set, order intact: nothing is stripped.
-		expect(texts(target)).toEqual(['—', 'draft', 'in_review', ...WITHHELD]);
+		expect(texts(target)).toEqual(['draft', 'in_review', ...WITHHELD]);
 		expect(
 			options(target)
 				.filter((o) => o.disabled)
@@ -118,7 +117,7 @@ describe("enumDisallowed: 'hide'", () => {
 		const target = mountEditor({ enumOptionAllowed: allowedStages, enumDisallowed: 'hide' });
 		openList(target, 'Status');
 
-		expect(texts(target)).toEqual(['—', 'draft', 'in_review']);
+		expect(texts(target)).toEqual(['draft', 'in_review']);
 	});
 
 	it('draws the authored value anyway, disabled, and no other out-of-policy row', () => {
@@ -130,7 +129,7 @@ describe("enumDisallowed: 'hide'", () => {
 		);
 		const trigger = openList(target, 'Status');
 
-		expect(texts(target)).toEqual(['—', 'draft', 'in_review', 'final']);
+		expect(texts(target)).toEqual(['draft', 'in_review', 'final']);
 		expect(
 			options(target)
 				.filter((o) => o.disabled)
@@ -149,7 +148,7 @@ describe("enumDisallowed: 'hide'", () => {
 		pick(target, 'in_review');
 
 		openList(target, 'Status');
-		expect(texts(target)).toEqual(['—', 'draft', 'in_review']);
+		expect(texts(target)).toEqual(['draft', 'in_review']);
 	});
 });
 

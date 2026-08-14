@@ -238,19 +238,35 @@ describe('bodyEnabled', () => {
 });
 
 describe('required', () => {
-	it('is the absence of a `default:`, which an empty string or array still counts as', () => {
-		const byName = Object.fromEntries(
-			fieldModels({
-				fields: {
-					none: f({}),
-					empty: f({ default: '' }),
-					list: f({ type: 'array', default: [] })
-				}
-			} as unknown as Parameters<typeof fieldModels>[0]).map((m) => [m.name, m])
+	const models = (fields: Record<string, unknown>) =>
+		Object.fromEntries(
+			fieldModels({ fields } as unknown as Parameters<typeof fieldModels>[0]).map((m) => [
+				m.name,
+				m
+			])
 		);
+
+	it('derives from the absence of a `default:`, which an empty string or array still counts as', () => {
+		const byName = models({
+			none: f({}),
+			empty: f({ default: '' }),
+			list: f({ type: 'array', default: [] })
+		});
 		expect(byName.none.required).toBe(true);
 		expect(byName.empty.required).toBe(false);
 		expect(byName.list.required).toBe(false);
+	});
+
+	it('is the declared `must_fill` wherever the schema states one', () => {
+		// The two axes are independent, so both off-diagonal cells are reachable: a
+		// defaulted field a human must still confirm, and a defaultless one nobody has
+		// to answer.
+		const byName = models({
+			obliged: f({ default: 'UNCLASSIFIED', must_fill: true }),
+			optional: f({ must_fill: false })
+		});
+		expect(byName.obliged.required).toBe(true);
+		expect(byName.optional.required).toBe(false);
 	});
 });
 
