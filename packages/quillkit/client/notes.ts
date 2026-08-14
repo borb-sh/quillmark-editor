@@ -7,21 +7,18 @@
 // reaches the control it is about. A diagnostic carrying `location` instead names a file,
 // a line and a column in the quill's source, which routes to no control and is read off
 // the compile-failure strip. One carrying neither reaches nothing.
-import { isQuillmarkError, type Diagnostic, type Location, type Severity } from '@quillmark/wasm';
-
-/** Errors before warnings; within a severity, the producer order the caller passed. */
-const RANK: Record<Severity, number> = { error: 0, warning: 1 };
+import { isQuillmarkError, type Diagnostic, type Location } from '@quillmark/wasm';
 
 /** A source address, as an author's editor spells one. */
 export const placeOf = (at: Location): string => `${at.file}:${at.line}:${at.column}`;
 
-/** What makes two diagnostics the same one. The producers overlap by design (a must-fill
- *  field is a schema verdict and a render warning both). Both address spaces are in the
- *  key: one message raised at two lines of a plate is two problems. */
+/** What makes two diagnostics the same one. The producers overlap by design. Both
+ *  address spaces are in the key: one message raised at two lines of a plate is two
+ *  problems. */
 const key = (d: Diagnostic): string =>
 	`${d.severity} ${d.code ?? ''} ${d.path ?? ''} ${d.location ? placeOf(d.location) : ''} ${d.message}`;
 
-/** Every producer's diagnostics as one set: deduplicated, errors first. */
+/** Every producer's diagnostics as one set: deduplicated, producer order. */
 export function collect(sources: readonly (readonly Diagnostic[])[]): Diagnostic[] {
 	const seen = new Map<string, Diagnostic>();
 	for (const diags of sources)
@@ -29,7 +26,7 @@ export function collect(sources: readonly (readonly Diagnostic[])[]): Diagnostic
 			const k = key(diag);
 			if (!seen.has(k)) seen.set(k, diag);
 		}
-	return [...seen.values()].sort((a, b) => RANK[a.severity] - RANK[b.severity]);
+	return [...seen.values()];
 }
 
 export function messageOf(err: unknown): string {

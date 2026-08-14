@@ -6,7 +6,7 @@
 //
 // Three producers (VISUAL_EDITOR §Diagnostics):
 // 1. `quill.validate(doc)`: `Diagnostic[]`, `.path` a canonical `DocPath`.
-//      Routed here by `routeAndResolve`, less what `inlineShown` withholds.
+//      Routed here by `routeAndResolve`, errors only.
 // 2. Local commit errors: a `writer.set`/`writer.card(i).set` throw at
 //      commit time (VisualEditor's `commitScalar`). The editor knows the exact
 //      field/card being committed, so these are keyed directly at the call site
@@ -16,7 +16,7 @@
 //      diagnostic verbatim under its own id-keyed address.
 // 3. External diagnostics: the consumer-supplied `diagnostics?: Diagnostic[]`
 //      prop (`LiveSession.warnings` + render errors via `FieldRegion.field`),
-//      routed by `.path` like #1.
+//      routed by `.path` like #1, errors only.
 //
 // Field-key space. Two addressing schemes meet here: producers #1/#3 speak the
 // canonical `DocPath` string (`main.<field>` / `main.body` /
@@ -71,28 +71,14 @@ export interface RoutedDiagnostic {
 }
 
 /**
- * Whether a validation diagnostic is the surface's to show under a control
- * (VISUAL_EDITOR §Diagnostics). Obligation is not: the label's `*` already states
- * it, from the same schema, for the same cells, and it states it whether or not the
- * cell has been answered — so the warning is a second copy of a mark on screen, once
- * per obliged field, on every document nobody has finished. That is every obliged
- * field of a fresh seed, which is what a consumer's first mount is.
- *
- * Withheld from the boundary's own validation lane only. A consumer's `diagnostics`
- * prop passes whole: what a host hands the surface, the host asked to see. And
- * nothing is suppressed at the source — `quill.validate(doc)` is the completeness
- * read, unchanged and still the host's to make.
- */
-export function inlineShown(d: Diagnostic): boolean {
-	return d.code !== 'validation::must_fill';
-}
-
-/**
  * Route a path-keyed producer's raw `Diagnostic[]` (validate / external) to the
  * editor's stable-id keying: the one door producers #1/#3 take, `addrForFieldPath`
- * and `resolveCardKey` in a single pass. An entry drops rather than mis-routes when
- * it carries no `path`, when the path names no single commit address (a nested /
- * array-element one), or when its absolute card index is out of the live `cardIds`.
+ * and `resolveCardKey` in a single pass. Warnings do not draw (VISUAL_EDITOR
+ * §Diagnostics): obligation, completeness, a render note — none of them is a value
+ * the field cannot hold. An entry also drops rather than mis-routes when it carries
+ * no `path`, when the path names no single commit address (a nested / array-element
+ * one), or when its absolute card index is out of the live `cardIds`. Completeness
+ * stays a read the host makes on `quill.validate(doc)`.
  */
 export function routeAndResolve(
 	diagnostics: Diagnostic[] | undefined,
@@ -100,7 +86,7 @@ export function routeAndResolve(
 ): RoutedDiagnostic[] {
 	const out: RoutedDiagnostic[] = [];
 	for (const d of diagnostics ?? []) {
-		if (!d.path) continue;
+		if (d.severity !== 'error' || !d.path) continue;
 		const key = addrForFieldPath(d.path);
 		const resolved = key && resolveCardKey(key, cardIds);
 		if (resolved) out.push({ key: resolved, diagnostic: d });
@@ -108,14 +94,11 @@ export function routeAndResolve(
 	return out;
 }
 
-/** Severity ordering: errors sort before warnings within a field's list (never dropped, just ranked: VISUAL_EDITOR §Diagnostics "nothing gates" extends to nothing hides). */
-const SEVERITY_RANK: Record<Diagnostic['severity'], number> = { error: 0, warning: 1 };
-
 /**
  * Merge N routed groups into `Map<fieldKeyToString(key), Diagnostic[]>`.
  * Dedupes an identical `(severity, message)` pair landing on the same key from
- * more than one group (e.g. the same warning present in both `validate()` and
- * an external feed); within a key, errors sort before warnings.
+ * more than one group (e.g. the same error present in both `validate()` and
+ * an external feed). Producer order within a key.
  */
 export function mergeDiagnostics(...groups: RoutedDiagnostic[][]): Map<string, Diagnostic[]> {
 	const byKey = new Map<string, Diagnostic[]>();
@@ -132,9 +115,6 @@ export function mergeDiagnostics(...groups: RoutedDiagnostic[][]): Map<string, D
 			if (arr) arr.push(diagnostic);
 			else byKey.set(k, [diagnostic]);
 		}
-	}
-	for (const arr of byKey.values()) {
-		arr.sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]);
 	}
 	return byKey;
 }

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+The inline lane draws errors only. Warnings — obligation, a `!must_fill` marker, a render note a host re-feeds as the `diagnostics` prop — stay a read of `quill.validate(doc)` and `session.warnings`. The warning hue is not a dial: a diagnostic is `--qm-danger`, and the preset's phase line has one failure face (`.qm-status-error`).
+
 ## v0.5.0 - 2026-08-14
 
 **The obligation warning is off the inline lane.** `quill.validate(doc)` raises `validation::must_fill` per obliged cell a document leaves unanswered, and the label's `*` states that already — same schema, same cells, and it states it whether or not the cell has been answered. Under every required field of a fresh seed the pair read as one claim printed twice, which is what a consumer's first mount is made of. The surface now withholds it from the boundary's validation lane; the `*` is the whole of what it says about obligation. Nothing is suppressed at the source, so a host reading completeness still reads `quill.validate(doc)`, and a consumer's own `diagnostics` prop passes whole — what a host hands in, it asked to see.

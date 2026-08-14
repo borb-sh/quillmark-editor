@@ -37,8 +37,7 @@ export interface FieldModel {
 	 * `default:`'s absence when the field declares none (DOCUMENT_MODEL). Drives a
 	 * persistent label `*`; a field can carry both it and a ghosted `default:`,
 	 * since the two axes are independent. Persistent (schema-derived, survives
-	 * filling); the `must_fill` `validate` warning remains the unmet-ness signal.
-	 * Label chrome only; never gates.
+	 * filling). Label chrome only; never gates.
 	 */
 	required: boolean;
 	/** Prose-leaf flags (only meaningful when `control === 'prose'` / array items). */

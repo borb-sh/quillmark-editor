@@ -79,15 +79,15 @@ describe('strings on the mounted surface', () => {
 describe('formatDiagnostic', () => {
 	const validation: Diagnostic = {
 		severity: 'error',
-		code: 'validation::must_fill',
+		code: 'validation::type_mismatch',
 		path: 'main.title',
-		message: 'title must be filled'
+		message: 'title is the wrong type'
 	};
 
 	it('takes the formatter when it words the diagnostic', () => {
 		const format = (d: Diagnostic) =>
-			d.code === 'validation::must_fill' ? `Champ requis : ${d.path}` : undefined;
-		expect(diagnosticText(validation, format)).toBe('Champ requis : main.title');
+			d.code === 'validation::type_mismatch' ? `Type incorrect : ${d.path}` : undefined;
+		expect(diagnosticText(validation, format)).toBe('Type incorrect : main.title');
 	});
 
 	it('falls back to the message when the formatter declines', () => {
@@ -99,7 +99,8 @@ describe('formatDiagnostic', () => {
 			code: 'parse::yaml_error_with_location',
 			message: 'YAML error at line 3, column 5: unexpected key `foo`'
 		};
-		const format = (d: Diagnostic) => (d.code === 'validation::must_fill' ? 'reworded' : undefined);
+		const format = (d: Diagnostic) =>
+			d.code === 'validation::type_mismatch' ? 'reworded' : undefined;
 		expect(diagnosticText(parse, format)).toBe(parse.message);
 	});
 
@@ -129,9 +130,31 @@ describe('formatDiagnostic', () => {
 		expect(diagnosticText(validation, undefined)).toBe(validation.message);
 		// `Diagnostic.code` is optional at this pin, so routing on it is not total by
 		// type: a formatter that switches on `code` reaches its default arm here.
-		const uncoded: Diagnostic = { severity: 'warning', message: 'backend said something' };
+		const uncoded: Diagnostic = { severity: 'error', message: 'backend said something' };
 		expect(diagnosticText(uncoded, (d) => (d.code ? 'reworded' : undefined))).toBe(
 			'backend said something'
 		);
+	});
+
+	it('withholds warnings even when the host hands them in', () => {
+		const { target } = mountEditor({
+			diagnostics: [
+				{
+					severity: 'warning',
+					code: 'validation::must_fill',
+					path: 'main.title',
+					message: 'Field `main.title` is marked `!must_fill`: a placeholder awaiting a value.'
+				},
+				{
+					severity: 'error',
+					code: 'validation::type_mismatch',
+					path: 'main.title',
+					message: 'field `main.title` is `richtext` but the value is an array.'
+				}
+			]
+		});
+		const lines = [...target.querySelectorAll('.qm-diag-line')].map((n) => n.textContent);
+		expect(lines.some((t) => t?.includes('must_fill') || t?.includes('placeholder'))).toBe(false);
+		expect(lines).toContain('field `main.title` is `richtext` but the value is an array.');
 	});
 });

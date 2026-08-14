@@ -110,7 +110,7 @@ function moveDown(slot: HTMLElement): void {
 /** A card's refused commit: the error lane, which is the one a refused write lands
  *  in whatever else the card is reporting. */
 function refusal(slot: HTMLElement): HTMLElement | null {
-	return slot.querySelector<HTMLElement>('.qm-diag-line[data-severity="error"]');
+	return slot.querySelector<HTMLElement>('.qm-diag-line');
 }
 function removeCard(slot: HTMLElement): void {
 	slot.querySelector<HTMLButtonElement>('.qm-card-delete')!.click();

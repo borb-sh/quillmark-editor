@@ -11,7 +11,7 @@
  `diagnostics` is the routed `Diagnostic[]` for this field (VisualEditor's
  `diagByKey`, merging `quill.validate`, local commit errors, and the external
  `diagnostics` prop (VISUAL_EDITOR §Diagnostics)) rendered via the shared
- `DiagnosticList`, severity-styled, non-gating.
+ `DiagnosticList`, non-gating.
 -->
 <script lang="ts">
 	import type { Document, Quill, Addr, Diagnostic, ResolvedField } from '@quillmark/wasm';

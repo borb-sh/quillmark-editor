@@ -2,7 +2,7 @@
    page around the surfaces out. `core/theme.css` is the same shape one level down
    (dials in, `--_qm-*` out), and the two are calibrated against each other: the
    figures here are the figures there (the ground step's ramp, 8% hover, 17%
-   border, 45% ink, the ring's width, the status hues at both poles) and the
+   border, 45% ink, the ring's width, the status hue at both poles) and the
    dial means the same plane in both, so a host plate and a card on it land on the same
    tone at both poles and a host page meets an editor's own column exactly. The well
    under the ground has no counterpart here: a host's own controls are boxed and carry a
@@ -45,13 +45,12 @@
 	   the underline under a link. */
 	--qmh-border-strong: color-mix(in oklab, var(--qmh-surface), var(--qmh-ink) 40%);
 
-	/* The two hues a host spends, and it spends them on a message. The figures are the
-	   surfaces' own, so a page carries one colour meaning error and one meaning warning
-	   rather than a second pair beside the surfaces'. Each pole is its own figure: a hue
-	   calibrated against white reads as a stain on a dark page. The dial sits in front
-	   of the pair, as every pole's does, so a host that turns one owns both schemes. */
+	/* The hue a host spends on a failure. The figures are the surfaces' own, so a
+	   page's status line and a card's diagnostic carry one colour meaning error.
+	   Each pole is its own figure: a hue calibrated against white reads as a stain
+	   on a dark page. The dial sits in front of the pair, as every pole's does, so
+	   a host that turns one owns both schemes. */
 	--qmh-alert: var(--qm-danger, light-dark(#9e1518, #f9786c));
-	--qmh-warn: var(--qm-warning, light-dark(#926510, #fdc776));
 
 	/* ── Rhythm ──────────────────────────────────────────────────────────────── */
 	/* One base and its multiples, the same four steps the surfaces derive. A host

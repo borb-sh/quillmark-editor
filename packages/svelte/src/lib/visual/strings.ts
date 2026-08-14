@@ -108,12 +108,12 @@ export interface VisualStrings extends TableChromeStrings, SlashStrings {
  * interpolates, keyed by name. What it can re-word tracks what that type carries per
  * lane (VISUAL_EDITOR §Diagnostics for why each lands where it does):
  *
- * - **`validation::enum_violation`, `type_mismatch`, `format_violation`,
- *   `must_fill`**: the constraint re-words from the quill's schema at `path`, the
- *   offending value from `args` (`value` / `sourceToken` / `actual`, the engine
- *   testifying to what it saw) and never from the document at `path`: validation
- *   runs post-coercion, so the validator read a value the document does not hold and
- *   a sentence built from `path` names a spelling the user never typed.
+ * - **`validation::enum_violation`, `type_mismatch`, `format_violation`**: the
+ *   constraint re-words from the quill's schema at `path`, the offending value from
+ *   `args` (`value` / `sourceToken` / `actual`, the engine testifying to what it
+ *   saw) and never from the document at `path`: validation runs post-coercion, so
+ *   the validator read a value the document does not hold and a sentence built from
+ *   `path` names a spelling the user never typed.
  * - **`edit::field_coercion_failed`**: re-words from the app's own control state, the
  *   refused value being in neither document (unchanged on throw) nor schema.
  * - **`parse::yaml_error_with_location`, `invalid_structure`**: does not re-word. No
