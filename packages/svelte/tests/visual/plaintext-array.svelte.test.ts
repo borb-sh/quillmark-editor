@@ -2,17 +2,19 @@
 // An array of `plaintext`, which the reference quill declares as `errata`: rows an
 // author writes verbatim, where markdown in one is the text rather than markup.
 //
-// The type is what the row has to agree with. A `plaintext` value rests as its
-// literal string, so the element is a text input and never the prose element the
-// scalar field of that type mounts: handing a string to the codec is a decode of
-// `undefined`. The rows are driven here and the values read back through
-// `DocumentReader`, so the resting form is judged by the writer rather than by the
-// control that wrote it.
+// The type is what the row has to agree with, and it agrees on both lanes. The row
+// reads through `reader.getContentAt`, which decodes an element at the codec its
+// `items` type names, so a literal string opens as content carrying its own
+// asterisks and no mark. It writes back the `Content` every prose leaf hands up,
+// which the typed writer rests as the literal string again — the claim that lets a
+// `plaintext` element mount the same prose leaf its scalar field does.
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
-import { DocumentReader, type Quill, type Document } from '@quillmark/wasm';
+import { init, DocumentReader, type Quill, type Document } from '@quillmark/wasm';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
 import { quill } from '../helpers/fixtures.js';
+
+const core = await init();
 
 // jsdom implements neither, and mounting the editor reaches both.
 Element.prototype.scrollIntoView ??= () => {};
@@ -48,40 +50,41 @@ function arrayControl(target: HTMLElement): HTMLElement {
 	return match;
 }
 
-/** The array's element inputs, in DOM order, located by the accessible name each
+/** The array's element leaves, in DOM order, located by the accessible name each
  *  carries (`${label} ${index + 1}`, ArrayField). */
-function inputs(target: HTMLElement): HTMLInputElement[] {
-	return [...target.querySelectorAll<HTMLInputElement>(`input[aria-label^="${ELEMENT_LABEL}"]`)];
+function rows(target: HTMLElement): HTMLElement[] {
+	return [...target.querySelectorAll<HTMLElement>(`.ProseMirror[aria-label^="${ELEMENT_LABEL}"]`)];
 }
 
+/** A key at a row, the way the browser delivers one: the leaf registers a real
+ *  `keydown` listener (`handleDOMEvents`), which is where the repeater's own
+ *  Enter/Backspace contract hangs. */
 function press(el: HTMLElement, key: string): void {
 	el.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
-	flushSync();
-}
-
-function type(input: HTMLInputElement, value: string): void {
-	input.value = value;
-	input.dispatchEvent(new Event('input', { bubbles: true }));
-	input.dispatchEvent(new Event('change', { bubbles: true }));
 	flushSync();
 }
 
 const read = (q: Quill, doc: Document, name: string) => new DocumentReader(q, doc).get(name);
 
 describe('an array of plaintext', () => {
-	it('mounts its seeded string elements as text inputs, logging nothing', () => {
+	it('mounts its seeded string elements as prose rows, verbatim, logging nothing', () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 		const error = vi.spyOn(console, 'error').mockImplementation(() => {});
 		try {
 			const q = quill();
 			const doc = q.seedDocument();
-			// The seed is what the row is handed: string elements, not `Content`.
+			// The element rests as its literal string; the row reads it through the codec
+			// the declared type names rather than off the stored value.
 			const seeded = doc.getStored('errata') as string[];
 			expect(seeded.every((e) => typeof e === 'string')).toBe(true);
 			expect(seeded.length).toBeGreaterThan(1);
 
 			const target = mountEditor(q, doc);
-			expect(inputs(target).map((i) => i.value)).toEqual(seeded);
+			expect(rows(target).map((r) => r.textContent)).toEqual(seeded);
+			// The type distinction, on screen: the seed's `**asterisks**` are characters
+			// in the row, and no emphasis was lowered from them.
+			expect(rows(target)[0].textContent).toContain('**asterisks**');
+			expect(rows(target)[0].querySelector('em, strong')).toBeNull();
 			// The messages, not just the count: a failure here should name what it saw.
 			expect(warn.mock.calls.map((c) => String(c[0]))).toEqual([]);
 			expect(error.mock.calls.map((c) => String(c[0]))).toEqual([]);
@@ -91,7 +94,7 @@ describe('an array of plaintext', () => {
 		}
 	});
 
-	it('adds an element and commits it as a string', () => {
+	it('adds an element and rests it as a string', () => {
 		const q = quill();
 		const doc = q.seedDocument();
 		const target = mountEditor(q, doc);
@@ -99,16 +102,26 @@ describe('an array of plaintext', () => {
 		const seeded = doc.getStored('errata') as string[];
 		arrayControl(target).querySelector<HTMLButtonElement>('.qm-add-el')!.click();
 		flushSync();
-		const rows = inputs(target);
-		expect(rows).toHaveLength(seeded.length + 1);
-		expect(rows.at(-1)!.value).toBe('');
+		expect(rows(target)).toHaveLength(seeded.length + 1);
+		expect(rows(target).at(-1)!.textContent).toBe('');
 
-		type(rows.at(-1)!, 'Page 9 omits the colophon.');
-		// Read through the codec, and stored under it: the element rests as its
-		// literal string either way.
-		const grown = [...seeded, 'Page 9 omits the colophon.'];
+		// A prose row commits `Content`, and the slot it lands in is a `plaintext`
+		// one: what rests is the string, so the array stays a string array.
+		const grown = [...seeded, ''];
 		expect(read(q, doc, 'errata')).toEqual(grown);
 		expect(doc.getStored('errata')).toEqual(grown);
+	});
+
+	// The other half of that write, without the row: what a prose leaf hands up for
+	// an edited element is a `Content`, and the typed writer is what turns it back
+	// into the element's rest form. jsdom implements no contenteditable, so the
+	// keystroke that produces one cannot be driven here (`loaded-richtext-array`
+	// stops at the same wall); the writer's half is where the claim lives anyway.
+	it('rests an edited element as its literal string', () => {
+		const q = quill();
+		const doc = q.seedDocument();
+		q.writer(doc).set('errata', [core.importMarkdown('Page 9 omits the colophon.')]);
+		expect(doc.getStored('errata')).toEqual(['Page 9 omits the colophon.']);
 	});
 
 	it('removes an element on Backspace only once it reads empty', () => {
@@ -117,14 +130,29 @@ describe('an array of plaintext', () => {
 		const target = mountEditor(q, doc);
 
 		const seeded = doc.getStored('errata') as string[];
-		// The emptiness test reads the input, not the committed value: a populated
-		// element keeps its row, whatever the stored form is.
-		press(inputs(target)[0], 'Backspace');
-		expect(inputs(target)).toHaveLength(seeded.length);
+		// A populated element keeps its row: the emptiness test reads the element's
+		// committed value, which a seeded row has.
+		press(rows(target)[0], 'Backspace');
+		expect(rows(target)).toHaveLength(seeded.length);
 
-		type(inputs(target)[0], '');
-		press(inputs(target)[0], 'Backspace');
-		expect(inputs(target).map((i) => i.value)).toEqual(seeded.slice(1));
-		expect(read(q, doc, 'errata')).toEqual(seeded.slice(1));
+		// An added row is the empty one, and it goes.
+		arrayControl(target).querySelector<HTMLButtonElement>('.qm-add-el')!.click();
+		flushSync();
+		press(rows(target).at(-1)!, 'Backspace');
+		expect(rows(target).map((r) => r.textContent)).toEqual(seeded);
+		expect(read(q, doc, 'errata')).toEqual(seeded);
+	});
+
+	it('inserts a sibling on Enter', () => {
+		const q = quill();
+		const doc = q.seedDocument();
+		const target = mountEditor(q, doc);
+
+		const seeded = doc.getStored('errata') as string[];
+		press(rows(target)[0], 'Enter');
+		expect(rows(target)).toHaveLength(seeded.length + 1);
+		// The new row is the first one's sibling, not the list's tail.
+		expect(rows(target)[1].textContent).toBe('');
+		expect(doc.getStored('errata')).toEqual([seeded[0], '', ...seeded.slice(1)]);
 	});
 });

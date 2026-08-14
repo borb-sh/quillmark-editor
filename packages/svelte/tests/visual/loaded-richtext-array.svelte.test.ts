@@ -1,10 +1,9 @@
 // @vitest-environment jsdom
 // An array of `richtext` on a document that came through the transport door
 // (`Document.fromMarkdown`): elements rest as authored strings, the same rest
-// form a scalar richtext field takes. The scalar leaf reads through
-// `reader.getContent`; an element has no such read (`getContent` addresses a
-// field, never an element), so the prose row has to lower the string itself.
-// Handing it to `decode` as-is is a read of `undefined`.
+// form a scalar richtext field takes. The row reads one through
+// `reader.getContentAt`, which decodes at the codec the declared type names, so
+// the emphasis below is lowered by the boundary rather than by the row.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
 import { init, type Document, type Quill } from '@quillmark/wasm';
