@@ -131,6 +131,27 @@ describe('a recompile re-locates the followed caret', () => {
 		]);
 		preview.destroy();
 	});
+
+	// Only a focus change says the caret has left the place the slot names: a control
+	// reports none of its own, so the re-locate above would keep pulling the pane back
+	// to the leaf the focus left, on every recompile.
+	it('a focus change ends it, and the next place restarts it', () => {
+		const preview = createPreview(trackingSession(), { container });
+		preview.focusPosition({ field: 'main.body', pos: 12 });
+		located.length = 0;
+
+		preview.endFollow();
+		preview.refresh(change(1));
+		expect(located).toEqual([]);
+
+		preview.focusPosition({ field: 'main.title', pos: 2 });
+		preview.refresh(change(1));
+		expect(located).toEqual([
+			['main.title', 2],
+			['main.title', 2]
+		]);
+		preview.destroy();
+	});
 });
 
 // `supportsCanvas` must gate the view (runtime.d.ts says re-check the

@@ -425,8 +425,11 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			// be non-inline (before an island/rule block, or doc-level in an empty
 			// nested textblock), where a raw TextSelection is invalid.
 			const sel = Selection.near(view.state.doc.resolve(pm));
-			view.dispatch(view.state.tr.setSelection(sel));
+			// Focus first, then the caret: the order a click's own pair arrives in, and the
+			// one a consumer that ends its caret follow on the arrival needs — the other
+			// way round, the arrival ends the follow this call just started.
 			view.focus();
+			view.dispatch(view.state.tr.setSelection(sel));
 		},
 		applyExternal(): void {
 			const current = readLeaf(reader, addr);

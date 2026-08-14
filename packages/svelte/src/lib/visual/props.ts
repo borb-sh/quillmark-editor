@@ -23,6 +23,11 @@ export interface VisualEditorProps {
 	 * The active leaf: its canonical `DocPath` and the session key of the card holding
 	 * it, which is what a host tracking the active card keeps across a reorder
 	 * (`CardId`).
+	 *
+	 * It fires for a form control as for a prose leaf, which makes it the other half of
+	 * the preview bridge: a control has no caret coordinate to report, so
+	 * `onActiveLeafChange={preview.endFollow}` is what stops the pane following the leaf
+	 * the focus left.
 	 */
 	onActiveLeafChange?: (active: ActiveLeaf) => void;
 	/**

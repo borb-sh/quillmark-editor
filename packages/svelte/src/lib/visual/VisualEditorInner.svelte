@@ -206,6 +206,10 @@
 		const plain = normalize(addr);
 		activeAddr = plain;
 		activeCardId = cardIdOf(plain);
+		// The arrival ends the caret memo's run (`lastCaretField` below): a leaf returned
+		// to at the offset it still names has to report again.
+		lastCaretField = undefined;
+		lastCaretPos = undefined;
 		const field = pathFor(plain);
 		if (field != null) onActiveLeafChange?.({ field, cardId: activeCardId });
 	}
@@ -236,6 +240,10 @@
 	// that reflows the page under a caret holding its offset is the case this drops,
 	// and a preview does not need the signal to answer it: the place is unchanged, so
 	// the one it already followed is the one its recompile re-locates.
+	//
+	// A focus clears it, and must: a focus into a leaf with no caret to report ends a
+	// consumer's follow (PREVIEW §"Follow-the-caret scroll"), and the return to the
+	// offset the memo still names is the only thing that would restart it.
 	let lastCaretField: DocPath | undefined;
 	let lastCaretPos: number | undefined;
 	function handleCaret(addr: Addr, pos: number): void {

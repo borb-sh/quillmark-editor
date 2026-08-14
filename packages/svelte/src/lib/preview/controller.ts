@@ -47,6 +47,17 @@ export interface PreviewController {
 	 * `ContentHit` carries both members and fits here too.
 	 */
 	focusPosition(at: Place): void;
+	/**
+	 * End the follow: the pane stays where the user left it until the next
+	 * `focusPosition`.
+	 *
+	 * The editor's `onActiveLeafChange` is the signal, firing for a form control as for
+	 * a prose leaf: `onActiveLeafChange={preview.endFollow}`. A control has no caret
+	 * coordinate to report, so unwired the follow keeps naming the leaf the focus left
+	 * and every recompile pulls the pane back there. A prose leaf restarts it with its
+	 * own next caret.
+	 */
+	endFollow(): void;
 	/** Fold a density multiplier into every future paint (crispness, not layout). */
 	setZoom(scale: number): void;
 	destroy(): void;
@@ -143,13 +154,13 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 
 	render(session.pageCount, []);
 
-	// The last place the editor put the caret, re-located after every recompile.
-	// `session.locate` answers against the last compiled layout and a consumer
-	// debounces `update`, so a caret typed past that layout's content is off-content
-	// for the whole burst: `focusPosition` no-ops and the pane sits still, and a
-	// caret event is otherwise the only thing that asks again. The re-locate is the
-	// preview's, not the consumer's: the staleness sits between two session queries
-	// this module owns both ends of.
+	// The last place the editor put the caret, re-located after every recompile and
+	// dropped on a focus change. `session.locate` answers against the last compiled
+	// layout and a consumer debounces `update`, so a caret typed past that layout's
+	// content is off-content for the whole burst: `focusPosition` no-ops and the pane
+	// sits still, and a caret event is otherwise the only thing that asks again. The
+	// re-locate is the preview's, not the consumer's: the staleness sits between two
+	// session queries this module owns both ends of.
 	let followed: Place | undefined;
 
 	return {
@@ -165,6 +176,9 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 		focusPosition(at) {
 			followed = at;
 			bridge?.focusPosition(at.field, at.pos);
+		},
+		endFollow() {
+			followed = undefined;
 		},
 		setZoom(scale) {
 			paintLoop.setDensityZoom(scale);

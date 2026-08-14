@@ -81,7 +81,7 @@ const preview = createPreview(session, {
 preview.refresh(session.update(doc)); // repaint dirtyPages ∩ visible
 ```
 
-In Svelte, `<Preview {session} onPick={…} />` exposes the same verbs (`refresh`, `scrollToField`, `focusPosition`, `setZoom`) via `bind:this`.
+In Svelte, `<Preview {session} onPick={…} />` exposes the same verbs (`refresh`, `scrollToField`, `focusPosition`, `endFollow`, `setZoom`) via `bind:this`.
 
 `<Preview>` binds **once**, at mount: swapping `session`, `margin`, `onPick`, `onError` or `strings` in place changes nothing on screen and reports `rebind-ignored` through `onError` at `dev` severity, naming the prop. Swap by remounting (`{#key session}`); drive in-place edits through `refresh(change)`. `class` and `style` are the exceptions, landing on the root element and staying live.
 
@@ -196,9 +196,13 @@ The bridge lives at the **consumer** layer and is opt-in; the editor is unaware 
 // preview → editor: a click resolved to an address lands in the field it names.
 onPick: (at) => visualEditor.setCaret(at);
 
-// editor → preview: a caret move scrolls the preview to follow it.
+// editor → preview: a caret move scrolls the preview to follow it,
+// and a focus into a leaf with no caret to report ends the follow.
 onCaretMove: preview.focusPosition;
+onActiveLeafChange: preview.endFollow;
 ```
+
+Both editor→preview hops or neither. A control reports its focus and no caret — there is no offset a date field could name — so without the second the preview keeps following the leaf the focus left, and every recompile pulls the pane back to it. A prose leaf restarts the follow with its next caret. A host that reads the active leaf for its own chrome calls `endFollow` from its handler.
 
 A pick carries a caret where the compile tracks the content under the point, and the field alone where it tracks only the placement — a scalar the plate prints without tracking. `setCaret` takes both: an absent `pos` reveals and focuses the field, which is the whole of what a click on plate-placed ink can mean. The address may name an array element (`main.keywords[0]`), which lands on that row.
 

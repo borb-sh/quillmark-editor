@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**A focus into a leaf with no caret to report ends the preview's follow.** The followed place was written by `onCaretMove` alone and cleared by nothing, and `refresh` re-asserts it on every recompile, so a click into any control — a text input, a date field, an enum, an array row, the JSON row — left the pane being pulled back to the leaf the focus left, on each keystroke typed into the control. `preview.endFollow()` ends it, and the editor's `onActiveLeafChange` is the signal: `onActiveLeafChange={preview.endFollow}` is the second half of the bridge `onCaretMove={preview.focusPosition}` opens, and a host wiring only the first keeps the sticky slot. A prose leaf restarts the follow with its own next caret, which the editor guarantees by clearing its caret memo on the same arrival: a leaf returned to at the offset it left reports again rather than being swallowed. `setCaret` focuses before it places the caret, holding the arrival-then-caret order a click already has.
+
 ## v0.4.3 - 2026-08-13
 
 ## v0.4.2 - 2026-08-13

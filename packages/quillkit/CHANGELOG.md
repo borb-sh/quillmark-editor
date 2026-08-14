@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+The studio's paint stops following the caret when the focus lands on a leaf that reports none: a click into any form control left it following the leaf the focus left, and each keystroke typed into the control scrolled the paint back there. The bridge wires `onActiveLeafChange={preview.endFollow}` beside the caret hop it already had.
+
 ## v0.2.2 - 2026-08-13
 
 Carries `@quillmark/svelte` 0.4.0, `@quillmark/quiver` 0.21.0, `@quillmark/wasm` 0.104.0.
