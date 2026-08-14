@@ -4,6 +4,10 @@
 
 ## Unreleased
 
+**A landing in a prose leaf reveals itself, where only a form control did.** A preview click on a region belonging to a `richtext` field or a body placed the caret and scrolled nothing: PM focuses with `preventScroll` and the landing's dispatch carried no `scrollIntoView` flag, so a caret an arrow key would have revealed was left off screen by the click that placed it — a body was where it showed, but every prose field answered the same way, while the input beside it took the browser's own focus scroll. The dispatch is flagged now, and the placement rung — a `'segment'` hit, a field the plate places without tracking its content — reveals the leaf's box the way a control reveals its own. An array of `richtext` elements reveals like the array of `string` beside it.
+
+The trip is the minimum and stops a line clear of the fold, never a centring: a landing's commonest target is the leaf already focused. That clearance is the leaf's own line box (`scrollThreshold` / `scrollMargin`), replacing PM's 5px, so typing near the bottom of a leaf keeps a line of room for the line about to be typed.
+
 **A focus into a leaf with no caret to report ends the preview's follow.** The followed place was written by `onCaretMove` alone and cleared by nothing, and `refresh` re-asserts it on every recompile, so a click into any control — a text input, a date field, an enum, an array row, the JSON row — left the pane being pulled back to the leaf the focus left, on each keystroke typed into the control. `preview.endFollow()` ends it, and the editor's `onActiveLeafChange` is the signal: `onActiveLeafChange={preview.endFollow}` is the second half of the bridge `onCaretMove={preview.focusPosition}` opens, and a host wiring only the first keeps the sticky slot. A prose leaf restarts the follow with its own next caret, which the editor guarantees by clearing its caret memo on the same arrival: a leaf returned to at the offset it left reports again rather than being swallowed. `setCaret` focuses before it places the caret, holding the arrival-then-caret order a click already has.
 
 ## v0.4.3 - 2026-08-13

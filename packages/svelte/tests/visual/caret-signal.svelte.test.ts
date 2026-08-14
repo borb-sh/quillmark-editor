@@ -20,9 +20,12 @@ import { quill } from '../helpers/fixtures.js';
 
 const core = await init();
 
-// jsdom implements neither, and the reveal `setCaret` runs first reaches both.
+// jsdom implements none of these, and the reveal `setCaret` runs reaches all four: the
+// group's hop, the arrival wash, and the caret rect PM measures to scroll to.
 Element.prototype.scrollIntoView ??= () => {};
 Element.prototype.getAnimations ??= () => [];
+Range.prototype.getClientRects ??= () => [] as unknown as DOMRectList;
+Range.prototype.getBoundingClientRect ??= () => new DOMRect();
 
 interface EditorRef {
 	setCaret(hit: ContentHit): Promise<void>;
