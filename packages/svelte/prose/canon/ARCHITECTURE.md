@@ -75,4 +75,6 @@ The public surface is the contract in [`THEMING.md`](../../THEMING.md): the dial
 
 The one signal the surface takes from outside the dials is the **host's declared `color-scheme`**, which the poles read through `light-dark()` and the root inherits untouched, so light/dark is the mounting site's declaration, not a preference the package reads behind it. A host with a theme of its own declares the scheme alongside it; the playground does this in its `playground.css`, which is also where the reference shell derives its own chrome from the same signal.
 
+So **a colour pole states both arms**: a hue is calibrated against one card, and stated once it reaches the other as a stain. `check:style` holds the shape over every derivation — a `light-dark()` pair, or a system colour, which resolves against the declared scheme itself — and the ratios each arm clears stay in the comment beside it, where a change that moves a hue is read against them.
+
 The systems beneath these surfaces have their own canon: the document/WASM boundary ([DOCUMENT_MODEL.md](DOCUMENT_MODEL.md)), the paint loop ([PREVIEW.md](PREVIEW.md)), the content codec ([CODEC.md](CODEC.md)), and the VisualEditor's composition ([VISUAL_EDITOR.md](VISUAL_EDITOR.md)).
