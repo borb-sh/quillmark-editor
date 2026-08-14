@@ -41,9 +41,14 @@
 	let view: EditorView | undefined;
 	/** Take the caret: what a parent placing focus on this element calls. The view's
 	 * focus, not the element's: a PM view restores its selection, where a bare DOM
-	 * focus on a contenteditable leaves the caret unplaced. */
+	 * focus on a contenteditable leaves the caret unplaced. And the reveal beside it,
+	 * since PM's focus prevents the scroll a `string` element's input takes by
+	 * default — an array whose two item types revealed differently is one row of it
+	 * landing off screen. */
 	export function focus(): void {
-		view?.focus();
+		if (!view) return;
+		view.focus();
+		view.dom.scrollIntoView({ block: 'nearest' });
 	}
 
 	onMount(() => {

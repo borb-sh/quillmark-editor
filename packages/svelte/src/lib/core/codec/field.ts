@@ -286,9 +286,23 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	const state = buildState(reconciler.last);
 	index = buildLineIndex(state.doc);
 
+	// The clearance PM's reveal keeps around the caret, in this leaf's own line box.
+	// Its default is 5px, which is a caret visible and unusable: the next line typed
+	// lands past the fold, the reason the preview's own scroll clears a target by the
+	// target's height (PREVIEW.md §"Follow-the-caret scroll"). Measured off the
+	// mounted box rather than restated from the rung, and dropped where the
+	// derivation is out of reach (jsdom), a fallback there being the scale written
+	// where `check:style` cannot read it.
+	const lineBox = Number.parseFloat(getComputedStyle(container).lineHeight);
+	const clearance = Number.isFinite(lineBox) ? lineBox : undefined;
+
 	view = new EditorView(container, {
 		state,
 		attributes: proseAttributes(opts),
+		// Both terms, one line each: when a flagged dispatch moves the scrollport
+		// (`scrollThreshold`) and what it leaves at the edge (`scrollMargin`).
+		scrollThreshold: clearance,
+		scrollMargin: clearance,
 		// Islands are block-schema only, so an inline leaf mounts no node view at all.
 		nodeViews: inline
 			? undefined
@@ -428,8 +442,12 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			// Focus first, then the caret: the order a click's own pair arrives in, and the
 			// one a consumer that ends its caret follow on the arrival needs — the other
 			// way round, the arrival ends the follow this call just started.
+			//
+			// Flagged, because PM focuses with `preventScroll` and a landing is a caret
+			// move like any other: unflagged, the caret an arrow key would have revealed
+			// is left off screen by the click that placed it.
 			view.focus();
-			view.dispatch(view.state.tr.setSelection(sel));
+			view.dispatch(view.state.tr.setSelection(sel).scrollIntoView());
 		},
 		applyExternal(): void {
 			const current = readLeaf(reader, addr);
@@ -452,6 +470,10 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		},
 		focus(): void {
 			view.focus();
+			// The placement rung's reveal: no caret to flag a transaction with, so the
+			// trip is the element's, `nearest` and no clearance — the one the control
+			// lane's own focus takes, for the landing that means the same thing there.
+			view.dom.scrollIntoView({ block: 'nearest' });
 		},
 		getContent(): Content {
 			return readLeaf(reader, addr);

@@ -10,6 +10,12 @@ import type { Document, TableProps } from '@quillmark/wasm';
 import { undo } from 'prosemirror-history';
 import { mount, quill, normalize, contentEqual, md } from './_util.js';
 
+// jsdom lays nothing out, and `setCaret`'s flagged dispatch asks PM for the caret's
+// rect to reveal it. Stubbed rather than guarded in the source: a landing is right to
+// reveal itself unconditionally in a browser, and a zero rect scrolls nothing here.
+Range.prototype.getClientRects ??= () => [] as unknown as DOMRectList;
+Range.prototype.getBoundingClientRect ??= () => new DOMRect();
+
 /** The view is attached to the controller as an undocumented handle. */
 function viewOf(f: FieldController): EditorView {
 	return (f as FieldController & { view: EditorView }).view;
