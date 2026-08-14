@@ -51,11 +51,11 @@ export interface PreviewController {
 	 * End the follow: the pane stays where the user left it until the next
 	 * `focusPosition`.
 	 *
-	 * The editor's `onActiveLeafChange` is the signal — it fires for a form control as
-	 * for a prose leaf, so the wiring is `onActiveLeafChange={preview.endFollow}`.
-	 * Without it a focus into a control, which has no caret coordinate to report, leaves
-	 * the follow naming the leaf the focus left, and every recompile pulls the pane back
-	 * there. A prose leaf restarts it with its own next caret.
+	 * The editor's `onActiveLeafChange` is the signal, firing for a form control as for
+	 * a prose leaf: `onActiveLeafChange={preview.endFollow}`. A control has no caret
+	 * coordinate to report, so unwired the follow keeps naming the leaf the focus left
+	 * and every recompile pulls the pane back there. A prose leaf restarts it with its
+	 * own next caret.
 	 */
 	endFollow(): void;
 	/** Fold a density multiplier into every future paint (crispness, not layout). */

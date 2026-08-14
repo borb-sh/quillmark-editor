@@ -128,8 +128,7 @@
 
 	// ── Bridge: editor → preview ────────────────────────────────────────────────
 	// The arrival half of the bridge: a form control reports its focus and no caret, so
-	// this is what ends the follow; a prose leaf restarts it with its next caret. The
-	// strip readout is the rest of what it is here for.
+	// this is what ends the follow; a prose leaf restarts it with its next caret.
 	function handleActiveLeaf(active: ActiveLeaf): void {
 		previewRef?.endFollow();
 		activeAddr = JSON.stringify(active);

@@ -202,7 +202,7 @@ onCaretMove: preview.focusPosition;
 onActiveLeafChange: preview.endFollow;
 ```
 
-Both editor→preview hops or neither: a control reports its focus and no caret — there is no offset a date field or a number input could name — so without the second the preview keeps following the leaf the focus left, and every recompile pulls the pane back to it. A prose leaf restarts the follow with its next caret. A host that reads the active leaf for its own chrome calls `endFollow` from its handler.
+Both editor→preview hops or neither. A control reports its focus and no caret — there is no offset a date field could name — so without the second the preview keeps following the leaf the focus left, and every recompile pulls the pane back to it. A prose leaf restarts the follow with its next caret. A host that reads the active leaf for its own chrome calls `endFollow` from its handler.
 
 A pick carries a caret where the compile tracks the content under the point, and the field alone where it tracks only the placement — a scalar the plate prints without tracking. `setCaret` takes both: an absent `pos` reveals and focuses the field, which is the whole of what a click on plate-placed ink can mean. The address may name an array element (`main.keywords[0]`), which lands on that row.
 

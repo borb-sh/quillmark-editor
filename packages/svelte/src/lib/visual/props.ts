@@ -24,8 +24,8 @@ export interface VisualEditorProps {
 	 * it, which is what a host tracking the active card keeps across a reorder
 	 * (`CardId`).
 	 *
-	 * It fires for a form control as for a prose leaf, which is what makes it the other
-	 * half of the preview bridge: a control has no caret coordinate to report, so
+	 * It fires for a form control as for a prose leaf, which makes it the other half of
+	 * the preview bridge: a control has no caret coordinate to report, so
 	 * `onActiveLeafChange={preview.endFollow}` is what stops the pane following the leaf
 	 * the focus left.
 	 */

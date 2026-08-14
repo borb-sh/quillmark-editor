@@ -7,9 +7,9 @@
 //
 // The document spans leaves, which is what a per-leaf guard cannot do: leaving a place
 // and coming back to the same offset in it is two moves, and a consumer following
-// the caret has to hear both. A focus is what tells the memo the leaf was left, and
-// the leaf left for reports no caret of its own — a form control has no offset to name
-// — so the arrival is the whole of the signal there is.
+// the caret has to hear both. A focus is what tells the memo the leaf was left, and it
+// has to be: a form control reports no caret of its own, having no offset to name, so
+// the arrival is the whole of the signal.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
 import { init, type ContentHit, type Document, type Quill } from '@quillmark/wasm';

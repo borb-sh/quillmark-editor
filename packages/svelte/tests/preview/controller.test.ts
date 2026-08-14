@@ -132,9 +132,9 @@ describe('a recompile re-locates the followed caret', () => {
 		preview.destroy();
 	});
 
-	// The slot is held until something says the caret is no longer there, and only a
-	// focus change does: a control reports no caret, so a re-located place would name
-	// the leaf the focus left and pull the pane back to it on every recompile.
+	// Only a focus change says the caret has left the place the slot names: a control
+	// reports none of its own, so the re-locate above would keep pulling the pane back
+	// to the leaf the focus left, on every recompile.
 	it('a focus change ends it, and the next place restarts it', () => {
 		const preview = createPreview(trackingSession(), { container });
 		preview.focusPosition({ field: 'main.body', pos: 12 });
