@@ -7,11 +7,14 @@
 //
 // The document spans leaves, which is what a per-leaf guard cannot do: leaving a place
 // and coming back to the same offset in it is two moves, and a consumer following
-// the caret has to hear both.
+// the caret has to hear both. A focus is what tells the memo the leaf was left, and
+// the leaf left for reports no caret of its own — a form control has no offset to name
+// — so the arrival is the whole of the signal there is.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
 import { init, type ContentHit, type Document, type Quill } from '@quillmark/wasm';
 import type { Place } from '$lib/core';
+import type { ActiveLeaf } from '$lib/visual';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
 import { quill } from '../helpers/fixtures.js';
 
@@ -23,6 +26,7 @@ Element.prototype.getAnimations ??= () => [];
 
 interface EditorRef {
 	setCaret(hit: ContentHit): Promise<void>;
+	focusField(field: string): Promise<void>;
 }
 
 let cleanup: (() => void) | undefined;
@@ -35,16 +39,22 @@ function mountEditor(q: Quill, doc: Document) {
 	const target = document.createElement('div');
 	document.body.appendChild(target);
 	const places: Place[] = [];
+	const active: ActiveLeaf[] = [];
 	const app = mount(VisualEditor, {
 		target,
-		props: { doc, quill: q, onCaretMove: (at: Place) => places.push(at) }
+		props: {
+			doc,
+			quill: q,
+			onCaretMove: (at: Place) => places.push(at),
+			onActiveLeafChange: (a: ActiveLeaf) => active.push(a)
+		}
 	}) as unknown as EditorRef;
 	flushSync();
 	cleanup = () => {
 		void unmount(app);
 		target.remove();
 	};
-	return { editor: app, places };
+	return { editor: app, places, active };
 }
 
 const at = (field: string, pos: number): ContentHit => ({ field, pos }) as ContentHit;
@@ -76,5 +86,23 @@ describe('the caret signal reports places, not transactions', () => {
 			{ field: 'main.title', pos: 3 },
 			{ field: 'main.body', pos: 3 }
 		]);
+	});
+
+	it('a focus into a leaf with no caret is what makes the return a move', async () => {
+		const q = quill();
+		const { editor, places, active } = mountEditor(q, q.seedDocument());
+
+		await editor.setCaret(at('main.body', 3));
+		places.length = 0;
+		active.length = 0;
+
+		// A form control has no offset to name, so it reports its arrival and no caret:
+		// the memo would otherwise still read `main.body`/3 when the body is returned to.
+		await editor.focusField('main.columns');
+		expect(places).toEqual([]);
+		expect(active).toEqual([{ field: 'main.columns', cardId: 'main' }]);
+
+		await editor.setCaret(at('main.body', 3));
+		expect(places).toEqual([{ field: 'main.body', pos: 3 }]);
 	});
 });

@@ -15,6 +15,7 @@
     preview click ─► onPick(at) ─► editor.setCaret(at)
                                       └► shown = 1   (reveal, under the threshold)
     editor caret  ─► onCaretMove(at)  ─► preview.focusPosition(at)
+    editor focus  ─► onActiveLeafChange ─► preview.endFollow()
 
   A repack of the source quiver arrives as one dev-server signal and is answered by
   minting a fresh `Quiver`: the manifest is content-addressed and the quill cache
@@ -305,6 +306,11 @@
 	function handleCaretMove(at: Place): void {
 		previewRef?.focusPosition(at);
 	}
+	/** The other half of that hop: a focus into a leaf with no caret to report — every
+	 *  form control — ends the follow, and a prose leaf restarts it with its next caret. */
+	function handleActiveLeaf(): void {
+		previewRef?.endFollow();
+	}
 
 	/** Both surfaces report here: a commit the boundary refused, a page the backend
 	 *  would not paint. Neither stops the session, and both belong in the one place
@@ -432,6 +438,7 @@
 						doc={open.doc}
 						quill={open.quill}
 						diagnostics={notes}
+						onActiveLeafChange={handleActiveLeaf}
 						onCaretMove={handleCaretMove}
 						onChange={handleChange}
 						onError={handleSurfaceError}

@@ -87,7 +87,11 @@ Reconciliation is field-scoped. The editor holds its optimistic PM state and re-
 Both directions ([PREVIEW.md](PREVIEW.md) §Click bridge):
 
 - **preview → editor**: `visualEditor.setCaret(hit)` resolves `hit.field` to a field, which runs `codec.usvToPM(hit.pos)` and sets its PM caret; a `'segment'` hit just focuses the leaf (`hit.pos` is a segment start, not a cluster-exact caret). A form control takes the focus and no caret: the offset is a position in rendered content and a control has no coordinate to spend it in (a numeric input refuses a selection outright, an array's own is an element index the grammar cannot name), so reveal-and-focus is the whole of what a click on plate-placed ink can mean. A landing reveals itself first and waits for the reveal, so it is the one async entry point: a caret placed into a collapsed group's `inert` panel fails silently, and `inert` clears on the render rather than on the ask.
-- **editor → preview**: a caret move in the active leaf emits `onCaretMove(at)` with a `Place` (`/core`): the canonical `DocPath` field address and the USV caret, which is `preview.focusPosition`'s own argument, so the hop is `onCaretMove={preview.focusPosition}` and translates nothing. The editor mints the path off its derived card tree, which already holds every kind, so following the caret costs no `doc.cards` read per keystroke (`doc.cards` serializes every card on each read). The USV `pos` is the shared coordinate: no codec hop.
+- **editor → preview**: the pair. A caret move in the active leaf emits `onCaretMove(at)` with a `Place` (`/core`): the canonical `DocPath` field address and the USV caret, which is `preview.focusPosition`'s own argument, so the hop is `onCaretMove={preview.focusPosition}` and translates nothing. The editor mints the path off its derived card tree, which already holds every kind, so following the caret costs no `doc.cards` read per keystroke (`doc.cards` serializes every card on each read). The USV `pos` is the shared coordinate: no codec hop.
+
+  `onCaretMove` stays a prose-leaf signal — only a leaf with a caret has one to report — so a focus into any other leaf ends the follow instead, through `onActiveLeafChange={preview.endFollow}` ([PREVIEW.md](PREVIEW.md) §"Follow-the-caret scroll"). The arrival is the trigger for both halves of that: it also ends the caret memo below, and a fix to one without the other half-works — a leaf returned to at the offset the memo still names would be swallowed, and nothing else restarts the follow. A host that wires `onCaretMove` alone follows the caret as it did, sticky slot and all; the two are one wiring.
+
+  The order the pair arrives in is the order a click's own focus and selection have: the arrival, then the caret in it. `setCaret` holds it too, which is why it focuses before it dispatches — reporting the caret first would have the arrival end the follow that caret just started.
 
 **A landing in the editor is an event, so the leaf marks it and lets it decay** (`core/bloom.ts`): resting ink would outlive the hop that caused it. Unguarded, because the input is a discrete act — its commonest target is the leaf already focused, where placing a caret changes nothing on screen. The preview marks nothing back: it draws nothing of its own on the page, and correlating the two panes there is unbuilt ([PREVIEW.md](PREVIEW.md) §"Two responsibilities").
 
@@ -186,7 +190,7 @@ interface FieldController {
 <VisualEditor
   bind:this={visualEditor}
   {doc} {quill}
-  onActiveLeafChange={({ field, cardId }) => …}
+  onActiveLeafChange={preview.endFollow}    <!-- ({ field, cardId }) for a host that reads it -->
   onCaretMove={preview.focusPosition}
   onChange={(change) => change.source === 'structure' ? recompileNow() : schedule()}
   onError={(err) => …}

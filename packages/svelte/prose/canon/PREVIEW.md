@@ -66,6 +66,8 @@ click → PDF-pt → session.positionAt(p, x, y) → ContentHit ─┐
 
 **A recompile re-locates the followed caret.** `session.locate` answers against the last compiled layout while a consumer debounces `update`, so a caret typed past that layout's content is off-content for the whole burst: `focusPosition` no-ops and the pane sits still. Nothing re-asks when the compile lands, because the next caret event is the only thing that would, so `refresh` re-runs the last followed place through the same guard. It belongs here rather than at the consumer: the staleness sits between two session queries this module owns both ends of.
 
+**A focus change ends the follow** (`endFollow`), and only a focus change does. The followed place is re-asserted on every recompile, so a leaf that reports no caret does not merely fail to be followed: it leaves the pane being pulled back to the leaf the focus left, on each one. Most leaves are such leaves — a form control has no offset to name, and a numeric input refuses a selection outright — so the rule is the arrival's, not the caret's, and the editor's `onActiveLeafChange` is the signal that carries it ([VISUAL_EDITOR.md](VISUAL_EDITOR.md) §"Focus and the preview bridge"). A prose leaf restarts the follow with its own next caret. Expiring the slot on a timer or on a recompile would answer a different question: a caret that has not moved is still followed correctly, which is what the re-locate above exists for.
+
 ## Minimal surface
 
 ```ts
@@ -82,6 +84,7 @@ interface PreviewController {
   refresh(change: ChangeSet): void;                  // repaint dirty ∩ visible, re-locate the followed caret
   scrollToField(field: DocPath): boolean;            // boxes → centre in the scrollport; false when it places none
   focusPosition(at: Place): void;                    // editor → preview: locate → caret rect → centre if past the fold
+  endFollow(): void;                                 // editor → preview: a focus change; the pane stops following
   setZoom(scale: number): void;                       // folds into densityScale, repaints visible
   destroy(): void;
 }

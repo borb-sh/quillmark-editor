@@ -12,6 +12,7 @@
     preview click ─► onPick(at) ─► editor.setCaret(at)          (preview→editor)
                                       └► shown = 1                (reveal, narrow)
     editor caret  ─► onCaretMove(at)  ─► preview.focusPosition(at) (editor→preview)
+    editor focus  ─► onActiveLeafChange ─► preview.endFollow()     (editor→preview)
 
   The bridge is consumer-layer and one-way-independent: the editor is unaware of
   the preview (it only emits addresses + carets), the preview is unaware of the
@@ -126,7 +127,11 @@
 	}
 
 	// ── Bridge: editor → preview ────────────────────────────────────────────────
+	// The arrival half of the bridge: a form control reports its focus and no caret, so
+	// this is what ends the follow; a prose leaf restarts it with its next caret. The
+	// strip readout is the rest of what it is here for.
 	function handleActiveLeaf(active: ActiveLeaf): void {
+		previewRef?.endFollow();
 		activeAddr = JSON.stringify(active);
 	}
 	// The editor already speaks the preview's address grammar, so this hop is a

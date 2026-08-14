@@ -3,8 +3,8 @@
   container div on mount and tears it down on unmount. No logic beyond wiring;
   paint.ts/bridge.ts/controller.ts own the behavior. Exposes the
   `PreviewController` verbs as instance methods (`bind:this`) for a consumer
-  that drives `refresh`/`scrollToField`/`focusPosition`/`setZoom` imperatively
-  (e.g. after `session.apply` elsewhere).
+  that drives `refresh`/`scrollToField`/`focusPosition`/`endFollow`/`setZoom`
+  imperatively (e.g. after `session.apply` elsewhere).
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -77,6 +77,11 @@
 	/** Takes the editor's `onCaretMove` payload: `onCaretMove={preview.focusPosition}`. */
 	export function focusPosition(at: Place): void {
 		controller?.focusPosition(at);
+	}
+	/** The follow ends on a focus change ({@link PreviewController}), and the editor's
+	 *  own signal is one: `onActiveLeafChange={preview.endFollow}`. */
+	export function endFollow(): void {
+		controller?.endFollow();
 	}
 	export function setZoom(scale: number): void {
 		controller?.setZoom(scale);
