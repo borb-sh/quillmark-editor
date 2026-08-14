@@ -1,3 +1,6 @@
+/** The lowest version a build packs. Below it is the draft space. */
+export const MIN_PUBLISHED_VERSION = '0.1.0';
+
 /** Returns true for exactly `x.y.z` with non-negative integer parts. */
 export function isCanonicalSemver(version: string): boolean {
 	return /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(version);
@@ -32,6 +35,11 @@ export function compareSemver(a: string, b: string): number {
 	}
 
 	return 0;
+}
+
+/** Returns true for a canonical version below `MIN_PUBLISHED_VERSION`. */
+export function isDraft(version: string): boolean {
+	return compareSemver(version, MIN_PUBLISHED_VERSION) < 0;
 }
 
 /** Returns the highest version string, or null if empty. */

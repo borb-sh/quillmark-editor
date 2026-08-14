@@ -10,6 +10,17 @@ import { QuiverError } from './errors.js';
 import { packFiles } from './bundle.js';
 import { NAME_DIGEST_LENGTH } from './digest.js';
 import { MANIFEST_VERSION, POINTER_FORMAT } from './format.js';
+import { isDraft } from './semver.js';
+
+/** Options for {@link buildQuiver}. */
+export interface BuildOptions {
+	/**
+	 * Pack versions below `MIN_PUBLISHED_VERSION` too. Off by default: the
+	 * artifact is a deployment, and the draft space is not part of one. An
+	 * author's own viewer turns it on, which is the only caller that should.
+	 */
+	drafts?: boolean;
+}
 
 /** Font file extensions recognised by the builder (case-insensitive). */
 const FONT_EXT = /\.(ttf|otf|woff|woff2)$/i;
@@ -80,12 +91,20 @@ function assertSafeOutDir(
  * fetching mid-build reads the previous one rather than a torn tree, and a
  * build that throws leaves the previous one serving.
  *
+ * Versions below `MIN_PUBLISHED_VERSION` are drafts and are left out unless
+ * `options.drafts` asks for them; a quill with nothing above the floor is
+ * absent from the manifest entirely.
+ *
  * Throws:
  *   - `quiver_invalid` on source validation failures (propagated from scanner)
  *   - `transport_error` on I/O failures, and on an outDir the build would have
  *     to delete something it does not own to write (see `assertSafeOutDir`)
  */
-export async function buildQuiver(sourceDir: string, outDir: string): Promise<void> {
+export async function buildQuiver(
+	sourceDir: string,
+	outDir: string,
+	options: BuildOptions = {}
+): Promise<void> {
 	// Dynamic imports keep this module safe to type-import from browser contexts.
 	const path = await import('node:path');
 	const { dirname, join, resolve } = path;
@@ -139,6 +158,8 @@ export async function buildQuiver(sourceDir: string, outDir: string): Promise<vo
 
 		for (const [quillName, versions] of catalog) {
 			for (const version of versions) {
+				if (!options.drafts && isDraft(version)) continue;
+
 				const quillDir = join(sourceDir, 'quills', quillName, version);
 
 				const tree = await readQuillTree(quillDir);
