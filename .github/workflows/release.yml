@@ -84,10 +84,41 @@ jobs:
       - name: Gate
         run: npm run gate
 
-      # ci.yml's last verb, scoped: publint reads the `dist` the released package's
-      # manifest points at.
+      # The tarball, packed once and published below, so what the checks read is what
+      # ships. `npm pack` on a directory runs its `prepack`, which is the build the
+      # publish would otherwise run after the checks, on a dist it had already deleted.
+      - name: Pack
+        id: pack
+        run: |
+          mkdir -p "$RUNNER_TEMP/pack"
+          npm pack "./packages/${{ steps.release.outputs.pkg }}" \
+            --pack-destination "$RUNNER_TEMP/pack" >/dev/null
+          echo "tgz=$(echo "$RUNNER_TEMP"/pack/*.tgz)" >> "$GITHUB_OUTPUT"
+
+      # ci.yml's last verb, aimed at the tarball rather than at the worktree: publint
+      # takes a file path as the package, so the manifest it reads and the files it
+      # resolves against are the published ones.
       - name: Package (publint)
-        run: npm run check:pack -w packages/${{ steps.release.outputs.pkg }}
+        run: |
+          npm run check:pack -w packages/${{ steps.release.outputs.pkg }} \
+            -- "${{ steps.pack.outputs.tgz }}"
+
+      # ci.yml's deploy rehearsal, which is quillkit's alone: it is the only package
+      # carrying a client, and a `files` field that stopped shipping it passes every
+      # check above and fails in a consumer's deploy. Extracted beside the worktree
+      # rather than inside it, so nothing resolves out of the workspace and the bin
+      # runs on the bytes it ships.
+      - name: Deploy layout, from the tarball
+        if: steps.release.outputs.pkg == 'quillkit'
+        run: |
+          mkdir -p "$RUNNER_TEMP/tool"
+          tar -xzf "${{ steps.pack.outputs.tgz }}" -C "$RUNNER_TEMP/tool" --strip-components=1
+          node "$RUNNER_TEMP/tool/dist/bin/quillkit.js" site --quiver fixtures --out "$RUNNER_TEMP/site"
+          test -f "$RUNNER_TEMP/site/index.html" \
+            || { echo "::error::the tarball laid no client at the site root"; exit 1; }
+          test -f "$RUNNER_TEMP/site/quiver/latest.json" \
+            || { echo "::error::the tarball laid no quiver under the site"; exit 1; }
+          node scripts/check-bundle.mjs "$RUNNER_TEMP/site"
 
       - name: Tag
         run: |
@@ -106,16 +137,20 @@ jobs:
       # no versions has no trusted publisher to configure, so its first upload is
       # a hand publish from the release branch and this run agrees rather than
       # 403s on it.
+      #
+      # The tarball rather than the workspace directory: a directory spec runs `prepack`
+      # here, which would delete the dist the checks read and ship a second build of it.
+      # Provenance is the same either way, its subject being the uploaded tarball's
+      # digest.
       - name: Publish
         run: |
-          PKG="${{ steps.release.outputs.pkg }}"
           NAME="${{ steps.release.outputs.name }}"
           VERSION="${{ steps.release.outputs.version }}"
           if [ "$(npm view "${NAME}@${VERSION}" version 2>/dev/null)" = "$VERSION" ]; then
             echo "${NAME}@${VERSION} is already on the registry; nothing to publish."
             exit 0
           fi
-          npm publish -w "packages/$PKG" --provenance --access public
+          npm publish "${{ steps.pack.outputs.tgz }}" --provenance --access public
 
       - name: Create GitHub Release
         env:
