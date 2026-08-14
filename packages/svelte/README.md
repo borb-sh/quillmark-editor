@@ -152,7 +152,7 @@ The package ships English and a seam to replace it. `strings` is keyed and **par
 		addCard: '+ Ajouter une carte'
 	}}
 	formatDiagnostic={(d) =>
-		d.code === 'validation::must_fill' ? `${d.path} est obligatoire` : undefined}
+		d.code === 'validation::type_mismatch' ? `${d.path} : type incorrect` : undefined}
 />
 ```
 
@@ -184,7 +184,7 @@ function recompileNow() {
 }
 ```
 
-`session.warnings` is a **getter on a handle Svelte does not track**: pull it per apply, or the editor shows the previous compile's diagnostics.
+`session.warnings` is a **getter on a handle Svelte does not track**: pull it per apply, or the editor shows the previous compile's errors.
 
 This shell layer is deliberately yours: the debounce value, what applies at once, and which surfaces refresh are host policy, so the package ships no scheduler over them. Three obligations ride with that: an edit of your own (an import, an undo, a direct `doc` write) recompiles by the same calls, since nothing polls the document; a compile owes the diagnostics re-read above, since nothing polls the session; and teardown clears the timer **before** freeing the handles, so a pending recompile never touches a freed session.
 

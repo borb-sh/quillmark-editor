@@ -1,9 +1,9 @@
 <!--
- Inline diagnostic display (VISUAL_EDITOR §Diagnostics), severity-styled via
- CSS vars, non-gating: purely additive, never disables the field it sits
- under. Shared by `Field.svelte` (a scalar/prose field) and `Card.svelte` (the
- body leaf, which has no `Field.svelte` wrapper), so a card's body diagnostics
- render the same way a field's do.
+ Inline diagnostic display (VISUAL_EDITOR §Diagnostics). Errors only, non-gating:
+ purely additive, never disables the field it sits under. Shared by `Field.svelte`
+ (a scalar/prose field) and `Card.svelte` (the body leaf, which has no
+ `Field.svelte` wrapper), so a card's body diagnostics render the same way a
+ field's do.
 -->
 <script lang="ts">
 	import type { Diagnostic } from '@quillmark/wasm';
@@ -27,9 +27,7 @@
 	<!-- role=status: commit errors appear mid-typing; announce without stealing focus. -->
 	<div class="qm-diag-list" role="status">
 		{#each diagnostics as d, i (i)}
-			<span class="qm-diag-line" data-severity={d.severity}
-				>{diagnosticText(d, t.formatDiagnostic)}</span
-			>
+			<span class="qm-diag-line">{diagnosticText(d, t.formatDiagnostic)}</span>
 		{/each}
 	</div>
 {/if}
@@ -42,9 +40,6 @@
 	}
 	.qm-diag-line {
 		font-size: var(--_qm-text-label);
-		color: var(--_qm-warning);
-	}
-	.qm-diag-line[data-severity='error'] {
 		color: var(--_qm-danger);
 	}
 </style>

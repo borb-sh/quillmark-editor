@@ -67,7 +67,7 @@ export interface VisualEditorProps {
 	onError?: EditorErrorHandler;
 	/**
 	 * External diagnostics, routed by `.path` and merged with `quill.validate`
-	 * and local commit errors (VISUAL_EDITOR §Diagnostics).
+	 * and local commit errors (VISUAL_EDITOR §Diagnostics). Warnings do not draw.
 	 */
 	diagnostics?: Diagnostic[];
 	/**

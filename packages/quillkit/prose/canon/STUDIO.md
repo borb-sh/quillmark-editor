@@ -108,7 +108,7 @@ A *pick*, unlike a repack, carries nothing. A different quill is a different doc
 
 ## The errors
 
-Four producers say something about the document in hand — `quill.validate(doc)`, the compile (`session.warnings` and the diagnostics a throw carries), the `conform::*` set a repack stranded, and what a surface recovered from. They overlap by design, a must-fill field being a schema verdict and a render warning both, so the set is merged and deduplicated before anything reads it: one field's one problem is one thing on screen.
+Four producers say something about the document in hand — `quill.validate(doc)`, the compile (`session.warnings` and the diagnostics a throw carries), the `conform::*` set a repack stranded, and what a surface recovered from. They overlap by design, so the set is merged and deduplicated before anything reads it: one field's one problem is one thing on screen. The editor draws errors only; a warning in the set does not.
 
 A throw is unwrapped rather than reported as one line: a `QuillmarkError` carries every diagnostic, and a broken plate is the case that matters.
 

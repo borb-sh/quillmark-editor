@@ -4,11 +4,11 @@
 
 There are three depths to that. An app mounting into an unstyled page stops at the first; an app with a plate of its own starts at the second:
 
-|                   | You write             | You get                                                 |
-| ----------------- | --------------------- | ------------------------------------------------------- |
-| **Drop it in**    | nothing               | a mounted surface that looks right in a bare `<div>`    |
-| **Make it yours** | ten custom properties | the whole surface rescaled and recolored to your brand  |
-| **Match ours**    | one CSS import        | the page around the surface, drawn the way we draw ours |
+|                   | You write              | You get                                                 |
+| ----------------- | ---------------------- | ------------------------------------------------------- |
+| **Drop it in**    | nothing                | a mounted surface that looks right in a bare `<div>`    |
+| **Make it yours** | nine custom properties | the whole surface rescaled and recolored to your brand  |
+| **Match ours**    | one CSS import         | the page around the surface, drawn the way we draw ours |
 
 ## Drop it in
 
@@ -28,7 +28,7 @@ Nothing to import and nothing to set. The package pulls its own stylesheet, and 
 
 ## Make it yours
 
-The whole contract is **ten CSS custom properties**. They are dials, not a palette: each derives a closed private scale that every component reads, so one override rescales or recolors the whole surface. Set them on any ancestor of a mounted surface (the app, or one pane):
+The whole contract is **nine CSS custom properties**. They are dials, not a palette: each derives a closed private scale that every component reads, so one override rescales or recolors the whole surface. Set them on any ancestor of a mounted surface (the app, or one pane):
 
 ```css
 .my-editor {
@@ -55,7 +55,6 @@ The poles take a colour, not `transparent` or `inherit`: the raised surfaces, th
 | `--qm-fg`        | `#1c1c1c` / `#d7dadc`                  | Base ink. Body text, labels, and borders step off it.                                                                                                          |
 | `--qm-accent`    | `#71717a` / `#a1a1aa`                  | Focus rings, active marks, the preview's active field box. The surface spends no hue of its own, so this is the one it wears.                                  |
 | `--qm-danger`    | `#9e1518` / `#f9786c`                  | Error diagnostics, the required marker, the delete glyph.                                                                                                      |
-| `--qm-warning`   | `#926510` / `#fdc776`                  | Warning diagnostics.                                                                                                                                           |
 | `--qm-font`      | `ui-sans-serif, system-ui, sans-serif` | The editor surface's font family. Controls and buttons take it too, in place of the UA face.                                                                   |
 | `--qm-font-mono` | `ui-monospace, monospace`              | The monospace face: the JSON array control, the tips card.                                                                                                     |
 | `--qm-font-size` | `0.875rem`                             | Chrome text: every control's size, the anchor the ramp derives up (title) and down (label/meta) from, and the anchor a document body sits one small step over. |
@@ -106,9 +105,9 @@ Setting the poles yourself wins over the default in both schemes, so a fixed pal
 }
 ```
 
-That cuts both ways for the status hues: `--qm-danger` and `--qm-warning` each default to a pair calibrated against the card at both poles, and one pinned value replaces both arms, so a red measured against white carries into the dark scheme unmeasured. Pin them under your own scheme rule (`.dark { --qm-danger: … }`) where the colour your app means by error is itself scheme-aware.
+That cuts both ways for the status hue: `--qm-danger` defaults to a pair calibrated against the card at both poles, and one pinned value replaces both arms, so a red measured against white carries into the dark scheme unmeasured. Pin it under your own scheme rule (`.dark { --qm-danger: … }`) where the colour your app means by error is itself scheme-aware.
 
-A palette **pinned against** your own scheme still wants a second line, for a smaller reason than it used to be: the planes read your card's lightness, so the surface itself lands right either way, but the poles' own defaults, the status hues and native chrome all still read `color-scheme`. Pin it with them (`.my-editor { color-scheme: dark }`). Skip that line and what the browser paints — the selection highlight, the scrollbar, the spinner — stays on whichever scheme the host inherits, and a status hue you left to us is measured against the wrong card.
+A palette **pinned against** your own scheme still wants a second line, for a smaller reason than it used to be: the planes read your card's lightness, so the surface itself lands right either way, but the poles' own defaults, the status hue and native chrome all still read `color-scheme`. Pin it with them (`.my-editor { color-scheme: dark }`). Skip that line and what the browser paints — the selection highlight, the scrollbar, the spinner — stays on whichever scheme the host inherits, and a status hue you left to us is measured against the wrong card.
 
 Pinning **one mount** rather than a page is the `style` prop, which lands on the same root: `<Preview style="color-scheme: dark" />`. There is no `scheme` prop, and deliberately — an inline declaration of ours would be the one thing your own CSS could not beat.
 
@@ -131,7 +130,7 @@ import '@quillmark/svelte/preset';
 
 This is the stylesheet our own apps import: the playground and studio draw with these rules and nothing else, so what you get is what we ship, not a reduction of it.
 
-It carries a `--qmh-*` scale for the page, derived from the same ten dials and calibrated against the surfaces' own steps, so a plate of yours and a card of ours agree about which way "raised" goes. Turning a dial moves both.
+It carries a `--qmh-*` scale for the page, derived from the same nine dials and calibrated against the surfaces' own steps, so a plate of yours and a card of ours agree about which way "raised" goes. Turning a dial moves both.
 
 | Class         | What it is                                                                                                                           |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
@@ -139,7 +138,7 @@ It carries a `--qmh-*` scale for the page, derived from the same ten dials and c
 | `.qm-panel`   | The plate your controls and readouts sit on: one rung off the page, a hairline, a corner.                                            |
 | `.qm-label`   | A run of chrome type: a section label, the name over a value.                                                                        |
 | `.qm-readout` | A value read back out of the session, monospace and tabular. `<pre class="qm-readout">` is the block form.                           |
-| `.qm-status`  | A phase line. `.qm-status-error` and `.qm-status-warn` are the two it fails to.                                                      |
+| `.qm-status`  | A phase line. `.qm-status-error` is the one it fails to.                                                                             |
 | `.qm-control` | A boxed button or select, which is what a host's controls are and the package's are not.                                             |
 | `.qm-measure` | A reading column at the width a passage wants.                                                                                       |
 

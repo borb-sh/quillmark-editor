@@ -247,10 +247,6 @@ pre.qm-readout {
 	overflow-wrap: anywhere;
 }
 
-.qm-status-warn {
-	color: var(--qmh-warn);
-}
-
 /* ── Surfaces ──────────────────────────────────────────────────────────────── */
 
 /* The instrument plate: what a host puts its controls and readouts on. The same plane a

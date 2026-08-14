@@ -1,4 +1,4 @@
-// diagnostics.ts routing/merge/precedence; pure logic, no Document. VisualEditor's
+// diagnostics.ts routing/merge; pure logic, no Document. VisualEditor's
 // `$derived.by` glue is the thin part; the math it feeds on is here. The path→key
 // walk itself is `/core`'s `addrForFieldPath` and is tested there.
 import { describe, it, expect } from 'vitest';
@@ -42,13 +42,17 @@ describe('routeAndResolve', () => {
 
 	it('routes a mix of main and card paths to the live stable-id keying', () => {
 		const out = routeAndResolve(
-			[warn('w1', 'main.subject'), err('e1', 'cards.indorsement[1].from')],
+			[err('e0', 'main.subject'), err('e1', 'cards.indorsement[1].from')],
 			cardIds
 		);
 		expect(out).toEqual([
-			{ key: { field: 'subject' }, diagnostic: warn('w1', 'main.subject') },
+			{ key: { field: 'subject' }, diagnostic: err('e0', 'main.subject') },
 			{ key: { card: 'c1', field: 'from' }, diagnostic: err('e1', 'cards.indorsement[1].from') }
 		]);
+	});
+
+	it('drops warnings rather than routing them', () => {
+		expect(routeAndResolve([warn('w1', 'main.subject')], cardIds)).toEqual([]);
 	});
 
 	it('drops rather than mis-routes: no path, an unplaceable path, an out-of-range card', () => {
@@ -72,20 +76,10 @@ describe('routeAndResolve', () => {
 
 describe('mergeDiagnostics', () => {
 	it('merges multiple groups by field key', () => {
-		const a = [{ key: { field: 'subject' } as FieldKey, diagnostic: warn('w1') }];
-		const b = [{ key: { field: 'subject' } as FieldKey, diagnostic: err('e1') }];
+		const a = [{ key: { field: 'subject' } as FieldKey, diagnostic: err('e1') }];
+		const b = [{ key: { field: 'subject' } as FieldKey, diagnostic: err('e2') }];
 		const m = mergeDiagnostics(a, b);
-		expect(m.get('main:subject')?.map((d) => d.message)).toEqual(['e1', 'w1']);
-	});
-	it('sorts errors before warnings within a field, without dropping either', () => {
-		const group = [
-			{ key: { field: 'x' } as FieldKey, diagnostic: warn('w1') },
-			{ key: { field: 'x' } as FieldKey, diagnostic: err('e1') },
-			{ key: { field: 'x' } as FieldKey, diagnostic: warn('w2') },
-			{ key: { field: 'x' } as FieldKey, diagnostic: err('e2') }
-		];
-		const m = mergeDiagnostics(group);
-		expect(m.get('main:x')?.map((d) => d.message)).toEqual(['e1', 'e2', 'w1', 'w2']);
+		expect(m.get('main:subject')?.map((d) => d.message)).toEqual(['e1', 'e2']);
 	});
 	it('dedupes an identical (key, severity, message) triple across groups', () => {
 		const a = [{ key: { field: 'x' } as FieldKey, diagnostic: err('same') }];
