@@ -50,8 +50,8 @@
 	   rather than a second pair beside the surfaces'. Each pole is its own figure: a hue
 	   calibrated against white reads as a stain on a dark page. The dial sits in front
 	   of the pair, as every pole's does, so a host that turns one owns both schemes. */
-	--qmh-alert: var(--qm-danger, light-dark(#c5221f, #ff9c94));
-	--qmh-warn: var(--qm-warning, light-dark(#b25000, #e0b44c));
+	--qmh-alert: var(--qm-danger, light-dark(#9e1518, #f9786c));
+	--qmh-warn: var(--qm-warning, light-dark(#926510, #fdc776));
 
 	/* ── Rhythm ──────────────────────────────────────────────────────────────── */
 	/* One base and its multiples, the same four steps the surfaces derive. A host
