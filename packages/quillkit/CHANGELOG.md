@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**`studio` packs drafts; `build` and `site` no longer do.** Quiver's floor leaves quills under `0.1.0` out of a built artifact, and the two verbs that write deployments take it. `studio` is the author's own viewer, so it asks for the whole tree and a quill mid-draft stays on screen.
+
 ## v0.3.0 - 2026-08-14
 
 Carries `@quillmark/svelte` 0.5.0, `@quillmark/quiver` 0.23.0, `@quillmark/wasm` 0.105.0.

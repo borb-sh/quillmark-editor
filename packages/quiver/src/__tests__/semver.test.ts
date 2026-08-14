@@ -3,7 +3,9 @@ import {
 	isCanonicalSemver,
 	matchesSemverSelector,
 	chooseHighestVersion,
-	compareSemver
+	compareSemver,
+	isDraft,
+	MIN_PUBLISHED_VERSION
 } from '../semver.js';
 
 describe('isCanonicalSemver', () => {
@@ -98,4 +100,17 @@ describe('compareSemver', () => {
 	it('correctly ranks 10.0.0 > 9.0.0 (numeric not lexicographic)', () => {
 		expect(compareSemver('10.0.0', '9.0.0')).toBeGreaterThan(0);
 	});
+});
+
+describe('isDraft', () => {
+	it('0.0.0 is a draft', () => expect(isDraft('0.0.0')).toBe(true));
+	it('0.0.9 is a draft', () => expect(isDraft('0.0.9')).toBe(true));
+	it('0.0.10 is a draft (numeric, not lexicographic)', () => expect(isDraft('0.0.10')).toBe(true));
+
+	it('0.1.0 is the floor, not below it', () => expect(isDraft('0.1.0')).toBe(false));
+	it('0.1.1 is published', () => expect(isDraft('0.1.1')).toBe(false));
+	it('0.2.0 is published', () => expect(isDraft('0.2.0')).toBe(false));
+	it('1.0.0 is published', () => expect(isDraft('1.0.0')).toBe(false));
+
+	it('agrees with the exported floor', () => expect(isDraft(MIN_PUBLISHED_VERSION)).toBe(false));
 });

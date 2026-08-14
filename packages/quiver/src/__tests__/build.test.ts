@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdir, rm, writeFile, readFile, access } from 'node:fs/promises';
+import { mkdir, rm, writeFile, readFile, access, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
@@ -403,5 +403,109 @@ describe('buildQuiver — every name carries the digest of its own bytes', () =>
 		// fonts sharing a prefix would merge into one entry.
 		expect(fontHash).toBe(await digestOf(fontBytes));
 		expect(fontHash).toHaveLength(64);
+	});
+});
+
+describe('buildQuiver — the draft floor', () => {
+	const tmpDirs: string[] = [];
+
+	afterEach(async () => {
+		for (const d of tmpDirs.splice(0)) {
+			await rm(d, { recursive: true, force: true });
+		}
+	});
+
+	/** `<name>@<version>` for every quill the manifest carries. */
+	async function refsOf(out: string): Promise<string[]> {
+		const manifest = await manifestOf(out);
+		const quills = manifest['quills'] as Array<{ name: string; version: string }>;
+		return quills.map((q) => `${q.name}@${q.version}`).sort();
+	}
+
+	it('leaves versions below 0.1.0 out of the manifest', async () => {
+		const src = tempDir();
+		const out = tempDir();
+		tmpDirs.push(src, out);
+		await seedSourceQuiver(src, {
+			quills: [
+				{ name: 'memo', version: '0.0.9' },
+				{ name: 'memo', version: '1.0.0' }
+			]
+		});
+
+		await buildQuiver(src, out);
+
+		expect(await refsOf(out)).toEqual(['memo@1.0.0']);
+	});
+
+	it('drops a quill whose every version is a draft', async () => {
+		const src = tempDir();
+		const out = tempDir();
+		tmpDirs.push(src, out);
+		await seedSourceQuiver(src, {
+			quills: [
+				{ name: 'draft-only', version: '0.0.1' },
+				{ name: 'memo', version: '1.0.0' }
+			]
+		});
+
+		await buildQuiver(src, out);
+
+		expect(await refsOf(out)).toEqual(['memo@1.0.0']);
+	});
+
+	it('writes no bundle for a version it left out', async () => {
+		// The manifest is the catalog, but an unreferenced bundle beside it would
+		// still be a draft served off the artifact's own origin.
+		const src = tempDir();
+		const out = tempDir();
+		tmpDirs.push(src, out);
+		await seedSourceQuiver(src, { quills: [{ name: 'memo', version: '0.0.1' }] });
+
+		await buildQuiver(src, out);
+
+		const names = await readdir(out);
+		expect(names.filter((n) => n.endsWith('.zip'))).toEqual([]);
+	});
+
+	it('keeps 0.1.0 itself — the floor is the lowest published version', async () => {
+		const src = tempDir();
+		const out = tempDir();
+		tmpDirs.push(src, out);
+		await seedSourceQuiver(src, { quills: [{ name: 'memo', version: '0.1.0' }] });
+
+		await buildQuiver(src, out);
+
+		expect(await refsOf(out)).toEqual(['memo@0.1.0']);
+	});
+
+	it('packs drafts under { drafts: true }', async () => {
+		const src = tempDir();
+		const out = tempDir();
+		tmpDirs.push(src, out);
+		await seedSourceQuiver(src, {
+			quills: [
+				{ name: 'memo', version: '0.0.9' },
+				{ name: 'memo', version: '1.0.0' }
+			]
+		});
+
+		await buildQuiver(src, out, { drafts: true });
+
+		expect(await refsOf(out)).toEqual(['memo@0.0.9', 'memo@1.0.0']);
+	});
+
+	it('builds an empty catalog rather than throwing when every quill is a draft', async () => {
+		// A quiver whose quills are all under the floor is a valid quiver that
+		// publishes nothing, so the pointer lands and names an empty manifest.
+		const src = tempDir();
+		const out = tempDir();
+		tmpDirs.push(src, out);
+		await seedSourceQuiver(src, { quills: [{ name: 'memo', version: '0.0.1' }] });
+
+		await buildQuiver(src, out);
+
+		expect(await refsOf(out)).toEqual([]);
+		await expect(access(join(out, 'latest.json'))).resolves.toBeUndefined();
 	});
 });

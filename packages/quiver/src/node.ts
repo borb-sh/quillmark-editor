@@ -12,6 +12,7 @@
 import { Quiver, createQuiver } from './quiver.js';
 import { scanSourceQuiver, SourceLoader } from './source-loader.js';
 import { buildQuiver } from './build.js';
+import type { BuildOptions } from './build.js';
 import { loadBuiltQuiver } from './built-loader.js';
 import { FsBuiltTransport } from './transports/fs-built-transport.js';
 import { fileURLToPath } from 'node:url';
@@ -59,11 +60,18 @@ export async function fromBuiltDir(dirPath: string): Promise<Quiver> {
  * Reads the Source Quiver at sourceDir, validates it, and writes the runtime
  * build artifact to outDir, which the build clears first and therefore owns.
  *
+ * Quills below `0.1.0` are drafts: they stay in the source layout, which
+ * `fromDir` reads whole, and reach the artifact only under `{ drafts: true }`.
+ *
  * Throws `quiver_invalid` on source validation failures, `transport_error` on
  * I/O failures and on an outDir holding the source quiver or the cwd.
  */
-export async function build(sourceDir: string, outDir: string): Promise<void> {
-	return buildQuiver(sourceDir, outDir);
+export async function build(
+	sourceDir: string,
+	outDir: string,
+	options?: BuildOptions
+): Promise<void> {
+	return buildQuiver(sourceDir, outDir, options);
 }
 
 // The rest of the public surface, so a Node consumer needs one import.
@@ -71,6 +79,7 @@ export async function build(sourceDir: string, outDir: string): Promise<void> {
 export { Quiver } from './quiver.js';
 export { QuiverError } from './errors.js';
 export type { QuiverErrorCode } from './errors.js';
+export type { BuildOptions } from './build.js';
 
 // Engine types (`Quillmark`, `Quill`, `Document`, `RenderResult`, …) are not
 // re-exported: import them straight from the `@quillmark/wasm` peer dependency,

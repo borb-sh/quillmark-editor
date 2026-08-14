@@ -41,6 +41,14 @@ A build is never observably half-written. It is assembled in `<out>.stage` and m
 
 The property belongs here rather than to whatever is serving, because the directory is this function's and no caller can close a window inside it. What remains is two renames: a directory rename refuses a non-empty target, so the outgoing generation steps aside first. The staging siblings are named off `out` and cleared with it, which is why the destructive-write refusals are checked over all three.
 
+## The draft floor
+
+`build` packs `0.1.0` and up. Below it is the draft space: a version an author is still shaping, inside a collection that is very likely already published, and the artifact is a deployment rather than a working tree. The floor is a semver reading rather than a policy knob — `0.0.x` is the range semver already spends on what is not for consumption — so it is a constant here and not a field `Quiver.yaml` carries.
+
+The source layout keeps every version, and `fromDir` reads them all: the filter is `build`'s alone, which is what leaves an author's own tooling and `quillkit test` looking at the whole tree. `build(src, out, { drafts: true })` turns it off, and has exactly one caller — `quillkit studio` packs through this function to serve an author their own collection, and a floor there would hide the quill most likely to be under the cursor.
+
+A quill with nothing above the floor is absent from the manifest rather than present and empty, and a quiver of nothing but drafts builds a pointer over an empty catalog. Which of the two ran is not stamped anywhere: the manifest is closed and carries its own version, so a field there costs a version bump to record a fact about a directory under `node_modules` that no deployment reads.
+
 ## The pointer
 
 `fromBuiltUrl` fetches `<url>/latest.json` first: a stable-named, non-content-addressed pointer to the current manifest. Everything behind it is content-addressed and safe to cache forever; that one filename is not. A CDN edge or a browser cache can serve a stale pointer after a release and silently pin the client to the old catalog, with no error, and per-host cache headers fix one serving layer at a time. The pointer is therefore the one request fetched `no-cache` (revalidate with the origin, a 304 still serving from disk), which closes the browser-cache layer and nothing above it.

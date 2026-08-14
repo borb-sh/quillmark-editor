@@ -117,7 +117,9 @@ async function studio(): Promise<void> {
 		throw new Error(`--port must be a port number, got "${flag('--port')}"`);
 
 	const { build: packQuiver } = await loadQuiverNode(source);
-	const pack = serialize(() => packQuiver(source, out));
+	// Drafts included: this is the author's own viewer, and a quill under 0.1.0 is
+	// what an author is most likely to be looking at.
+	const pack = serialize(() => packQuiver(source, out, { drafts: true }));
 	// Before the server, so the first request finds a whole generation rather than an
 	// empty directory.
 	await pack();
