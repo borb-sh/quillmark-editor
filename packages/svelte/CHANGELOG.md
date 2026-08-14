@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.5.1 - 2026-08-14
+
 The inline lane draws errors only. Warnings — obligation, a `!must_fill` marker, a render note a host re-feeds as the `diagnostics` prop — stay a read of `quill.validate(doc)` and `session.warnings`. The warning hue is not a dial: a diagnostic is `--qm-danger`, and the preset's phase line has one failure face (`.qm-status-error`).
 
 ## v0.5.0 - 2026-08-14
