@@ -15,14 +15,14 @@
 /// The monospace face, for `raw` and the colophon.
 #let mono-face = "Liberation Mono"
 
-/// The `accent` enum's three values, resolved to colour. An unknown name takes
-/// the default rather than failing: the schema closes the domain, and a plate is
-/// not the place to re-check it.
+/// The `accent` enum's three values, resolved to colour. The domain a plate
+/// branches over is `values ∪ blank`, so an unanswered accent takes an ink of its
+/// own: falling back to a member would print a choice nobody made.
 #let accent-color(name) = (
   slate: rgb("#334155"),
   ink: rgb("#111827"),
   rust: rgb("#b45309"),
-).at(name, default: rgb("#334155"))
+).at(name, default: luma(90))
 
 /// A rule in the document's accent.
 #let accent-rule(accent: "slate") = line(length: 100%, stroke: 0.75pt + accent-color(accent))

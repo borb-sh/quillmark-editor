@@ -80,8 +80,8 @@
 <span class="qm-select-wrap" bind:this={wrapEl}>
 	<!-- `allowDeselect={false}`: the unset sentinel is the clear-to-default
 	 affordance, so the primitive's own deselect must stay off. It reports a
-	 deselect as `''`: indistinguishable from picking the empty-string enum
-	 member the reference quill actually declares. -->
+	 deselect as `''`, the boundary's blank: a written value, where the sentinel's
+	 clear is an absence. -->
 	<Select.Root
 		type="single"
 		allowDeselect={false}

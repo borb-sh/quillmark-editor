@@ -62,8 +62,8 @@
 	// The element control is the item schema's own, with one departure: a `plaintext`
 	// element is a text input where the scalar field of that type is a prose leaf. A
 	// `plaintext` value rests as its literal string (canon SCHEMAS.md §"Content fields
-	// rest per codec"), and the read that decodes a resting value to `Content` addresses
-	// a field, never an element (`getContent`; borb-sh/quillmark#1243), so a string is
+	// rest per codec"), and this control reads and commits the array whole rather than
+	// through the boundary's element read, so a string is
 	// what the row is handed and a string is what it commits. The prose element stays
 	// the `richtext` arm: `Content` after a bound load or a commit, the authored
 	// string through the transport door, lowered in the row for the same reason.

@@ -9,12 +9,12 @@
  element are dropped on that value write: acceptable for inline refs. Mounts
  once per stable element id (no reset on the parent's re-derive).
 
- A transport-door document rests each element as the authored string. A scalar
- leaf reads that through `getContent`; `getContent` names a field, never an
- element, so this row calls the boundary's `importMarkdown` itself. That is
- the richtext codec, which is this row's `items` type; `decode` is the PM
- mapping and assumes `Content`. A string here is the missing element read,
- not a codec failure.
+ A transport-door document rests each element as the authored string. The
+ boundary decodes one at `reader.getContentAt(addr, path)`, which takes an
+ address, and this row is handed a value: the array is read and committed
+ whole. So the row lowers the string itself through `importMarkdown`, the
+ richtext codec its `items` type names; `decode` is the PM mapping and assumes
+ `Content`.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';

@@ -58,7 +58,7 @@ describe('the ghost projection', () => {
 	it('ghosts only a default-sourced value', () => {
 		expect(ghostDefault(row('a', 'D', 'default'))).toBe('D');
 		expect(ghostDefault(row('a', 'A', 'authored'))).toBeUndefined();
-		expect(ghostDefault(row('a', '', 'zero'))).toBeUndefined();
+		expect(ghostDefault(row('a', '', 'blank'))).toBeUndefined();
 		expect(ghostDefault(undefined)).toBeUndefined();
 	});
 	it('renders a scalar ghost as text and declines an object one', () => {

@@ -107,6 +107,11 @@ function moveDown(slot: HTMLElement): void {
 	slot.querySelectorAll<HTMLButtonElement>('.qm-card-reorder button')[1].click();
 	flushSync();
 }
+/** A card's refused commit: the error lane. Every card the blueprint seeds also
+ *  carries `must_fill` warnings, which are a different lane and a different claim. */
+function refusal(slot: HTMLElement): HTMLElement | null {
+	return slot.querySelector<HTMLElement>('.qm-diag-line[data-severity="error"]');
+}
 function removeCard(slot: HTMLElement): void {
 	slot.querySelector<HTMLButtonElement>('.qm-card-delete')!.click();
 	flushSync();
@@ -150,17 +155,15 @@ describe('a reorder through the card control', () => {
 		// The first card's date control refuses its own value: the diagnostic pins to
 		// the field, and the document is unchanged (the write threw).
 		fillDate(slots(target)[0]);
-		expect(slots(target)[0].querySelector('.qm-diag-line')?.textContent).toContain(
-			'could not be coerced'
-		);
-		expect(slots(target)[1].querySelector('.qm-diag-line')).toBeNull();
+		expect(refusal(slots(target)[0])?.textContent).toContain('could not be coerced');
+		expect(refusal(slots(target)[1])).toBeNull();
 
 		moveDown(slots(target)[0]);
 
 		// The map is keyed by session id, so the error goes where the card goes.
 		const after = slots(target);
-		expect(after[0].querySelector('.qm-diag-line')).toBeNull();
-		expect(after[1].querySelector('.qm-diag-line')?.textContent).toContain('could not be coerced');
+		expect(refusal(after[0])).toBeNull();
+		expect(refusal(after[1])?.textContent).toContain('could not be coerced');
 		expect(leafKeys(after[1])).toContain('c0:$body');
 	});
 });

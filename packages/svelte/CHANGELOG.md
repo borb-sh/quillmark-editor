@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+**The `@quillmark/wasm` peer floor is `>=0.105.0-0`, where every enum carries the engine's blank and `must_fill:` is an axis of its own.** An enum's accepted domain is `values ∪ blank`: `""` is the field's spelling of explicitly-nothing, supplied by the engine, and a quill declaring one among its `values:` no longer loads. The editor mints none — its unset sentinel clears the field, and an unset field re-reads the `default:` at every render where a stored blank is a value that outlives the schema's answer. A document arriving with one draws as the em dash on the closed control, unghosted, and marks no row in the list.
+
+The required `*` reads the schema's `must_fill`, which derives from a missing `default:` only where the quill declares no obligation of its own. A defaulted field the quill obliges now carries a `*` over a ghosted default, the pair being independent axes where the label used to read one off the other, and a defaultless field declared `must_fill: false` carries neither. `validate` warns per obliged cell the document leaves unauthored as well as per `!must_fill` marker, so a document built programmatically, or simply left incomplete, draws a warning under each unanswered field where it drew none. Non-gating as before: the `*` states required-ness, the warning reports unmet-ness.
+
+`FieldSource`'s third rung is `blank` where it was `zero`, which `tsc` reports at any call site naming it.
+
 **A focus into a leaf with no caret to report ends the preview's follow.** The followed place was written by `onCaretMove` alone and cleared by nothing, and `refresh` re-asserts it on every recompile, so a click into any control — a text input, a date field, an enum, an array row, the JSON row — left the pane being pulled back to the leaf the focus left, on each keystroke typed into the control. `preview.endFollow()` ends it, and the editor's `onActiveLeafChange` is the signal: `onActiveLeafChange={preview.endFollow}` is the second half of the bridge `onCaretMove={preview.focusPosition}` opens, and a host wiring only the first keeps the sticky slot. A prose leaf restarts the follow with its own next caret, which the editor guarantees by clearing its caret memo on the same arrival: a leaf returned to at the offset it left reports again rather than being swallowed. `setCaret` focuses before it places the caret, holding the arrival-then-caret order a click already has.
 
 ## v0.4.3 - 2026-08-13

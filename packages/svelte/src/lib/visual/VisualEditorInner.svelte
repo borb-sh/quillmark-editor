@@ -280,7 +280,7 @@
 			if (value === undefined) {
 				// The unset rung of the commitment ladder (VISUAL_EDITOR §"Structure mirrors
 				// the schema"): removing the field leaves the engine's authored › `default:`
-				// › zero-fill resolve to render the default, where writing one bakes a
+				// › blank-fill resolve to render the default, where writing one bakes a
 				// snapshot the schema cannot track (canon SCHEMAS.md: the engine never
 				// persists a default; nor do we). Removal writes no value, so there is
 				// nothing for a schema to conform and the lane is the quill-free one.
