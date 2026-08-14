@@ -107,8 +107,8 @@ function moveDown(slot: HTMLElement): void {
 	slot.querySelectorAll<HTMLButtonElement>('.qm-card-reorder button')[1].click();
 	flushSync();
 }
-/** A card's refused commit: the error lane. Every card the blueprint seeds also
- *  carries `must_fill` warnings, which are a different lane and a different claim. */
+/** A card's refused commit: the error lane, which is the one a refused write lands
+ *  in whatever else the card is reporting. */
 function refusal(slot: HTMLElement): HTMLElement | null {
 	return slot.querySelector<HTMLElement>('.qm-diag-line[data-severity="error"]');
 }

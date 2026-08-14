@@ -58,6 +58,7 @@
 	} from './structure.js';
 	import {
 		fieldKeyToString,
+		inlineShown,
 		resolveCardKey,
 		routeAndResolve,
 		mergeDiagnostics,
@@ -485,10 +486,12 @@
 	});
 
 	// All three producers. The two positional ones resolve their `.path` to the live
-	// stable-id keying; commit errors are id-keyed already. Nothing is dropped:
-	// diagnostics never gate, so nothing here hides one either.
+	// stable-id keying; commit errors are id-keyed already. Nothing is dropped for
+	// being unwelcome — diagnostics never gate — but the obligation warning is
+	// withheld from the boundary's lane, the label's `*` being where the surface
+	// states that (`inlineShown`).
 	const diagByKey = $derived.by(() => {
-		const fromValidate = routeAndResolve(validation, cardIds);
+		const fromValidate = routeAndResolve(validation.filter(inlineShown), cardIds);
 		const fromExternal = routeAndResolve(diagnostics, cardIds);
 		return mergeDiagnostics(fromValidate, fromExternal, [...commitErrors.values()]);
 	});
