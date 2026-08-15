@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**An error anchored deeper than a commit address draws at the nearest field that holds it.** `validate` walks into object properties and array elements and anchors per leaf, so a coercion failure inside a subform arrives as `main.contact.listed` and one inside a repeater as `main.revisions[0].pages` — paths `Addr` cannot name. Routing dropped them by shape, which since the inline lane went errors-only was the only thing standing between such an error and the user: a document loaded with a bad nested value drew nothing anywhere. Each now routes to the field it hangs off, which is the field whose subform or repeater draws that leaf, and the message names the leaf. Only a path with no addressable prefix drops, which is a config-space or malformed anchor and never a document one. A commit made from the surface is unaffected: an object and an array both commit whole at their field, so a refusal was always keyed at the call site.
+
 ## v0.5.1 - 2026-08-14
 
 The inline lane draws errors only. Warnings — obligation, a `!must_fill` marker, a render note a host re-feeds as the `diagnostics` prop — stay a read of `quill.validate(doc)` and `session.warnings`. The warning hue is not a dial: a diagnostic is `--qm-danger`, and the preset's phase line has one failure face (`.qm-status-error`).

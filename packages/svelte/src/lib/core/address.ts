@@ -101,9 +101,10 @@ export function cardPath(index: number, kinds: readonly string[]): DocPath | und
 /**
  * The inverse: a canonical `DocPath` back to the `Addr` the document verbs take, or
  * `undefined` for a path that names no single commit address — a nested or
- * array-element path (`main.keywords[0]`, which {@link elementAddrForFieldPath}
- * takes instead), a field-rooted one, or a malformed one. A bare card and a `.body`
- * terminal both land on the field-less `{card: i}` the body leaf answers to.
+ * array-element path (`main.keywords[0]`, which {@link elementAddrForFieldPath} and
+ * {@link nearestAddrForFieldPath} take instead), a field-rooted one, or a malformed
+ * one. A bare card and a `.body` terminal both land on the field-less `{card: i}`
+ * the body leaf answers to.
  *
  * Needs no `kinds`: the path carries the absolute index, and the kind in it is
  * decoration the `Addr` has no room for.
@@ -111,6 +112,27 @@ export function cardPath(index: number, kinds: readonly string[]): DocPath | und
 export function addrForFieldPath(path: DocPath): Addr | undefined {
 	const segs = segsOf(path);
 	return segs && addrForSegs(segs);
+}
+
+/**
+ * The nearest ancestor a commit address can name: {@link addrForFieldPath} where the
+ * path has one, else its longest addressable prefix. `main.contact.email` and
+ * `main.keywords[0]` both land on their field, and a deeper nesting on the top-level
+ * field it hangs off. `undefined` where no prefix is addressable at all — a
+ * field-rooted (config-space) or malformed path.
+ *
+ * The truncation is the consumer's, not the grammar's: what counts as addressable is
+ * `Addr`'s reach, which is what the document verbs commit to and what the editor
+ * keys its field map at.
+ */
+export function nearestAddrForFieldPath(path: DocPath): Addr | undefined {
+	const segs = segsOf(path);
+	if (!segs) return undefined;
+	for (let end = segs.length; end > 0; end--) {
+		const addr = addrForSegs(segs.slice(0, end));
+		if (addr) return addr;
+	}
+	return undefined;
 }
 
 /**

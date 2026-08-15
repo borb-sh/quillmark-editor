@@ -6,6 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { init, type Diagnostic } from '@quillmark/wasm';
 import { quill } from '../helpers/fixtures.js';
+import { routeAndResolve } from '$lib/visual/diagnostics';
 
 const core = await init();
 
@@ -30,6 +31,33 @@ describe('what a Diagnostic carries', () => {
 		expect(typeMismatch?.args?.expected).toBe('number');
 		expect(typeMismatch?.args?.actual).toBe('string');
 		expect(typeMismatch?.args?.sourceToken).toContain('not a number');
+
+		doc.free();
+	});
+
+	it('anchors an ERROR deeper than any commit address, which is what routing truncates for', () => {
+		// `validate` walks into object properties and array elements and anchors per
+		// leaf, so the deep-anchor class is not obligation warnings alone: a coercion
+		// failure inside a subform arrives at a path `Addr` cannot name. That is the
+		// whole premise of `nearestAddrForFieldPath`, so it is asserted here rather
+		// than assumed from the grammar's shape.
+		const q = quill();
+		const doc = q.seedDocument();
+		doc.storeField('contact', { name: 'x', email: 'y', listed: 'not-a-boolean' });
+		doc.storeField('revisions', [{ note: 'n', pages: 'not-an-integer' }]);
+
+		const deep = q
+			.validate(doc)
+			.filter((d) => d.severity === 'error')
+			.map((d) => d.path);
+		expect(deep).toEqual(['main.contact.listed', 'main.revisions[0].pages']);
+
+		// And they land, rather than dropping by shape: the property under its subform's
+		// field, the element's property under its repeater's.
+		expect(routeAndResolve(q.validate(doc), []).map((r) => r.key)).toEqual([
+			{ field: 'contact' },
+			{ field: 'revisions' }
+		]);
 
 		doc.free();
 	});
