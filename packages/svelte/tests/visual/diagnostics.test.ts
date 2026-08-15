@@ -56,9 +56,6 @@ describe('routeAndResolve', () => {
 	});
 
 	it('lands an error deeper than a commit address on the field that holds it', () => {
-		// `validate` anchors per leaf, so an object property and an array element both
-		// arrive deeper than anything `Addr` names. The subform and the repeater draw
-		// those leaves under the field's label, so the field is where they belong.
 		const out = routeAndResolve(
 			[
 				err('bad email', 'main.contact.email'),
@@ -88,8 +85,7 @@ describe('routeAndResolve', () => {
 					err('unplaceable', 'recipients[0].name'),
 					err('malformed', 'cards.indorsement[x].from'),
 					err('gone', 'cards.indorsement[9].from'),
-					// Truncation keeps the stale index, and `resolveCardKey` still drops it:
-					// a dead card's error must not land on the main card.
+					// Truncation keeps the stale index for `resolveCardKey` to drop.
 					err('gone nested', 'cards.indorsement[9].contact.email')
 				],
 				cardIds

@@ -77,9 +77,9 @@ export interface RoutedDiagnostic {
  * draw (VISUAL_EDITOR §Diagnostics): obligation, completeness, a render note — none
  * of them is a value the field cannot hold. An anchor deeper than a commit address
  * (`main.contact.email`, `main.keywords[0]`) draws at the nearest field holding it,
- * which is the field whose subform or repeater draws that leaf. An entry drops
- * rather than mis-routes when it carries no `path`, when no prefix of the path is
- * addressable, or when its absolute card index is out of the live `cardIds`.
+ * whose subform or repeater draws that leaf. An entry drops rather than mis-routes
+ * when it carries no `path`, when no prefix of the path is addressable, or when its
+ * absolute card index is out of the live `cardIds`.
  * Completeness stays a read the host makes on `quill.validate(doc)`.
  */
 export function routeAndResolve(

@@ -122,6 +122,7 @@ describe('nearestAddrForFieldPath', () => {
 			'main.body',
 			'main.subject',
 			'cards.indorsement[1].from',
+			'cards.indorsement[1].body',
 			'cards.indorsement[1]'
 		]) {
 			expect(nearestAddrForFieldPath(path)).toEqual(addrForFieldPath(path));
@@ -144,11 +145,6 @@ describe('nearestAddrForFieldPath', () => {
 	it('truncates to the top-level field however deep the leaf sits', () => {
 		expect(nearestAddrForFieldPath('main.a.b.c.d')).toEqual({ field: 'a' });
 		expect(nearestAddrForFieldPath('main.rows[0].cells[1].text')).toEqual({ field: 'rows' });
-	});
-
-	it('keeps the card index for a card whose own path is all that survives', () => {
-		// No field segment to keep: the body leaf is the card's nearest holder.
-		expect(nearestAddrForFieldPath('cards.indorsement[1].body')).toEqual({ card: 1 });
 	});
 
 	it('drops a path with no addressable prefix at all', () => {

@@ -117,13 +117,12 @@ export function addrForFieldPath(path: DocPath): Addr | undefined {
 /**
  * The nearest ancestor a commit address can name: {@link addrForFieldPath} where the
  * path has one, else its longest addressable prefix. `main.contact.email` and
- * `main.keywords[0]` both land on their field, and a deeper nesting on the top-level
- * field it hangs off. `undefined` where no prefix is addressable at all — a
- * field-rooted (config-space) or malformed path.
+ * `main.keywords[0]` land on their field, any deeper nesting on the top-level field
+ * it hangs off. `undefined` where no prefix is addressable — a field-rooted
+ * (config-space) or malformed path.
  *
- * The truncation is the consumer's, not the grammar's: what counts as addressable is
- * `Addr`'s reach, which is what the document verbs commit to and what the editor
- * keys its field map at.
+ * Addressability is `Addr`'s reach rather than the grammar's, which is what makes
+ * the truncation a consumer's to make (VISUAL_EDITOR §Diagnostics).
  */
 export function nearestAddrForFieldPath(path: DocPath): Addr | undefined {
 	const segs = segsOf(path);

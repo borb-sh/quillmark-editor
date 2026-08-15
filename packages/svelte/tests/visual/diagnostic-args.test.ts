@@ -36,11 +36,9 @@ describe('what a Diagnostic carries', () => {
 	});
 
 	it('anchors an ERROR deeper than any commit address, which is what routing truncates for', () => {
-		// `validate` walks into object properties and array elements and anchors per
-		// leaf, so the deep-anchor class is not obligation warnings alone: a coercion
-		// failure inside a subform arrives at a path `Addr` cannot name. That is the
-		// whole premise of `nearestAddrForFieldPath`, so it is asserted here rather
-		// than assumed from the grammar's shape.
+		// The deep-anchor class is not obligation warnings alone: `validate` walks into
+		// object properties and array elements, so a coercion failure inside a subform
+		// anchors where `Addr` cannot reach. `nearestAddrForFieldPath` exists for this.
 		const q = quill();
 		const doc = q.seedDocument();
 		doc.storeField('contact', { name: 'x', email: 'y', listed: 'not-a-boolean' });
