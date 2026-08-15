@@ -147,6 +147,13 @@ describe('nearestAddrForFieldPath', () => {
 		expect(nearestAddrForFieldPath('main.rows[0].cells[1].text')).toEqual({ field: 'rows' });
 	});
 
+	it('does not read an index under a root as a field', () => {
+		// Unmintable for a document — the engine emits a field segment before any index
+		// — and the two segments name nothing, so it drops instead of landing on a body.
+		expect(nearestAddrForFieldPath('main[0]')).toBeUndefined();
+		expect(nearestAddrForFieldPath('cards.indorsement[1][0]')).toBeUndefined();
+	});
+
 	it('drops a path with no addressable prefix at all', () => {
 		// Field-rooted (config-space) and malformed: the root itself is unnameable, so
 		// there is nothing to truncate to.

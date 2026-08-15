@@ -116,22 +116,19 @@ export function addrForFieldPath(path: DocPath): Addr | undefined {
 
 /**
  * The nearest ancestor a commit address can name: {@link addrForFieldPath} where the
- * path has one, else its longest addressable prefix. `main.contact.email` and
+ * path has one, else the root and its first field. `main.contact.email` and
  * `main.keywords[0]` land on their field, any deeper nesting on the top-level field
- * it hangs off. `undefined` where no prefix is addressable — a field-rooted
+ * it hangs off. `undefined` where those two segments name nothing — a field-rooted
  * (config-space) or malformed path.
  *
- * Addressability is `Addr`'s reach rather than the grammar's, which is what makes
- * the truncation a consumer's to make (VISUAL_EDITOR §Diagnostics).
+ * An `Addr` reaches a root and one field, so two segments is the whole search: a
+ * deeper prefix is unaddressable by arity alone. Addressability being `Addr`'s reach
+ * rather than the grammar's is what makes the truncation a consumer's to make
+ * (VISUAL_EDITOR §Diagnostics).
  */
 export function nearestAddrForFieldPath(path: DocPath): Addr | undefined {
 	const segs = segsOf(path);
-	if (!segs) return undefined;
-	for (let end = segs.length; end > 0; end--) {
-		const addr = addrForSegs(segs.slice(0, end));
-		if (addr) return addr;
-	}
-	return undefined;
+	return segs && addrForSegs(segs.slice(0, 2));
 }
 
 /**
