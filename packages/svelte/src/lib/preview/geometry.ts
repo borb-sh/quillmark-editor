@@ -29,13 +29,13 @@ export interface PdfPoint {
  * names is never one the preview cannot place (PREVIEW.md §"Two responsibilities").
  *
  * `fieldBoxes` answers `[]` for a scalar reference the plate places without tracking
- * its content and for a `richtext[]` element; runtime.d.ts says what such a field's
- * box is, a single `regions()` rect. The third rung is that sentence one granularity
- * down — an array's ink is its elements' — and is a fallback, not a union, so an
- * address with rects of its own never also draws its children's. The boundary
- * character (`.` for a nested field, `[` for an array element) keeps the prefix a
- * path boundary: `main.keywords` matches `main.keywords[0]`, not
- * `main.keywords_note`.
+ * its content and for an array itself; runtime.d.ts says what such a field's box is, a
+ * single `regions()` rect. The third rung is that sentence one granularity down — an
+ * array's ink is its elements', and an element answers a union rect of its own — and
+ * is a fallback, not a union, so an address with rects of its own never also draws its
+ * children's. The boundary character (`.` for a nested field, `[` for an array
+ * element) keeps the prefix a path boundary: `main.keywords` matches
+ * `main.keywords[0]`, not `main.keywords_note`.
  */
 export function boxesForField(
 	field: string,

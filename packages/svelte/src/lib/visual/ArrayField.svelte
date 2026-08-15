@@ -115,7 +115,8 @@
 	// it says so once per element per render. Thirteen lines on one memo's first paint,
 	// in the console a consumer is reading to find its own defects. Same shape
 	// {@link Card} keeps its header/panel refs in.
-	const els: Record<string, { focus: () => void } | undefined> = $state({});
+	const els: Record<string, { focus: () => void; setCaret?: (pos: number) => void } | undefined> =
+		$state({});
 	let addEl: HTMLButtonElement | undefined = $state();
 	let rootEl: HTMLElement | undefined = $state();
 	let rowsEl: HTMLElement | undefined = $state();
@@ -185,15 +186,21 @@
 	export function washBox(): HTMLElement | undefined {
 		return rowsEl;
 	}
-	/** Take the caret to element `k`: what a landing on an element address resolves to
-	 * (`leaves.ts`). The index resolves to the element's session id here, at the call,
-	 * never carried as one — an index is stale the moment anything above it splices.
-	 * Past the live list it falls back to {@link focus}: the field is right and the row
-	 * is gone, which is a landing off a compile the document has moved past. */
-	export function focusElement(k: number): void {
+	/** Take the caret to element `k`, at USV `pos` where the row's control can take one:
+	 * what a landing on an element address resolves to (`leaves.ts`). The index resolves
+	 * to the element's session id here, at the call, never carried as one — an index is
+	 * stale the moment anything above it splices. Past the live list it falls back to
+	 * {@link focus}: the field is right and the row is gone, which is a landing off a
+	 * compile the document has moved past.
+	 *
+	 * An absent `pos` is the placement rung, exactly as on `Landing`. A row that takes
+	 * no offset gets the bare focus: the JSON element, whose textarea has no coordinate
+	 * to spend one in, and a `string` element, which the compile never addresses. */
+	export function focusElement(k: number, pos?: number): void {
 		const el = els[ids[k]];
-		if (el) el.focus();
-		else focus();
+		if (!el) return focus();
+		if (pos != null && el.setCaret) return el.setCaret(pos);
+		el.focus();
 	}
 	/** Focus element `id` after the flush, never in the same tick: a mutation commits
 	 * the array by value, so the parent re-derives and the row does not exist until

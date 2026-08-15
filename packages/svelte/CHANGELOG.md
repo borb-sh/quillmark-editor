@@ -4,6 +4,10 @@
 
 ## Unreleased
 
+**A preview click on an array element lands the caret it resolved.** The compile answers an element at full precision — `main.keywords[0]` at a cluster-exact USV offset, `plaintext` rows included, both riding the same lowering — and the landing dropped it: the element lane carried a focus and no place, so the row was right and the caret was a guess, at 0 in a `richtext[]` row. `FieldControl.focusElement(index, pos?)` carries the offset down, and `ProseArrayElement.setCaret` spends it the way a `createField` leaf does, over the view the row owns. Nothing reported an error before, which is the shape of the defect: the landing resolved, so there was nothing to report.
+
+What a place means stays the row control's. A JSON `object[]` row takes the bare focus it took before, an offset being a position in rendered content that a textarea has no coordinate to spend. An absent `pos` is the placement rung on this lane exactly as on `Landing`, so a `'segment'` hit lands the row and places nothing; an offset past the row's current value clamps to its end, and an index past the live list still falls back to the field's own landing.
+
 ## v0.5.1 - 2026-08-14
 
 The inline lane draws errors only. Warnings — obligation, a `!must_fill` marker, a render note a host re-feeds as the `diagnostics` prop — stay a read of `quill.validate(doc)` and `session.warnings`. The warning hue is not a dial: a diagnostic is `--qm-danger`, and the preset's phase line has one failure face (`.qm-status-error`).

@@ -668,14 +668,15 @@
 
 	/**
 	 * Put the caret in a revealed target, at the finest grain it can take: a USV offset
-	 * in a prose leaf, a bare focus everywhere else. An array element is no
-	 * `createField` leaf, and a form control has no coordinate to spend an offset in (an
-	 * `<input type="number">` refuses a selection outright), which is also the whole of
-	 * what a click on plate-placed ink can mean.
+	 * in a prose leaf or an array element, a bare focus everywhere else. A form control
+	 * has no coordinate to spend an offset in (an `<input type="number">` refuses a
+	 * selection outright), which is also the whole of what a click on plate-placed ink
+	 * can mean. An element is no `createField` leaf, so the offset goes down the element
+	 * lane instead, where what it means is the row control's (`leaves.ts`).
 	 */
 	function land(found: Landed, pos: number | undefined): void {
 		if (found.element != null && found.control.focusElement) {
-			return found.control.focusElement(found.element);
+			return found.control.focusElement(found.element, pos);
 		}
 		if (pos != null) {
 			const prose = leaves.prose(found.key);
