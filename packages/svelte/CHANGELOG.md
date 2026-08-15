@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**No markdown or HTML crosses the clipboard.** The table island's clipboard door is gone in both directions. A `<table>` pasted into a body or into a cell no longer becomes an island: what a paste gets is ProseMirror's own DOM parse against the schema, which for a table is its cells' text. `Mod-C` and `Mod-X` over a held rectangle no longer write one, a grip selection having no copy of its own. Markdown reaches a field by import — Quillmark's conversion to a DTO, or the source editor — which is a whole document with its anchors rather than a fragment that has to be rebased onto one. What ProseMirror does itself is untouched: a paste still carries lists, headings and marks, and `Mod-C` over a selected island still takes the island.
+
 ## v0.5.1 - 2026-08-14
 
 The inline lane draws errors only. Warnings — obligation, a `!must_fill` marker, a render note a host re-feeds as the `diagnostics` prop — stay a read of `quill.validate(doc)` and `session.warnings`. The warning hue is not a dial: a diagnostic is `--qm-danger`, and the preset's phase line has one failure face (`.qm-status-error`).
