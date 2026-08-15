@@ -22,7 +22,7 @@
 // mint stays in the diff, spelled as a mint, with its reason beside it — a family of
 // them is a rung waiting to be cut.
 //
-// Four rules sit outside the table, being about the scale itself rather than one axis:
+// Five rules sit outside the table, being about the scale itself rather than one axis:
 //
 //   · A shadow is the lift rung or it is nothing, in either scope and in the
 //     derivations too: an offset states a light source no pole carries, so what is
@@ -31,6 +31,12 @@
 //     nothing.
 //   · A private rung is defined only in its scope's derivation — what makes one
 //     derivation safe for every surface reading it — and never twice in one rule.
+//   · A colour pole states both schemes, and it is the one rule a derivation answers
+//     to. An entry rung — a private rung whose value reads a dial — carries that dial's
+//     default as its fallback, and a hue calibrated against one card is a stain on the
+//     other, so a colour fallback is a `light-dark()` pair or a system colour, which
+//     resolves against the declared scheme itself. The ratios each arm clears are
+//     review's, beside the values in the derivation's own comments.
 //   · An app does not redefine a name the preset carries: the app is meant to look
 //     like the endorsed answer, and a local copy is where it stops. A name the preset
 //     lacks (an app's own rail width) is the whole of what a host adds on top.
@@ -50,9 +56,10 @@
 // decides which axis owns a line; in `.ts` the axis's own marker stands in for it, and
 // an axis carrying no marker runs on CSS alone.
 //
-// A derivation is exempt from the literal rules entirely, which is what makes a
-// `var()` fallback legitimate there and nowhere else. Zero deps; run via
-// `npm run check:style`.
+// A derivation is exempt from the literal rules, which is what makes a `var()`
+// fallback legitimate there and nowhere else, and answers to the pole rule above in
+// their place: where every value is minted, what is left to ask of one is whether it
+// is whole. Zero deps; run via `npm run check:style`.
 
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -108,6 +115,9 @@ const SCOPES = [
 
 /** A colour literal: hex, or a functional notation that names a colour space. */
 const COLOR_LITERAL = /#[0-9a-fA-F]{3,8}\b|\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(/;
+/** A stated pair, one level of nesting deep. Stripped from a fallback, what remains is
+ *  a colour stated once. */
+const LIGHT_DARK = /light-dark\((?:[^()]|\([^()]*\))*\)/g;
 /** A length literal, for the axes whose values are sizes. The rhythm axis keeps its
  *  own narrower shape (`px|rem`); the type and stroke axes count `em` too. */
 const LENGTH_LITERAL = /\b\d*\.?\d+(px|rem|em)\b/;
@@ -339,6 +349,11 @@ for (const scope of SCOPES) {
 	const reads = scope.host && scope.prefix !== '--qmh-' ? [scope.prefix, '--qmh-'] : [scope.prefix];
 	const READS_RUNG = readsRung(reads);
 	const PRIVATE_DEF = privateDef(scope.prefix);
+	/** An entry rung and its fallback: a private rung whose value reads a public dial, so
+	 *  the fallback is that dial's default. */
+	const ENTRY_RUNG = new RegExp(
+		`^\\s*(${scope.prefix}[\\w-]+)\\s*:\\s*var\\(\\s*--qm-[\\w-]+\\s*,([^;]*)\\)`
+	);
 	// The axis table names the package's rungs; a failure elsewhere points at the same
 	// family under the prefix that scope draws with, and at the doc that states the
 	// rule there. For an app that is the preset's prefix rather than its own: the
@@ -416,7 +431,18 @@ for (const scope of SCOPES) {
 					);
 			}
 
-			if (file === scope.derivation) return; // literals here are the defaults
+			// The pole rule, and then the axes stay off. The stated pair is stripped and the
+			// colour axis's own literal test reads what remains, which is how a system
+			// colour passes — and the length and family fallbacks with it — without a case
+			// apiece.
+			if (file === scope.derivation) {
+				const entry = line.match(ENTRY_RUNG);
+				if (entry && excused === undefined && COLOR_LITERAL.test(entry[2].replace(LIGHT_DARK, '')))
+					fail(
+						`\`${entry[1]}\` — a colour pole states both schemes, as \`light-dark(light, dark)\` (ARCHITECTURE §Styling)`
+					);
+				return;
+			}
 
 			const decl = line.match(/^\s*([\w-]+)\s*:\s*([^;]*)/);
 			const prop = decl?.[1] ?? carry;

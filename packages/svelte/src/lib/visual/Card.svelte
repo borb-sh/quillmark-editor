@@ -140,6 +140,10 @@
 	let expanded = $state<string | null>(initialExpandedGroup(card.sections));
 	let headers = $state<Record<string, HTMLButtonElement | undefined>>({});
 	let panels = $state<Record<string, HTMLElement | undefined>>({});
+	/** Whether the panels animate the move `expanded` is about to make. False for a reveal
+	 *  ({@link revealLeaf}), restored by the header gesture the motion is there for, so its
+	 *  return needs no timer. */
+	let animate = $state(true);
 	/**
 	 * Move to `next` (`null` = all closed). A closing panel goes `inert` with whatever it
 	 * held still focused, and `inert` does not say where focus should go — the browser
@@ -154,6 +158,7 @@
 		expanded = next;
 	}
 	function toggleGroup(group: string): void {
+		animate = true;
 		setExpanded(expanded === group ? null : group);
 	}
 
@@ -163,13 +168,20 @@
 	 * flush before landing, since `inert` clears when the panel renders open, not when
 	 * `expanded` is assigned.
 	 *
+	 * The move is instant, because that same flush is when the landing measures its target:
+	 * an animating track still reads its start value there, and the trip would be computed
+	 * against a panel that has not moved yet. The motion explains a header click, and a
+	 * click in the preview is not one.
+	 *
 	 * A call, not a prop: a reveal is an event, and modelling it as state needs a
 	 * fresh-identity wrapper to re-fire and an `untrack` to keep the per-keystroke
 	 * re-derive from reopening the accordion under the user.
 	 */
 	export function revealLeaf(key: string): void {
 		const section = grouped.find((s) => s.fields.some((f) => ops.leafKey(f.name) === key));
-		if (section?.group) setExpanded(section.group);
+		if (!section?.group) return;
+		animate = false;
+		setExpanded(section.group);
 	}
 
 	let el = $state<HTMLElement | undefined>(undefined);
@@ -252,7 +264,7 @@
 				     accordion is not the bracket's last child: the bottom rule's inset belongs
 				     to whichever block abuts it. -->
 					{#if grouped.length}
-						<div class="qm-groups">
+						<div class="qm-groups" class:qm-instant={!animate}>
 							{#each grouped as section (section.group)}
 								{@const group = section.group as string}
 								{@const isOpen = expanded === group}
@@ -617,6 +629,13 @@
 	}
 	.qm-group.qm-open .qm-group-panel {
 		grid-template-rows: 1fr;
+	}
+	/* The track is the accordion's only stroke that moves layout, and a reveal's landing
+	 measures its target one flush after asking — where an animating track still reads its
+	 start value. Both panels of the move are inside the group box, so the opening one and
+	 the closing one above it stand still together (`revealLeaf`). */
+	.qm-groups.qm-instant .qm-group-panel {
+		transition: none;
 	}
 	/* Two boxes because the axes clip differently, and the track is the only thing that
 	 animates: a field sits at its open position from the first frame of the reveal.

@@ -176,6 +176,30 @@ describe('the landing verbs over a form control', () => {
 		expect(errors).toHaveLength(0);
 	});
 
+	// The landing measures its target one flush after asking for the reveal, and a track
+	// animating from `0fr` still reads its start value there: a target under a group that
+	// had to open was measured against a panel that had not moved, and settled past the
+	// fold. Layout is a thing jsdom does not have, so the seam is the flag rather than the
+	// rect: the reveal moves the accordion instantly, and the header gesture the motion is
+	// there for is what restores it.
+	it('reveals a group instantly, and animates again for a header click', async () => {
+		const q = quill();
+		const { target, editor } = mountEditor(q, q.seedDocument());
+		const header = [...target.querySelectorAll<HTMLElement>('.qm-group-header')].find((h) =>
+			h.textContent?.includes('Metadata')
+		);
+		const groups = header?.closest('.qm-groups');
+		expect(groups?.classList.contains('qm-instant')).toBe(false);
+
+		await editor.focusField('main.tracking_id');
+		await tick();
+		expect(groups?.classList.contains('qm-instant')).toBe(true);
+
+		header?.click();
+		await tick();
+		expect(groups?.classList.contains('qm-instant')).toBe(false);
+	});
+
 	it('focuses an array field at its first element, and a date field at its first segment', async () => {
 		const q = quill();
 		const { editor, errors } = mountEditor(q, q.seedDocument());
