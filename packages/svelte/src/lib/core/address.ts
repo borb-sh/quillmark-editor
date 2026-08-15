@@ -101,9 +101,10 @@ export function cardPath(index: number, kinds: readonly string[]): DocPath | und
 /**
  * The inverse: a canonical `DocPath` back to the `Addr` the document verbs take, or
  * `undefined` for a path that names no single commit address — a nested or
- * array-element path (`main.keywords[0]`, which {@link elementAddrForFieldPath}
- * takes instead), a field-rooted one, or a malformed one. A bare card and a `.body`
- * terminal both land on the field-less `{card: i}` the body leaf answers to.
+ * array-element path (`main.keywords[0]`, which {@link elementAddrForFieldPath} and
+ * {@link nearestAddrForFieldPath} take instead), a field-rooted one, or a malformed
+ * one. A bare card and a `.body` terminal both land on the field-less `{card: i}`
+ * the body leaf answers to.
  *
  * Needs no `kinds`: the path carries the absolute index, and the kind in it is
  * decoration the `Addr` has no room for.
@@ -111,6 +112,23 @@ export function cardPath(index: number, kinds: readonly string[]): DocPath | und
 export function addrForFieldPath(path: DocPath): Addr | undefined {
 	const segs = segsOf(path);
 	return segs && addrForSegs(segs);
+}
+
+/**
+ * The nearest ancestor a commit address can name: {@link addrForFieldPath} where the
+ * path has one, else the root and its first field. `main.contact.email` and
+ * `main.keywords[0]` land on their field, any deeper nesting on the top-level field
+ * it hangs off. `undefined` where those two segments name nothing — a field-rooted
+ * (config-space) or malformed path.
+ *
+ * An `Addr` reaches a root and one field, so two segments is the whole search: a
+ * deeper prefix is unaddressable by arity alone. Addressability being `Addr`'s reach
+ * rather than the grammar's is what makes the truncation a consumer's to make
+ * (VISUAL_EDITOR §Diagnostics).
+ */
+export function nearestAddrForFieldPath(path: DocPath): Addr | undefined {
+	const segs = segsOf(path);
+	return segs && addrForSegs(segs.slice(0, 2));
 }
 
 /**

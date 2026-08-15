@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { fieldPathForAddr, addrForFieldPath } from '$lib/core';
 // Not on `/core`'s entry: the element split is the editor's ladder, not a hop a host
 // needs (`core/index.ts` carries what more than one surface speaks).
-import { elementAddrForFieldPath } from '$lib/core/address.js';
+import { elementAddrForFieldPath, nearestAddrForFieldPath } from '$lib/core/address.js';
 import { cardPath } from '$lib/core/address.js';
 
 describe('fieldPathForAddr', () => {
@@ -113,5 +113,61 @@ describe('elementAddrForFieldPath', () => {
 		expect(elementAddrForFieldPath('cards.indorsement[1]')).toBeUndefined();
 		expect(elementAddrForFieldPath('main.author.name')).toBeUndefined();
 		expect(elementAddrForFieldPath('')).toBeUndefined();
+	});
+});
+
+describe('nearestAddrForFieldPath', () => {
+	it('is `addrForFieldPath` wherever the path names a commit address', () => {
+		for (const path of [
+			'main.body',
+			'main.subject',
+			'cards.indorsement[1].from',
+			'cards.indorsement[1].body',
+			'cards.indorsement[1]'
+		]) {
+			expect(nearestAddrForFieldPath(path)).toEqual(addrForFieldPath(path));
+		}
+	});
+
+	it('truncates an object property and an array element to their field', () => {
+		expect(nearestAddrForFieldPath('main.contact.email')).toEqual({ field: 'contact' });
+		expect(nearestAddrForFieldPath('main.keywords[0]')).toEqual({ field: 'keywords' });
+		expect(nearestAddrForFieldPath('cards.indorsement[1].contact.email')).toEqual({
+			card: 1,
+			field: 'contact'
+		});
+		expect(nearestAddrForFieldPath('cards.indorsement[1].refs[2].title')).toEqual({
+			card: 1,
+			field: 'refs'
+		});
+	});
+
+	it('truncates to the top-level field however deep the leaf sits', () => {
+		expect(nearestAddrForFieldPath('main.a.b.c.d')).toEqual({ field: 'a' });
+		expect(nearestAddrForFieldPath('main.rows[0].cells[1].text')).toEqual({ field: 'rows' });
+	});
+
+	it('does not read an index under a root as a field', () => {
+		// Unmintable for a document — the engine emits a field segment before any index
+		// — and the two segments name nothing, so it drops instead of landing on a body.
+		expect(nearestAddrForFieldPath('main[0]')).toBeUndefined();
+		expect(nearestAddrForFieldPath('cards.indorsement[1][0]')).toBeUndefined();
+	});
+
+	it('drops a path with no addressable prefix at all', () => {
+		// Field-rooted (config-space) and malformed: the root itself is unnameable, so
+		// there is nothing to truncate to.
+		expect(nearestAddrForFieldPath('recipients[0].name')).toBeUndefined();
+		expect(nearestAddrForFieldPath('')).toBeUndefined();
+		expect(nearestAddrForFieldPath('cards.indorsement[x].from')).toBeUndefined();
+	});
+
+	it('keeps an out-of-range card index rather than truncating it away', () => {
+		// Staleness is `resolveCardKey`'s to catch against the live `cardIds`; dropping
+		// the index here would route a dead card's error onto the main card.
+		expect(nearestAddrForFieldPath('cards.indorsement[9].contact.email')).toEqual({
+			card: 9,
+			field: 'contact'
+		});
 	});
 });

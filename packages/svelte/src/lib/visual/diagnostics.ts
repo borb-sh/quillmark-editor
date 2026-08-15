@@ -30,13 +30,13 @@
 // `fieldKeyToString` is the one shared string form both sides collapse to for the
 // `Map`.
 import type { Diagnostic } from '@quillmark/wasm';
-import { addrForFieldPath } from '../core/address.js';
+import { nearestAddrForFieldPath } from '../core/address.js';
 
 /** A field's routing address, and `/core`'s `Addr` structurally: an `Addr` is a
- * positional `FieldKey`, so `addrForFieldPath` is the path→key walk and routing
- * carries no second copy of the grammar. `card` is `undefined` for the main card; a
- * composable card slot is a stable session id (the editor's own bookkeeping) once
- * resolved, or an absolute document-array index straight off a parsed `DocPath`
+ * positional `FieldKey`, so `nearestAddrForFieldPath` is the path→key walk and
+ * routing carries no second copy of the grammar. `card` is `undefined` for the main
+ * card; a composable card slot is a stable session id (the editor's own bookkeeping)
+ * once resolved, or an absolute document-array index straight off a parsed `DocPath`
  * (resolve via {@link resolveCardKey} before merging with id-keyed sources). `field`
  * `undefined` addresses the body (the field-less leaf). */
 export interface FieldKey {
@@ -72,13 +72,15 @@ export interface RoutedDiagnostic {
 
 /**
  * Route a path-keyed producer's raw `Diagnostic[]` (validate / external) to the
- * editor's stable-id keying: the one door producers #1/#3 take, `addrForFieldPath`
- * and `resolveCardKey` in a single pass. Warnings do not draw (VISUAL_EDITOR
- * §Diagnostics): obligation, completeness, a render note — none of them is a value
- * the field cannot hold. An entry also drops rather than mis-routes when it carries
- * no `path`, when the path names no single commit address (a nested / array-element
- * one), or when its absolute card index is out of the live `cardIds`. Completeness
- * stays a read the host makes on `quill.validate(doc)`.
+ * editor's stable-id keying: the one door producers #1/#3 take,
+ * `nearestAddrForFieldPath` and `resolveCardKey` in a single pass. Warnings do not
+ * draw (VISUAL_EDITOR §Diagnostics): obligation, completeness, a render note — none
+ * of them is a value the field cannot hold. An anchor deeper than a commit address
+ * (`main.contact.email`, `main.keywords[0]`) draws at the nearest field holding it,
+ * whose subform or repeater draws that leaf. An entry drops rather than mis-routes
+ * when it carries no `path`, when no prefix of the path is addressable, or when its
+ * absolute card index is out of the live `cardIds`.
+ * Completeness stays a read the host makes on `quill.validate(doc)`.
  */
 export function routeAndResolve(
 	diagnostics: Diagnostic[] | undefined,
@@ -87,7 +89,7 @@ export function routeAndResolve(
 	const out: RoutedDiagnostic[] = [];
 	for (const d of diagnostics ?? []) {
 		if (d.severity !== 'error' || !d.path) continue;
-		const key = addrForFieldPath(d.path);
+		const key = nearestAddrForFieldPath(d.path);
 		const resolved = key && resolveCardKey(key, cardIds);
 		if (resolved) out.push({ key: resolved, diagnostic: d });
 	}
