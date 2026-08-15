@@ -105,24 +105,13 @@ The both-axes arm is the rule's limit rather than an exception to it. What a del
 
 Deleting the table is reachable twice, and they are the same delete: the island selection, which Escape leaves a cell or a line for, and the cell selection covering every rank, which never leaves the grid. Both dispatch an ordinary transaction on the leaf's own view, so either rides the one undo stack and comes back in one `Mod-z`.
 
-**The rectangle is also what crosses the clipboard** (`codec/clipboard.ts`). `Mod-C` over the held selection writes it out; `Mod-X` writes it and then takes what that selection's Backspace takes, the extent rule reading a cut exactly as it reads a delete. The listener is on the document rather than on the island: a copy is delivered to the DOM selection's own node, and a held rectangle has cleared that selection — a sweep removes the ranges itself, a grip press moves the focus to a button — so the event never crosses the island's subtree at all. What makes one the island's is the guard: a rectangle is held, and the focus is inside. The rectangle arriving is the same gesture from the other end: a table pasted into a cell is written in at that cell and the table grows to hold it, where anything else is the cell's own paste. Without that arm the cell's inline schema reads a pasted table as text and flattens it into one cell, which is the destructive case one level down.
+**The rectangle does not cross the clipboard** (§"Markdown at the edges"). No copy writes it and no paste reads it: a table reaches a field by import, and a `Mod-C` over a held rectangle is nobody's to claim.
 
 The codec reports nothing to the shell: the leaf passes no island channel, because a cell index inside one island is not a coordinate its surface speaks, and nothing here floats, so there is no surface for the shell to place.
 
 **A cell edit is one `islandOps` `set`.** The NodeView writes a whole new `props` onto the node with `setNodeMarkup` and the leaf's own commit path lowers it (§Encode), so a keystroke in a cell costs one island op rather than the whole-field value write `overwrite` would, and every identity anchor in the field survives it. Alignment is reachable by the same route, for the first time: it round-trips today and nothing in the editor could reach it. A reseed is decided per cell by comparing the stored value against what the nested view already projects, so the cell that produced an edit keeps its caret while an undo or a re-hydrate takes the fresh state. That state carries the caret's offset in, clamped — the rule a field's own re-hydrate takes — since a state built from scratch resolves to the cell's start, where the edit an undo reverses never was. A changed rectangle rebuilds the views instead, and the op that changed it says where the caret lands. An undo names none, being the outer history's transaction rather than an op of this view's, so the rebuild reads the seat the focus held — a cell by position, a grip by line — and restores it clamped into the rectangle that is there now. Without it the DOM under the focus goes with the rebuild, focus falls to the document body, and the next undo reaches no view at all.
 
 Every other island type keeps the literal placeholder the node's `toDOM` draws: the NodeView narrows through the boundary's own `isTableIsland` guard, and an unknown island renders as its tag rather than as a table it is not.
-
-The clipboard door is built out of the escape hatch the shape makes cheap. `TableProps` *is* a pipe table, so a local reader and writer over it are small and lossless by construction, and they are one grammar seen from two sides: what a copy writes, a paste reads. A row 0 is a header on both sides, `header: []` being no table — a `<table>` with no `<th>` promotes its first row, and a copied rectangle's first row is the header of what it pastes.
-
-Two wire formats, and the HTML one is authoritative: it is what a browser, a spreadsheet and a word processor all speak, and it is the one the reader reads back.
-
-| Format | Carries | Loses |
-| --- | --- | --- |
-| `text/html` | a `<table>`, its cells' marks with it, the inline schema serializing and parsing them both | nothing a `TableProps` holds |
-| `text/plain` | pipe rows, delimiter row and alignment included: a valid pipe table on its own | a cell's marks |
-
-What the reader does not carry is a `rowspan`: a merged cell is not a rectangle, so the rows under one arrive short and normalize pads them. A `colspan` arrives as the empty cells it covers, so the columns after it keep their index. What the hatch still does not buy is the per-island source view: `Document.toMarkdown()` cannot stand in (whole-document and read-only), and the suite oracles the rectangle directly instead.
 
 ## Open sets: an unknown must survive an edit
 
@@ -153,11 +142,11 @@ The schema distinction is also what sizes the leaf: a constrained leaf holds one
 
 ## Markdown at the edges
 
-Markdown never represents an edit, but it stays a boundary format. Two of its three doors are open, and the paste one is open on its HTML arm alone:
+Markdown never represents an edit, and the clipboard is not how it reaches a field. One of the three doors is open:
 
 - **whole-document serialize**: `Document.toMarkdown()`, read-only, canonical.
-- **paste**: a block leaf registers a `clipboardParser` carrying one rule the schema's own do not — a `<table>` is the island the model already holds (§"The table island") — and a `transformPasted` that mints an id for every island the parse produced, an id being part of the document's canonical bytes and the channel that addresses one. Everything else is ProseMirror's own DOM parse against the schema above: lists, headings and marks survive it, and markdown text arrives literally. The text arm is shut, and what it wants is `rebase(fieldCorpus, md)` — cold import plus diff, surviving anchors rebased — spliced as the returned `delta`.
-- **copy**: the clipboard takes PM's own serialization rather than `exportMarkdown(rt)`, except over a table island's held rectangle, which writes itself (§"The table island"). Markdown is **lossy** here — anchors, `underline` and unknown marks have no projection — so the door carries a warning before a copy that would drop identity.
+- **paste**: shut. What a paste gets is ProseMirror's own DOM parse against the schema above and nothing this package adds: lists, headings and marks survive it, markdown text arrives literally, and a `<table>` flattens to its cells' text, the schema declaring no `parseDOM` for an island. A field takes markdown by import — Quillmark's conversion to a DTO, or the source editor — which is a whole document with its anchors rather than a fragment that has to be rebased onto one.
+- **copy**: the clipboard takes PM's own serialization. Nothing writes markdown, so there is no lossy export to warn about.
 
 ## Reconciliation
 

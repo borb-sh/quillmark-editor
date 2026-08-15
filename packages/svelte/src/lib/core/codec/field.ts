@@ -30,7 +30,6 @@ import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
 import type { Document, DocumentReader, Content, Addr, Quill } from '@quillmark/wasm';
 import type { EditorErrorHandler } from '../errors.js';
 import { reportError, errorMessage } from '../errors.js';
-import { tableClipboardPlugin } from './clipboard.js';
 import { decode } from './decode.js';
 import { usvToPM, pmToUsv, buildLineIndex, type LineIndex } from './positions.js';
 import { lower, pmToContent, contentEdit } from './encode.js';
@@ -565,10 +564,9 @@ export function proseLeafPlugins(
 	if (!opts.noInputRules) list.push(inputRulesPlugin(schema));
 	list.push(keymap(editorKeymap(schema, opts.inline, !!opts.slash)));
 	list.push(keymap(baseKeymap));
-	// All three answer to something only a block leaf holds: an inline leaf is one
-	// textblock with no island, no gap to put a cursor in, and nowhere for a pasted
-	// table to land.
-	if (!opts.inline) list.push(gapCursor(), pastAtomPlugin(), tableClipboardPlugin(schema));
+	// Both answer to something only a block leaf holds: an inline leaf is one textblock
+	// with no island and no gap to put a cursor in.
+	if (!opts.inline) list.push(gapCursor(), pastAtomPlugin());
 	if (opts.placeholder) list.push(placeholderPlugin(opts.placeholder));
 	return list;
 }
