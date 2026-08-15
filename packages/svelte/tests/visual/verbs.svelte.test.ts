@@ -14,10 +14,14 @@ import { quill } from '../helpers/fixtures.js';
 
 const core = await init();
 
-// jsdom implements neither, and a card operation reaches both: the insert/reorder
-// scroll hop and the flip the removal runs the survivors through.
+// jsdom implements none of these. The first two are a card operation's: the
+// insert/reorder scroll hop and the flip the removal runs the survivors through. The
+// rects are the caret's — a landing that carries an offset dispatches a scrolled
+// selection, and PM measures the caret to scroll to it.
 Element.prototype.scrollIntoView ??= () => {};
 Element.prototype.getAnimations ??= () => [];
+Range.prototype.getClientRects ??= () => [] as unknown as DOMRectList;
+Range.prototype.getBoundingClientRect ??= () => new DOMRect();
 
 /** The instance surface a host binds to. */
 interface EditorRef {
@@ -58,6 +62,14 @@ function mountEditor(q: Quill, doc: Document) {
 	};
 	return { target, editor: app, changes, errors, active };
 }
+
+/** Where the caret sits, as the DOM reports it: the text node it is in and its
+ *  UTF-16 offset within that node. An array element registers no prose lane, so
+ *  `onCaretMove` says nothing about one and the selection is the only witness. */
+const caret = () => {
+	const sel = window.getSelection();
+	return { text: sel?.anchorNode?.textContent, offset: sel?.anchorOffset };
+};
 
 const slots = (target: HTMLElement) => [...target.querySelectorAll<HTMLElement>('.qm-card-slot')];
 const leafKeys = (slot: HTMLElement) =>
@@ -260,6 +272,55 @@ describe('a landing on an array element', () => {
 		// The element's own accessible name is `label` + its 1-based index, so this
 		// distinguishes the row from the one a bare `focusField` would land on.
 		expect(document.activeElement?.getAttribute('aria-label')).toBe('Keywords 2');
+		expect(errors).toHaveLength(0);
+	});
+
+	it('places the caret at the offset the compile resolved, inside the row', async () => {
+		const q = quill();
+		const { editor, errors } = mountEditor(q, q.seedDocument());
+
+		// `keywords[0]` is `*Schema* shapes`: 13 USV of content, the markup stripped.
+		// USV 5 is inside the emphasized word, so a caret that landed on the row and
+		// guessed would sit at 0 in some other text node.
+		await editor.setCaret({ field: 'main.keywords[0]', pos: 5, granularity: 'cluster' });
+		await tick();
+
+		expect(document.activeElement?.getAttribute('aria-label')).toBe('Keywords 1');
+		expect(caret()).toEqual({ text: 'Schema', offset: 5 });
+		expect(errors).toHaveLength(0);
+	});
+
+	it('takes the row with a bare focus for a segment hit and for a pick with no pos', async () => {
+		const q = quill();
+		const { editor, errors } = mountEditor(q, q.seedDocument());
+
+		await editor.setCaret({ field: 'main.keywords[0]', pos: 5, granularity: 'cluster' });
+		await tick();
+
+		// A `'segment'` hit landed on origin-less ink: `pos` is the segment start, not a
+		// caret the click resolved, so it is dropped on this lane as on the other. Asserted
+		// as a caret that did not move, a landing at 0 being what a guess would also give.
+		await editor.setCaret({ field: 'main.keywords[0]', pos: 0, granularity: 'segment' });
+		await tick();
+		expect(caret()).toEqual({ text: 'Schema', offset: 5 });
+
+		await editor.setCaret({ field: 'main.keywords[0]' });
+		await tick();
+		expect(caret()).toEqual({ text: 'Schema', offset: 5 });
+		expect(errors).toHaveLength(0);
+	});
+
+	it('clamps an offset past the row to its end', async () => {
+		const q = quill();
+		const { editor, errors } = mountEditor(q, q.seedDocument());
+
+		// A landing off a compile the row's value has moved past: the field and the row
+		// are right and the offset is not, which clamps rather than throws.
+		await editor.setCaret({ field: 'main.keywords[0]', pos: 999, granularity: 'cluster' });
+		await tick();
+
+		expect(document.activeElement?.getAttribute('aria-label')).toBe('Keywords 1');
+		expect(caret()).toEqual({ text: ' shapes', offset: 7 });
 		expect(errors).toHaveLength(0);
 	});
 
