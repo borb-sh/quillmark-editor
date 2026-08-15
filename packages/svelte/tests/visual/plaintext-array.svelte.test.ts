@@ -9,22 +9,31 @@
 // which the typed writer rests as the literal string again — the claim that lets a
 // `plaintext` element mount the same prose leaf its scalar field does.
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { mount, unmount, flushSync } from 'svelte';
+import { mount, unmount, flushSync, tick } from 'svelte';
 import { init, DocumentReader, type Quill, type Document } from '@quillmark/wasm';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
 import { quill } from '../helpers/fixtures.js';
 
 const core = await init();
 
-// jsdom implements neither, and mounting the editor reaches both.
+// jsdom implements none of these: the first two are the mount's, the rects are the
+// caret rect PM measures to scroll a landing into view.
 Element.prototype.scrollIntoView ??= () => {};
 Element.prototype.getAnimations ??= () => [];
+Range.prototype.getClientRects ??= () => [] as unknown as DOMRectList;
+Range.prototype.getBoundingClientRect ??= () => new DOMRect();
 
 let cleanup: (() => void) | undefined;
 afterEach(() => {
 	cleanup?.();
 	cleanup = undefined;
 });
+
+/** The landing verb this suite drives; the rest of the instance surface is
+ *  `verbs.svelte.test.ts`'s. */
+interface EditorRef {
+	setCaret(at: { field: string; pos?: number; granularity?: string }): Promise<void>;
+}
 
 function mountEditor(q: Quill, doc: Document) {
 	const target = document.createElement('div');
@@ -35,7 +44,7 @@ function mountEditor(q: Quill, doc: Document) {
 		void unmount(app);
 		target.remove();
 	};
-	return target;
+	return { target, editor: app as unknown as EditorRef };
 }
 
 const ELEMENT_LABEL = 'Errata ';
@@ -79,7 +88,7 @@ describe('an array of plaintext', () => {
 			expect(seeded.every((e) => typeof e === 'string')).toBe(true);
 			expect(seeded.length).toBeGreaterThan(1);
 
-			const target = mountEditor(q, doc);
+			const { target } = mountEditor(q, doc);
 			expect(rows(target).map((r) => r.textContent)).toEqual(seeded);
 			// The type distinction, on screen: the seed's `**asterisks**` are characters
 			// in the row, and no emphasis was lowered from them.
@@ -97,7 +106,7 @@ describe('an array of plaintext', () => {
 	it('adds an element and rests it as a string', () => {
 		const q = quill();
 		const doc = q.seedDocument();
-		const target = mountEditor(q, doc);
+		const { target } = mountEditor(q, doc);
 
 		const seeded = doc.getStored('errata') as string[];
 		arrayControl(target).querySelector<HTMLButtonElement>('.qm-add-el')!.click();
@@ -127,7 +136,7 @@ describe('an array of plaintext', () => {
 	it('removes an element on Backspace only once it reads empty', () => {
 		const q = quill();
 		const doc = q.seedDocument();
-		const target = mountEditor(q, doc);
+		const { target } = mountEditor(q, doc);
 
 		const seeded = doc.getStored('errata') as string[];
 		// A populated element keeps its row: the emptiness test reads the element's
@@ -146,7 +155,7 @@ describe('an array of plaintext', () => {
 	it('inserts a sibling on Enter', () => {
 		const q = quill();
 		const doc = q.seedDocument();
-		const target = mountEditor(q, doc);
+		const { target } = mountEditor(q, doc);
 
 		const seeded = doc.getStored('errata') as string[];
 		press(rows(target)[0], 'Enter');
@@ -154,5 +163,26 @@ describe('an array of plaintext', () => {
 		// The new row is the first one's sibling, not the list's tail.
 		expect(rows(target)[1].textContent).toBe('');
 		expect(doc.getStored('errata')).toEqual([seeded[0], '', ...seeded.slice(1)]);
+	});
+
+	// The landing is the row's, not the field's: a `plaintext` element rides the same
+	// lowering a `richtext` one does, so the compile answers it cluster-exact and the
+	// element lane carries the offset down (VISUAL_EDITOR.md §Surface).
+	it('lands a caret at the offset the compile resolved, counting by code point', async () => {
+		const q = quill();
+		const doc = q.seedDocument();
+		// An astral character before the offset is the hazard: 𝔘 is one code point and
+		// two UTF-16 units, so USV 9 is UTF-16 10 and a naive offset lands short of it.
+		q.writer(doc).set('errata', [core.importMarkdown('astral \u{1D518} tail here')]);
+		const { target, editor } = mountEditor(q, doc);
+
+		await editor.setCaret({ field: 'main.errata[0]', pos: 9, granularity: 'cluster' });
+		await tick();
+
+		expect(document.activeElement?.getAttribute('aria-label')).toBe('Errata 1');
+		const sel = window.getSelection();
+		expect(sel?.anchorNode?.textContent).toBe('astral \u{1D518} tail here');
+		expect(sel?.anchorOffset).toBe(10);
+		expect(rows(target)).toHaveLength(1);
 	});
 });

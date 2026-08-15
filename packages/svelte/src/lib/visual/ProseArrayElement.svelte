@@ -17,14 +17,16 @@
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { EditorState } from 'prosemirror-state';
+	import { EditorState, Selection } from 'prosemirror-state';
 	import { EditorView } from 'prosemirror-view';
 	import {
 		decode,
 		pmToContent,
 		inlineSchema,
 		plaintextSchema,
-		proseLeafPlugins
+		proseLeafPlugins,
+		buildLineIndex,
+		usvToPM
 	} from '../core/codec/index.js';
 	import './controls.css';
 	import type { Content } from '@quillmark/wasm';
@@ -60,6 +62,24 @@
 		if (!view) return;
 		view.focus();
 		view.dom.scrollIntoView({ block: 'nearest' });
+	}
+	/** Take the caret to USV `pos` in this element's own content: what a landing on an
+	 * element address resolves to when the compile answered a cluster-exact offset
+	 * (`leaves.ts`). `createField`'s body over the view this component owns.
+	 *
+	 * The index is built here rather than held: a landing is a discrete act, and one
+	 * doc walk per click is cheaper than a cache to invalidate per keystroke. `usvToPM`
+	 * clamps, so an offset past a value the compile has moved on from lands the end.
+	 *
+	 * `Selection.near`, not `TextSelection.create`: the mapped position can be
+	 * non-inline. Focus first, then the caret, flagged for scroll — the order and the
+	 * reasons are `FieldController.setCaret`'s (`codec/field.ts`). */
+	export function setCaret(pos: number): void {
+		if (!view) return;
+		const pm = usvToPM(buildLineIndex(view.state.doc), pos);
+		const sel = Selection.near(view.state.doc.resolve(pm));
+		view.focus();
+		view.dispatch(view.state.tr.setSelection(sel).scrollIntoView());
 	}
 
 	onMount(() => {

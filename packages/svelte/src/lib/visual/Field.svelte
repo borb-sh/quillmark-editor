@@ -120,7 +120,7 @@
 	let arrayEl = $state<
 		| {
 				focus: () => void;
-				focusElement: (k: number) => void;
+				focusElement: (k: number, pos?: number) => void;
 				washBox: () => HTMLElement | undefined;
 		  }
 		| undefined
@@ -133,8 +133,8 @@
 	}
 	/** The array's per-ELEMENT landing, for the addresses the preview mints under an
 	 *  array field (`leaves.ts`); read at the call, so it tracks the mounted repeater. */
-	function focusElement(k: number): void {
-		arrayEl?.focusElement(k);
+	function focusElement(k: number, pos?: number): void {
+		arrayEl?.focusElement(k, pos);
 	}
 	// Only where `for` cannot reach; the labelable four are the browser's own, and a
 	// second handler over them would be a focus the label already placed.

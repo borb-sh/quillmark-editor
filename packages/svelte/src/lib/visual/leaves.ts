@@ -29,15 +29,17 @@ import type { FieldController } from '../core/codec/index.js';
 export interface FieldControl {
 	focus(): void;
 	/**
-	 * Focus element `index` of a control that has elements, resolving the index to the
-	 * element's session id at the call; {@link focus}'s own answer for an index past
-	 * the live list. Absent on every control without elements.
+	 * Land in element `index` of a control that has elements, at USV `pos` where the
+	 * row's control can take one; resolving the index to the element's session id at
+	 * the call, with {@link focus}'s own answer for an index past the live list. Absent
+	 * on every control without elements.
 	 *
-	 * The granularity rides the call because the registry stays parent-keyed: a
-	 * per-element key is positional, in a registry whose doctrine is dodging
-	 * positional churn.
+	 * A landing, not a focus: an absent `pos` is the placement rung, exactly as on
+	 * `Landing`, and what a `pos` means is the row control's, the same way focusing is.
+	 * The place rides the call because the registry stays parent-keyed: a per-element
+	 * key is positional, in a registry whose doctrine is dodging positional churn.
 	 */
-	focusElement?(index: number): void;
+	focusElement?(index: number, pos?: number): void;
 	readonly el: HTMLElement;
 }
 
