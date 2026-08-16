@@ -149,7 +149,15 @@
 		   dark. */
 		--_qm-surface-raised: color-mix(in oklab, var(--_qm-bg), #fff 8%);
 		--_qm-surface-hover: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 8%);
-		--_qm-border: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 17%);
+		/* The one rung whose arms are not a single ratio: a stroke is read against what it
+		   separates, and the mix that reads as a hairline on the dark default draws the
+		   light card in a line heavier than the type it frames. The light arm is
+		   calibrated rather than derived, which makes this the one rung under the poles
+		   that reads the declared scheme rather than only the colours it resolves to. */
+		--_qm-border: light-dark(
+			color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 6%),
+			color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 17%)
+		);
 		/* A rule that separates without structuring: the lines between a table's cells,
 		   where the frame around them is the structure. Half the border, and read off
 		   it rather than restated as a percentage of its own, so the two hold their

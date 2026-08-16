@@ -97,23 +97,23 @@
 	 paints over the rest. The two read as one block, which is what document-level
 	 guidance is: the main card's, not a card of its own. Still in-flow, no lift.
 
-	 It takes the card's hairline, and the tuck makes the two outlines one: the slip's top
-	 stroke and the tops of its sides run under `main`, so what shows starts at the card's
-	 bottom corners.
+	 No stroke of its own. A tint below the card reads as a slip; the same tint inside an
+	 outline reads as a second card, which is the one thing the tuck exists to deny. What
+	 shows below the seam is fill, and `main`'s hairline is the pair's only edge.
 
 	 The bottom corners take the inner rung where the card above takes the outer: a slip
 	 is cut crisper than the thing it is tucked under, at every setting of the dial.
 
 	 The insets are asymmetric so the ink is not: the top takes the tuck back, and the
 	 bottom gives up a rung to the foot's control, whose box stands on the tap floor
-	 rather than on its own one-line label. The horizontal is the card's inset plus the
-	 body's margin (ProseField), so the tip starts under the prose rather than under the
-	 fields. */
+	 rather than on its own one-line label. Across, the inset is `main`'s stroke and the
+	 two nested insets under it, the card's own and the prose control's, so the tip starts
+	 on the prose's edge rather than short of it. */
 	.qm-tips {
 		margin-top: calc(var(--_qm-radius) * -1);
-		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: 0 0 var(--_qm-radius-inner) var(--_qm-radius-inner);
-		padding: calc(var(--_qm-space-3) + var(--_qm-radius)) var(--_qm-space-5) var(--_qm-space-2);
+		padding: calc(var(--_qm-space-3) + var(--_qm-radius))
+			calc(var(--_qm-border-width) + var(--_qm-space-3) * 2) var(--_qm-space-2);
 		background: var(--_qm-tips-surface);
 		display: flex;
 		flex-direction: column;
@@ -168,7 +168,11 @@
 	 the spacing one — the foot's button clears the floor and walks the whole set from
 	 the tip the card opens on, so no tip is reachable only by a dot. State is three
 	 steps of one ink on the recede ladder, never a second hue and never a size: a dot
-	 that grew would move the row it sits in. */
+	 that grew would move the row it sits in.
+
+	 `color` is restated because a button takes the UA's and not its parent's, so
+	 `currentColor` is the card's ink only once it is inherited; left to the UA it is
+	 `buttontext`, which is the one neutral on a card that carries no neutrals. */
 	.qm-tips-dot {
 		box-sizing: content-box;
 		width: 5px;
@@ -176,6 +180,7 @@
 		padding: var(--_qm-space-half);
 		border: none;
 		border-radius: var(--_qm-radius-pill);
+		color: inherit;
 		background: currentColor;
 		background-clip: content-box;
 		opacity: var(--_qm-opacity-idle);
@@ -192,8 +197,13 @@
 	   overrides is everything the family sets for a glyph among callers of its own
 	   colour, a labelled control on a warm card wanting none of it. The hover included:
 	   the family's neutral step would read as lent from the document above. Unlayered,
-	   so it beats the base rule without out-specifying it. */
+	   so it beats the base rule without out-specifying it.
+
+	   The box carries a rung of padding, so a rung of negative margin lands its label on
+	   the body's edge above while the box, and the hover it paints, still reaches past
+	   the text the way a control does. */
 	.qm-tips-action {
+		margin-right: calc(var(--_qm-space-2) * -1);
 		padding: var(--_qm-space-half) var(--_qm-space-2);
 		font-family: inherit;
 		font-size: inherit;
