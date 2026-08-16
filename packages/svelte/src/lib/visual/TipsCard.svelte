@@ -104,20 +104,27 @@
 	 The bottom corners take the inner rung where the card above takes the outer: a slip
 	 is cut crisper than the thing it is tucked under, at every setting of the dial.
 
-	 The insets are asymmetric so the ink is not: the top takes the tuck back, and the
-	 bottom gives up a rung to the foot's control, whose box stands on the tap floor
-	 rather than on its own one-line label. Across, the inset is `main`'s stroke and the
-	 two nested insets under it, the card's own and the prose control's, so the tip starts
-	 on the prose's edge rather than short of it. */
+	 Down, the insets are the document's own rhythm and they are measured to the ink, not
+	 to the boxes. The top is a block gap below the seam, what two of the body's paragraphs
+	 take, so the tip reads as the block after the prose; the bottom is the card's inset
+	 rung; and the foot sits at half of either, being the message's own foot rather than
+	 the next thing after it. The control gives its tap floor back as margin for that to
+	 hold: a box standing on the floor rather than on its one-line label carries a rung of
+	 slack at each edge, and spent inside the gap that is enough to make the tightest space
+	 in the card measure as the widest.
+
+	 Across, the inset is `main`'s stroke and the two nested insets under it, the card's
+	 own and the prose control's, so the tip starts on the prose's edge rather than short
+	 of it. */
 	.qm-tips {
 		margin-top: calc(var(--_qm-radius) * -1);
 		border-radius: 0 0 var(--_qm-radius-inner) var(--_qm-radius-inner);
 		padding: calc(var(--_qm-space-3) + var(--_qm-radius))
-			calc(var(--_qm-border-width) + var(--_qm-space-3) * 2) var(--_qm-space-2);
+			calc(var(--_qm-border-width) + var(--_qm-space-3) * 2) var(--_qm-space-3);
 		background: var(--_qm-tips-surface);
 		display: flex;
 		flex-direction: column;
-		gap: var(--_qm-space-2);
+		gap: var(--_qm-space);
 		font-family: var(--_qm-tips-font);
 		font-size: var(--_qm-text-body);
 		line-height: var(--_qm-leading-body);
@@ -199,10 +206,13 @@
 	   the family's neutral step would read as lent from the document above. Unlayered,
 	   so it beats the base rule without out-specifying it.
 
-	   The box carries a rung of padding, so a rung of negative margin lands its label on
-	   the body's edge above while the box, and the hover it paints, still reaches past
-	   the text the way a control does. */
+	   The box is the tap target and the label is what the rhythm measures, so both axes
+	   give the difference back as margin: the inline rung lands the label on the body's
+	   edge above, and the block rung takes the floor's slack out of the foot's height.
+	   The box, and the hover it paints, still reaches past the label the way a control
+	   does. */
 	.qm-tips-action {
+		margin-block: calc(var(--_qm-space) * -1);
 		margin-right: calc(var(--_qm-space-2) * -1);
 		padding: var(--_qm-space-half) var(--_qm-space-2);
 		font-family: inherit;
