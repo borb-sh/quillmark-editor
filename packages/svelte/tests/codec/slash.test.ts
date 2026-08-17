@@ -5,7 +5,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import type { EditorView } from 'prosemirror-view';
 import { createField } from '$lib/core/codec';
 import type { FieldController, LeafViews, SlashState } from '$lib/core/codec';
-import { filterItems, slashItems } from '$lib/core/codec/slash.js';
+import { filterItems } from '$lib/core/codec/slash.js';
 import type { Document, TableProps } from '@quillmark/wasm';
 import { mount, press, quill, md } from './_util.js';
 
@@ -112,13 +112,139 @@ describe('the trigger is a word boundary', () => {
 	});
 });
 
-describe('the vocabulary is what no shorthand reaches', () => {
-	it('offers the table and nothing a `- `, `1. `, `# `, `> ` or fence already opens', () => {
-		expect(slashItems()).toEqual(['table']);
+describe('the vocabulary is the block shapes, one implementation behind two doors', () => {
+	it('offers every block a shorthand mints, and the table no shorthand reaches', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/');
+		expect(state()?.items).toEqual([
+			'heading',
+			'list',
+			'numbered-list',
+			'quote',
+			'code',
+			'divider',
+			'table'
+		]);
+		field.destroy();
 	});
 
 	it('is lowercase kebab-case throughout: a name is typed, not read', () => {
-		for (const name of slashItems()) expect(name).toMatch(/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/);
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/');
+		for (const name of state()!.items) expect(name).toMatch(/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/);
+		field.destroy();
+	});
+
+	/** Type `name` as a trigger run at the head of the block holding USV `pos`, and pick
+	 *  it: the gesture whose whole claim is that it lands what the shorthand lands. */
+	function pick(field: FieldController, view: EditorView, pos: number, name: string): void {
+		field.setCaret(pos);
+		type(view, `/${name}`);
+		press(view, 'Enter');
+	}
+
+	it('`/quote` wraps the block, the container `> ` opens', () => {
+		const { field, view } = leaf('alpha');
+		pick(field, view, 0, 'quote');
+		const stored = field.getContent();
+		expect(stored.text).toBe('alpha');
+		expect(stored.lines[0].containers).toEqual([{ container: 'quote' }]);
+		field.destroy();
+	});
+
+	it('`/list` mints the paragraph item `- ` does', () => {
+		const { field, view } = leaf('alpha');
+		pick(field, view, 0, 'list');
+		const stored = field.getContent();
+		expect(stored.text).toBe('alpha');
+		expect(stored.lines[0].containers).toEqual([
+			{ container: 'list_item', ordered: false, start: 1, ordinal: 0 }
+		]);
+		field.destroy();
+	});
+
+	it('`/numbered-list` mints the ordered one, numbered from 1', () => {
+		const { field, view } = leaf('alpha');
+		pick(field, view, 0, 'numbered-list');
+		expect(field.getContent().lines[0].containers).toEqual([
+			{ container: 'list_item', ordered: true, start: 1, ordinal: 0 }
+		]);
+		field.destroy();
+	});
+
+	it('a list pick continues the list above it rather than opening a second', () => {
+		const { field, view } = leaf('- alpha\n\nbeta');
+		pick(field, view, 6, 'list');
+		const stored = field.getContent();
+		// One list of two items, so the second item is ordinal 1 of the first's list.
+		expect(stored.lines.map((l) => l.containers)).toEqual([
+			[{ container: 'list_item', ordered: false, start: 1, ordinal: 0 }],
+			[{ container: 'list_item', ordered: false, start: 1, ordinal: 1 }]
+		]);
+		field.destroy();
+	});
+
+	it('`/heading` is level 1, the level `# ` counts to', () => {
+		const { field, view } = leaf('alpha');
+		pick(field, view, 0, 'heading');
+		expect(field.getContent().lines[0]).toMatchObject({ kind: 'heading', level: 1 });
+		field.destroy();
+	});
+
+	it('`/code` opens the fence and the paragraph after it, and keeps the caret inside', () => {
+		const { field, view } = leaf('');
+		pick(field, view, 0, 'code');
+		expect(field.getContent().lines.map((l) => l.kind)).toEqual(['code', 'para']);
+		// A code block is the one block no gap cursor sits beside, so the exit is minted
+		// and the caret stays in the fence to type in.
+		expect(view.state.selection.$head.parent.type.name).toBe('code_block');
+		field.destroy();
+	});
+
+	it('`/divider` replaces the block and lands the caret past it', () => {
+		const { field, view } = leaf('');
+		pick(field, view, 0, 'divider');
+		expect(field.getContent().lines.map((l) => l.kind)).toEqual(['rule', 'para']);
+		expect(view.state.selection.$head.parent.type.name).toBe('paragraph');
+		field.destroy();
+	});
+});
+
+describe('a name is offered only where its command would run', () => {
+	it('offers the island alone mid-paragraph, the rest turning the block the caret is in', () => {
+		const { field, view, state } = leaf('para');
+		typeAt(field, view, 4, ' /');
+		expect(state()?.items).toEqual(['table']);
+		field.destroy();
+	});
+
+	it("drops the lists at an item's head, where `- ` declines and Tab owns the nesting", () => {
+		const { field, view, state } = leaf('- alpha');
+		typeAt(field, view, 0, '/');
+		expect(state()?.items).not.toContain('list');
+		expect(state()?.items).not.toContain('numbered-list');
+		// The item holds every other shape the content does, and `# ` / `> ` fire there.
+		expect(state()?.items).toContain('heading');
+		expect(state()?.items).toContain('quote');
+		field.destroy();
+	});
+
+	it('drops the divider off a block with text in it, having nothing to retype into', () => {
+		const { field, view, state } = leaf('alpha');
+		typeAt(field, view, 0, '/');
+		expect(state()?.items).not.toContain('divider');
+		expect(state()?.items).toContain('heading');
+		field.destroy();
+	});
+
+	it('a pick the menu never offers consumes nothing: the run is left as typed', () => {
+		// `slashPick` is a public seam, so the decline is reachable without the menu.
+		const { field, view } = leaf('- alpha');
+		field.setCaret(0);
+		type(view, '/list');
+		field.slashPick('list');
+		expect(field.getContent().text).toBe('/listalpha');
+		field.destroy();
 	});
 });
 
@@ -174,15 +300,24 @@ describe('the query filters, and a miss draws nothing', () => {
 		field.destroy();
 	});
 
-	// Over a vocabulary of its own: the shipped one is one command, which cannot show
-	// that a prefix beats a substring or that the order survives.
-	it('matches a case-insensitive PREFIX, keeping the vocabulary order', () => {
-		const vocab = ['table', 'table-of-contents', 'footnote'];
-		expect(filterItems(vocab, 'TAB')).toEqual(['table', 'table-of-contents']);
-		// `note` is inside `footnote` and is not a prefix of it: a command completes the
-		// way it is typed, from the front.
+	// Over a vocabulary of its own, so the rule is stated rather than illustrated by
+	// whichever names the menu happens to carry.
+	it('matches a case-insensitive prefix of the name or of any of its words', () => {
+		const vocab = ['table', 'numbered-list', 'footnote'];
+		expect(filterItems(vocab, 'TAB')).toEqual(['table']);
+		// The word a writer has, wherever it sits in the name: a two-word command is
+		// reachable by its head noun and not only by the word it is distinguished with.
+		expect(filterItems(vocab, 'list')).toEqual(['numbered-list']);
+		// A prefix and not a substring: `note` is inside `footnote` and completes nothing.
 		expect(filterItems(vocab, 'note')).toEqual([]);
 		expect(filterItems(vocab, '')).toEqual(vocab);
+	});
+
+	it('offers both lists on `/list`, in the vocabulary order', () => {
+		const { field, view, state } = leaf('');
+		typeAt(field, view, 0, '/list');
+		expect(state()?.items).toEqual(['list', 'numbered-list']);
+		field.destroy();
 	});
 });
 
@@ -246,18 +381,18 @@ describe('a dismissal edits no text; a pick consumes exactly the run', () => {
 		field.destroy();
 	});
 
-	// One command, so there is nothing for the arrows to walk to; what has to hold is
-	// that they are claimed, since a caret leaving the run closes the menu it was
-	// navigating.
-	it("the arrows are the menu's while it is open, and hold the cursor in range", () => {
+	it("the arrows are the menu's while it is open, and walk it as a ring", () => {
 		const { field, view, state } = leaf('');
 		typeAt(field, view, 0, '/');
 		const claimed = (key: string) =>
 			view.someProp('handleKeyDown', (f) => f(view, new KeyboardEvent('keydown', { key })));
 		expect(claimed('ArrowDown')).toBe(true);
+		expect(state()?.index).toBe(1);
 		expect(claimed('ArrowUp')).toBe(true);
 		expect(state()?.index).toBe(0);
-		expect(state()?.items).toHaveLength(1);
+		// A ring, so no press is a no-op: Up off the first row lands on the last.
+		expect(claimed('ArrowUp')).toBe(true);
+		expect(state()?.index).toBe(state()!.items.length - 1);
 		field.destroy();
 	});
 
@@ -322,12 +457,12 @@ describe('a dismissal edits no text; a pick consumes exactly the run', () => {
 	it('a pointer entering an item moves the ONE highlight the keys drive', () => {
 		const { field, view, state } = leaf('');
 		typeAt(field, view, 0, '/');
-		field.slashFocus('table');
-		expect(state()!.items[state()!.index]).toBe('table');
+		field.slashFocus('quote');
+		expect(state()!.items[state()!.index]).toBe('quote');
 		// A name the menu is not offering moves nothing: a stale pointer event arrives
 		// after the query that filtered its row away.
 		field.slashFocus('nonesuch');
-		expect(state()!.index).toBe(0);
+		expect(state()!.items[state()!.index]).toBe('quote');
 		field.destroy();
 	});
 });
