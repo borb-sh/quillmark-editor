@@ -214,11 +214,11 @@ function cap(field: FieldController, kind: 'row' | 'column'): HTMLButtonElement 
 	return field.el.querySelector<HTMLButtonElement>(`.qm-table-add[data-axis='${kind}']`)!;
 }
 
-/** Drive a key at a focused grip, where a line selection's verbs live. */
-function key(target: Element, k: string, init: KeyboardEventInit = {}): void {
-	target.dispatchEvent(
-		new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init })
-	);
+/** Where the caret is: the island's one focus host, and so where every line verb is
+ *  driven from. Re-queried per press, since the caret travels with the line it names and
+ *  an op that changes the rectangle rebuilds the views. */
+function caret(field: FieldController): EditorView {
+	return (field as FieldController & LeafViews).focusedView();
 }
 
 /** Which cells the surface is washing: the selected line, read back off the DOM. */
@@ -345,11 +345,24 @@ describe('the table NodeView', () => {
 		field.destroy();
 	});
 
+	it('a grip press carries the caret onto the line, which is where the verbs bind', () => {
+		const { field } = tableLeaf(LETTERED);
+		const views = cellViews(field);
+		views[1].focus(); // the header's second cell
+		grips(field, 'row')[2].click();
+		// The caret kept its column and changed rows: the rectangle is the line through
+		// the caret, so a press on a line the caret is not in has to bring it along.
+		expect(views.indexOf(caret(field))).toBe(5);
+		expect(washed(field)).toEqual(['2,0', '2,1']);
+		// And the grip took none of it: nothing on the band is a focus host.
+		expect(field.el.ownerDocument.activeElement).not.toBe(grips(field, 'row')[2]);
+		field.destroy();
+	});
+
 	it('Backspace over a selected row deletes it', () => {
 		const { field } = tableLeaf(LETTERED);
-		const grip = grips(field, 'row')[1];
-		grip.click();
-		key(grip, 'Backspace');
+		grips(field, 'row')[1].click();
+		press(caret(field), 'Backspace');
 		expect(grid(leafProps(field))).toEqual([
 			['h1', 'h2'],
 			['b1', 'b2']
@@ -359,10 +372,9 @@ describe('the table NodeView', () => {
 
 	it('the HEADER row deletes the same way, and the row under it takes its place', () => {
 		const { field } = tableLeaf(LETTERED);
-		const grip = grips(field, 'row')[0];
-		grip.click();
+		grips(field, 'row')[0].click();
 		expect(washed(field)).toEqual(['0,0', '0,1']);
-		key(grip, 'Backspace');
+		press(caret(field), 'Backspace');
 		// A table is one row shorter and still has a header, which is the whole of what
 		// the model asked for. Alignment is the column's, so it does not travel.
 		expect(grid(leafProps(field))).toEqual([
@@ -375,9 +387,8 @@ describe('the table NodeView', () => {
 
 	it('Backspace over a selected column deletes it, alignment and all', () => {
 		const { field } = tableLeaf(LETTERED);
-		const grip = grips(field, 'column')[1];
-		grip.click();
-		key(grip, 'Backspace');
+		grips(field, 'column')[1].click();
+		press(caret(field), 'Backspace');
 		expect(grid(leafProps(field))).toEqual([['h1'], ['a1'], ['b1']]);
 		expect(leafProps(field).aligns).toEqual(['left']);
 		field.destroy();
@@ -387,62 +398,75 @@ describe('the table NodeView', () => {
 		// One rule for both, or the next Alt+arrow acts on a line the writer did not aim
 		// at — and which line that is would depend on which axis they were on.
 		const wide = tableLeaf(insertColumn(LETTERED, 1));
-		const column = grips(wide.field, 'column')[1];
-		column.click();
-		key(column, 'Backspace');
+		grips(wide.field, 'column')[1].click();
+		press(caret(wide.field), 'Backspace');
 		expect(washed(wide.field)).toEqual(['0,1', '1,1', '2,1']);
 		wide.field.destroy();
 
 		const tall = tableLeaf(LETTERED);
-		const row = grips(tall.field, 'row')[1];
-		row.click();
-		key(row, 'Backspace');
+		grips(tall.field, 'row')[1].click();
+		press(caret(tall.field), 'Backspace');
 		expect(washed(tall.field)).toEqual(['1,0', '1,1']);
 		tall.field.destroy();
 	});
 
 	it('the LAST rank of an axis hands it back, there being nothing after it', () => {
 		const { field } = tableLeaf(LETTERED);
-		const grip = grips(field, 'column')[1];
-		grip.click();
-		key(grip, 'Backspace');
+		grips(field, 'column')[1].click();
+		press(caret(field), 'Backspace');
 		// Two columns, the second dropped: the clamp lands on the one that is left.
 		expect(washed(field)).toEqual(['0,0', '1,0', '2,0']);
 		field.destroy();
 	});
 
-	it('an arrow steps the selection, and stops where the axis does', () => {
+	it('an arrow steps the selection, carries the caret, and stops where the axis does', () => {
 		const { field } = tableLeaf(LETTERED);
-		const grip = grips(field, 'row')[1];
-		grip.click();
-		key(grip, 'ArrowDown');
+		const views = cellViews(field);
+		grips(field, 'row')[1].click();
+		press(caret(field), 'ArrowDown');
 		expect(washed(field)).toEqual(['2,0', '2,1']);
+		// The caret went with the step, keeping its column: the held rectangle is the
+		// line through the caret, so one left behind would aim the next arrow elsewhere.
+		expect(views.indexOf(caret(field))).toBe(4);
 		// Up runs to the header and stops there, the row axis floor being row 0 like
 		// every other index the chrome walks.
-		key(grips(field, 'row')[2], 'ArrowUp');
-		key(grips(field, 'row')[1], 'ArrowUp');
+		press(caret(field), 'ArrowUp');
+		press(caret(field), 'ArrowUp');
 		expect(washed(field)).toEqual(['0,0', '0,1']);
-		key(grips(field, 'row')[0], 'ArrowUp');
+		press(caret(field), 'ArrowUp');
 		expect(washed(field)).toEqual(['0,0', '0,1']);
+		field.destroy();
+	});
+
+	it('a cross-axis arrow turns the line onto the caret’s other axis', () => {
+		const { field } = tableLeaf(LETTERED);
+		cellViews(field)[3].focus(); // row 1, column 1
+		press(caret(field), 'Escape');
+		expect(washed(field)).toEqual(['1,0', '1,1']);
+		// The arrow names the line on its own axis through the caret, so the first press
+		// across turns the row into the caret's column: the keyboard's whole route to one.
+		press(caret(field), 'ArrowLeft');
+		expect(washed(field)).toEqual(['0,1', '1,1', '2,1']);
+		// And the next one steps it, the held rectangle now being a line on that axis.
+		press(caret(field), 'ArrowLeft');
+		expect(washed(field)).toEqual(['0,0', '1,0', '2,0']);
 		field.destroy();
 	});
 
 	it('the one line that IS the table deletes it: a one-column table, its grip', () => {
 		const { doc, field } = tableLeaf(newTable(1, 1));
-		const grip = grips(field, 'column')[0];
-		grip.click();
+		grips(field, 'column')[0].click();
 		// That rectangle spans both axes — the column is every column and it runs every
 		// row — so it is the table, and the table is what goes.
-		key(grip, 'Backspace');
+		press(caret(field), 'Backspace');
 		expect(doc.main.body.islands).toHaveLength(0);
 		field.destroy();
 	});
 
 	it('Alt+arrow moves the selected line, and the selection travels with it', () => {
 		const { field } = tableLeaf(LETTERED);
-		const grip = grips(field, 'row')[1];
-		grip.click();
-		key(grip, 'ArrowDown', { altKey: true });
+		grips(field, 'row')[1].click();
+		press(caret(field), 'ArrowDown', { altKey: true });
 		expect(grid(leafProps(field))).toEqual([
 			['h1', 'h2'],
 			['b1', 'b2'],
@@ -454,11 +478,24 @@ describe('the table NodeView', () => {
 		field.destroy();
 	});
 
+	it('an Alt+arrow across the held line keeps the key without acting', () => {
+		const { field } = tableLeaf(LETTERED);
+		grips(field, 'row')[1].click();
+		const view = caret(field);
+		const claimed = view.someProp('handleKeyDown', (f) =>
+			f(view, new KeyboardEvent('keydown', { key: 'ArrowLeft', altKey: true }))
+		);
+		// A row is not a column, so there is no line to move — and the key is the
+		// rectangle's anyway: handed back, it is the browser's Back mid-gesture.
+		expect(claimed).toBe(true);
+		expect(grid(leafProps(field))).toEqual(grid(LETTERED));
+		field.destroy();
+	});
+
 	it('a column moves with its alignment', () => {
 		const { field } = tableLeaf(LETTERED);
-		const grip = grips(field, 'column')[1];
-		grip.click();
-		key(grip, 'ArrowLeft', { altKey: true });
+		grips(field, 'column')[1].click();
+		press(caret(field), 'ArrowLeft', { altKey: true });
 		expect(grid(leafProps(field))).toEqual([
 			['h2', 'h1'],
 			['a2', 'a1'],
@@ -470,9 +507,8 @@ describe('the table NodeView', () => {
 
 	it('Alt+arrow carries the header down, and the row it passed is the header now', () => {
 		const { field } = tableLeaf(LETTERED);
-		const grip = grips(field, 'row')[0];
-		grip.click();
-		key(grip, 'ArrowDown', { altKey: true });
+		grips(field, 'row')[0].click();
+		press(caret(field), 'ArrowDown', { altKey: true });
 		expect(grid(leafProps(field))).toEqual([
 			['a1', 'a2'],
 			['h1', 'h2'],
@@ -484,13 +520,30 @@ describe('the table NodeView', () => {
 		field.destroy();
 	});
 
-	it('Escape leaves a line selection for the island, one rung up the ladder', () => {
+	it('Escape climbs a rung a press: the caret’s row, then the island', () => {
 		const { field } = tableLeaf(LETTERED);
-		const grip = grips(field, 'row')[1];
-		grip.click();
-		key(grip, 'Escape');
+		const views = cellViews(field);
+		views[3].focus(); // row 1, column 1
+		press(caret(field), 'Escape');
+		// The row through the caret, and the caret still in it: this is the gesture that
+		// draws a rectangle from the keyboard, and every line verb reads one.
+		expect(washed(field)).toEqual(['1,0', '1,1']);
+		expect(views.indexOf(caret(field))).toBe(3);
+		press(caret(field), 'Escape');
 		const selection = outerView(field).state.selection;
 		expect(selection instanceof NodeSelection && selection.node.type.name).toBe('island_block');
+		expect(washed(field)).toEqual([]);
+		field.destroy();
+	});
+
+	it('a cell edit retires the rectangle: typing is the caret’s', () => {
+		const { field } = tableLeaf(LETTERED);
+		grips(field, 'row')[1].click();
+		expect(washed(field)).not.toEqual([]);
+		const view = caret(field);
+		view.dispatch(view.state.tr.insertText('!', 1));
+		// A wash left up over text being typed says the next Backspace takes the row,
+		// and it does not.
 		expect(washed(field)).toEqual([]);
 		field.destroy();
 	});
@@ -572,12 +625,12 @@ describe('the table NodeView', () => {
 		// Five grips no Tab arrives at, so five stops the document does not spend.
 		for (const axis of ['row', 'column'] as const)
 			for (const grip of grips(field, axis)) expect(grip.tabIndex).toBe(-1);
-		// The caps stay: the column one is the keyboard's only route to a column at all,
-		// and the row one is that control on the other axis.
+		// The caps stay: they are the keyboard's route to growth on either axis.
 		for (const axis of ['row', 'column'] as const) expect(cap(field, axis).tabIndex).toBe(0);
-		// A grip still takes focus, by the routes the view owns rather than by Tab.
+		// And no key reaches a grip by any other route either: it is pointer chrome, and
+		// the line verbs bind in the cell the selection runs through.
 		grips(field, 'row')[1].click();
-		expect(field.el.ownerDocument.activeElement).toBe(grips(field, 'row')[1]);
+		expect(cellViews(field).some((v) => v.hasFocus())).toBe(true);
 		field.destroy();
 	});
 
@@ -629,7 +682,8 @@ describe('the table NodeView', () => {
 		const { doc, field } = tableLeaf(LETTERED);
 		const first = cellViews(field)[0];
 		first.focus();
-		press(first, 'Escape');
+		press(first, 'Escape'); // the caret's row
+		press(first, 'Escape'); // and the island under it
 		const outer = outerView(field);
 		const selection = outer.state.selection;
 		expect(selection instanceof NodeSelection && selection.node.type.name).toBe('island_block');
@@ -776,6 +830,20 @@ describe('a selection is a rectangle of cells, and Backspace reads its extent', 
 		sweep(field, 2, 3);
 		expect(washed(field)).toEqual(['1,0', '1,1']);
 		expect(grips(field, 'row')[1].getAttribute('aria-pressed')).toBe('true');
+		field.destroy();
+	});
+
+	it('a swept row moves like the one a grip named: the extent is what a verb reads', () => {
+		const { field } = tableLeaf(LETTERED);
+		layout(field);
+		sweep(field, 2, 3); // row 1, cell by cell
+		press(caret(field), 'ArrowDown', { altKey: true });
+		expect(grid(leafProps(field))).toEqual([
+			['h1', 'h2'],
+			['b1', 'b2'],
+			['a1', 'a2']
+		]);
+		expect(washed(field)).toEqual(['2,0', '2,1']);
 		field.destroy();
 	});
 
@@ -1065,7 +1133,8 @@ describe('a selection is the subject of the next command', () => {
 		const { doc, field } = tableLeaf(LETTERED);
 		const first = cellViews(field)[0];
 		first.focus();
-		press(first, 'Escape');
+		press(first, 'Escape'); // the caret's row
+		press(first, 'Escape'); // and the island under it
 		const outer = outerView(field);
 		expect(type(outer, 'x')).toBe(true);
 		expect(doc.main.body.islands).toHaveLength(1); // the table stands
