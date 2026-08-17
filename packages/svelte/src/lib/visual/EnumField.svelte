@@ -16,7 +16,10 @@
 	import { Select } from 'bits-ui';
 	import Icon from './icons/Icon.svelte';
 	import { syncedLocal } from './synced.svelte.js';
+	import { wording } from './strings.js';
 	import './controls.css';
+
+	const t = wording();
 
 	interface Props {
 		value: string | undefined;
@@ -114,8 +117,20 @@
 				     plain string and never picks up the scoping hash. -->
 				<div class="qm-menu-surface qm-select-content" data-qm-root>
 					<Select.Viewport>
-						<Select.Item class="qm-menu-item qm-select-item" value={UNSET} label={ghostText}>
+						<!-- The sentinel renders the `default:`'s own text, so a defaulted enum
+						     lists that word twice: this row, and the member below it. The tag is
+						     what tells them apart, and it has to be a word rather than a tone —
+						     the ghost is already `ink-label`, and while the field is unset this
+						     is the selected row, so the weight step is pulling the other way. It
+						     rides the accessible name too: the row is no clearer to a screen
+						     reader than to an eye without it. -->
+						<Select.Item
+							class="qm-menu-item qm-select-item qm-select-unset"
+							value={UNSET}
+							label={`${ghostText} ${t.strings.enumUnsetTag}`}
+						>
 							<span class="qm-select-ghost">{ghostText}</span>
+							<span class="qm-select-tag">{t.strings.enumUnsetTag}</span>
 						</Select.Item>
 						<!-- A refused option still draws under `'disable'`, and under either
 						     policy when it is the one selected: a listbox whose selected value
@@ -184,6 +199,24 @@
 		cursor: default;
 	}
 	.qm-select-ghost {
+		color: var(--_qm-ink-label);
+	}
+	/* The sentinel's row: the ghost at one end, the tag at the other, so the pair reads
+	   as a value and a note about it rather than as two words. Only this row takes the
+	   split; a member's row is one string and has nothing to distribute. */
+	.qm-select-content :global(.qm-select-unset) {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--_qm-space-2);
+	}
+	/* A step down the size ramp, which is what says this is chrome and the word beside
+	   it is the value. The ink is the ghost's own: a second tone here would rank the
+	   tag against the thing it annotates, and there is no rung under `label` to take
+	   (theme.css, "Two rungs, and there is no third"). */
+	.qm-select-tag {
+		flex-shrink: 0;
+		font-size: var(--_qm-text-label);
 		color: var(--_qm-ink-label);
 	}
 </style>

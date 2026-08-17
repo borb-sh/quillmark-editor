@@ -82,18 +82,23 @@ function clearWorld(target: HTMLElement): void {
 	);
 }
 
-/** The drawn cells of the live world, label text in declaration order. */
+/** The drawn cells of the live world, label text in declaration order. The marker is
+ *  a sibling node inside the label, so the text is normalized rather than compared
+ *  raw: what the assertions are about is the name and its obligation, not the
+ *  whitespace `FieldLabel`'s markup leaves between the two. */
 function cellLabels(target: HTMLElement): string[] {
-	return [...field(target, 'Distribution').querySelectorAll<HTMLElement>('.qm-object-label')].map(
-		(el) => el.textContent?.trim() ?? ''
-	);
+	return [
+		...field(target, 'Distribution').querySelectorAll<HTMLElement>(
+			'.qm-object-prop .qm-field-label'
+		)
+	].map((el) => el.textContent?.replace(/\s+/g, ' ').trim() ?? '');
 }
 
 /** A cell's text input, by the label it sits under. */
 function cellInput(target: HTMLElement, label: string): HTMLInputElement {
 	const prop = [
 		...field(target, 'Distribution').querySelectorAll<HTMLElement>('.qm-object-prop')
-	].find((p) => p.querySelector('.qm-object-label')?.textContent?.trim().startsWith(label));
+	].find((p) => p.querySelector('.qm-field-label')?.textContent?.trim().startsWith(label));
 	const input = prop?.querySelector('input');
 	if (!input) throw new Error(`no cell input under ${label}`);
 	return input;
@@ -123,7 +128,7 @@ describe('a variant enum field', () => {
 		// `lift_on` declares no `default:` and is obliged; `held_by` declares `""` and is
 		// not. The pair is what the axis buys: required *in this world*.
 		pickWorld(target, 'embargoed');
-		expect(cellLabels(target)).toEqual(['Lift on*', 'Held by']);
+		expect(cellLabels(target)).toEqual(['Lift on *', 'Held by']);
 
 		// One world's cells are not the other's: the flip retires both and brings the
 		// licence in, rather than accumulating a union of every world's fields.
@@ -134,18 +139,29 @@ describe('a variant enum field', () => {
 		expect(cellLabels(target)).toEqual([]);
 	});
 
-	it('names an obliged cell "required", the label being a span that names nothing', () => {
+	it('names an obliged cell through a real label, and says "required" on the marker', () => {
 		const q = quill();
 		const doc = q.seedDocument();
 		const target = mountEditor(q, doc);
 
 		pickWorld(target, 'embargoed');
-		// The `*` is decorative here, unlike the field label's: a screen reader gets the
-		// word off the control's own composed name.
-		expect(cellInput(target, 'Lift on').getAttribute('aria-label')).toBe(
-			'Distribution Lift on required'
-		);
-		expect(cellInput(target, 'Held by').getAttribute('aria-label')).toBe('Distribution Held by');
+		// A cell is named the way every other control on the surface is: a `<label for>`
+		// pointing at it, so the name is the label's own text and there is no second
+		// `aria-label` beside it for an implementation to have to choose between.
+		const input = cellInput(target, 'Lift on');
+		expect(input.getAttribute('aria-label')).toBeNull();
+		const label = target.querySelector<HTMLLabelElement>(`label[for="${input.id}"]`);
+		expect(label?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Lift on *');
+		// The glyph announces the word rather than the character, and it rides inside the
+		// label so it names the control along with the text.
+		expect(label?.querySelector('.qm-field-required')?.getAttribute('aria-label')).toBe('required');
+
+		const unobliged = cellInput(target, 'Held by');
+		expect(
+			target
+				.querySelector<HTMLLabelElement>(`label[for="${unobliged.id}"]`)
+				?.querySelector('.qm-field-required')
+		).toBeNull();
 	});
 
 	it('commits a cell into the container, keeping the discriminant beside it', () => {

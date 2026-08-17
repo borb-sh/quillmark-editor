@@ -53,6 +53,30 @@ export interface VisualStrings extends TableChromeStrings, SlashStrings {
 	arrayAdd: string;
 	arrayRemove: string;
 
+	// ── Enum control ──────────────────────────────────────────────────────────
+	/**
+	 * The tag on the unset sentinel's row. The sentinel renders the `default:`'s own
+	 * text, so without it the list opens on two rows reading the same word and only
+	 * tone tells them apart — and tone is carrying the selected weight in the other
+	 * direction. A word is what separates them.
+	 */
+	enumUnsetTag: string;
+
+	// ── Subform ───────────────────────────────────────────────────────────────
+	/**
+	 * What stands where a subform declines to recurse (a nested prose / array /
+	 * object property). The whole sentence, since a translator orders the kind
+	 * within it, and it says what the reader can do rather than which release drew
+	 * the line.
+	 */
+	nestedUnsupported: (kind: string) => string;
+	/**
+	 * A collapsed array element whose first text property is empty: the label and the
+	 * 1-based index, which is what its accessible name already says. Parametric, so
+	 * word order stays the translator's.
+	 */
+	elementUntitled: (label: string, index: number) => string;
+
 	// ── Field chrome ──────────────────────────────────────────────────────────
 	/** The required marker's accessible name; the glyph itself is a `*`. */
 	fieldRequired: string;
@@ -143,6 +167,9 @@ export const DEFAULT_VISUAL_STRINGS: VisualStrings = {
 	addCard: '+ Add Card',
 	arrayAdd: '+ Add',
 	arrayRemove: 'Remove',
+	enumUnsetTag: 'default',
+	nestedUnsupported: (kind) => `A nested ${kind} — edit this field in the source view.`,
+	elementUntitled: (label, index) => `${label} ${index}`,
 	fieldRequired: 'required',
 	formatGroup: 'Formatting',
 	formatBold: 'Bold (Mod-B)',
