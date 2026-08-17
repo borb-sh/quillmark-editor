@@ -198,8 +198,7 @@ export function controlKind(f: QuillFieldSchema): ControlKind {
 			return 'prose';
 		case 'enum':
 			// `variants:` is the one key that changes a field's resting shape (canon
-			// `SCHEMAS.md`): with it the field rests as a container and takes the control
-			// that draws one, without it a bare string and the plain select.
+			// `SCHEMAS.md`): with it the field rests as a container, without it a bare string.
 			return f.variants ? 'variant' : 'enum';
 		case 'string':
 			return 'text';
@@ -226,10 +225,9 @@ export const VARIANT_DISCRIMINANT = 'value';
 
 /**
  * Which world's cells to draw: the authored discriminant when the container carries
- * one, else the ghosted default's member. Reading through the ghost is what keeps the
- * cells on screen the cells that will print — an unset field renders its `default:`,
- * so a defaulted world whose cells were hidden would print answers the form never
- * asked for. The blank owns no world and neither does a member declaring no cells.
+ * one, else the ghosted default's member — an unset field renders its `default:`, so a
+ * defaulted world whose cells were hidden would print answers the form never asked
+ * for. The blank owns no world, and neither does a member declaring no cells.
  */
 export function variantMember(
 	value: Record<string, unknown> | undefined,
@@ -248,14 +246,11 @@ export function variantCells(
 }
 
 /**
- * The container a discriminant pick commits. Sibling cells are **kept**: the engine
- * carries an answer its world no longer selects and warns `validation::out_of_variant`
- * rather than dropping it (canon `SCHEMAS.md`), precisely so the ordinary gesture —
- * pick a world, fill it, flip to compare, flip back — costs nothing. Dropping them
- * here would spend the answers the boundary went out of its way to keep.
- *
- * The unset sentinel clears the discriminant cell alone, for the same reason. A
- * container left holding nothing is an unset field, which commits `undefined`.
+ * The container a discriminant pick commits, and the discriminant cell alone the unset
+ * sentinel clears: sibling cells are **kept** either way, since the boundary carries an
+ * answer its world does not select rather than dropping it (VISUAL_EDITOR §"Enum
+ * variants"). A container left holding nothing is an unset field, which commits
+ * `undefined`.
  */
 export function commitDiscriminant(
 	value: Record<string, unknown> | undefined,

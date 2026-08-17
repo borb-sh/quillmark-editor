@@ -93,9 +93,7 @@
 	const ghost = $derived(ghostDefault(provenance));
 	const defaultStr = $derived(stringifyGhost(ghost));
 	// A variant resolves as one rung whose value is the whole container, so the
-	// discriminant's ghost is that container's own discriminant cell. Read off the
-	// resolved rung like every other ghost, never off the static schema: what the
-	// control ghosts is what an unset field renders.
+	// discriminant's ghost is that container's own discriminant cell.
 	const ghostMember = $derived(
 		(ghost as Record<string, unknown> | undefined)?.[VARIANT_DISCRIMINANT] as string | undefined
 	);

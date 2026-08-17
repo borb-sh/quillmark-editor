@@ -1,31 +1,25 @@
 <!--
  An `enum` declaring `variants:` → the discriminant's select, and under it the cells
- the chosen world brings into play (canon `SCHEMAS.md` §"Enum variants"). The field
- rests as a container, `{value: <member>, …that member's fields}`, and commits whole:
- it is one cell to `Addr`, so there is no per-cell write address and none is wanted.
+ the chosen world brings into play (VISUAL_EDITOR §"Enum variants"). The field rests as
+ a container, `{value: <member>, …that member's fields}`, and commits whole: it is one
+ cell to `Addr`, so there is no per-cell write address.
 
- The cells are the object subform, unchanged. A variant's cell set is a scalar field
- set keyed by name over a container the parent commits by value, which is what that
- component already is; passing the whole container as its `value` and the world's
- declaration as its `properties` gives back the container with one cell written, which
- is exactly what this commits. Cells outside the drawn world ride through untouched.
-
- A discriminant flip keeps the other worlds' answers, and so does clearing it. The
- boundary carries a stranded answer and warns `validation::out_of_variant` rather than
- dropping it, so that the ordinary gesture — pick a world, fill it, flip to compare,
- flip back — costs nothing; a control that dropped them would spend exactly what the
- engine went out of its way to keep.
-
- A stranded answer is therefore held but undrawn: the cells of a world that is not
- live have nowhere to render, and `out_of_variant` is a warning, which the inline lane
- does not carry (it draws errors only). It is a read of `quill.validate(doc)`, where a
- host that wants to surface one finds it — the same lane obligation is on.
+ The cells are {@link ObjectField}, which already draws a scalar field set keyed by
+ name over a container its parent commits by value. It takes the whole container as its
+ `value` and the world's declaration as its `properties`, so what it hands back is the
+ container with one cell written — and cells outside the drawn world ride through
+ untouched rather than needing to be merged back.
 -->
 <script lang="ts">
 	import type { QuillFieldSchema } from '@quillmark/wasm';
 	import EnumField from './EnumField.svelte';
 	import ObjectField from './ObjectField.svelte';
-	import { commitDiscriminant, variantCells, variantMember } from './structure.js';
+	import {
+		VARIANT_DISCRIMINANT,
+		commitDiscriminant,
+		variantCells,
+		variantMember
+	} from './structure.js';
 
 	interface Props {
 		/** The stored container, or undefined while the field is unset. */
@@ -59,7 +53,7 @@
 
 	const member = $derived(variantMember(value, ghostMember));
 	const cells = $derived(variantCells(schema, member));
-	const discriminant = $derived(value?.value as string | undefined);
+	const discriminant = $derived(value?.[VARIANT_DISCRIMINANT] as string | undefined);
 </script>
 
 <div class="qm-variant">

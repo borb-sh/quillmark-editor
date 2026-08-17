@@ -211,7 +211,7 @@ main:
             type: string
             default: ""
             description: Who to ask about the hold.
-      description: "Who may have it. The one field declaring `variants:`, so it rests as a container (`{value, …the member's fields}`) rather than a bare string. `embargoed` brings two cells into play and obliges one of them — required in that world and silent in every other, which is what the flat spelling could not say; `public` brings a licence with a default to ghost; `internal` brings none, so the subform goes. An answer stranded by a flip is kept and warned, never dropped."
+      description: "Who may have it. The one field declaring `variants:`, so it rests as a container (`{value, …the member's fields}`) rather than a bare string. `embargoed` brings two cells into play and obliges one of them, required in that world and silent in every other; `public` brings a licence with a default to ghost; `internal` brings none, so the subform goes. An answer stranded by a flip is kept and warned, never dropped."
 
     issued:
       type: date

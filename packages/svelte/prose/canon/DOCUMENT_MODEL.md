@@ -44,7 +44,7 @@ Consumed by: [CODEC.md](CODEC.md) (op-grained edit, positions, markdown edges), 
 
 Two neighbouring surfaces the editor consumes but never drives: it selects no `OutputFormat` (Preview paints a page; it emits no artifact) and it routes diagnostics by `path`, never by a backend's error `code`.
 
-**One schema shape reaches the boundary with no control behind it.** `QuillFieldSchema.variants` (0.106.0) rests a card-level enum as a container, `{value: <member>, …that member's fields}`, so the discriminant is one cell of it and the per-member fields are siblings. `structure.ts` maps `type: 'enum'` to a select on the type alone and reads no `variants`, so a declaring quill would hand that select the container. No quill in this workspace declares one and nothing is broken today; what is missing is the control, not a repair.
+**`QuillFieldSchema.variants` rests a card-level enum as a container**, `{value: <member>, …that member's fields}`, so the discriminant is one cell of it and the per-member fields are siblings. It is the one schema key that changes a field's resting shape, and the editor reads it: the control is the discriminant's select over the cells the live member declares ([VISUAL_EDITOR.md](VISUAL_EDITOR.md) §"Enum variants").
 
 ## Stability seams
 

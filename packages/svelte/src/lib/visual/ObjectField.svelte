@@ -82,11 +82,10 @@
 			`${label != null ? `${label} ` : ''}${sub.ui?.title ?? humanize(key)}` +
 			(required(sub) ? ` ${t.strings.fieldRequired}` : '')}
 		<div class="qm-object-prop">
-			<!-- The obligation marker is spaced by the label's own flex gap, as the field
-			     label spaces its own: no whitespace text node, so an unobliged property's
-			     label reads as its name and nothing else. Decorative, unlike FieldLabel's:
-			     this label is a `<span>` and names nothing, so the word rides the control's
-			     composed name (`propLabel`) rather than announcing as a node beside it. -->
+			<!-- The marker is spaced by the label's flex gap, not a whitespace text node, so
+			     an unobliged property's label reads as its name and nothing else. Decorative,
+			     unlike FieldLabel's: this label is a `<span>` and names nothing, so the word
+			     rides the control's own composed name (`propLabel`). -->
 			<span class="qm-object-label"
 				>{sub.ui?.title ?? humanize(key)}{#if required(sub)}<span
 						class="qm-object-required"

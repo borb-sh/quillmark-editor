@@ -22,10 +22,10 @@
 // branch every declared cell of that world is present, so a cell needs no presence
 // guard — only its value is worth one.
 //
-// The discriminant is bound for the branching and every *emitted* cell is read off
-// `data` directly, which is what regions it at the property (`main.distribution.
-// license`) and puts these cells within reach of the preview. A cell read through a
-// local binding carries no address.
+// The discriminant is bound for the branching, and every *emitted* cell is read off
+// `data` directly: a direct read regions at the property, so these cells reach the
+// preview as `main.distribution.<cell>`. A cell read through a local binding carries
+// no address.
 #let distribution-note = {
   let world = data.distribution.value
   if world == "internal" [Internal]
