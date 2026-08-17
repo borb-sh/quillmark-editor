@@ -12,8 +12,8 @@
 // `dist/client/carried.json` beside the bundle: the define lets a running client name
 // itself in a bug report, the file lets a consumer read the tarball without running
 // anything. `release.yml` renders that file with `--line --from`, so the notes and the
-// bytes are one reading. A second `carried()` against a second tree is a coordinate that
-// can disagree with the bundle: `main` moves while a release PR is open.
+// bytes are one reading rather than two that `main` can move between while a release PR
+// is open.
 
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';

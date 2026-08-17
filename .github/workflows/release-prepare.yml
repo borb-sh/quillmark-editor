@@ -123,7 +123,7 @@ jobs:
             echo "**Before merging:** read the \`## v${VERSION}\` section of \`packages/${PKG}/CHANGELOG.md\` on this branch. It is the curated \`## Unreleased\` body, promoted, and it becomes the GitHub Release notes verbatim."
             echo
             if [ "$PKG" = quillkit ]; then
-              echo "The notes open with one line this section does not carry: what the tarball compiles in, rendered from its own \`dist/client/carried.json\`. Read off the tarball rather than off this branch, so it names the copies the merge commit builds."
+              echo "The notes open with one line this section does not carry: what the tarball compiles in, rendered from its own \`dist/client/carried.json\`, so it names the copies the merge commit builds rather than the ones on this branch."
               echo
             fi
             echo "Merging tags \`${PKG}-v${VERSION}\` and publishes \`${NAME}\`."
