@@ -6,6 +6,8 @@
 
 **The carried `@quillmark/wasm` is 0.106.0.** A quill under test gains two shapes: an enum may declare `variants:`, per-member fields that exist only in the world its discriminant selects — which the editor draws, so an author sees the cells appear and retire as they pick — and a plate may claim the ink it composes for a field with `field-region`, which puts a computed block in the region table the preview reads. A quill whose variants declare one name differently fails to load.
 
+**A release's notes name what its tarball carries, read off the tarball.** The line was minted from the release branch while the client is built from the merge commit, so a sibling release landing between the two made them disagree: 0.2.1's notes name a `@quillmark/svelte` its client does not carry, corrected here. `dist/client/carried.json` is the one mint, the notes render it, and the promoted changelog section carries no copy.
+
 **`studio` packs drafts; `build` and `site` no longer do.** Quiver's floor leaves quills under `0.1.0` out of a built artifact, and the two verbs that write deployments take it. `studio` is the author's own viewer, so it asks for the whole tree and a quill mid-draft stays on screen.
 
 ## v0.3.0 - 2026-08-14
@@ -24,7 +26,7 @@ The carried `@quillmark/wasm` is 0.104.0. The studio and `test` name no field ad
 
 ## v0.2.1 - 2026-08-11
 
-Carries `@quillmark/svelte` 0.3.0, `@quillmark/quiver` 0.21.0, `@quillmark/wasm` 0.103.0.
+Carries `@quillmark/svelte` 0.3.1, `@quillmark/quiver` 0.21.0, `@quillmark/wasm` 0.103.0.
 
 ## v0.2.0 - 2026-08-11
 

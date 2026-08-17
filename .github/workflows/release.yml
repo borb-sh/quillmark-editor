@@ -118,6 +118,10 @@ jobs:
             || { echo "::error::the tarball laid no client at the site root"; exit 1; }
           test -f "$RUNNER_TEMP/site/quiver/latest.json" \
             || { echo "::error::the tarball laid no quiver under the site"; exit 1; }
+          # The stamp the notes below render. Asserted here rather than there,
+          # because that step runs after the tag.
+          test -f "$RUNNER_TEMP/tool/dist/client/carried.json" \
+            || { echo "::error::the tarball carries no stamp of what it compiles in"; exit 1; }
           node scripts/check-bundle.mjs "$RUNNER_TEMP/site"
 
       - name: Tag
@@ -168,6 +172,15 @@ jobs:
           # A whitespace-only section would publish blank notes, and `-s` alone is
           # true for one.
           grep -q '[^[:space:]]' notes.md || echo "${NAME} ${VERSION}" > notes.md
+
+          # What the tarball compiles in, rendered from the stamp inside it rather than
+          # read off this tree a second time (`carried.mjs`). The extraction above laid
+          # it there; a package carrying no client has no stamp and gets no line.
+          CARRIED="$RUNNER_TEMP/tool/dist/client/carried.json"
+          if [ -f "$CARRIED" ]; then
+            { node scripts/carried.mjs --line --from "$CARRIED"; echo; cat notes.md; } \
+              > notes.new && mv notes.new notes.md
+          fi
 
           # No release is the repository's latest: the packages release on their
           # own clocks, so whichever went last would claim the label for all.
