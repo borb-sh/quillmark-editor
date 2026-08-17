@@ -67,6 +67,34 @@ import { ROOT, canonDocs, canonRoots, report } from './workspace.mjs';
 
 const THEMING = join(ROOT, 'packages', 'svelte', 'THEMING.md');
 
+/** The surface scope's stylesheets, split by whether their rank is contract.
+ *
+ *  `contract` is the derivation and the shared recipes: what a consumer aims a rule at,
+ *  and therefore what THEMING §"Your CSS beats ours" promises will lose to one. Their
+ *  selectors carry no class, id or attribute outside `:where()`, so any rule of a
+ *  consumer's outranks them, and they sit in no cascade layer, so a host reset that does
+ *  cannot reach them whatever order a bundler emits the sheets in. Both halves are the
+ *  promise; only the first is visible in a selector, the second being the absence of
+ *  `@layer` anywhere in the scope, which is held over every sheet below including the
+ *  exempt ones.
+ *
+ *  `exempt` is the prose leaf's interior, which ranks against two things a consumer is
+ *  not: ProseMirror's own unlayered sheet, imported beside it and won on source order at
+ *  equal specificity, and the table subsystem's states, which rank against each other.
+ *  Nothing here carries a class THEMING promises.
+ *
+ *  A `.css` file in the scope belonging to neither list fails: which side a new sheet is
+ *  on is a decision, and an allowlist that silently absorbs one is how the promise rots.
+ *  `.svelte` blocks are outside both — a component's own block overrides the shared base
+ *  on purpose, over classes the package withholds (§"What is deliberately not public"). */
+const RANK = {
+	contract: [
+		'packages/svelte/src/lib/core/theme.css',
+		'packages/svelte/src/lib/visual/controls.css'
+	],
+	exempt: ['packages/svelte/src/lib/core/codec/prose.css']
+};
+
 /** The closed scales, each with the tree that reads it and the one file that mints it.
  *  `census` marks the scopes the dial contract is measured over: the package's, since
  *  THEMING.md documents what the package consumes, and the preset's, which consumes the
@@ -336,6 +364,77 @@ function styleRegion(text, file) {
 	};
 }
 
+/** `:where(…)` dropped and `:global(…)` unwrapped, parens counted so a nested group goes
+ *  with its own wrapper. `:where` zeroes what it holds; `:global` is Svelte's compile-time
+ *  marker, emitting its contents verbatim, so it weighs exactly what they weigh. What is
+ *  left is everything that still weighs. */
+function unwrap(sel) {
+	let out = '';
+	let i = 0;
+	while (i < sel.length) {
+		const isGlobal = sel.startsWith(':global(', i);
+		if (isGlobal || sel.startsWith(':where(', i)) {
+			const open = sel.indexOf('(', i);
+			let depth = 0;
+			let j = open;
+			do {
+				if (sel[j] === '(') depth++;
+				else if (sel[j] === ')') depth--;
+				j++;
+			} while (j < sel.length && depth > 0);
+			if (isGlobal) out += unwrap(sel.slice(open + 1, j - 1));
+			i = j;
+			continue;
+		}
+		out += sel[i++];
+	}
+	return out;
+}
+
+/** A class, id or attribute weighing outside `:where()` — the two columns a consumer's
+ *  own class has to outrank. A pseudo-element weighs in the third, which any class
+ *  already beats, so `:where(.qm-tap-floor)::after` is at rank. */
+function weighs(sel) {
+	const bare = unwrap(sel)
+		.replace(/::[\w-]+/g, '')
+		.replace(/:(?:before|after|first-line|first-letter)\b/g, '');
+	return /#[\w-]+|\.[\w-]+|\[[^\]]*\]|:[\w-]+/.test(bare);
+}
+
+/** Every selector in a stylesheet, with the line it sits on. Descends into at-rules,
+ *  whose contents are ordinary rules; skips `@keyframes`, whose children are offsets. */
+function selectors(css) {
+	const out = [];
+	const stack = [];
+	let prelude = '';
+	let preludeLine = 1;
+	let line = 1;
+	for (const ch of css) {
+		if (ch === '{') {
+			const at = prelude.trim().startsWith('@');
+			if (!at && !stack.includes('keyframes')) {
+				let seen = preludeLine;
+				for (const part of prelude.split(',')) {
+					if (part.trim()) out.push({ sel: part.trim(), line: seen });
+					seen += part.split('\n').length - 1;
+				}
+			}
+			stack.push(at ? prelude.trim().slice(1).split(/[\s(]/)[0].toLowerCase() : 'rule');
+			prelude = '';
+			preludeLine = line;
+		} else if (ch === '}') {
+			stack.pop();
+			prelude = '';
+			preludeLine = line;
+		} else {
+			if (ch === '\n') line++;
+			if (!prelude.trim() && /\s/.test(ch)) preludeLine = line;
+			prelude += ch;
+		}
+	}
+	return out;
+}
+
 const errors = [];
 const warnings = [];
 const consumed = new Set();
@@ -559,11 +658,64 @@ for (const [abs, rel] of canonRoots().flatMap(canonDocs))
 		if (!classes.has(m[1]))
 			warnings.push(`${rel}: \`.${m[1]}\` named but carried by nothing in src/`);
 
+// The rank rule: the surfaces lose to a consumer's CSS by ranking under it, which is a
+// property of their selectors and of the layers they are not in rather than of any value.
+// Held over source, because a bundle cannot show it — a host's layered reset outranking a
+// rule that resolves fine leaves every rung defined and every sheet present, which is
+// what `check:bundle` reads.
+const surface = SCOPES.find((s) => !s.host);
+let ranked = 0;
+for (const full of sources(surface.dir, surface.exclude).filter((f) => f.endsWith('.css'))) {
+	const rel = relative(ROOT, full);
+	const css = decomment(readFileSync(full, 'utf8'));
+	// Ahead of the split: a layer anywhere in the scope reopens the order question, and an
+	// exempt sheet declaring one orders the layer for every sheet under it too.
+	if (/@layer\b/.test(css))
+		errors.push(
+			`${rel}: declares a cascade layer — the surfaces rank by specificity, not by layer`
+		);
+	if (RANK.exempt.includes(rel)) continue;
+	if (!RANK.contract.includes(rel)) {
+		errors.push(`${rel}: a new surface stylesheet — name it in RANK.contract or RANK.exempt`);
+		continue;
+	}
+	ranked++;
+	for (const { sel, line } of selectors(css))
+		if (weighs(sel))
+			errors.push(
+				`${rel}:${line}: \`${sel}\` weighs outside \`:where()\` — a consumer's own rule has to outrank it`
+			);
+}
+
+// The same rank over the surfaces' own class contract, wherever a file draws it: these
+// three are what a consumer is invited to aim a rule at, so a component drawing one
+// answers to it too (ARCHITECTURE §Styling for the form that satisfies it in a `<style>`
+// block). Each is checked against THEMING's promised set, so dropping one from the doc
+// fails here rather than quietly narrowing the contract.
+//
+// The preset's promised classes are out of scope: they land on the consumer's own DOM and
+// answer to ordinary precedence (`preset/recipes.css`). So is `.ts` — `paint.ts` carries
+// declarations in strings, which have no selector to weigh.
+const SURFACE_CONTRACT = ['qm-editor', 'qm-preview', 'qm-pane'];
+for (const c of SURFACE_CONTRACT.filter((c) => !promised.has(c)))
+	errors.push(`THEMING.md: \`.${c}\` is held at zero rank but not promised — settle which`);
+
+for (const full of sources(surface.dir, surface.exclude).filter((f) => !f.endsWith('.ts'))) {
+	const rel = relative(ROOT, full);
+	const region = styleRegion(readFileSync(full, 'utf8'), full);
+	if (!region) continue;
+	for (const { sel, line } of selectors(region.style))
+		if (weighs(sel) && [...sel.matchAll(CLASS_IN_SRC)].some((m) => SURFACE_CONTRACT.includes(m[0])))
+			errors.push(
+				`${rel}:${region.base + line}: \`${sel}\` weighs on a surface's contract class — wrap it \`:global(:where(…))\` so a consumer's own rule wins`
+			);
+}
+
 report(
 	'Style check',
 	errors,
 	`Style OK — ${scanned} files over ${SCOPES.length} scopes, ${consumed.size} public dials, ` +
-		`${promised.size} contract classes` +
+		`${promised.size} contract classes, ${ranked} sheets at zero rank` +
 		(mints.length ? `, ${mints.length} minted on purpose.` : '.'),
 	[...warnings, ...mints.map((m) => `${m} (minted on purpose)`)]
 );

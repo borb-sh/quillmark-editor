@@ -101,8 +101,10 @@
 	   the surface's own, so a bare `<div>` is a mounting site. The
 	   padding is safe against the paint loop: a slot is a `width: 100%` child and
 	   measures the content box, and the container's own `clientWidth` is read only as
-	   a change detector, which a constant inset does not disturb. */
-	.qm-preview {
+	   a change detector, which a constant inset does not disturb.
+
+	   `:global(:where(…))` puts this promised class at zero rank (ARCHITECTURE §Styling). */
+	:global(:where(.qm-preview)) {
 		box-sizing: border-box;
 		position: relative;
 		width: 100%;

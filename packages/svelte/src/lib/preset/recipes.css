@@ -8,11 +8,10 @@
    they freeze nothing about the surfaces' interior: the reason the package withholds
    its own internal classes does not reach them.
 
-   Unlayered, deliberately. `@layer qm` exists so consumer CSS beats the surfaces
-   without `!important`, and the same has to be true here; a layer of the preset's own
-   would put a second name in the contract and change what `revert-layer` at the foot
-   of this file resolves against. Unlayered, a consumer's own rules win by ordinary
-   precedence and the focus rule works with nothing declared. */
+   Unlayered, deliberately: a layer of the preset's own would put a name in the contract,
+   and unlayered a consumer's rules win over these by ordinary precedence. Ordinary
+   specificity too, not the surfaces' `:where()` zero: a consumer takes these classes on
+   purpose, so a rule of their own beside one is aimed rather than incidental. */
 
 /* ── The page ──────────────────────────────────────────────────────────────── */
 
@@ -308,18 +307,12 @@ pre.qm-readout {
 
 /* One visible indicator for the whole host, since none of these controls draws a ring
    of its own. It reads the ink rung rather than a hue: the page is monochrome, and a
-   focus ring is a position, not a destination. */
-:focus-visible {
+   focus ring is a position, not a destination.
+
+   The mounted surfaces are cut out of it: they draw their own ring, and a blanket would
+   repaint the controls that already have one. `:not(:where(…))` contributes no
+   specificity, so the cut-out leaves this rule's own rank where it was. */
+:focus-visible:not(:where([data-qm-root], [data-qm-root] *)) {
 	outline: var(--qmh-ring-width) solid var(--qmh-ink);
 	outline-offset: var(--qmh-space-half);
-}
-
-/* The mounted surfaces are the exception, and the rule above is why: an unlayered host
-   declaration beats `@layer qm.chrome` by design, so a ring written for controls that
-   draw none repaints the ones that do. `revert-layer` hands each control back to the
-   layer under this one, which is the package's own ring at its own offset, and is
-   what makes this file's own lack of a layer load-bearing rather than a preference. */
-[data-qm-root] :focus-visible {
-	outline: revert-layer;
-	outline-offset: revert-layer;
 }

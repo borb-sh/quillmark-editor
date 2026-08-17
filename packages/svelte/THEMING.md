@@ -24,7 +24,7 @@ Nothing to import and nothing to set. The package pulls its own stylesheet, and 
 
 **Placing and sizing**: each surface carries a stable root class (`.qm-editor`, `.qm-preview`), so you can place it from your own stylesheet without a wrapper. Each also takes a `class` prop that merges onto the same element, which is the better handle when you have one to give.
 
-**Taking the column back**: your CSS is unlayered and ours is not (below), so `padding: 0` or a `background` of your own on `.qm-editor` wins outright. Nothing is locked.
+**Taking the column back**: our selectors compute at specificity zero (below), so `padding: 0` or a `background` of your own on `.qm-editor` wins outright. Nothing is locked.
 
 ## Make it yours
 
@@ -43,7 +43,7 @@ The whole contract is **nine CSS custom properties**. They are dials, not a pale
 
 `--qm-bg` and `--qm-fg` are the two a themed host sets before any brand decision. Their defaults are a self-consistent neutral for a bare mounting site, not a guess at your page.
 
-`--qm-bg` is the **card**, not the column behind it: the plane a document is written on, which is also the sheet the preview paints. Everything else is a step off it, and the column the cards sit in is a step down, so a mounted editor draws its own ground and the cards read as islands on it. Give it the tone you want a card to be — white, in most light themes — and let the column fall out. If you want the column to meet your page instead, set a `background` of your own on `.qm-editor`; your CSS is unlayered and wins.
+`--qm-bg` is the **card**, not the column behind it: the plane a document is written on, which is also the sheet the preview paints. Everything else is a step off it, and the column the cards sit in is a step down, so a mounted editor draws its own ground and the cards read as islands on it. Give it the tone you want a card to be — white, in most light themes — and let the column fall out. If you want the column to meet your page instead, set a `background` of your own on `.qm-editor`; any rule of yours wins.
 
 The poles take a colour, not `transparent` or `inherit`: the raised surfaces, the borders and the muted inks are each a `color-mix` against `--qm-bg`, so a transparent pole makes every one of them translucent instead of letting your page through. Hand over the value your page is painted with and the derivation steps off it.
 
@@ -65,15 +65,12 @@ Give a length dial a length: `--qm-space: 4` is a valid custom property and an i
 
 ### Your CSS beats ours
 
-The surfaces' own rules live in the `qm` cascade layer, so **unlayered CSS of yours beats them outright**, at any specificity and without `!important`. Nothing to declare; this is the case most apps are in.
+The rules behind every class the surfaces promise you — `.qm-editor`, `.qm-preview`, `.qm-pane` — are wrapped in `:where()` and sit in no cascade layer, as are the derivation and the shared control recipes under them. So **each computes at specificity zero**, and two things follow:
 
-If your app uses cascade layers of its own, layer order decides it, and layer order is first-declaration order across the document — which makes it the bundler's, not yours. Name our layer first in one statement of your own, anywhere in your CSS, and it stops mattering:
+- **Any rule of yours wins**, at any specificity and without `!important`. A bare `.qm-editor { … }` does it; so does a bare `input`.
+- **No layer of yours can reach them**, because unlayered rules outrank every layer. A reset in a layer — Tailwind v4's preflight in `@layer base` is the common one — cannot strip the controls however your bundler orders the sheets. There is no layer statement to write and no sheet order to get right.
 
-```css
-@layer qm, app;
-```
-
-Declared before our sheet it fixes the order outright; declared after, `qm` is already first and `app` appends behind it. Either way your layer lands after ours and wins. `qm` is the contract; the sub-layers under it (`qm.scale`, `qm.chrome`) are ours to re-cut.
+One thing still outranks us: an **unlayered** blanket reset of your own (`* { padding: 0 }` in no layer) ties at specificity zero and wins on source order. Put it in a layer, where Tailwind, Bootstrap and Open Props already put theirs, and it stops reaching us.
 
 ### The surface follows your colour scheme
 
@@ -180,18 +177,17 @@ The narrow shape is one mount at a time, not two of them stacked: half a narrow 
 
 The shape is shared; the look of a band is not. Your wordmark, your nav and the depth of your head are the most app-specific things on the screen, and a preset that drew them would hand every tool built on this the same face, so they read `--qmh-*` like everything else and you write the rules. `.qm-split`'s gap is a default rather than a fact about splitting: close it to `0` and carry a hairline on one pane if you want the two mounts to meet instead of stand apart.
 
-It is **unlayered**, so your own rules beat it by ordinary precedence, exactly as they beat the surfaces. It is also opt-in and side-effect free until imported: nothing that styles your document arrives with a component.
+It is **unlayered** and at ordinary specificity, so your own rules beat it by ordinary precedence. It is also opt-in and side-effect free until imported: nothing that styles your document arrives with a component.
 
-One rule in it earns its place regardless of whether you take the rest, and you want it if you draw a focus ring of your own:
+One rule in it earns its place regardless of whether you take the rest, and you want it if you draw a focus ring of your own — cut the mounted surfaces out of the blanket:
 
 ```css
-[data-qm-root] :focus-visible {
-	outline: revert-layer;
-	outline-offset: revert-layer;
+:focus-visible:not(:where([data-qm-root], [data-qm-root] *)) {
+	outline: 2px solid; /* your ring, on your page */
 }
 ```
 
-A blanket `:focus-visible` of yours is unlayered, so it beats `@layer qm.chrome`, including on the controls that already draw a ring. `revert-layer` hands those back to ours and leaves yours everywhere else.
+A blanket `:focus-visible` of yours outranks ours, including on the controls that already draw one, so a ring written for the controls that draw none repaints the ones that do. The cut-out leaves yours everywhere else, and `:not(:where(…))` contributes no specificity, so your rule ranks exactly as it would without it.
 
 ## What is deliberately not public
 
@@ -201,4 +197,4 @@ The derived surface scale (surface / border / ink rungs, the blur radius, the po
 
 ## Requirements
 
-`@layer`, `color-mix()`, `light-dark()` and relative colour syntax (`oklab(from …)`): Baseline since 2022, 2023, 2024 and 2024 respectively — the last is what lets a plane step by the card's own lightness. `@property` is the one feature the surface does not require: where it is missing, an invalid length dial collapses the surface rather than falling back.
+`:where()`, `color-mix()`, `light-dark()` and relative colour syntax (`oklab(from …)`): Baseline since 2021, 2023, 2024 and 2024 respectively — the last is what lets a plane step by the card's own lightness. `@property` is the one feature the surface does not require: where it is missing, an invalid length dial collapses the surface rather than falling back.

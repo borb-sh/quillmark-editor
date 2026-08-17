@@ -899,9 +899,13 @@
 
 	   The column, not only the cards in it: the gutter the stack sits in and the tone
 	   behind it are the surface's own, so a bare `<div>` is a mounting site and nothing
-	   is owed before the editor looks right. Consumer CSS is unlayered and beats all of
-	   it, which is how a host that wants the column back takes it. `border-box`, so a
-	   height from the caller is the height this draws.
+	   is owed before the editor looks right. `border-box`, so a height from the caller is
+	   the height this draws.
+
+	   `:global(:where(…))` puts a promised class at zero rank, and both halves are
+	   load-bearing: `:global` drops the scoping class, `:where` drops the rest
+	   (ARCHITECTURE §Styling). The class is the surface's root wherever it mounts, so
+	   leaving the component's scope costs nothing.
 
 	   The sunken rung, which is what makes a card an island: the cards are the base
 	   plane and this is the one they float on, so the gutter reads as ground rather
@@ -909,7 +913,7 @@
 	   ramp, which is what gives the ground enough of itself to read as ground: at a
 	   narrower one the stack meets whatever frames the surface and the islands are
 	   back to being one block clipped at its edges. */
-	.qm-editor {
+	:global(:where(.qm-editor)) {
 		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
@@ -934,7 +938,7 @@
 	   site with no height of its own, which is the page form kept. The cards do not
 	   shrink to fit: a flex item's automatic minimum floors each at its own height, so
 	   the stack overflows and scrolls rather than squashing. */
-	.qm-editor.qm-pane {
+	:global(:where(.qm-editor.qm-pane)) {
 		height: 100%;
 		overflow: auto;
 		overscroll-behavior: contain;

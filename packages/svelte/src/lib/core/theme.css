@@ -8,7 +8,7 @@
    every element marked `data-qm-root`. The package imports it itself, so there is
    no `import './theme.css'` for a consumer to forget. A stylesheet rather than an
    inline `style` attribute is what buys the three things an attribute cannot
-   carry: a cascade layer consumer CSS beats without `!important`, real properties
+   carry: a selector consumer CSS outranks without `!important`, real properties
    on the root rule (`font-family`) that every root then inherits, and a free
    `style` attribute for the consumer.
 
@@ -26,10 +26,12 @@
    declared on the root, so they are reachable only by a rule targeting it:
    THEMING.md §"What is deliberately not public" states the terms.
 
-   Layers: `qm` is the top-level layer name, and it is contract — a consumer
-   pins the order against it with `@layer qm, app;` in their own CSS, which wins
-   in both bundler orders (THEMING §"Your CSS beats ours"). Unlayered consumer
-   CSS beats every layer here for free.
+   Rank: no cascade layer, and every selector here and in the shared recipes is
+   `:where()`-wrapped, so each computes at specificity zero. Any rule of a consumer's
+   outranks them at any specificity, and no layer of a consumer's outranks them at all —
+   unlayered beats layered whatever order the sheets arrive in, which is what makes the
+   rank independent of the bundler (THEMING §"Your CSS beats ours"). `check:style` holds
+   both halves over the sheets it names.
 
    `@property` registers the three entry rungs, the ones reading a dial, and
    nothing below them. An `initial-value` must be computationally independent,
@@ -64,374 +66,370 @@
 	initial-value: 14px;
 }
 
-@layer qm.scale, qm.chrome;
+:where([data-qm-root]) {
+	/* ── Poles ───────────────────────────────────────────────────────────────
+	   Each dial's default, stated once. Every rung below reads a pole, never a
+	   dial, so both schemes cost two declarations rather than fifteen; and the
+	   dial sits in front of the default, so a consumer's ancestor value wins in
+	   either scheme, which it would not if a scheme rule set `--qm-bg` instead.
 
-@layer qm.scale {
+	   `light-dark()` keys the default off the `color-scheme` this root inherits,
+	   which is the host's: an app that declares `dark` gets a dark surface
+	   whatever the OS says, and one that declares nothing gets light, matching
+	   its own unstyled text. So the package owns no mode logic at all: light or
+	   dark is the mounting site's, like every other value here (THEMING.md
+	   §"The surface follows your colour scheme").
+
+	   `--qm-bg` is the card, not the column behind it: the plane content is
+	   written on, which is also the preview's paper. Everything else is a step
+	   off it, and the column is a step down. */
+	--_qm-bg: var(--qm-bg, light-dark(#fff, #272729));
+	--_qm-fg: var(--qm-fg, light-dark(#1c1c1c, #d7dadc));
+	/* Neutral: the surface spends no hue on a state it can draw in grey. The pair
+	   clears WCAG 2.4.11's 3:1 against the card at both poles, at 4.8:1 and 5.8:1. */
+	--_qm-accent: var(--qm-accent, light-dark(#71717a, #a1a1aa));
+	/* The one hue the surface spends, and it spends it on a state. Each pole is
+	   its own figure rather than one ink shown twice: a hue calibrated against
+	   white reads as a stain on a dark card. Both clear WCAG 1.4.3's 4.5:1 against
+	   the card, which is the bar the label rung asks for and the one the glyphs
+	   drawn in this hue clear on the way past 1.4.11's 3:1. Dark enough at its own
+	   pole to carry a label at 4.5:1, so a filled chip needs no third figure. The
+	   figures are the host scale's (`preset/scale.css`), so a page's status line
+	   and a card's diagnostic carry one colour meaning error. */
+	--_qm-danger: var(--qm-danger, light-dark(#9e1518, #f9786c));
+	--_qm-font: var(--qm-font, ui-sans-serif, system-ui, sans-serif);
+	--_qm-font-mono: var(--qm-font-mono, ui-monospace, monospace);
+
+	/* ── Colour ──────────────────────────────────────────────────────────────
+	   Ink steps fg → bg, the border and hover rungs step bg → fg, all mixed in
+	   oklab; sRGB muddies the mid-tones and the label/meta/border rungs are
+	   exactly mid-tone. So inverting the poles inverts that half of the scale.
+	   The percentages are calibrated to the light-mode literals they stand in
+	   for (17% ≈ #d4d4d4, 35% ≈ #555).
+
+	   Planes are the half that does not read the ink pole, because what makes a
+	   card read as a card is that it is the brighter plane, in both schemes
+	   alike (ARCHITECTURE §Styling). A plane stepped toward the ink is right in
+	   dark and inverted in light, where it darkens the card below the page it
+	   floats on. So `sunken` and `well` step toward shadow and `raised` toward
+	   light, and the base plane — a card, the preview's paper — is the pole
+	   itself.
+
+	   Two planes sink. `sunken` is the ground — the column behind the cards, the
+	   desk behind the sheets — and lifting the plane above it takes very little
+	   at the light pole. `well` is the hole cut into a card: a field, a table's
+	   header band, the one native select, none of which draw an edge, so the
+	   step is the whole of what says a value is typed there. The order at the
+	   light pole is card, ground, well; at the dark pole the two sink to within
+	   a channel of each other, which is where a card with little light left to
+	   give up leaves them.
+
+	   How far each sinks is a function of the card's own L, not of the scheme the
+	   host declared: a dark surface has to spend more of what little it has
+	   before the card above it reads as lifted, so the two calibrated distances
+	   — 0.0214 off white, 0.0553 off the dark default — interpolate linearly
+	   between. A card pinned at neither pole takes a proportionate step whatever
+	   `color-scheme` says, which is the half of the derivation that reads a
+	   colour rather than a declaration.
+
+	   Both sink by subtraction where every other rung mixes: a mix toward black
+	   is a ratio, so it scales what it takes and pulls the result toward
+	   neutral, and a ground is a fixed distance. `a b` pass through, so the
+	   plane keeps the pole's hue and a turned `--qm-bg` tints it. The defaults
+	   land within a channel of `#f7f8f9` and `#1a1a1b`. Below L ≈ 0.065 the
+	   ground clamps to black, which is where a near-black card leaves no room
+	   for a ground of its own. */
+	--_qm-surface: var(--_qm-bg);
+	--_qm-surface-sunken: oklab(from var(--_qm-bg) calc(l - (0.0214 + 0.0467 * (1 - l))) a b);
+	--_qm-surface-well: oklab(from var(--_qm-bg) calc(l - (0.04 + 0.0202 * (1 - l))) a b);
+	/* `raised` is the same ramp spelled as a mix, its step 0.08 × (1 − l): the light
+	   arm is zero, a white card having nowhere further to go, so a floating surface
+	   separates on its hairline and `--_qm-lift` there and the step joins them in
+	   dark. */
+	--_qm-surface-raised: color-mix(in oklab, var(--_qm-bg), #fff 8%);
+	--_qm-surface-hover: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 8%);
+	/* The one rung whose arms are not a single ratio: a stroke is read against what it
+	   separates, and the mix that reads as a hairline on the dark default draws the
+	   light card in a line heavier than the type it frames. The light arm is
+	   calibrated rather than derived, which makes this the one rung under the poles
+	   that reads the declared scheme rather than only the colours it resolves to. */
+	--_qm-border: light-dark(
+		color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 6%),
+		color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 17%)
+	);
+	/* A rule that separates without structuring: the lines between a table's cells,
+	   where the frame around them is the structure. Half the border, and read off
+	   it rather than restated as a percentage of its own, so the two hold their
+	   relationship at any mix: a stroke against the surface behind it, not a fill
+	   stacked on one. */
+	--_qm-border-faint: color-mix(in oklab, var(--_qm-bg), var(--_qm-border) 50%);
+	/* Two rungs, and there is no third: a step below `label` lands under 3:1 on the
+	   well a field draws it against, and what would take it — a placeholder, an
+	   unset value, the resolved `default:` — is content a reader has to read
+	   (WCAG 1.4.3), not decoration. So tone carries hierarchy alone, and a leaf
+	   saying shown-never-written says it against the `ink` a written value takes,
+	   in italic where it has no written neighbour to be read against. */
+	--_qm-ink: var(--_qm-fg);
+	--_qm-ink-label: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 35%);
+	/* The arrival wash (`core/bloom.ts`). Its alpha is a peak, not a tint: the
+	   wash animates from and back to zero, never held, so it reads over the leaf it
+	   lands on while the leaf rests clean. */
+	--_qm-accent-wash: color-mix(in oklab, var(--_qm-accent) 18%, transparent);
+	/* The accent held: what a selected line of a table is tinted with, and what its
+	   grip is filled with, so the two ends of one gesture are one colour. A second
+	   name rather than the wash reused, because the two answer different questions
+	   and the numbers follow: a peak passes over paper and can be strong, where a
+	   tint is held under body text and cannot. Translucent, so it
+	   stacks over whichever surface rung the cell already draws instead of replacing
+	   it. */
+	--_qm-accent-tint: color-mix(in oklab, var(--_qm-accent) 12%, transparent);
+	/* The danger hue held: what a destructive control fills with where the family's
+	   neutral hover rung would read as one more button. Mixed at the accent tint's
+	   strength, so a held tint is a held tint whichever hue it carries. */
+	--_qm-danger-tint: color-mix(in oklab, var(--_qm-danger) 12%, transparent);
+	/* The label ink held: what a trigger fills with whose own ink never steps, so
+	   the fill arriving under it is that tone at a strength a surface reads
+	   through. */
+	--_qm-add-fill: color-mix(in oklab, var(--_qm-ink-label) 15%, transparent);
+
+	/* The tips card'S hue: the surface's one exit from the greyscale that is not
+	   a status, and what the amber and the typewriter face say together is
+	   draft (VISUAL_EDITOR §"Card operations"). A literal rather than a dial
+	   because there is nothing left to turn: the rungs under it mix over
+	   the surface and the ink a consumer already tuned, so the card follows a
+	   brand untold. The mixes are faint on purpose: a warmth, not a badge.
+
+	   The one group mixed in sRGB. oklab holds perceived lightness across a mix and
+	   spends chroma to do it, which is right where both endpoints are grey and wrong
+	   for a hue: at either pole it lands the ink a channel short of warm. */
+	--_qm-tips: #e88c0a;
+	--_qm-tips-surface: color-mix(in srgb, var(--_qm-surface), var(--_qm-tips) 3%);
+	--_qm-tips-ink: color-mix(in srgb, var(--_qm-ink), var(--_qm-tips) 24%);
+	/* The ink and the amber stepped up, and the pair is spent on the two runs that
+	   are not the sentence: a token in a tip, and the foot's control under the
+	   pointer. One rung each rather than one per run, a chip and a hover four
+	   percent apart being a number with no second decision under it. */
+	--_qm-tips-ink-warm: color-mix(in srgb, var(--_qm-ink), var(--_qm-tips) 45%);
+	--_qm-tips-fill: color-mix(in srgb, var(--_qm-tips) 12%, transparent);
+	/* The typewriter, the half of the slip the amber cannot carry: a modern mono
+	   reads as code where a Courier reads as typed. Its own rung rather than
+	   `--_qm-font-mono`, the chrome's readout face, which a consumer turns for
+	   tabular figures and not to dress this card. Courier Prime leads and is nobody's
+	   system font, so a host that loads it lands on it and every other host falls to
+	   the Courier the platform already carries; the package fetches nothing, a preset
+	   costing a network request being one a consumer cannot decline. */
+	--_qm-tips-font: 'Courier Prime', 'Courier New', Courier, ui-monospace, monospace;
+
+	/* ── Ratios and effects ──────────────────────────────────────────────────
+	   No palette fixes these, so they are their own rungs. */
+	--_qm-blur: 8px;
+	/* The popover's translucency: the raised surface mixed toward transparent, so
+	   the page reads faintly through the pill. */
+	--_qm-surface-popover: color-mix(in oklab, var(--_qm-surface-raised) 82%, transparent);
+	/* What a surface with no plane under it lifts on. A tone rung cannot carry that at
+	   both poles: `raised` is a no-op against a white card (§Colour), so in light the
+	   hairline is otherwise the whole separation over the body prose these float on.
+	   Offset-free is the whole of it: an offset states where the light is and no pole
+	   carries that, where a halo states occlusion. Toward black at both poles for the
+	   same reason — a crevice is darker than what surrounds it in a dark room too — so
+	   the cue means one thing whichever way the scale runs. Spent only on what portals;
+	   `check:style` holds the offsets at zero here and the rung as the only shadow
+	   anywhere. */
+	--_qm-lift: 0 0 12px color-mix(in oklab, #000 16%, transparent);
+	/* The recede ladder: a hover-revealed or disabled affordance at rest, and a
+	   muted one. Opacity recedes toward whatever is behind, so these invert
+	   correctly given the element's own colour is a rung. */
+	--_qm-opacity-idle: 0.35;
+	--_qm-opacity-muted: 0.5;
+
+	/* ── Focus ───────────────────────────────────────────────────────────────
+	   These fix the ring's value, so no control mints it. Which properties draw a
+	   ring, and on what state, is the other half: a rule, `.qm-focus-ring` in
+	   `visual/controls.css`, since a rung each control reassembles is a scale
+	   only up to the point where it is assembled. One width: focus is the only
+	   state that draws a ring anywhere, so there is no held-back tier under it.
+	   Sub-pixel, because at two it reads as a second border on a card whose every
+	   other edge is a hairline. */
+	--_qm-ring-width: 1.5px;
+	/* Every ring the surface draws, focus and selection alike, which is why the name
+	   carries neither. Assembled here because the parts spelled out at a use site pass
+	   every axis — each reads a rung — while drawing a ring nothing else agrees with. */
+	--_qm-ring: var(--_qm-ring-width) solid var(--_qm-accent);
+	--_qm-ring-offset: 1px;
+	/* What a clip box carries past its content for a focused control inside it to
+	   keep the whole mark. */
+	--_qm-ring-reach: calc(var(--_qm-ring-width) + var(--_qm-ring-offset));
+
+	/* ── Motion ──────────────────────────────────────────────────────────────
+	   Two rungs, by what the trip disturbs: `fast` stays inside the element's own
+	   box, `slow` moves the layout around it. */
+	--_qm-duration-fast: 120ms;
+	--_qm-duration-slow: 200ms;
+	/* The bloom's whole rise-hold-decay, and deliberately not a third rung. A
+	   custom property rather than a constant in `core/bloom.ts` because that module
+	   animates over WAAPI and reads it from here. */
+	--_qm-bloom-dwell: 1100ms;
+
+	/* One curve, symmetric because an interruption turns these trips around: a hover
+	   leaves before it arrives, a card collapses mid-expand. Every trip at `fast` or
+	   `slow` takes it; a one-way shape is legible only over a longer one. */
+	--_qm-ease-reverse: cubic-bezier(0.4, 0, 0.6, 1);
+	/* A trip rather than a rung, duration and curve composed the way `--_qm-ring`
+	   composes its three: neither half is reachable alone. Weighted to its end, so an
+	   arrival settles into its rest instead of stopping at it, and long enough that a
+	   control resting at nothing reads as arriving rather than as switching. */
+	--_qm-reveal: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+
+	/* ── Geometry ──────────────────────────────────────────────────────────*/
+	/* One stroke width for every edge the chrome draws: a card's, a control's,
+	   and the metadata bracket's three rules alike. A threshold rather than a
+	   rhythm choice, like the tap floor: a hairline is a hairline at any
+	   `--qm-space`, so it does not derive from a dial. It exists as a rung because
+	   the bracket's whole claim is that its vertical and its horizontals are the
+	   same stroke, and `check:style`'s border-width axis can only hold that
+	   against a token. */
+	--_qm-border-width: 1px;
+	--_qm-radius: var(--qm-radius, 8px);
+	/* The interior corner, and half is the relationship rather than the number: a
+	   corner inside a corner reads as nested only while it is visibly tighter, and
+	   halving holds that at every setting of the dial, zero included. */
+	--_qm-radius-inner: calc(var(--_qm-radius) / 2);
+	/* A fully-rounded end cap: a shape tier, not a step on the radius ramp, so
+	   it does not derive from the dial: a pill stays a pill at any radius. */
+	--_qm-radius-pill: 999px;
+	--_qm-space: var(--qm-space, 0.25rem);
+	--_qm-space-half: calc(var(--_qm-space) / 2);
+	--_qm-space-2: calc(var(--_qm-space) * 2);
+	--_qm-space-3: calc(var(--_qm-space) * 3);
+	--_qm-space-4: calc(var(--_qm-space) * 4);
+	--_qm-space-5: calc(var(--_qm-space) * 5);
+	/* A rung because the two axes are two decisions and the ladder alone cannot hold
+	   them together: `check:style`'s rhythm axis sees each box read a rung, never that
+	   they read the same one, which is the drift `visual/controls.css` already names
+	   for the type half. Asymmetric because the vertical is what leading leaves once
+	   it has taken the line box, and the horizontal is how far in the text starts,
+	   which nothing else fixes. */
+	--_qm-inset-control: var(--_qm-space) var(--_qm-space-3);
+	/* The scroll tail: dead space under the last card, so it can be read at the
+	   middle of a pane rather than at its bottom edge. A fraction of the viewport
+	   rather than a step on the ramp, because what it answers is how far the eye
+	   sits from the bottom of the screen, which no spacing dial knows. Spent by
+	   the editor alone (`.qm-pane`): a stack of cards is what has a last one to
+	   reach, where a page and a text mirror end where the document ends. */
+	--_qm-tail: 40vh;
+	/* WCAG 2.5.8's 24x24 pointer-target floor. A rung rather than a sixth step on
+	   the space scale: it is a threshold the spec fixes, not a rhythm choice, so
+	   it does not move when `--qm-space` does. Both button families read it, so the
+	   floor is one number instead of one expression per control. */
+	--_qm-tap-min: 24px;
+	/* The reorder/delete glyph. A rung because the card header's
+	   right hang is half the difference between this and the tap floor: the glyph
+	   centres in a target sized by the floor, so what stands between it and the
+	   card's gutter is an arithmetic of the two, and a literal on either side is a
+	   balance that silently breaks when the glyph moves. Sized in CSS rather than
+	   through the icon's `size`, so the hang and the glyph read one number. Scoped to
+	   the control pair: the hint and the format marks take their own sizes, and a
+	   rung claiming to be every glyph would be false at three of them. */
+	--_qm-glyph-control: 14px;
+
+	/* ── Type ────────────────────────────────────────────────────────────────
+	   `--qm-font-size` anchors the chrome rung; 1.125 is the ratio between adjacent
+	   rungs: a step up (title) and one down (label). The ratio and the
+	   weight are fixed conventions, not dials: no consumer tunes a typographic
+	   ratio, and a dial nobody turns is a name every reader still holds. Three chrome
+	   rungs: a second step below `label` lands near 11px, under a size anything here
+	   wants to be read at, and the supporting text that would take it is what `label`
+	   already is. */
+	--_qm-text-body: var(--qm-font-size, 0.875rem);
+	--_qm-text-title: calc(var(--_qm-text-body) * 1.125);
+	--_qm-text-label: calc(var(--_qm-text-body) / 1.125);
+	/* Paper: the document body answers to the preview's paper where every other
+	   surface here answers to the control beside it, so a rung shared with the chrome
+	   makes a consumer asking for larger prose take larger inputs with it. 16/15 where
+	   the ramp steps at 9/8: small enough to read as a change of register rather than
+	   a rung of hierarchy, and clear of the title rung, which one 9/8 step lands on
+	   exactly. */
+	--_qm-text-paper: calc(var(--_qm-text-body) * 16 / 15);
+	/* Two weights over the regular, and only one of them is chrome. `mid` names
+	   everything the surface names — a card title, a section header, a field
+	   label, a nested property — so a stack of them reads as one register and
+	   hierarchy stays the size ramp's, which is the axis that can carry it.
+	   500 rather than 600 because the family dial resolves to the platform UI
+	   face, whose 600 is heavier at the same number than the webfont a surface
+	   is usually drawn against: at the label rung it goes smudgy, and one
+	   number across three sizes does not read as one weight.
+
+	   `strong` is not a rung of that ramp. It is the mark a run wears where
+	   weight is the only signal it has: a heading inside a prose leaf, drawn at
+	   no size step of its own because the quill sets the paper's; a table
+	   island's header row; the stored value in an enum listbox. Reaching for it
+	   where a size or a tone could speak is the drift the split exists to
+	   stop. */
+	--_qm-weight-strong: 600;
+	--_qm-weight-mid: 500;
+	/* Leading: the ramp's third axis, and it does not track the sizes one for one:
+	   two rungs, because a wrapped label and a wrapped paragraph want different
+	   rhythms and nothing wants four. `body` is reading rhythm (both prose leaves,
+	   every control beside them, the tips card's guidance); `tight` is a line that is
+	   a label rather than a passage. Unitless, so a rung inherits multiplicatively
+	   and holds against whichever size rung the surface reads: a `rem` leading
+	   would freeze at one size and disagree with the rest of the ramp. It is the
+	   axis paper and chrome share: both read `body`, and the size rung is what
+	   separates them. `line-height: 1` is outside the axis: it collapses the
+	   line box onto its content, a glyph or a button's one-line label. */
+	--_qm-leading-body: 1.5;
+	--_qm-leading-tight: 1.3;
+
+	/* ── The baseline every root inherits ────────────────────────────────────
+	   Real properties, not only custom ones: the thing an inline attribute
+	   could carry but never did, which is why `--qm-font` reached one root of
+	   five. `color-scheme` is deliberately absent: it inherits, so the host's
+	   reaches this root untouched and native chrome (scrollbars, the date
+	   picker, the caret) lands on the same pole the poles above resolve to.
+	   Declaring it here would break that lockstep in the one direction that
+	   matters: a host that declares `dark` would get light native chrome under
+	   a dark surface. A consumer that pins a palette against its own scheme
+	   declares `color-scheme` with it, on the root (THEMING.md).
+
+	   Face, ink and leading are the three axes a root carries this way. Leading
+	   belongs with the other two because a unitless ratio inherits
+	   multiplicatively: it holds against whatever size rung each surface reads, so
+	   it imposes less than the ink beside it, and the reason `font-size` stays off
+	   does not transfer: a ratio has no size to sweep a consumer's content with.
+	   What it buys is that `normal` (the UA figure near 1.14, varying by font) is
+	   unreachable under a marker, so a type-bearing surface lands on the ramp
+	   whether or not it remembers to say so, and a per-surface
+	   `--_qm-leading-tight` reads as the deliberate override it is.
+
+	   Deliberately not `font-size`, and the reason is about the root rule rather
+	   than about size: a root-level body size sweeps every descendant a consumer
+	   may have put inside the marker, which is a reach the derivation does not
+	   have. The rung is not withheld from the surfaces: every control and every
+	   prose leaf reads `--_qm-text-body` in its own recipe, which is
+	   what closes the ramp and makes `--qm-font-size` move an input. What would
+	   break a mounted leaf is a size that changes under it; a rung is fixed at
+	   mount unless the consumer turns the dial, and a consumer turning a dial is
+	   entitled to the reflow. So: the root imposes no size, each surface reads the
+	   rung it wants. */
+	font-family: var(--_qm-font);
+	color: var(--_qm-ink);
+	line-height: var(--_qm-leading-body);
+}
+
+/* Reduced motion collapses the scale, never a list of selectors.
+   Two values here are not the rung they look like:
+
+   `1ms` rather than `none`, because a collapsed transition still fires: a surface
+   waiting on `transitionend` keeps its event, where `transition: none` would strand
+   it. The beat is under perception either way.
+
+   `200ms` rather than `1ms` for the dwell, because the bloom's reduced form is a
+   hold and a cut (`core/bloom.ts` swaps the ramps out), and a hold is a duration:
+   collapsing it deletes the gesture instead of shortening it. */
+@media (prefers-reduced-motion: reduce) {
 	:where([data-qm-root]) {
-		/* ── Poles ───────────────────────────────────────────────────────────────
-		   Each dial's default, stated once. Every rung below reads a pole, never a
-		   dial, so both schemes cost two declarations rather than fifteen; and the
-		   dial sits in front of the default, so a consumer's ancestor value wins in
-		   either scheme, which it would not if a scheme rule set `--qm-bg` instead.
-
-		   `light-dark()` keys the default off the `color-scheme` this root inherits,
-		   which is the host's: an app that declares `dark` gets a dark surface
-		   whatever the OS says, and one that declares nothing gets light, matching
-		   its own unstyled text. So the package owns no mode logic at all: light or
-		   dark is the mounting site's, like every other value here (THEMING.md
-		   §"The surface follows your colour scheme").
-
-		   `--qm-bg` is the card, not the column behind it: the plane content is
-		   written on, which is also the preview's paper. Everything else is a step
-		   off it, and the column is a step down. */
-		--_qm-bg: var(--qm-bg, light-dark(#fff, #272729));
-		--_qm-fg: var(--qm-fg, light-dark(#1c1c1c, #d7dadc));
-		/* Neutral: the surface spends no hue on a state it can draw in grey. The pair
-		   clears WCAG 2.4.11's 3:1 against the card at both poles, at 4.8:1 and 5.8:1. */
-		--_qm-accent: var(--qm-accent, light-dark(#71717a, #a1a1aa));
-		/* The one hue the surface spends, and it spends it on a state. Each pole is
-		   its own figure rather than one ink shown twice: a hue calibrated against
-		   white reads as a stain on a dark card. Both clear WCAG 1.4.3's 4.5:1 against
-		   the card, which is the bar the label rung asks for and the one the glyphs
-		   drawn in this hue clear on the way past 1.4.11's 3:1. Dark enough at its own
-		   pole to carry a label at 4.5:1, so a filled chip needs no third figure. The
-		   figures are the host scale's (`preset/scale.css`), so a page's status line
-		   and a card's diagnostic carry one colour meaning error. */
-		--_qm-danger: var(--qm-danger, light-dark(#9e1518, #f9786c));
-		--_qm-font: var(--qm-font, ui-sans-serif, system-ui, sans-serif);
-		--_qm-font-mono: var(--qm-font-mono, ui-monospace, monospace);
-
-		/* ── Colour ──────────────────────────────────────────────────────────────
-		   Ink steps fg → bg, the border and hover rungs step bg → fg, all mixed in
-		   oklab; sRGB muddies the mid-tones and the label/meta/border rungs are
-		   exactly mid-tone. So inverting the poles inverts that half of the scale.
-		   The percentages are calibrated to the light-mode literals they stand in
-		   for (17% ≈ #d4d4d4, 35% ≈ #555).
-
-		   Planes are the half that does not read the ink pole, because what makes a
-		   card read as a card is that it is the brighter plane, in both schemes
-		   alike (ARCHITECTURE §Styling). A plane stepped toward the ink is right in
-		   dark and inverted in light, where it darkens the card below the page it
-		   floats on. So `sunken` and `well` step toward shadow and `raised` toward
-		   light, and the base plane — a card, the preview's paper — is the pole
-		   itself.
-
-		   Two planes sink. `sunken` is the ground — the column behind the cards, the
-		   desk behind the sheets — and lifting the plane above it takes very little
-		   at the light pole. `well` is the hole cut into a card: a field, a table's
-		   header band, the one native select, none of which draw an edge, so the
-		   step is the whole of what says a value is typed there. The order at the
-		   light pole is card, ground, well; at the dark pole the two sink to within
-		   a channel of each other, which is where a card with little light left to
-		   give up leaves them.
-
-		   How far each sinks is a function of the card's own L, not of the scheme the
-		   host declared: a dark surface has to spend more of what little it has
-		   before the card above it reads as lifted, so the two calibrated distances
-		   — 0.0214 off white, 0.0553 off the dark default — interpolate linearly
-		   between. A card pinned at neither pole takes a proportionate step whatever
-		   `color-scheme` says, which is the half of the derivation that reads a
-		   colour rather than a declaration.
-
-		   Both sink by subtraction where every other rung mixes: a mix toward black
-		   is a ratio, so it scales what it takes and pulls the result toward
-		   neutral, and a ground is a fixed distance. `a b` pass through, so the
-		   plane keeps the pole's hue and a turned `--qm-bg` tints it. The defaults
-		   land within a channel of `#f7f8f9` and `#1a1a1b`. Below L ≈ 0.065 the
-		   ground clamps to black, which is where a near-black card leaves no room
-		   for a ground of its own. */
-		--_qm-surface: var(--_qm-bg);
-		--_qm-surface-sunken: oklab(from var(--_qm-bg) calc(l - (0.0214 + 0.0467 * (1 - l))) a b);
-		--_qm-surface-well: oklab(from var(--_qm-bg) calc(l - (0.04 + 0.0202 * (1 - l))) a b);
-		/* `raised` is the same ramp spelled as a mix, its step 0.08 × (1 − l): the light
-		   arm is zero, a white card having nowhere further to go, so a floating surface
-		   separates on its hairline and `--_qm-lift` there and the step joins them in
-		   dark. */
-		--_qm-surface-raised: color-mix(in oklab, var(--_qm-bg), #fff 8%);
-		--_qm-surface-hover: color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 8%);
-		/* The one rung whose arms are not a single ratio: a stroke is read against what it
-		   separates, and the mix that reads as a hairline on the dark default draws the
-		   light card in a line heavier than the type it frames. The light arm is
-		   calibrated rather than derived, which makes this the one rung under the poles
-		   that reads the declared scheme rather than only the colours it resolves to. */
-		--_qm-border: light-dark(
-			color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 6%),
-			color-mix(in oklab, var(--_qm-bg), var(--_qm-fg) 17%)
-		);
-		/* A rule that separates without structuring: the lines between a table's cells,
-		   where the frame around them is the structure. Half the border, and read off
-		   it rather than restated as a percentage of its own, so the two hold their
-		   relationship at any mix: a stroke against the surface behind it, not a fill
-		   stacked on one. */
-		--_qm-border-faint: color-mix(in oklab, var(--_qm-bg), var(--_qm-border) 50%);
-		/* Two rungs, and there is no third: a step below `label` lands under 3:1 on the
-		   well a field draws it against, and what would take it — a placeholder, an
-		   unset value, the resolved `default:` — is content a reader has to read
-		   (WCAG 1.4.3), not decoration. So tone carries hierarchy alone, and a leaf
-		   saying shown-never-written says it against the `ink` a written value takes,
-		   in italic where it has no written neighbour to be read against. */
-		--_qm-ink: var(--_qm-fg);
-		--_qm-ink-label: color-mix(in oklab, var(--_qm-fg), var(--_qm-bg) 35%);
-		/* The arrival wash (`core/bloom.ts`). Its alpha is a peak, not a tint: the
-		   wash animates from and back to zero, never held, so it reads over the leaf it
-		   lands on while the leaf rests clean. */
-		--_qm-accent-wash: color-mix(in oklab, var(--_qm-accent) 18%, transparent);
-		/* The accent held: what a selected line of a table is tinted with, and what its
-		   grip is filled with, so the two ends of one gesture are one colour. A second
-		   name rather than the wash reused, because the two answer different questions
-		   and the numbers follow: a peak passes over paper and can be strong, where a
-		   tint is held under body text and cannot. Translucent, so it
-		   stacks over whichever surface rung the cell already draws instead of replacing
-		   it. */
-		--_qm-accent-tint: color-mix(in oklab, var(--_qm-accent) 12%, transparent);
-		/* The danger hue held: what a destructive control fills with where the family's
-		   neutral hover rung would read as one more button. Mixed at the accent tint's
-		   strength, so a held tint is a held tint whichever hue it carries. */
-		--_qm-danger-tint: color-mix(in oklab, var(--_qm-danger) 12%, transparent);
-		/* The label ink held: what a trigger fills with whose own ink never steps, so
-		   the fill arriving under it is that tone at a strength a surface reads
-		   through. */
-		--_qm-add-fill: color-mix(in oklab, var(--_qm-ink-label) 15%, transparent);
-
-		/* The tips card'S hue: the surface's one exit from the greyscale that is not
-		   a status, and what the amber and the typewriter face say together is
-		   draft (VISUAL_EDITOR §"Card operations"). A literal rather than a dial
-		   because there is nothing left to turn: the rungs under it mix over
-		   the surface and the ink a consumer already tuned, so the card follows a
-		   brand untold. The mixes are faint on purpose: a warmth, not a badge.
-
-		   The one group mixed in sRGB. oklab holds perceived lightness across a mix and
-		   spends chroma to do it, which is right where both endpoints are grey and wrong
-		   for a hue: at either pole it lands the ink a channel short of warm. */
-		--_qm-tips: #e88c0a;
-		--_qm-tips-surface: color-mix(in srgb, var(--_qm-surface), var(--_qm-tips) 3%);
-		--_qm-tips-ink: color-mix(in srgb, var(--_qm-ink), var(--_qm-tips) 24%);
-		/* The ink and the amber stepped up, and the pair is spent on the two runs that
-		   are not the sentence: a token in a tip, and the foot's control under the
-		   pointer. One rung each rather than one per run, a chip and a hover four
-		   percent apart being a number with no second decision under it. */
-		--_qm-tips-ink-warm: color-mix(in srgb, var(--_qm-ink), var(--_qm-tips) 45%);
-		--_qm-tips-fill: color-mix(in srgb, var(--_qm-tips) 12%, transparent);
-		/* The typewriter, the half of the slip the amber cannot carry: a modern mono
-		   reads as code where a Courier reads as typed. Its own rung rather than
-		   `--_qm-font-mono`, the chrome's readout face, which a consumer turns for
-		   tabular figures and not to dress this card. Courier Prime leads and is nobody's
-		   system font, so a host that loads it lands on it and every other host falls to
-		   the Courier the platform already carries; the package fetches nothing, a preset
-		   costing a network request being one a consumer cannot decline. */
-		--_qm-tips-font: 'Courier Prime', 'Courier New', Courier, ui-monospace, monospace;
-
-		/* ── Ratios and effects ──────────────────────────────────────────────────
-		   No palette fixes these, so they are their own rungs. */
-		--_qm-blur: 8px;
-		/* The popover's translucency: the raised surface mixed toward transparent, so
-		   the page reads faintly through the pill. */
-		--_qm-surface-popover: color-mix(in oklab, var(--_qm-surface-raised) 82%, transparent);
-		/* What a surface with no plane under it lifts on. A tone rung cannot carry that at
-		   both poles: `raised` is a no-op against a white card (§Colour), so in light the
-		   hairline is otherwise the whole separation over the body prose these float on.
-		   Offset-free is the whole of it: an offset states where the light is and no pole
-		   carries that, where a halo states occlusion. Toward black at both poles for the
-		   same reason — a crevice is darker than what surrounds it in a dark room too — so
-		   the cue means one thing whichever way the scale runs. Spent only on what portals;
-		   `check:style` holds the offsets at zero here and the rung as the only shadow
-		   anywhere. */
-		--_qm-lift: 0 0 12px color-mix(in oklab, #000 16%, transparent);
-		/* The recede ladder: a hover-revealed or disabled affordance at rest, and a
-		   muted one. Opacity recedes toward whatever is behind, so these invert
-		   correctly given the element's own colour is a rung. */
-		--_qm-opacity-idle: 0.35;
-		--_qm-opacity-muted: 0.5;
-
-		/* ── Focus ───────────────────────────────────────────────────────────────
-		   These fix the ring's value, so no control mints it. Which properties draw a
-		   ring, and on what state, is the other half: a rule, `.qm-focus-ring` in
-		   `visual/controls.css`, since a rung each control reassembles is a scale
-		   only up to the point where it is assembled. One width: focus is the only
-		   state that draws a ring anywhere, so there is no held-back tier under it.
-		   Sub-pixel, because at two it reads as a second border on a card whose every
-		   other edge is a hairline. */
-		--_qm-ring-width: 1.5px;
-		/* Every ring the surface draws, focus and selection alike, which is why the name
-		   carries neither. Assembled here because the parts spelled out at a use site pass
-		   every axis — each reads a rung — while drawing a ring nothing else agrees with. */
-		--_qm-ring: var(--_qm-ring-width) solid var(--_qm-accent);
-		--_qm-ring-offset: 1px;
-		/* What a clip box carries past its content for a focused control inside it to
-		   keep the whole mark. */
-		--_qm-ring-reach: calc(var(--_qm-ring-width) + var(--_qm-ring-offset));
-
-		/* ── Motion ──────────────────────────────────────────────────────────────
-		   Two rungs, by what the trip disturbs: `fast` stays inside the element's own
-		   box, `slow` moves the layout around it. */
-		--_qm-duration-fast: 120ms;
-		--_qm-duration-slow: 200ms;
-		/* The bloom's whole rise-hold-decay, and deliberately not a third rung. A
-		   custom property rather than a constant in `core/bloom.ts` because that module
-		   animates over WAAPI and reads it from here. */
-		--_qm-bloom-dwell: 1100ms;
-
-		/* One curve, symmetric because an interruption turns these trips around: a hover
-		   leaves before it arrives, a card collapses mid-expand. Every trip at `fast` or
-		   `slow` takes it; a one-way shape is legible only over a longer one. */
-		--_qm-ease-reverse: cubic-bezier(0.4, 0, 0.6, 1);
-		/* A trip rather than a rung, duration and curve composed the way `--_qm-ring`
-		   composes its three: neither half is reachable alone. Weighted to its end, so an
-		   arrival settles into its rest instead of stopping at it, and long enough that a
-		   control resting at nothing reads as arriving rather than as switching. */
-		--_qm-reveal: 500ms cubic-bezier(0.4, 0, 0.2, 1);
-
-		/* ── Geometry ──────────────────────────────────────────────────────────*/
-		/* One stroke width for every edge the chrome draws: a card's, a control's,
-		   and the metadata bracket's three rules alike. A threshold rather than a
-		   rhythm choice, like the tap floor: a hairline is a hairline at any
-		   `--qm-space`, so it does not derive from a dial. It exists as a rung because
-		   the bracket's whole claim is that its vertical and its horizontals are the
-		   same stroke, and `check:style`'s border-width axis can only hold that
-		   against a token. */
-		--_qm-border-width: 1px;
-		--_qm-radius: var(--qm-radius, 8px);
-		/* The interior corner, and half is the relationship rather than the number: a
-		   corner inside a corner reads as nested only while it is visibly tighter, and
-		   halving holds that at every setting of the dial, zero included. */
-		--_qm-radius-inner: calc(var(--_qm-radius) / 2);
-		/* A fully-rounded end cap: a shape tier, not a step on the radius ramp, so
-		   it does not derive from the dial: a pill stays a pill at any radius. */
-		--_qm-radius-pill: 999px;
-		--_qm-space: var(--qm-space, 0.25rem);
-		--_qm-space-half: calc(var(--_qm-space) / 2);
-		--_qm-space-2: calc(var(--_qm-space) * 2);
-		--_qm-space-3: calc(var(--_qm-space) * 3);
-		--_qm-space-4: calc(var(--_qm-space) * 4);
-		--_qm-space-5: calc(var(--_qm-space) * 5);
-		/* A rung because the two axes are two decisions and the ladder alone cannot hold
-		   them together: `check:style`'s rhythm axis sees each box read a rung, never that
-		   they read the same one, which is the drift `visual/controls.css` already names
-		   for the type half. Asymmetric because the vertical is what leading leaves once
-		   it has taken the line box, and the horizontal is how far in the text starts,
-		   which nothing else fixes. */
-		--_qm-inset-control: var(--_qm-space) var(--_qm-space-3);
-		/* The scroll tail: dead space under the last card, so it can be read at the
-		   middle of a pane rather than at its bottom edge. A fraction of the viewport
-		   rather than a step on the ramp, because what it answers is how far the eye
-		   sits from the bottom of the screen, which no spacing dial knows. Spent by
-		   the editor alone (`.qm-pane`): a stack of cards is what has a last one to
-		   reach, where a page and a text mirror end where the document ends. */
-		--_qm-tail: 40vh;
-		/* WCAG 2.5.8's 24x24 pointer-target floor. A rung rather than a sixth step on
-		   the space scale: it is a threshold the spec fixes, not a rhythm choice, so
-		   it does not move when `--qm-space` does. Both button families read it, so the
-		   floor is one number instead of one expression per control. */
-		--_qm-tap-min: 24px;
-		/* The reorder/delete glyph. A rung because the card header's
-		   right hang is half the difference between this and the tap floor: the glyph
-		   centres in a target sized by the floor, so what stands between it and the
-		   card's gutter is an arithmetic of the two, and a literal on either side is a
-		   balance that silently breaks when the glyph moves. Sized in CSS rather than
-		   through the icon's `size`, so the hang and the glyph read one number. Scoped to
-		   the control pair: the hint and the format marks take their own sizes, and a
-		   rung claiming to be every glyph would be false at three of them. */
-		--_qm-glyph-control: 14px;
-
-		/* ── Type ────────────────────────────────────────────────────────────────
-		   `--qm-font-size` anchors the chrome rung; 1.125 is the ratio between adjacent
-		   rungs: a step up (title) and one down (label). The ratio and the
-		   weight are fixed conventions, not dials: no consumer tunes a typographic
-		   ratio, and a dial nobody turns is a name every reader still holds. Three chrome
-		   rungs: a second step below `label` lands near 11px, under a size anything here
-		   wants to be read at, and the supporting text that would take it is what `label`
-		   already is. */
-		--_qm-text-body: var(--qm-font-size, 0.875rem);
-		--_qm-text-title: calc(var(--_qm-text-body) * 1.125);
-		--_qm-text-label: calc(var(--_qm-text-body) / 1.125);
-		/* Paper: the document body answers to the preview's paper where every other
-		   surface here answers to the control beside it, so a rung shared with the chrome
-		   makes a consumer asking for larger prose take larger inputs with it. 16/15 where
-		   the ramp steps at 9/8: small enough to read as a change of register rather than
-		   a rung of hierarchy, and clear of the title rung, which one 9/8 step lands on
-		   exactly. */
-		--_qm-text-paper: calc(var(--_qm-text-body) * 16 / 15);
-		/* Two weights over the regular, and only one of them is chrome. `mid` names
-		   everything the surface names — a card title, a section header, a field
-		   label, a nested property — so a stack of them reads as one register and
-		   hierarchy stays the size ramp's, which is the axis that can carry it.
-		   500 rather than 600 because the family dial resolves to the platform UI
-		   face, whose 600 is heavier at the same number than the webfont a surface
-		   is usually drawn against: at the label rung it goes smudgy, and one
-		   number across three sizes does not read as one weight.
-
-		   `strong` is not a rung of that ramp. It is the mark a run wears where
-		   weight is the only signal it has: a heading inside a prose leaf, drawn at
-		   no size step of its own because the quill sets the paper's; a table
-		   island's header row; the stored value in an enum listbox. Reaching for it
-		   where a size or a tone could speak is the drift the split exists to
-		   stop. */
-		--_qm-weight-strong: 600;
-		--_qm-weight-mid: 500;
-		/* Leading: the ramp's third axis, and it does not track the sizes one for one:
-		   two rungs, because a wrapped label and a wrapped paragraph want different
-		   rhythms and nothing wants four. `body` is reading rhythm (both prose leaves,
-		   every control beside them, the tips card's guidance); `tight` is a line that is
-		   a label rather than a passage. Unitless, so a rung inherits multiplicatively
-		   and holds against whichever size rung the surface reads: a `rem` leading
-		   would freeze at one size and disagree with the rest of the ramp. It is the
-		   axis paper and chrome share: both read `body`, and the size rung is what
-		   separates them. `line-height: 1` is outside the axis: it collapses the
-		   line box onto its content, a glyph or a button's one-line label. */
-		--_qm-leading-body: 1.5;
-		--_qm-leading-tight: 1.3;
-
-		/* ── The baseline every root inherits ────────────────────────────────────
-		   Real properties, not only custom ones: the thing an inline attribute
-		   could carry but never did, which is why `--qm-font` reached one root of
-		   five. `color-scheme` is deliberately absent: it inherits, so the host's
-		   reaches this root untouched and native chrome (scrollbars, the date
-		   picker, the caret) lands on the same pole the poles above resolve to.
-		   Declaring it here would break that lockstep in the one direction that
-		   matters: a host that declares `dark` would get light native chrome under
-		   a dark surface. A consumer that pins a palette against its own scheme
-		   declares `color-scheme` with it, on the root (THEMING.md).
-
-		   Face, ink and leading are the three axes a root carries this way. Leading
-		   belongs with the other two because a unitless ratio inherits
-		   multiplicatively: it holds against whatever size rung each surface reads, so
-		   it imposes less than the ink beside it, and the reason `font-size` stays off
-		   does not transfer: a ratio has no size to sweep a consumer's content with.
-		   What it buys is that `normal` (the UA figure near 1.14, varying by font) is
-		   unreachable under a marker, so a type-bearing surface lands on the ramp
-		   whether or not it remembers to say so, and a per-surface
-		   `--_qm-leading-tight` reads as the deliberate override it is.
-
-		   Deliberately not `font-size`, and the reason is about the root rule rather
-		   than about size: a root-level body size sweeps every descendant a consumer
-		   may have put inside the marker, which is a reach the derivation does not
-		   have. The rung is not withheld from the surfaces: every control and every
-		   prose leaf reads `--_qm-text-body` in its own recipe, which is
-		   what closes the ramp and makes `--qm-font-size` move an input. What would
-		   break a mounted leaf is a size that changes under it; a rung is fixed at
-		   mount unless the consumer turns the dial, and a consumer turning a dial is
-		   entitled to the reflow. So: the root imposes no size, each surface reads the
-		   rung it wants. */
-		font-family: var(--_qm-font);
-		color: var(--_qm-ink);
-		line-height: var(--_qm-leading-body);
-	}
-
-	/* Reduced motion collapses the scale, never a list of selectors.
-	   Two values here are not the rung they look like:
-
-	   `1ms` rather than `none`, because a collapsed transition still fires: a surface
-	   waiting on `transitionend` keeps its event, where `transition: none` would strand
-	   it. The beat is under perception either way.
-
-	   `200ms` rather than `1ms` for the dwell, because the bloom's reduced form is a
-	   hold and a cut (`core/bloom.ts` swaps the ramps out), and a hold is a duration:
-	   collapsing it deletes the gesture instead of shortening it. */
-	@media (prefers-reduced-motion: reduce) {
-		:where([data-qm-root]) {
-			--_qm-duration-fast: 1ms;
-			--_qm-duration-slow: 1ms;
-			--_qm-bloom-dwell: 200ms;
-		}
+		--_qm-duration-fast: 1ms;
+		--_qm-duration-slow: 1ms;
+		--_qm-bloom-dwell: 200ms;
 	}
 }
