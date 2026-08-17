@@ -136,7 +136,7 @@ describe('the vocabulary is the block shapes, one implementation behind two door
 	});
 
 	/** Type `name` as a trigger run at the head of the block holding USV `pos`, and pick
-	 *  it: the gesture whose whole claim is that it lands what the shorthand lands. */
+	 *  it. What each case asserts is that the pick lands what the shorthand lands. */
 	function pick(field: FieldController, view: EditorView, pos: number, name: string): void {
 		field.setCaret(pos);
 		type(view, `/${name}`);
@@ -195,8 +195,8 @@ describe('the vocabulary is the block shapes, one implementation behind two door
 		const { field, view } = leaf('');
 		pick(field, view, 0, 'code');
 		expect(field.getContent().lines.map((l) => l.kind)).toEqual(['code', 'para']);
-		// A code block is the one block no gap cursor sits beside, so the exit is minted
-		// and the caret stays in the fence to type in.
+		// A code block is the one block no gap cursor sits beside, so the exit is minted;
+		// the caret stays in the fence.
 		expect(view.state.selection.$head.parent.type.name).toBe('code_block');
 		field.destroy();
 	});
@@ -305,8 +305,7 @@ describe('the query filters, and a miss draws nothing', () => {
 	it('matches a case-insensitive prefix of the name or of any of its words', () => {
 		const vocab = ['table', 'numbered-list', 'footnote'];
 		expect(filterItems(vocab, 'TAB')).toEqual(['table']);
-		// The word a writer has, wherever it sits in the name: a two-word command is
-		// reachable by its head noun and not only by the word it is distinguished with.
+		// The noun a writer has, wherever it sits in the name.
 		expect(filterItems(vocab, 'list')).toEqual(['numbered-list']);
 		// A prefix and not a substring: `note` is inside `footnote` and completes nothing.
 		expect(filterItems(vocab, 'note')).toEqual([]);

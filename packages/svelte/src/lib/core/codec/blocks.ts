@@ -1,13 +1,11 @@
 // The block shapes, as commands. A markdown shorthand and a slash pick are two doors
-// onto the same construct, and what makes a second door cost a row rather than a second
-// thing to keep true is that there is one implementation behind both: `inputrules.ts`
-// runs these under a regexp, `slash.ts` under a name.
+// onto one construct, with one implementation behind them: `inputrules.ts` runs these
+// under a regexp, `slash.ts` under a name.
 //
 // A shorthand's `^` anchors it to the head of a textblock, so every command here
-// declines anywhere else and a pick does what the shorthand would have done there —
-// the trigger run consumed, the caret at the block's head. The menu asks each command
-// whether it would run rather than restating its guards (§`slashItems`), so the two
-// doors cannot disagree about where they open.
+// declines anywhere else, and a pick does what the shorthand would have done there —
+// the run consumed, the caret at the block's head. The menu asks each command whether
+// it would run rather than restating its guards (§`slashItems`).
 import type { Attrs, Node as PMNode, NodeType, ResolvedPos } from 'prosemirror-model';
 import { Selection } from 'prosemirror-state';
 import type { Command, EditorState, Transaction } from 'prosemirror-state';
@@ -41,7 +39,6 @@ function openingAnItem($from: ResolvedPos, item: NodeType | undefined): boolean 
 	return $from.node(-1).type === item && $from.index(-1) === 0;
 }
 
-/** Retype the caret's textblock. */
 function retype(name: string, attrs?: Attrs): Command {
 	return (state, dispatch) => {
 		const type = state.schema.nodes[name];
@@ -137,8 +134,8 @@ export function wrapInQuote(): Command {
 }
 
 /** `- ` / `1. `. `joinBefore` is the shorthand's ordinal test: `2. ` continues the list
- *  above where `7. ` opens one. A pick passes none, so it continues whatever is there,
- *  which is what a list under a list is. */
+ *  above where `7. ` opens one. A pick passes none and continues whatever list is
+ *  above it. */
 export function wrapInList(
 	ordered: boolean,
 	attrs: Attrs | null = null,

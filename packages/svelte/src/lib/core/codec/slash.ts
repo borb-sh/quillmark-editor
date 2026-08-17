@@ -7,8 +7,7 @@
 // name.
 //
 // Every command but the island's is also a markdown shorthand, and the two doors share
-// one implementation (`blocks.ts`): the menu is where a writer who has never typed `## `
-// finds that headings exist, and it costs a row rather than a second thing to keep true.
+// one implementation (`blocks.ts`).
 //
 // The plugin owns the whole menu model (the trigger run, the query, the highlighted
 // index, and the commands themselves) and the chrome owns only its pixels. That split
@@ -70,25 +69,21 @@ export const DEFAULT_SLASH_STRINGS: SlashStrings = {
  * The vocabulary a caret can run, in menu order: the names `SLASH_COMMANDS` is keyed
  * by, each asked whether it would fire here. A row that declines when picked is worse
  * than an absent one, and asking the command rather than restating its guards is what
- * keeps the menu from drifting off what the shorthand does.
+ * keeps the menu from drifting off what the shorthand does. So the offers narrow as the
+ * caret moves: the island alone mid-paragraph, no list at an item's head.
  *
- * `state` is the state a pick leaves behind — the trigger run already consumed —
- * because that is the caret every command answers for (`blocks.ts`).
- *
- * So the menu narrows as the caret moves: mid-paragraph it offers the island alone,
- * which inserts a block after where the rest turn the one the caret is in, and at the
- * head of an item it drops the lists, where Tab owns the nesting.
+ * `state` is the state a pick leaves behind — the run already consumed — since that is
+ * the caret every command answers for (`blocks.ts`).
  */
 export function slashItems(state: EditorState): string[] {
 	return Object.keys(SLASH_COMMANDS).filter((name) => SLASH_COMMANDS[name](state, undefined));
 }
 
 /** The query filter: a case-insensitive prefix of the name or of any of its words, which
- *  is how a command line completes and how a two-word name stays reachable by the word a
- *  writer has — `/list` offers both lists, `/num` the numbered one. A prefix and not a
- *  substring: `note` is inside `footnote` and completes nothing. An empty query offers
- *  everything, and the vocabulary's order survives, so the menu never reorders under a
- *  keystroke. */
+ *  is how a command line completes and how a two-word name stays reachable by the noun a
+ *  writer has — `/list` offers both lists. A prefix and not a substring: `note` is inside
+ *  `footnote` and completes nothing. An empty query offers everything, and the
+ *  vocabulary's order survives, so the menu never reorders under a keystroke. */
 export function filterItems(items: string[], query: string): string[] {
 	const q = query.trim().toLowerCase();
 	if (!q) return items;
@@ -287,9 +282,9 @@ export function focusSlashItem(view: EditorView, name: string): void {
 
 /**
  * Run a command: one transaction that deletes the trigger run and applies the command's
- * own edit (`blocks.ts` §`consuming`). A command that declines consumes nothing, which
- * the menu never reaches — a name is offered only where it would run — and `slashPick`
- * is a public seam that can.
+ * own edit (`blocks.ts` §`consuming`). A command that declines consumes nothing. The
+ * menu never picks one, offering only what would run; `slashPick` is a public seam and
+ * can.
  */
 export function runSlashItem(view: EditorView, name: string): void {
 	const run = slashKey.getState(view.state);
@@ -368,10 +363,9 @@ function insertBlock(make: (state: EditorState) => PMNode): Command {
  *  This table is the vocabulary (§`slashItems`): a name with no command here is a row
  *  the menu cannot run, and a command with no row is a door nothing opens.
  *
- *  In the order a writer scans rather than the order the schema declares, and the words
- *  a writer has rather than the schema's: `list` and `numbered-list`, not `bullet_list`
- *  and `ordered_list`. `heading` is level 1, the level `# ` counts to; `## ` is how the
- *  rest are reached, here as everywhere. */
+ *  In menu order, under the words a writer has rather than the schema's: `list` and
+ *  `numbered-list`, not `bullet_list` and `ordered_list`. `heading` is level 1, the
+ *  level `# ` counts to. */
 const SLASH_COMMANDS: Record<string, Command> = {
 	heading: toHeading(1),
 	list: wrapInList(false),
