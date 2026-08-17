@@ -17,7 +17,7 @@
 // The chrome is A band and A selection (CODEC §"The table island"), and it raises
 // nothing. Every control is absolutely positioned out of the grid, so the band is in no
 // row and no column of it; `codec/prose.css` draws the band and the selection wash both.
-import { baseKeymap, toggleMark } from 'prosemirror-commands';
+import { baseKeymap, chainCommands, toggleMark } from 'prosemirror-commands';
 import { redo, undo } from 'prosemirror-history';
 import { keymap } from 'prosemirror-keymap';
 import type { Node as PMNode } from 'prosemirror-model';
@@ -152,8 +152,9 @@ function el<K extends keyof HTMLElementTagNameMap>(
 
 /** A band button. It swallows its own `mousedown` (prosemirror-menu's trick, and
  *  the format popover's): without it the browser focuses the button, blurring the
- *  cell whose caret the op is about to be measured against. A grip wants that focus
- *  and takes it explicitly, which is why this does not hand it out. */
+ *  cell whose caret the op is about to be measured against. No control on the band ever
+ *  holds the focus: a cell is the island's one host, and what a press acts on is where
+ *  it lands the caret. */
 function chromeButton(className: string, label: string, run: () => void): HTMLButtonElement {
 	const btn = el('button', className);
 	btn.type = 'button';
@@ -473,10 +474,10 @@ class TableIslandView implements NodeView {
 		this.outer.dispatch(this.outer.state.tr.setSelection(selection));
 	}
 
-	/** The island as the selection: Escape out of a cell or a line, which is the whole of
-	 *  what selects it. Backspace there deletes the table, as it does over every other
-	 *  island; the cell selection covering every rank reaches the same delete without
-	 *  leaving the grid (CODEC §"The table island"). */
+	/** The island as the selection: the Escape that climbs out of a cell or a held
+	 *  rectangle, which is the whole of what selects it. Backspace there deletes the
+	 *  table, as it does over every other island; the cell selection covering every rank
+	 *  reaches the same delete without leaving the grid (CODEC §"The table island"). */
 	private selectIsland(): void {
 		const pos = this.getPos();
 		if (pos == null) return;
@@ -558,11 +559,6 @@ class TableIslandView implements NodeView {
 
 	// ── The selection ─────────────────────────────────────────────────────────
 
-	/** Take the line's grip: the focus a selection's keys land on. */
-	private gripFor(line: Line): HTMLButtonElement | undefined {
-		return this.grips.get(lineKey(line));
-	}
-
 	/** The rectangle a line covers, which is what selecting one means: a grip draws no
 	 *  second kind of selection, it draws this one. */
 	private lineCells(line: Line): Cells {
@@ -581,11 +577,41 @@ class TableIslandView implements NodeView {
 			: { floor: 0, limit: columnCount(props) - 1 };
 	}
 
-	/** Select a line. The grip takes the focus, because the selection's keys bind
-	 *  there and need somewhere to land. */
+	/** Select a line, and land the caret on it. The line verbs bind in the cell
+	 *  (CODEC §"The table island"), so the rectangle has to run through the caret for the
+	 *  next key to read a line off it. The focus moves first and the paint follows: a cell
+	 *  taking the focus retires whatever was held. */
 	private selectLine(line: Line): void {
+		this.carryCaret(line);
 		this.select(this.lineCells(line));
-		this.gripFor(line)?.focus();
+	}
+
+	/** Put the caret on the line, keeping its other coordinate, and leave it exactly
+	 *  where it is on a line it is already in: a walk down the rows stays in its column,
+	 *  and a grip press on the caret's own row does not shunt it to a cell's end. */
+	private carryCaret(line: Line): void {
+		const held = this.cells.find((m) => m.view.hasFocus());
+		if (line.axis === 'row') {
+			if (held?.r !== line.index) this.focusCell(line.index, held?.c ?? 0);
+		} else if (held?.c !== line.index) this.focusCell(held?.r ?? 0, line.index);
+	}
+
+	/** Which line the held rectangle is, on one axis: a row spanning every column, a
+	 *  column spanning every row, and nothing at all for a block that spans neither. The
+	 *  extent rule reaching the line verbs ({@link TableIslandView.deleteSelection}) — a
+	 *  rectangle answers by what it covers, never by the gesture that drew it, so a row
+	 *  swept cell by cell moves exactly as the row a grip named does. */
+	private lineOn(axis: Axis): number | undefined {
+		const held = this.selected;
+		if (!held) return undefined;
+		const props = this.props();
+		if (axis === 'row')
+			return held.r0 === held.r1 && held.c0 === 0 && held.c1 === columnCount(props) - 1
+				? held.r0
+				: undefined;
+		return held.c0 === held.c1 && held.r0 === 0 && held.r1 === rowCount(props) - 1
+			? held.c0
+			: undefined;
 	}
 
 	private select(cells: Cells): void {
@@ -626,45 +652,6 @@ class TableIslandView implements NodeView {
 				'data-selected',
 				!!held && cell.r >= held.r0 && cell.r <= held.r1 && cell.c >= held.c0 && cell.c <= held.c1
 			);
-	}
-
-	/**
-	 * A selected line's keys, bound to the line its own grip names rather than read off
-	 * the selection: focus and selection are separate, and a Tab between grips would
-	 * otherwise aim the next key at whichever line was last pressed.
-	 *
-	 * Undo is forwarded for the reason a cell forwards it: one undo stack per leaf, and
-	 * a `button` has no history of its own.
-	 */
-	private lineKeys(line: Line): (event: KeyboardEvent) => void {
-		return (event: KeyboardEvent) => {
-			const key = event.key;
-			const mod = event.ctrlKey || event.metaKey;
-			if (mod && (key === 'z' || key === 'Z' || key === 'y')) {
-				event.preventDefault();
-				const redoing = key === 'y' || (key === 'Z' && event.shiftKey);
-				(redoing ? redo : undo)(this.outer.state, this.outer.dispatch);
-				return;
-			}
-			const along = line.axis === 'row' ? ['ArrowUp', 'ArrowDown'] : ['ArrowLeft', 'ArrowRight'];
-			const acts = along.includes(key) || ['Backspace', 'Delete', 'Enter', 'Escape'].includes(key);
-			if (!acts) return;
-			event.preventDefault();
-			event.stopPropagation();
-			if (key === 'Escape') return this.selectIsland();
-			if (key === 'Enter') {
-				this.clearSelection();
-				return line.axis === 'row' ? this.focusCell(line.index, 0) : this.focusCell(0, line.index);
-			}
-			if (key === 'Backspace' || key === 'Delete') return this.deleteSelection();
-			const by = key === 'ArrowUp' || key === 'ArrowLeft' ? -1 : 1;
-			if (event.altKey) return this.moveLine(line, by);
-			const { floor, limit } = this.bounds(line.axis, this.props());
-			this.selectLine({
-				axis: line.axis,
-				index: Math.max(floor, Math.min(line.index + by, limit))
-			});
-		};
 	}
 
 	/**
@@ -949,8 +936,9 @@ class TableIslandView implements NodeView {
 	}
 
 	/**
-	 * Where the focus sits, in terms a rebuild can restore it by: a cell's position or a
-	 * grip's line, neither of which is an element that survives one.
+	 * Where the focus sits, in terms a rebuild can restore it by: the caret's cell by
+	 * position, that being the one seat the island has and not an element that survives
+	 * one.
 	 *
 	 * A rebuild is what a changed rectangle costs, and the op that changed it usually
 	 * says where the caret lands ({@link TableIslandView.write}'s `focus`). An undo says
@@ -958,27 +946,17 @@ class TableIslandView implements NodeView {
 	 * without this the DOM under the focus is removed and the focus falls to the
 	 * document body, where the next undo reaches no view at all.
 	 */
-	private focusedSeat(): { cell?: { r: number; c: number }; line?: Line } | undefined {
+	private focusedSeat(): { r: number; c: number } | undefined {
 		const held = this.cells.find((m) => m.view.hasFocus());
-		if (held) return { cell: { r: held.r, c: held.c } };
-		const active = this.dom.ownerDocument.activeElement;
-		for (const [key, grip] of this.grips) {
-			if (grip !== active) continue;
-			const [axis, index] = key.split(':');
-			return { line: { axis: axis as Axis, index: Number(index) } };
-		}
-		return undefined;
+		return held && { r: held.r, c: held.c };
 	}
 
-	/** Put the focus back where {@link TableIslandView.focusedSeat} found it, clamped into
-	 *  the rectangle that is there now: the seat's line may be the one the rebuild
-	 *  removed. A caller that has a landing of its own overrides this by running after. */
-	private reseat(seat: { cell?: { r: number; c: number }; line?: Line } | undefined): void {
-		if (seat?.cell) return this.focusCell(seat.cell.r, seat.cell.c);
-		if (!seat?.line) return;
-		const { floor, limit } = this.bounds(seat.line.axis, this.props());
-		const index = Math.max(floor, Math.min(seat.line.index, limit));
-		this.gripFor({ axis: seat.line.axis, index })?.focus();
+	/** Put the caret back where {@link TableIslandView.focusedSeat} found it, clamped by
+	 *  `focusCell` into the rectangle that is there now: the seat may be the cell the
+	 *  rebuild removed. A caller that has a landing of its own overrides this by running
+	 *  after. */
+	private reseat(seat: { r: number; c: number } | undefined): void {
+		if (seat) this.focusCell(seat.r, seat.c);
 	}
 
 	/** One table row: its cells, each carrying whatever chrome hangs off it. */
@@ -1020,12 +998,12 @@ class TableIslandView implements NodeView {
 	 *  press that travels drags it. Both are "this line", asked once with the pointer,
 	 *  and the dead zone is what tells them apart.
 	 *
-	 *  Out of the tab order, at no cost in reach: a grip follows the cell it hangs in, so
-	 *  a forward Tab is the cell traversal's before the browser gets there and a backward
-	 *  one leaves the grid off cell (0,0) without passing a grip
-	 *  (§{@link TableIslandView.step}). A line's chrome answers to the pointer. Focus is
-	 *  still taken here, by the routes this view owns: a selection, a drag, a rebuild's
-	 *  reseat. */
+	 *  Pointer chrome and nothing else: no key binds here and no route focuses it, the
+	 *  line verbs binding in the cell the selection runs through
+	 *  (§{@link TableIslandView.cellKeys}). Out of the tab order at no cost in reach,
+	 *  since a grip follows the cell it hangs in: a forward Tab is the cell traversal's
+	 *  before the browser gets there, and a backward one leaves the grid off cell (0,0)
+	 *  without passing a grip (§{@link TableIslandView.step}). */
 	private grip(line: Line, label: string): HTMLButtonElement {
 		const btn = chromeButton('qm-table-grip', label, () => {
 			if (this.suppressClick) this.suppressClick = false;
@@ -1038,7 +1016,6 @@ class TableIslandView implements NodeView {
 		bar.appendChild(svg(GRIP[line.axis]));
 		btn.appendChild(bar);
 		btn.addEventListener('pointerdown', (e) => this.onGripDown(line, btn, e));
-		btn.addEventListener('keydown', this.lineKeys(line));
 		this.grips.set(lineKey(line), btn);
 		return btn;
 	}
@@ -1049,11 +1026,12 @@ class TableIslandView implements NodeView {
 	 *  the pointer out past the last line is the claim — so its name carries the verb for
 	 *  everything that does not read position.
 	 *
-	 *  In the tab order, where a grip is not: the column bar is the keyboard's only route
-	 *  to a column at all, and the row bar is that control on the other axis, where Enter
-	 *  at the last row and Tab past the last cell reach the verb from inside a cell. They
-	 *  sit after the grid, so the Tab that declines off the last cell lands on them, and
-	 *  the focus rung draws the one it lands on (`codec/prose.css`). */
+	 *  In the tab order, where a grip is not: growth is what the line verbs do not carry,
+	 *  so the column bar is the keyboard's only route to a new column, and the row bar is
+	 *  that control on the other axis, where Enter at the last row and Tab past the last
+	 *  cell reach the verb from inside a cell. They sit after the grid, so the Tab that
+	 *  declines off the last cell lands on them, and the focus rung draws the one it lands
+	 *  on (`codec/prose.css`). */
 	private addBar(axis: Axis, label: string): HTMLButtonElement {
 		const btn = chromeButton('qm-table-add', label, () => {
 			const props = this.props();
@@ -1085,6 +1063,11 @@ class TableIslandView implements NodeView {
 				const next = view.state.apply(tr);
 				view.updateState(next);
 				if (!tr.docChanged) return;
+				// A cell edit is the caret's, so it retires the rectangle: a wash left up
+				// over text being typed says the next Backspace takes a rank, and it does
+				// not. The clear op is not this path — it writes through the leaf, and the
+				// reseed it comes back as changes no cell's own doc.
+				this.clearSelection();
 				const now = this.props();
 				this.write(withCell(now, r, c, cellFromDoc(next.doc, cellAt(now, r, c))));
 			},
@@ -1155,10 +1138,10 @@ class TableIslandView implements NodeView {
 		if (inlineSchema.marks.em) marks['Mod-i'] = toggleMark(inlineSchema.marks.em);
 		if (inlineSchema.marks.underline) marks['Mod-u'] = toggleMark(inlineSchema.marks.underline);
 		// Up and down are the grid's own walk: nothing else moves the caret vertically,
-		// and `focusCell` clamps, so neither can grow the table. Left and right are
-		// deliberately absent: at a text edge they would call what Tab and Shift-Tab
-		// already call, and inherit the append-past-the-last-cell that makes Tab a
-		// growth affordance and would make a caret key one.
+		// and `focusCell` clamps, so neither can grow the table. Left and right do not
+		// traverse at all: at a text edge they would call what Tab and Shift-Tab already
+		// call, and inherit the append-past-the-last-cell that makes Tab a growth
+		// affordance and would make a caret key one.
 		const walk = (dir: 'up' | 'down'): Command => {
 			return (_state, _dispatch, view) => {
 				const { selection } = view?.state ?? {};
@@ -1176,6 +1159,32 @@ class TableIslandView implements NodeView {
 			this.deleteSelection();
 			return true;
 		};
+		// The line verbs, over the held rectangle and nothing else: with none held every
+		// one of these declines and the key is the caret's, which is what lets them sit on
+		// keys a cell is already typing under. An arrow names the line on its own axis
+		// through the caret — the one already held steps to its neighbour and carries the
+		// caret, and any other rectangle turns into it, which is how a row becomes the
+		// column the caret is in. Alt moves the line instead, and over a rectangle that is
+		// not one it does nothing but keep the key: while a rectangle is held every arrow
+		// is its own, and an Alt+arrow handed back is the browser's Back on two platforms,
+		// mid-gesture.
+		const line = (axis: Axis, by: -1 | 1, move: boolean): Command => {
+			return () => {
+				if (!this.selected) return false;
+				const on = this.lineOn(axis);
+				if (move) {
+					if (on !== undefined) this.moveLine({ axis, index: on }, by);
+					return true;
+				}
+				if (on === undefined) {
+					this.selectLine({ axis, index: axis === 'row' ? r : c });
+					return true;
+				}
+				const { floor, limit } = this.bounds(axis, this.props());
+				this.selectLine({ axis, index: Math.max(floor, Math.min(on + by, limit)) });
+				return true;
+			};
+		};
 		return {
 			...marks,
 			// One undo stack per leaf: a cell carries no history of its own, so Mod-z
@@ -1185,20 +1194,37 @@ class TableIslandView implements NodeView {
 			'Shift-Mod-z': () => redo(this.outer.state, this.outer.dispatch),
 			Backspace: erase,
 			Delete: erase,
-			ArrowUp: walk('up'),
-			ArrowDown: walk('down'),
+			ArrowUp: chainCommands(line('row', -1, false), walk('up')),
+			ArrowDown: chainCommands(line('row', 1, false), walk('down')),
+			ArrowLeft: line('column', -1, false),
+			ArrowRight: line('column', 1, false),
+			'Alt-ArrowUp': line('row', -1, true),
+			'Alt-ArrowDown': line('row', 1, true),
+			'Alt-ArrowLeft': line('column', -1, true),
+			'Alt-ArrowRight': line('column', 1, true),
 			Tab: () => this.step(r, c, 1),
 			'Shift-Tab': () => this.step(r, c, -1),
 			Enter: () => {
+				// Over a rectangle it hands the caret back, which is the line verbs' own
+				// exit: the caret never left the cell, so there is nowhere else to put it.
+				if (this.selected) {
+					this.clearSelection();
+					return true;
+				}
 				const props = this.props();
 				if (r === rowCount(props) - 1) this.write(insertRow(props, r), { r: r + 1, c });
 				else this.focusCell(r + 1, c);
 				return true;
 			},
-			// The innermost Escape: out of the cell, onto the island. What the next one
-			// means is the shell's (VISUAL_EDITOR §"Settled and open").
+			// Escape climbs a rung a press: the caret's own row, then the island. The row
+			// is the entry the band has no other route to — every line verb reads a held
+			// rectangle, and this is the gesture that draws one from the keyboard — and it
+			// is the row rather than the column because the column is one arrow further
+			// on. What the press past the island means is the shell's
+			// (VISUAL_EDITOR §"Settled and open").
 			Escape: () => {
-				this.selectIsland();
+				if (this.selected) this.selectIsland();
+				else this.selectLine({ axis: 'row', index: r });
 				return true;
 			}
 		};
