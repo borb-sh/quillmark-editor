@@ -10,6 +10,10 @@
  exactly as a field's does, and the field's own label caps the band from outside it —
  name, rule under the name, content, closing rule.
 
+ That absent inset is also what puts the properties on the section's own column tracks
+ (below), so a subform's cells share edges with the fields above them rather than
+ keeping a rhythm of their own.
+
  Which edges draw is {@link Props.edges}, and the rule is that a boundary is stated
  once: where a box already sits against the subform, that box IS the boundary and a
  stroke under it would say so twice. So a field-level subform takes the band, and a
@@ -216,10 +220,19 @@
 	   (ARCHITECTURE §"A plane is a tone"), the one the metadata bracket and the open
 	   section's vertical read. `faint` separates without structuring — a table's
 	   interior lines under a frame that is doing the structuring — which is the other
-	   job. */
+	   job.
+
+	   The columns are the section's, arrived at by arithmetic rather than by `subgrid`:
+	   the band insets nothing horizontally, so this box spans exactly what `.qm-fields`
+	   spans, and equal tracks at the same count over the same width with the same column
+	   gap fall on the same edges. `subgrid` would want the tracks chained through the
+	   three wrappers between the section grid and here (`Field.svelte`), none of which is
+	   a grid. `--cols` inherits instead, so the container query stepping the section's
+	   capacity steps the subform's with it — no second query container, no second set of
+	   rungs, nothing measured. */
 	.qm-object {
-		display: flex;
-		flex-direction: column;
+		display: grid;
+		grid-template-columns: repeat(var(--cols), 1fr);
 		gap: var(--_qm-space-2);
 		border-block: var(--_qm-border-width) solid var(--_qm-border);
 		padding-block: var(--_qm-space-2);
@@ -232,10 +245,25 @@
 		border-block-start: none;
 		padding-block-start: 0;
 	}
+	/* A property measures like a field: two tracks over the subform's own rows, so a
+	   label wrapping in one column leaves its control on the row's baseline rather than a
+	   line below it — `Field.svelte`'s rule for a row-sharing field, one level in. The
+	   tracks are this grid's own; the section's belong to the fields.
+
+	   `min-width: 0` is what holds the arithmetic above: a property overflowing its `1fr`
+	   grows the track, and the subform's edges leave the section's with it. */
 	.qm-object-prop {
-		display: flex;
-		flex-direction: column;
-		gap: var(--_qm-space-half);
+		display: grid;
+		grid-row: span 2;
+		grid-template-rows: subgrid;
+		row-gap: var(--_qm-space-half);
+		align-items: start;
+		min-width: 0;
+	}
+	/* A subform of one takes half the capacity, the way a packable run of one does
+	   (`.qm-field.lone`): at full capacity a single track reads as truncated. */
+	.qm-object-prop:only-child {
+		grid-column: span var(--cols-half);
 	}
 	.qm-unsupported {
 		font-size: var(--_qm-text-body);
