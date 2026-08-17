@@ -101,12 +101,9 @@ describe('an object field', () => {
 		// Declaration order, which is what the subform renders by. Each carries the
 		// obligation marker: none of the four declares a `default:`, so `validate` anchors
 		// a `validation::must_fill` at each in its own right.
-		expect(props.map((p) => p.querySelector('.qm-object-label')?.textContent)).toEqual([
-			'Name*',
-			'Email*',
-			'Reply by*',
-			'Listed*'
-		]);
+		expect(
+			props.map((p) => p.querySelector('.qm-field-label')?.textContent?.replace(/\s+/g, ' ').trim())
+		).toEqual(['Name *', 'Email *', 'Reply by *', 'Listed *']);
 
 		type(props[0].querySelector('input')!, 'Ada Lovelace');
 		expect(read(q, doc, 'contact')).toEqual({ name: 'Ada Lovelace' });
@@ -151,7 +148,12 @@ describe('an object field', () => {
 });
 
 describe('an array of objects', () => {
-	it('commits an element parsed from its JSON, and keeps the prior value on invalid JSON', () => {
+	/** A row's summary button, which is the element in collapsed form. */
+	const summaries = (arr: HTMLElement) => [
+		...arr.querySelectorAll<HTMLButtonElement>('.qm-element-summary')
+	];
+
+	it('adds an element open, and commits its cells through the subform', () => {
 		const q = quill();
 		const doc = q.seedDocument();
 		const target = mountEditor(q, doc);
@@ -160,21 +162,81 @@ describe('an array of objects', () => {
 		arr.querySelector<HTMLButtonElement>('.qm-add-el')!.click();
 		flushSync();
 
-		// The `object` element is a JSON editor, not a text input: the empty element
-		// renders as an object literal.
-		const json = arr.querySelector<HTMLTextAreaElement>('textarea.qm-json')!;
-		expect(json.value).toBe('{}');
+		// A row added is a row to fill in, so it arrives open rather than as a summary
+		// the user has to press before typing.
+		expect(summaries(arr)[0].getAttribute('aria-expanded')).toBe('true');
 
-		json.value = '{"note":"First cut","pages":3}';
-		json.dispatchEvent(new Event('change', { bubbles: true }));
-		flushSync();
-		expect(read(q, doc, 'revisions')).toEqual([{ note: 'First cut', pages: 3 }]);
+		// The element is a subform over `items.properties`, not a JSON pane: one control
+		// per declared cell, at the cell's own type.
+		const props = [...arr.querySelectorAll<HTMLElement>('.qm-object-prop')];
+		expect(
+			props.map((p) => p.querySelector('.qm-field-label')?.textContent?.replace(/\s+/g, ' ').trim())
+		).toEqual(['Note *', 'Pages *']);
 
-		// Unparseable entry is swallowed by the element's own `catch`: the committed
-		// array is the last one that parsed, not an empty object and not a throw.
-		json.value = '{"note":';
-		json.dispatchEvent(new Event('change', { bubbles: true }));
-		flushSync();
+		type(props[0].querySelector('input')!, 'First cut');
+		expect(read(q, doc, 'revisions')).toEqual([{ note: 'First cut' }]);
+
+		// The element commits whole, so the second cell has to carry the first with it.
+		type(props[1].querySelector('input')!, '3');
 		expect(read(q, doc, 'revisions')).toEqual([{ note: 'First cut', pages: 3 }]);
+	});
+
+	it('titles a collapsed row by its first string cell, and opens one at a time', () => {
+		const q = quill();
+		const doc = q.seedDocument();
+		const target = mountEditor(q, doc);
+
+		const arr = arrayField(target, 'Revisions');
+		const add = arr.querySelector<HTMLButtonElement>('.qm-add-el')!;
+		add.click();
+		flushSync();
+		type(
+			arr.querySelector<HTMLElement>('.qm-object-prop')!.querySelector('input')!,
+			'Fig. 2 relabelled'
+		);
+
+		// The second add closes the first: one figure on screen per array, however many
+		// records it holds.
+		add.click();
+		flushSync();
+		const rows = summaries(arr);
+		expect(rows.map((s) => s.getAttribute('aria-expanded'))).toEqual(['false', 'true']);
+
+		// A titled row reads as its own value; an untitled one falls back to the name its
+		// accessible label already spends.
+		expect(rows[0].textContent?.trim()).toBe('Fig. 2 relabelled');
+		expect(rows[1].textContent?.trim()).toBe('Revisions 2');
+
+		// Pressing an open row closes it, so an array can rest with nothing unfolded.
+		rows[1].click();
+		flushSync();
+		expect(summaries(arr).map((s) => s.getAttribute('aria-expanded'))).toEqual(['false', 'false']);
+	});
+
+	it('drops the open row with its element, leaving no row opened in its place', () => {
+		const q = quill();
+		const doc = q.seedDocument();
+		const target = mountEditor(q, doc);
+
+		const arr = arrayField(target, 'Revisions');
+		const add = arr.querySelector<HTMLButtonElement>('.qm-add-el')!;
+		add.click();
+		flushSync();
+		type(arr.querySelector<HTMLElement>('.qm-object-prop')!.querySelector('input')!, 'Kept');
+		add.click();
+		flushSync();
+		expect(read(q, doc, 'revisions')).toEqual([{ note: 'Kept' }, {}]);
+
+		// Removing the open row must not leave `openId` naming a row that has gone: the
+		// row sliding into its place would otherwise be un-openable by its own press.
+		arr.querySelectorAll<HTMLButtonElement>('.qm-remove')[1].click();
+		flushSync();
+		expect(read(q, doc, 'revisions')).toEqual([{ note: 'Kept' }]);
+		const rows = summaries(arr);
+		expect(rows).toHaveLength(1);
+		expect(rows[0].getAttribute('aria-expanded')).toBe('false');
+		rows[0].click();
+		flushSync();
+		expect(summaries(arr)[0].getAttribute('aria-expanded')).toBe('true');
 	});
 });

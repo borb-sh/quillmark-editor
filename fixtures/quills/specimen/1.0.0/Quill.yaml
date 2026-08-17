@@ -249,7 +249,7 @@ main:
       default: []
       ui:
         group: meta
-      description: "The revision log. An array of objects, whose elements the editor hands a JSON pane: it has no control that draws a whole object inline."
+      description: "The revision log. An array of objects: each element collapses to a summary row titled by its own `note`, and opens onto a subform, one at a time."
 
     colophon:
       type: richtext

@@ -62,7 +62,7 @@ The direction is fixed and it is the reason planes are the one axis that does no
 
 Four kinds of stroke survive, and each says something a fill cannot:
 
-- **A stroke that structures**: the metadata bracket, a subform's rule, a blockquote's, a table's frame and its interior divisions, an `hr`. These draw a figure — a relationship between blocks — where a fill would draw a box.
+- **A stroke that structures**: the metadata bracket, a subform's band, a blockquote's, a table's frame and its interior divisions, an `hr`. These draw a figure — a relationship between blocks — where a fill would draw a box.
 - **A stroke that closes a block**: the card's, and only the card's. One rung, `--_qm-border`, the same the bracket and the open section's vertical read, so a card and the figure inside it are one hand. The tips slip tucked under a card takes the fill alone: an outline of its own would close it as a second block, which is the one thing the tuck denies. Its two arms are the one place a rung is calibrated per scheme rather than mixed at one ratio — a line that reads as a hairline against the dark default draws the light card heavier than the type it frames.
 - **A stroke on something floating**: a menu, a popover, the table island's alignment cluster. There is no plane under them to step off, since what they hang over is content they did not choose, so the edge and `--_qm-lift` are the separation, and the raised rung joins them in dark, where a tone still has somewhere to go.
 - **A stroke that is a state**: the dashed edge on an un-schemable card. It reads against the solid one every other card carries.

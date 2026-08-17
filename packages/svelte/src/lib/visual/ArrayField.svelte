@@ -3,15 +3,23 @@
  edit / add / remove rebuilds the whole array and hands it to the parent's typed
  `writer.set(field, wholeArray)` (arrays are not op-addressed). Element control
  by `items.type`: `richtext` / `plaintext` → a prose element
- ({@link ProseArrayElement}), `object` → a minimal JSON editor, keeping the prior
- element value on an entry that does not parse, everything else → a text input. The
+ ({@link ProseArrayElement}), `object` → a summary row that opens onto a subform,
+ everything else → a text input. The
  add affordance sits in the label header row (space-between with the field label);
  {@link Field} skips its own label for array controls and hands this component the
  label track with it.
 
+ An `object` element collapses: the row is its own summary — a box, titled by the
+ element's first `string` cell — and opens onto {@link ObjectField}, one at a time.
+ Stacking the subforms instead would nest a field one level past the depth the band
+ draws, once per row. Opening is therefore part of a landing rather than something the
+ user does first: `focusElement` opens the row it is aimed at before it focuses.
+
  The remove is inside the element: a slab over the end of the element's own box, taking
  its two end-side corners. So a row's box is the element's box, and an array's rows end
- where every other field's control does.
+ where every other field's control does. On an object element that box is the summary
+ rather than the open row: a destructive control belongs to the line it sits on, not to
+ everything that line has unfolded.
 
  Keys carry the list without the mouse: Enter inserts a
  sibling below and takes the caret there, Backspace on an empty element removes it
@@ -36,9 +44,14 @@
 	import { IdSeq, controlKind } from './structure.js';
 	import Icon from './icons/Icon.svelte';
 	import TextField from './TextField.svelte';
+	import ObjectField from './ObjectField.svelte';
 	import ProseArrayElement from './ProseArrayElement.svelte';
 	import FieldLabel from './FieldLabel.svelte';
 	import './controls.css';
+
+	/** The disclosure glyph, at the size the accordion's own chevron takes: one
+	 *  disclosure figure per surface, so it is one glyph at one size. */
+	const CHEVRON = 16;
 
 	interface Props {
 		value: unknown[] | undefined;
@@ -55,6 +68,10 @@
 		labelId?: string;
 		/** Where the description parks, for the group's `aria-describedby`. */
 		descriptionId?: string;
+		/** The field's control id: the base an `object` element's subform derives its
+		 * properties' own names from, one `-e-<element id>` segment down, so each open
+		 * record's cells carry real `<label for>` pairs like every other control. */
+		idBase?: string;
 		/** Element `i`'s content, decoded by the boundary through the codec `items`
 		 * names (`Field`, `reader.getContentAt`). Asked only for a content-typed
 		 * element: on any other the read is not content and throws. `undefined` for a
@@ -71,6 +88,7 @@
 		description,
 		labelId,
 		descriptionId,
+		idBase,
 		elementContent,
 		onCommit
 	}: Props = $props();
@@ -121,6 +139,37 @@
 	let rootEl: HTMLElement | undefined = $state();
 	let rowsEl: HTMLElement | undefined = $state();
 
+	// ── Object elements: one open at a time ──────────────────────────────────────
+	// So an array of ten records is ten lines and one figure, whatever its length.
+	let openId = $state<string | undefined>(undefined);
+	// The open row's subform, for the landing below. One entry, never a map: only one
+	// row is open, so the ref is singular by the same rule the state is.
+	let openObjEl = $state<{ focus: () => void } | undefined>();
+
+	/** The property whose value titles a collapsed row: the first `string` cell in
+	 *  declaration order, which is the order a schema states its own priority in. */
+	const titleKey = $derived.by(() => {
+		for (const [k, sub] of Object.entries(items?.properties ?? {})) {
+			if (controlKind(sub) === 'text') return k;
+		}
+		return undefined;
+	});
+	/** A collapsed row's own words: the title cell's committed value, or `undefined`
+	 *  while it has none. */
+	function elementTitle(k: number): string | undefined {
+		const el = arr[k] as Record<string, unknown> | undefined;
+		const v = titleKey ? el?.[titleKey] : undefined;
+		return typeof v === 'string' && v.trim() ? v : undefined;
+	}
+	/** What an untitled row reads as: the name its `aria-label` already spends,
+	 *  `label` + the 1-based index. */
+	function untitled(k: number): string {
+		return label != null ? t.strings.elementUntitled(label, k + 1) : String(k + 1);
+	}
+	function toggleRow(id: string): void {
+		openId = openId === id ? undefined : id;
+	}
+
 	// The awaited flush below is the only work that outlives a gesture here, so the
 	// span carries no cancellers: it is the liveness `focusAfterFlush` asks for.
 	const span = createLifespan();
@@ -149,6 +198,9 @@
 		const next = arr.slice();
 		next.splice(at, 0, emptyElement());
 		onCommit(next);
+		// A row added is a row to fill in, so an object element arrives open: landing on
+		// a collapsed empty summary would make adding one a two-press gesture.
+		if (control === 'object') openId = id;
 		focusAfterFlush(id);
 	}
 	function add(): void {
@@ -159,6 +211,9 @@
 		const next = ids.filter((_, i) => i !== k);
 		ids = next;
 		delete els[dropped];
+		// The open row can be the one removed; `openId` is cleared with it rather than
+		// left naming an element that has gone.
+		if (openId === dropped) openId = undefined;
 		onCommit(arr.filter((_, i) => i !== k));
 		// Focus lands on the element before the removed one, or on the one that slid
 		// into its place; on the add affordance once the list is empty, which is then
@@ -172,11 +227,20 @@
 	 * ask one function so they cannot disagree (`Field`, `leaves.ts`). */
 	export function focus(): void {
 		if (ids.length === 0) return void addEl?.focus();
-		const first = els[ids[0]];
-		if (first) return first.focus();
-		// The JSON element registers no controller: it is a plain textarea, with
-		// nothing about focusing it that the DOM does not already know.
-		rootEl?.querySelector<HTMLTextAreaElement>('.qm-array-row textarea')?.focus();
+		if (control === 'object') return focusObjectRow(ids[0]);
+		els[ids[0]]?.focus();
+	}
+	/** An object row's landing: inside the subform when that row is the open one, on
+	 *  the row's own summary otherwise — a collapsed row's control is its summary. */
+	function focusObjectRow(id: string): void {
+		if (id === openId && openObjEl) return openObjEl.focus();
+		// Matched on the dataset: spelling an id into a selector needs `CSS.escape`,
+		// which the test DOM does not carry.
+		const rows = rowsEl?.querySelectorAll<HTMLElement>('[data-qm-el]') ?? [];
+		for (const row of rows) {
+			if (row.dataset.qmEl === id)
+				return row.querySelector<HTMLElement>('.qm-element-summary')?.focus();
+		}
 	}
 	/** The box an arrival wash blooms in (`leaves.ts`, `core/bloom.ts`): the elements,
 	 * not the header above them. This component owns the field's label, so the wrapper
@@ -197,6 +261,15 @@
 	 * no offset gets the bare focus: the JSON element, whose textarea has no coordinate
 	 * to spend one in, and a `string` element, which the compile never addresses. */
 	export function focusElement(k: number, pos?: number): void {
+		// A collapsed row holds no control for a caret to land in, so opening it is part
+		// of the landing rather than something the user does first: a preview click that
+		// resolves into an element has to arrive somewhere the caret can sit.
+		if (control === 'object') {
+			const id = ids[k];
+			if (id === undefined) return focus();
+			openId = id;
+			return void focusAfterFlush(id);
+		}
 		const el = els[ids[k]];
 		if (!el) return focus();
 		if (pos != null && el.setCaret) return el.setCaret(pos);
@@ -210,8 +283,9 @@
 	 * unmounts this component inside the window (core/teardown.ts). */
 	async function focusAfterFlush(id: string | undefined): Promise<void> {
 		if (!(await span.resumes(tick()))) return;
-		if (id === undefined) addEl?.focus();
-		else els[id]?.focus();
+		if (id === undefined) return void addEl?.focus();
+		if (control === 'object') return focusObjectRow(id);
+		els[id]?.focus();
 	}
 	/** Whether element `k` reads empty to the user. A text element's committed value
 	 * lags the input: a cleared field commits at `change`, not per keystroke
@@ -251,6 +325,7 @@
 <div
 	bind:this={rootEl}
 	class="qm-array"
+	class:empty={ids.length === 0}
 	role="group"
 	aria-labelledby={label != null ? labelId : undefined}
 	aria-describedby={description ? descriptionId : undefined}
@@ -277,45 +352,78 @@
 	</div>
 	<div class="qm-array-rows" class:empty={ids.length === 0} bind:this={rowsEl}>
 		{#each ids as id, k (id)}
-			<div class="qm-array-row">
-				{#if control === 'prose'}
-					<ProseArrayElement
-						bind:this={els[id]}
-						content={() => elementContent(k) ?? emptyContent()}
-						plaintext={items?.type === 'plaintext'}
-						label={label != null ? `${label} ${k + 1}` : undefined}
-						onChange={(rt) => commitElement(k, rt)}
-						onKey={(e) => onElementKey(e, k)}
-					/>
-				{:else if control === 'object'}
-					<textarea
-						class="qm-input qm-json qm-focus-ring"
-						aria-label={label != null ? `${label} ${k + 1}` : undefined}
-						value={JSON.stringify(arr[k] ?? {})}
-						onchange={(e) => {
-							try {
-								commitElement(k, JSON.parse((e.currentTarget as HTMLTextAreaElement).value));
-							} catch {
-								/* keep prior value on invalid JSON */
-							}
-						}}
-					></textarea>
-				{:else}
-					<TextField
-						bind:this={els[id]}
-						value={String(arr[k] ?? '')}
-						label={label != null ? `${label} ${k + 1}` : undefined}
-						onCommit={(v) => commitElement(k, v)}
-						onKey={(e) => onElementKey(e, k)}
-					/>
-				{/if}
-				<button
-					type="button"
-					class="qm-icon-btn qm-remove qm-focus-ring"
-					title={t.strings.arrayRemove}
-					onclick={() => remove(k)}><Icon name="minus" /></button
-				>
-			</div>
+			{#if control === 'object'}
+				{@const open = openId === id}
+				{@const shown = elementTitle(k)}
+				<div class="qm-array-row qm-element" class:open data-qm-el={id}>
+					<!-- The head is the row in collapsed form, and it is a box: the element IS
+					     a value, the way the enum trigger is, and the remove slab's grammar
+					     (the box's two end-side corners) needs corners to take. So a list of
+					     records measures like a list of inputs whatever the element type. -->
+					<div class="qm-element-head">
+						<button
+							type="button"
+							class="qm-control-box qm-focus-ring qm-element-summary"
+							aria-expanded={open}
+							onclick={() => toggleRow(id)}
+						>
+							<!-- Leading, and it rotates: trailing is the figure for pushing a new
+							     screen, where this unfolds in place. Same glyph, same rotation and
+							     same rung as the accordion's, so the surface has one disclosure. -->
+							<Icon name="chevron-right" class="qm-el-chevron" size={CHEVRON} />
+							{#if shown}
+								<span class="qm-element-title">{shown}</span>
+							{:else}
+								<span class="qm-element-title untitled">{untitled(k)}</span>
+							{/if}
+						</button>
+						<button
+							type="button"
+							class="qm-icon-btn qm-remove qm-focus-ring"
+							title={t.strings.arrayRemove}
+							onclick={() => remove(k)}><Icon name="minus" /></button
+						>
+					</div>
+					{#if open}
+						<ObjectField
+							bind:this={openObjEl}
+							value={(arr[k] ?? {}) as Record<string, unknown>}
+							properties={items?.properties}
+							label={label != null ? `${label} ${k + 1}` : undefined}
+							idBase={idBase != null ? `${idBase}-e-${id}` : undefined}
+							edges="close"
+							onCommit={(obj) => commitElement(k, obj)}
+						/>
+					{/if}
+				</div>
+			{:else}
+				<div class="qm-array-row">
+					{#if control === 'prose'}
+						<ProseArrayElement
+							bind:this={els[id]}
+							content={() => elementContent(k) ?? emptyContent()}
+							plaintext={items?.type === 'plaintext'}
+							label={label != null ? `${label} ${k + 1}` : undefined}
+							onChange={(rt) => commitElement(k, rt)}
+							onKey={(e) => onElementKey(e, k)}
+						/>
+					{:else}
+						<TextField
+							bind:this={els[id]}
+							value={String(arr[k] ?? '')}
+							label={label != null ? `${label} ${k + 1}` : undefined}
+							onCommit={(v) => commitElement(k, v)}
+							onKey={(e) => onElementKey(e, k)}
+						/>
+					{/if}
+					<button
+						type="button"
+						class="qm-icon-btn qm-remove qm-focus-ring"
+						title={t.strings.arrayRemove}
+						onclick={() => remove(k)}><Icon name="minus" /></button
+					>
+				</div>
+			{/if}
 		{/each}
 	</div>
 </div>
@@ -406,11 +514,68 @@
 		background: var(--_qm-danger-tint);
 		color: var(--_qm-danger);
 	}
-	/* The JSON element is a `.qm-input` (controls.css): box, focus ring, and all;
-	 what a textarea adds over an input is the face and a floor on its height. */
-	.qm-json {
-		font-family: var(--_qm-font-mono);
-		min-height: 2.5rem;
+	/* ── An object element ──────────────────────────────────────────────────────
+	 The row is a summary and the subform hangs under it. `row-gap` rather than a
+	 margin on the subform, because the distance between a control and what it has
+	 unfolded belongs to the thing stacking them: the variant field spends its own
+	 `gap` on exactly this and `ObjectField` therefore opens flush, carrying no
+	 leading space of its own for a caller to cancel. */
+	.qm-element {
+		row-gap: var(--_qm-space-2);
+	}
+	/* The slab measures the head, not the row: an open element is the head plus
+	 everything it unfolded, and a destructive control belongs to the line it sits on
+	 rather than to all of that. Positioned, so `.qm-remove` anchors here. */
+	.qm-element-head {
+		position: relative;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+	}
+	/* A box, which the button family otherwise is not: the row IS the element, a value
+	 in collapsed form the way the enum trigger is one, and the slab's grammar — the
+	 box's two end-side corners — needs a box with corners to take. It carries
+	 `.qm-control-box`, so the fill, the radius, the inset and the type are the recipe's
+	 (controls.css) and a list of records measures like the list of inputs beside it.
+	 The end inset the slab stands in arrives from the row's own rule above. */
+	.qm-element-summary {
+		display: flex;
+		align-items: center;
+		gap: var(--_qm-space);
+		width: 100%;
+		box-sizing: border-box;
+		text-align: start;
+		cursor: pointer;
+	}
+	/* No hover fill: a well does not fill under the pointer anywhere on this surface.
+	 The chevron's ink is the cue, which is the accordion header's own ladder. */
+	.qm-element-summary :global(.qm-el-chevron) {
+		flex-shrink: 0;
+		display: block;
+		color: var(--_qm-ink-label);
+		transform: rotate(0deg);
+		transform-origin: center;
+		transition:
+			transform var(--_qm-duration-slow) var(--_qm-ease-reverse),
+			color var(--_qm-duration-fast) var(--_qm-ease-reverse);
+	}
+	.qm-element-summary:hover :global(.qm-el-chevron),
+	.qm-element.open :global(.qm-el-chevron) {
+		color: var(--_qm-ink);
+	}
+	.qm-element.open :global(.qm-el-chevron) {
+		transform: rotate(90deg);
+	}
+	/* The title is the element's own value, so it reads at the ink a written value
+	 takes, on one line however long the cell runs. An untitled row has nothing written
+	 in it yet and says so the way every other empty rung does. */
+	.qm-element-title {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.qm-element-title.untitled {
+		color: var(--_qm-ink-label);
+		font-style: italic;
 	}
 	/* It rests dim and comes up on hover of the field rather than of itself: one trigger
 	 at the head of a row of controls is found by looking at the array, not by grazing its
@@ -429,6 +594,13 @@
 	}
 	.qm-array:hover .qm-add-el,
 	.qm-add-el:focus-visible {
+		opacity: 1;
+	}
+	/* Empty, the rows box is `display: none` and the field is a label and this trigger:
+	   nothing left for it to compete with, and nothing else in the field to act on. So
+	   it rests full-strength there and takes the recede back once it heads a list. A
+	   receded trigger beside no content reads as a caption rather than as a way in. */
+	.qm-array.empty .qm-add-el {
 		opacity: 1;
 	}
 	@media (hover: none) {

@@ -4,6 +4,19 @@
  only: a nested prose/array/object property renders a placeholder instead of
  recursing.
 
+ The nesting is a band: two full-width horizontals at `--_qm-border`, the figure the
+ card draws around its own metadata (`.qm-meta-top` / `.qm-meta-bottom`) one octave
+ down. Nothing insets, so a property's control keeps the card's left and right columns
+ exactly as a field's does, and the field's own label caps the band from outside it —
+ name, rule under the name, content, closing rule.
+
+ Which edges draw is {@link Props.edges}, and the rule is that a boundary is stated
+ once: where a box already sits against the subform, that box IS the boundary and a
+ stroke under it would say so twice. So a field-level subform takes the band, and a
+ subform hanging off a control — a variant's cells under their discriminant, an
+ array element's properties under its summary row — takes the closing rule alone.
+ Sometimes two strokes and sometimes one: the open figure the card's bracket is.
+
  A property's ghosted `default:` is the static schema `sub.default`, not the
  resolved provenance the top-level ghosts read (FIELD_PROVENANCE): `resolve`
  carries no per-property row (an object field resolves as one row whose value is
@@ -13,6 +26,8 @@
 	import type { QuillFieldSchema } from '@quillmark/wasm';
 	import { controlKind, humanize } from './structure.js';
 	import { wording } from './strings.js';
+	import { propertyDomIds } from './domid.js';
+	import FieldLabel from './FieldLabel.svelte';
 	import TextField from './TextField.svelte';
 	import EnumField from './EnumField.svelte';
 	import NumberField from './NumberField.svelte';
@@ -22,25 +37,53 @@
 	interface Props {
 		value: Record<string, unknown> | undefined;
 		properties: Record<string, QuillFieldSchema> | undefined;
-		/** Accessible-name prefix for the property controls. */
-		label?: string;
 		/** The field label's own id. A subform is a group of controls, not one control
-		 * `for` could reach, so the field's label names the set and each property
-		 * control keeps its own composed `aria-label`. */
+		 * `for` could reach, so the field's label names the set; each property carries
+		 * its own `<label for>` inside it. */
 		labelledBy?: string;
 		/** The parked `description` (FieldLabel): announced on entering the group. */
 		describedBy?: string;
+		/**
+		 * The parent control's DOM id: the base each property's own three names derive
+		 * from ({@link propertyDomIds}). Absent — a subform mounted with no field around
+		 * it — the properties fall back to `aria-label`, which names them without a
+		 * `for` target to click.
+		 */
+		idBase?: string;
+		/** Accessible-name prefix used only on the `aria-label` fallback above. */
+		label?: string;
+		/** Which strokes the subform draws; see the note above. */
+		edges?: 'band' | 'close';
 		onCommit: (obj: Record<string, unknown>) => void;
 	}
-	let { value, properties, label, labelledBy, describedBy, onCommit }: Props = $props();
+	let {
+		value,
+		properties,
+		labelledBy,
+		describedBy,
+		idBase,
+		label,
+		edges = 'band',
+		onCommit
+	}: Props = $props();
 
 	const t = wording();
 	const entries = $derived(Object.entries(properties ?? {}));
 	const obj = $derived((value ?? {}) as Record<string, unknown>);
 
 	/** The obligation axis, read off the cell exactly as `fieldModels` reads it off a
-	 *  field: declared `must_fill`, else a missing `default:`. */
+	 *  field: declared `must_fill`, else a missing `default:`. `validate` anchors
+	 *  `must_fill` per leaf, so a property with no `default:` is obliged in its own
+	 *  right whether or not the container around it is (VISUAL_EDITOR §"Enum
+	 *  variants"). */
 	const required = (sub: QuillFieldSchema): boolean => sub.must_fill ?? sub.default === undefined;
+
+	const title = (key: string, sub: QuillFieldSchema): string => sub.ui?.title ?? humanize(key);
+	/** The `aria-label` fallback, for a subform mounted without a field's id space:
+	 *  the field's name and the property's, since nothing else names the control. */
+	const fallbackName = (key: string, sub: QuillFieldSchema): string =>
+		`${label != null ? `${label} ` : ''}${title(key, sub)}` +
+		(required(sub) ? ` ${t.strings.fieldRequired}` : '');
 
 	/** Take the caret: the first property's control, a subform having no single control
 	 * of its own to land on. Resolved off the DOM rather than a ref per property: every
@@ -49,10 +92,19 @@
 	 * handle each would be five refs restating document order. An empty or wholly
 	 * unsupported subform lands nothing. */
 	let rootEl = $state<HTMLElement | undefined>();
+	const FOCUSABLE = 'input, select, button, [tabindex]:not([tabindex="-1"])';
 	export function focus(): void {
-		rootEl
-			?.querySelector<HTMLElement>('input, select, button, [tabindex]:not([tabindex="-1"])')
-			?.focus();
+		rootEl?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+	}
+	/** A label click for the one property `for` cannot reach: the date control, whose
+	 *  focus lives on a segment. Scoped to that property's own cell, so the click lands
+	 *  where the label is rather than on the subform's first control. */
+	function focusProp(key: string): void {
+		// Matched on the dataset: a key is the schema's own string, and spelling one into
+		// a selector needs `CSS.escape`, which the test DOM does not carry.
+		for (const cell of rootEl?.querySelectorAll<HTMLElement>('[data-qm-prop]') ?? []) {
+			if (cell.dataset.qmProp === key) return cell.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+		}
 	}
 
 	function commitProp(key: string, v: unknown): void {
@@ -72,29 +124,38 @@
 <div
 	bind:this={rootEl}
 	class="qm-object"
+	class:close={edges === 'close'}
 	role="group"
 	aria-labelledby={labelledBy}
 	aria-describedby={describedBy}
 >
 	{#each entries as [key, sub] (key)}
 		{@const kind = controlKind(sub)}
-		{@const propLabel =
-			`${label != null ? `${label} ` : ''}${sub.ui?.title ?? humanize(key)}` +
-			(required(sub) ? ` ${t.strings.fieldRequired}` : '')}
-		<div class="qm-object-prop">
-			<!-- The marker is spaced by the label's flex gap, not a whitespace text node, so
-			     an unobliged property's label reads as its name and nothing else. Decorative,
-			     unlike FieldLabel's: this label is a `<span>` and names nothing, so the word
-			     rides the control's own composed name (`propLabel`). -->
-			<span class="qm-object-label"
-				>{sub.ui?.title ?? humanize(key)}{#if required(sub)}<span
-						class="qm-object-required"
-						aria-hidden="true">*</span
-					>{/if}</span
-			>
+		{@const ids = idBase ? propertyDomIds(idBase, key) : undefined}
+		{@const named = ids ? undefined : fallbackName(key, sub)}
+		{@const describes = sub.description && ids ? ids.description : undefined}
+		<!-- `for` reaches the four labelable controls; the date field's focus lives on a
+		     segment, so it takes the click handoff instead, exactly as `Field` does one
+		     level up. -->
+		{@const labelable =
+			kind === 'text' || kind === 'enum' || kind === 'number' || kind === 'boolean'}
+		<div class="qm-object-prop" data-qm-prop={key}>
+			{#if ids}
+				<FieldLabel
+					label={title(key, sub)}
+					controlId={labelable ? ids.control : undefined}
+					id={ids.label}
+					descriptionId={describes}
+					onActivate={labelable ? undefined : () => focusProp(key)}
+					required={required(sub)}
+					description={sub.description}
+				/>
+			{/if}
 			{#if kind === 'enum'}
 				<EnumField
-					label={propLabel}
+					label={named}
+					id={ids?.control}
+					describedBy={describes}
 					value={obj[key] as string | undefined}
 					values={sub.values ?? []}
 					fallback={sub.default as string | undefined}
@@ -102,7 +163,9 @@
 				/>
 			{:else if kind === 'number'}
 				<NumberField
-					label={propLabel}
+					label={named}
+					id={ids?.control}
+					describedBy={describes}
 					value={obj[key] as number | undefined}
 					integer={sub.type === 'integer'}
 					fallback={sub.default as number | undefined}
@@ -110,62 +173,69 @@
 				/>
 			{:else if kind === 'boolean'}
 				<BooleanField
-					label={propLabel}
+					label={named}
+					id={ids?.control}
+					describedBy={describes}
 					value={obj[key] as boolean | undefined}
 					fallback={sub.default as boolean | undefined}
 					onCommit={(v) => commitProp(key, v)}
 				/>
 			{:else if kind === 'date'}
 				<DateField
-					label={propLabel}
+					label={named}
+					labelledBy={ids?.label}
+					describedBy={describes}
 					value={obj[key] as string | undefined}
 					onCommit={(v) => commitProp(key, v)}
 				/>
 			{:else if kind === 'text'}
 				<TextField
-					label={propLabel}
+					label={named}
+					id={ids?.control}
+					describedBy={describes}
 					value={obj[key] as string | undefined}
 					placeholder={sub.default != null ? String(sub.default) : undefined}
 					onCommit={(v) => commitProp(key, v)}
 				/>
 			{:else}
-				<span class="qm-unsupported">({kind} property — not editable in V1)</span>
+				<!-- A property the subform does not recurse into. What it says is what the
+				     user can do about it, which is edit the field from the source surface;
+				     a version number is the roadmap talking to somebody filling in a form. -->
+				<span class="qm-unsupported">{t.strings.nestedUnsupported(kind)}</span>
 			{/if}
 		</div>
 	{/each}
 </div>
 
 <style>
+	/* The band. `border-block` draws both strokes as one declaration, which is what
+	   makes the figure symmetric by construction rather than by two lines agreeing;
+	   `padding-block` at the same rung on both sides is the other half of that.
+
+	   `--_qm-border` and not `--_qm-border-faint`: this is the stroke that structures
+	   (ARCHITECTURE §"A plane is a tone"), the one the metadata bracket and the open
+	   section's vertical read. `faint` separates without structuring — a table's
+	   interior lines under a frame that is doing the structuring — which is the other
+	   job. */
 	.qm-object {
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
-		border-left: var(--_qm-border-width) solid var(--_qm-border);
-		padding-left: var(--_qm-space-2);
+		border-block: var(--_qm-border-width) solid var(--_qm-border);
+		padding-block: var(--_qm-space-2);
+	}
+	/* Hanging off a control (a variant's discriminant, an array element's summary row):
+	   that box is the top boundary already, and a stroke under it would state the
+	   boundary twice. The closing rule is not optional in the same breath — without it
+	   the properties float between the box above and whatever follows. */
+	.qm-object.close {
+		border-block-start: none;
+		padding-block-start: 0;
 	}
 	.qm-object-prop {
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-half);
-	}
-	.qm-object-label {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--_qm-space-half);
-		font-size: var(--_qm-text-label);
-		/* The chrome weight, the same one the field label above it takes: what says
-		   this name is nested is the subform's rule and its inset, so a weight step
-		   here would state it twice and rank two names the ramp does not separate. */
-		font-weight: var(--_qm-weight-mid);
-		/* A label is a line, not a passage, so it overrides the root's reading
-		   rhythm the way every other label rung does. */
-		line-height: var(--_qm-leading-tight);
-		color: var(--_qm-ink-label);
-	}
-	/* The field label's marker, at the cell's rung: same ink, so obligation reads as
-	   one thing wherever it is stated. */
-	.qm-object-required {
-		color: var(--_qm-danger);
 	}
 	.qm-unsupported {
 		font-size: var(--_qm-text-body);

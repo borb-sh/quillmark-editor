@@ -287,6 +287,7 @@
 					description={field.description}
 					labelId={domIds.label}
 					descriptionId={domIds.description}
+					idBase={domIds.control}
 					elementContent={(i) => quill.reader(doc).getContentAt(addr, [i])}
 					onCommit={onCommitScalar}
 				/>
@@ -296,6 +297,7 @@
 					value={value as Record<string, unknown> | undefined}
 					properties={field.schema.properties}
 					label={field.label}
+					idBase={domIds.control}
 					labelledBy={domIds.label}
 					{describedBy}
 					onCommit={onCommitScalar}
