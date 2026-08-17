@@ -1,0 +1,94 @@
+<!--
+ An `enum` declaring `variants:` → the discriminant's select, and under it the cells
+ the chosen world brings into play (VISUAL_EDITOR §"Enum variants"). The field rests as
+ a container, `{value: <member>, …that member's fields}`, and commits whole: it is one
+ cell to `Addr`, so there is no per-cell write address.
+
+ The cells are {@link ObjectField}, which already draws a scalar field set keyed by
+ name over a container its parent commits by value. It takes the whole container as its
+ `value` and the world's declaration as its `properties`, so what it hands back is the
+ container with one cell written — and cells outside the drawn world ride through
+ untouched rather than needing to be merged back.
+-->
+<script lang="ts">
+	import type { QuillFieldSchema } from '@quillmark/wasm';
+	import EnumField from './EnumField.svelte';
+	import ObjectField from './ObjectField.svelte';
+	import {
+		VARIANT_DISCRIMINANT,
+		commitDiscriminant,
+		variantCells,
+		variantMember
+	} from './structure.js';
+
+	interface Props {
+		/** The stored container, or undefined while the field is unset. */
+		value: Record<string, unknown> | undefined;
+		schema: QuillFieldSchema;
+		/** The resolved `default:`'s member: what an unset field renders as. */
+		ghostMember: string | undefined;
+		/** Field label, the naming prefix the cells' controls compose with. */
+		label: string;
+		/** `<label for>` target: the discriminant trigger, this control's one labelable
+		 * element. The cells are named by their own composed labels. */
+		id?: string;
+		labelledBy?: string;
+		describedBy?: string;
+		onCommit: (v: Record<string, unknown> | undefined) => void;
+		optionAllowed?: (value: string) => boolean;
+		enumDisallowed?: 'hide' | 'disable';
+	}
+	let {
+		value,
+		schema,
+		ghostMember,
+		label,
+		id,
+		labelledBy,
+		describedBy,
+		onCommit,
+		optionAllowed,
+		enumDisallowed
+	}: Props = $props();
+
+	const member = $derived(variantMember(value, ghostMember));
+	const cells = $derived(variantCells(schema, member));
+	const discriminant = $derived(value?.[VARIANT_DISCRIMINANT] as string | undefined);
+</script>
+
+<div class="qm-variant">
+	<EnumField
+		value={discriminant}
+		values={schema.values ?? []}
+		fallback={ghostMember}
+		{id}
+		{describedBy}
+		onCommit={(v) => onCommit(commitDiscriminant(value, v))}
+		{optionAllowed}
+		{enumDisallowed}
+	/>
+	<!-- Keyed on the member so a flip remounts the cells rather than re-targeting
+	     them: two worlds' cells are different fields that happen to occupy one place,
+	     and a control carrying local state (an unreconciled pick, a caret) across the
+	     flip would carry it between them. -->
+	{#if cells}
+		{#key member}
+			<ObjectField
+				value={value ?? {}}
+				properties={cells}
+				{label}
+				{labelledBy}
+				{describedBy}
+				onCommit={(obj) => onCommit(obj)}
+			/>
+		{/key}
+	{/if}
+</div>
+
+<style>
+	.qm-variant {
+		display: flex;
+		flex-direction: column;
+		gap: var(--_qm-space-2);
+	}
+</style>

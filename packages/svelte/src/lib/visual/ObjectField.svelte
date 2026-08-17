@@ -12,6 +12,7 @@
 <script lang="ts">
 	import type { QuillFieldSchema } from '@quillmark/wasm';
 	import { controlKind, humanize } from './structure.js';
+	import { wording } from './strings.js';
 	import TextField from './TextField.svelte';
 	import EnumField from './EnumField.svelte';
 	import NumberField from './NumberField.svelte';
@@ -33,8 +34,13 @@
 	}
 	let { value, properties, label, labelledBy, describedBy, onCommit }: Props = $props();
 
+	const t = wording();
 	const entries = $derived(Object.entries(properties ?? {}));
 	const obj = $derived((value ?? {}) as Record<string, unknown>);
+
+	/** The obligation axis, read off the cell exactly as `fieldModels` reads it off a
+	 *  field: declared `must_fill`, else a missing `default:`. */
+	const required = (sub: QuillFieldSchema): boolean => sub.must_fill ?? sub.default === undefined;
 
 	/** Take the caret: the first property's control, a subform having no single control
 	 * of its own to land on. Resolved off the DOM rather than a ref per property: every
@@ -72,9 +78,20 @@
 >
 	{#each entries as [key, sub] (key)}
 		{@const kind = controlKind(sub)}
-		{@const propLabel = `${label != null ? `${label} ` : ''}${sub.ui?.title ?? humanize(key)}`}
+		{@const propLabel =
+			`${label != null ? `${label} ` : ''}${sub.ui?.title ?? humanize(key)}` +
+			(required(sub) ? ` ${t.strings.fieldRequired}` : '')}
 		<div class="qm-object-prop">
-			<span class="qm-object-label">{sub.ui?.title ?? humanize(key)}</span>
+			<!-- The marker is spaced by the label's flex gap, not a whitespace text node, so
+			     an unobliged property's label reads as its name and nothing else. Decorative,
+			     unlike FieldLabel's: this label is a `<span>` and names nothing, so the word
+			     rides the control's own composed name (`propLabel`). -->
+			<span class="qm-object-label"
+				>{sub.ui?.title ?? humanize(key)}{#if required(sub)}<span
+						class="qm-object-required"
+						aria-hidden="true">*</span
+					>{/if}</span
+			>
 			{#if kind === 'enum'}
 				<EnumField
 					label={propLabel}
@@ -132,6 +149,9 @@
 		gap: var(--_qm-space-half);
 	}
 	.qm-object-label {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--_qm-space-half);
 		font-size: var(--_qm-text-label);
 		/* The chrome weight, the same one the field label above it takes: what says
 		   this name is nested is the subform's rule and its inset, so a weight step
@@ -141,6 +161,11 @@
 		   rhythm the way every other label rung does. */
 		line-height: var(--_qm-leading-tight);
 		color: var(--_qm-ink-label);
+	}
+	/* The field label's marker, at the cell's rung: same ink, so obligation reads as
+	   one thing wherever it is stated. */
+	.qm-object-required {
+		color: var(--_qm-danger);
 	}
 	.qm-unsupported {
 		font-size: var(--_qm-text-body);

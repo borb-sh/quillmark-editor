@@ -15,7 +15,10 @@ import {
 	placeFields,
 	interpolateTitle,
 	cardTitle,
-	bodyEnabled
+	bodyEnabled,
+	variantMember,
+	variantCells,
+	commitDiscriminant
 } from '$lib/visual/structure';
 import { quill } from '../helpers/fixtures.js';
 
@@ -35,6 +38,61 @@ describe('controlKind', () => {
 		expect(controlKind(f({ type: 'datetime' }))).toBe('date');
 		expect(controlKind(f({ type: 'array' }))).toBe('array');
 		expect(controlKind(f({ type: 'object' }))).toBe('object');
+	});
+
+	it('splits the enum on `variants:`, the key that changes its resting shape', () => {
+		const values = ['a', 'b'];
+		expect(controlKind(f({ type: 'enum', values }))).toBe('enum');
+		expect(
+			controlKind(f({ type: 'enum', values, variants: { b: { note: f({ type: 'string' }) } } }))
+		).toBe('variant');
+	});
+});
+
+describe('variantMember + variantCells', () => {
+	const schema = f({
+		type: 'enum',
+		values: ['plain', 'rich'],
+		variants: { rich: { note: f({ type: 'string' }) } }
+	});
+
+	it('reads the authored discriminant, and falls back to the ghosted default', () => {
+		expect(variantMember({ value: 'rich' }, 'plain')).toBe('rich');
+		// Unset draws the world the document renders as, not nothing: an unset field
+		// resolves its `default:`, so hiding that world's cells would print answers the
+		// form never asked for.
+		expect(variantMember(undefined, 'plain')).toBe('plain');
+		// A container carrying answers but no discriminant is unset too, and the engine
+		// resolves it the same way.
+		expect(variantMember({ note: 'x' }, 'plain')).toBe('plain');
+	});
+
+	it('gives the blank no world, authored or ghosted', () => {
+		expect(variantMember({ value: '' }, 'plain')).toBeUndefined();
+		expect(variantMember(undefined, undefined)).toBeUndefined();
+		expect(variantMember(undefined, '')).toBeUndefined();
+	});
+
+	it('answers cells only where that world declares them', () => {
+		expect(variantCells(schema, 'rich')).toEqual({ note: f({ type: 'string' }) });
+		expect(variantCells(schema, 'plain')).toBeUndefined();
+		expect(variantCells(schema, undefined)).toBeUndefined();
+	});
+});
+
+describe('commitDiscriminant', () => {
+	it('keeps the answers a flip strands, which is what the boundary does with them', () => {
+		expect(commitDiscriminant({ value: 'rich', note: 'x' }, 'plain')).toEqual({
+			value: 'plain',
+			note: 'x'
+		});
+		expect(commitDiscriminant(undefined, 'rich')).toEqual({ value: 'rich' });
+	});
+
+	it('clears the discriminant cell alone, and the field when it held nothing else', () => {
+		expect(commitDiscriminant({ value: 'rich', note: 'x' }, undefined)).toEqual({ note: 'x' });
+		expect(commitDiscriminant({ value: 'rich' }, undefined)).toBeUndefined();
+		expect(commitDiscriminant(undefined, undefined)).toBeUndefined();
 	});
 });
 
@@ -122,6 +180,20 @@ describe('placeFields', () => {
 		).toEqual([
 			['block', 'full'],
 			['obj', 'full']
+		]);
+	});
+
+	it('declines the compact hint for a variant, whose height a pick sets', () => {
+		// A variant's height is the live world's cell count, so it moves on a pick rather
+		// than only with the document: a packed neighbour would reflow every flip.
+		expect(
+			spans([
+				mk('world', true, { control: 'variant', schema: { type: 'enum', values: ['a'] } }),
+				mk('after', true)
+			])
+		).toEqual([
+			['world', 'full'],
+			['after', 'lone']
 		]);
 	});
 
