@@ -118,12 +118,11 @@
 				<div class="qm-menu-surface qm-select-content" data-qm-root>
 					<Select.Viewport>
 						<!-- The sentinel renders the `default:`'s own text, so a defaulted enum
-						     lists that word twice: this row, and the member below it. The tag is
-						     what tells them apart, and it has to be a word rather than a tone —
-						     the ghost is already `ink-label`, and while the field is unset this
-						     is the selected row, so the weight step is pulling the other way. It
-						     rides the accessible name too: the row is no clearer to a screen
-						     reader than to an eye without it. -->
+						     lists that word twice: this row, and the member below it. The tag has
+						     to be a word rather than a tone — the ghost is already `ink-label`,
+						     and while the field is unset this is the selected row, so the weight
+						     step pulls the other way. It rides the accessible name for the same
+						     reason. -->
 						<Select.Item
 							class="qm-menu-item qm-select-item qm-select-unset"
 							value={UNSET}

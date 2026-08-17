@@ -11,10 +11,9 @@
 
  An `object` element collapses: the row is its own summary — a box, titled by the
  element's first `string` cell — and opens onto {@link ObjectField}, one at a time.
- N subforms stacked is the shape no editor that ships this draws, and it is the one
- that puts a nested field three deep; collapsed, the depth on screen never exceeds the
- one the band was drawn for. Opening is therefore part of a landing and not something
- the user does first: `focusElement` opens the row it is aimed at before it focuses.
+ Stacking the subforms instead would nest a field one level past the depth the band
+ draws, once per row. Opening is therefore part of a landing rather than something the
+ user does first: `focusElement` opens the row it is aimed at before it focuses.
 
  The remove is inside the element: a slab over the end of the element's own box, taking
  its two end-side corners. So a row's box is the element's box, and an array's rows end
@@ -141,19 +140,14 @@
 	let rowsEl: HTMLElement | undefined = $state();
 
 	// ── Object elements: one open at a time ──────────────────────────────────────
-	// An `object` element is a subform, and N subforms stacked is the shape no editor
-	// that ships this feature draws: the row collapses to its own summary and opens to
-	// edit. One open at a time, so an array of ten records is ten lines and at most one
-	// figure, and so the depth a nested field has to communicate never exceeds the one
-	// the band was drawn for.
+	// So an array of ten records is ten lines and one figure, whatever its length.
 	let openId = $state<string | undefined>(undefined);
 	// The open row's subform, for the landing below. One entry, never a map: only one
 	// row is open, so the ref is singular by the same rule the state is.
 	let openObjEl = $state<{ focus: () => void } | undefined>();
 
 	/** The property whose value titles a collapsed row: the first `string` cell in
-	 *  declaration order. Declaration order rather than a `ui` key, because a schema
-	 *  that wanted a different one would say so by declaring it first. */
+	 *  declaration order, which is the order a schema states its own priority in. */
 	const titleKey = $derived.by(() => {
 		for (const [k, sub] of Object.entries(items?.properties ?? {})) {
 			if (controlKind(sub) === 'text') return k;
@@ -167,8 +161,8 @@
 		const v = titleKey ? el?.[titleKey] : undefined;
 		return typeof v === 'string' && v.trim() ? v : undefined;
 	}
-	/** What an untitled row reads as: the name its `aria-label` already spends
-	 *  (`label` + 1-based index), now on screen as well. */
+	/** What an untitled row reads as: the name its `aria-label` already spends,
+	 *  `label` + the 1-based index. */
 	function untitled(k: number): string {
 		return label != null ? t.strings.elementUntitled(label, k + 1) : String(k + 1);
 	}
@@ -217,9 +211,8 @@
 		const next = ids.filter((_, i) => i !== k);
 		ids = next;
 		delete els[dropped];
-		// The open row can be the one being removed, and an `openId` naming a row that
-		// no longer exists opens nothing while blocking the next row that takes the id's
-		// place in the list from being opened by its own press.
+		// The open row can be the one removed; `openId` is cleared with it rather than
+		// left naming an element that has gone.
 		if (openId === dropped) openId = undefined;
 		onCommit(arr.filter((_, i) => i !== k));
 		// Focus lands on the element before the removed one, or on the one that slid
@@ -238,14 +231,11 @@
 		els[ids[0]]?.focus();
 	}
 	/** An object row's landing: inside the subform when that row is the open one, on
-	 *  the row's own summary otherwise. A collapsed row's control IS its summary —
-	 *  there is nothing else of the element on screen to land on. */
+	 *  the row's own summary otherwise — a collapsed row's control is its summary. */
 	function focusObjectRow(id: string): void {
 		if (id === openId && openObjEl) return openObjEl.focus();
-		// Matched on the dataset rather than interpolated into a selector: an id is
-		// this component's own token, but `CSS.escape` is the only correct way to spell
-		// one into a selector and it is absent under the test DOM. A find over the rows
-		// needs neither.
+		// Matched on the dataset: spelling an id into a selector needs `CSS.escape`,
+		// which the test DOM does not carry.
 		const rows = rowsEl?.querySelectorAll<HTMLElement>('[data-qm-el]') ?? [];
 		for (const row of rows) {
 			if (row.dataset.qmEl === id)

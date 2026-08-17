@@ -4,12 +4,11 @@
  only: a nested prose/array/object property renders a placeholder instead of
  recursing.
 
- The nesting is drawn as a band and not as a rail: two full-width horizontals at
- `--_qm-border`, the figure the card already draws around its own metadata
- (`.qm-meta-top` / `.qm-meta-bottom`), one octave down. Nothing insets, so a
- property's control keeps the card's left and right columns exactly as a field's
- does, and the field's own label caps the band from outside it — name, rule under
- the name, content, closing rule.
+ The nesting is a band: two full-width horizontals at `--_qm-border`, the figure the
+ card draws around its own metadata (`.qm-meta-top` / `.qm-meta-bottom`) one octave
+ down. Nothing insets, so a property's control keeps the card's left and right columns
+ exactly as a field's does, and the field's own label caps the band from outside it —
+ name, rule under the name, content, closing rule.
 
  Which edges draw is {@link Props.edges}, and the rule is that a boundary is stated
  once: where a box already sits against the subform, that box IS the boundary and a
@@ -73,10 +72,10 @@
 	const obj = $derived((value ?? {}) as Record<string, unknown>);
 
 	/** The obligation axis, read off the cell exactly as `fieldModels` reads it off a
-	 *  field: declared `must_fill`, else a missing `default:`. Truthful at this rung
-	 *  and not merely inherited — `validate` anchors `must_fill` per leaf, so a
-	 *  property with no `default:` is obliged in its own right whether or not the
-	 *  container around it is (VISUAL_EDITOR §"Enum variants"). */
+	 *  field: declared `must_fill`, else a missing `default:`. `validate` anchors
+	 *  `must_fill` per leaf, so a property with no `default:` is obliged in its own
+	 *  right whether or not the container around it is (VISUAL_EDITOR §"Enum
+	 *  variants"). */
 	const required = (sub: QuillFieldSchema): boolean => sub.must_fill ?? sub.default === undefined;
 
 	const title = (key: string, sub: QuillFieldSchema): string => sub.ui?.title ?? humanize(key);
@@ -101,9 +100,8 @@
 	 *  focus lives on a segment. Scoped to that property's own cell, so the click lands
 	 *  where the label is rather than on the subform's first control. */
 	function focusProp(key: string): void {
-		// Matched on the dataset rather than interpolated into a selector: a property key
-		// is the schema's string and spelling one into a selector needs `CSS.escape`,
-		// which the test DOM does not carry. A find over the cells needs neither.
+		// Matched on the dataset: a key is the schema's own string, and spelling one into
+		// a selector needs `CSS.escape`, which the test DOM does not carry.
 		for (const cell of rootEl?.querySelectorAll<HTMLElement>('[data-qm-prop]') ?? []) {
 			if (cell.dataset.qmProp === key) return cell.querySelector<HTMLElement>(FOCUSABLE)?.focus();
 		}

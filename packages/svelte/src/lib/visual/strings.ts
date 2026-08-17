@@ -54,20 +54,15 @@ export interface VisualStrings extends TableChromeStrings, SlashStrings {
 	arrayRemove: string;
 
 	// ── Enum control ──────────────────────────────────────────────────────────
-	/**
-	 * The tag on the unset sentinel's row. The sentinel renders the `default:`'s own
-	 * text, so without it the list opens on two rows reading the same word and only
-	 * tone tells them apart — and tone is carrying the selected weight in the other
-	 * direction. A word is what separates them.
-	 */
+	/** The tag on the unset sentinel's row, which is what tells it from the member it
+	 *  ghosts ({@link EnumField}). */
 	enumUnsetTag: string;
 
 	// ── Subform ───────────────────────────────────────────────────────────────
 	/**
 	 * What stands where a subform declines to recurse (a nested prose / array /
-	 * object property). The whole sentence, since a translator orders the kind
-	 * within it, and it says what the reader can do rather than which release drew
-	 * the line.
+	 * object property), and where to edit that property instead. The whole sentence,
+	 * since a translator orders the kind within it.
 	 */
 	nestedUnsupported: (kind: string) => string;
 	/**
