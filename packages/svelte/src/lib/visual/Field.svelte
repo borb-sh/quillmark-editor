@@ -18,7 +18,7 @@
 	import type { EditorErrorHandler } from '../core/errors.js';
 	import type { LeafRegistry } from './leaves.js';
 	import type { FieldModel, FieldSpan } from './structure.js';
-	import { ghostDefault, stringifyGhost } from './structure.js';
+	import { VARIANT_DISCRIMINANT, ghostDefault, stringifyGhost } from './structure.js';
 	import type { FieldDomIds } from './domid.js';
 	import ProseField from './ProseField.svelte';
 	import TextField from './TextField.svelte';
@@ -28,6 +28,7 @@
 	import DateField from './DateField.svelte';
 	import ArrayField from './ArrayField.svelte';
 	import ObjectField from './ObjectField.svelte';
+	import VariantField from './VariantField.svelte';
 	import DiagnosticList from './DiagnosticList.svelte';
 	import FieldLabel from './FieldLabel.svelte';
 
@@ -91,14 +92,24 @@
 	// control's `YYYY-MM-DD`. An object-valued default does not ghost.
 	const ghost = $derived(ghostDefault(provenance));
 	const defaultStr = $derived(stringifyGhost(ghost));
+	// A variant resolves as one rung whose value is the whole container, so the
+	// discriminant's ghost is that container's own discriminant cell. Read off the
+	// resolved rung like every other ghost, never off the static schema: what the
+	// control ghosts is what an unset field renders.
+	const ghostMember = $derived(
+		(ghost as Record<string, unknown> | undefined)?.[VARIANT_DISCRIMINANT] as string | undefined
+	);
 
 	// `for` reaches a labelable control and the browser does the rest. The other four
 	// are not labelable (the prose leaf's `contenteditable`, the date field's segment
 	// container, the object subform, an array's N inputs) so `for` there would be
 	// both inert and invalid markup; they take `aria-labelledby` and a click handoff.
+	// A variant is labelable through its discriminant: the select is the one control
+	// the field's label names, and its cells carry composed names of their own.
 	const labelable = $derived(
 		field.control === 'text' ||
 			field.control === 'enum' ||
+			field.control === 'variant' ||
 			field.control === 'number' ||
 			field.control === 'boolean'
 	);
@@ -224,6 +235,19 @@
 					values={field.schema.values ?? []}
 					fallback={ghost as string | undefined}
 					id={domIds.control}
+					{describedBy}
+					onCommit={onCommitScalar}
+					{optionAllowed}
+					{enumDisallowed}
+				/>
+			{:else if field.control === 'variant'}
+				<VariantField
+					value={value as Record<string, unknown> | undefined}
+					schema={field.schema}
+					{ghostMember}
+					label={field.label}
+					id={domIds.control}
+					labelledBy={domIds.label}
 					{describedBy}
 					onCommit={onCommitScalar}
 					{optionAllowed}

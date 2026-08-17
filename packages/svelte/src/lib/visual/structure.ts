@@ -11,6 +11,7 @@ export type ControlKind =
 	| 'prose' // richtext / plaintext → a codec prose leaf
 	| 'text' // string
 	| 'enum' // string+enum | type:'enum' → select
+	| 'variant' // type:'enum' + variants: → select, plus the live world's cells
 	| 'number' // number / integer
 	| 'boolean' // boolean → toggle
 	| 'date' // date / datetime → native date control
@@ -196,7 +197,10 @@ export function controlKind(f: QuillFieldSchema): ControlKind {
 		case 'plaintext':
 			return 'prose';
 		case 'enum':
-			return 'enum';
+			// `variants:` is the one key that changes a field's resting shape (canon
+			// `SCHEMAS.md`): with it the field rests as a container and takes the control
+			// that draws one, without it a bare string and the plain select.
+			return f.variants ? 'variant' : 'enum';
 		case 'string':
 			return 'text';
 		case 'number':
@@ -214,6 +218,53 @@ export function controlKind(f: QuillFieldSchema): ControlKind {
 		default:
 			return 'text';
 	}
+}
+
+/** The discriminant cell of a variant container (`VARIANT_DISCRIMINANT_KEY` upstream,
+ *  which the boundary does not export). Reserved: no variant may declare it. */
+export const VARIANT_DISCRIMINANT = 'value';
+
+/**
+ * Which world's cells to draw: the authored discriminant when the container carries
+ * one, else the ghosted default's member. Reading through the ghost is what keeps the
+ * cells on screen the cells that will print — an unset field renders its `default:`,
+ * so a defaulted world whose cells were hidden would print answers the form never
+ * asked for. The blank owns no world and neither does a member declaring no cells.
+ */
+export function variantMember(
+	value: Record<string, unknown> | undefined,
+	ghostMember: string | undefined
+): string | undefined {
+	const authored = value?.[VARIANT_DISCRIMINANT];
+	return (typeof authored === 'string' ? authored : ghostMember) || undefined;
+}
+
+/** The cells a member declares, or `undefined` where that world has none. */
+export function variantCells(
+	schema: QuillFieldSchema,
+	member: string | undefined
+): Record<string, QuillFieldSchema> | undefined {
+	return member ? schema.variants?.[member] : undefined;
+}
+
+/**
+ * The container a discriminant pick commits. Sibling cells are **kept**: the engine
+ * carries an answer its world no longer selects and warns `validation::out_of_variant`
+ * rather than dropping it (canon `SCHEMAS.md`), precisely so the ordinary gesture —
+ * pick a world, fill it, flip to compare, flip back — costs nothing. Dropping them
+ * here would spend the answers the boundary went out of its way to keep.
+ *
+ * The unset sentinel clears the discriminant cell alone, for the same reason. A
+ * container left holding nothing is an unset field, which commits `undefined`.
+ */
+export function commitDiscriminant(
+	value: Record<string, unknown> | undefined,
+	member: string | undefined
+): Record<string, unknown> | undefined {
+	const next = { ...(value ?? {}) };
+	if (member !== undefined) return { ...next, [VARIANT_DISCRIMINANT]: member };
+	delete next[VARIANT_DISCRIMINANT];
+	return Object.keys(next).length ? next : undefined;
 }
 
 /** `foo_bar` → `Foo bar`: the label fallback when a field declares no `ui.title`. */
@@ -334,6 +385,10 @@ export interface PlacedField {
  * document carries. Any of them stands its neighbour in a column of whitespace. An
  * inline prose leaf is one line tall and packs like any scalar.
  *
+ * A variant declines for the same reason one step further in: its height is the live
+ * world's cell count, so it is set by a pick rather than only by the document, and a
+ * packed neighbour would reflow every time the discriminant moves.
+ *
  * An array declines whatever its items are: one-line elements make a one-line step,
  * but nothing holds two arrays to the same number of them, so the shorter of a packed
  * pair pays a cell of whitespace for every element the taller one has past it, and
@@ -341,7 +396,7 @@ export interface PlacedField {
  */
 function packable(f: FieldModel): boolean {
 	if (!f.compact) return false;
-	if (f.control === 'object' || f.control === 'array') return false;
+	if (f.control === 'object' || f.control === 'array' || f.control === 'variant') return false;
 	return f.control !== 'prose' || f.inline;
 }
 

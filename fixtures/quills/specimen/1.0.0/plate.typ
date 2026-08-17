@@ -16,6 +16,25 @@
 // A date field arrives as a value object (`value` + `display`), or `none` when blank.
 #let shown-date(d, fallback) = if d == none { fallback } else { (d.display)("[year]-[month]-[day]") }
 
+// A `variants:` enum rests as a container, `{value, …the live member's fields}`. The
+// branch covers `values ∪ blank` and its last arm is the blank's, not a fallback: an
+// `else` standing for "anything else" would print a world nobody chose. Inside a
+// branch every declared cell of that world is present, so a cell needs no presence
+// guard — only its value is worth one.
+//
+// The discriminant is bound for the branching and every *emitted* cell is read off
+// `data` directly, which is what regions it at the property (`main.distribution.
+// license`) and puts these cells within reach of the preview. A cell read through a
+// local binding carries no address.
+#let distribution-note = {
+  let world = data.distribution.value
+  if world == "internal" [Internal]
+  else if world == "public" [Public · #data.distribution.license]
+  else if world == "embargoed" [
+    Embargoed#if data.distribution.lift_on != "" [ until #data.distribution.lift_on]#if data.distribution.held_by != "" [ · #data.distribution.held_by]
+  ] else [Distribution unset]
+}
+
 // ── Letterhead ──────────────────────────────────────────────────────────────
 #grid(
   columns: (auto, 1fr),
@@ -166,6 +185,8 @@
   #raw(plaintext("title"))
   #linebreak()
   #data.at("status", default: "draft") · #accent · #str(data.at("columns", default: 1)) col · #str(data.at("font_size", default: 10.5)) pt
+  #linebreak()
+  #distribution-note
   #linebreak()
   #for rev in data.at("revisions", default: ()) [
     #rev.at("note", default: "revised") (#str(rev.at("pages", default: 0)) pp)

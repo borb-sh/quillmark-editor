@@ -185,6 +185,34 @@ main:
         compact: true
       description: "Where the document is in its life. Defaulted and obliged both, the pair the `must_fill` axis exists for: `draft` is safe to render, and which stage this is remains a human's call. The one field whose control ghosts a default under a required `*`."
 
+    distribution:
+      type: enum
+      values:
+        - internal
+        - public
+        - embargoed
+      default: internal
+      ui:
+        group: meta
+      variants:
+        public:
+          license:
+            type: enum
+            values:
+              - cc-by
+              - cc0
+            default: cc-by
+            description: Which licence the public copy carries.
+        embargoed:
+          lift_on:
+            type: string
+            description: When the hold lifts, as the notice words it. A variant carries plain data, so a date is spelled here as a string.
+          held_by:
+            type: string
+            default: ""
+            description: Who to ask about the hold.
+      description: "Who may have it. The one field declaring `variants:`, so it rests as a container (`{value, …the member's fields}`) rather than a bare string. `embargoed` brings two cells into play and obliges one of them — required in that world and silent in every other, which is what the flat spelling could not say; `public` brings a licence with a default to ghost; `internal` brings none, so the subform goes. An answer stranded by a flip is kept and warned, never dropped."
+
     issued:
       type: date
       default: "2026-01-15"
