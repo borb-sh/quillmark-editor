@@ -128,6 +128,54 @@ describe('scanSourceQuiver', () => {
 	});
 });
 
+describe('the quill-name charset', () => {
+	const tempDirs: string[] = [];
+
+	afterEach(async () => {
+		for (const dir of tempDirs.splice(0)) {
+			await rm(dir, { recursive: true, force: true });
+		}
+	});
+
+	it('admits the charset a ref spells', async () => {
+		const root = makeTempDir();
+		tempDirs.push(root);
+		await buildMinimalQuiver(root, { quills: [{ name: 'My_quill-2', version: '1.0.0' }] });
+
+		const { catalog } = await scanSourceQuiver(root);
+		expect([...catalog.keys()]).toEqual(['My_quill-2']);
+	});
+
+	it('refuses a seated row a ref cannot spell', async () => {
+		const root = makeTempDir();
+		tempDirs.push(root);
+		await buildMinimalQuiver(root, { quills: [{ name: 'my.quill', version: '1.0.0' }] });
+
+		await expect(scanSourceQuiver(root)).rejects.toThrow(
+			expect.objectContaining({ code: 'quiver_invalid' })
+		);
+	});
+
+	it('names the directory rather than the ref that would have failed', async () => {
+		const root = makeTempDir();
+		tempDirs.push(root);
+		await buildMinimalQuiver(root, { quills: [{ name: 'my quill', version: '1.0.0' }] });
+
+		await expect(scanSourceQuiver(root)).rejects.toThrow(/directory "my quill"/);
+	});
+
+	it('ignores a stray directory holding no quill, whatever its name', async () => {
+		// The row is what has to be addressable; a `.cache` beside the quills is not one.
+		const root = makeTempDir();
+		tempDirs.push(root);
+		await buildMinimalQuiver(root, { quills: [{ name: 'memo', version: '1.0.0' }] });
+		await mkdir(join(root, 'quills', '.cache'), { recursive: true });
+
+		const { catalog } = await scanSourceQuiver(root);
+		expect([...catalog.keys()]).toEqual(['memo']);
+	});
+});
+
 describe('readQuillTree', () => {
 	const tempDirs: string[] = [];
 

@@ -8,6 +8,7 @@ import type { Stats } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { QuiverError } from './errors.js';
 import { parseQuiverYaml } from './quiver-yaml.js';
+import { isQuillName } from './ref.js';
 import { isCanonicalSemver, compareSemver } from './semver.js';
 import type { QuiverMeta } from './quiver-yaml.js';
 import type { QuiverLoader } from './quiver.js';
@@ -36,8 +37,9 @@ function refuseSymlink(st: Stats, path: string): void {
  *
  * Throws:
  *   - `quiver_invalid` if Quiver.yaml is missing/invalid, a quill or version directory
- *     is a symlink, a version dir name is non-canonical, or a version dir is missing
- *     its Quill.yaml sentinel.
+ *     is a symlink, a quill dir holding versions is named outside the ref charset, a
+ *     version dir name is non-canonical, or a version dir is missing its Quill.yaml
+ *     sentinel.
  *   - `transport_error` for I/O failures (permissions, etc.).
  *
  * Missing `quills/` directory is not an error — the quiver is valid but empty.
@@ -168,6 +170,15 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 		}
 
 		if (versions.length > 0) {
+			// Asked here rather than at the directory, so a stray one holding no quill
+			// stays ignored: what has to be addressable is a catalog row.
+			if (!isQuillName(quillName)) {
+				throw new QuiverError(
+					'quiver_invalid',
+					`Quill directory "${quillName}" is not a name a ref can spell — only [A-Za-z0-9_-] are allowed`,
+					{ quiverName: meta.name }
+				);
+			}
 			versions.sort((a, b) => compareSemver(b, a));
 			catalog.set(quillName, versions);
 		}

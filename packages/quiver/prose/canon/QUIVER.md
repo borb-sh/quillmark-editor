@@ -65,7 +65,7 @@ Seeded bytes are checked exactly as fetched bytes are, because the check reads t
 
 Every name but the pointer carries the SHA-256 of what it names, and the loader hashes what arrives before using it: a manifest against the digest in the pointer's filename, a bundle against the digest in the manifest's, a font against its full-width store key. That check is what turns "safe to cache forever" into a property: it catches a corrupted CDN object, a partial sync, and a name reused across releases, and it reports `transport_error`, so the caches that evict on error let a retry succeed. Where no digest primitive exists (`crypto.subtle` is secure-context-only, so a page served over plain `http` to something other than localhost has none) the fetch passes through unchecked rather than failing.
 
-Bundle and manifest names carry 12 hex chars, 48 bits: enough that a new manifest name colliding with a prior release's, which under immutable CDN caching would serve the old catalog forever, is not a birthday problem within any release count a quiver will see. Store keys are the full 64, because the store is keyed by hash and two distinct fonts sharing a prefix would merge into one entry.
+Bundle and manifest names carry 32 hex chars; the width answers a chosen prefix rather than a collision, and `digest.ts` states what that buys. Store keys are the full 64, because the store is keyed by hash and two distinct fonts sharing a prefix would merge into one entry.
 
 What the addressing does not buy is a stale-pointer fallback: `build` replaces its output rather than adding to it, so a client pinned to a stale pointer gets 404s rather than a stale-but-working catalog. That costs nothing while an artifact and its clients deploy together; where they deploy independently, an append-only store with garbage collection is what buys it back.
 
@@ -82,6 +82,8 @@ One narrower verb sits beside it: `resolve(ref)` returns the canonical ref witho
 The quill cache is the only one. A fetched tree lives for the length of the materialization that consumes it and no longer: a second cache holding trees would buy a retry after a `Quill.fromTree` throw its refetch, which is a round-trip saved on the path where the quill is broken, against a cache to evict, coalesce and reason about on every path where it is not.
 
 `resolve` is **sync**, and so are `quillNames()` and `versionsOf()`: the catalog is materialized as the quiver is built (`fromBuiltUrl` fetches `latest.json`, `fromDir` scans the source tree), and `QuiverLoader` carries one verb, `loadTree`, which resolution never reaches. A promise there would price I/O the design does not admit.
+
+Every catalog row is a name a ref can spell. Both loaders hold the row to the charset `parseQuillRef` takes, so what `quillNames()` hands out is what `getQuill` takes back; a source directory or a manifest entry outside it is a `quiver_invalid` naming it, not a row the one verb lists and the other refuses.
 
 `name` and `description` are what `Quiver.yaml` says the collection is, and both reach the class by the same road: parsed off the source tree, written into the manifest by `build`, read back out of it by every built loader. A surface over a quiver has no other authored sentence to print — everything else it can show about a collection is a name a directory happens to carry.
 
