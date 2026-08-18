@@ -405,7 +405,7 @@ describe('buildQuiver — every name carries the digest of its own bytes', () =>
 		expect(fontHash).toHaveLength(64);
 
 		// The width is the claim (`digest.ts`), and `short` above would hold at any of
-		// them: 12 hex chars is a chosen prefix somebody can grind.
+		// them, so it is pinned here.
 		expect(pointer.manifest).toMatch(/^manifest\.[0-9a-f]{32}\.json$/);
 	});
 });
