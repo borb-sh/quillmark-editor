@@ -34,11 +34,10 @@ export interface FieldModel {
 	 * undefined when the field declares none. Chrome-only; never gates. */
 	description: string | undefined;
 	/**
-	 * Required-ness: the schema's `must_fill` obligation, which derives from
-	 * `default:`'s absence when the field declares none (DOCUMENT_MODEL). Drives a
-	 * persistent label `*`; a field can carry both it and a ghosted `default:`,
-	 * since the two axes are independent. Persistent (schema-derived, survives
-	 * filling). Label chrome only; never gates.
+	 * Required-ness: {@link obliged}. Drives a persistent label `*`; a field never
+	 * carries both it and a ghosted `default:`, that default being the whole of what
+	 * retires the obligation. Persistent (schema-derived, survives filling). Label
+	 * chrome only; never gates.
 	 */
 	required: boolean;
 	/** Prose-leaf flags (only meaningful when `control === 'prose'` / array items). */
@@ -262,6 +261,16 @@ export function commitDiscriminant(
 	return Object.keys(next).length ? next : undefined;
 }
 
+/**
+ * Whether the schema obliges a cell: `default:`'s absence, which is the whole of the
+ * obligation (DOCUMENT_MODEL). A typed dictionary is exempt — a namespace declares no
+ * `default:` at all, and `validate` anchors obligation on the leaves under it, so
+ * reading one off the container would mark every subform required.
+ */
+export function obliged(schema: QuillFieldSchema): boolean {
+	return schema.type !== 'object' && schema.default === undefined;
+}
+
 /** `foo_bar` → `Foo bar`: the label fallback when a field declares no `ui.title`. */
 export function humanize(name: string): string {
 	const spaced = name.replace(/_/g, ' ').trim();
@@ -278,7 +287,7 @@ export function fieldModels(cardSchema: QuillCardSchema): FieldModel[] {
 		compact: !!schema.ui?.compact,
 		label: schema.ui?.title ?? humanize(name),
 		description: schema.description,
-		required: schema.must_fill ?? schema.default === undefined,
+		required: obliged(schema),
 		inline: !!schema.inline,
 		plaintext: schema.type === 'plaintext'
 	}));
