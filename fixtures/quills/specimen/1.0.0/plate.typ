@@ -194,10 +194,6 @@
 #text(size: 12pt, weight: "bold", data.title)
 #v(4pt)
 #text(font: mono-face, size: 8pt)[
-  // `raw` needs a string and the content block is not one; `plain-text` is the
-  // coercion, and `repr` of the block is not.
-  #raw(plain-text(data.title))
-  #linebreak()
   #data.at("status", default: "draft") · #accent · #str(data.at("columns", default: 1)) col · #str(data.at("font_size", default: 10.5)) pt
   #linebreak()
   #distribution-note

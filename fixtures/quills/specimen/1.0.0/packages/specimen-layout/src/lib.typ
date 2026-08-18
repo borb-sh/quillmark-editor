@@ -15,12 +15,15 @@
 /// The monospace face, for `raw` and the colophon.
 #let mono-face = "Liberation Mono"
 
-/// A content field flattened to its text. Two placements in this quill take a
-/// `str` rather than the block — the running head, and `raw` on the colophon —
-/// and the helper exposes no content-to-string coercion, so the walk is the
-/// quill's own. Text and the elements that wrap it: a schema leaf's markup is
-/// words, emphasis, links and spaces, so an element this walk misses is one no
-/// leaf produces.
+/// A content field flattened to its text, for the running head and nothing else.
+/// A block placed in `page(header:)` takes the field's regions onto that
+/// placement and the flow keeps none, so the head is passed a string it cannot
+/// region instead — a workaround for where the ink is attributed, not a
+/// projection a plate wants. A `str` from the data lane needs no walk: `raw`
+/// takes `data.tracking_id` and `document(title:)` takes the block itself.
+/// Text and the elements that wrap it: a schema leaf's markup is words,
+/// emphasis, links and spaces, so an element this walk misses is one no leaf
+/// produces.
 #let plain-text(c) = {
   if type(c) == str { c }
   else if c == [ ] { " " }
