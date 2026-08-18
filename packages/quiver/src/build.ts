@@ -8,7 +8,7 @@
 
 import { QuiverError } from './errors.js';
 import { packFiles } from './bundle.js';
-import { NAME_DIGEST_WIDTH } from './digest.js';
+import { NAME_DIGEST_LENGTH } from './digest.js';
 import { MANIFEST_VERSION, POINTER_FORMAT } from './format.js';
 import { isDraft } from './semver.js';
 
@@ -203,7 +203,7 @@ export async function buildQuiver(
 				const bundleHash = createHash('sha256')
 					.update(zipBytes)
 					.digest('hex')
-					.slice(0, NAME_DIGEST_WIDTH);
+					.slice(0, NAME_DIGEST_LENGTH);
 				const bundleName = `${quillName}@${version}.${bundleHash}.zip`;
 
 				try {
@@ -231,7 +231,7 @@ export async function buildQuiver(
 		const manifestHash = createHash('sha256')
 			.update(manifestJson)
 			.digest('hex')
-			.slice(0, NAME_DIGEST_WIDTH);
+			.slice(0, NAME_DIGEST_LENGTH);
 		const manifestFileName = `manifest.${manifestHash}.json`;
 
 		try {

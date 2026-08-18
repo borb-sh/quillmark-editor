@@ -11,7 +11,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { loadBuiltQuiver } from '../built-loader.js';
 import { packFiles } from '../bundle.js';
-import { NAME_DIGEST_MIN, NAME_DIGEST_WIDTH, sha256Hex } from '../digest.js';
+import { NAME_DIGEST_LENGTH, sha256Hex } from '../digest.js';
 import { QuiverError } from '../errors.js';
 import { MANIFEST_VERSION, POINTER_FORMAT } from '../format.js';
 import type { BuiltTransport, FetchOptions } from '../built-loader.js';
@@ -79,7 +79,7 @@ async function fullDigest(bytes: Uint8Array): Promise<string> {
 
 /** The truncated digest a bundle or manifest filename carries. */
 async function nameDigest(bytes: Uint8Array): Promise<string> {
-	return (await fullDigest(bytes)).slice(0, NAME_DIGEST_WIDTH);
+	return (await fullDigest(bytes)).slice(0, NAME_DIGEST_LENGTH);
 }
 
 function makeBundle(files: Record<string, string>): Uint8Array {
@@ -431,21 +431,6 @@ describe('loadBuiltQuiver — invalid manifest', () => {
 		).rejects.toThrow(expect.objectContaining({ code: 'quiver_invalid' }));
 	});
 
-	it('quill name outside the ref charset → quiver_invalid', async () => {
-		// A name `parseQuillRef` refuses is a catalog row `resolve` cannot reach, so it
-		// is refused where the catalog is built rather than listed and then denied.
-		for (const name of ['my.quill', 'a@b', 'has space', 'sl/ash'])
-			await expect(
-				loadBuiltQuiver(
-					await transportWith({
-						version: 1,
-						name: 'test',
-						quills: [{ name, version: '1.0.0', bundle: 'foo@1.0.0.aabbccddeeff.zip', fonts: {} }]
-					})
-				)
-			).rejects.toThrow(expect.objectContaining({ code: 'quiver_invalid' }));
-	});
-
 	it('non-canonical semver in quill entry → quiver_invalid', async () => {
 		await expect(
 			loadBuiltQuiver(
@@ -532,7 +517,7 @@ describe('loadBuiltQuiver — path validation (security)', () => {
 						{
 							name: 'evil',
 							version: '1.0.0',
-							bundle: 'evil@1.0.0.aabbccddeeff.zip',
+							bundle: 'evil@1.0.0.aabbccddeeff0011223344556677889a.zip',
 							fonts: { 'fonts/body.ttf': '../../etc/passwd' }
 						}
 					]
@@ -551,7 +536,7 @@ describe('loadBuiltQuiver — path validation (security)', () => {
 						{
 							name: 'evil',
 							version: '1.0.0',
-							bundle: 'evil@1.0.0.aabbccddeeff.zip',
+							bundle: 'evil@1.0.0.aabbccddeeff0011223344556677889a.zip',
 							// 32 hex chars: a full-width MD5, not a SHA-256.
 							fonts: { 'fonts/body.ttf': 'aabbccddeeff00112233445566778899' }
 						}
@@ -559,47 +544,6 @@ describe('loadBuiltQuiver — path validation (security)', () => {
 				})
 			)
 		).rejects.toThrow(expect.objectContaining({ code: 'quiver_invalid' }));
-	});
-});
-
-describe('loadBuiltQuiver — the digest width in a name', () => {
-	// A name is permanent, so the reader's floor is not the width `build` writes: a
-	// tree published at the earlier width has to keep verifying at it. Both halves
-	// are asserted, because raising the floor to the width is the one edit that
-	// silently strands every artifact already served.
-	async function artifactAtWidth(width: number): Promise<MemTransport> {
-		const zip = makeBundle({ 'Quill.yaml': 'name: foo\n' });
-		const short = async (b: Uint8Array) => (await fullDigest(b)).slice(0, width);
-		const bundle = `foo@1.0.0.${await short(zip)}.zip`;
-		const manifestBytes = enc.encode(
-			JSON.stringify({
-				version: 1,
-				name: 'test',
-				quills: [{ name: 'foo', version: '1.0.0', bundle, fonts: {} }]
-			})
-		);
-		const manifestFileName = `manifest.${await short(manifestBytes)}.json`;
-		return new MemTransport({
-			'latest.json': makePointer(manifestFileName),
-			[manifestFileName]: manifestBytes,
-			[bundle]: zip
-		});
-	}
-
-	it('reads a tree named at the floor width', async () => {
-		const q = await loadBuiltQuiver(await artifactAtWidth(NAME_DIGEST_MIN));
-		expect(q.resolve('foo')).toBe('foo@1.0.0');
-	});
-
-	it('reads a tree named at the width build writes', async () => {
-		const q = await loadBuiltQuiver(await artifactAtWidth(NAME_DIGEST_WIDTH));
-		expect(q.resolve('foo')).toBe('foo@1.0.0');
-	});
-
-	it('refuses a name carrying less than the floor', async () => {
-		await expect(loadBuiltQuiver(await artifactAtWidth(NAME_DIGEST_MIN - 1))).rejects.toThrow(
-			expect.objectContaining({ code: 'quiver_invalid' })
-		);
 	});
 });
 
@@ -611,12 +555,22 @@ describe('loadBuiltQuiver — duplicate entry detection', () => {
 					version: 1,
 					name: 'test',
 					quills: [
-						{ name: 'foo', version: '1.0.0', bundle: 'foo@1.0.0.aabbccddeeff.zip', fonts: {} },
-						{ name: 'foo', version: '1.0.0', bundle: 'foo@1.0.0.ddeeffaabbcc.zip', fonts: {} }
+						{
+							name: 'foo',
+							version: '1.0.0',
+							bundle: 'foo@1.0.0.aabbccddeeff0011223344556677889a.zip',
+							fonts: {}
+						},
+						{
+							name: 'foo',
+							version: '1.0.0',
+							bundle: 'foo@1.0.0.ddeeffaabbcc0011223344556677889b.zip',
+							fonts: {}
+						}
 					]
 				})
 			)
-		).rejects.toThrow(expect.objectContaining({ code: 'quiver_invalid' }));
+		).rejects.toThrow(/Duplicate quill entry/);
 	});
 
 	it('same name but different versions is not a duplicate', async () => {

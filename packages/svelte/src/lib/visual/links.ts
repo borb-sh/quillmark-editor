@@ -28,9 +28,9 @@ const ADDRESS = /^[^\s/@]+@[^\s/@]+$/;
  * A rooted value is left alone, being the spelling that asks for the embedding
  * page, and so is anything already carrying a scheme the link mark renders.
  *
- * `''` for a blank value and for a scheme the mark would render inert, both being
- * nothing to apply: `setLink` declines an empty href, so the prompt refuses at the
- * one exit a writer can see rather than storing a link that draws as plain text.
+ * `''` for a blank value and for a scheme the mark renders inert, both being nothing
+ * to apply: `setLink` declines an empty href, so the refusal lands at the prompt's
+ * own exit rather than storing a link that draws as plain text.
  */
 export function normalizeHref(raw: string): string {
 	const value = raw.trim();
