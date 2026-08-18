@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.6.0 - 2026-08-18
+
 **The slash menu carries the block shapes.** `heading`, `list`, `numbered-list`, `quote`, `code` and `divider` join `table`, which is what the menu was. The one-door rule they displace was about a construct having two implementations, and these have one: every block shorthand and every pick now runs the same command (`codec/blocks.ts`), a shorthand under a regexp and a pick under a name. So the second door costs a row, and a writer who has never typed `## ` has a route to a heading, a list, a quote, a rule and a code block — which, with no toolbar and a format popover that carries marks over a non-empty selection only, they had nowhere.
 
 A shorthand is anchored to the head of a textblock, so a pick does what the shorthand would have done there, the trigger run consumed first, and **a name is offered only where its command would run** — the menu asks each command rather than restating its guards. The lists are absent at an item's head, where `- ` declines and Tab owns the nesting; the divider off a block with text in it, holding no content to retype into; and a caret mid-paragraph is offered the island alone, which inserts a block after it where the rest turn the one the caret is in. `heading` is level 1, the level `# ` counts to.
