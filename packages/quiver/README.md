@@ -126,6 +126,8 @@ The seed answers first and the URL serves what it does not carry. Seeding `lates
 
 `Quiver.fromBuiltUrl(url)` first fetches `<url>/latest.json`, a stable-named pointer to the current manifest. Everything behind that pointer is content-addressed and checked against the digest in its name; the pointer itself is not, so a cache layer can serve a stale one and silently pin the client to the old catalog. It is therefore the one request fetched `no-cache` (revalidate with the origin; a 304 still serves from disk), which closes the browser-cache layer. A stale CDN edge is answered by that host's cache headers.
 
+The check itself needs `crypto.subtle`, which a browser exposes only in a secure context. An `https` page, `http://localhost` and Node have one; a page served over plain `http` to anything else — a dev host on a LAN address, a staging box without a certificate — has none, and there every fetch passes through unchecked.
+
 ## Error handling
 
 Every error is a `QuiverError` carrying a `code` from a closed set — `invalid_ref`, `quill_not_found`, `quiver_invalid`, `transport_error` — a human-readable `message`, and the offending `ref` where there is one.

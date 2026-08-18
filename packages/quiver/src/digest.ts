@@ -15,8 +15,9 @@
  * The width answers a chosen prefix, not a collision. Where the manifest is trusted
  * and the bundles are not — the seeded deployment, where the two come from different
  * places by design — this is the only thing between a served zip and the quill it
- * claims to be, and a quill is a template the backend executes. Grinding padding
- * until SHA-256 lands on a chosen 48-bit prefix is hours of one GPU.
+ * claims to be, and a quill is a template the backend executes. Grinding padding until
+ * SHA-256 lands on a chosen prefix costs hours of one GPU at 48 bits and is out of
+ * reach at 128.
  */
 export const NAME_DIGEST_LENGTH = 32;
 

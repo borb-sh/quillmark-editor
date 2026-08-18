@@ -278,6 +278,18 @@
 	}
 
 	/**
+	 * A fresh anchor id: 128 random bits as hex, the id being opaque to the
+	 * boundary and needing only to be unique. `crypto.randomUUID` is
+	 * secure-context-only, and absent on a page served over plain `http` to
+	 * something other than localhost; `getRandomValues` is there either way.
+	 */
+	function mintAnchorId(): string {
+		return [...crypto.getRandomValues(new Uint8Array(16))]
+			.map((b) => b.toString(16).padStart(2, '0'))
+			.join('');
+	}
+
+	/**
 	 * Toggle an identity anchor over the selection: the `anchor`
 	 * button's answer to a formatting toggle. If the selection already covers
 	 * anchors, remove them; else insert one at its start with a freshly-minted
@@ -292,7 +304,7 @@
 		const { from, to } = leaf.selectionRange();
 		const covered = leaf.anchorsInRange(from, to);
 		if (covered.length) covered.forEach((id) => leaf.removeAnchor(id));
-		else leaf.insertAnchor(crypto.randomUUID(), from);
+		else leaf.insertAnchor(mintAnchorId(), from);
 		view.focus();
 		sync();
 	}
