@@ -28,7 +28,7 @@
 -->
 <script lang="ts">
 	import type { QuillFieldSchema } from '@quillmark/wasm';
-	import { controlKind, humanize } from './structure.js';
+	import { controlKind, humanize, obliged } from './structure.js';
 	import { wording } from './strings.js';
 	import { propertyDomIds } from './domid.js';
 	import FieldLabel from './FieldLabel.svelte';
@@ -75,12 +75,11 @@
 	const entries = $derived(Object.entries(properties ?? {}));
 	const obj = $derived((value ?? {}) as Record<string, unknown>);
 
-	/** The obligation axis, read off the cell exactly as `fieldModels` reads it off a
-	 *  field: declared `must_fill`, else a missing `default:`. `validate` anchors
-	 *  `must_fill` per leaf, so a property with no `default:` is obliged in its own
-	 *  right whether or not the container around it is (VISUAL_EDITOR §"Enum
-	 *  variants"). */
-	const required = (sub: QuillFieldSchema): boolean => sub.must_fill ?? sub.default === undefined;
+	/** Obligation, read off the cell exactly as `fieldModels` reads it off a field
+	 *  ({@link obliged}). `validate` anchors it per leaf, so a property with no
+	 *  `default:` is obliged in its own right and the container around it holds none
+	 *  (VISUAL_EDITOR §"Enum variants"). */
+	const required = obliged;
 
 	const title = (key: string, sub: QuillFieldSchema): string => sub.ui?.title ?? humanize(key);
 	/** The `aria-label` fallback, for a subform mounted without a field's id space:

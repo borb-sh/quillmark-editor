@@ -74,12 +74,12 @@ main:
           description: When a reply is wanted.
         listed:
           type: boolean
+          default: false
           description: Print the address in the letterhead.
-      default: {}
       ui:
         title: Point of contact
         group: identity
-      description: A nested subform, one property per control it draws. The one field labelled by a `ui.title` override rather than by its humanized key.
+      description: "A nested subform, one property per control it draws. A namespace carries no literal of its own — an absent container descends into its cells, so what a blank `contact` renders is what its properties declare. The one field labelled by a `ui.title` override rather than by its humanized key."
 
     signature_block:
       type: array
@@ -178,12 +178,11 @@ main:
         - approved
         - final
         - withdrawn
-      default: draft
-      must_fill: true
+      example: draft
       ui:
         group: meta
         compact: true
-      description: "Where the document is in its life. Defaulted and obliged both, the pair the `must_fill` axis exists for: `draft` is safe to render, and which stage this is remains a human's call. The one field whose control ghosts a default under a required `*`."
+      description: "Where the document is in its life. Which stage this is remains a human's call, so the field declares no `default:` and asks: the one enum carrying a required `*`, and the one whose seeded `draft` is an authored answer rather than a ghost."
 
     distribution:
       type: enum

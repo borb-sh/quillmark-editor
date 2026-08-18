@@ -329,16 +329,14 @@ describe('required', () => {
 		expect(byName.list.required).toBe(false);
 	});
 
-	it('is the declared `must_fill` wherever the schema states one', () => {
-		// The two axes are independent, so both off-diagonal cells are reachable: a
-		// defaulted field a human must still confirm, and a defaultless one nobody has
-		// to answer.
+	it('exempts a typed dictionary, whose obligation is its leaves’', () => {
+		// A namespace can declare no `default:` at all, so reading one off the container
+		// would mark every subform required. `validate` anchors the obligation on the
+		// properties, and so does the subform's own label.
 		const byName = models({
-			obliged: f({ default: 'UNCLASSIFIED', must_fill: true }),
-			optional: f({ must_fill: false })
+			dict: f({ type: 'object', properties: { name: f({}) } })
 		});
-		expect(byName.obliged.required).toBe(true);
-		expect(byName.optional.required).toBe(false);
+		expect(byName.dict.required).toBe(false);
 	});
 });
 

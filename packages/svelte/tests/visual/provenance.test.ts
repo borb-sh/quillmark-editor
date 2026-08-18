@@ -95,4 +95,26 @@ describe('resolve over the real specimen schema', () => {
 		expect(cleared.tracking_id.source).toBe('default');
 		expect(ghostDefault(cleared.tracking_id)).toBe('SPEC-0001');
 	});
+
+	it('reports a container’s strongest contributing rung, its cells having their own', () => {
+		const doc = quill().seedDocument();
+		// `contact` declares no literal — a namespace holds none — and one property
+		// declares a `default:`, which is the whole of what lifts the container off
+		// `blank`. The value is composed per cell, so the defaultless three blank-fill
+		// beside it.
+		const unset = provenanceMap(quill().resolve(doc).main.fields);
+		expect(unset.contact).toMatchObject({
+			source: 'default',
+			value: { name: '', email: '', reply_by: '', listed: false }
+		});
+		// An object-shaped rung ghosts nothing however it resolves; only text does.
+		expect(stringifyGhost(ghostDefault(unset.contact))).toBeUndefined();
+
+		doc.storeField('contact', { email: 'ada@example.org' });
+		const authored = provenanceMap(quill().resolve(doc).main.fields);
+		expect(authored.contact).toMatchObject({
+			source: 'authored',
+			value: { name: '', email: 'ada@example.org', reply_by: '', listed: false }
+		});
+	});
 });
