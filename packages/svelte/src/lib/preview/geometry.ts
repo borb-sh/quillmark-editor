@@ -24,18 +24,19 @@ export interface PdfPoint {
 }
 
 /**
- * An address's boxes: `fieldBoxes`'s union, else its own `regions()` rects, else the
- * rects of everything under it. What the scroll reads, so an address `regions()`
- * names is never one the preview cannot place (PREVIEW.md §"Two responsibilities").
+ * An address's boxes: `fieldBoxes`'s union, else every `regions()` rect at or under it.
+ * What the scroll reads, so an address `regions()` names is never one the preview
+ * cannot place (PREVIEW.md §"Two responsibilities").
  *
  * `fieldBoxes` answers `[]` for a scalar reference the plate places without tracking
  * its content and for an array itself; runtime.d.ts says what such a field's box is, a
- * single `regions()` rect. The third rung is that sentence one granularity down — an
- * array's ink is its elements', and an element answers a union rect of its own — and
- * is a fallback, not a union, so an address with rects of its own never also draws its
- * children's. The boundary character (`.` for a nested field, `[` for an array
- * element) keeps the prefix a path boundary: `main.keywords` matches
- * `main.keywords[0]`, not `main.keywords_note`.
+ * single `regions()` rect. The second rung takes an address and its descendants
+ * together, since a container holds both: a plate composing an array's presentation
+ * regions the array on the ink it composed — a separator, a heading — where each
+ * element regions the ink it carries itself, and the field is placed at all of it. The
+ * boundary character (`.` for a nested field, `[` for an array element) keeps the
+ * prefix a path boundary: `main.keywords` matches `main.keywords[0]`, not
+ * `main.keywords_note`.
  */
 export function boxesForField(
 	field: string,
@@ -43,9 +44,9 @@ export function boxesForField(
 	regions: readonly FieldRegion[]
 ): readonly FieldRegion[] {
 	if (boxes.length) return boxes;
-	const own = regions.filter((r) => r.field === field);
-	if (own.length) return own;
-	return regions.filter((r) => r.field.startsWith(`${field}.`) || r.field.startsWith(`${field}[`));
+	return regions.filter(
+		(r) => r.field === field || r.field.startsWith(`${field}.`) || r.field.startsWith(`${field}[`)
+	);
 }
 
 /**

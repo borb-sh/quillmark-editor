@@ -4,7 +4,7 @@
 
 ## Unreleased
 
-**The `@quillmark/wasm` peer floor is `>=0.106.0-0`.** Nothing here reads a schema shape or a region address, so the release's breaks land outside this package; the floor moves because a quiver hands out `Quill` handles the consumer's copy of the artifact has to be able to parse. A quill whose two enum variants declare one name differently now fails at `getQuill`, the name being one cell of the container whichever world brings it into play.
+**The `@quillmark/wasm` peer floor is `>=0.107.0-0`.** Nothing here reads a schema shape or a region address, so the release's breaks land outside this package; the floor moves because a quiver hands out `Quill` handles the consumer's copy of the artifact has to be able to parse. Three schema literals now fail at `getQuill`: a nested `richtext(inline)` `default:` or `example:` spanning more than one paragraph, a container-shaped literal on a variant-bearing enum, and two enum variants declaring one name differently.
 
 **`build` packs `0.1.0` and up.** Below it is the draft space: a version an author is still shaping does not reach a deployment, and a quill with nothing above the floor is absent from the built catalog rather than present and empty. The source layout keeps every version and `fromDir` still reads them all, so the filter is `build`'s alone; `build(src, out, { drafts: true })` turns it off for a caller serving an author their own collection.
 

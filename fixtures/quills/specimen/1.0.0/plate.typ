@@ -1,20 +1,29 @@
-#import "@local/quillmark-helper:0.1.0": data, form-field, plaintext, signature-field
-#import "@local/specimen-layout:1.0.0": accent-rule, callout, mono-face, specimen-page
+#import "@local/quillmark-helper:0.1.0": data, display, form-field, signature-field
+#import "@local/specimen-layout:1.0.0": (
+  accent-rule, callout, mono-face, plain-text, specimen-page,
+)
 
 #let accent = data.at("accent", default: "slate")
 
 #show: specimen-page.with(
   // A string, not `data.title`: see `specimen-page` on why the running head takes
-  // the plaintext projection and the block stays in the flow.
-  running-title: plaintext("title"),
+  // a flattened projection and the block stays in the flow. The projection is the
+  // quill's own walk — the helper offers no content-to-string coercion.
+  running-title: plain-text(data.title),
   status: data.at("status", default: "draft"),
   accent: accent,
   font-size: data.at("font_size", default: 10.5) * 1pt,
   watermark: data.at("draft_watermark", default: false),
 )
 
-// A date field arrives as a value object (`value` + `display`), or `none` when blank.
-#let shown-date(d, fallback) = if d == none { fallback } else { (d.display)("[year]-[month]-[day]") }
+// A date arrives as a native `datetime`, so `data.<field>` is what arithmetic and
+// comparison take. Rendered ink is reached by schema address instead: `display`
+// keys on the address, returns `none` for a blank date, and its glyphs carry that
+// address, so a date stays click-to-edit however it is formatted.
+#let shown-date(addr, fallback) = {
+  let ink = display(addr, "[year]-[month]-[day]")
+  if ink == none { fallback } else { ink }
+}
 
 // A `variants:` enum rests as a container, `{value, …the live member's fields}`. The
 // branch covers `values ∪ blank` and its last arm is the blank's, not a fallback: an
@@ -43,7 +52,9 @@
   image("assets/mark.png", width: 46pt),
   {
     text(size: 19pt, weight: "bold", data.title)
-    if plaintext("subtitle") != "" {
+    // A blank content field arrives as the empty string and a written one as its
+    // markup block, so `!= ""` is the guard a placement takes.
+    if data.at("subtitle", default: "") != "" {
       linebreak()
       text(size: 11pt, style: "italic", data.subtitle)
     }
@@ -60,22 +71,24 @@
   #if poc.at("name", default: "") != "" [
     · #poc.name#if poc.at("email", default: "") != "" [ (#poc.email)]
   ]
-  · Issued #shown-date(data.at("issued", default: none), [—])
-  #if data.at("revised_at", default: none) != none [
-    · Revised #(data.revised_at.display)("[year]-[month]-[day] [hour]:[minute]")
-  ]
+  · Issued #shown-date("issued", [—])
+  #let revised = display("revised_at", "[year]-[month]-[day] [hour]:[minute]")
+  #if revised != none [ · Revised #revised]
   #if data.at("tracking_id", default: "") != "" [ · #raw(data.tracking_id)]
-  #if poc.at("reply_by", default: "") != "" [ · reply by #poc.reply_by]
+  // A property's date is a `datetime` like a card-level one, so the property is
+  // addressed the same way rather than placed as the string it used to be.
+  #let reply = display("contact.reply_by", "[year]-[month]-[day]")
+  #if reply != none [ · reply by #reply]
   #if poc.at("listed", default: false) [ · listed]
 ]
 
-#if plaintext("epigraph") != "" {
+#if data.at("epigraph", default: "") != "" {
   v(6pt)
   align(center, block(width: 78%, text(size: 9.5pt, data.epigraph)))
 }
 
 // ── Abstract, keywords ──────────────────────────────────────────────────────
-#if plaintext("abstract") != "" {
+#if data.at("abstract", default: "") != "" {
   v(8pt)
   block(inset: (left: 14pt), text(size: 9.5pt, data.abstract))
 }
@@ -86,7 +99,8 @@
   text(size: 9pt, { strong[Keywords: ]; keywords.map(box).join[, ] })
 }
 
-// `errata` rows are plaintext: strings, so they set as text rather than as markup.
+// `errata` rows are `plaintext`, so each row's markdown delimiters reach the page
+// as the characters they are rather than as the emphasis they would mark.
 #let errata = data.at("errata", default: ())
 #if errata.len() > 0 {
   v(6pt)
@@ -130,7 +144,7 @@
       let label = if card.at("numbered", default: true) [#section-no. ] else []
       v(8pt)
       heading(level: 2, outlined: false)[#label#card.at("heading", default: "")]
-      if plaintext(path + "lead") != "" {
+      if card.at("lead", default: "") != "" {
         text(size: 9.5pt, style: "italic", card.lead)
         parbreak()
       }
@@ -164,7 +178,7 @@
         line
         linebreak()
       }
-      text(size: 9pt)[Date: #shown-date(card.at("signed_on", default: none), box(width: 90pt, line(length: 100%)))]
+      text(size: 9pt)[Date: #shown-date(path + "signed_on", box(width: 90pt, line(length: 100%)))]
     }
   }
 }
@@ -180,9 +194,9 @@
 #text(size: 12pt, weight: "bold", data.title)
 #v(4pt)
 #text(font: mono-face, size: 8pt)[
-  // `raw` needs a string and the content block is not one; `plaintext` is the
+  // `raw` needs a string and the content block is not one; `plain-text` is the
   // coercion, and `repr` of the block is not.
-  #raw(plaintext("title"))
+  #raw(plain-text(data.title))
   #linebreak()
   #data.at("status", default: "draft") · #accent · #str(data.at("columns", default: 1)) col · #str(data.at("font_size", default: 10.5)) pt
   #linebreak()
@@ -204,7 +218,7 @@
   )
   marked draft
 ]
-#if plaintext("colophon") != "" {
+#if data.at("colophon", default: "") != "" {
   v(4pt)
   text(font: mono-face, size: 8pt, data.colophon)
 }
