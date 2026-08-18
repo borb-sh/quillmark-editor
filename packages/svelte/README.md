@@ -60,6 +60,12 @@ const session = await new Engine().open(quill, doc);
 
 Opening a document that names a **different** quill is the same sequence, in order: resolve the new ref, `engine.open(quill, next)`, swap the props, then free the replaced handles that were yours to free. `<VisualEditor>` re-keys itself on the new `doc` (see below); `<Preview>` swaps by remount (`{#key session}`).
 
+## What a document is trusted to be
+
+**A `Document` may be one its reader did not write** — an import, a shared file, a row from a multi-tenant store — and two properties hold over one regardless. Markdown becomes typed nodes and then DOM, never a markup string: this package has no `{@html}`, no `innerHTML` and no `eval`, so a document's text cannot become tags. And a link renders as one only for `http`, `https`, `mailto`, `tel`, `ftp`, or a value naming no scheme at all; every other scheme draws as an inert span, on the editable surface and in the tips card that paints `$ext.editor.tips` outside any `contenteditable`. That gate is the render's rather than the model's, so a refused href stays on the mark and round-trips: opening a document never edits it.
+
+What stays yours is the text edge and the ref. The markdown is the host's at both ends, and `doc.quillRef` is the **document's** own — a stored file names the quill that opens it, so the ref → `Quill` mapping above is what bounds which templates it can reach.
+
 ## Preview
 
 `createPreview` supplies the layer the session omits: viewport, DOM, DPR, click mapping. It is a pure view: it never calls `session.apply`; you drive the edit and hand it the resulting `ChangeSet`.

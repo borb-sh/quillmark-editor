@@ -128,6 +128,12 @@ The seed answers first and the URL serves what it does not carry. Seeding `lates
 
 The check itself needs `crypto.subtle`, which a browser exposes only in a secure context. An `https` page, `http://localhost` and Node have one; a page served over plain `http` to anything else — a dev host on a LAN address, a staging box without a certificate — has none, and there every fetch passes through unchecked.
 
+## What a quiver is trusted to be
+
+**A quill is a template the backend executes, so loading a quiver runs its author's code.** Point one at a source you would take a dependency from — an npm package or a git tag, pinned like any other — because nothing here sandboxes a quill, and a collection assembled from anywhere else is a decision to make on purpose.
+
+Content addressing is an integrity check and not a provenance one: the digest in each name catches a corrupted object, a partial sync and a name reused across releases, and says nothing about who packed the bytes. Where the primitive behind it is absent the page is no secure context either, so the pointer, the manifest, the digests and the client itself all arrived over the same unauthenticated channel — which is the whole of why a built quiver is served over `https`.
+
 ## Error handling
 
 Every error is a `QuiverError` carrying a `code` from a closed set — `invalid_ref`, `quill_not_found`, `quiver_invalid`, `transport_error` — a human-readable `message`, and the offending `ref` where there is one.

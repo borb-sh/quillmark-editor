@@ -67,6 +67,8 @@ Every name but the pointer carries the SHA-256 of what it names, and the loader 
 
 Bundle and manifest names carry 32 hex chars; the width answers a chosen prefix rather than a collision, and `digest.ts` states what that buys. Store keys are the full 64, because the store is keyed by hash and two distinct fonts sharing a prefix would merge into one entry.
 
+**The check is integrity, not provenance.** It says the bytes are the bytes the name claims and nothing about who packed them, so what a consumer owns is the choice of source, stated for them in the [README](../../README.md#what-a-quiver-is-trusted-to-be).
+
 What the addressing does not buy is a stale-pointer fallback: `build` replaces its output rather than adding to it, so a client pinned to a stale pointer gets 404s rather than a stale-but-working catalog. That costs nothing while an artifact and its clients deploy together; where they deploy independently, an append-only store with garbage collection is what buys it back.
 
 ## getQuill is the seam
