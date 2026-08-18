@@ -198,7 +198,19 @@ export async function buildQuiver(
 				for (const [path, bytes] of contentEntries) {
 					contentRecord[path] = bytes;
 				}
-				const zipBytes = packFiles(contentRecord);
+				// The budget `bundle.ts` carries is spent here as well as at the read, so
+				// a quill no loader would take is refused by the build that packs it,
+				// where the author it names can still do something about it.
+				let zipBytes: Uint8Array;
+				try {
+					zipBytes = packFiles(contentRecord);
+				} catch (err) {
+					throw new QuiverError(
+						'quiver_invalid',
+						`Quill "${quillName}@${version}": ${(err as Error).message}`,
+						{ quiverName: meta.name, version, cause: err }
+					);
+				}
 
 				const bundleHash = createHash('sha256')
 					.update(zipBytes)
