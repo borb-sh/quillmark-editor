@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.4.0 - 2026-08-18
+
 **The carried `@quillmark/wasm` is 0.108.0.** A quill under test gains depth and two shapes. Every type nests at every position the schema admits, so a property or an element declares whatever a card-level field declares, itself included; an enum may declare `variants:`, per-member fields that exist only in the world its discriminant selects — which the editor draws, so an author sees the cells appear and retire as they pick — and a plate may claim the ink it composes for a field with `field-region`, which puts a computed block in the region table the preview reads.
 
 **A plate under test loses `plaintext(field)` and the date wrapper.** The helper exports no content-to-string coercion, and a present date is a native `datetime` whose ink is reached by schema address: `display("issued", "[year]")` where `(data.issued.display)("[year]")` stood. Both old spellings are compile errors rather than silent degrades, so a plate carrying one stops rendering in the studio until it moves. Five schema declarations fail load: a nested `richtext(inline)` literal over more than one paragraph, a container-shaped literal on a variant-bearing enum, two variants declaring one name differently, a `default:` or `example:` on a typed dictionary, and `must_fill:` anywhere at all — the last two naming the migration in the diagnostic, since obligation is now a reading of `default:` rather than a key beside it.
