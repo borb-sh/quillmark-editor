@@ -12,6 +12,37 @@ import { Schema } from 'prosemirror-model';
 import type { MarkSpec, NodeSpec } from 'prosemirror-model';
 import { islandBlockSpec, islandInlineSpec } from './islands.js';
 
+// ── The href gate ───────────────────────────────────────────────────────────
+// An `href` is an attribute value and not markup, so the markdown → typed node → DOM
+// path that keeps a document's text from becoming tags never reaches it: what the
+// mark carries is what `toDOM` emits, and `renderContent` paints marks outside a
+// `contenteditable` (the tips card), where a click is a plain one.
+//
+// An allowlist, because the set a document can spell is open: naming the dangerous
+// schemes instead loses to the first one this has not heard of. It holds what the
+// surface has a caller for; a scheme reaching it later is a line.
+const RENDERED_SCHEMES = new Set(['http', 'https', 'mailto', 'tel', 'ftp']);
+
+/** A scheme and its colon: a letter, then letters, digits, `+`, `-` or `.` (RFC 3986). */
+const SCHEME = /^([a-z][a-z0-9+.-]*):/i;
+
+/** Dropped before the scheme is read, so a tab spliced into `javascript:` is tested
+ *  as what it navigates to. Wider than the URL parser's own tab/newline rule: no
+ *  scheme carries a control character, and the strip decides without rewriting. */
+const IGNORED = /[\u0000-\u0020]/g;
+
+/**
+ * Whether a link carrying `href` renders as one. A value with no scheme is relative
+ * to the embedding page and has none to refuse.
+ *
+ * A refused href is unchanged: it stays on the mark and round-trips, so a document
+ * survives an editor that declines to make it clickable.
+ */
+export function rendersHref(href: string): boolean {
+	const scheme = SCHEME.exec(href.replace(IGNORED, ''));
+	return scheme === null || RENDERED_SCHEMES.has(scheme[1]!.toLowerCase());
+}
+
 // ── Marks (the block and inline schemas share them; plaintext declares none) ─
 const marks: Record<string, MarkSpec> = {
 	// Order matters: it fixes mark-set sort order and parse precedence. `link`
@@ -28,7 +59,12 @@ const marks: Record<string, MarkSpec> = {
 		parseDOM: [
 			{ tag: 'a[href]', getAttrs: (el) => ({ href: (el as HTMLElement).getAttribute('href') }) }
 		],
-		toDOM: (mark) => ['a', { href: mark.attrs.href as string }, 0]
+		// A refused href draws as a bare span: the text stands, unstyled and
+		// unclickable, and the mark keeps its value for encode.
+		toDOM: (mark) => {
+			const href = mark.attrs.href as string;
+			return rendersHref(href) ? ['a', { href }, 0] : ['span', 0];
+		}
 	},
 	// The open-set escape hatch: an inert mark that renders as a bare span and
 	// re-emits its stored `type`/`attrs` on encode. `excludes: ''` lets marks of

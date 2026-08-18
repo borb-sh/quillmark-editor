@@ -10,12 +10,15 @@
  */
 
 /**
- * Digest width in the names `build` writes, in hex chars: 48 bits of SHA-256.
- * Wide enough that a manifest name colliding with a prior release's, which
- * under immutable CDN caching serves the old catalog forever, is not a birthday
- * problem within any release count a quiver will see.
+ * Digest width in the names `build` writes, in hex chars: 128 bits of SHA-256.
+ *
+ * The width answers a chosen prefix, not a collision. Where the manifest is trusted
+ * and the bundles are not — the seeded deployment, where the two come from different
+ * places by design — this is the only thing between a served zip and the quill it
+ * claims to be, and a quill is a template the backend executes. Grinding padding
+ * until SHA-256 lands on a chosen 48-bit prefix is hours of one GPU.
  */
-export const NAME_DIGEST_LENGTH = 12;
+export const NAME_DIGEST_LENGTH = 32;
 
 /** SHA-256 over `bytes` as lowercase hex, or undefined where no digest exists. */
 export async function sha256Hex(bytes: Uint8Array): Promise<string | undefined> {

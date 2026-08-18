@@ -82,8 +82,8 @@ function assertSafeOutDir(
  * names, which is what the loader checks on fetch:
  *   outDir/
  *     latest.json                     # the format, and a stable pointer to the manifest
- *     manifest.<sha256:12>.json       # hashed manifest
- *     <name>@<version>.<sha256:12>.zip  # one bundle per quill
+ *     manifest.<sha256:32>.json       # hashed manifest
+ *     <name>@<version>.<sha256:32>.zip  # one bundle per quill
  *     store/
  *       <sha256>                      # dehydrated font bytes (full hash, no ext)
  *

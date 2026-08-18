@@ -403,6 +403,10 @@ describe('buildQuiver — every name carries the digest of its own bytes', () =>
 		// fonts sharing a prefix would merge into one entry.
 		expect(fontHash).toBe(await digestOf(fontBytes));
 		expect(fontHash).toHaveLength(64);
+
+		// The width is the claim (`digest.ts`), and `short` above would hold at any of
+		// them: 12 hex chars is a chosen prefix somebody can grind.
+		expect(pointer.manifest).toMatch(/^manifest\.[0-9a-f]{32}\.json$/);
 	});
 });
 

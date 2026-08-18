@@ -517,7 +517,7 @@ describe('loadBuiltQuiver — path validation (security)', () => {
 						{
 							name: 'evil',
 							version: '1.0.0',
-							bundle: 'evil@1.0.0.aabbccddeeff.zip',
+							bundle: 'evil@1.0.0.aabbccddeeff0011223344556677889a.zip',
 							fonts: { 'fonts/body.ttf': '../../etc/passwd' }
 						}
 					]
@@ -536,7 +536,7 @@ describe('loadBuiltQuiver — path validation (security)', () => {
 						{
 							name: 'evil',
 							version: '1.0.0',
-							bundle: 'evil@1.0.0.aabbccddeeff.zip',
+							bundle: 'evil@1.0.0.aabbccddeeff0011223344556677889a.zip',
 							// 32 hex chars: a full-width MD5, not a SHA-256.
 							fonts: { 'fonts/body.ttf': 'aabbccddeeff00112233445566778899' }
 						}
@@ -555,12 +555,22 @@ describe('loadBuiltQuiver — duplicate entry detection', () => {
 					version: 1,
 					name: 'test',
 					quills: [
-						{ name: 'foo', version: '1.0.0', bundle: 'foo@1.0.0.aabbccddeeff.zip', fonts: {} },
-						{ name: 'foo', version: '1.0.0', bundle: 'foo@1.0.0.ddeeffaabbcc.zip', fonts: {} }
+						{
+							name: 'foo',
+							version: '1.0.0',
+							bundle: 'foo@1.0.0.aabbccddeeff0011223344556677889a.zip',
+							fonts: {}
+						},
+						{
+							name: 'foo',
+							version: '1.0.0',
+							bundle: 'foo@1.0.0.ddeeffaabbcc0011223344556677889b.zip',
+							fonts: {}
+						}
 					]
 				})
 			)
-		).rejects.toThrow(expect.objectContaining({ code: 'quiver_invalid' }));
+		).rejects.toThrow(/Duplicate quill entry/);
 	});
 
 	it('same name but different versions is not a duplicate', async () => {
