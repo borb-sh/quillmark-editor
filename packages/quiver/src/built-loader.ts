@@ -8,6 +8,7 @@
 
 import { QuiverError } from './errors.js';
 import { unpackFiles } from './bundle.js';
+import { isQuillName } from './ref.js';
 import { isCanonicalSemver, compareSemver } from './semver.js';
 import { NAME_DIGEST_LENGTH, sha256Hex } from './digest.js';
 import { MANIFEST_VERSION, POINTER_FORMAT } from './format.js';
@@ -84,8 +85,10 @@ async function fetchVerified(
 // chars for bundles and manifests and the full 64 for store entries.
 const DIGEST = `[0-9a-f]{${NAME_DIGEST_LENGTH},}`;
 const MANIFEST_FILENAME_RE = new RegExp(`^manifest\\.(${DIGEST})\\.json$`);
+// The name span is the ref charset, not a filename charset: `build` spells a bundle
+// off the catalog row, and a row is a name a ref can spell.
 const BUNDLE_FILENAME_RE = new RegExp(
-	`^[A-Za-z0-9_.-]+@[0-9]+\\.[0-9]+\\.[0-9]+\\.(${DIGEST})\\.zip$`
+	`^[A-Za-z0-9_-]+@[0-9]+\\.[0-9]+\\.[0-9]+\\.(${DIGEST})\\.zip$`
 );
 const FONT_HASH_RE = /^[0-9a-f]{64}$/;
 
@@ -274,6 +277,13 @@ function parseManifest(raw: string): BuiltManifest {
 			throw new QuiverError(
 				'quiver_invalid',
 				`manifest.quills[${i}].name must be a non-empty string`
+			);
+		}
+
+		if (!isQuillName(e['name'] as string)) {
+			throw new QuiverError(
+				'quiver_invalid',
+				`manifest.quills[${i}].name "${e['name'] as string}" is not a name a ref can spell — only [A-Za-z0-9_-] are allowed`
 			);
 		}
 
