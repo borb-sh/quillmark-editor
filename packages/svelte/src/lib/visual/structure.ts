@@ -261,6 +261,44 @@ export function commitDiscriminant(
 	return Object.keys(next).length ? next : undefined;
 }
 
+/** A cell of a world the discriminant does not select, and the answer held under it. */
+export interface StrandedCell {
+	key: string;
+	label: string;
+	value: unknown;
+}
+
+/** One such world, and what it holds. */
+export interface StrandedWorld {
+	member: string;
+	cells: StrandedCell[];
+}
+
+/**
+ * The answers the container holds for worlds that are not live, which is what the
+ * field names under the drawn cells (VISUAL_EDITOR §"Enum variants").
+ *
+ * A key the live world declares is that world's cell wherever else it is also
+ * declared: it is drawn, so naming it here would report a value the user is looking at.
+ */
+export function strandedWorlds(
+	schema: QuillFieldSchema,
+	value: Record<string, unknown> | undefined,
+	member: string | undefined
+): StrandedWorld[] {
+	if (!value) return [];
+	const live = new Set(Object.keys(variantCells(schema, member) ?? {}));
+	const worlds: StrandedWorld[] = [];
+	for (const [name, cells] of Object.entries(schema.variants ?? {})) {
+		if (name === member) continue;
+		const held = Object.entries(cells)
+			.filter(([key]) => !live.has(key) && value[key] !== undefined)
+			.map(([key, sub]) => ({ key, label: sub.ui?.title ?? humanize(key), value: value[key] }));
+		if (held.length) worlds.push({ member: name, cells: held });
+	}
+	return worlds;
+}
+
 /**
  * Whether the schema obliges a cell: `default:`'s absence, which is the whole of the
  * obligation (DOCUMENT_MODEL). A typed dictionary is exempt — a namespace declares no

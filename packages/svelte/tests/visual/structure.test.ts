@@ -18,6 +18,7 @@ import {
 	bodyEnabled,
 	variantMember,
 	variantCells,
+	strandedWorlds,
 	commitDiscriminant
 } from '$lib/visual/structure';
 import { quill } from '../helpers/fixtures.js';
@@ -77,6 +78,49 @@ describe('variantMember + variantCells', () => {
 		expect(variantCells(schema, 'rich')).toEqual({ note: f({ type: 'string' }) });
 		expect(variantCells(schema, 'plain')).toBeUndefined();
 		expect(variantCells(schema, undefined)).toBeUndefined();
+	});
+});
+
+describe('strandedWorlds', () => {
+	const schema = f({
+		type: 'enum',
+		values: ['plain', 'rich', 'held'],
+		variants: {
+			rich: { note: f({ type: 'string' }), pages: f({ type: 'integer' }) },
+			held: { note: f({ type: 'string' }), until: f({ type: 'string', ui: { title: 'Until' } }) }
+		}
+	});
+
+	it('names the world an answer belongs to, and the cell that holds it', () => {
+		expect(strandedWorlds(schema, { value: 'plain', pages: 3 }, 'plain')).toEqual([
+			{ member: 'rich', cells: [{ key: 'pages', label: 'Pages', value: 3 }] }
+		]);
+		// Every world but the live one, each with its own answers.
+		expect(strandedWorlds(schema, { value: 'plain', pages: 3, until: 'May' }, 'plain')).toEqual([
+			{ member: 'rich', cells: [{ key: 'pages', label: 'Pages', value: 3 }] },
+			{ member: 'held', cells: [{ key: 'until', label: 'Until', value: 'May' }] }
+		]);
+	});
+
+	it('names nothing while the live world holds it all, and nothing for an unset field', () => {
+		expect(strandedWorlds(schema, { value: 'rich', note: 'x', pages: 3 }, 'rich')).toEqual([]);
+		expect(strandedWorlds(schema, { value: 'plain' }, 'plain')).toEqual([]);
+		expect(strandedWorlds(schema, undefined, 'rich')).toEqual([]);
+		expect(strandedWorlds(f({ type: 'enum', values: ['a'] }), { value: 'a', x: 1 }, 'a')).toEqual(
+			[]
+		);
+	});
+
+	it('leaves a key the live world declares to the cell that draws it', () => {
+		// `note` is declared by both worlds, so under `rich` it is the drawn answer and
+		// naming it here would report a value the user is looking at.
+		expect(strandedWorlds(schema, { value: 'rich', note: 'x' }, 'rich')).toEqual([]);
+		expect(strandedWorlds(schema, { value: 'held', note: 'x' }, 'held')).toEqual([]);
+		// Live nowhere: the same key is then held for both worlds that declare it.
+		expect(strandedWorlds(schema, { value: 'plain', note: 'x' }, 'plain')).toEqual([
+			{ member: 'rich', cells: [{ key: 'note', label: 'Note', value: 'x' }] },
+			{ member: 'held', cells: [{ key: 'note', label: 'Note', value: 'x' }] }
+		]);
 	});
 });
 

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**A stranded answer says which world holds it.** A variant keeps the answers a flip leaves behind, and the field names them: the member they belong to, how many, and that they do not render. Until now nothing on the surface did — `validation::out_of_variant` is a warning and the inline lane carries errors only, so a document could hold an answer with nowhere to say so, and only a host calling `quill.validate(doc)` knew. The note reads the container against the schema rather than that lane, which is unmoved. A key the live world also declares is drawn rather than named, being that world's cell, and an answer that is not a scalar is named without it, prose being the source view's to show. Read-only: picking that world, one control above, is where these are edited. The heading is `strings.variantStranded(member, count)`, and a consumer overriding `strings` gains a key.
+
 ## v0.6.0 - 2026-08-18
 
 **The slash menu carries the block shapes.** `heading`, `list`, `numbered-list`, `quote`, `code` and `divider` join `table`, which is what the menu was. The one-door rule they displace was about a construct having two implementations, and these have one: every block shorthand and every pick now runs the same command (`codec/blocks.ts`), a shorthand under a regexp and a pick under a name. So the second door costs a row, and a writer who has never typed `## ` has a route to a heading, a list, a quote, a rule and a code block — which, with no toolbar and a format popover that carries marks over a non-empty selection only, they had nowhere.

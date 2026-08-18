@@ -92,6 +92,16 @@ function cellLabels(target: HTMLElement, name = 'Distribution'): string[] {
 	].map((el) => el.textContent?.replace(/\s+/g, ' ').trim() ?? '');
 }
 
+/** The note under the cells: its heading, then each stranded cell — the name, and the
+ *  answer where the note has one to show. */
+function strandedNote(target: HTMLElement, name = 'Distribution'): string[] {
+	return [
+		...field(target, name).querySelectorAll<HTMLElement>(
+			'.qm-variant-stranded-head, .qm-variant-stranded-cell'
+		)
+	].map((el) => el.textContent?.replace(/\s+/g, ' ').trim() ?? '');
+}
+
 /** A cell's text input, by the label it sits under. */
 function cellInput(target: HTMLElement, label: string): HTMLInputElement {
 	const prop = [
@@ -196,11 +206,45 @@ describe('a variant enum field', () => {
 		pickWorld(target, 'internal');
 		expect(cellLabels(target)).toEqual([]);
 		expect(stored(doc)).toEqual({ value: 'internal', lift_on: '2027-01-01' });
+		// And the field says so: which world holds it, and that it does not print.
+		expect(strandedNote(target)).toEqual([
+			'One answer kept for embargoed, and not rendered.',
+			'Lift on 2027-01-01'
+		]);
 
-		// And back: the answer is still the document's, so the cell re-draws filled.
+		// And back: the answer is still the document's, so the cell re-draws filled and the
+		// note retires — the cell that draws an answer is the whole of what says it.
 		pickWorld(target, 'embargoed');
 		expect(cellInput(target, 'Lift on').value).toBe('2027-01-01');
 		expect(stored(doc)).toEqual({ value: 'embargoed', lift_on: '2027-01-01' });
+		expect(strandedNote(target)).toEqual([]);
+	});
+
+	it('names a stranded cell it cannot show the answer of, and none while unset', () => {
+		const q = quill();
+		const doc = q.seedDocument();
+		// A note about a world nobody has picked would be a note about the whole schema:
+		// an unset field holds no answers, so it says nothing.
+		expect(strandedNote(mountEditor(q, doc))).toEqual([]);
+		cleanup?.();
+
+		// Two worlds' answers at once, one of them not a scalar — the shape a source-view
+		// edit leaves, so it arrives on the document rather than through the form.
+		doc.storeField('distribution', {
+			value: 'internal',
+			license: 'cc0',
+			lift_on: '2027-01-01',
+			held_by: { lines: [] }
+		});
+		const target = mountEditor(q, doc);
+		expect(strandedNote(target)).toEqual([
+			'One answer kept for public, and not rendered.',
+			'License cc0',
+			'2 answers kept for embargoed, and not rendered.',
+			'Lift on 2027-01-01',
+			// Not a scalar: the cell is named and the prose stays the source view's.
+			'Held by'
+		]);
 	});
 
 	it('clears the discriminant alone, and the whole field when it held nothing else', () => {

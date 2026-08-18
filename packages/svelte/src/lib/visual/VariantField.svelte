@@ -9,6 +9,8 @@
  `value` and the world's declaration as its `properties`, so what it hands back is the
  container with one cell written — and cells outside the drawn world ride through
  untouched rather than needing to be merged back.
+
+ What those untouched cells hold is named under them ({@link strandedWorlds}).
 -->
 <script lang="ts">
 	import type { QuillFieldSchema } from '@quillmark/wasm';
@@ -17,9 +19,12 @@
 	import {
 		VARIANT_DISCRIMINANT,
 		commitDiscriminant,
+		stringifyGhost,
+		strandedWorlds,
 		variantCells,
 		variantMember
 	} from './structure.js';
+	import { wording } from './strings.js';
 
 	interface Props {
 		/** The stored container, or undefined while the field is unset. */
@@ -51,9 +56,12 @@
 		enumDisallowed
 	}: Props = $props();
 
+	const t = wording();
+
 	const member = $derived(variantMember(value, ghostMember));
 	const cells = $derived(variantCells(schema, member));
 	const discriminant = $derived(value?.[VARIANT_DISCRIMINANT] as string | undefined);
+	const stranded = $derived(strandedWorlds(schema, value, member));
 </script>
 
 <div class="qm-variant">
@@ -87,6 +95,23 @@
 			/>
 		{/key}
 	{/if}
+	<!-- Read-only, and picking that world is where these are edited: the answers are the
+	     engine's to hold (VISUAL_EDITOR §"Enum variants"). An answer that is not a scalar
+	     names its cell alone. -->
+	{#each stranded as world (world.member)}
+		<div class="qm-variant-stranded">
+			<span class="qm-variant-stranded-head"
+				>{t.strings.variantStranded(world.member, world.cells.length)}</span
+			>
+			{#each world.cells as cell (cell.key)}
+				{@const shown = stringifyGhost(cell.value)}
+				<span class="qm-variant-stranded-cell">
+					<span class="qm-variant-stranded-name">{cell.label}</span>
+					{#if shown}<span class="qm-variant-stranded-value">{shown}</span>{/if}
+				</span>
+			{/each}
+		</div>
+	{/each}
 </div>
 
 <style>
@@ -94,5 +119,27 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-2);
+	}
+	/* A note, not a control: the label rungs throughout and no box, the column's own gap
+	   separating it from the cells above. */
+	.qm-variant-stranded {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--_qm-space) var(--_qm-space-2);
+		font-size: var(--_qm-text-label);
+		color: var(--_qm-ink-label);
+	}
+	.qm-variant-stranded-head {
+		flex-basis: 100%;
+	}
+	/* Name and answer as one run, so a wrap breaks between cells rather than through one. */
+	.qm-variant-stranded-cell {
+		display: inline-flex;
+		align-items: baseline;
+		gap: var(--_qm-space);
+	}
+	.qm-variant-stranded-value {
+		color: var(--_qm-fg);
 	}
 </style>

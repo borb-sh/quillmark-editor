@@ -72,6 +72,15 @@ export interface VisualStrings extends TableChromeStrings, SlashStrings {
 	 */
 	elementUntitled: (label: string, index: number) => string;
 
+	// ── Variant control ───────────────────────────────────────────────────────
+	/**
+	 * What a variant says about the answers it holds for a world the discriminant does
+	 * not select. Both the member and that they do not render: either alone leaves the
+	 * reader looking for a control that is not there. The count is a parameter because
+	 * plural is the translator's to decide, English included.
+	 */
+	variantStranded: (member: string, count: number) => string;
+
 	// ── Field chrome ──────────────────────────────────────────────────────────
 	/** The required marker's accessible name; the glyph itself is a `*`. */
 	fieldRequired: string;
@@ -165,6 +174,8 @@ export const DEFAULT_VISUAL_STRINGS: VisualStrings = {
 	enumUnsetTag: 'default',
 	nestedUnsupported: (kind) => `A nested ${kind} — edit this field in the source view.`,
 	elementUntitled: (label, index) => `${label} ${index}`,
+	variantStranded: (member, count) =>
+		`${count === 1 ? 'One answer' : `${count} answers`} kept for ${member}, and not rendered.`,
 	fieldRequired: 'required',
 	formatGroup: 'Formatting',
 	formatBold: 'Bold (Mod-B)',
