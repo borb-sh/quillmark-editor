@@ -1,2 +1,17 @@
 name: fixtures
-description: The workspace's reference quills. A dev fixture, never published.
+description: |
+  The workspace's reference quills. A dev fixture, never published.
+
+  `specimen` is the workspace's own, and declares every schema shape the JS tier
+  draws a control for: a shape reaches the surface by being declared here.
+
+  `usaf_memo` is a copy of tonguetoquill/airmark-quiver's `usaf_memo@0.3.0`, held
+  at `0.0.0` because it is a copy and not that release. It declares nothing for the
+  tier's benefit, which is what it is for: what a shipped quill asks of the surface,
+  asked the way its author wrote it. Re-copy it whole to move it, and let the
+  assertions keyed to its shapes fail where they will.
+
+  `0.0.0` is under the quiver's draft floor, so a build leaves it out and only a
+  source read reaches it: the suite and `quillkit test` gate it, an artifact serves
+  `specimen` alone. A copy is not the release, and the version is what holds it to
+  that.

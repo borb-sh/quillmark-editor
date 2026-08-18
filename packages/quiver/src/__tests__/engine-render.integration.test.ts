@@ -38,9 +38,9 @@ const core = await init();
 // compiles to a valid PDF.
 const RENDER_FIXTURE = fileURLToPath(new URL('./fixtures/render-quiver', import.meta.url));
 
-// The workspace's reference quiver: `specimen@1.0.0`, a published-shape quill with
-// a Typst package tree, an image asset, and five fonts the build dehydrates into
-// `store/`.
+// The workspace's reference quiver: `specimen@1.0.0`, a published-shape quill with a
+// Typst package tree, an image asset, and five fonts the build dehydrates into
+// `store/`; beside it `usaf_memo@0.0.0`, which a build leaves out as a draft.
 const REFERENCE_QUIVER = fileURLToPath(new URL('../../../../fixtures', import.meta.url));
 
 describe('Engine.render against a quiver quill', () => {
@@ -141,6 +141,11 @@ describe('the reference quill, source → build → fetch → render', () => {
 
 	it('packs the reference quiver and renders it back out of the artifact', async () => {
 		const built = await fromBuiltDir(join(outDir, 'packed'));
+		// The source quiver carries two quills and the artifact carries one: `usaf_memo`
+		// sits at `0.0.0`, under the draft floor, so a build leaves it out. It is a copy
+		// of a shipped quill rather than that release, and the version is what says so —
+		// the rule the synthetic fixtures assert (build.test.ts), holding over a real one.
+		expect((await fromDir(REFERENCE_QUIVER)).quillNames()).toEqual(['specimen', 'usaf_memo']);
 		expect(built.quillNames()).toEqual(['specimen']);
 		expect(built.resolve('specimen')).toBe('specimen@1.0.0');
 

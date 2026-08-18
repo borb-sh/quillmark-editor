@@ -238,6 +238,29 @@ describe('geometry: the addresses a compile serves (specimen)', () => {
 		}
 	});
 
+	it('gives every address the shipped quill serves a box of its own', async () => {
+		// The invariant above, over a plate nobody here wrote: a region a real quill's
+		// plate mints is a region this tier has to be able to box.
+		const quill = core.Quill.fromTree(loadFixtureTree('usaf_memo'));
+		const doc = quill.seedDocument();
+		const engine = new Engine();
+		const session = await engine.open(quill, doc);
+		try {
+			const regions = session.regions();
+			expect(regions.length).toBeGreaterThan(0);
+			for (const field of new Set(regions.map((r) => r.field))) {
+				expect(
+					boxesForField(field, session.fieldBoxes(field), regions).length,
+					`no box for ${field}`
+				).toBeGreaterThan(0);
+			}
+		} finally {
+			session.free();
+			doc.free();
+			quill.free();
+		}
+	});
+
 	it('gives a live variant cell its own region, and a box under the field that draws it', async () => {
 		const quill = core.Quill.fromTree(loadFixtureTree());
 		const doc = quill.seedDocument();

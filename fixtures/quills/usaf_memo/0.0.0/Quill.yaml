@@ -1,0 +1,297 @@
+quill:
+  name: usaf_memo
+  version: 0.0.0
+  backend: typst
+  description: U.S. Air Force and Space Force Official Memorandum. A copy of usaf_memo@0.3.0 (tonguetoquill/airmark-quiver), held here at 0.0.0 as the JS tier's conformance fixture.
+
+typst:
+  plate_file: plate.typ
+
+main:
+  ui:
+    groups: [addressing, letterhead, classification, additional]
+  body:
+    example: |
+      The first paragraph. Top-level paragraphs are auto-numbered; do not add manual numbering.
+
+      - Nested bullets are automatically lettered.
+  fields:
+    memo_for:
+      type: array
+      items:
+        type: plaintext
+        inline: true
+      example:
+        - ORG1/SYMBOL
+        - ORG2/SYMBOL
+      ui:
+        group: addressing
+        compact: true
+      description: "Organization/office symbol in UPPERCASE. To address a specific person, add their rank and name in parentheses (e.g., 'ORG/SYMBOL (LT COL JANE DOE)'). For many recipients, enter 'SEE DISTRIBUTION' and list them in the Distribution field."
+
+    memo_from:
+      type: array
+      items:
+        type: plaintext
+        inline: true
+      default: []
+      example:
+        - ORG/SYMBOL
+        - Organization Name
+        - 123 Street Ave
+        - City ST 12345-6789
+      ui:
+        group: addressing
+        compact: true
+      description: "If recipients are on the same installation, use only the office symbol. For recipients on other installations, include the full mailing address to enable return correspondence. Omit entirely to produce a Memorandum for Record (no MEMO FROM line)."
+
+    subject:
+      type: plaintext
+      inline: true
+      example: Subject of the Memorandum
+      ui:
+        group: addressing
+      description: Be brief and clear. Capitalize the first letter of each word except articles, prepositions, and conjunctions. Include suspense dates in parentheses if applicable.
+
+    signature_block:
+      type: array
+      items:
+        type: plaintext
+        inline: true
+      example:
+        - "FIRST M. LAST, Rank, USAF"
+        - Duty Title
+      ui:
+        group: addressing
+        compact: true
+      description: "Line 1: Name in UPPERCASE as signed, grade, and service. Line 2: Duty title."
+
+    letterhead_title:
+      type: array
+      items:
+        type: plaintext
+        inline: true
+      default:
+        - DEPARTMENT OF THE AIR FORCE
+      example:
+        - DEPARTMENT OF THE AIR FORCE
+        - HEADQUARTERS [UNIT NAME]
+      ui:
+        group: letterhead
+      description: "Letterhead lines, top to bottom. The first is the department title, set larger than the rest; change it only for Joint Commands or DoW agencies. The lines below it are your unit's full organization name."
+
+    letterhead_seal:
+      type: enum
+      values:
+        - dow
+        - dod
+      default: dow
+      ui:
+        group: letterhead
+        compact: true
+      description: Department of War (DoW) or Department of Defense (DoD) seal shown in the letterhead.
+
+    letterhead_seal_subtitle:
+      type: plaintext
+      inline: true
+      default: ""
+      ui:
+        group: letterhead
+        compact: true
+      description: Bold-caps line below the seal; blank to omit.
+
+    tag_line:
+      type: richtext
+      inline: true
+      default: ""
+      ui:
+        group: letterhead
+        compact: true
+      description: "Organizational motto at the bottom of the page. Supports Markdown emphasis (e.g. *italics*, **bold**)."
+
+    classification:
+      type: enum
+      values:
+        - UNCLASSIFIED
+        - CUI
+        - CONFIDENTIAL
+        - SECRET
+        - TOP SECRET
+      default: ""
+      ui:
+        group: classification
+        compact: true
+      description: "Select the classification marking shown in the header and footer banner. Unclassified documents typically omit this banner entirely — leave blank unless the document is CUI or classified. Mark per DAFI 16-1404 (DoDM 5200.48 for CUI) and applicable DoD guidance."
+      variants:
+        CUI:
+          controlled_by:
+            type: plaintext
+            inline: true
+            example: SAF/AA
+            description: "Office or organization that designated this information as CUI. Required by DoDM 5200.48."
+          poc:
+            type: plaintext
+            inline: true
+            example: "Capt J. Smith, DSN 555-1234, john.smith@us.af.mil"
+            description: "Point of contact for CUI questions. Required by DoDM 5200.48."
+          category:
+            type: plaintext
+            inline: true
+            default: ""
+            description: "CUI category from the DoD CUI Registry (e.g., 'Privacy/MED', 'CTI', 'PRVCY'). Leave blank to omit."
+          limited_dissemination:
+            type: plaintext
+            inline: true
+            default: ""
+            description: "Limited dissemination control shown in the indicator block (e.g., 'FEDONLY', 'NOFORN'). Independent from the banner suffix."
+
+    dissemination:
+      type: plaintext
+      inline: true
+      default: ""
+      ui:
+        group: classification
+        compact: true
+      description: "Banner dissemination suffix appended after double slash (e.g. 'NF' renders as CUI//NF in the header/footer). Leave blank for no suffix."
+
+    references:
+      type: array
+      items:
+        type: richtext
+        inline: true
+      default: []
+      example:
+        - "AFMAN 33-326, 25 November 2011, *Preparing Official Communications*"
+        - "AFI 33-360, *Publications and Forms Management*"
+      ui:
+        group: additional
+      description: "References, auto-lettered (a), (b), (c) per AFH 33-337. Cite each by organization, type, date, and title; italicize publication titles with *asterisks* (standard Markdown emphasis)."
+
+    cc:
+      type: array
+      items:
+        type: plaintext
+        inline: true
+      default: []
+      example:
+        - Rank and Name, ORG/SYMBOL
+      ui:
+        group: additional
+      description: List office symbols of recipients to receive copies.
+
+    distribution:
+      type: array
+      items:
+        type: plaintext
+        inline: true
+      default: []
+      example:
+        - ORG1/SYMBOL
+        - ORG2/SYMBOL
+      ui:
+        group: additional
+      description: Complete list of recipients if 'SEE DISTRIBUTION' is used in the 'Memo For' field.
+
+    attachments:
+      type: array
+      items:
+        type: plaintext
+        inline: true
+      default: []
+      example:
+        - Attachment description, YYYY MMM DD
+      ui:
+        group: additional
+      description: List attachments in the order they are mentioned in the memo. Briefly describe each; do not use 'as stated' or abbreviations.
+
+    memo_style:
+      type: enum
+      values:
+        - usaf
+        - daf
+      default: usaf
+      ui:
+        group: additional
+        compact: true
+      description: "USAF memorandum or DAF headquarters memorandum; DAF changes date format and body paragraph layout per AFH 33-337."
+
+    font_size:
+      type: number
+      default: 12
+      ui:
+        group: additional
+        compact: true
+      description: Body text size in points; decimals allowed (e.g. 11.5).
+
+    date:
+      type: date
+      default: ""
+      ui:
+        group: additional
+        compact: true
+      description: YYYY-MM-DD. Leave blank to use today's date.
+
+card_kinds:
+  indorsement:
+    description: Chain of routing endorsements. Each endorsement block adds an official response or forwarding action to the original memo.
+    ui:
+      title: Routing indorsement
+      groups: [addressing, additional]
+    fields:
+      from:
+        type: plaintext
+        inline: true
+        example: ORG/SYMBOL
+        ui:
+          group: addressing
+          compact: true
+        description: Office symbol or Rank Name of the endorsing official.
+      for:
+        type: plaintext
+        inline: true
+        example: ORG/SYMBOL
+        ui:
+          group: addressing
+          compact: true
+        description: Office symbol or organization receiving the endorsed memo.
+      signature_block:
+        type: array
+        items:
+          type: plaintext
+          inline: true
+        example:
+          - "FIRST M. LAST, Rank, USAF"
+          - Duty Title
+        ui:
+          group: addressing
+          compact: true
+        description: "Line 1: Name in UPPERCASE as signed, grade, and service. Line 2: Duty title."
+      format:
+        type: enum
+        values:
+          - standard
+          - informal
+          - separate_page
+        default: standard
+        ui:
+          group: additional
+          compact: true
+        description: "'standard' (formal, same page), 'informal' (less formal routing), or 'separate_page' (begins on a new page). 'informal' prints no header, so an informal indorsement with an empty body is nothing but a signature block — it has no text of its own to hold it to the page, and can open a page alone. Give it a body or an action, or use 'standard'."
+      action:
+        type: enum
+        values:
+          - undecided
+          - approve
+          - disapprove
+        default: ""
+        ui:
+          group: additional
+          compact: true
+        description: "Decision taken by the endorser, shown as an either/or line with the choice underlined and the rejected option struck out. Leave blank to hide the line entirely. The wording is automatic: the last indorsement is the approval authority and reads Approve/Disapprove, while every earlier one is a coordinating official and reads Concur/Nonconcur. Use 'undecided' to print the pair unmarked for the endorser to mark by hand."
+      date:
+        type: date
+        default: ""
+        ui:
+          group: additional
+          compact: true
+        description: "YYYY-MM-DD. Date the endorser signs/forwards the memo (per AFH 33-337 Ch. 14, this is distinct from the originating memo's date). Leave blank to render a fillable PDF text field for the endorser to type the date into when signing."
