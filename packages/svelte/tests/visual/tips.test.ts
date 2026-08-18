@@ -73,9 +73,7 @@ describe('renderTip', () => {
 		// attribute value rather than markup, so the round-trip above does not reach
 		// it; the mark's own gate does (`codec/schema.ts`).
 		for (const scheme of ['javascript:alert(1)', 'data:text/html,<script>alert(1)</script>'])
-			expect(html(`See [docs](${scheme})`)).toBe(
-				'<p>See <span data-qm-href-refused="">docs</span></p>'
-			);
+			expect(html(`See [docs](${scheme})`)).toBe('<p>See <span>docs</span></p>');
 	});
 
 	it('draws the schemes a tip legitimately carries', () => {

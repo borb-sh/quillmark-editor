@@ -3,7 +3,7 @@
  * `node:fs`, so it is reachable from the Node entry alone.
  */
 
-import { readdir, readFile, lstat } from 'node:fs/promises';
+import { readdir, readFile, lstat, stat } from 'node:fs/promises';
 import type { Stats } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { QuiverError } from './errors.js';
@@ -14,11 +14,11 @@ import type { QuiverMeta } from './quiver-yaml.js';
 import type { QuiverLoader } from './quiver.js';
 
 /**
- * Refuse a symlink. Every rung stats with `lstat` and asks, because a source quiver
- * is content and a link is a reference out of it: followed, `readFile` reads whatever
- * it points at into the quill, where the backend can typeset it and `build` packs it
- * into the published artifact. A linked directory smuggles a tree where a linked file
- * smuggles one file, so the question is the same at each rung and the answer is no.
+ * Refuse a symlink. Every rung that opens a tree or reads a file `lstat`s and asks,
+ * because a source quiver is content and a link is a reference out of it: followed,
+ * `readFile` reads whatever it points at into the quill, where the backend can typeset
+ * it and `build` packs it into the published artifact. A linked directory smuggles a
+ * tree where a linked file smuggles one, so the answer is the same at each.
  */
 function refuseSymlink(st: Stats, path: string): void {
 	if (st.isSymbolicLink()) {
@@ -36,9 +36,9 @@ function refuseSymlink(st: Stats, path: string): void {
  * to build a catalog of quill names → sorted versions (descending).
  *
  * Throws:
- *   - `quiver_invalid` if Quiver.yaml is missing/invalid, a quill dir name is outside
- *     the ref charset, a version dir name is non-canonical, a version dir is missing
- *     its Quill.yaml sentinel, or any rung is a symlink.
+ *   - `quiver_invalid` if Quiver.yaml is missing/invalid, a quill or version directory
+ *     is a symlink, a quill dir name is outside the ref charset, a version dir name is
+ *     non-canonical, or a version dir is missing its Quill.yaml sentinel.
  *   - `transport_error` for I/O failures (permissions, etc.).
  *
  * Missing `quills/` directory is not an error — the quiver is valid but empty.
@@ -156,7 +156,7 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 
 			const quillYamlPath = join(versionPath, 'Quill.yaml');
 			try {
-				await lstat(quillYamlPath);
+				await stat(quillYamlPath);
 			} catch (err) {
 				const code = (err as NodeJS.ErrnoException).code;
 				if (code === 'ENOENT') {

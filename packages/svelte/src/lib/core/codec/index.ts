@@ -31,12 +31,9 @@ export { DEFAULT_SLASH_STRINGS } from './slash.js';
 export type { SlashState, SlashStrings } from './slash.js';
 
 // Schemas (the decode/encode target; the VisualEditor mounts them). `hasMarks` is
-// what a mark surface asks before offering itself over a leaf.
-export { blockSchema, inlineSchema, plaintextSchema, hasMarks } from './schema.js';
-
-// The href gate the link mark's `toDOM` runs, so the prompt refuses on submit what
-// the render would refuse anyway (`visual/links.ts`).
-export { rendersHref } from './schema.js';
+// what a mark surface asks before offering itself over a leaf, and `rendersHref` the
+// link gate the prompt re-asks on submit (`visual/links.ts`).
+export { blockSchema, inlineSchema, plaintextSchema, hasMarks, rendersHref } from './schema.js';
 
 // Decode / encode / positions (tests + VisualEditor).
 //

@@ -34,8 +34,7 @@ const ADDRESS = /^[^\s/@]+@[^\s/@]+$/;
  */
 export function normalizeHref(raw: string): string {
 	const value = raw.trim();
-	if (!value) return value;
-	if (!rendersHref(value)) return '';
+	if (!value || !rendersHref(value)) return '';
 	if (SCHEME.test(value) || ROOTED.test(value)) return value;
 	return ADDRESS.test(value) ? `mailto:${value}` : `https://${value}`;
 }

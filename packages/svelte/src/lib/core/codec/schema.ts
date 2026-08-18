@@ -21,11 +21,12 @@ import { islandBlockSpec, islandInlineSpec } from './islands.js';
 // the leaf's Ctrl-click.
 //
 // An allowlist, because the set a document can spell is open: a reader that instead
-// names the dangerous schemes loses to the first one it has not heard of.
-const RENDERED_SCHEMES = new Set(['http', 'https', 'mailto', 'tel', 'sms', 'ftp', 'ftps']);
+// names the dangerous schemes loses to the first one it has not heard of. It holds
+// what the surface has a caller for; a scheme reaching it later is a line.
+const RENDERED_SCHEMES = new Set(['http', 'https', 'mailto', 'tel', 'ftp']);
 
-/** A scheme: a letter, then letters, digits, `+`, `-` or `.` (RFC 3986). */
-const SCHEME = /^[a-z][a-z0-9+.-]*$/i;
+/** A scheme and its colon: a letter, then letters, digits, `+`, `-` or `.` (RFC 3986). */
+const SCHEME = /^([a-z][a-z0-9+.-]*):/i;
 
 /** Dropped before the scheme is read, so a tab spliced into `javascript:` is tested
  *  as the scheme it navigates to. Wider than the URL parser's own tab/newline rule:
@@ -41,11 +42,8 @@ const IGNORED = /[\u0000-\u0020]/g;
  * so what a document holds survives an editor that declines to make it clickable.
  */
 export function rendersHref(href: string): boolean {
-	const url = href.replace(IGNORED, '');
-	const colon = url.indexOf(':');
-	if (colon === -1) return true;
-	const scheme = url.slice(0, colon);
-	return SCHEME.test(scheme) ? RENDERED_SCHEMES.has(scheme.toLowerCase()) : true;
+	const scheme = SCHEME.exec(href.replace(IGNORED, ''));
+	return scheme === null || RENDERED_SCHEMES.has(scheme[1]!.toLowerCase());
 }
 
 // ── Marks (the block and inline schemas share them; plaintext declares none) ─
@@ -64,11 +62,11 @@ const marks: Record<string, MarkSpec> = {
 		parseDOM: [
 			{ tag: 'a[href]', getAttrs: (el) => ({ href: (el as HTMLElement).getAttribute('href') }) }
 		],
-		// A refused href renders as the `unknown` mark does, an inert span: the text
-		// stands, unstyled and unclickable, and the mark keeps its value for encode.
+		// A refused href draws as a bare span: the text stands, unstyled and
+		// unclickable, and the mark keeps its value for encode.
 		toDOM: (mark) => {
 			const href = mark.attrs.href as string;
-			return rendersHref(href) ? ['a', { href }, 0] : ['span', { 'data-qm-href-refused': '' }, 0];
+			return rendersHref(href) ? ['a', { href }, 0] : ['span', 0];
 		}
 	},
 	// The open-set escape hatch: an inert mark that renders as a bare span and
