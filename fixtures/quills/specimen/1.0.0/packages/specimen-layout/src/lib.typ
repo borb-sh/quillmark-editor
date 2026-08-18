@@ -15,6 +15,24 @@
 /// The monospace face, for `raw` and the colophon.
 #let mono-face = "Liberation Mono"
 
+/// A content field flattened to its text, for the running head and nothing else.
+/// A block placed in `page(header:)` takes the field's regions onto that
+/// placement and the flow keeps none, so the head is passed a string it cannot
+/// region instead — a workaround for where the ink is attributed, not a
+/// projection a plate wants. A `str` from the data lane needs no walk: `raw`
+/// takes `data.tracking_id` and `document(title:)` takes the block itself.
+/// Text and the elements that wrap it: a schema leaf's markup is words,
+/// emphasis, links and spaces, so an element this walk misses is one no leaf
+/// produces.
+#let plain-text(c) = {
+  if type(c) == str { c }
+  else if c == [ ] { " " }
+  else if c.has("text") { c.text }
+  else if c.has("children") { c.children.map(plain-text).join() }
+  else if c.has("body") { plain-text(c.body) }
+  else { "" }
+}
+
 /// The `accent` enum's three values, resolved to colour. The domain a plate
 /// branches over is `values ∪ blank`, so an unanswered accent takes an ink of its
 /// own: falling back to a member would print a choice nobody made.
@@ -40,11 +58,12 @@
 /// The page setup: margins, a running head, a page-count footer, and the
 /// optional DRAFT wash.
 ///
-/// `running-title` is a **string**, not the title's content block: a placement
-/// inside `page(header:)` reaches no region table, so passing the block here
-/// would spend the title's spans on furniture a click can never land in. The
-/// plate passes the helper's `plaintext` projection instead, and places the
-/// block itself in the flow, where a region can be read back off it.
+/// `running-title` is a **string**, not the title's content block: the header
+/// places its ink on every page and the scan attributes the block's spans to
+/// that placement, so passing the block here spends the title's regions on
+/// furniture a click can never land in — the field then has none in the flow at
+/// all. The plate passes `plain-text` instead, and places the block itself in
+/// the flow, where a region can be read back off it.
 #let specimen-page(
   running-title: "",
   status: "draft",

@@ -4,7 +4,9 @@
 
 ## Unreleased
 
-**The carried `@quillmark/wasm` is 0.106.0.** A quill under test gains two shapes: an enum may declare `variants:`, per-member fields that exist only in the world its discriminant selects — which the editor draws, so an author sees the cells appear and retire as they pick — and a plate may claim the ink it composes for a field with `field-region`, which puts a computed block in the region table the preview reads. A quill whose variants declare one name differently fails to load.
+**The carried `@quillmark/wasm` is 0.107.0.** A quill under test gains depth and two shapes. Every type nests at every position the schema admits, so a property or an element declares whatever a card-level field declares, itself included; an enum may declare `variants:`, per-member fields that exist only in the world its discriminant selects — which the editor draws, so an author sees the cells appear and retire as they pick — and a plate may claim the ink it composes for a field with `field-region`, which puts a computed block in the region table the preview reads.
+
+**A plate under test loses `plaintext(field)` and the date wrapper.** The helper exports no content-to-string coercion, and a present date is a native `datetime` whose ink is reached by schema address: `display("issued", "[year]")` where `(data.issued.display)("[year]")` stood. Both old spellings are compile errors rather than silent degrades, so a plate carrying one stops rendering in the studio until it moves. Three schema literals fail load: a nested `richtext(inline)` literal over more than one paragraph, a container-shaped literal on a variant-bearing enum, and two variants declaring one name differently.
 
 **A release's notes name what its tarball carries, read off the tarball.** The line was minted from the release branch while the client is built from the merge commit, so a sibling release landing between the two made them disagree: 0.2.1's notes name a `@quillmark/svelte` its client does not carry, corrected here. `dist/client/carried.json` is the one mint, the notes render it, and the promoted changelog section carries no copy.
 

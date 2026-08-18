@@ -173,11 +173,11 @@ describe('boxesForField', () => {
 	const region = (field: string, x: number): FieldRegion =>
 		({ field, page: 0, rect: [x, 10, x + 100, 30] }) as FieldRegion;
 
-	it("takes an address's own rects over the ones under it", () => {
-		// The descendant rung is a fallback, not a union: an address with rects of its
-		// own never also draws its children's over them.
+	it("takes an address's own rects together with the ones under it", () => {
+		// A container is placed at both: the array's own region is the ink the plate
+		// composed around its elements, and an element's is what it carries itself.
 		const regions = [region('main.authors', 0), region('main.authors[0]', 200)];
-		expect(boxesForField('main.authors', [], regions)).toEqual([regions[0]]);
+		expect(boxesForField('main.authors', [], regions)).toEqual(regions);
 		expect(boxesForField('main.authors[0]', [], regions)).toEqual([regions[1]]);
 	});
 
@@ -219,14 +219,18 @@ describe('geometry: the addresses a compile serves (specimen)', () => {
 				const boxes = boxesForField(field, session.fieldBoxes(field), regions);
 				expect(boxes.length, `no box for ${field}`).toBeGreaterThan(0);
 			}
-			// `main.keywords` is named by no region: the compile tracks its elements.
-			// A host holding the declared path still reaches every row it prints, so the
-			// fallback's count is the element count, whatever the fixture seeds.
-			expect(fields).not.toContain('main.keywords');
-			const elements = fields.filter((f) => f.startsWith('main.keywords['));
+			// The array is named by the ink the plate composes around its elements — the
+			// separator between the boxed keywords — and each element by the ink it carries
+			// itself. A host holding the declared path reaches every row it prints either
+			// way, so the second rung answers with both, whatever the fixture seeds.
+			expect(session.fieldBoxes('main.keywords')).toEqual([]);
+			const under = regions.filter(
+				(r) => r.field === 'main.keywords' || r.field.startsWith('main.keywords[')
+			);
+			expect(under.filter((r) => r.field === 'main.keywords').length).toBeGreaterThan(0);
 			expect(
 				boxesForField('main.keywords', session.fieldBoxes('main.keywords'), regions).length
-			).toBe(elements.length);
+			).toBe(under.length);
 		} finally {
 			session.free();
 			doc.free();
@@ -234,10 +238,14 @@ describe('geometry: the addresses a compile serves (specimen)', () => {
 		}
 	});
 
-	it('answers fieldAt wherever positionAt answers, and never with another field', async () => {
+	it('answers fieldAt wherever positionAt answers, at that field or the one holding it', async () => {
 		// The ladder's premise: `positionAt` over span-tracked content, `fieldAt` over
 		// every placement, the second a superset of the first. If it ever stopped being
-		// one, a click on content would fall through to a rung that named nothing.
+		// one, a click on content would fall through to a rung that named nothing. Ink a
+		// plate composes around an element meets that element at a shared edge, where the
+		// placement is the container and the span is the element, so the coarser answer
+		// is a prefix of the finer on a path boundary. The ladder reads `positionAt`
+		// first, so the finer one is what a click lands on.
 		const quill = core.Quill.fromTree(loadFixtureTree());
 		const doc = quill.seedDocument();
 		const engine = new Engine();
@@ -252,8 +260,10 @@ describe('geometry: the addresses a compile serves (specimen)', () => {
 						const y = y0 + ((y1 - y0) * j) / 10;
 						const hit = session.positionAt(region.page, x, y);
 						const field = session.fieldAt(region.page, x, y);
-						if (hit) expect(field).toBe(hit.field);
-						else if (field) placementOnly++;
+						if (hit) {
+							const holds = hit.field.startsWith(`${field}.`) || hit.field.startsWith(`${field}[`);
+							expect(field === hit.field || holds, `${field} for a hit on ${hit.field}`).toBe(true);
+						} else if (field) placementOnly++;
 					}
 				}
 			}
