@@ -238,6 +238,39 @@ describe('geometry: the addresses a compile serves (specimen)', () => {
 		}
 	});
 
+	it('gives a live variant cell its own region, and a box under the field that draws it', async () => {
+		const quill = core.Quill.fromTree(loadFixtureTree());
+		const doc = quill.seedDocument();
+		// The cells of a world nobody picked print nothing, so the address exists only
+		// once the document is in that world with the cell written.
+		doc.storeField('handling', {
+			value: 'CONTROLLED',
+			controlled_by: 'SPEC/AA',
+			caveat: 'no copies'
+		});
+		const engine = new Engine();
+		const session = await engine.open(quill, doc);
+		try {
+			const fields = [...new Set(session.regions().map((r) => r.field))];
+			expect(fields).toContain('main.handling.controlled_by');
+			expect(fields).toContain('main.handling.caveat');
+			for (const cell of ['main.handling.controlled_by', 'main.handling.caveat']) {
+				expect(
+					boxesForField(cell, session.fieldBoxes(cell), session.regions()).length,
+					`no box for ${cell}`
+				).toBeGreaterThan(0);
+			}
+			// The discriminant is read into a local for the branching, and a binding carries
+			// no address: what the compile serves is the cells, and the field above them is
+			// reached by truncating one of theirs (`nearestAddrForFieldPath`).
+			expect(fields).not.toContain('main.handling');
+		} finally {
+			session.free();
+			doc.free();
+			quill.free();
+		}
+	});
+
 	it('answers fieldAt wherever positionAt answers, at that field or the one holding it', async () => {
 		// The ladder's premise: `positionAt` over span-tracked content, `fieldAt` over
 		// every placement, the second a superset of the first. If it ever stopped being

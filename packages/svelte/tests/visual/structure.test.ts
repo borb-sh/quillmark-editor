@@ -362,6 +362,38 @@ describe('against the real specimen schema', () => {
 		expect(byName.keywords.schema.items?.type).toBe('richtext');
 	});
 
+	it('splits the two variants on what their `default:` names', () => {
+		const byName = Object.fromEntries(fieldModels(main()).map((m) => [m.name, m]));
+		expect(byName.distribution.control).toBe('variant');
+		expect(byName.handling.control).toBe('variant');
+		// The blank is a `default:` like any other, so the field is unobliged and draws
+		// no `*`; what it does not do is name a world (`variantMember`), so an unset
+		// `handling` draws its discriminant alone where `distribution` draws cells.
+		expect(byName.handling.schema.default).toBe('');
+		expect(byName.handling.required).toBe(false);
+		expect(variantCells(byName.handling.schema, variantMember(undefined, ''))).toBeUndefined();
+		expect(
+			Object.keys(variantCells(byName.distribution.schema, variantMember(undefined, 'embargoed'))!)
+		).toEqual(['lift_on', 'held_by']);
+		// A member is a value, not an id: one carries a space, and the cells hang off the
+		// spelling the schema declares rather than a humanized one.
+		expect(byName.handling.schema.values).toContain('CLOSE HOLD');
+		expect(Object.keys(byName.handling.schema.variants!)).toEqual(['CONTROLLED']);
+	});
+
+	it('reads `inline` off what the boundary serves, which spells it for richtext alone', () => {
+		const byName = Object.fromEntries(fieldModels(main()).map((m) => [m.name, m]));
+		// `subtitle` and the `handling` cells declare `inline: true` on disk; the schema
+		// carries it for richtext only, so a plaintext leaf projects as a block one and
+		// `packable` declines the `ui.compact` it asks for.
+		expect(byName.subtitle.schema.type).toBe('plaintext');
+		expect(byName.subtitle.plaintext).toBe(true);
+		expect(byName.subtitle.inline).toBe(false);
+		expect(byName.epigraph.inline).toBe(true); // richtext, declared the same way
+		expect(byName.subtitle.compact).toBe(true);
+		expect(placeFields([byName.subtitle])).toEqual([{ field: byName.subtitle, span: 'full' }]);
+	});
+
 	it('threads a field schema description into the model verbatim', () => {
 		const byName = Object.fromEntries(fieldModels(main()).map((m) => [m.name, m]));
 		expect(byName.authors.description).toBe(byName.authors.schema.description);

@@ -131,6 +131,11 @@ describe('nearestAddrForFieldPath', () => {
 
 	it('truncates an object property and an array element to their field', () => {
 		expect(nearestAddrForFieldPath('main.contact.email')).toEqual({ field: 'contact' });
+		// A variant cell reads the same way: the container commits whole, so the field
+		// that draws the cell is the address a click or a diagnostic on it lands.
+		expect(nearestAddrForFieldPath('main.handling.controlled_by')).toEqual({
+			field: 'handling'
+		});
 		expect(nearestAddrForFieldPath('main.keywords[0]')).toEqual({ field: 'keywords' });
 		expect(nearestAddrForFieldPath('cards.indorsement[1].contact.email')).toEqual({
 			card: 1,
