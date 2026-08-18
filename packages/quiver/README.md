@@ -84,7 +84,7 @@ const quill = await quiver.getQuill(doc.quillRef);
 const result = await engine.render(quill, doc, { format: 'pdf' });
 ```
 
-A CDN URL works the same way, for consumers who cannot run a Node build step of their own.
+A CDN URL works the same way, for consumers who cannot run a Node build step of their own — a collection you publish, on a host you pick, and pinned like the dependency [it is](#what-a-quiver-is-trusted-to-be).
 
 ## Server-side runtime (Node, packed artifact on disk)
 

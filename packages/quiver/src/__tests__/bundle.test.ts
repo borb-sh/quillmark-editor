@@ -1,7 +1,16 @@
 import { describe, it, expect } from 'vitest';
+import { zipSync } from 'fflate';
 import { packFiles, unpackFiles } from '../bundle.js';
+import { QuiverError } from '../errors.js';
 
 const enc = new TextEncoder();
+
+const MIB = 1024 * 1024;
+
+/** A zip `packFiles` would refuse, minted past it so the read side can be asked. */
+function zipOf(files: Record<string, Uint8Array>): Uint8Array {
+	return zipSync(files, { level: 1 });
+}
 
 describe('packFiles / unpackFiles', () => {
 	it('roundtrips a single file', () => {
@@ -28,6 +37,41 @@ describe('packFiles / unpackFiles', () => {
 		const input = { 'binary.bin': bytes };
 		const output = unpackFiles(packFiles(input));
 		expect(output['binary.bin']).toEqual(bytes);
+	});
+});
+
+describe('the bundle budget', () => {
+	it('refuses a zip that inflates past the total, without inflating it', () => {
+		const zeros = new Uint8Array(15 * MIB);
+		const zipped = zipOf({ a: zeros, b: zeros, c: zeros, d: zeros, e: zeros });
+
+		// The whole finding in two assertions: what arrives is small, and what it
+		// declares is refused off the central directory rather than allocated.
+		expect(zipped.length).toBeLessThan(MIB);
+		expect(() => unpackFiles(zipped)).toThrow(
+			expect.objectContaining({
+				code: 'quiver_invalid',
+				message: expect.stringContaining('unpacks to over')
+			})
+		);
+	});
+
+	it('refuses one entry over the per-file ceiling, naming it', () => {
+		const zipped = zipOf({ 'fat.bin': new Uint8Array(17 * MIB) });
+		expect(() => unpackFiles(zipped)).toThrow(/"fat\.bin" is \d+ bytes/);
+	});
+
+	it('refuses more entries than the count allows', () => {
+		const files: Record<string, Uint8Array> = {};
+		for (let i = 0; i <= 2048; i++) files[`f${i}`] = enc.encode('x');
+		expect(() => unpackFiles(zipOf(files))).toThrow(/over 2048 files/);
+	});
+
+	it('is spent at the pack too, so no build writes what no read would take', () => {
+		const zeros = new Uint8Array(15 * MIB);
+		expect(() => packFiles({ a: zeros, b: zeros, c: zeros, d: zeros, e: zeros })).toThrow(
+			QuiverError
+		);
 	});
 });
 
