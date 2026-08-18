@@ -431,6 +431,25 @@ describe('loadBuiltQuiver — invalid manifest', () => {
 		).rejects.toThrow(expect.objectContaining({ code: 'quiver_invalid' }));
 	});
 
+	it('a quill entry named outside the ref charset → quiver_invalid', async () => {
+		await expect(
+			loadBuiltQuiver(
+				await transportWith({
+					version: 1,
+					name: 'test',
+					quills: [
+						{
+							name: 'my.quill',
+							version: '1.0.0',
+							bundle: `my.quill@1.0.0.${'a'.repeat(NAME_DIGEST_LENGTH)}.zip`,
+							fonts: {}
+						}
+					]
+				})
+			)
+		).rejects.toThrow(/is not a name a ref can spell/);
+	});
+
 	it('non-canonical semver in quill entry → quiver_invalid', async () => {
 		await expect(
 			loadBuiltQuiver(

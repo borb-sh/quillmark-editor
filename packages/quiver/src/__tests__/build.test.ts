@@ -410,6 +410,35 @@ describe('buildQuiver — every name carries the digest of its own bytes', () =>
 	});
 });
 
+describe('buildQuiver — what it writes, a loader reads', () => {
+	// A quill directory outside the ref charset is refused at the scan, before a bundle
+	// takes its name: a bundle filename the loader refuses fails the whole artifact,
+	// every healthy quill in it included.
+	const tmpDirs: string[] = [];
+
+	afterEach(async () => {
+		for (const d of tmpDirs.splice(0)) {
+			await rm(d, { recursive: true, force: true });
+		}
+	});
+
+	it('refuses a source quill a ref cannot spell, and writes nothing', async () => {
+		const src = tempDir();
+		const out = tempDir();
+		tmpDirs.push(src, out);
+
+		await seedSourceQuiver(src, {
+			quills: [
+				{ name: 'memo', version: '1.0.0' },
+				{ name: 'my quill', version: '1.0.0' }
+			]
+		});
+
+		await expect(buildQuiver(src, out)).rejects.toThrow(/directory "my quill"/);
+		await expect(access(out)).rejects.toThrow();
+	});
+});
+
 describe('buildQuiver — the draft floor', () => {
 	const tmpDirs: string[] = [];
 

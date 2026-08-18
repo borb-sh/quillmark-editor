@@ -83,6 +83,8 @@ The quill cache is the only one. A fetched tree lives for the length of the mate
 
 `resolve` is **sync**, and so are `quillNames()` and `versionsOf()`: the catalog is materialized as the quiver is built (`fromBuiltUrl` fetches `latest.json`, `fromDir` scans the source tree), and `QuiverLoader` carries one verb, `loadTree`, which resolution never reaches. A promise there would price I/O the design does not admit.
 
+Every catalog row is a name a ref can spell. Both loaders hold the row to the charset `parseQuillRef` takes, so what `quillNames()` hands out is what `getQuill` takes back; a source directory or a manifest entry outside it is a `quiver_invalid` naming it, not a row the one verb lists and the other refuses.
+
 `name` and `description` are what `Quiver.yaml` says the collection is, and both reach the class by the same road: parsed off the source tree, written into the manifest by `build`, read back out of it by every built loader. A surface over a quiver has no other authored sentence to print — everything else it can show about a collection is a name a directory happens to carry.
 
 ## The render boundary

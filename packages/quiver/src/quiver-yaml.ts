@@ -6,13 +6,12 @@
 
 import { parse as parseYaml } from 'yaml';
 import { QuiverError } from './errors.js';
+import { isQuillName } from './ref.js';
 
 export interface QuiverMeta {
 	name: string;
 	description?: string;
 }
-
-const NAME_RE = /^[A-Za-z0-9_-]+$/;
 
 const KNOWN_FIELDS = new Set(['name', 'description']);
 
@@ -71,7 +70,7 @@ export function parseQuiverYaml(raw: string | Uint8Array): QuiverMeta {
 
 	const name = doc['name'] as string;
 
-	if (!NAME_RE.test(name)) {
+	if (!isQuillName(name)) {
 		throw new QuiverError(
 			'quiver_invalid',
 			`Quiver.yaml: "name" value "${name}" contains invalid characters — only [A-Za-z0-9_-] are allowed`
