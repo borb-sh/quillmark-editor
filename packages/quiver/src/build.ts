@@ -8,7 +8,7 @@
 
 import { QuiverError } from './errors.js';
 import { packFiles } from './bundle.js';
-import { NAME_DIGEST_LENGTH } from './digest.js';
+import { NAME_DIGEST_WIDTH } from './digest.js';
 import { MANIFEST_VERSION, POINTER_FORMAT } from './format.js';
 import { isDraft } from './semver.js';
 
@@ -82,8 +82,8 @@ function assertSafeOutDir(
  * names, which is what the loader checks on fetch:
  *   outDir/
  *     latest.json                     # the format, and a stable pointer to the manifest
- *     manifest.<sha256:12>.json       # hashed manifest
- *     <name>@<version>.<sha256:12>.zip  # one bundle per quill
+ *     manifest.<sha256:32>.json       # hashed manifest
+ *     <name>@<version>.<sha256:32>.zip  # one bundle per quill
  *     store/
  *       <sha256>                      # dehydrated font bytes (full hash, no ext)
  *
@@ -203,7 +203,7 @@ export async function buildQuiver(
 				const bundleHash = createHash('sha256')
 					.update(zipBytes)
 					.digest('hex')
-					.slice(0, NAME_DIGEST_LENGTH);
+					.slice(0, NAME_DIGEST_WIDTH);
 				const bundleName = `${quillName}@${version}.${bundleHash}.zip`;
 
 				try {
@@ -231,7 +231,7 @@ export async function buildQuiver(
 		const manifestHash = createHash('sha256')
 			.update(manifestJson)
 			.digest('hex')
-			.slice(0, NAME_DIGEST_LENGTH);
+			.slice(0, NAME_DIGEST_WIDTH);
 		const manifestFileName = `manifest.${manifestHash}.json`;
 
 		try {

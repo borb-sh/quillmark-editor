@@ -10,7 +10,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { Quiver } from '../../quiver.js';
 import { packFiles } from '../../bundle.js';
-import { NAME_DIGEST_LENGTH, sha256Hex } from '../../digest.js';
+import { NAME_DIGEST_WIDTH, sha256Hex } from '../../digest.js';
 import { QuiverError } from '../../errors.js';
 import { mockQuillFromTree } from '../helpers/mock-engine.js';
 
@@ -29,7 +29,7 @@ afterEach(() => {
 // ─── Fixture ──────────────────────────────────────────────────────────────────
 
 async function nameDigest(bytes: Uint8Array): Promise<string> {
-	return (await sha256Hex(bytes))!.slice(0, NAME_DIGEST_LENGTH);
+	return (await sha256Hex(bytes))!.slice(0, NAME_DIGEST_WIDTH);
 }
 
 /**

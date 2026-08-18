@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { buildQuiver } from '../build.js';
 import { unpackFiles } from '../bundle.js';
-import { NAME_DIGEST_LENGTH, sha256Hex } from '../digest.js';
+import { NAME_DIGEST_WIDTH, sha256Hex } from '../digest.js';
 import { MANIFEST_VERSION, POINTER_FORMAT } from '../format.js';
 
 const SAMPLE_FIXTURE = new URL('./fixtures/sample-quiver', import.meta.url).pathname;
@@ -389,7 +389,7 @@ describe('buildQuiver — every name carries the digest of its own bytes', () =>
 		};
 
 		const digestOf = async (bytes: Uint8Array) => (await sha256Hex(bytes))!;
-		const short = (hex: string) => hex.slice(0, NAME_DIGEST_LENGTH);
+		const short = (hex: string) => hex.slice(0, NAME_DIGEST_WIDTH);
 
 		expect(pointer.manifest).toBe(`manifest.${short(await digestOf(manifestBytes))}.json`);
 
@@ -403,6 +403,12 @@ describe('buildQuiver — every name carries the digest of its own bytes', () =>
 		// fonts sharing a prefix would merge into one entry.
 		expect(fontHash).toBe(await digestOf(fontBytes));
 		expect(fontHash).toHaveLength(64);
+
+		// The width answers a chosen prefix (`digest.ts`), so it is the claim rather
+		// than an artifact of the slice above: 12 hex chars is grindable.
+		expect(NAME_DIGEST_WIDTH).toBe(32);
+		expect(pointer.manifest).toMatch(/^manifest\.[0-9a-f]{32}\.json$/);
+		expect(entry!.bundle).toMatch(/^memo@1\.0\.0\.[0-9a-f]{32}\.zip$/);
 	});
 });
 

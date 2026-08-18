@@ -65,6 +65,23 @@ describe('renderTip', () => {
 		expect(out).not.toContain('<img');
 		expect(out).not.toContain('onerror');
 	});
+
+	it('draws a link the mark refuses as inert text', () => {
+		// The card paints outside a `contenteditable`, so a rendered href is a plain
+		// click away — and the tip is the document's own (`$ext.editor.tips`), which
+		// makes the author of the tip the author of the document. An href is an
+		// attribute value rather than markup, so the round-trip above does not reach
+		// it; the mark's own gate does (`codec/schema.ts`).
+		for (const scheme of ['javascript:alert(1)', 'data:text/html,<script>alert(1)</script>'])
+			expect(html(`See [docs](${scheme})`)).toBe(
+				'<p>See <span data-qm-href-refused="">docs</span></p>'
+			);
+	});
+
+	it('draws the schemes a tip legitimately carries', () => {
+		expect(html('Write [us](mailto:a@x.com)')).toBe('<p>Write <a href="mailto:a@x.com">us</a></p>');
+		expect(html('Call [us](tel:+15550100)')).toBe('<p>Call <a href="tel:+15550100">us</a></p>');
+	});
 });
 
 describe('patchEditorExt', () => {

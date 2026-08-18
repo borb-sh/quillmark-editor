@@ -8,6 +8,7 @@
 // transaction so the mark diff lowers it as one link family exchanged for another
 // (`codec/marks.ts` keys a link on type+url).
 import type { Command, EditorState } from 'prosemirror-state';
+import { rendersHref } from '../core/codec/index.js';
 
 /** A scheme: a letter, then letters, digits, `+`, `-` or `.`, then `:` (RFC 3986). */
 const SCHEME = /^[a-z][a-z0-9+.-]*:/i;
@@ -25,12 +26,17 @@ const ADDRESS = /^[^\s/@]+@[^\s/@]+$/;
  * userinfo — a wrong destination this normalization would itself have minted.
  *
  * A rooted value is left alone, being the spelling that asks for the embedding
- * page, and so is anything already carrying a scheme. `''` for a blank value, which
- * is nothing to apply.
+ * page, and so is anything already carrying a scheme the link mark renders.
+ *
+ * `''` for a blank value and for a scheme the mark would render inert, both being
+ * nothing to apply: `setLink` declines an empty href, so the prompt refuses at the
+ * one exit a writer can see rather than storing a link that draws as plain text.
  */
 export function normalizeHref(raw: string): string {
 	const value = raw.trim();
-	if (!value || SCHEME.test(value) || ROOTED.test(value)) return value;
+	if (!value) return value;
+	if (!rendersHref(value)) return '';
+	if (SCHEME.test(value) || ROOTED.test(value)) return value;
 	return ADDRESS.test(value) ? `mailto:${value}` : `https://${value}`;
 }
 

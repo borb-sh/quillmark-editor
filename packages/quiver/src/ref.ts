@@ -13,6 +13,15 @@ const NAME_RE = /^[A-Za-z0-9_-]+$/;
 const SELECTOR_RE = /^\d+(\.\d+){0,2}$/;
 
 /**
+ * Whether `name` is a name a ref can spell. The loaders ask before they seat a
+ * catalog entry: a name outside this charset is one `parseQuillRef` refuses, so
+ * seated it would be a quill `quillNames` lists and `getQuill` cannot reach.
+ */
+export function isQuillName(name: string): boolean {
+	return NAME_RE.test(name);
+}
+
+/**
  * Throws QuiverError('invalid_ref') on malformed input. The name is
  * `[A-Za-z0-9_-]+`; the selector is `x`, `x.y` or `x.y.z`, digits only, with no
  * ranges or operators — a quiver resolves a prefix, it does not solve a range.

@@ -8,8 +8,9 @@
 
 import { QuiverError } from './errors.js';
 import { unpackFiles } from './bundle.js';
+import { isQuillName } from './ref.js';
 import { isCanonicalSemver, compareSemver } from './semver.js';
-import { NAME_DIGEST_LENGTH, sha256Hex } from './digest.js';
+import { NAME_DIGEST_MIN, sha256Hex } from './digest.js';
 import { MANIFEST_VERSION, POINTER_FORMAT } from './format.js';
 import type { Quiver, QuiverLoader } from './quiver.js';
 import { createQuiver } from './quiver.js';
@@ -80,9 +81,10 @@ async function fetchVerified(
 
 // Each name carries the digest of what it names; the capture group is the
 // digest the fetch is checked against, so path validation and verification
-// read the same character span. `build` writes exactly NAME_DIGEST_LENGTH
-// chars for bundles and manifests and the full 64 for store entries.
-const DIGEST = `[0-9a-f]{${NAME_DIGEST_LENGTH},}`;
+// read the same character span. The floor is `NAME_DIGEST_MIN` rather than the width
+// `build` writes, which is what keeps a tree named at a narrower one readable; store
+// entries carry the full 64.
+const DIGEST = `[0-9a-f]{${NAME_DIGEST_MIN},}`;
 const MANIFEST_FILENAME_RE = new RegExp(`^manifest\\.(${DIGEST})\\.json$`);
 const BUNDLE_FILENAME_RE = new RegExp(
 	`^[A-Za-z0-9_.-]+@[0-9]+\\.[0-9]+\\.[0-9]+\\.(${DIGEST})\\.zip$`
@@ -274,6 +276,13 @@ function parseManifest(raw: string): BuiltManifest {
 			throw new QuiverError(
 				'quiver_invalid',
 				`manifest.quills[${i}].name must be a non-empty string`
+			);
+		}
+
+		if (!isQuillName(e['name'] as string)) {
+			throw new QuiverError(
+				'quiver_invalid',
+				`manifest.quills[${i}].name "${e['name'] as string}" is not a name a ref can spell — only [A-Za-z0-9_-] are allowed`
 			);
 		}
 

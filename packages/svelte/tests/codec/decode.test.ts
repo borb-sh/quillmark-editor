@@ -1,7 +1,15 @@
 // Decode: idempotence up to normalization, overlapping-mark inline splits, island
-// round-trip, and the inline/plaintext constraints.
+// round-trip, the inline/plaintext constraints, and the href gate the link mark
+// renders through (its DOM is asserted where a DOM exists, `visual/tips.test.ts`).
 import { describe, it, expect } from 'vitest';
-import { decode, pmToContent, blockSchema, inlineSchema, plaintextSchema } from '$lib/core/codec';
+import {
+	decode,
+	pmToContent,
+	rendersHref,
+	blockSchema,
+	inlineSchema,
+	plaintextSchema
+} from '$lib/core/codec';
 import type { Content } from '@quillmark/wasm';
 import { md, normalize, contentEqual, titleContent, bodyContent } from './_util.js';
 
@@ -166,5 +174,42 @@ describe('mark-set run keying', () => {
 			.sort();
 		expect(second).toEqual(['link', 'strong']);
 		expect(para.child(1).marks.find((m) => m.type.name === 'link')?.attrs.href).toBe('a');
+	});
+});
+
+describe('the href gate', () => {
+	/** One paragraph, one linked run. */
+	function linked(href: string): Content {
+		return {
+			text: 'here',
+			lines: [{ containers: [], kind: 'para' }],
+			marks: [{ start: 0, end: 4, type: 'link', url: href } as never],
+			islands: []
+		};
+	}
+
+	it('admits a relative value, which carries no scheme to refuse', () => {
+		for (const href of ['/a/b', '#anchor', '?q=1', '//cdn.x.com/a', 'page.html', 'a/b:c'])
+			expect(rendersHref(href)).toBe(true);
+	});
+
+	it('reads the scheme a browser would, not the one the string spells', () => {
+		// Leading control characters and an embedded tab are dropped before a URL's
+		// scheme is parsed, so the test runs on what the navigation resolves to.
+		for (const href of [
+			'java\tscript:alert(1)',
+			'\u0001javascript:alert(1)',
+			'JAVASCRIPT:alert(1)'
+		])
+			expect(rendersHref(href)).toBe(false);
+	});
+
+	it('keeps a refused href on the mark, so the document round-trips', () => {
+		// The gate is the render's, not the model's: refusing at decode would drop the
+		// value on the next commit, editing a document by opening it.
+		const rt = linked('javascript:alert(1)');
+		const mark = decode(rt, blockSchema).child(0).child(0).marks[0]!;
+		expect(mark.attrs.href).toBe('javascript:alert(1)');
+		expect(contentEqual(reContent(rt), normalize(rt))).toBe(true);
 	});
 });

@@ -3,13 +3,31 @@
  * `node:fs`, so it is reachable from the Node entry alone.
  */
 
-import { readdir, readFile, stat } from 'node:fs/promises';
+import { readdir, readFile, lstat } from 'node:fs/promises';
+import type { Stats } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { QuiverError } from './errors.js';
 import { parseQuiverYaml } from './quiver-yaml.js';
+import { isQuillName } from './ref.js';
 import { isCanonicalSemver, compareSemver } from './semver.js';
 import type { QuiverMeta } from './quiver-yaml.js';
 import type { QuiverLoader } from './quiver.js';
+
+/**
+ * Refuse a symlink. Every rung stats with `lstat` and asks, because a source quiver
+ * is content and a link is a reference out of it: followed, `readFile` reads whatever
+ * it points at into the quill, where the backend can typeset it and `build` packs it
+ * into the published artifact. A linked directory smuggles a tree where a linked file
+ * smuggles one file, so the question is the same at each rung and the answer is no.
+ */
+function refuseSymlink(st: Stats, path: string): void {
+	if (st.isSymbolicLink()) {
+		throw new QuiverError(
+			'quiver_invalid',
+			`"${path}" is a symlink; a quiver holds its own content, and nothing under it may point outside`
+		);
+	}
+}
 
 /**
  * Scans a Source Quiver root directory.
@@ -18,8 +36,9 @@ import type { QuiverLoader } from './quiver.js';
  * to build a catalog of quill names → sorted versions (descending).
  *
  * Throws:
- *   - `quiver_invalid` if Quiver.yaml is missing/invalid, a version dir name is
- *     non-canonical, or a version dir is missing its Quill.yaml sentinel.
+ *   - `quiver_invalid` if Quiver.yaml is missing/invalid, a quill dir name is outside
+ *     the ref charset, a version dir name is non-canonical, a version dir is missing
+ *     its Quill.yaml sentinel, or any rung is a symlink.
  *   - `transport_error` for I/O failures (permissions, etc.).
  *
  * Missing `quills/` directory is not an error — the quiver is valid but empty.
@@ -79,7 +98,7 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 
 		let st;
 		try {
-			st = await stat(quillNameDir);
+			st = await lstat(quillNameDir);
 		} catch (err) {
 			throw new QuiverError(
 				'transport_error',
@@ -87,7 +106,16 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 				{ cause: err }
 			);
 		}
+		refuseSymlink(st, quillNameDir);
 		if (!st.isDirectory()) continue;
+
+		if (!isQuillName(quillName)) {
+			throw new QuiverError(
+				'quiver_invalid',
+				`Quill directory "${quillName}" is not a name a ref can spell — only [A-Za-z0-9_-] are allowed`,
+				{ quiverName: meta.name }
+			);
+		}
 
 		let versionDirs: string[];
 		try {
@@ -107,7 +135,7 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 
 			let vst;
 			try {
-				vst = await stat(versionPath);
+				vst = await lstat(versionPath);
 			} catch (err) {
 				throw new QuiverError(
 					'transport_error',
@@ -115,6 +143,7 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 					{ cause: err }
 				);
 			}
+			refuseSymlink(vst, versionPath);
 			if (!vst.isDirectory()) continue;
 
 			if (!isCanonicalSemver(versionDir)) {
@@ -127,7 +156,7 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 
 			const quillYamlPath = join(versionPath, 'Quill.yaml');
 			try {
-				await stat(quillYamlPath);
+				await lstat(quillYamlPath);
 			} catch (err) {
 				const code = (err as NodeJS.ErrnoException).code;
 				if (code === 'ENOENT') {
@@ -160,7 +189,7 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
  * Recursively reads all files under a quill version directory into a Map.
  *
  * Keys are relative POSIX paths (forward slashes, no leading slash).
- * Throws `transport_error` on I/O failure.
+ * Throws `quiver_invalid` on a symlink, `transport_error` on I/O failure.
  */
 export async function readQuillTree(quillDir: string): Promise<Map<string, Uint8Array>> {
 	const tree: Map<string, Uint8Array> = new Map();
@@ -188,7 +217,7 @@ async function walkDir(
 		const fullPath = join(currentDir, entry);
 		let st;
 		try {
-			st = await stat(fullPath);
+			st = await lstat(fullPath);
 		} catch (err) {
 			throw new QuiverError(
 				'transport_error',
@@ -196,6 +225,7 @@ async function walkDir(
 				{ cause: err }
 			);
 		}
+		refuseSymlink(st, fullPath);
 
 		if (st.isDirectory()) {
 			await walkDir(baseDir, fullPath, tree);

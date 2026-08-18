@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
@@ -160,5 +160,107 @@ describe('readQuillTree', () => {
 		await expect(readQuillTree('/nonexistent/path/quill')).rejects.toThrow(
 			expect.objectContaining({ code: 'transport_error' })
 		);
+	});
+});
+
+describe('the symlink refusal', () => {
+	const tempDirs: string[] = [];
+
+	afterEach(async () => {
+		for (const dir of tempDirs.splice(0)) {
+			await rm(dir, { recursive: true, force: true });
+		}
+	});
+
+	/** A quiver holding one quill, plus `secret.txt` beside the root for a link to reach. */
+	async function quiverWithOutsideFile(): Promise<{ root: string; secret: string }> {
+		const base = makeTempDir();
+		tempDirs.push(base);
+		const root = join(base, 'quiver');
+		await buildMinimalQuiver(root, { quills: [{ name: 'memo', version: '1.0.0' }] });
+		const secret = join(base, 'secret.txt');
+		await writeFile(secret, 'SECRET\n');
+		return { root, secret };
+	}
+
+	it('refuses a linked file rather than reading what it points at', async () => {
+		// Followed, the target is quill content: the backend can typeset it and
+		// `build` packs it into the published artifact.
+		const { root, secret } = await quiverWithOutsideFile();
+		const quillDir = join(root, 'quills', 'memo', '1.0.0');
+		await symlink(secret, join(quillDir, 'stolen.txt'));
+
+		await expect(readQuillTree(quillDir)).rejects.toThrow(
+			expect.objectContaining({ code: 'quiver_invalid' })
+		);
+	});
+
+	it('refuses a linked directory, which smuggles a tree rather than a file', async () => {
+		const { root } = await quiverWithOutsideFile();
+		const quillDir = join(root, 'quills', 'memo', '1.0.0');
+		await mkdir(join(root, 'outside'), { recursive: true });
+		await writeFile(join(root, 'outside', 'a.txt'), 'x\n');
+		await symlink(join(root, 'outside'), join(quillDir, 'assets'));
+
+		await expect(readQuillTree(quillDir)).rejects.toThrow(
+			expect.objectContaining({ code: 'quiver_invalid' })
+		);
+	});
+
+	it('refuses a linked quill directory at the scan', async () => {
+		const { root } = await quiverWithOutsideFile();
+		await symlink(join(root, 'quills', 'memo'), join(root, 'quills', 'alias'));
+
+		await expect(scanSourceQuiver(root)).rejects.toThrow(
+			expect.objectContaining({ code: 'quiver_invalid' })
+		);
+	});
+
+	it('refuses a linked version directory at the scan', async () => {
+		const { root } = await quiverWithOutsideFile();
+		const memo = join(root, 'quills', 'memo');
+		await symlink(join(memo, '1.0.0'), join(memo, '2.0.0'));
+
+		await expect(scanSourceQuiver(root)).rejects.toThrow(
+			expect.objectContaining({ code: 'quiver_invalid' })
+		);
+	});
+
+	it('leaves an ordinary tree alone', async () => {
+		const { root } = await quiverWithOutsideFile();
+		const { catalog } = await scanSourceQuiver(root);
+		expect(catalog.get('memo')).toEqual(['1.0.0']);
+	});
+});
+
+describe('the quill-name charset', () => {
+	const tempDirs: string[] = [];
+
+	afterEach(async () => {
+		for (const dir of tempDirs.splice(0)) {
+			await rm(dir, { recursive: true, force: true });
+		}
+	});
+
+	it('refuses a directory name no ref can spell', async () => {
+		// Seated, it would be a quill `quillNames` lists and `getQuill` refuses.
+		const root = makeTempDir();
+		tempDirs.push(root);
+		await buildMinimalQuiver(root, { quills: [{ name: 'my.quill', version: '1.0.0' }] });
+
+		await expect(scanSourceQuiver(root)).rejects.toThrow(
+			expect.objectContaining({ code: 'quiver_invalid' })
+		);
+	});
+
+	it('admits the charset a ref spells', async () => {
+		const root = makeTempDir();
+		tempDirs.push(root);
+		await buildMinimalQuiver(root, {
+			quills: [{ name: 'Memo_2-b', version: '1.0.0' }]
+		});
+
+		const { catalog } = await scanSourceQuiver(root);
+		expect(catalog.get('Memo_2-b')).toEqual(['1.0.0']);
 	});
 });

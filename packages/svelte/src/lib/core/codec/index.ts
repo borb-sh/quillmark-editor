@@ -34,6 +34,10 @@ export type { SlashState, SlashStrings } from './slash.js';
 // what a mark surface asks before offering itself over a leaf.
 export { blockSchema, inlineSchema, plaintextSchema, hasMarks } from './schema.js';
 
+// The href gate the link mark's `toDOM` runs, so the prompt refuses on submit what
+// the render would refuse anyway (`visual/links.ts`).
+export { rendersHref } from './schema.js';
+
 // Decode / encode / positions (tests + VisualEditor).
 //
 // The barrel carries what has an off-barrel caller, and nothing else. A symbol

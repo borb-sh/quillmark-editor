@@ -53,9 +53,24 @@ describe('normalizeHref', () => {
 		expect(normalizeHref('example.com/a/b?q=1#f')).toBe('https://example.com/a/b?q=1#f');
 	});
 
-	it('leaves anything already carrying a scheme', () => {
+	it('leaves a scheme the link mark renders', () => {
 		for (const href of ['https://x.com', 'http://x.com', 'mailto:a@x.com', 'tel:+1', 'ftp://x'])
 			expect(normalizeHref(href)).toBe(href);
+	});
+
+	it('refuses a scheme the mark would draw inert, which is nothing to apply', () => {
+		// `setLink` declines an empty href, so the refusal lands at the prompt's own
+		// exit rather than storing a link that renders as plain text.
+		for (const href of [
+			'javascript:alert(1)',
+			'JavaScript:alert(1)',
+			'  javascript:alert(1)  ',
+			'java\tscript:alert(1)',
+			'data:text/html,<script>alert(1)</script>',
+			'vbscript:msgbox(1)',
+			'blob:https://x.com/uuid'
+		])
+			expect(normalizeHref(href)).toBe('');
 	});
 
 	it('leaves the spellings that ask for the embedding page', () => {
