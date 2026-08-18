@@ -109,14 +109,6 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 		refuseSymlink(st, quillNameDir);
 		if (!st.isDirectory()) continue;
 
-		if (!isQuillName(quillName)) {
-			throw new QuiverError(
-				'quiver_invalid',
-				`Quill directory "${quillName}" is not a name a ref can spell — only [A-Za-z0-9_-] are allowed`,
-				{ quiverName: meta.name }
-			);
-		}
-
 		let versionDirs: string[];
 		try {
 			versionDirs = await readdir(quillNameDir);
@@ -177,6 +169,15 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 		}
 
 		if (versions.length > 0) {
+			// Asked here rather than at the directory, so a stray one holding no quill
+			// stays ignored: what has to be addressable is a catalog row.
+			if (!isQuillName(quillName)) {
+				throw new QuiverError(
+					'quiver_invalid',
+					`Quill directory "${quillName}" is not a name a ref can spell — only [A-Za-z0-9_-] are allowed`,
+					{ quiverName: meta.name }
+				);
+			}
 			versions.sort((a, b) => compareSemver(b, a));
 			catalog.set(quillName, versions);
 		}

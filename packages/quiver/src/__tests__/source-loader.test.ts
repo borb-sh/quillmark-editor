@@ -253,6 +253,17 @@ describe('the quill-name charset', () => {
 		);
 	});
 
+	it('ignores a stray directory holding no quill, whatever its name', async () => {
+		// The row is what has to be addressable; a `.cache` beside the quills is not one.
+		const root = makeTempDir();
+		tempDirs.push(root);
+		await buildMinimalQuiver(root, { quills: [{ name: 'memo', version: '1.0.0' }] });
+		await mkdir(join(root, 'quills', '.cache'), { recursive: true });
+
+		const { catalog } = await scanSourceQuiver(root);
+		expect([...catalog.keys()]).toEqual(['memo']);
+	});
+
 	it('admits the charset a ref spells', async () => {
 		const root = makeTempDir();
 		tempDirs.push(root);
