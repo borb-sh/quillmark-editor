@@ -16,6 +16,7 @@
 	import type { LeafRegistry } from './leaves.js';
 	import type { CardModel, FieldModel } from './structure.js';
 	import { placeFields, humanize, initialExpandedGroup } from './structure.js';
+	import { holdInView } from './hold.js';
 	import type { FieldDomIds } from './domid.js';
 	import Field from './Field.svelte';
 	import ProseField from './ProseField.svelte';
@@ -157,9 +158,11 @@
 			headers[closing]?.focus();
 		expanded = next;
 	}
+	/** The header is the anchor: a section closing above it is what would carry it off the
+	 *  fold, and a section opens under its own header (`hold.ts`). */
 	function toggleGroup(group: string): void {
 		animate = true;
-		setExpanded(expanded === group ? null : group);
+		holdInView(headers[group], () => setExpanded(expanded === group ? null : group));
 	}
 
 	/**
