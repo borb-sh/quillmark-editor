@@ -6,8 +6,9 @@
    recipes are `routes/chrome.css`).
 
    Literals live here and nowhere else under `src/routes`: `check:style` runs its axes
-   over this scope too, with this file exempt as the place these defaults are minted,
-   and its conformance rule fails a rung that restates one of the preset's. */
+   over this scope too, with this file exempt as the place these defaults are minted. A
+   rung here restating one the preset carries is review's — the app is meant to look like
+   the endorsed answer, and a local copy is where that stops. */
 
 :root {
 	/* ── Rhythm ──────────────────────────────────────────────────────────────── */

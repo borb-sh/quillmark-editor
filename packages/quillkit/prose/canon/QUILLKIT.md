@@ -37,7 +37,7 @@ The blueprint is what the two share: the client seeds the same way, so the docum
 
 `test` is the only verb that puts a wasm in this process, and it is the collection's own. The packer instantiates nothing, and the client is static bytes handed to a browser tab, a process this one never shares. So the tool holds at most one copy and hands a handle to nobody.
 
-The tarball holds two, and they never meet: the client bundles the copy it was built against, and the bin resolves the collection's when `test` runs. Neither half is importable, a `bin` being a process of its own and the client being bytes, so no handle minted by one can reach the other. That is what lets a compiled Node program and a bundled browser program share one manifest as a single bundled terminal (`check:deps`).
+The tarball holds two, and they never meet: the client bundles the copy it was built against, and the bin resolves the collection's when `test` runs. Neither half is importable, a `bin` being a process of its own and the client being bytes, so no handle minted by one can reach the other. That is what lets a compiled Node program and a bundled browser program share one manifest as a single bundled terminal.
 
 ## The local loop
 

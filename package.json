@@ -20,14 +20,13 @@
 		"test": "npm run test --workspaces --if-present",
 		"lint": "prettier --check .",
 		"format": "prettier --write .",
-		"check:pointers": "node scripts/check-pointers.mjs",
+		"check:docs": "node scripts/check-docs.mjs",
 		"check:style": "node scripts/check-style.mjs",
 		"check:deps": "node scripts/check-deps.mjs",
-		"check:ledger": "node scripts/check-ledger.mjs",
-		"check:bundle": "node scripts/check-bundle.mjs",
+		"check:bundle": "node scripts/check-style.mjs --built",
 		"check:pack": "npm run check:pack --workspaces --if-present",
 		"check:registry": "node scripts/check-registry.mjs",
-		"gate:fast": "npm run lint && npm run check && npm run check:pointers && npm run check:style && npm run check:deps && npm run check:ledger",
+		"gate:fast": "npm run lint && npm run check && npm run check:docs && npm run check:style && npm run check:deps",
 		"gate": "npm run gate:fast && npm run build && npm run check:bundle && npm test"
 	},
 	"overrides": {
@@ -35,6 +34,7 @@
 	},
 	"devDependencies": {
 		"@quillmark/wasm": "0.108.0",
+		"postcss": "^8.5.0",
 		"prettier": "^3.4.0",
 		"prettier-plugin-svelte": "^3.3.0"
 	}
