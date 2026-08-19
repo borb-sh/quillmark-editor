@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.5.0 - 2026-08-19
+
 **The studio carries the editor's nesting ladder, its pressed-header hold and the preview's bounded fold.** The client compiles `@quillmark/svelte` in, so what that package releases is what an author here works in: depth stated by verticals rather than rules across a block, a pressed section header held in the fold as the one above it collapses, a discrete hop that outranks the follow, and a caret into a table cell that takes the scroller with it. The shell taking the viewport's width rather than its widest mount is the studio's own — it is the surface that spends the whole screen on two mounts, and a host holding its content to a maximum never saw it.
 
 ## v0.4.0 - 2026-08-18
