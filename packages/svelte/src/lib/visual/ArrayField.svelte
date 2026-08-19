@@ -167,9 +167,9 @@
 	function untitled(k: number): string {
 		return label != null ? t.strings.elementUntitled(label, k + 1) : String(k + 1);
 	}
-	/** The row gesture. An open row's subform unmounts under its own summary, so the only
-	 *  box that can carry this summary off is a row closing above it, and that is what the
-	 *  scroll pays for (`hold.ts`). */
+	/** An open row's subform unmounts under its own summary, so the only box that can carry
+	 *  this summary off is a row closing above it, and that is what the scroll pays for
+	 *  (`hold.ts`). */
 	function toggleRow(id: string, summary: HTMLElement): void {
 		const closing = openId === id ? undefined : openId;
 		const above = closing !== undefined && ids.indexOf(closing) < ids.indexOf(id);

@@ -1,13 +1,12 @@
 // @vitest-environment jsdom
 // The accordion's half of the hold (`visual/hold.ts`), wired: which control the card
-// offers as the anchor, and when it offers none. One open section at a time means a
-// press can be carried off the fold by exactly one box — the panel closing above it —
-// and a press with the open section below it moves nothing above the header, so there
-// is nothing to spend.
+// offers as the anchor, and when it offers none. One open section at a time means a press
+// can be carried off the fold by exactly one box, the panel closing above it; a press with
+// the open section below it moves nothing above the header and spends nothing.
 //
-// jsdom lays nothing out, so the collapse is stubbed as the pair of reads the hold
-// takes across it and what is asserted is the decision. `usaf_memo` seeds four groups
-// in a known order, which is what makes above and below nameable.
+// jsdom lays nothing out, so the collapse is stubbed as the pair of reads the hold takes
+// across it. `usaf_memo` seeds four groups in a known order, which is what makes above and
+// below nameable.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
 import type { Quill, Document } from '@quillmark/wasm';

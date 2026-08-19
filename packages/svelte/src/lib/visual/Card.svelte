@@ -162,10 +162,10 @@
 		expanded = next;
 	}
 	/**
-	 * The header gesture. A panel opens under its own header, so the only box that can
-	 * carry this one off is a panel closing above it — and that is what the scroll pays
-	 * for, at the price of the closing animation: the trip is measured one flush in,
-	 * where an animating track still reads its start value (`hold.ts`).
+	 * A panel opens under its own header, so the only box that can carry this header off is
+	 * a panel closing above it — and that is what the scroll pays for, at the price of the
+	 * closing animation: the trip is measured one flush in, where an animating track still
+	 * reads its start value (`hold.ts`).
 	 */
 	function toggleGroup(group: string): void {
 		animate = true;

@@ -1,14 +1,7 @@
 // @vitest-environment jsdom
 // The scroll that holds a pressed control still across a disclosure's collapse
-// (`visual/hold.ts`). A section closing above the header the press landed on takes that
-// header off the fold with it, and the platform does not answer it: scroll anchoring
-// picks its anchor off the layout, and the content filling the viewport is the closing
-// section's own, whose top never moves.
-//
-// jsdom lays nothing out, so the geometry is stubbed and what is asserted is the
-// decision: which scrollport is found, that the drift measured across the change is what
-// gets spent, and that a change moving nothing above the anchor spends nothing. The trip
-// itself is the playground's to show.
+// (`visual/hold.ts`). jsdom lays nothing out, so the geometry is stubbed and what is
+// asserted is the decision; the trip itself is the playground's to show.
 import { describe, it, expect } from 'vitest';
 import { holdStill } from '$lib/visual/hold.js';
 
