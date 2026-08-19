@@ -42,7 +42,7 @@ export function reorder(
 ): AnimationConfig {
 	// The returned config is empty by design, in both exits and the run below: Svelte
 	// samples a config's keyframes through a JS easing function, and this curve is a
-	// rung the derivation mints and `check:style` holds.
+	// rung the derivation mints.
 	if (!armed() || typeof node.animate !== 'function') return {};
 	const style = getComputedStyle(node);
 	const duration = rungMs(style, '--_qm-duration-slow');

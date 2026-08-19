@@ -16,8 +16,8 @@
    the package claims `sideEffects: true`. Pruned, every rung below is undefined,
    every `var()` reading one is invalid at computed-value time, and the declaration
    holding it drops: a control with no border, no background and no padding, under
-   chrome that still reads as intact. `check:bundle` holds both ends, the claim and
-   the built bytes.
+   chrome that still reads as intact. `check:bundle` reads the built bytes for it;
+   the claim in the manifest is review's.
 
    Every value stays a `var()` reference, so the dials resolve against the cascade
    at each root: a consumer's `[data-theme="dark"]` ancestor rule flows in
@@ -232,9 +232,8 @@
 	   Offset-free is the whole of it: an offset states where the light is and no pole
 	   carries that, where a halo states occlusion. Toward black at both poles for the
 	   same reason — a crevice is darker than what surrounds it in a dark room too — so
-	   the cue means one thing whichever way the scale runs. Spent only on what portals;
-	   `check:style` holds the offsets at zero here and the rung as the only shadow
-	   anywhere. */
+	   the cue means one thing whichever way the scale runs. Spent only on what portals,
+	   and the one shadow any surface casts, which is review's to hold. */
 	--_qm-lift: 0 0 12px color-mix(in oklab, #000 16%, transparent);
 	/* The recede ladder: a hover-revealed or disabled affordance at rest, and a
 	   muted one. Opacity recedes toward whatever is behind, so these invert

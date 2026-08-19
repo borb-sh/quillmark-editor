@@ -4,14 +4,15 @@
 // land here. Reserved-package invariant: this subpath imports no editor-side code
 // (the codec, the VisualEditor) so a `@quillmark/preview` promotion stays a
 // re-export, not a refactor: it may reach `/core` (the shared WASM boundary) and
-// nothing else. Enforced by `check:deps`, which walks the subpath's import graph.
+// nothing else. Enforced by `check:deps`, at the subpath's edge: a relative hop past a
+// module directly in `core/` is what pulls the codec, and all of ProseMirror with it.
 
 // The theme derivation, which the page slots read through `var()`.
 // Imported at the barrel because a subpath is what a consumer gets: this surface
 // reaches modules inside `core/` and never its entry, so a sheet hanging off that
 // entry arrives only for a consumer importing `/core` for some other reason. The
 // sheet rather than the entry, because the barrel needs the derivation and not
-// `init`. `check:deps` (rule 4) walks this file's own graph and holds the reach.
+// `init`. `check:deps` holds the reach.
 import '../core/theme.css';
 
 export { createPreview } from './controller.js';
