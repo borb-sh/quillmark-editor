@@ -38,10 +38,9 @@
   render-error feed: a real consumer derives external diagnostics from
   `session.warnings` (wired here, `[]` for the reference quill) plus render errors.
 
-  Which quill is a control rather than a flag: it is a fact about what is on screen,
-  and the answer changes what both surfaces are. Picking tears the shell down and
-  stands it back up. The seed variants stay query flags with no chrome, read once per
-  open, for the branches a quill on disk reaches none of
+  Which quill is a control, since the answer changes what both surfaces are: picking
+  tears the shell down and stands it back up. The seed variants are query flags with
+  no chrome, read once per open, for the branches a quill on disk reaches none of
   (PLAYGROUND §"Which quill, and what is seeded into it").
 -->
 <script lang="ts">
@@ -58,9 +57,8 @@
 	let status = $state<Status>({ phase: 'loading' });
 	let VisualEditor = $state<VisualEditorComponent | undefined>();
 
-	// Which quill the shell is over, and every one the served quiver holds. What is in
-	// the quiver is the pack's call: a dev server packs under the draft floor too, so
-	// the memo stands beside the reference quill there and in no deploy.
+	// Which quill the shell is over, and every one the served quiver holds — the pack's
+	// call rather than this route's.
 	let fixtures = $state<string[]>([]);
 	let fixture = $state(DEFAULT_FIXTURE);
 	// Inert while an open is in flight: a second pick mid-open would race it.
@@ -190,10 +188,12 @@
 	}
 
 	/**
-	 * Tear the shell down and stand it back up over `name`. The surfaces come down
-	 * before their handles do — the ready phase is what mounts them, so a loading phase
-	 * and a flush is the teardown — and the handles go before the next open allocates,
-	 * so one session is live at a time.
+	 * Tear the shell down and stand it back up over `name`, so one session is live at a
+	 * time.
+	 *
+	 * The surfaces come down before their handles do: the ready phase is what mounts
+	 * them, so a loading phase and a flush is the teardown. The handles go before the
+	 * next open allocates.
 	 */
 	async function open(name: string): Promise<void> {
 		const mine = ++generation;
@@ -315,9 +315,9 @@
 	     readout runs already say this is chrome, and a plate spends a fill, a hairline
 	     and two rungs of the panes' height saying it again.
 
-	     Drawn from the moment the catalog is known rather than with the panes, since the
-	     picker at its end is what opens them: a control that goes while what it asked
-	     for loads is one a hand cannot get back to. -->
+	     Drawn from the moment the catalog is known rather than with the panes: the picker
+	     at its end is what opens them, and a control that goes while what it asked for
+	     loads is one a hand cannot get back to. -->
 	{#if fixtures.length > 0}
 		<div class="strip">
 			<span class="stat"
@@ -354,9 +354,9 @@
 			>
 			<span class="strip-actions">
 				<!-- An axis holding one value is not a choice, so it is printed rather than
-				     offered: a deploy packs the reference quill alone. A native select
-				     where there is something to pick, that being the control the surfaces
-				     under it compete with least. -->
+				     offered. Native where there is something to pick: a control the
+				     platform draws is the one that competes least with the surfaces
+				     under it. -->
 				{#if fixtures.length > 1}
 					<label class="pick">
 						<span class="qm-label">quill</span>

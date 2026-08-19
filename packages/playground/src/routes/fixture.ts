@@ -20,8 +20,7 @@ function quiver(): Promise<Quiver> {
 
 /**
  * Every quill the served quiver holds, which is the pack's call rather than this
- * module's: `--drafts` adds the ones under the floor, so a dev server offers the memo
- * beside the reference quill and a deploy offers the reference quill alone.
+ * module's (PLAYGROUND §"Which quill, and what is seeded into it").
  *
  * Sync on the quiver, which materializes its catalog as it loads, so a picker over
  * this needs no loading state past the one its route already has.
