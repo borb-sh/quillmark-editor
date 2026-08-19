@@ -245,7 +245,7 @@
 
 		<div class="qm-card-body">
 			{#if hasMeta}
-				<div class="qm-card-meta">
+				<div class="qm-card-meta" class:qm-meta-bottom={card.hasBody}>
 					{#each ungrouped as section (section.group ?? '_ungrouped')}
 						<div class="qm-section">
 							{@render sectionFields(section.fields)}
@@ -505,6 +505,18 @@
 		flex-direction: column;
 		gap: var(--_qm-space);
 	}
+	/* The one horizontal the card draws, and it is the one thing a horizontal is for: it
+	 ranks the payload against the body rather than saying what is inside what, which is
+	 the verticals' job (ARCHITECTURE §"A plane is a tone"). Conditional on a body, since
+	 with none it would divide the payload from the card's own edge a rung below it.
+
+	 The inset stands the rule off the last control at the rung the body sits under it by,
+	 taking the section's own end cap into account: `--_qm-space-2` here, plus that cap,
+	 is the `--_qm-space-3` the card spends between its blocks. */
+	.qm-meta-bottom {
+		border-bottom: var(--_qm-border-width) solid var(--_qm-border);
+		padding-bottom: var(--_qm-space-2);
+	}
 	/* A section's vertical: the ladder's second stroke, one `--_qm-nest` in from the card's
 	 edge and standing its fields the same rung off itself (ARCHITECTURE §"A plane is a
 	 tone"). `--_qm-border` and not `--_qm-accent`: a card's edge and the verticals inside
@@ -573,10 +585,13 @@
 	}
 	/* Symmetric vertical padding at the tightest rung that still clears WCAG 2.5.8's
 	 24×24 floor: the header is the whole row, so adjacent labels share one rhythm with no
-	 dead strip outside the button. Horizontal is the nesting step left and zero right —
-	 left, so the chevron starts where the fields under it start and the section's vertical
-	 clears the glyph by the rung it clears their labels by; right, because the row is the
-	 target and an inset there is target given back.
+	 dead strip outside the button. Horizontal is one rung left and zero right — left,
+	 because at zero the chevron stands on the section's vertical with only the icon box's
+	 own bearing between them, and the glyph's rotation swaps which bearing faces the
+	 stroke; right, because the row is the target and an inset there is target given back.
+	 The rung is the glyph's own and not the nesting step the fields under it take: what
+	 the heading names is the section, so it rides the vertical rather than the column its
+	 fields start on.
 
 	 `font: inherit` because a UA button inherits no face, then the body rung, one step
 	 over the field labels beneath it: at the label rung the two read as one register and
@@ -589,7 +604,7 @@
 		width: 100%;
 		border: none;
 		background: transparent;
-		padding: var(--_qm-space) 0 var(--_qm-space) var(--_qm-nest);
+		padding: var(--_qm-space) 0 var(--_qm-space) var(--_qm-space);
 		font: inherit;
 		font-size: var(--_qm-text-body);
 		font-weight: var(--_qm-weight-mid);
