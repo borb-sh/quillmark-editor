@@ -24,7 +24,7 @@ Every verb below is on the WASM `Document` / `Quill` / `LiveSession` today (`imp
 
 The last row is the odd one: no code in this package calls it. The surfaces mount over live handles, so a host that stores text owns getting one open and reading it back out, and those verbs are load-bearing for an integration while appearing in no prop and no signature here; what a host does with them is [HOSTING.md](HOSTING.md).
 
-`check:ledger` holds the pin stated above against the version on disk. What the table names answers to `tsc`, which fails the moment package code calls a verb the artifact stopped exporting — and for the row nothing here calls, to review.
+`check:docs` holds the pin stated above against the version on disk. What the table names answers to `tsc`, which fails the moment package code calls a verb the artifact stopped exporting — and for the row nothing here calls, to review.
 
 | Concern | Verbs / types | Canon | Stability |
 | --- | --- | --- | --- |

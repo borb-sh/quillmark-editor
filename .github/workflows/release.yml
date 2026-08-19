@@ -122,7 +122,7 @@ jobs:
           # because that step runs after the tag.
           test -f "$RUNNER_TEMP/tool/dist/client/carried.json" \
             || { echo "::error::the tarball carries no stamp of what it compiles in"; exit 1; }
-          node scripts/check-bundle.mjs "$RUNNER_TEMP/site"
+          node scripts/check-style.mjs --built "$RUNNER_TEMP/site"
 
       - name: Tag
         run: |

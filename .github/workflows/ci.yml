@@ -41,17 +41,14 @@ jobs:
       - name: Check (types)
         run: npm run check
 
-      - name: Section pointers
-        run: npm run check:pointers
+      - name: Docs (section pointers, the boundary pin)
+        run: npm run check:docs
 
       - name: Style scales
         run: npm run check:style
 
       - name: Dependency law
         run: npm run check:deps
-
-      - name: Boundary pin
-        run: npm run check:ledger
 
       # Before the suite: quillkit is reached through the bin an author runs, and the
       # client it serves is `vite build`'s output, so both are built artifacts the
@@ -76,7 +73,7 @@ jobs:
       # thing nothing above reaches: the suite lays a site out of `dist/`, and a `files`
       # field that stopped shipping the client passes every check up to here and fails in
       # a consumer's deploy. `npm pack` on a directory runs its `prepack`, so this is the
-      # published artifact, and `check:bundle` reads the laid client rather than inferring
+      # published artifact, and the bundle half reads the laid client rather than inferring
       # it from the build path. No upload: a rehearsal is not a deploy, and this
       # repository's Pages holds the playground.
       - name: Deploy layout, from the tarball
@@ -89,4 +86,4 @@ jobs:
             || { echo "::error::the tarball laid no client at the site root"; exit 1; }
           test -f "$RUNNER_TEMP/site/quiver/latest.json" \
             || { echo "::error::the tarball laid no quiver under the site"; exit 1; }
-          node scripts/check-bundle.mjs "$RUNNER_TEMP/site"
+          node scripts/check-style.mjs --built "$RUNNER_TEMP/site"

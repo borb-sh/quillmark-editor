@@ -14,7 +14,7 @@
 // reaches modules inside `core/` and never its entry, so a sheet hanging off that
 // entry arrives only for a consumer importing `/core` for some other reason. The
 // sheet rather than the entry, because the barrel needs the derivation and not
-// `init`. `check:deps` (rule 4) walks this file's own graph and holds the reach.
+// `init`. `check:deps` holds the reach.
 import '../core/theme.css';
 
 export { default as VisualEditor } from './VisualEditor.svelte';

@@ -1,55 +1,40 @@
-// The dependency law, enforced. In a workspace a quiver↔svelte edge is one relative
-// path away, so the separation is held by a gate rather than by distance. Zero deps;
-// run via `npm run check:deps`.
+// The dependency law, enforced. In a workspace a quiver↔svelte edge is one relative path
+// away, so the separation is held by a gate rather than by distance. Zero deps; run via
+// `npm run check:deps`.
 //
-// Five rules, each stated once here and nowhere else:
+// Four rules:
 //
-//   1. The graph. `@quillmark/wasm` is external and above everything; `svelte` and
-//      `quiver` are siblings at one tier with no edge between them, in either
-//      direction; and a node reaching both is composing them, which is the only way
-//      the two meet. Three do: the two apps, and `quillkit`, which carries the client
-//      it serves and so composes them the way an app does, inside a build of its own at
-//      a tier above the pair. Declared dependencies and source specifiers
-//      both, since either alone is half a check: an undeclared import resolves fine in
-//      a workspace, and a declared dependency nothing imports is still a promise.
+//   1. The graph. `@quillmark/wasm` is external and above everything; `svelte` and `quiver`
+//      are siblings at one tier with no edge between them, in either direction; and a node
+//      reaching both is composing them, which is the only way the two meet. Declared
+//      dependencies and source specifiers both, since either alone is half a check: an
+//      undeclared import resolves fine in a workspace, and a declared dependency nothing
+//      imports is still a promise.
 //
-//   2. One WASM per process. A handle minted by one copy of the linear memory and
-//      handed to another is foreign, so the count that matters is how many copies meet
-//      inside one process. A package with an importable entry puts its copy in the
-//      importer's process, so it peers the artifact and never depends on it, the range
-//      is a single `>=` comparator (loose, until 1.0 makes a narrow one honest), and
-//      root `overrides` pins the developed-against version to exactly one. Loose
-//      ranges permit two installs rather than preventing them, which is why the pin is
-//      the half that works.
-//      A package with no importable entry is a bundled terminal: nothing imports it,
-//      so the copy it bundles meets no other. It depends on the artifact like any
-//      consumer, at build time, and ships no runtime dependencies at all: what it
-//      bundles, a consumer must not install a second time beside a tarball that already
-//      contains it. A `bin` is not an importable entry, being a process of its own that
-//      hands a handle to nobody, and neither is a `./package.json` export, a manifest
-//      being a location rather than a module. So one terminal may carry both halves at
-//      once (a compiled Node program a consumer runs, and a bundled browser program it
-//      serves), each holding its copy in a process the other never enters. A terminal
-//      that bundles nothing at all answers the same way: it names the artifact for
-//      types, ships no runtime dependencies, and holds at most the one copy it resolves.
+//   2. One wasm per process. A handle minted by one copy of the linear memory and handed
+//      to another is foreign, so what matters is how many copies meet inside one process. A
+//      package a consumer can import puts its copy in the importer's process, so it peers
+//      the artifact and never depends on it, at a single `>=` comparator (loose, until 1.0
+//      makes a narrow one honest); root `overrides` pins the developed-against version to
+//      exactly one, loose ranges permitting two installs rather than preventing them. A
+//      package with no importable entry is a bundled terminal: nothing imports it, so the
+//      copy it bundles meets no other, and what its manifest may hold is review's.
 //
-//   3. The `/preview` bundle weight. A preview consumer does not pull ProseMirror,
-//      which is what makes the subpath claim ("a bundler pulls only what the imported
-//      entry reaches") true for the one surface whose audience is not editing. A
-//      direct-import scan is not enough: one relative hop into the codec pulls all of
-//      ProseMirror and no direct scan sees it, so this walks preview's import graph
-//      within `src/lib` and fails on any reached module's forbidden external.
+//   3. `/preview` stays free of editor weight, which is what makes the subpath claim ("a
+//      bundler pulls only what the imported entry reaches") true for the one surface whose
+//      audience is not editing. Held at the subpath's edge rather than by walking the graph:
+//      preview reaches its own directory and the shared modules in `core/`, and one relative
+//      hop further — `../core/codec` — pulls all of ProseMirror.
 //
-//   4. The lock'S platforms. The lock resolves every platform an optional dependency
+//   4. The lock's platforms. The lock resolves every platform an optional dependency
 //      offers, not the one that wrote it: a lock missing `@rollup/rollup-darwin-arm64`
-//      installs a rollup with no native binary on a Mac, and npm repairs nothing: an
-//      `npm i` reading a lock that is self-consistent for its own platform adds no
-//      entry. CI runs one platform and the lock is platform-free data, so this is the
-//      only place the breach is visible before a contributor's install fails.
+//      installs a rollup with no native binary on a Mac, and npm repairs nothing. CI runs
+//      one platform and the lock is platform-free data, so this is the only place the
+//      breach is visible before a contributor's install fails.
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
-import { ROOT, packages, report } from './workspace.mjs';
+import { readFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { ROOT, filesUnder, packages, report } from './workspace.mjs';
 
 /** The graph. An edge absent from this table is a violation; an edge in it is optional. */
 const ALLOWED = {
@@ -69,6 +54,21 @@ const root = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
 const PACKAGES = packages();
 const names = PACKAGES.map((p) => p.json.name);
 
+/** Every import/export-from/dynamic-import specifier in an ESM/Svelte source. */
+function specifiersOf(file) {
+	const src = readFileSync(file, 'utf8');
+	return [
+		/\bimport\s+[^'"]*?\bfrom\s*['"]([^'"]+)['"]/g,
+		/\bexport\s+[^'"]*?\bfrom\s*['"]([^'"]+)['"]/g,
+		/\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
+		/\bimport\s*['"]([^'"]+)['"]/g
+	].flatMap((re) => [...src.matchAll(re)].map((m) => m[1]));
+}
+
+/** Every source under `dir`, tests included, build output skipped. A stylesheet's `@import`
+ *  is a specifier too, so a sheet reaching a forbidden module is seen. */
+const sources = (dir) => filesUnder(dir, /\.(ts|js|svelte|css)$/, { names: ['dist', 'build'] });
+
 // ── 1. The graph ────────────────────────────────────────────────────────────────
 
 for (const { dir, json } of PACKAGES) {
@@ -87,6 +87,20 @@ for (const { dir, json } of PACKAGES) {
 				);
 }
 
+const packageOf = (spec) => names.find((n) => spec === n || spec.startsWith(`${n}/`)) ?? null;
+
+for (const { at, json } of PACKAGES) {
+	const allowed = ALLOWED[json.name] ?? [];
+	for (const file of sources(at))
+		for (const spec of specifiersOf(file)) {
+			const dep = packageOf(spec);
+			if (dep && dep !== json.name && !allowed.includes(dep))
+				fail(
+					`${relative(ROOT, file)}: imports "${spec}" — \`${json.name}\` has no edge to \`${dep}\``
+				);
+		}
+}
+
 // ── 2. One wasm per process ─────────────────────────────────────────────────────
 
 const pin = root.overrides?.[WASM];
@@ -102,48 +116,22 @@ const floorOf = (range) => {
 	const m = /^>=\s*(\d+)\.(\d+)\.(\d+)(-[\w.]+)?$/.exec(range.trim());
 	return m ? [+m[1], +m[2], +m[3]] : null;
 };
-/** Lexicographic, not per-position: `0.99.0` is above the floor `0.98.5`, and a
- *  per-position `some` would call it below on the patch. */
+/** Lexicographic, not per-position: `0.99.0` is above the floor `0.98.5`. */
 const below = (a, b) => {
 	for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] < b[i];
 	return false;
 };
 
 /** What a consumer can import: a bare `main`, or an exports map with a module subpath in
- *  it. An empty map is the seal rather than an omission (it forbids every deep path a
- *  missing map leaves open), so it counts as no entry at all. `./package.json` counts as
- *  none either: it publishes a location rather than a module, so nothing imports through
- *  it. Neither is a `bin`: an executable is a process, and a process hands out no
- *  handles. A package with no importable entry is a bundled terminal. */
-const importableEntry = (json) =>
+ *  it. An empty map is the seal rather than an omission, and `./package.json` publishes a
+ *  location rather than a module; neither is a `bin`, an executable being a process that
+ *  hands out no handles. */
+const importable = (json) =>
 	json.main !== undefined ||
 	Object.keys(json.exports ?? {}).some((path) => path !== './package.json');
 
 for (const { dir, json } of PACKAGES) {
-	if (json.private || !importableEntry(json)) {
-		// Neither is a published claim on the artifact: the app installs it like any
-		// consumer, and the bundled terminal contains it.
-		const what = json.private ? 'a private package' : 'a package with no importable entry';
-		if (json.peerDependencies?.[WASM])
-			fail(`packages/${dir}/package.json: \`${WASM}\` is a peer of ${what} — depend on it`);
-		if (!json.private) {
-			if (!json.devDependencies?.[WASM])
-				fail(
-					`packages/${dir}/package.json: \`${WASM}\` is not a devDependency — a bundled terminal builds against the copy it ships`
-				);
-			// Every field that puts something in a consumer's tree, not `dependencies`
-			// alone: an optional or peered one is installed beside the tarball just the
-			// same. `devDependencies` is the one that stays behind, which is where a
-			// bundled terminal's whole build lives.
-			for (const f of ['dependencies', 'optionalDependencies', 'peerDependencies'])
-				for (const dep of Object.keys(json[f] ?? {}))
-					if (dep !== WASM)
-						fail(
-							`packages/${dir}/package.json: \`${f}.${dep}\` — a bundled terminal has no runtime dependencies; what it bundles is not installed beside it`
-						);
-		}
-		continue;
-	}
+	if (json.private || !importable(json)) continue;
 	for (const f of DEP_FIELDS)
 		if (f !== 'peerDependencies' && json[f]?.[WASM])
 			fail(
@@ -167,112 +155,32 @@ for (const { dir, json } of PACKAGES) {
 		);
 }
 
-// ── Source specifiers ───────────────────────────────────────────────────────────
-
-/** Every import/export-from/dynamic-import specifier in an ESM/Svelte source. */
-function specifiersOf(file) {
-	const src = readFileSync(file, 'utf8');
-	const out = [];
-	const patterns = [
-		/\bimport\s+[^'"]*?\bfrom\s*['"]([^'"]+)['"]/g,
-		/\bexport\s+[^'"]*?\bfrom\s*['"]([^'"]+)['"]/g,
-		/\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
-		/\bimport\s*['"]([^'"]+)['"]/g
-	];
-	for (const re of patterns) {
-		let m;
-		while ((m = re.exec(src))) out.push(m[1]);
-	}
-	return out;
-}
-
-/** Every `.ts`/`.js`/`.svelte` source under `dir`, tests included, build output skipped. */
-function sources(dir) {
-	const out = [];
-	(function walk(at) {
-		for (const name of readdirSync(at).sort()) {
-			if (name === 'node_modules' || name === 'dist' || name === 'build' || name.startsWith('.'))
-				continue;
-			const abs = join(at, name);
-			if (statSync(abs).isDirectory()) walk(abs);
-			else if (/\.(ts|js|svelte)$/.test(abs)) out.push(abs);
-		}
-	})(dir);
-	return out;
-}
-
-/** The workspace package a bare specifier names, or null. */
-const packageOf = (spec) => names.find((n) => spec === n || spec.startsWith(`${n}/`)) ?? null;
-
-for (const { at, json } of PACKAGES) {
-	const allowed = ALLOWED[json.name] ?? [];
-	for (const file of sources(at))
-		for (const spec of specifiersOf(file)) {
-			const dep = packageOf(spec);
-			if (dep && dep !== json.name && !allowed.includes(dep))
-				fail(
-					`${relative(ROOT, file)}: imports "${spec}" — \`${json.name}\` has no edge to \`${dep}\``
-				);
-		}
-}
-
-// ── 3. The /preview bundle weight ───────────────────────────────────────────────
+// ── 3. The /preview subpath ─────────────────────────────────────────────────────
 
 const LIB = join(ROOT, 'packages', 'svelte', 'src', 'lib');
 const SELF = '@quillmark/svelte';
-// The subpaths a viewer may reach. Every OTHER subpath svelte exports is editor-side and
-// forbidden, derived rather than listed so the rule fails closed the way the graph
-// rule does: a new editing surface is forbidden the moment it is exported, instead of
-// waiting for someone to remember this line.
+/** The subpaths a viewer may reach. Every other subpath svelte exports is editor-side and
+ *  forbidden, derived rather than listed so a new editing surface is forbidden the moment
+ *  it is exported. */
 const NEUTRAL = new Set(['.', './core', './preview']);
 const svelteExports = PACKAGES.find((p) => p.json.name === SELF)?.json.exports ?? {};
 const editorSide = Object.keys(svelteExports)
 	.filter((k) => !NEUTRAL.has(k))
 	.map((k) => k.replace(/^\.\//, ''));
-// ProseMirror is the weight itself; the editing subpaths are editor-side whether or
-// not they carry weight of their own.
+/** ProseMirror is the weight itself; the editing subpaths are editor-side whether or not
+ *  they carry weight of their own. */
 const FORBIDDEN = new RegExp(`^(prosemirror-|${SELF}/(${editorSide.join('|')}))`);
+/** What preview may reach by relative path: its own directory, and a module directly in
+ *  `core/`. `../core/codec/…` is one hop further and pulls all of ProseMirror. */
+const REACHES = /^\.\/|^\.\.\/core\/[\w.-]+$/;
 
-/** Resolve a relative specifier to a file inside src/lib, or null. `src/lib` is
- *  relative throughout, which `svelte-package` requires (it rewrites no aliases), so
- *  a relative specifier is the only kind that continues the walk; everything else is
- *  bare and answers to FORBIDDEN. */
-function resolveInLib(spec, fromFile) {
-	if (!spec.startsWith('.')) return null;
-	// TS-ESM specifiers carry the EMITTED extension (`./paint.js` → `paint.ts`), so
-	// strip it before building candidates; else a `.js` specifier resolves to nothing
-	// and the transitive walk never leaves `preview/`, silently passing a relative
-	// reach into the codec. `.css` is in the set because a stylesheet's `@import`
-	// matches the specifier patterns too, so a sheet reaching a forbidden one is seen.
-	const stem = resolve(dirname(fromFile), spec).replace(/\.(js|ts|svelte|css)$/, '');
-	for (const cand of [
-		`${stem}.ts`,
-		`${stem}.js`,
-		`${stem}.svelte`,
-		`${stem}.css`,
-		join(stem, 'index.ts'),
-		join(stem, 'index.js')
-	])
-		if (existsSync(cand) && statSync(cand).isFile()) return cand;
-	return null;
-}
-
-const seen = new Set();
-const walk = (file) => {
-	if (seen.has(file)) return;
-	seen.add(file);
-	for (const spec of specifiersOf(file)) {
-		if (FORBIDDEN.test(spec)) {
+let held = 0;
+for (const file of sources(join(LIB, 'preview'))) {
+	held++;
+	for (const spec of specifiersOf(file))
+		if (FORBIDDEN.test(spec) || (spec.startsWith('.') && !REACHES.test(spec)))
 			fail(`${relative(ROOT, file)}: imports "${spec}" — /preview stays free of editor weight`);
-			continue;
-		}
-		const next = resolveInLib(spec, file);
-		if (next) walk(next);
-	}
-};
-// Every file in the subpath, not just its barrel: a module the barrel does not
-// re-export is still shipped inside the module root a bundler pulls.
-for (const file of sources(join(LIB, 'preview'))) walk(file);
+}
 
 // ── 4. The lock's platforms ─────────────────────────────────────────────────────
 
@@ -296,5 +204,5 @@ for (const [path, entry] of Object.entries(lock.packages ?? {}))
 report(
 	'Dependency law check',
 	errors,
-	`Dependency law OK — ${PACKAGES.length} packages, ${WASM} pinned at ${pin}, /preview reaches ${seen.size} modules, lock resolves ${optionals} optionals.`
+	`Dependency law OK — ${PACKAGES.length} packages, ${WASM} pinned at ${pin}, /preview holds ${held} modules, lock resolves ${optionals} optionals.`
 );

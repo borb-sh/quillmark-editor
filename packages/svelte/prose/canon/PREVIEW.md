@@ -4,7 +4,7 @@
 
 ## TL;DR
 
-The headline live preview surface: turning the current document into a rendered, continuously-updating view of the output. `PreviewController` (vanilla-TS core) composes the paint loop and the click/scroll bridge over one `LiveSession`, wrapped by a thin `<Preview>` Svelte component. The subpath imports nothing editor-side: enforced by `check:deps`, which walks the subpath's import graph rather than its direct imports.
+The headline live preview surface: turning the current document into a rendered, continuously-updating view of the output. `PreviewController` (vanilla-TS core) composes the paint loop and the click/scroll bridge over one `LiveSession`, wrapped by a thin `<Preview>` Svelte component. The subpath imports nothing editor-side: enforced by `check:deps`, at the subpath's edge — it reaches its own directory and the shared modules in `core/`, and the hop past those is what pulls the codec.
 
 ## Shape
 

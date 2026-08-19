@@ -2,8 +2,8 @@
 // packages are, where canon lives, and how a gate reports. Stated once, so three
 // scripts cannot disagree about the answer.
 
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -23,19 +23,21 @@ export function packages() {
 		});
 }
 
-/** Every package's `prose/canon/`, sorted. */
-export function canonRoots() {
-	return packages()
-		.map((p) => join(p.at, 'prose', 'canon'))
-		.filter(existsSync);
-}
-
-/** Every `*.md` under `dir`, as `[absolute, repo-relative]`, sorted. */
-export function canonDocs(dir) {
-	return readdirSync(dir)
-		.filter((f) => f.endsWith('.md'))
-		.sort()
-		.map((f) => [join(dir, f), relative(ROOT, join(dir, f))]);
+/** Every file under `at` matching `ext`, sorted: `skip` names directories by path, `names`
+ *  by name at any depth. A missing directory reads as empty — the caller says whether that
+ *  is a finding. */
+export function filesUnder(at, ext, { skip = [], names = [] } = {}) {
+	const out = [];
+	(function walk(dir) {
+		if (!existsSync(dir) || skip.includes(dir)) return;
+		for (const name of readdirSync(dir).sort()) {
+			if (name === 'node_modules' || name.startsWith('.') || names.includes(name)) continue;
+			const abs = join(dir, name);
+			if (statSync(abs).isDirectory()) walk(abs);
+			else if (ext.test(name)) out.push(abs);
+		}
+	})(at);
+	return out;
 }
 
 /** A gate's verdict, in two severities. An error is a fault the diff cannot show — a
