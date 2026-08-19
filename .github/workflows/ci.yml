@@ -1,6 +1,7 @@
 # The whole gate, over the whole workspace, in one job: every package runs each verb its
-# own way, and a verb name means one thing. Nothing here needs a browser, and nothing
-# runs elsewhere.
+# own way, and a verb name means one thing. Nothing runs elsewhere. One test loads the
+# built client in a browser (CLAUDE.md §Verification), which the runner image's Google
+# Chrome answers; nothing else here needs one and nothing installs one.
 name: CI
 
 on:
