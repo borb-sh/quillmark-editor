@@ -95,6 +95,7 @@
   #let reply = display("contact.reply_by", "[year]-[month]-[day]")
   #if reply != none [ · reply by #reply]
   #if poc.at("listed", default: false) [ · listed]
+  #if poc.at("note", default: "") != "" [ · #poc.note]
 ]
 
 #if data.at("epigraph", default: "") != "" {

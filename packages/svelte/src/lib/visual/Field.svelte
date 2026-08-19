@@ -14,7 +14,15 @@
  `DiagnosticList`, non-gating.
 -->
 <script lang="ts">
-	import type { Document, Quill, Addr, Diagnostic, ResolvedField } from '@quillmark/wasm';
+	import type {
+		Document,
+		Quill,
+		Addr,
+		Content,
+		Diagnostic,
+		PathStep,
+		ResolvedField
+	} from '@quillmark/wasm';
 	import type { EditorErrorHandler } from '../core/errors.js';
 	import type { LeafRegistry } from './leaves.js';
 	import type { FieldModel, FieldSpan } from './structure.js';
@@ -115,6 +123,16 @@
 	// reference must vanish with it: `aria-describedby` pointing at nothing describes
 	// nothing, and silently.
 	const describedBy = $derived(field.description ? domIds.description : undefined);
+
+	/** The boundary's nested content read with this field's address already bound: an
+	 * array's elements, an object's properties, a variant's cells, and a subform's cells
+	 * under an open element. One door rather than one per depth, since `getContentAt`
+	 * takes the whole path and the walk down is each container prefixing its own step.
+	 * Read per call and never held: a leaf takes its state at mount, and a control asks
+	 * once. */
+	function contentAt(path: PathStep[]): Content | undefined {
+		return quill.reader(doc).getContentAt(addr, path);
+	}
 
 	// ── Focus: one answer, two callers (`leaves.ts`) ─────────────────────────────
 	// A label click and the editor's `focusField`/`setCaret` ask the same question, so
@@ -247,6 +265,7 @@
 					id={domIds.control}
 					labelledBy={domIds.label}
 					{describedBy}
+					{contentAt}
 					onCommit={onCommitScalar}
 					{optionAllowed}
 					{enumDisallowed}
@@ -288,7 +307,7 @@
 					labelId={domIds.label}
 					descriptionId={domIds.description}
 					idBase={domIds.control}
-					elementContent={(i) => quill.reader(doc).getContentAt(addr, [i])}
+					{contentAt}
 					onCommit={onCommitScalar}
 				/>
 			{:else if field.control === 'object'}
@@ -300,6 +319,7 @@
 					idBase={domIds.control}
 					labelledBy={domIds.label}
 					{describedBy}
+					{contentAt}
 					onCommit={onCommitScalar}
 				/>
 			{:else}

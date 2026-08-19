@@ -238,11 +238,17 @@ function opsCommittable(doc: Document, addr: Addr): boolean {
 	return stored !== null && typeof stored === 'object';
 }
 
-/** The naming attributes for the `contenteditable`. `aria-labelledby` supersedes
- * `aria-label`: a leaf carrying both is the ambiguity where implementations
- * disagree about which wins, and `undefined` is returned whole when a leaf takes
- * neither, since ProseMirror reads the absence, not an empty object. */
-function proseAttributes(opts: CreateFieldOpts): Record<string, string> | undefined {
+/** The naming attributes for the `contenteditable`, shared by every prose leaf
+ * (`ProseValue` takes it too, so an addressed leaf and a by-value one name their
+ * regions by one rule). `aria-labelledby` supersedes `aria-label`: a leaf carrying
+ * both is the ambiguity where implementations disagree about which wins, and
+ * `undefined` is returned whole when a leaf takes neither, since ProseMirror reads
+ * the absence, not an empty object. */
+export function proseAttributes(opts: {
+	label?: string;
+	labelledBy?: string;
+	describedBy?: string;
+}): Record<string, string> | undefined {
 	const attrs: Record<string, string> = {};
 	if (opts.labelledBy) attrs['aria-labelledby'] = opts.labelledBy;
 	else if (opts.label) attrs['aria-label'] = opts.label;
@@ -532,10 +538,10 @@ export function createField(opts: CreateFieldOpts): FieldController {
 
 /**
  * The prose-leaf plugin stack (VISUAL_EDITOR §Surface): shared by
- * {@link createField} and the array-element inline editor (`ProseArrayElement`),
- * so the two never fork the keymap/plugin ordering. History first, then any
- * leaf-specific plugins (`afterHistory`: the addressed leaf passes its
- * anchor-position plugin; a by-value array element passes none), the
+ * {@link createField} and the by-value inline editor (`ProseValue`), so the two
+ * never fork the keymap/plugin ordering. History first, then any leaf-specific
+ * plugins (`afterHistory`: the addressed leaf passes its anchor-position plugin;
+ * a by-value leaf passes none), the
  * markdown-shorthand input rules, then the field keymap over the base keymap, and
  * last the two that answer to a caret or a selection beside a block: the gap cursor
  * and {@link pastAtomPlugin}.

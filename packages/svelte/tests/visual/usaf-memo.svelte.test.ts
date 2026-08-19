@@ -9,6 +9,10 @@
 // last two name shapes, and are meant to fail when the shape or the surface moves:
 // they are what the tier does with `plaintext` and with a variant whose cells are
 // prose, which is most of this quill.
+//
+// jsdom implements no contenteditable, so a cell's keystroke is out of reach here: the
+// read half is asserted on the mounted leaf and the write half through the typed
+// writer, as an array's prose row asserts them (`plaintext-array`).
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
 import type { Quill, Document } from '@quillmark/wasm';
@@ -19,6 +23,9 @@ import { quill } from '../helpers/fixtures.js';
 Element.prototype.scrollIntoView ??= () => {};
 Element.prototype.getAnimations ??= () => [];
 Element.prototype.hasPointerCapture ??= () => false;
+// The rects a prose cell's view measures; jsdom implements neither.
+Range.prototype.getClientRects ??= () => [] as unknown as DOMRectList;
+Range.prototype.getBoundingClientRect ??= () => new DOMRect();
 
 let cleanup: (() => void) | undefined;
 afterEach(() => {
@@ -135,7 +142,7 @@ describe('the shipped quill on the surface', () => {
 		expect(span('Tag line')).toBe('lone');
 	});
 
-	it('draws the CUI world as cells it cannot fill', () => {
+	it('draws the CUI world as four fillable cells', () => {
 		const q = memo();
 		const doc = q.seedDocument();
 		doc.storeField('classification', { value: 'CUI' });
@@ -151,12 +158,44 @@ describe('the shipped quill on the surface', () => {
 			'Category',
 			'Limited dissemination'
 		]);
-		// And every one of them is `plaintext`, which the subform does not recurse into:
-		// the whole world stands the line pointing at the source view, so a CUI document
-		// cannot be finished from this surface.
-		expect(texts(field, '.qm-object-prop .qm-unsupported')).toEqual(
-			Array(4).fill('A nested prose — edit this field in the source view.')
-		);
-		expect(field.querySelectorAll('.qm-object-prop input')).toHaveLength(0);
+		// And every one of them is `plaintext`, which the subform mounts the prose leaf
+		// for: the whole world is fillable here, so a CUI document can be finished from
+		// this surface.
+		expect(field.querySelectorAll('.qm-object-prop .ProseMirror')).toHaveLength(4);
+		expect(field.querySelectorAll('.qm-object-prop .qm-unsupported')).toHaveLength(0);
+	});
+
+	// What the cells rest as, both ways. The read is the one a variant's key answers
+	// only at the boundary that walks it; the write is the container's own, whole.
+	it('reads its CUI cells at their codec and rests them back as strings', () => {
+		const q = memo();
+		const doc = q.seedDocument();
+		q.writer(doc).set('classification', {
+			value: 'CUI',
+			controlled_by: 'SAF/AA',
+			poc: 'Capt J. Smith, DSN 555-1234',
+			category: 'PRVCY',
+			limited_dissemination: 'FEDONLY'
+		});
+		const target = mountEditor(q, doc);
+
+		const field = [...target.querySelectorAll<HTMLElement>('.qm-field')].find(
+			(f) => f.querySelector('.qm-field-label span')?.textContent === 'Classification'
+		)!;
+		expect(texts(field, '.qm-object-prop .ProseMirror')).toEqual([
+			'SAF/AA',
+			'Capt J. Smith, DSN 555-1234',
+			'PRVCY',
+			'FEDONLY'
+		]);
+		// Every cell rests as its literal string, which is what a `plaintext` cell's
+		// codec commits: the banner reads them as text and the storage says so.
+		expect(doc.getStored('classification')).toEqual({
+			value: 'CUI',
+			controlled_by: 'SAF/AA',
+			poc: 'Capt J. Smith, DSN 555-1234',
+			category: 'PRVCY',
+			limited_dissemination: 'FEDONLY'
+		});
 	});
 });

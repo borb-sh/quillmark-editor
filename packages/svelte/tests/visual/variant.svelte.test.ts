@@ -6,15 +6,21 @@
 //
 // The claims that are the feature: a world's cells appear and retire with the pick,
 // obligation is per world (`lift_on` is required on an embargoed document and exists
-// nowhere else), and an answer the discriminant strands is kept rather than dropped.
+// nowhere else), an answer the discriminant strands is kept rather than dropped, and a
+// content cell (`handling`'s two) is a leaf at the depth it sits.
 import { describe, it, expect, afterEach } from 'vitest';
 import { mount, unmount, flushSync } from 'svelte';
-import type { Quill, Document } from '@quillmark/wasm';
+import { init, type Quill, type Document } from '@quillmark/wasm';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
 import { quill } from '../helpers/fixtures.js';
 
+const core = await init();
+
 Element.prototype.scrollIntoView ??= () => {};
 Element.prototype.getAnimations ??= () => [];
+// The rects a prose cell's view measures; jsdom implements neither.
+Range.prototype.getClientRects ??= () => [] as unknown as DOMRectList;
+Range.prototype.getBoundingClientRect ??= () => new DOMRect();
 // jsdom implements no pointer-capture API, and the trigger probes for one before it
 // opens (see enum-policy).
 Element.prototype.hasPointerCapture ??= () => false;
@@ -263,7 +269,7 @@ describe('a variant whose default is the blank', () => {
 		expect(held(doc)).toBeUndefined();
 	});
 
-	it('names its prose cells and marks the obliged one, and stands a line for each', () => {
+	it('names its prose cells, marks the obliged one, and mounts a leaf in each', () => {
 		const q = quill();
 		const doc = q.seedDocument();
 		const target = mountEditor(q, doc);
@@ -273,18 +279,51 @@ describe('a variant whose default is the blank', () => {
 		// and `caveat` declares the blank.
 		expect(cellLabels(target, 'Handling')).toEqual(['Controlled by *', 'Caveat']);
 
-		// The subform recurses into scalar properties only, and a `plaintext` cell is a
-		// prose leaf: each stands the line that points at the source surface, so a world
-		// whose cells are prose is drawn but not fillable here.
+		// A content cell is a leaf like any other, at the depth it sits: the cell mounts
+		// the prose leaf its scalar field mounts, named by the label beside it.
 		const cells = [...field(target, 'Handling').querySelectorAll<HTMLElement>('.qm-object-prop')];
 		expect(cells).toHaveLength(2);
 		for (const cell of cells) {
-			expect(cell.querySelector('input')).toBeNull();
-			expect(cell.querySelector('.qm-unsupported')?.textContent).toBe(
-				'A nested prose — edit this field in the source view.'
-			);
+			const leaf = cell.querySelector<HTMLElement>('.ProseMirror');
+			expect(leaf).not.toBeNull();
+			expect(cell.querySelector('.qm-unsupported')).toBeNull();
+			const named = cell.querySelector<HTMLElement>('.qm-field-label span');
+			expect(leaf!.getAttribute('aria-labelledby')).toBe(named?.parentElement?.id);
 		}
-		// So the pick is the whole of what the field commits.
+		// The pick is still the whole of what the discriminant commits: a cell rests
+		// only once it is written.
 		expect(held(doc)).toEqual({ value: 'CONTROLLED' });
+	});
+
+	// The read the cells mount over, at the depth they sit: `schema_at` steps a
+	// variant's key, so a stored cell decodes at the codec its own type declares
+	// rather than answering `edit::field_not_content` for the `enum` above it.
+	it('reads a stored cell at its own codec, and rests an edited one back at it', () => {
+		const q = quill();
+		const doc = q.seedDocument();
+		q.writer(doc).set('handling', {
+			value: 'CONTROLLED',
+			controlled_by: 'SPEC/AA',
+			caveat: 'no *markup*, just text'
+		});
+		const target = mountEditor(q, doc);
+
+		const leaves = [
+			...field(target, 'Handling').querySelectorAll<HTMLElement>('.qm-object-prop .ProseMirror')
+		];
+		expect(leaves.map((l) => l.textContent)).toEqual(['SPEC/AA', 'no *markup*, just text']);
+		// `plaintext`, so the asterisks are characters and nothing was lowered from them.
+		expect(leaves[1].querySelector('em, strong')).toBeNull();
+
+		// The write is the other lane: the container commits whole, and the typed writer
+		// rests a cell's `Content` back as the literal string the codec names. (jsdom
+		// implements no contenteditable, so the keystroke that produces one is out of
+		// reach here, as it is for an array's prose row.)
+		q.writer(doc).set('handling', {
+			value: 'CONTROLLED',
+			controlled_by: core.importMarkdown('SPEC/BB'),
+			caveat: ''
+		});
+		expect(held(doc)).toEqual({ value: 'CONTROLLED', controlled_by: 'SPEC/BB', caveat: '' });
 	});
 });

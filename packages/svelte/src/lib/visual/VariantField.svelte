@@ -4,14 +4,16 @@
  a container, `{value: <member>, …that member's fields}`, and commits whole: it is one
  cell to `Addr`, so there is no per-cell write address.
 
- The cells are {@link ObjectField}, which already draws a scalar field set keyed by
+ The cells are {@link ObjectField}, which already draws a leaf field set keyed by
  name over a container its parent commits by value. It takes the whole container as its
  `value` and the world's declaration as its `properties`, so what it hands back is the
  container with one cell written — and cells outside the drawn world ride through
- untouched rather than needing to be merged back.
+ untouched rather than needing to be merged back. A content cell reads at the key it
+ declares: the boundary's schema walk unions the worlds, so a dormant cell reads absent
+ rather than raising.
 -->
 <script lang="ts">
-	import type { QuillFieldSchema } from '@quillmark/wasm';
+	import type { Content, PathStep, QuillFieldSchema } from '@quillmark/wasm';
 	import EnumField from './EnumField.svelte';
 	import ObjectField from './ObjectField.svelte';
 	import {
@@ -34,6 +36,10 @@
 		id?: string;
 		labelledBy?: string;
 		describedBy?: string;
+		/** The boundary's nested content read for this field, which the cells take
+		 * unprefixed: a variant's cell is one key in from the container it rests as, so
+		 * a `plaintext` cell's path is its own name ({@link ObjectField}). */
+		contentAt: (path: PathStep[]) => Content | undefined;
 		onCommit: (v: Record<string, unknown> | undefined) => void;
 		optionAllowed?: (value: string) => boolean;
 		enumDisallowed?: 'hide' | 'disable';
@@ -46,6 +52,7 @@
 		id,
 		labelledBy,
 		describedBy,
+		contentAt,
 		onCommit,
 		optionAllowed,
 		enumDisallowed
@@ -80,6 +87,7 @@
 				idBase={id}
 				{labelledBy}
 				{describedBy}
+				{contentAt}
 				onCommit={(obj) => onCommit(obj)}
 			/>
 		{/key}
