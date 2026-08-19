@@ -282,12 +282,12 @@
 
 	/* ── Geometry ──────────────────────────────────────────────────────────*/
 	/* One stroke width for every edge the chrome draws: a card's, a control's,
-	   and the metadata bracket's three rules alike. A threshold rather than a
+	   and the verticals nested inside it alike. A threshold rather than a
 	   rhythm choice, like the tap floor: a hairline is a hairline at any
 	   `--qm-space`, so it does not derive from a dial. It exists as a rung because
-	   the bracket's whole claim is that its vertical and its horizontals are the
-	   same stroke, and `check:style`'s border-width axis can only hold that
-	   against a token. */
+	   the nesting ladder's whole claim is that a card's edge, a section's vertical
+	   and a subform's are one stroke at three depths, and `check:style`'s
+	   border-width axis can only hold that against a token. */
 	--_qm-border-width: 1px;
 	--_qm-radius: var(--qm-radius, 8px);
 	/* The interior corner, and half is the relationship rather than the number: a
@@ -310,6 +310,14 @@
 	   it has taken the line box, and the horizontal is how far in the text starts,
 	   which nothing else fixes. */
 	--_qm-inset-control: var(--_qm-space) var(--_qm-space-3);
+	/* The nesting step: the distance from one structural stroke to the next, spent by
+	   the card's inline inset, by a section standing its fields off its own vertical,
+	   and by a subform standing its properties off its. Three boxes in two components
+	   have to land on one number for the depths to read as a ladder rather than as
+	   three indents that happen to look alike, and `check:style`'s rhythm axis sees
+	   each of them read a rung, never that they read the same one — the case
+	   `--_qm-inset-control` above is cut for. */
+	--_qm-nest: var(--_qm-space-3);
 	/* The scroll tail: dead space under the last card, so it can be read at the
 	   middle of a pane rather than at its bottom edge. A fraction of the viewport
 	   rather than a step on the ramp, because what it answers is how far the eye

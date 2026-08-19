@@ -73,8 +73,6 @@
 	     flip would carry it between them. -->
 	{#if cells}
 		{#key member}
-			<!-- `close`: the discriminant's box directly above IS the cells' top boundary,
-			     so the band's opening stroke would state it twice. -->
 			<ObjectField
 				value={value ?? {}}
 				properties={cells}
@@ -82,7 +80,6 @@
 				idBase={id}
 				{labelledBy}
 				{describedBy}
-				edges="close"
 				onCommit={(obj) => onCommit(obj)}
 			/>
 		{/key}

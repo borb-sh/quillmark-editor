@@ -127,9 +127,9 @@
 	const ungrouped = $derived(card.sections.filter((s) => s.group == null));
 	const grouped = $derived(card.sections.filter((s) => s.group != null));
 
-	// A schema that declares no fields still gets a body, and a bracket around nothing is
-	// worse than none: with no content between them the two horizontals land on one y and
-	// paint as a single stroke of twice the width.
+	// A schema that declares no fields still gets a body, and an empty metadata block is
+	// not free: it draws nothing, and the card's own gap counts it twice, standing a rung
+	// of dead space over the body.
 	const hasMeta = $derived(ungrouped.length > 0 || grouped.length > 0);
 
 	// Seeded once from the card's shape. Card is keyed by stable id, so this survives the
@@ -244,16 +244,12 @@
 		{/if}
 
 		<div class="qm-card-body">
-			<!-- One element whose top and bottom edges are the bracket's two horizontals.
-		 Anchored here rather than on the header and on the accordion so an open section's
-		 vertical reaches them, and so a card with no groups still terminates above its
-		 body. -->
+			<!-- The metadata block draws no edge of its own: depth is a ladder of verticals
+		 inside it — the card's own left edge, then a section's, then a subform's — each one
+		 rung in from the last. A horizontal here would rank the block against the header
+		 and the body, which is not what nesting is. -->
 			{#if hasMeta}
-				<div
-					class="qm-card-meta"
-					class:qm-meta-top={!card.isMain}
-					class:qm-meta-bottom={card.hasBody}
-				>
+				<div class="qm-card-meta">
 					{#each ungrouped as section (section.group ?? '_ungrouped')}
 						<div class="qm-section">
 							{@render sectionFields(section.fields)}
@@ -261,8 +257,7 @@
 					{/each}
 
 					<!-- One open at a time. Rendered only when a card has groups, so an empty
-				     accordion is not the bracket's last child: the bottom rule's inset belongs
-				     to whichever block abuts it. -->
+				     accordion does not stand a gap under the ungrouped fields. -->
 					{#if grouped.length}
 						<div class="qm-groups" class:qm-instant={!animate}>
 							{#each grouped as section (section.group)}
@@ -409,11 +404,13 @@
 	/* An island: the card is the base plane, the column behind it the sunken one, and the
 	 hairline closes it (ARCHITECTURE §Styling). The inset is the same rung as the gap, so
 	 what separates the header from the fields is what separates the fields from the
-	 card's edge. */
+	 card's edge. The inline half is spelled `--_qm-nest`, the same rung at the same
+	 number: it is the first step of the nesting ladder, the distance every stroke inside
+	 the card then repeats. */
 	.qm-card {
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
-		padding: var(--_qm-space-3);
+		padding: var(--_qm-space-3) var(--_qm-nest);
 		background: var(--_qm-surface);
 		display: flex;
 		flex-direction: column;
@@ -497,37 +494,42 @@
 	.qm-card-title:focus {
 		color: var(--_qm-ink);
 	}
-	.qm-card-body,
-	.qm-card-meta {
+	.qm-card-body {
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-3);
 	}
-	/* The metadata bracket, in three strokes at one rung: these two horizontals and the
-	 open section's vertical below. A bracket whose sides disagree on width or tone reads
-	 as three unrelated lines rather than one figure, which is why the vertical takes
-	 `--_qm-border` and not `--_qm-accent`.
+	/* Where two sections meet the distance is three of one rung — the cap ending the one
+	 above, this gap, and the cap opening the one below — and it is the same three
+	 whether either side is a group or the ungrouped block, because every section caps
+	 itself the same way. That total is the rung the fields inside a section already keep
+	 between their rows (`.qm-fields` row-gap), so a section boundary is as far apart as a
+	 field boundary and no further: what ranks them is the stroke, not the air. */
+	.qm-card-meta,
+	.qm-groups {
+		display: flex;
+		flex-direction: column;
+		gap: var(--_qm-space);
+	}
+	/* A section's vertical: the ladder's second stroke, one `--_qm-nest` in from the card's
+	 own edge and standing its fields the same rung off itself. `--_qm-border` and not
+	 `--_qm-accent`, because a card's edge and the verticals inside it are one hand at
+	 three depths, and a stroke that changed tone as it went in would read as three
+	 unrelated lines rather than as one figure nesting.
 
-	 Each condition is what its stroke means: a top rule is the line under a card title,
-	 so the headerless `main` has none; a bottom rule divides fields from body, so a card
-	 with no body has nothing to divide. Sometimes two strokes and sometimes one — an open
-	 figure, which is what distinguishes it from a second box inside the card. */
-	.qm-meta-top {
-		border-top: var(--_qm-border-width) solid var(--_qm-border);
-	}
-	.qm-meta-bottom {
-		border-bottom: var(--_qm-border-width) solid var(--_qm-border);
-	}
-	/* The inset sits on the fields rather than on the block that holds them: an open
-	 section's vertical has to reach the rule to close a corner against it, and padding
-	 between the two is the distance by which it would miss. Unqualified by open — a shut
-	 panel clips it. */
-	.qm-meta-top > .qm-section {
-		padding-top: var(--_qm-space-3);
-	}
-	.qm-meta-bottom > .qm-section:last-child,
-	.qm-meta-bottom .qm-group:last-child .qm-group-panel-inner > .qm-fields {
-		padding-bottom: var(--_qm-space-3);
+	 Unconditional here: an ungrouped section is always open. The accordion's is the same
+	 stroke under a condition (below).
+
+	 `padding-block` is the stroke's end caps, equal by construction at one rung: a
+	 vertical that stops dead on the first label's cap height and overshoots the last
+	 control reads as hung crooked, and which end a reader notices depends on nothing but
+	 which one they were looking at. The accordion's caps are the same rung, arrived at
+	 from both sides — its header's own padding at the top (below), its panel's at the
+	 bottom. */
+	.qm-section {
+		border-inline-start: var(--_qm-border-width) solid var(--_qm-border);
+		padding-inline-start: var(--_qm-nest);
+		padding-block: var(--_qm-space);
 	}
 	/* Two query containers, one per kind of section, so capacity follows the width the
 	 fields actually get: a panel's inset makes that narrower than the card. */
@@ -562,15 +564,18 @@
 			--cols-half: 2;
 		}
 	}
-	.qm-groups,
+	/* The same vertical at the same depth, on the group rather than on its panel: what the
+	 stroke marks is the section, and a section is its header and what hangs under it.
+	 Drawn transparent when closed rather than absent, so a toggle moves no text — and
+	 closed, there is nothing under the header for it to gather.
+
+	 Its end caps are not its own: the header's block padding stands the stroke off the
+	 title at the top and the panel's stands it off the last control at the bottom, both
+	 at the rung `.qm-section` spends on `padding-block` above. Three boxes, one distance,
+	 and the group therefore declares none. */
 	.qm-group {
 		display: flex;
 		flex-direction: column;
-	}
-	/* The bracket's third stroke, on the section rather than on its panel: spanning the
-	 header is what gives it a corner to close into at the block's edge. Drawn transparent
-	 when closed rather than absent, so a toggle moves no text. */
-	.qm-group {
 		border-left: var(--_qm-border-width) solid transparent;
 		transition: border-color var(--_qm-duration-slow) var(--_qm-ease-reverse);
 	}
@@ -579,10 +584,11 @@
 	}
 	/* Symmetric vertical padding at the tightest rung that still clears WCAG 2.5.8's
 	 24×24 floor: the header is the whole row, so adjacent labels share one rhythm with no
-	 dead strip outside the button. Horizontal is one rung left and zero right — left,
-	 because at zero the chevron stands on the section's vertical with only the icon box's
-	 own bearing between them, and the glyph's rotation swaps which bearing faces the
-	 stroke; right, because the row is the target and an inset there is target given back.
+	 dead strip outside the button. Horizontal is the nesting step left and zero right —
+	 left, because the chevron starts where the fields under it start, so the section's
+	 vertical clears the glyph by the rung it clears their labels by, and neither the icon
+	 box's own bearing nor the swap the glyph's rotation makes of it is standing in for a
+	 distance; right, because the row is the target and an inset there is target given back.
 
 	 `font: inherit` because a UA button inherits no face, then the body rung, one step
 	 over the field labels beneath it: at the label rung the two read as one register and
@@ -595,7 +601,7 @@
 		width: 100%;
 		border: none;
 		background: transparent;
-		padding: var(--_qm-space) 0 var(--_qm-space) var(--_qm-space);
+		padding: var(--_qm-space) 0 var(--_qm-space) var(--_qm-nest);
 		font: inherit;
 		font-size: var(--_qm-text-body);
 		font-weight: var(--_qm-weight-mid);
@@ -651,12 +657,15 @@
 	.qm-group-panel-inner {
 		min-height: 0;
 		overflow: hidden;
-		padding-inline-start: var(--_qm-space-4);
+		padding-inline-start: var(--_qm-nest);
 		padding-inline-end: var(--_qm-ring-reach);
 		margin-inline-end: calc(-1 * var(--_qm-ring-reach));
 	}
+	/* The stroke's lower cap, at the rung every accent's caps read (`.qm-section`): the
+	 header's padding is the upper one, so the two ends of an open section's vertical are
+	 one number stated at the two boxes that own those edges. */
 	.qm-group-panel-inner > .qm-fields {
-		padding-block: var(--_qm-space-2);
+		padding-block: var(--_qm-space);
 	}
 	.qm-body-leaf {
 		display: flex;
