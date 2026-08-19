@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.7.0 - 2026-08-19
+
 **A discrete hop outranks the follow.** `scrollToField` ends the follow it displaces, so a hop taken while a follow is live is no longer re-centred away at the next `refresh` — the hop has just moved the caret off screen, which is where the guard cannot save it. A hop that placed nothing moved nothing and takes no rank.
 
 **The fold's clearance is bounded at both ends.** What a target keeps clear of each edge was its own height and nothing else, so a centred target needed a port three times its height to ever pass: a tall located rect or a short split track was re-centred by every keystroke, and a zero-height rect collapsed the term to bare intersection, scoring a caret flush against an edge as clear. The clearance is floored at a caret's height and capped at a third of the room the port has to spare, and a target taller than the port is clear while it covers the port — no scroll shows more of it. `clearOfTheFold` reads two vertical spans, so its arithmetic is driven directly rather than through layout.
