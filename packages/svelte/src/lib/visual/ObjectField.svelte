@@ -4,16 +4,13 @@
  only: a nested prose/array/object property renders a placeholder instead of
  recursing.
 
- The nesting is a vertical at `--_qm-border`, the ladder's third stroke: the card's
- edge, the section's vertical one `--_qm-nest` in, and this one a rung further, with the
- properties a rung inside it. Depth is that repeated distance, and it reads at a glance
- in a way a rule above and below the block does not — a horizontal ranks what it
- separates, where a vertical says what a block is inside of.
+ The nesting is a vertical at `--_qm-border`, the ladder's third stroke: the card's edge,
+ the section's vertical one `--_qm-nest` in, this one a rung further, the properties a
+ rung inside it (ARCHITECTURE §"A plane is a tone").
 
- One figure for every mounting: a subform hanging off a control — a variant's cells
- under their discriminant, an array element's properties under its summary row — draws
- exactly what a field-level one draws, because the depth is the same in both and the
- box above states position rather than depth.
+ One figure wherever it mounts: a variant's cells under their discriminant and an array
+ element's properties under its summary row sit at the depth a field-level subform sits
+ at, and the box above them states position rather than depth.
 
  A property's ghosted `default:` is the static schema `sub.default`, not the
  resolved provenance the top-level ghosts read (FIELD_PROVENANCE): `resolve`
@@ -193,9 +190,8 @@
 </div>
 
 <style>
-	/* The vertical, and the rung between it and the properties: `--_qm-nest` is the same
-	   distance the card holds off its own edge and the section holds off its vertical, so
-	   the three depths step evenly whatever the spacing dial says.
+	/* The vertical and the rung between it and the properties, `--_qm-nest` being the step
+	   the card and the section hold too.
 
 	   `--_qm-border` and not `--_qm-border-faint`: this is the stroke that structures
 	   (ARCHITECTURE §"A plane is a tone"), the one the card's edge and the section's
@@ -203,15 +199,14 @@
 	   under a frame that is doing the structuring — which is the other job.
 
 	   `padding-block` is the stroke's end caps, the same rung and the same reason as a
-	   section's (`Card.svelte`): equal at both ends, so the vertical reads as hung rather
-	   than as stopped short. It is a cap and not a leading gap — what stands the subform
-	   off the label or the box above it is still that stacker's own.
+	   section's (`Card.svelte`). A cap and not a leading gap: what stands the subform off
+	   the label or the box above it is still that stacker's own.
 
 	   The tracks are the section's count over the subform's own width — `--cols` inherits,
 	   so the container query stepping the section's capacity steps this with it, and there
 	   is no second query container and nothing measured. The edges are not the section's:
-	   the inset is the nesting, and a cell that lined up with the field above it would be
-	   claiming a depth it is not at. */
+	   the inset is the nesting, and a cell lining up with the field above it would claim a
+	   depth it is not at. */
 	.qm-object {
 		display: grid;
 		grid-template-columns: repeat(var(--cols), 1fr);

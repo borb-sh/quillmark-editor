@@ -310,13 +310,11 @@
 	   it has taken the line box, and the horizontal is how far in the text starts,
 	   which nothing else fixes. */
 	--_qm-inset-control: var(--_qm-space) var(--_qm-space-3);
-	/* The nesting step: the distance from one structural stroke to the next, spent by
-	   the card's inline inset, by a section standing its fields off its own vertical,
-	   and by a subform standing its properties off its. Three boxes in two components
-	   have to land on one number for the depths to read as a ladder rather than as
-	   three indents that happen to look alike, and `check:style`'s rhythm axis sees
-	   each of them read a rung, never that they read the same one — the case
-	   `--_qm-inset-control` above is cut for. */
+	/* The nesting step: the distance from one structural stroke to the next, and what
+	   makes the depths read as a ladder rather than as indents that happen to look
+	   alike. A rung because the boxes holding that distance are in two components and
+	   `check:style`'s rhythm axis sees each of them read a rung, never that they read
+	   the same one — the case `--_qm-inset-control` above is cut for. */
 	--_qm-nest: var(--_qm-space-3);
 	/* The scroll tail: dead space under the last card, so it can be read at the
 	   middle of a pane rather than at its bottom edge. A fraction of the viewport

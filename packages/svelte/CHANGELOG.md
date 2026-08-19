@@ -8,7 +8,7 @@
 
 Every accent caps at `--_qm-space` on both ends, so a vertical stands clear of its first label and its last control by the same distance rather than hanging crooked; an open section's two ends are that one rung stated by the two boxes that own those edges — its header's padding above, its panel's below. And where two sections meet the distance is three of that rung — a cap, the gap, a cap — the same whether either side is an accordion group or the ungrouped block, which is the rung the fields inside a section already keep between their rows.
 
-An ungrouped section draws the vertical unconditionally, an accordion group draws it open, and a subform draws it wherever it mounts: the `edges` distinction a subform took (a band at field level, a closing rule under a control) was about which horizontal to state twice and retires with them. A subform's cells no longer share column edges with the fields above them — the inset is the nesting — and still step with them, `--cols` inheriting as before.
+An ungrouped section draws the vertical unconditionally, an accordion group draws it open, and a subform draws it wherever it mounts: the `edges` distinction a subform took — a band at field level, a closing rule under a control — chose between horizontals and retires with them. A subform's cells no longer share column edges with the fields above them — the inset is the nesting — and still step with them, `--cols` inheriting as before.
 
 ## v0.6.0 - 2026-08-18
 

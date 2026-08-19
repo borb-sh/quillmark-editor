@@ -516,10 +516,9 @@
 	/* ── An object element ──────────────────────────────────────────────────────
 	 The row is a summary and the subform hangs under it. `row-gap` rather than a
 	 margin on the subform, because the distance between a control and what it has
-	 unfolded belongs to the thing stacking them: the variant field spends its own
-	 `gap` on exactly this, and what `ObjectField` carries is the cap on its own stroke,
-	 which is the same at both of its ends and therefore nothing for a caller to
-	 cancel. */
+	 unfolded belongs to the thing stacking them: the variant field spends its own `gap` on
+	 exactly this, and what `ObjectField` adds is the cap on its own stroke, equal at both
+	 of its ends. */
 	.qm-element {
 		row-gap: var(--_qm-space-2);
 	}
