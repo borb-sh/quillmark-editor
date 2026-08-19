@@ -1,9 +1,6 @@
 // @vitest-environment jsdom
 // The hold, wired (`visual/hold.ts`): which control each disclosure offers as the anchor,
-// and that the trip is taken against the change rather than the layout before it. The
-// pressed control is the anchor at both rungs — the section closing above it is what
-// would carry it off the fold, and neither a panel nor a subform opens anywhere but under
-// its own header.
+// and that the trip is taken against the change rather than the layout before it.
 //
 // jsdom lays nothing out, so what the reveal would move is the playground's to show; what
 // is asserted here is that it is asked for, on the right element, in the right state.

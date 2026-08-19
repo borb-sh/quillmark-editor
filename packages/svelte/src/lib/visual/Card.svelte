@@ -644,8 +644,7 @@
 	/* The track is the accordion's only stroke that moves layout, and a reveal's landing
 	 measures its target one flush after asking — where an animating track still reads its
 	 start value. Both panels of the move are inside the group box, so the opening one and
-	 the closing one above it stand still together (`revealLeaf`). A header gesture keeps
-	 the motion and rides its own trip over it instead (`hold.ts`). */
+	 the closing one above it stand still together (`revealLeaf`). */
 	.qm-groups.qm-instant .qm-group-panel {
 		transition: none;
 	}
