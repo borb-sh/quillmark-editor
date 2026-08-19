@@ -32,10 +32,11 @@ export interface PreviewController {
 	 *  apply-driven hop. */
 	refresh(change: ChangeSet): void;
 	/**
-	 * Scroll `field`'s first box into view. `false` when this compile places nothing
-	 * at that address — an answer, not a failure: the plate places plenty it does not
-	 * track, and the preview carries no schema to tell that from a field the host
-	 * misnamed. The editor's `focusField` is what distinguishes them.
+	 * Scroll `field`'s first box into view, and end any follow it outranks. `false`
+	 * when this compile places nothing at that address — an answer, not a failure: the
+	 * plate places plenty it does not track, and the preview carries no schema to tell
+	 * that from a field the host misnamed. The editor's `focusField` is what
+	 * distinguishes them.
 	 */
 	scrollToField(field: DocPath): boolean;
 	/**
@@ -49,7 +50,7 @@ export interface PreviewController {
 	focusPosition(at: Place): void;
 	/**
 	 * End the follow: the pane stays where the user left it until the next
-	 * `focusPosition`.
+	 * `focusPosition`. A `scrollToField` that placed its target ends one too.
 	 *
 	 * The editor's `onActiveLeafChange` is the signal, firing for a form control as for
 	 * a prose leaf: `onActiveLeafChange={preview.endFollow}`. A control has no caret
@@ -155,12 +156,12 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	render(session.pageCount, []);
 
 	// The last place the editor put the caret, re-located after every recompile and
-	// dropped on a focus change. `session.locate` answers against the last compiled
-	// layout and a consumer debounces `update`, so a caret typed past that layout's
-	// content is off-content for the whole burst: `focusPosition` no-ops and the pane
-	// sits still, and a caret event is otherwise the only thing that asks again. The
-	// re-locate is the preview's, not the consumer's: the staleness sits between two
-	// session queries this module owns both ends of.
+	// dropped on a focus change or a discrete hop. `session.locate` answers against the
+	// last compiled layout and a consumer debounces `update`, so a caret typed past that
+	// layout's content is off-content for the whole burst: `focusPosition` no-ops and
+	// the pane sits still, and a caret event is otherwise the only thing that asks
+	// again. The re-locate is the preview's, not the consumer's: the staleness sits
+	// between two session queries this module owns both ends of.
 	let followed: Place | undefined;
 
 	return {
@@ -171,7 +172,12 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 			if (followed) bridge?.focusPosition(followed.field, followed.pos);
 		},
 		scrollToField(field) {
-			return bridge?.scrollToField(field) ?? false;
+			const placed = bridge?.scrollToField(field) ?? false;
+			// The discrete hop outranks the follow: a caret re-asserted at the next
+			// recompile would pull the pane straight off the field a host just asked
+			// for. A hop that placed nothing moved nothing, so the follow stands.
+			if (placed) followed = undefined;
+			return placed;
 		},
 		focusPosition(at) {
 			followed = at;
