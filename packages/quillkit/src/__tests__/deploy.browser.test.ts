@@ -2,14 +2,13 @@
  * The deploy as a reader reaches it: a site the bin laid, served under a subpath, opened
  * in a browser.
  *
- * It is the one test that loads what a consumer is served. Everything else here reads
- * built output as files — that a path exists, that a stylesheet survived the bundler —
- * and a client whose assets 404 or whose panes stand past the viewport passes all of it.
- * The dev server cannot exhibit either: it tree-shakes nothing and serves at a root.
+ * The one test that loads what a consumer is served. Every other rule over built output
+ * reads it as files — a path exists, a stylesheet survived the bundler — and a client
+ * whose assets 404 or whose panes stand past the viewport passes all of them. The dev
+ * server exhibits neither: it tree-shakes nothing and serves at a root.
  *
- * What it asserts is presence against absence, and relations no dial owns: the tracks of
- * a split sum to the shell they are in, and the shell is the viewport. Both hold at every
- * rung of every scale, so a retune leaves them green (CLAUDE.md §Verification).
+ * What it may assert is CLAUDE.md §Verification's: presence against absence, and a
+ * relation no dial owns.
  *
  * It runs against `dist/`, so it needs the package built, both halves.
  */
@@ -30,9 +29,9 @@ const run = promisify(execFile);
 const BIN = fileURLToPath(new URL('../../dist/bin/quillkit.js', import.meta.url));
 
 /**
- * Two segments deep, which is the shape a project page is served at. A client that
- * resolved its assets or its quiver against the origin rather than the document's base
- * is whole at a root and blank here.
+ * Two segments deep, the shape a project page is served at. A client resolving its
+ * assets or its quiver against the origin rather than the document's base is whole at a
+ * root and blank here.
  */
 const PREFIX = '/quillmark-js/studio';
 
@@ -44,10 +43,9 @@ const NARROW: Viewport = { width: 700, height: 900 };
 const LOAD_MS = 120_000;
 
 /**
- * What the page is asked, once it has settled. The load event fires before the client
- * has fetched anything of its own, so each handle is waited for: the shell is the mount,
- * the picker stands only over a resolved quiver, and the split only over an open
- * session.
+ * What the page is asked, once each handle it is asked about exists: the shell is the
+ * mount, the picker stands only over a resolved quiver, the split only over an open
+ * session. A handle that never arrives comes back null rather than hanging the load.
  */
 const PROBE = `(async () => {
 	const deadline = Date.now() + 30000;

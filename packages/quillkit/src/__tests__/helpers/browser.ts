@@ -1,10 +1,8 @@
 /**
- * One page loaded in a real browser, over the debugging protocol it already speaks.
- *
- * Written rather than borrowed, for the same reason `serve.ts` is: what a load costs
- * here is a spawn, an endpoint read off stderr and two protocol calls, and a driver
- * library would be a dependency the whole gate carries for that. Node's own `WebSocket`
- * is the transport, and the browser is whatever the host already has.
+ * One page loaded in a real browser, over the debugging protocol it already speaks: a
+ * spawn, an endpoint read off stderr, three protocol calls. Node's own `WebSocket` is
+ * the transport, so a load costs the workspace no dependency, and the browser is
+ * whatever the host has.
  */
 
 import { spawn } from 'node:child_process';
@@ -13,11 +11,11 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-/** What a Playwright cache holds, by its own layout: a versioned directory per build. */
+/** A Playwright cache, by its own layout: a versioned directory per build. */
 function cached(): string[] {
 	const cache = process.env.PLAYWRIGHT_BROWSERS_PATH;
 	if (cache === undefined || !existsSync(cache)) return [];
-	// The containers here preset the cache and link the binary at its root.
+	// This repository's containers link the binary at the cache's root.
 	const paths = [join(cache, 'chromium')];
 	for (const entry of readdirSync(cache))
 		if (entry.startsWith('chromium-')) paths.push(join(cache, entry, 'chrome-linux', 'chrome'));
@@ -26,8 +24,8 @@ function cached(): string[] {
 
 /**
  * Where a browser is, in the order a host is likely to have one: the override, a
- * Playwright cache, then the package managers' paths on Linux and macOS. GitHub's Ubuntu
- * runners ship Google Chrome, which is the one CI finds.
+ * Playwright cache, then the package managers' paths on Linux and macOS. CI lands on
+ * `/usr/bin/google-chrome`, the runner image shipping Chrome and no cache.
  */
 function candidates(): string[] {
 	return [
@@ -61,10 +59,9 @@ export interface Viewport {
 }
 
 /**
- * Load `url` at `viewport`, evaluate `expression` in the page and hand back what it
- * resolved to. The expression owns its own waiting: the load event fires before a
- * client has fetched anything of its own, so what a caller asks about is whatever the
- * page holds once its own promise settles.
+ * `expression` owns its own waiting: the load event fires before a client has fetched
+ * anything of its own, so what comes back is whatever the page holds when the
+ * expression's promise settles.
  */
 export async function load<T>(url: string, expression: string, viewport: Viewport): Promise<T> {
 	const profile = await mkdtemp(join(tmpdir(), 'quillkit-chrome-'));
@@ -76,17 +73,17 @@ export async function load<T>(url: string, expression: string, viewport: Viewpor
 			// loaded is one this process just laid on disk and served to itself.
 			'--no-sandbox',
 			'--disable-gpu',
-			// A scrollbar is the host's width taken out of the viewport, which would leave
-			// every relation below off by a platform's chrome.
+			// A scrollbar takes its width out of the viewport, which would leave a caller's
+			// widths off by a platform's chrome.
 			'--hide-scrollbars',
 			`--window-size=${viewport.width},${viewport.height}`,
 			`--user-data-dir=${profile}`,
 			// The port the OS hands out, printed on stderr with the endpoint.
 			'--remote-debugging-port=0',
 			'about:blank'
-			// Its own process group: a browser is a tree, and killing the parent alone leaves
-			// children writing into the profile below.
 		],
+		// Its own process group: a browser is a tree, and killing the parent alone leaves
+		// children writing into the profile.
 		{ detached: true }
 	);
 
@@ -158,8 +155,8 @@ export async function load<T>(url: string, expression: string, viewport: Viewpor
 			throw new Error(answer.exceptionDetails.exception?.description ?? 'the page threw');
 		return answer.result.value;
 	} finally {
-		// The group, and then the wait: the profile is the browser's until the tree is
-		// gone, and a removal racing the last flush finds a directory refilling under it.
+		// The group, then the wait: a removal racing the tree's last flush finds a
+		// directory refilling under it.
 		if (child.pid !== undefined) process.kill(-child.pid, 'SIGKILL');
 		await new Promise((gone) => child.once('exit', gone));
 		await rm(profile, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
