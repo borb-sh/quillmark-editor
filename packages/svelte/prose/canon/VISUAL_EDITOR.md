@@ -48,7 +48,7 @@ The parallel array is not a workaround. With no card handle in the document, `ca
 
 A structure op's path names the card (`cards.<kind>[i]`), not the body leaf inside it: the change is the card. It is minted after the mutation, since an insert's card does not exist in the previous tree and a retype's kind is the previous kind.
 
-**Path-only was probed against struct and lost.** A hook could carry a bare `DocPath` and nothing else; the cost measured was the sites that parse an index back out. Written both ways over the four things a host does with these signals — recompile, pin an annotation, highlight the active card, scroll a positional list — path-only saves nothing at the site it was supposed to: the struct carries the path too, so `parseDocPath` is one call under either shape. It loses at the other: an outline highlighting the active card reads `cardId` directly under the struct, and under path-only parses a path for an index that is wrong after the next reorder, which is the trap `cardId` exists to close. A shape that is never cheaper and sometimes wrong is not a trade-off.
+**A bare path is never cheaper and sometimes wrong.** A hook carrying a `DocPath` and nothing else would spare a host the sites that parse an index back out, except that the struct carries the path too, so `parseDocPath` is one call under either shape. And it loses where the struct does not: an outline highlighting the active card reads `cardId` directly, where a bare path is parsed for an index that is wrong after the next reorder — the trap `cardId` exists to close.
 
 ## Edits are ops to the live Document
 
@@ -148,7 +148,7 @@ The residue is the boundary's shape, not a gap in it: a backend's compile diagno
 
 ## What the surface says
 
-Every built-in string is a key on `strings`, partial: unset keys take the package's English, so wording is an override rather than a fork. It covers the card controls, the add trigger, the array control, the required marker, the formatting popover and its link prompt, the tips card, the unknown-kind recovery shell and the empty body's ghost. Several are accessible names rather than decoration — an untranslated card control does not read as inconsistent to a screen reader, it reads as the wrong language, which is why this is a seam and not a list of literals to grep for. `bodyPlaceholder` is a key inside the set rather than a prop beside it: the per-card hook and the flat string it falls back to are one decision. The hook is pure and nothing it returns is cached, so a ghost holds still across a re-derive because the function does: per-card wording is a function of the `cardId` it is handed, per-kind wording a function of `kind`. Determinism is the consumer's to express rather than the editor's to impose.
+Every built-in string is a key on `strings`, partial: unset keys take the package's English, so wording is an override rather than a fork. Several are accessible names rather than decoration — an untranslated card control does not read as inconsistent to a screen reader, it reads as the wrong language, which is why this is a seam and not a list of literals to grep for. `bodyPlaceholder` is a key inside the set rather than a prop beside it: the per-card hook and the flat string it falls back to are one decision. The hook is pure and nothing it returns is cached, so a ghost holds still across a re-derive because the function does: per-card wording is a function of the `cardId` it is handed, per-kind wording a function of `kind`. Determinism is the consumer's to express rather than the editor's to impose.
 
 The strings reach the tree through **context**, not props. They are ambient, read-only and wanted eight components deep, so threading them by hand would put a `strings` prop on every component between the root and each leaf that means nothing to any of them. The channel exposes getters, so a consumer swapping locale mid-session re-renders rather than freezing the wording at mount; a component rendered off-tree falls to the package's English and still has every key.
 
@@ -186,29 +186,7 @@ The field commits whole and holds no per-cell write address, `Addr` reaching a r
 
 Two layers, per [ARCHITECTURE.md](ARCHITECTURE.md): the prose leaf is the vanilla-TS core seam, the composition is Svelte chrome.
 
-```ts
-// core: one prose leaf; owns the codec, the PM view, and its plugin stack.
-function createField(opts: {
-  doc: Document;
-  addr: Addr; // {card?, field?}; field-less = a body
-  container: HTMLElement;
-  inline?: boolean; // one-textblock schema (a richtext(inline) field)
-  plaintext?: boolean; // inline, over the schema declaring no marks
-  label?: string; // aria-label on the contenteditable
-  onFocus?(addr: Addr): void;
-  onCaretMove?(addr: Addr, pos: number): void; // an edit OR a bare selection move
-  onChange?(addr: Addr): void; // a commit that LANDED: the change signal
-  onError?: EditorErrorHandler; // a commit the boundary refused (recovered)
-}): FieldController;
-
-interface FieldController {
-  setCaret(pos: number): void; // preview onPick → codec.usvToPM → here
-  applyExternal(): void; // external content change → re-hydrate this leaf (gated)
-  focus(): void;
-  getContent(): Content; // the leaf's stored content (tests / reconcile)
-  destroy(): void;
-}
-```
+**The core seam is one prose leaf**: `createField` mounts one into a container over an `Addr` — field-less for a body — and hands back the `FieldController` the composition places a caret through, re-hydrates, and destroys (`core/codec/field.ts`, both re-exported from `/visual`). The leaf owns the codec, the PM view and its plugin stack. Which schema an option selects is §"Structure mirrors the schema"'s, and what each hook reports is §"Edits are ops to the live Document"'s.
 
 ```svelte
 <!-- chrome: renders the card tree, mounts a <ProseField> (createField) per

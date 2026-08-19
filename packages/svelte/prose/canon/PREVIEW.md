@@ -78,25 +78,7 @@ The rule is this pane's, and it is about the keystroke rather than about the cal
 
 ## Minimal surface
 
-```ts
-function createPreview(session: LiveSession, opts: PreviewOptions): PreviewController;
-
-interface PreviewOptions {
-  container: HTMLElement;
-  margin?: number;        // pages kept painted beyond the viewport; default 1
-  onPick?(at: Landing): void;            // preview → editor; `pos` absent on the placement rung
-  onError?: EditorErrorHandler;          // a page paint the backend refused
-}
-
-interface PreviewController {
-  refresh(change: ChangeSet): void;                  // repaint dirty ∩ visible, re-locate the followed caret
-  scrollToField(field: DocPath): boolean;            // boxes → centre in the scrollport, ending the follow; false when it places none
-  focusPosition(at: Place): void;                    // editor → preview: locate → caret rect → centre if past the fold
-  endFollow(): void;                                 // editor → preview: a focus change; the pane stops following
-  setZoom(scale: number): void;                       // folds into densityScale, repaints visible
-  destroy(): void;
-}
-```
+`createPreview(session, opts)` hands back a `PreviewController` (`preview/controller.ts`), and the sections above are its verbs: `refresh` after an edit, `scrollToField` and `focusPosition` for the two hops, `endFollow` for the arrival that stops one. Its options are the container and the hooks it reports through, and every one of them is once-bound, so a swap is the consumer's `{#key session}` ([VISUAL_EDITOR.md](VISUAL_EDITOR.md) §"The document swap").
 
 ## Not owned
 
