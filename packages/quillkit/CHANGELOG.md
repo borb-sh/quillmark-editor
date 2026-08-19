@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**The studio carries the editor's nesting ladder, its pressed-header hold and the preview's bounded fold.** The client compiles `@quillmark/svelte` in, so what that package releases is what an author here works in: depth stated by verticals rather than rules across a block, a pressed section header held in the fold as the one above it collapses, a discrete hop that outranks the follow, and a caret into a table cell that takes the scroller with it. The shell taking the viewport's width rather than its widest mount is the studio's own — it is the surface that spends the whole screen on two mounts, and a host holding its content to a maximum never saw it.
+
 ## v0.4.0 - 2026-08-18
 
 **The carried `@quillmark/wasm` is 0.108.0.** A quill under test gains depth and two shapes. Every type nests at every position the schema admits, so a property or an element declares whatever a card-level field declares, itself included; an enum may declare `variants:`, per-member fields that exist only in the world its discriminant selects — which the editor draws, so an author sees the cells appear and retire as they pick — and a plate may claim the ink it composes for a field with `field-region`, which puts a computed block in the region table the preview reads.
