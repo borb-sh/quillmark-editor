@@ -11,8 +11,8 @@
 
  An `object` element collapses: the row is its own summary — a box, titled by the
  element's first `string` cell — and opens onto {@link ObjectField}, one at a time.
- Stacking the subforms instead would nest a field one level past the depth the band
- draws, once per row. Opening is therefore part of a landing rather than something the
+ Stacking the subforms instead would nest a field one level past the depth the
+ subform's own vertical draws, once per row. Opening is therefore part of a landing rather than something the
  user does first: `focusElement` opens the row it is aimed at before it focuses.
 
  The remove is inside the element: a slab over the end of the element's own box, taking
@@ -391,7 +391,6 @@
 							properties={items?.properties}
 							label={label != null ? `${label} ${k + 1}` : undefined}
 							idBase={idBase != null ? `${idBase}-e-${id}` : undefined}
-							edges="close"
 							onCommit={(obj) => commitElement(k, obj)}
 						/>
 					{/if}
@@ -517,9 +516,9 @@
 	/* ── An object element ──────────────────────────────────────────────────────
 	 The row is a summary and the subform hangs under it. `row-gap` rather than a
 	 margin on the subform, because the distance between a control and what it has
-	 unfolded belongs to the thing stacking them: the variant field spends its own
-	 `gap` on exactly this and `ObjectField` therefore opens flush, carrying no
-	 leading space of its own for a caller to cancel. */
+	 unfolded belongs to the thing stacking them: the variant field spends its own `gap` on
+	 exactly this, and what `ObjectField` adds is the cap on its own stroke, equal at both
+	 of its ends. */
 	.qm-element {
 		row-gap: var(--_qm-space-2);
 	}

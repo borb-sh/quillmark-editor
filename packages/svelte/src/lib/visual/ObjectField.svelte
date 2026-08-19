@@ -4,22 +4,13 @@
  only: a nested prose/array/object property renders a placeholder instead of
  recursing.
 
- The nesting is a band: two full-width horizontals at `--_qm-border`, the figure the
- card draws around its own metadata (`.qm-meta-top` / `.qm-meta-bottom`) one octave
- down. Nothing insets, so a property's control keeps the card's left and right columns
- exactly as a field's does, and the field's own label caps the band from outside it —
- name, rule under the name, content, closing rule.
+ The nesting is a vertical at `--_qm-border`, the ladder's last stroke: the card's edge,
+ an open section's vertical one `--_qm-nest` in where the field is in one, this one a rung
+ further, the properties a rung inside it (ARCHITECTURE §"A plane is a tone").
 
- That absent inset is also what puts the properties on the section's own column tracks
- (below), so a subform's cells share edges with the fields above them rather than
- keeping a rhythm of their own.
-
- Which edges draw is {@link Props.edges}, and the rule is that a boundary is stated
- once: where a box already sits against the subform, that box IS the boundary and a
- stroke under it would say so twice. So a field-level subform takes the band, and a
- subform hanging off a control — a variant's cells under their discriminant, an
- array element's properties under its summary row — takes the closing rule alone.
- Sometimes two strokes and sometimes one: the open figure the card's bracket is.
+ One figure wherever it mounts: a variant's cells under their discriminant and an array
+ element's properties under its summary row sit at the depth a field-level subform sits
+ at, and the box above them states position rather than depth.
 
  A property's ghosted `default:` is the static schema `sub.default`, not the
  resolved provenance the top-level ghosts read (FIELD_PROVENANCE): `resolve`
@@ -56,20 +47,9 @@
 		idBase?: string;
 		/** Accessible-name prefix used only on the `aria-label` fallback above. */
 		label?: string;
-		/** Which strokes the subform draws; see the note above. */
-		edges?: 'band' | 'close';
 		onCommit: (obj: Record<string, unknown>) => void;
 	}
-	let {
-		value,
-		properties,
-		labelledBy,
-		describedBy,
-		idBase,
-		label,
-		edges = 'band',
-		onCommit
-	}: Props = $props();
+	let { value, properties, labelledBy, describedBy, idBase, label, onCommit }: Props = $props();
 
 	const t = wording();
 	const entries = $derived(Object.entries(properties ?? {}));
@@ -127,7 +107,6 @@
 <div
 	bind:this={rootEl}
 	class="qm-object"
-	class:close={edges === 'close'}
 	role="group"
 	aria-labelledby={labelledBy}
 	aria-describedby={describedBy}
@@ -211,46 +190,38 @@
 </div>
 
 <style>
-	/* The band. `border-block` draws both strokes as one declaration, which is what
-	   makes the figure symmetric by construction rather than by two lines agreeing;
-	   `padding-block` at the same rung on both sides is the other half of that.
+	/* The vertical and the rung between it and the properties, `--_qm-nest` being the step
+	   the card and the section hold too.
 
 	   `--_qm-border` and not `--_qm-border-faint`: this is the stroke that structures
-	   (ARCHITECTURE §"A plane is a tone"), the one the metadata bracket and the open
-	   section's vertical read. `faint` separates without structuring — a table's
-	   interior lines under a frame that is doing the structuring — which is the other
-	   job.
+	   (ARCHITECTURE §"A plane is a tone"), the one the card's edge and the section's
+	   vertical read. `faint` separates without structuring — a table's interior lines
+	   under a frame that is doing the structuring — which is the other job.
 
-	   The columns are the section's, arrived at by arithmetic rather than by `subgrid`:
-	   the band insets nothing horizontally, so this box spans exactly what `.qm-fields`
-	   spans, and equal tracks at the same count over the same width with the same column
-	   gap fall on the same edges. `subgrid` would want the tracks chained through the
-	   three wrappers between the section grid and here (`Field.svelte`), none of which is
-	   a grid. `--cols` inherits instead, so the container query stepping the section's
-	   capacity steps the subform's with it — no second query container, no second set of
-	   rungs, nothing measured. */
+	   `padding-block` is the stroke's end caps, the same rung and the same reason as a
+	   section's (`Card.svelte`). A cap and not a leading gap: what stands the subform off
+	   the label or the box above it is still that stacker's own.
+
+	   The tracks are the section's count over the subform's own width — `--cols` inherits,
+	   so the container query stepping the section's capacity steps this with it, and there
+	   is no second query container and nothing measured. The edges are not the section's:
+	   the inset is the nesting, and a cell lining up with the field above it would claim a
+	   depth it is not at. */
 	.qm-object {
 		display: grid;
 		grid-template-columns: repeat(var(--cols), 1fr);
 		gap: var(--_qm-space-2);
-		border-block: var(--_qm-border-width) solid var(--_qm-border);
-		padding-block: var(--_qm-space-2);
-	}
-	/* Hanging off a control (a variant's discriminant, an array element's summary row):
-	   that box is the top boundary already, and a stroke under it would state the
-	   boundary twice. The closing rule is not optional in the same breath — without it
-	   the properties float between the box above and whatever follows. */
-	.qm-object.close {
-		border-block-start: none;
-		padding-block-start: 0;
+		border-inline-start: var(--_qm-border-width) solid var(--_qm-border);
+		padding-inline-start: var(--_qm-nest);
+		padding-block: var(--_qm-space);
 	}
 	/* A property measures like a field: two tracks over the subform's own rows, so a
 	   label wrapping in one column leaves its control on the row's baseline rather than a
 	   line below it — `Field.svelte`'s rule for a row-sharing field, one level in. The
 	   tracks are this grid's own; the section's belong to the fields.
 
-	   `min-width: 0` is what holds the arithmetic above: a property overflowing its `1fr`
-	   grows the track, and the subform's edges leave the section's with it. */
+	   `min-width: 0` because a property overflowing its `1fr` grows the track, and the
+	   subform with it, past the field that holds it. */
 	.qm-object-prop {
 		display: grid;
 		grid-row: span 2;
