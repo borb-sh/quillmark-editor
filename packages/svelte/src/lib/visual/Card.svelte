@@ -128,9 +128,9 @@
 	const ungrouped = $derived(card.sections.filter((s) => s.group == null));
 	const grouped = $derived(card.sections.filter((s) => s.group != null));
 
-	// A schema that declares no fields still gets a body, and an empty metadata block
-	// draws nothing while the card's gap still counts it twice, standing a rung of dead
-	// space over the body.
+	// A schema that declares no fields still gets a body, and an empty payload block is
+	// worse than none: its two rules land on one y and paint as a single stroke of twice
+	// the width, and the card's gap counts the block twice besides.
 	const hasMeta = $derived(ungrouped.length > 0 || grouped.length > 0);
 
 	// Seeded once from the card's shape. Card is keyed by stable id, so this survives the
@@ -251,7 +251,11 @@
 
 		<div class="qm-card-body">
 			{#if hasMeta}
-				<div class="qm-card-meta" class:qm-meta-bottom={card.hasBody}>
+				<div
+					class="qm-card-meta"
+					class:qm-meta-top={!card.isMain}
+					class:qm-meta-bottom={card.hasBody}
+				>
 					{#each ungrouped as section (section.group ?? '_ungrouped')}
 						<div class="qm-section">
 							{@render sectionFields(section.fields)}
@@ -511,17 +515,22 @@
 		flex-direction: column;
 		gap: var(--_qm-space);
 	}
-	/* The one horizontal the card draws, and it is the one thing a horizontal is for: it
-	 ranks the payload against the body rather than saying what is inside what, which is
-	 the verticals' job (ARCHITECTURE §"A plane is a tone"). Conditional on a body, since
-	 with none it would divide the payload from the card's own edge a rung below it.
+	/* The card's two horizontals, and ranking is the one thing a horizontal is for: they
+	 stand the payload against the title above it and the body below it, where saying what
+	 sits inside what is the verticals' (ARCHITECTURE §"A plane is a tone"). Each is
+	 conditional on what it ranks against: `main` is headerless, and a card with no body
+	 has nothing under the payload to divide it from.
 
-	 The inset stands the rule off the last control at the rung the body sits under it by,
-	 taking the section's own end cap into account: `--_qm-space-2` here, plus that cap,
-	 is the `--_qm-space-3` the card spends between its blocks. */
+	 They are the payload's own block edges rather than lines set into the air around it,
+	 which is what closes a corner with no stroke drawn longer to reach one: every section
+	 caps at the one rung at every end, so its vertical runs its box edge to edge, and the
+	 first and last sections end on the rule they meet. The air is outside the pair, at
+	 the `--_qm-space-3` the card spends between its blocks. */
+	.qm-meta-top {
+		border-top: var(--_qm-border-width) solid var(--_qm-border);
+	}
 	.qm-meta-bottom {
 		border-bottom: var(--_qm-border-width) solid var(--_qm-border);
-		padding-bottom: var(--_qm-space-2);
 	}
 	/* A section's share of the boundary between sections: one rung at each end, so two of
 	 them stand three of it apart whichever kind they are (above). The accordion spends the

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**A card's payload is closed at both ends, and its verticals meet the rules at a corner.** The rule under the card title is back, so the payload is ranked against the title above it as it already was against the body below it; `main` is headerless and draws neither. Both rules sit on the payload block's own edges rather than in the air around it, which is what lets every section keep the one `--_qm-space` cap at every end and still land its vertical on the rule where it is the first or the last — a corner closed by the rhythm rather than by two strokes drawn longer than the rest. The air the rules used to sit inside is now outside the pair, at the `--_qm-space-3` the card spends between its blocks.
+
 ## v0.7.0 - 2026-08-19
 
 **A discrete hop outranks the follow.** `scrollToField` ends the follow it displaces, so a hop taken while a follow is live is no longer re-centred away at the next `refresh` — the hop has just moved the caret off screen, which is where the guard cannot save it. A hop that placed nothing moved nothing and takes no rank.
