@@ -14,39 +14,51 @@ const core = await init();
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(HERE, '..', '..', '..', '..');
 
-/** The one reference quill (dev fixture, never published). */
-const ROOT = join(REPO_ROOT, 'fixtures', 'quills', 'specimen', '1.0.0');
+/**
+ * The reference quiver's quills (dev fixtures, never published). `specimen` is the
+ * workspace's own and is what a suite drives unless it says otherwise; `usaf_memo` is
+ * a copy of a shipped quill, held at `0.0.0` (fixtures/Quiver.yaml).
+ */
+const ROOTS = {
+	specimen: join(REPO_ROOT, 'fixtures', 'quills', 'specimen', '1.0.0'),
+	usaf_memo: join(REPO_ROOT, 'fixtures', 'quills', 'usaf_memo', '0.0.0')
+} as const;
+
+/** Which fixture quill: the default is `specimen` everywhere it is not named. */
+export type FixtureName = keyof typeof ROOTS;
 
 /**
- * The reference quill's tree, keyed by `"/"`-joined paths relative to its root;
- * binary bytes intact (the fonts and the letterhead mark are read as raw
+ * A fixture quill's tree, keyed by `"/"`-joined paths relative to its root; binary
+ * bytes intact (the fonts, the letterhead mark and the seals are read as raw
  * `Uint8Array`, never decoded). The version directory is quill content throughout,
  * so there is nothing here to skip.
  */
-export function loadFixtureTree(): Map<string, Uint8Array> {
+export function loadFixtureTree(name: FixtureName = 'specimen'): Map<string, Uint8Array> {
+	const root = ROOTS[name];
 	const tree = new Map<string, Uint8Array>();
 	const walk = (dir: string): void => {
-		for (const name of readdirSync(dir)) {
-			const abs = join(dir, name);
+		for (const entry of readdirSync(dir)) {
+			const abs = join(dir, entry);
 			if (statSync(abs).isDirectory()) {
 				walk(abs);
 			} else {
-				tree.set(relative(ROOT, abs).split(sep).join('/'), new Uint8Array(readFileSync(abs)));
+				tree.set(relative(root, abs).split(sep).join('/'), new Uint8Array(readFileSync(abs)));
 			}
 		}
 	};
-	walk(ROOT);
+	walk(root);
 	return tree;
 }
 
 /**
- * The reference quill, parsed once per worker. `Quill.fromTree` re-parses the
- * whole fixture tree, and a suite only ever reads its schema or seeds fresh
- * documents off it; so the handle is shared and never freed, rather than each
- * suite keeping its own copy of this cache.
+ * A fixture quill, parsed once per worker. `Quill.fromTree` re-parses the whole
+ * fixture tree, and a suite only ever reads its schema or seeds fresh documents off
+ * it; so the handle is shared and never freed, rather than each suite keeping its own
+ * copy of this cache.
  */
-let cachedQuill: Quill | undefined;
-export function quill(): Quill {
-	if (!cachedQuill) cachedQuill = core.Quill.fromTree(loadFixtureTree());
-	return cachedQuill;
+const cached = new Map<FixtureName, Quill>();
+export function quill(name: FixtureName = 'specimen'): Quill {
+	let held = cached.get(name);
+	if (!held) cached.set(name, (held = core.Quill.fromTree(loadFixtureTree(name))));
+	return held;
 }

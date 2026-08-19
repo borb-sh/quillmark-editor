@@ -44,6 +44,21 @@
   ] else [Distribution unset]
 }
 
+// The second `variants:` enum, whose `default:` is the blank. The blank owns no world,
+// so the last arm is what an unset document reaches as well as a blank one, and the
+// members are read as marked rather than as ids. A prose cell arrives as its markup
+// block when written and as the empty string when not, so the guard is a content
+// field's anywhere else.
+#let handling-note = {
+  let world = data.handling.value
+  if world == "OPEN" [Open]
+  else if world == "CONTROLLED" [
+    Controlled#if data.handling.controlled_by != "" [ by #data.handling.controlled_by]#if data.handling.caveat != "" [ · #data.handling.caveat]
+  ]
+  else if world == "CLOSE HOLD" [Close hold]
+  else [Handling unset]
+}
+
 // ── Letterhead ──────────────────────────────────────────────────────────────
 #grid(
   columns: (auto, 1fr),
@@ -197,6 +212,8 @@
   #data.at("status", default: "draft") · #accent · #str(data.at("columns", default: 1)) col · #str(data.at("font_size", default: 10.5)) pt
   #linebreak()
   #distribution-note
+  #linebreak()
+  #handling-note
   #linebreak()
   #for rev in data.at("revisions", default: ()) [
     #rev.at("note", default: "revised") (#str(rev.at("pages", default: 0)) pp)

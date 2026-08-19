@@ -53,7 +53,8 @@ describe('quillkit test', () => {
 			});
 
 			expect(stdout).toContain('pass  specimen@1.0.0');
-			expect(stdout).toContain('1/1 passed');
+			expect(stdout).toContain('pass  usaf_memo@0.0.0');
+			expect(stdout).toContain('2/2 passed');
 		},
 		RENDER_MS
 	);

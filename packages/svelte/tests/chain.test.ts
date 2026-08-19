@@ -64,4 +64,24 @@ describe('substrate chain', () => {
 		}
 		quill.free();
 	});
+
+	it('runs the same chain over the shipped quill, fonts, seals and all', async () => {
+		// The other fixture is a copy of a real quill (fixtures/Quiver.yaml), so this is
+		// the chain over a tree nobody here curated: four font families, two seal images
+		// and a Typst package of its own.
+		const quill = core.Quill.fromTree(loadFixtureTree('usaf_memo'));
+		expect(quill.metadata.name).toBe('usaf_memo');
+		expect(quill.metadata.version).toBe('0.0.0');
+
+		const doc = quill.seedDocument();
+		expect(doc.quillRef).toBe('usaf_memo@0.0.0');
+
+		const session = await new Engine().open(quill, doc);
+		expect(session.pageCount).toBeGreaterThan(0);
+		expect(session.warnings).toEqual([]);
+
+		session.free();
+		doc.free();
+		quill.free();
+	});
 });

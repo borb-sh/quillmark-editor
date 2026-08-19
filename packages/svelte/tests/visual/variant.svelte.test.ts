@@ -46,8 +46,8 @@ function field(target: HTMLElement, label: string): HTMLElement {
 }
 
 /** Open the variant's discriminant list as a pointer opens it (see enum-policy). */
-function openList(target: HTMLElement): void {
-	const trigger = field(target, 'Distribution').querySelector<HTMLElement>('.qm-select')!;
+function openList(target: HTMLElement, name = 'Distribution'): void {
+	const trigger = field(target, name).querySelector<HTMLElement>('.qm-select')!;
 	trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0 }));
 	trigger.click();
 	flushSync();
@@ -61,8 +61,8 @@ function press(row: HTMLElement | undefined, what: string): void {
 
 /** Pick a world by its option text. The sentinel is excluded by class rather than by
  *  text: it ghosts the resolved default, so its row reads `internal` too. */
-function pickWorld(target: HTMLElement, text: string): void {
-	openList(target);
+function pickWorld(target: HTMLElement, text: string, name = 'Distribution'): void {
+	openList(target, name);
 	press(
 		[...target.querySelectorAll<HTMLElement>('.qm-select-item')].find(
 			(el) => !el.querySelector('.qm-select-ghost') && el.textContent?.trim() === text
@@ -72,8 +72,8 @@ function pickWorld(target: HTMLElement, text: string): void {
 }
 
 /** Pick the unset sentinel: the clear-back-to-default affordance. */
-function clearWorld(target: HTMLElement): void {
-	openList(target);
+function clearWorld(target: HTMLElement, name = 'Distribution'): void {
+	openList(target, name);
 	press(
 		[...target.querySelectorAll<HTMLElement>('.qm-select-item')].find((el) =>
 			el.querySelector('.qm-select-ghost')
@@ -86,11 +86,9 @@ function clearWorld(target: HTMLElement): void {
  *  a sibling node inside the label, so the text is normalized rather than compared
  *  raw: what the assertions are about is the name and its obligation, not the
  *  whitespace `FieldLabel`'s markup leaves between the two. */
-function cellLabels(target: HTMLElement): string[] {
+function cellLabels(target: HTMLElement, name = 'Distribution'): string[] {
 	return [
-		...field(target, 'Distribution').querySelectorAll<HTMLElement>(
-			'.qm-object-prop .qm-field-label'
-		)
+		...field(target, name).querySelectorAll<HTMLElement>('.qm-object-prop .qm-field-label')
 	].map((el) => el.textContent?.replace(/\s+/g, ' ').trim() ?? '');
 }
 
@@ -224,5 +222,69 @@ describe('a variant enum field', () => {
 		type(cellInput(target, 'Lift on'), '2027-01-01');
 		clearWorld(target);
 		expect(stored(doc)).toEqual({ lift_on: '2027-01-01' });
+	});
+});
+
+// The reference quill's other variant, and the shape a real quill declares: the
+// `default:` is the blank, the members are markings rather than ids, and the cells are
+// prose. Driven off `handling` on disk exactly as the block above is driven off
+// `distribution`.
+describe('a variant whose default is the blank', () => {
+	const held = (doc: Document) => doc.getStored('handling');
+	const trigger = (target: HTMLElement) =>
+		field(target, 'Handling').querySelector<HTMLElement>('.qm-select')!;
+
+	it('draws the discriminant alone, ghosting the em dash the blank has no glyph for', () => {
+		const q = quill();
+		const doc = q.seedDocument();
+		const target = mountEditor(q, doc);
+
+		// The blank owns no world, so there is nothing under the select to draw — and
+		// the ghost is the blank's own em dash rather than a member's name.
+		expect(cellLabels(target, 'Handling')).toEqual([]);
+		expect(trigger(target).textContent?.trim()).toBe('—');
+		expect(trigger(target).hasAttribute('data-ghosted')).toBe(true);
+		expect(held(doc)).toBeUndefined();
+	});
+
+	it('picks a member spelled as it is marked, spaces and all', () => {
+		const q = quill();
+		const doc = q.seedDocument();
+		const target = mountEditor(q, doc);
+
+		pickWorld(target, 'CLOSE HOLD', 'Handling');
+		expect(held(doc)).toEqual({ value: 'CLOSE HOLD' });
+		expect(trigger(target).textContent?.trim()).toBe('CLOSE HOLD');
+		expect(trigger(target).hasAttribute('data-ghosted')).toBe(false);
+		// A member declaring no cells draws none, blank default or not.
+		expect(cellLabels(target, 'Handling')).toEqual([]);
+
+		clearWorld(target, 'Handling');
+		expect(held(doc)).toBeUndefined();
+	});
+
+	it('names its prose cells and marks the obliged one, and stands a line for each', () => {
+		const q = quill();
+		const doc = q.seedDocument();
+		const target = mountEditor(q, doc);
+
+		pickWorld(target, 'CONTROLLED', 'Handling');
+		// Obligation is per world and per cell: `controlled_by` declares no `default:`
+		// and `caveat` declares the blank.
+		expect(cellLabels(target, 'Handling')).toEqual(['Controlled by *', 'Caveat']);
+
+		// The subform recurses into scalar properties only, and a `plaintext` cell is a
+		// prose leaf: each stands the line that points at the source surface, so a world
+		// whose cells are prose is drawn but not fillable here.
+		const cells = [...field(target, 'Handling').querySelectorAll<HTMLElement>('.qm-object-prop')];
+		expect(cells).toHaveLength(2);
+		for (const cell of cells) {
+			expect(cell.querySelector('input')).toBeNull();
+			expect(cell.querySelector('.qm-unsupported')?.textContent).toBe(
+				'A nested prose — edit this field in the source view.'
+			);
+		}
+		// So the pick is the whole of what the field commits.
+		expect(held(doc)).toEqual({ value: 'CONTROLLED' });
 	});
 });

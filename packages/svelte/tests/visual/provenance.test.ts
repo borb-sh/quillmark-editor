@@ -96,6 +96,45 @@ describe('resolve over the real specimen schema', () => {
 		expect(ghostDefault(cleared.tracking_id)).toBe('SPEC-0001');
 	});
 
+	it('resolves a variant as a container, so the ghosted member is one cell of it', () => {
+		const doc = quill().seedDocument();
+		const main = provenanceMap(quill().resolve(doc).main.fields);
+		// The rung is the field's, and its value is the whole container: the discriminant
+		// the control ghosts is `value` inside it, never the row itself.
+		expect(main.distribution).toMatchObject({ source: 'default', value: { value: 'internal' } });
+		expect(main.handling).toMatchObject({ source: 'default', value: { value: '' } });
+		expect(stringifyGhost(ghostDefault(main.distribution))).toBeUndefined();
+		expect(
+			(ghostDefault(main.handling) as Record<string, unknown>).value,
+			'the blank ghosts as itself, and names no world'
+		).toBe('');
+	});
+
+	it('leaves a variant cell to its own world: no seed reaches its `example:`', () => {
+		// `handling.CONTROLLED.controlled_by` declares an `example:` and the seed writes
+		// none — the cascade reaches a card's fields, and a cell is not one. So a fresh
+		// document has no handling container at all, which is what the blank `default:`
+		// then resolves for.
+		const doc = quill().seedDocument();
+		expect(doc.toMarkdown()).not.toContain('handling');
+		expect(doc.getStored('handling')).toBeUndefined();
+	});
+
+	it('reports an array `default:` as one, and ghosts none of it', () => {
+		const doc = quill().seedDocument();
+		// Seeded from `example:`, which is the authored answer, not the default beneath it.
+		expect(provenanceMap(quill().resolve(doc).main.fields).authors).toMatchObject({
+			source: 'authored',
+			value: ['Ada Lovelace', 'Grace Hopper']
+		});
+		doc.removeField('authors');
+		const cleared = provenanceMap(quill().resolve(doc).main.fields);
+		expect(cleared.authors).toMatchObject({ source: 'default', value: ['Anonymous'] });
+		// A list is not text: the repeater draws its rows and has no placeholder to ghost
+		// into, the same way an object-shaped rung has none.
+		expect(stringifyGhost(ghostDefault(cleared.authors))).toBeUndefined();
+	});
+
 	it('reports a container’s strongest contributing rung, its cells having their own', () => {
 		const doc = quill().seedDocument();
 		// `contact` declares no literal — a namespace holds none — and one property
