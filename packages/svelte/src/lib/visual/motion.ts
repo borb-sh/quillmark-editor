@@ -15,7 +15,7 @@ const RUN_ID = 'qm-reorder';
  *  (an unstyled root, or jsdom, where `getComputedStyle` reports custom properties as
  *  empty). No rung, no motion: a fallback here would be the scale restated in the one
  *  place `check:style` cannot read. */
-function rungMs(style: CSSStyleDeclaration, rung: string): number | undefined {
+export function rungMs(style: CSSStyleDeclaration, rung: string): number | undefined {
 	const raw = style.getPropertyValue(rung).trim();
 	const n = Number.parseFloat(raw);
 	if (!Number.isFinite(n)) return undefined;
