@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**The carried `@quillmark/wasm` is 0.108.1, and a quill under test can be filled at depth.** A content cell under `variants:` reads at its codec, so the studio's editor mounts a leaf over one where it stood a line pointing at the source view; the same holds for a content property of an `object`. A quill whose classification world is four `plaintext` cells is fillable from the visual surface.
+
 ## v0.5.0 - 2026-08-19
 
 **The studio carries the editor's nesting ladder, its pressed-header hold and the preview's bounded fold.** The client compiles `@quillmark/svelte` in, so what that package releases is what an author here works in: depth stated by verticals rather than rules across a block, a pressed section header held in the fold as the one above it collapses, a discrete hop that outranks the follow, and a caret into a table cell that takes the scroller with it. The shell taking the viewport's width rather than its widest mount is the studio's own — it is the surface that spends the whole screen on two mounts, and a host holding its content to a maximum never saw it.

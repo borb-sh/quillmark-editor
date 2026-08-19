@@ -3,7 +3,7 @@
  edit / add / remove rebuilds the whole array and hands it to the parent's typed
  `writer.set(field, wholeArray)` (arrays are not op-addressed). Element control
  by `items.type`: `richtext` / `plaintext` → a prose element
- ({@link ProseArrayElement}), `object` → a summary row that opens onto a subform,
+ ({@link ProseValue}), `object` → a summary row that opens onto a subform,
  everything else → a text input. The
  add affordance sits in the label header row (space-between with the field label);
  {@link Field} skips its own label for array controls and hands this component the
@@ -38,7 +38,7 @@
 	// off-tree, so this component renders standalone too.
 	const t = wording();
 	import { onDestroy, tick } from 'svelte';
-	import type { Content, QuillFieldSchema } from '@quillmark/wasm';
+	import type { Content, PathStep, QuillFieldSchema } from '@quillmark/wasm';
 	import { emptyContent } from '../core/codec/index.js';
 	import { createLifespan } from '../core/teardown.js';
 	import { IdSeq, controlKind } from './structure.js';
@@ -46,7 +46,7 @@
 	import Icon from './icons/Icon.svelte';
 	import TextField from './TextField.svelte';
 	import ObjectField from './ObjectField.svelte';
-	import ProseArrayElement from './ProseArrayElement.svelte';
+	import ProseValue from './ProseValue.svelte';
 	import FieldLabel from './FieldLabel.svelte';
 	import './controls.css';
 
@@ -73,12 +73,14 @@
 		 * properties' own names from, one `-e-<element id>` segment down, so each open
 		 * record's cells carry real `<label for>` pairs like every other control. */
 		idBase?: string;
-		/** Element `i`'s content, decoded by the boundary through the codec `items`
-		 * names (`Field`, `reader.getContentAt`). Asked only for a content-typed
-		 * element: on any other the read is not content and throws. `undefined` for a
-		 * row the stored value does not reach — a slot this control has spliced in and
-		 * whose commit has yet to land, or was refused. */
-		elementContent: (i: number) => Content | undefined;
+		/** The boundary's nested content read, rooted at this field: `path` is a
+		 * `PathStep[]` from the field to the leaf, so `[i]` is element `i` and
+		 * `[i, key]` a content cell of an `object` element's subform (`Field`,
+		 * `reader.getContentAt`). The codec is the leaf's own declared type's. Asked
+		 * only for a content-typed leaf: on any other the read is not content and
+		 * throws. `undefined` for a leaf the stored value does not reach — a slot this
+		 * control has spliced in and whose commit has yet to land, or was refused. */
+		contentAt: (path: PathStep[]) => Content | undefined;
 		onCommit: (arr: unknown[]) => void;
 	}
 	let {
@@ -90,13 +92,13 @@
 		labelId,
 		descriptionId,
 		idBase,
-		elementContent,
+		contentAt,
 		onCommit
 	}: Props = $props();
 
 	// The element control is the item schema's own, with no departure: a content-typed
 	// element mounts the prose leaf its scalar field mounts, reading through
-	// `elementContent` whatever the element rests as. An array declaring no `items`
+	// `contentAt` whatever the element rests as. An array declaring no `items`
 	// has text elements.
 	const control = $derived(items ? controlKind(items) : 'text');
 	const arr = $derived((value ?? []) as unknown[]);
@@ -122,7 +124,7 @@
 	// The focus targets, keyed by element ID rather than index: an index goes stale on
 	// the splice that focus is chasing. An element control exposes `focus()` because a
 	// text element and a prose element disagree on what focusing is: the difference
-	// is stated on `ProseArrayElement.focus`, which owns it.
+	// is stated on `ProseValue.focus`, which owns it.
 	//
 	// Every path that drops an id deletes its entry: `bind:this` teardown nulls the
 	// value on unmount and leaves the key, so a card that outlives its elements
@@ -396,6 +398,7 @@
 							properties={items?.properties}
 							label={label != null ? `${label} ${k + 1}` : undefined}
 							idBase={idBase != null ? `${idBase}-e-${id}` : undefined}
+							contentAt={(path) => contentAt([k, ...path])}
 							onCommit={(obj) => commitElement(k, obj)}
 						/>
 					{/if}
@@ -403,9 +406,9 @@
 			{:else}
 				<div class="qm-array-row">
 					{#if control === 'prose'}
-						<ProseArrayElement
+						<ProseValue
 							bind:this={els[id]}
-							content={() => elementContent(k) ?? emptyContent()}
+							content={() => contentAt([k]) ?? emptyContent()}
 							plaintext={items?.type === 'plaintext'}
 							label={label != null ? `${label} ${k + 1}` : undefined}
 							onChange={(rt) => commitElement(k, rt)}

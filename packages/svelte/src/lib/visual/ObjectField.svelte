@@ -1,8 +1,9 @@
 <!--
  An `object` field → a nested subform over `properties` (declaration order),
- committing the whole object by value on any nested change. Scalar properties
- only: a nested prose/array/object property renders a placeholder instead of
- recursing.
+ committing the whole object by value on any nested change. Leaf properties: a
+ scalar draws its own control, a content property mounts the by-value prose leaf
+ ({@link ProseValue}) over the boundary's nested read, and a nested `array`/`object`
+ property renders a placeholder instead of recursing.
 
  The nesting is a vertical at `--_qm-border`, the ladder's last stroke: the card's edge,
  an open section's vertical one `--_qm-nest` in where the field is in one, this one a rung
@@ -16,9 +17,15 @@
  resolved provenance the top-level ghosts read (FIELD_PROVENANCE): `resolve`
  carries no per-property row (an object field resolves as one row whose value is
  the whole object).
+
+ Every caller hands down `contentAt`, which is `reader.getContentAt` with the field
+ already bound: a field-level subform passes the property key through untouched, a
+ variant passes its cell's, and an array's open row prefixes its index. So a cell
+ reads at whatever depth it sits, which nothing here knows.
 -->
 <script lang="ts">
-	import type { QuillFieldSchema } from '@quillmark/wasm';
+	import type { Content, PathStep, QuillFieldSchema } from '@quillmark/wasm';
+	import { emptyContent } from '../core/codec/index.js';
 	import { controlKind, humanize, obliged } from './structure.js';
 	import { wording } from './strings.js';
 	import { propertyDomIds } from './domid.js';
@@ -28,6 +35,7 @@
 	import NumberField from './NumberField.svelte';
 	import BooleanField from './BooleanField.svelte';
 	import DateField from './DateField.svelte';
+	import ProseValue from './ProseValue.svelte';
 
 	interface Props {
 		value: Record<string, unknown> | undefined;
@@ -47,9 +55,16 @@
 		idBase?: string;
 		/** Accessible-name prefix used only on the `aria-label` fallback above. */
 		label?: string;
+		/** The boundary's nested content read, rooted at this subform: `path` is a
+		 * `PathStep[]` from here to the leaf, which the caller prefixes with whatever
+		 * stands between this subform and the field (`reader.getContentAt`). Asked only
+		 * for a content-typed property: on any other the read is not content and throws.
+		 * `undefined` for a property the stored value does not reach. */
+		contentAt: (path: PathStep[]) => Content | undefined;
 		onCommit: (obj: Record<string, unknown>) => void;
 	}
-	let { value, properties, labelledBy, describedBy, idBase, label, onCommit }: Props = $props();
+	let { value, properties, labelledBy, describedBy, idBase, label, contentAt, onCommit }: Props =
+		$props();
 
 	const t = wording();
 	const entries = $derived(Object.entries(properties ?? {}));
@@ -68,26 +83,48 @@
 		`${label != null ? `${label} ` : ''}${title(key, sub)}` +
 		(required(sub) ? ` ${t.strings.fieldRequired}` : '');
 
-	/** Take the caret: the first property's control, a subform having no single control
-	 * of its own to land on. Resolved off the DOM rather than a ref per property: every
-	 * property is a scalar control the DOM already knows how to focus (the date field's
-	 * segments carry `tabindex`, the `literal` separators between them do not), so a
-	 * handle each would be five refs restating document order. An empty or wholly
-	 * unsupported subform lands nothing. */
+	/** The prose cells' handles, keyed by property name — which is stable, a subform
+	 *  drawing its properties by declaration and never by position. A ref only where
+	 *  the DOM cannot answer: a `contenteditable` matches no focusable selector, and
+	 *  focusing the node is not focusing the view ({@link ProseValue.focus}). A scalar
+	 *  control is resolved off the markup, so a handle each would be five refs
+	 *  restating document order.
+	 *
+	 *  `$state` for the binding's sake: `bind:this` into a property of a plain object
+	 *  is a write Svelte cannot track, and it says so once per cell per render
+	 *  (`ArrayField` keeps its element refs the same way). */
+	const proseEls: Record<string, { focus: () => void } | undefined> = $state({});
 	let rootEl = $state<HTMLElement | undefined>();
 	const FOCUSABLE = 'input, select, button, [tabindex]:not([tabindex="-1"])';
+	/** Take the caret: the first property that has somewhere to put it, in document
+	 * order — a subform has no single control of its own to land on, and a property
+	 * standing the unsupported line has none either, so the walk steps past it. An
+	 * empty or wholly unsupported subform lands nothing. */
 	export function focus(): void {
-		rootEl?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+		for (const cell of propCells()) if (landOn(cell)) return;
 	}
-	/** A label click for the one property `for` cannot reach: the date control, whose
-	 *  focus lives on a segment. Scoped to that property's own cell, so the click lands
-	 *  where the label is rather than on the subform's first control. */
+	/** A label click for the properties `for` cannot reach: the date control, whose
+	 *  focus lives on a segment, and a prose cell, which is a `contenteditable`. Scoped
+	 *  to that property's own cell, so the click lands where the label is rather than on
+	 *  the subform's first control. */
 	function focusProp(key: string): void {
-		// Matched on the dataset: a key is the schema's own string, and spelling one into
-		// a selector needs `CSS.escape`, which the test DOM does not carry.
-		for (const cell of rootEl?.querySelectorAll<HTMLElement>('[data-qm-prop]') ?? []) {
-			if (cell.dataset.qmProp === key) return cell.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+		for (const cell of propCells()) if (cell.dataset.qmProp === key) return void landOn(cell);
+	}
+	// Matched on the dataset: a key is the schema's own string, and spelling one into a
+	// selector needs `CSS.escape`, which the test DOM does not carry.
+	function propCells(): HTMLElement[] {
+		return [...(rootEl?.querySelectorAll<HTMLElement>('[data-qm-prop]') ?? [])];
+	}
+	/** Land in one property's cell, answering whether it took the caret. */
+	function landOn(cell: HTMLElement): boolean {
+		const prose = proseEls[cell.dataset.qmProp ?? ''];
+		if (prose) {
+			prose.focus();
+			return true;
 		}
+		const el = cell.querySelector<HTMLElement>(FOCUSABLE);
+		el?.focus();
+		return !!el;
 	}
 
 	function commitProp(key: string, v: unknown): void {
@@ -117,8 +154,8 @@
 		{@const named = ids ? undefined : fallbackName(key, sub)}
 		{@const describes = sub.description && ids ? ids.description : undefined}
 		<!-- `for` reaches the four labelable controls; the date field's focus lives on a
-		     segment, so it takes the click handoff instead, exactly as `Field` does one
-		     level up. -->
+		     segment and a prose cell is a `contenteditable`, so those take the click
+		     handoff instead, exactly as `Field` does one level up. -->
 		{@const labelable =
 			kind === 'text' || kind === 'enum' || kind === 'number' || kind === 'boolean'}
 		<div class="qm-object-prop" data-qm-prop={key}>
@@ -178,6 +215,18 @@
 					value={obj[key] as string | undefined}
 					placeholder={sub.default != null ? String(sub.default) : undefined}
 					onCommit={(v) => commitProp(key, v)}
+				/>
+			{:else if kind === 'prose'}
+				<!-- Keyed by name, so a re-derive of the container this cell commits whole
+				     leaves the leaf mounted and the caret in it. -->
+				<ProseValue
+					bind:this={proseEls[key]}
+					content={() => contentAt([key]) ?? emptyContent()}
+					plaintext={sub.type === 'plaintext'}
+					label={named}
+					labelledBy={ids?.label}
+					describedBy={describes}
+					onChange={(rt) => commitProp(key, rt)}
 				/>
 			{:else}
 				<!-- A property the subform does not recurse into. What it says is what the

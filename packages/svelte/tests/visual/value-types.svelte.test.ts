@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-// The three controls no prose leaf covers: the boolean switch, the object subform,
-// and the array's `object` element. The reference quill declares a field for each,
-// so they are driven off the fixture on disk rather than off a schema patched in
+// The three controls no field-level prose leaf covers: the boolean switch, the object
+// subform, and the array's `object` element. The reference quill declares a field for
+// each, so they are driven off the fixture on disk rather than off a schema patched in
 // memory or hand-built behind the WASM boundary.
 //
 // Each control is driven as a pointer drives it and the value read back through
@@ -17,6 +17,9 @@ import { quill } from '../helpers/fixtures.js';
 // scroll hop and the flip the survivors run through.
 Element.prototype.scrollIntoView ??= () => {};
 Element.prototype.getAnimations ??= () => [];
+// The rects the subform's prose cell measures; jsdom implements neither.
+Range.prototype.getClientRects ??= () => [] as unknown as DOMRectList;
+Range.prototype.getBoundingClientRect ??= () => new DOMRect();
 
 let cleanup: (() => void) | undefined;
 afterEach(() => {
@@ -104,7 +107,7 @@ describe('an object field', () => {
 		// retires its own while the container above holds none either way.
 		expect(
 			props.map((p) => p.querySelector('.qm-field-label')?.textContent?.replace(/\s+/g, ' ').trim())
-		).toEqual(['Name *', 'Email *', 'Reply by *', 'Listed']);
+		).toEqual(['Name *', 'Email *', 'Reply by *', 'Listed', 'Note']);
 
 		type(props[0].querySelector('input')!, 'Ada Lovelace');
 		expect(read(q, doc, 'contact')).toEqual({ name: 'Ada Lovelace' });
@@ -145,6 +148,37 @@ describe('an object field', () => {
 		// rather than being committed as `undefined`.
 		type(props[0].querySelector('input')!, '');
 		expect(read(q, doc, 'contact')).toEqual({ email: 'ada@example.org' });
+	});
+
+	// The content property, which is a leaf and not a line pointing elsewhere: it reads
+	// one key in through `reader.getContentAt` at the codec its own type declares, and
+	// the container commits it whole like every other property.
+	it('mounts its content property as a prose leaf reading at the property codec', () => {
+		const q = quill();
+		const doc = q.seedDocument();
+		q.writer(doc).set('contact', { name: 'Ada Lovelace', note: 'ask for *Ada*, not Augusta' });
+		const target = mountEditor(q, doc);
+
+		const props = [
+			...field(target, 'Point of contact').querySelectorAll<HTMLElement>('.qm-object-prop')
+		];
+		const leaf = props[4].querySelector<HTMLElement>('.ProseMirror')!;
+		expect(leaf).not.toBeNull();
+		expect(props[4].querySelector('.qm-unsupported')).toBeNull();
+		// `plaintext`, so the asterisks are characters: nothing was lowered from them.
+		expect(leaf.textContent).toBe('ask for *Ada*, not Augusta');
+		expect(leaf.querySelector('em, strong')).toBeNull();
+		// `for` cannot reach a `contenteditable`, so the label names it the other way.
+		expect(leaf.getAttribute('aria-labelledby')).toBe(
+			props[4].querySelector('.qm-field-label')?.id
+		);
+
+		// The property rests as its literal string, the scalar `plaintext` field's rest
+		// form one key in, and the scalar beside it rides the commit as ever.
+		expect(doc.getStored('contact')).toEqual({
+			name: 'Ada Lovelace',
+			note: 'ask for *Ada*, not Augusta'
+		});
 	});
 });
 
