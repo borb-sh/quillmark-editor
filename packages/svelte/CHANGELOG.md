@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**A card's payload is closed at both ends, and its verticals meet the rules at a square corner.** The rule under the card title is back, so the payload is ranked against the title above it as it already was against the body below it; `main` is headerless and draws neither. Everything a section holds now stands off its vertical by one rung, `--_qm-nest`: the chevron opening a heading takes the nesting step its fields take, where it stood at the tighter rung before, so a heading sits on the column its fields sit on. The stroke caps at that same rung at both ends and both rules inset their edge by it, so a field stands the same distance off the rule beyond it as off the stroke beside it and each corner reads square rather than pinched at one axis. A section boundary keeps the three rungs it stood at, that reach being grown as padding and handed straight back as margin; one section is open at a time, so no two strokes are ever visible to meet in between.
+
 ## v0.7.0 - 2026-08-19
 
 **A discrete hop outranks the follow.** `scrollToField` ends the follow it displaces, so a hop taken while a follow is live is no longer re-centred away at the next `refresh` — the hop has just moved the caret off screen, which is where the guard cannot save it. A hop that placed nothing moved nothing and takes no rank.

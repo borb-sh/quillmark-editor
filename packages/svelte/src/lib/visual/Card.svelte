@@ -128,9 +128,9 @@
 	const ungrouped = $derived(card.sections.filter((s) => s.group == null));
 	const grouped = $derived(card.sections.filter((s) => s.group != null));
 
-	// A schema that declares no fields still gets a body, and an empty metadata block
-	// draws nothing while the card's gap still counts it twice, standing a rung of dead
-	// space over the body.
+	// A schema that declares no fields still gets a body, and an empty payload block is
+	// worse than none: its two rules land on one y and paint as a single stroke of twice
+	// the width, and the card's gap counts the block twice besides.
 	const hasMeta = $derived(ungrouped.length > 0 || grouped.length > 0);
 
 	// Seeded once from the card's shape. Card is keyed by stable id, so this survives the
@@ -251,7 +251,11 @@
 
 		<div class="qm-card-body">
 			{#if hasMeta}
-				<div class="qm-card-meta" class:qm-meta-bottom={card.hasBody}>
+				<div
+					class="qm-card-meta"
+					class:qm-meta-top={!card.isMain}
+					class:qm-meta-bottom={card.hasBody}
+				>
 					{#each ungrouped as section (section.group ?? '_ungrouped')}
 						<div class="qm-section">
 							{@render sectionFields(section.fields)}
@@ -511,17 +515,31 @@
 		flex-direction: column;
 		gap: var(--_qm-space);
 	}
-	/* The one horizontal the card draws, and it is the one thing a horizontal is for: it
-	 ranks the payload against the body rather than saying what is inside what, which is
-	 the verticals' job (ARCHITECTURE §"A plane is a tone"). Conditional on a body, since
-	 with none it would divide the payload from the card's own edge a rung below it.
+	/* One rung in two places: what a rule insets its own edge by, and what a vertical
+	 reaches past the box it is drawn on. `--_qm-nest` is the distance a stroke stands off
+	 the content it holds — the same one the fields keep off the vertical inline — and a
+	 section's box already spends `--_qm-space` of it capping its own ends, so both spend
+	 the difference. That is what squares the corner: the field stands the same rung off
+	 the rule above it as off the vertical beside it. */
+	.qm-card-meta {
+		--stroke-reach: calc(var(--_qm-nest) - var(--_qm-space));
+	}
+	/* The card's two horizontals, and ranking is the one thing a horizontal is for: they
+	 stand the payload against the title above it and the body below it, where saying what
+	 sits inside what is the verticals' (ARCHITECTURE §"A plane is a tone"). Each is
+	 conditional on what it ranks against: `main` is headerless, and a card with no body
+	 has nothing under the payload to divide it from.
 
-	 The inset stands the rule off the last control at the rung the body sits under it by,
-	 taking the section's own end cap into account: `--_qm-space-2` here, plus that cap,
-	 is the `--_qm-space-3` the card spends between its blocks. */
+	 The inset is the rule's own, so it goes with it: a card drawing one horizontal insets
+	 that end and not the other. The air outside the pair is the `--_qm-space-3` the card
+	 spends between its blocks. */
+	.qm-meta-top {
+		border-top: var(--_qm-border-width) solid var(--_qm-border);
+		padding-top: var(--stroke-reach);
+	}
 	.qm-meta-bottom {
 		border-bottom: var(--_qm-border-width) solid var(--_qm-border);
-		padding-bottom: var(--_qm-space-2);
+		padding-bottom: var(--stroke-reach);
 	}
 	/* A section's share of the boundary between sections: one rung at each end, so two of
 	 them stand three of it apart whichever kind they are (above). The accordion spends the
@@ -577,12 +595,22 @@
 	 On the group rather than on its panel: what the stroke marks is the section, and a
 	 section is its header and what hangs under it. Drawn transparent when closed rather
 	 than absent, so a toggle moves no text — and closed, there is nothing under the header
-	 for it to gather. Its caps are the header's block padding above and the panel's below,
-	 at the rung the ungrouped section spends on both of its own ends. */
+	 for it to gather.
+
+	 The stroke caps at `--_qm-nest`, at both ends and on every section alike. Its box
+	 already spends `--_qm-space` of that — the header's block padding above, the panel's
+	 below, the rung the ungrouped section spends on its own two ends — so the rest is
+	 grown here and handed straight back as margin: the stroke lengthens, and a section
+	 boundary keeps the three rungs it stood at. What the stroke reaches into is the air of
+	 that boundary, or, where the section is the payload's first or last, exactly the inset
+	 its rule took — so it lands on the rule at a corner with nothing drawn longer for it.
+	 One section open at a time, so no two strokes are ever visible to meet in between. */
 	.qm-group {
 		display: flex;
 		flex-direction: column;
 		border-left: var(--_qm-border-width) solid transparent;
+		padding-block: var(--stroke-reach);
+		margin-block: calc(-1 * var(--stroke-reach));
 		transition: border-color var(--_qm-duration-slow) var(--_qm-ease-reverse);
 	}
 	.qm-group.qm-open {
@@ -590,13 +618,13 @@
 	}
 	/* Symmetric vertical padding at the tightest rung that still clears WCAG 2.5.8's
 	 24×24 floor: the header is the whole row, so adjacent labels share one rhythm with no
-	 dead strip outside the button. Horizontal is one rung left and zero right — left,
-	 because at zero the chevron stands on the section's vertical with only the icon box's
-	 own bearing between them, and the glyph's rotation swaps which bearing faces the
-	 stroke; right, because the row is the target and an inset there is target given back.
-	 The rung is the glyph's own and not the nesting step the fields under it take: what
-	 the heading names is the section, so it rides the vertical rather than the column its
-	 fields start on.
+	 dead strip outside the button. Horizontal is the nesting step left and zero right —
+	 left, because the chevron opening the heading starts where the fields under it start,
+	 so everything the section holds stands off its vertical by one rung and the corner the
+	 stroke closes against a rule reads square; right, because the row is the target and an
+	 inset there is target given back. What the glyph gives up by taking the step is the
+	 gutter: at a tighter rung it stands in the clearance itself, with only its own bearing
+	 between ink and stroke, and the rotation swaps which bearing faces which.
 
 	 `font: inherit` because a UA button inherits no face, then the body rung, one step
 	 over the field labels beneath it: at the label rung the two read as one register and
@@ -609,7 +637,7 @@
 		width: 100%;
 		border: none;
 		background: transparent;
-		padding: var(--_qm-space) 0 var(--_qm-space) var(--_qm-space);
+		padding: var(--_qm-space) 0 var(--_qm-space) var(--_qm-nest);
 		font: inherit;
 		font-size: var(--_qm-text-body);
 		font-weight: var(--_qm-weight-mid);
