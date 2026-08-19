@@ -4,7 +4,7 @@
 
 ## Unreleased
 
-**A card's payload is closed at both ends, and its verticals meet the rules at a corner.** The rule under the card title is back, so the payload is ranked against the title above it as it already was against the body below it; `main` is headerless and draws neither. Both rules sit on the payload block's own edges rather than in the air around it, which is what lets every section keep the one `--_qm-space` cap at every end and still land its vertical on the rule where it is the first or the last — a corner closed by the rhythm rather than by two strokes drawn longer than the rest. The air the rules used to sit inside is now outside the pair, at the `--_qm-space-3` the card spends between its blocks.
+**A card's payload is closed at both ends, and its verticals meet the rules at a square corner.** The rule under the card title is back, so the payload is ranked against the title above it as it already was against the body below it; `main` is headerless and draws neither. Each rule insets its own edge by `--_qm-nest` — the rung the fields already keep off the vertical beside them — so a field stands the same distance off the rule above it as off the stroke to its left, and the corner reads square rather than pinched. The vertical reaches that same rung past the box it is drawn on, at both ends and on every section alike, its box having already spent `--_qm-space` of it: so a section's stroke spans its slot, from where the section above ends to where the section below begins, and where the section is the payload's first or last that boundary is the rule it lands on. A section boundary keeps the three rungs it stood at, and one section being open at a time, no two strokes are ever visible to meet in between.
 
 ## v0.7.0 - 2026-08-19
 

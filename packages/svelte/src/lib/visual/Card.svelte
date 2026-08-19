@@ -515,22 +515,31 @@
 		flex-direction: column;
 		gap: var(--_qm-space);
 	}
+	/* One rung in two places: what a rule insets its own edge by, and what a vertical
+	 reaches past the box it is drawn on. `--_qm-nest` is the distance a stroke stands off
+	 the content it holds — the same one the fields keep off the vertical inline — and a
+	 section's box already spends `--_qm-space` of it capping its own ends, so both spend
+	 the difference. That is what squares the corner: the field stands the same rung off
+	 the rule above it as off the vertical beside it. */
+	.qm-card-meta {
+		--stroke-reach: calc(var(--_qm-nest) - var(--_qm-space));
+	}
 	/* The card's two horizontals, and ranking is the one thing a horizontal is for: they
 	 stand the payload against the title above it and the body below it, where saying what
 	 sits inside what is the verticals' (ARCHITECTURE §"A plane is a tone"). Each is
 	 conditional on what it ranks against: `main` is headerless, and a card with no body
 	 has nothing under the payload to divide it from.
 
-	 They are the payload's own block edges rather than lines set into the air around it,
-	 which is what closes a corner with no stroke drawn longer to reach one: every section
-	 caps at the one rung at every end, so its vertical runs its box edge to edge, and the
-	 first and last sections end on the rule they meet. The air is outside the pair, at
-	 the `--_qm-space-3` the card spends between its blocks. */
+	 The inset is the rule's own, so it goes with it: a card drawing one horizontal insets
+	 that end and not the other. The air outside the pair is the `--_qm-space-3` the card
+	 spends between its blocks. */
 	.qm-meta-top {
 		border-top: var(--_qm-border-width) solid var(--_qm-border);
+		padding-top: var(--stroke-reach);
 	}
 	.qm-meta-bottom {
 		border-bottom: var(--_qm-border-width) solid var(--_qm-border);
+		padding-bottom: var(--stroke-reach);
 	}
 	/* A section's share of the boundary between sections: one rung at each end, so two of
 	 them stand three of it apart whichever kind they are (above). The accordion spends the
@@ -586,12 +595,22 @@
 	 On the group rather than on its panel: what the stroke marks is the section, and a
 	 section is its header and what hangs under it. Drawn transparent when closed rather
 	 than absent, so a toggle moves no text — and closed, there is nothing under the header
-	 for it to gather. Its caps are the header's block padding above and the panel's below,
-	 at the rung the ungrouped section spends on both of its own ends. */
+	 for it to gather.
+
+	 The stroke caps at `--_qm-nest`, at both ends and on every section alike. Its box
+	 already spends `--_qm-space` of that — the header's block padding above, the panel's
+	 below, the rung the ungrouped section spends on its own two ends — so the rest is
+	 grown here and handed straight back as margin: the stroke lengthens, and a section
+	 boundary keeps the three rungs it stood at. What the stroke reaches into is the air of
+	 that boundary, or, where the section is the payload's first or last, exactly the inset
+	 its rule took — so it lands on the rule at a corner with nothing drawn longer for it.
+	 One section open at a time, so no two strokes are ever visible to meet in between. */
 	.qm-group {
 		display: flex;
 		flex-direction: column;
 		border-left: var(--_qm-border-width) solid transparent;
+		padding-block: var(--stroke-reach);
+		margin-block: calc(-1 * var(--stroke-reach));
 		transition: border-color var(--_qm-duration-slow) var(--_qm-ease-reverse);
 	}
 	.qm-group.qm-open {
