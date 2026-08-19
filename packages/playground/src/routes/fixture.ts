@@ -9,6 +9,9 @@
 import { Quiver } from '@quillmark/quiver';
 import { base } from '$app/paths';
 
+/** The quill a route opens unless it is asked for another. */
+export const DEFAULT_FIXTURE = 'specimen';
+
 let quiverP: Promise<Quiver> | undefined;
 
 function quiver(): Promise<Quiver> {
@@ -16,13 +19,26 @@ function quiver(): Promise<Quiver> {
 }
 
 /**
- * The reference quill's file tree, from the quiver: the `Map` `Quill.fromTree`
- * accepts, keyed `"/"`-joined relative to the quill root.
+ * Every quill the served quiver holds, which is the pack's call rather than this
+ * module's (PLAYGROUND §"Which quill, and what is seeded into it").
+ *
+ * Sync on the quiver, which materializes its catalog as it loads, so a picker over
+ * this needs no loading state past the one its route already has.
+ */
+export async function fixtureNames(): Promise<string[]> {
+	return (await quiver()).quillNames();
+}
+
+/**
+ * A fixture quill's file tree, from the quiver: the `Map` `Quill.fromTree` accepts,
+ * keyed `"/"`-joined relative to the quill root. A bare name takes the newest version.
  *
  * A tree rather than the `Quill` `getQuill` hands back, because a route frees the
  * handles it opens and the quiver's cached quill is not a route's to free: it is
  * held unfreed for the page. The cost is one materialization the caller discards.
  */
-export async function loadSpecimenTree(): Promise<Map<string, Uint8Array>> {
-	return (await (await quiver()).getQuill('specimen')).toTree();
+export async function loadFixtureTree(
+	name: string = DEFAULT_FIXTURE
+): Promise<Map<string, Uint8Array>> {
+	return (await (await quiver()).getQuill(name)).toTree();
 }
