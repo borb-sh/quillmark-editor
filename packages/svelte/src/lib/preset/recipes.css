@@ -123,9 +123,12 @@ html:has(.qm-workspace) {
    pane needs no `inert` and the host needs no breakpoint in JS. Both stay mounted (a
    preview binds its handle once, an editor holds a caret, a history and a scroll), so
    the switch is presentational, never conditional. A pane hidden this way keeps the
-   pixels it had (the paint loop's band sweep no-ops on an empty visible set) and repaints
-   from its live box when it comes back, which its resize observer sees as a width moving
-   off zero.
+   pixels it had: the paint loop's band sweep no-ops on an empty visible set, and its
+   resize observer holds the last real width rather than rastering at the 0×0 box a hidden
+   pane reports, so what comes back at the width it left needs no paint at all. The
+   preview's caret follow spans the same window — a trip asked for against a pane with no
+   box is held and run when it has one (`preview/bridge.ts`), the pane opening at the
+   caret rather than several edits behind it.
 
    Height is the second clause because a landscape phone passes the first one: it clears
    the width with room for two tracks and has no body left to put them in. A desktop window

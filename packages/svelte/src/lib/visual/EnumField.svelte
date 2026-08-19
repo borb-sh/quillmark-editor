@@ -108,10 +108,12 @@
 			<Icon name="chevron-down" size={14} />
 		</Select.Trigger>
 		<Select.Portal to={portalTarget}>
-			<Select.Content sideOffset={4}>
+			<Select.Content collisionBoundary={portalTarget ?? []} sideOffset={4}>
 				<!-- The list portals out of the trigger's DOM but into the nearest
 				     `[data-qm-root]`, and carries the marker itself, like FormatPopover.
-				     The pill is this
+				     That root is the boundary a flip is measured against too, being the box
+				     that clips the surface where the consumer scrolls one; the viewport
+				     default knows nothing of that. The pill is this
 				     element (not the primitive's) because scoped CSS keys off which
 				     component owns the markup: a `class` passed to a primitive is a
 				     plain string and never picks up the scoping hash. -->

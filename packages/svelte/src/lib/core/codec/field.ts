@@ -315,7 +315,8 @@ export function createField(opts: CreateFieldOpts): FieldController {
 						// A focus event does not bubble, so the leaf's own `focus` handler
 						// never fires for a cell: without this the active address would not
 						// follow a caret clicked straight into a table.
-						onCellFocus: () => opts.onFocus?.(addr)
+						onCellFocus: () => opts.onFocus?.(addr),
+						clearance
 					})
 				},
 		dispatchTransaction: (tr) => {

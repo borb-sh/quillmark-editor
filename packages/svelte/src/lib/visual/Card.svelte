@@ -190,6 +190,9 @@
 	 * an insert, `nearest` for a reorder. The reduced-motion guard is JS rather than the
 	 * CSS the accordion uses: a scroll's behaviour is an argument, not a transition a
 	 * media query can cancel.
+	 *
+	 * The caller is what waits out a reorder's own trip before asking: the run holds the
+	 * slot this card sits in, and the slot is the stack's (`VisualEditorInner`).
 	 */
 	export function scrollIntoViewCard(block: ScrollLogicalPosition): void {
 		const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;

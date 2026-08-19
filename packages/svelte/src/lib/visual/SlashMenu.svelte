@@ -72,8 +72,15 @@
 		     edge under the character that opened the menu, and stays there as the query is
 		     typed. Zero offset, because a gap reads as a surface floating near the caret
 		     rather than one growing out of it. -->
+		<!-- The boundary is the root the surface portals into, the box that clips it where
+		     the consumer scrolls one ({@link FormatPopover} states it in full). It is also
+		     what keeps the row scroll above inside the list: `nearest` scrolls any ancestor
+		     the row is not visible in, and a surface raised into room the pane clips leaves
+		     the pane one of them — so the scroll moves the pane, and with it the caret this
+		     menu is anchored to. -->
 		<Popover.Content
 			customAnchor={menu?.anchor ?? null}
+			collisionBoundary={portalTarget ?? []}
 			side="bottom"
 			align="start"
 			trapFocus={false}

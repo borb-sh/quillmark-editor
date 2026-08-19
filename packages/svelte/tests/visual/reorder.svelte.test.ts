@@ -11,10 +11,10 @@
 // refused write pins a diagnostic to its field, and the diagnostic travels with the
 // card rather than staying at the index.
 import { describe, it, expect, afterEach } from 'vitest';
-import { mount, unmount, flushSync } from 'svelte';
+import { mount, unmount, flushSync, tick } from 'svelte';
 import type { Document, Quill } from '@quillmark/wasm';
 import { addrForFieldPath } from '$lib/core';
-import type { ActiveLeaf, EditorChange } from '$lib/visual';
+import type { ActiveLeaf, CardId, EditorChange } from '$lib/visual';
 import VisualEditor from '$lib/visual/VisualEditor.svelte';
 import { quill } from '../helpers/fixtures.js';
 
@@ -53,6 +53,13 @@ afterEach(() => {
 	cleanup = undefined;
 });
 
+/** The verbs the card controls call, for the two a single gesture cannot put inside one
+ *  tick: a click flushes, and the coalescing is about what does not. */
+interface EditorRef {
+	insertCard(kind: string, at?: number): CardId | undefined;
+	moveCard(cardId: CardId, dir: -1 | 1): void;
+}
+
 function mountEditor(q: Quill, doc: Document) {
 	const target = document.createElement('div');
 	document.body.appendChild(target);
@@ -72,7 +79,7 @@ function mountEditor(q: Quill, doc: Document) {
 		void unmount(app);
 		target.remove();
 	};
-	return { target, changes, actives };
+	return { target, changes, actives, editor: app as unknown as EditorRef };
 }
 
 /** The composable cards, in DOM order (the main card renders outside the slots). */
@@ -165,6 +172,30 @@ describe('a reorder through the card control', () => {
 		expect(refusal(after[0])).toBeNull();
 		expect(refusal(after[1])?.textContent).toContain('could not be coerced');
 		expect(leafKeys(after[1])).toContain('c0:$body');
+	});
+});
+
+// The post-mutation scroll is one per tick, on the terms of that tick's last mutation:
+// two of them are two trips over one scroller. An insert and a move of the *same* card
+// are the pair a per-id handle cannot tell apart — two calls naming one id, one asking
+// for `center` and one for `nearest`.
+describe('two card mutations inside one tick', () => {
+	it('scroll once, on the terms the last of them asked for', async () => {
+		const q = quill();
+		const { editor } = mountEditor(q, docWithTwoCards(q));
+		const trips: (ScrollIntoViewOptions | undefined)[] = [];
+		const scroll = Element.prototype.scrollIntoView;
+		Element.prototype.scrollIntoView = function (arg?: boolean | ScrollIntoViewOptions) {
+			trips.push(arg as ScrollIntoViewOptions);
+		};
+
+		const id = editor.insertCard('section', 1);
+		editor.moveCard(id!, -1);
+		await tick();
+		await tick();
+
+		expect(trips.map((t) => t?.block)).toEqual(['nearest']);
+		Element.prototype.scrollIntoView = scroll;
 	});
 });
 

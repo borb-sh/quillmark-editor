@@ -11,6 +11,14 @@ import type { AnimationConfig } from 'svelte/animate';
  *  a second transform over it. */
 const RUN_ID = 'qm-reorder';
 
+/** The trips this module is running on `node`. A run holds the slot at its pre-move
+ *  position for its whole length, so anything that measures the node's box waits on
+ *  these rather than reading the one a transform is holding. */
+export function reorderTrips(node: HTMLElement): Animation[] {
+	if (typeof node.getAnimations !== 'function') return [];
+	return node.getAnimations().filter((run) => run.id === RUN_ID);
+}
+
 /** A duration rung off `style`, in ms; `undefined` where the derivation is out of reach
  *  (an unstyled root, or jsdom, where `getComputedStyle` reports custom properties as
  *  empty). No rung, no motion: a fallback here would be the scale restated in the one
