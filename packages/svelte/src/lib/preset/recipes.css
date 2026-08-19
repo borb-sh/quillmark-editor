@@ -50,11 +50,19 @@
    root scroller counting the overflow its panes clip, and a wheel over the chrome drags
    the whole app off the top. Three bands (a head, the body, an optional foot), and the
    body takes what is left and may shrink below its content, so the panes in it own
-   their overflow and hold still while their contents move. */
+   their overflow and hold still while their contents move.
+
+   The one column is stated for the same reason the rows are: an implicit track is `auto`,
+   which is sized by what a band holds, and a `.qm-split` under one contributes its items'
+   max-content through its `fr` tracks. The shell would take the width of the widest thing
+   mounted in it instead of the viewport's, and every band would be that wide with the
+   second pane past the edge. A host holding its content to a maximum never sees it; one
+   spending the whole screen sees it on the first surface it mounts. */
 .qm-workspace {
 	position: fixed;
 	inset: 0;
 	display: grid;
+	grid-template-columns: minmax(0, 1fr);
 	grid-template-rows: auto minmax(0, 1fr) auto;
 	overflow: hidden;
 }
