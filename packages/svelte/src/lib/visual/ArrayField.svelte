@@ -42,6 +42,7 @@
 	import { emptyContent } from '../core/codec/index.js';
 	import { createLifespan } from '../core/teardown.js';
 	import { IdSeq, controlKind } from './structure.js';
+	import { holdStill } from './hold.js';
 	import Icon from './icons/Icon.svelte';
 	import TextField from './TextField.svelte';
 	import ObjectField from './ObjectField.svelte';
@@ -166,8 +167,15 @@
 	function untitled(k: number): string {
 		return label != null ? t.strings.elementUntitled(label, k + 1) : String(k + 1);
 	}
-	function toggleRow(id: string): void {
-		openId = openId === id ? undefined : id;
+	/** The row gesture. An open row's subform unmounts under its own summary, so the only
+	 *  box that can carry this summary off is a row closing above it, and that is what the
+	 *  scroll pays for (`hold.ts`). */
+	function toggleRow(id: string, summary: HTMLElement): void {
+		const closing = openId === id ? undefined : openId;
+		const above = closing !== undefined && ids.indexOf(closing) < ids.indexOf(id);
+		holdStill(above ? summary : undefined, () => {
+			openId = openId === id ? undefined : id;
+		});
 	}
 
 	// The awaited flush below is the only work that outlives a gesture here, so the
@@ -365,7 +373,7 @@
 							type="button"
 							class="qm-control-box qm-focus-ring qm-element-summary"
 							aria-expanded={open}
-							onclick={() => toggleRow(id)}
+							onclick={(e) => toggleRow(id, e.currentTarget)}
 						>
 							<!-- Leading, and it rotates: trailing is the figure for pushing a new
 							     screen, where this unfolds in place. Same glyph, same rotation and
