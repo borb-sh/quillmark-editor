@@ -77,6 +77,11 @@ main:
           type: boolean
           default: false
           description: Print the address in the letterhead.
+        note:
+          type: plaintext
+          inline: true
+          default: ""
+          description: How to reach them, in their own words. The content property, which reads at its codec one key in and mounts the prose leaf a scalar `plaintext` field mounts.
       ui:
         title: Point of contact
         group: identity

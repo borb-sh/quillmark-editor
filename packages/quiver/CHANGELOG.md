@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**The `@quillmark/wasm` peer floor is `>=0.108.1-0`.** Nothing here reads a content address, so the step lands outside this package; the floor moves because a quiver hands out `Quill` handles the consumer's copy of the artifact has to be able to parse.
+
 ## v0.24.0 - 2026-08-18
 
 **The `@quillmark/wasm` peer floor is `>=0.108.0-0`.** Nothing here reads a schema shape or a region address, so the release's breaks land outside this package; the floor moves because a quiver hands out `Quill` handles the consumer's copy of the artifact has to be able to parse. Five schema declarations now fail at `getQuill`: a nested `richtext(inline)` `default:` or `example:` spanning more than one paragraph, a container-shaped literal on a variant-bearing enum, two enum variants declaring one name differently, a `default:` or `example:` on a typed dictionary, and `must_fill:` anywhere at all.

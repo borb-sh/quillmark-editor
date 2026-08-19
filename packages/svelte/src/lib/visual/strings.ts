@@ -60,9 +60,10 @@ export interface VisualStrings extends TableChromeStrings, SlashStrings {
 
 	// ── Subform ───────────────────────────────────────────────────────────────
 	/**
-	 * What stands where a subform declines to recurse (a nested prose / array /
-	 * object property), and where to edit that property instead. The whole sentence,
-	 * since a translator orders the kind within it.
+	 * What stands where a subform declines to recurse — a nested `array` or `object`
+	 * property, whose own figure would nest a field past the depth this one draws —
+	 * and where to edit that property instead. The whole sentence, since a translator
+	 * orders the kind within it.
 	 */
 	nestedUnsupported: (kind: string) => string;
 	/**
