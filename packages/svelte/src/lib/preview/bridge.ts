@@ -22,6 +22,8 @@ import {
 	type PercentRect
 } from './geometry.js';
 
+/** Both trips are held while the pane has no box to measure against, and the last one
+ *  held runs when it has one again. */
 export interface BridgeController {
 	/** Scroll `field`'s first box to centre; `false` when this compile places none
 	 *  for that address, which is the whole of what the preview can say about it. */
@@ -32,6 +34,14 @@ export interface BridgeController {
 	 */
 	focusPosition(field: string, pos: number): void;
 	destroy(): void;
+}
+
+/** A pane hidden by the shell's narrow switch (`preset/recipes.css`) measures 0×0, and so
+ *  does every box on it: the clearance arithmetic reads that as a caret clear of both
+ *  edges, and a centring computes its trip out of zeros. Neither is an answer about where
+ *  the caret is. */
+function hasBox(port: DOMRect): boolean {
+	return port.width > 0 && port.height > 0;
 }
 
 export function createBridge(
@@ -101,30 +111,68 @@ export function createBridge(
 		return target.top - target.height >= port.top && target.bottom + target.height <= port.bottom;
 	}
 
-	return {
-		scrollToField(field) {
-			const box = boxesForField(field, session.fieldBoxes(field), session.regions())[0];
-			if (!box) return false;
-			const slot = slots[box.page];
-			if (!slot) return false;
-			// A discrete act ("show me this field"), so it centres every time, unlike
-			// the continuous hop below.
-			centre(measure(slot, rectToPercent(box.rect, slot.size)));
+	// The trip a pane with no box could not run, held for the box coming back. One, and
+	// the last one asked for: a caret hop supersedes the hop before it on a showing pane
+	// too.
+	let held: (() => void) | undefined;
+
+	// The re-assert. Nothing else asks on the way back: `refresh` re-asks only on a
+	// recompile, and the reader who has just tapped Preview is not typing, so the pane
+	// would open where the caret was several edits ago. Guarded for jsdom, which ships no
+	// ResizeObserver and lays out nothing for one to report.
+	if (typeof ResizeObserver !== 'undefined') {
+		const observer = new ResizeObserver(() => {
+			if (!held || !hasBox(container.getBoundingClientRect())) return;
+			const trip = held;
+			held = undefined;
+			trip();
+		});
+		observer.observe(container);
+		unlisten.push(() => observer.disconnect());
+	}
+
+	function scrollToField(field: string): boolean {
+		const box = boxesForField(field, session.fieldBoxes(field), session.regions())[0];
+		if (!box) return false;
+		const slot = slots[box.page];
+		if (!slot) return false;
+		// The address is placed, which is the whole of what the `boolean` answers; a pane
+		// with no box yet is not a second no.
+		if (!hasBox(container.getBoundingClientRect())) {
+			held = () => void scrollToField(field);
 			return true;
-		},
-		focusPosition(field, pos) {
-			const region = session.locate(field, pos);
-			if (!region) return;
-			const slot = slots[region.page];
-			if (!slot) return;
-			// The continuous hop: one call per keystroke and per arrow key, so it moves
-			// the pane only when the caret has left the fold. Centring unconditionally
-			// takes the scrollport back from the user on every one of them, including
-			// the ones that changed nothing about where the caret already was.
-			const target = measure(slot, rectToPercent(region.rect, slot.size));
-			if (clearOfTheFold(target)) return;
-			centre(target);
-		},
+		}
+		// A discrete act ("show me this field"), so it centres every time, unlike
+		// the continuous hop below.
+		centre(measure(slot, rectToPercent(box.rect, slot.size)));
+		return true;
+	}
+
+	function focusPosition(field: string, pos: number): void {
+		const region = session.locate(field, pos);
+		if (!region) return;
+		const slot = slots[region.page];
+		if (!slot) return;
+		// Held before the guard below, which a pane measuring zero answers "already clear"
+		// for every keystroke of (`hasBox`): the follow would die silently for as long as
+		// a track is hidden. What is held is the request, not the trip, so it re-locates
+		// against whatever compile is current when the pane comes back.
+		if (!hasBox(container.getBoundingClientRect())) {
+			held = () => focusPosition(field, pos);
+			return;
+		}
+		// The continuous hop: one call per keystroke and per arrow key, so it moves
+		// the pane only when the caret has left the fold. Centring unconditionally
+		// takes the scrollport back from the user on every one of them, including
+		// the ones that changed nothing about where the caret already was.
+		const target = measure(slot, rectToPercent(region.rect, slot.size));
+		if (clearOfTheFold(target)) return;
+		centre(target);
+	}
+
+	return {
+		scrollToField,
+		focusPosition,
 		destroy() {
 			for (const off of unlisten) off();
 		}

@@ -109,6 +109,10 @@ export interface TableViewDeps {
 	/** A cell took focus: the leaf's own `focus` handler never fires for one (a focus
 	 *  event does not bubble), so the active address would not follow the caret. */
 	onCellFocus: () => void;
+	/** The clearance a revealed caret keeps, in the leaf's own line box (`field.ts`), which
+	 *  is a cell's line box too. `undefined` where the derivation is out of reach (jsdom),
+	 *  which is PM's 5px default. */
+	clearance: number | undefined;
 }
 
 /** The one glyph this chrome draws, as the path data a DOM node can carry — its own set
@@ -1059,6 +1063,11 @@ class TableIslandView implements NodeView {
 				plugins: cellPlugins(this.cellKeys(r, c))
 			}),
 			attributes: { 'aria-label': name, class: 'qm-table-cell-editor' },
+			// A cell is one of the leaf's lines, so a reveal here keeps the leaf's
+			// clearance: PM's 5px default is the caret visible and unusable that rung
+			// exists to refuse (`field.ts`).
+			scrollThreshold: this.deps.clearance,
+			scrollMargin: this.deps.clearance,
 			dispatchTransaction: (tr) => {
 				const next = view.state.apply(tr);
 				view.updateState(next);
@@ -1119,8 +1128,12 @@ class TableIslandView implements NodeView {
 		const mounted = this.cells.find((m) => m.r === row && m.c === col);
 		if (!mounted) return;
 		const { view } = mounted;
+		// Flagged, for the reason the leaf's own landing is (`field.ts`, `setCaret`): PM
+		// focuses with `preventScroll`, so an unflagged dispatch lands the caret where no
+		// scroller has moved to — a Tab past the right edge of the horizontal scroller a
+		// wide table lives in, or the row an Enter on the last one appends below the fold.
 		view.focus();
-		view.dispatch(view.state.tr.setSelection(Selection.atEnd(view.state.doc)));
+		view.dispatch(view.state.tr.setSelection(Selection.atEnd(view.state.doc)).scrollIntoView());
 	}
 
 	/**

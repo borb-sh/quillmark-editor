@@ -224,9 +224,16 @@ export function createPaintLoop(
 		if (rafId) return;
 		rafId = requestAnimationFrame(() => {
 			rafId = 0;
+			const width = container.clientWidth;
+			// A pane the shell has hidden reports a 0×0 box, which is a width to paint
+			// nothing at rather than a width that moved: `paintSlot` would take its
+			// `clientWidth || widthPt` fallback and freeze every mounted canvas at the 1×
+			// raster. The last real width and any pending force are held instead — the
+			// observer fires again when the pane has a box, and a return at that same
+			// width needs no raster, the pixels being the ones it was hidden with.
+			if (width === 0) return;
 			const forced = forcePending;
 			forcePending = false;
-			const width = container.clientWidth;
 			if (!forced && width === lastWidth) return;
 			lastWidth = width;
 			repaint();

@@ -66,7 +66,7 @@
 	} from './diagnostics.js';
 	import { fieldDomIds, groupPanelId } from './domid.js';
 	import { createLeafRegistry, type FieldControl } from './leaves.js';
-	import { reorder } from './motion.js';
+	import { reorder, reorderTrips } from './motion.js';
 	import { tipsChannel } from './tips.js';
 	import { patchEditorExt } from './ext.js';
 	import Card from './Card.svelte';
@@ -185,6 +185,9 @@
 	};
 	let mainCard = $state<CardHandle | undefined>(undefined);
 	let cardRefs = $state<(CardHandle | undefined)[]>([]);
+	/** The slot each card sits in: what a reorder animates, and so what the post-mutation
+	 *  scroll waits on before it measures anything. */
+	let slotEls = $state<(HTMLElement | undefined)[]>([]);
 	/** The stack's own element: it carries `data-qm-root`, so it is what the kind
 	 * menu portals into, the way each leaf's surface resolves its nearest root. */
 	let rootEl = $state<HTMLElement | undefined>(undefined);
@@ -327,16 +330,29 @@
 	 * on a document of any length an insert lands off-screen, and a
 	 * viewport that does not follow reads as nothing happening.
 	 *
-	 * Coalesced on a single pending id: two quick adds resolve their `tick()` in
-	 * order, the earlier one sees a newer pending id and drops out, so one smooth
-	 * scroll runs to the last card rather than two fighting over the same scroller.
+	 * Coalesced on the last call: each takes a ticket and a continuation holding a stale
+	 * one drops out, so two mutations inside a tick run one smooth scroll to the last of
+	 * them rather than two fighting over the same scroller. A ticket rather than the id
+	 * being scrolled to, because an insert and a move of the *same* card are two calls
+	 * naming one id, on different terms — `center` against `nearest`.
 	 */
-	let pendingScrollId: string | null = null;
+	let scrollTicket = 0;
 	async function scrollCardIntoView(id: string, block: ScrollLogicalPosition): Promise<void> {
-		pendingScrollId = id;
+		const ticket = ++scrollTicket;
 		if (!(await span.resumes(tick()))) return;
-		if (pendingScrollId !== id) return;
-		pendingScrollId = null;
+		if (ticket !== scrollTicket) return;
+		// A reorder is running by this flush and holds the slot at its pre-move position
+		// for the length of the trip (`motion.ts`), so asking now measures the box the
+		// card is leaving — where a `nearest` would take the stack back to for the card
+		// that moved in from off screen. The trip says the card moved; the scroll follows
+		// it to where it landed. `allSettled`, because a second reorder cancels the first
+		// and a cancelled run rejects.
+		const slot = slotEls[cardIndexOf(id)];
+		const trips = slot ? reorderTrips(slot) : [];
+		if (trips.length) {
+			if (!(await span.resumes(Promise.allSettled(trips.map((trip) => trip.finished))))) return;
+			if (ticket !== scrollTicket) return;
+		}
 		const i = cardIndexOf(id);
 		if (i >= 0) cardRefs[i]?.scrollIntoViewCard(block);
 	}
@@ -813,7 +829,7 @@
 	 rather than being slid across. It is also the shape `animate:` asks for, being the
 	 keyed block's only child. -->
 	{#each model.cards as c, i (c.id)}
-		<div class="qm-card-slot" animate:reorder={isReordering}>
+		<div class="qm-card-slot" bind:this={slotEls[i]} animate:reorder={isReordering}>
 			<Card
 				bind:this={cardRefs[i]}
 				card={c}
@@ -874,10 +890,12 @@
 						>{marked ? merged.addCard : ''}</DropdownMenu.Trigger
 					>
 					<DropdownMenu.Portal to={rootEl}>
-						<DropdownMenu.Content sideOffset={4}>
+						<DropdownMenu.Content collisionBoundary={rootEl ?? []} sideOffset={4}>
 							<!-- Portalled out of the row but into the stack's root, and carrying the
 						     marker itself: floating is still a detached subtree to the
-						     derivation, like FormatPopover and the enum listbox. -->
+						     derivation, like FormatPopover and the enum listbox. The root is the
+						     flip's boundary for the reason it is theirs: it is the box that clips
+						     the surface where the consumer scrolls one. -->
 							<div class="qm-menu-surface" data-qm-root>
 								{#each kinds as k (k)}
 									<DropdownMenu.Item class="qm-menu-item" onSelect={() => addCard(atIndex, k)}
