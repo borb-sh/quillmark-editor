@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.7.1 - 2026-08-19
+
 **A subform's content cell is a leaf, not a line pointing elsewhere.** An `object`'s `plaintext`/`richtext` property and a variant's content cell each mounted a placeholder saying to edit the field from the source view — so the four CUI cells of a memo were drawn, named, obliged and unfillable. Both mount the by-value prose leaf an array element already mounts, reading through `reader.getContentAt` at the codec the cell's own type declares and resting back at it, the container committing whole per edit as it does for every other property. It reaches the third subform too: a content cell of an `object` element's open row reads at `[k, "note"]`. `nestedUnsupported` narrows to what it always described — an `array` or `object` property, whose own figure would nest a field past the depth the subform draws. A cell's label reaches its leaf: `for` cannot name a `contenteditable`, so the association runs the other way and the click comes back through the leaf's own focus, which is also what a subform's `focus()` lands on when the first property is prose. Anchors inside a cell are dropped on the container's value write, and a block `richtext` cell is held to one textblock — the trade an array element already takes.
 
 **The `@quillmark/wasm` peer floor is `>=0.108.1-0`**, where `getContentAt` walks a variant's key. It walked `items` and `properties` alone and answered `edit::field_not_content` naming the `enum` above the cell, so a variant's content cell had no read at its codec and nothing could mount an editor over it. The walk unions the worlds, so a cell of a world that is not live reads absent rather than raising.
