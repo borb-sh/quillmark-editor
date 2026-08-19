@@ -517,21 +517,15 @@
 		border-bottom: var(--_qm-border-width) solid var(--_qm-border);
 		padding-bottom: var(--_qm-space-2);
 	}
-	/* A section's vertical: the ladder's second stroke, one `--_qm-nest` in from the card's
-	 edge and standing its fields the same rung off itself (ARCHITECTURE §"A plane is a
-	 tone"). `--_qm-border` and not `--_qm-accent`: a card's edge and the verticals inside
-	 it are one stroke at three depths, and a tone that changed as it went in would read as
-	 three unrelated lines rather than one figure.
+	/* A section's share of the boundary between sections: one rung at each end, so two of
+	 them stand three of it apart whichever kind they are (above). The accordion spends the
+	 same rung from its header and its panel, where it also caps the vertical those two
+	 edges hold.
 
-	 Unconditional, an ungrouped section being always open; the accordion draws the same
-	 stroke under a condition (below).
-
-	 `padding-block` is the stroke's end caps, equal by construction at one rung: a
-	 vertical that stops on the first label and overruns the last control reads as hung
-	 crooked. */
+	 No stroke and no inset: fields declaring no `ui.group` are the card's own, at the rank
+	 its body is at, and the card's edge is the only container there is to state. A
+	 vertical here would mark a section a reader has no name for. */
 	.qm-section {
-		border-inline-start: var(--_qm-border-width) solid var(--_qm-border);
-		padding-inline-start: var(--_qm-nest);
 		padding-block: var(--_qm-space);
 	}
 	/* Two query containers, one per kind of section, so capacity follows the width the
@@ -567,13 +561,18 @@
 			--cols-half: 2;
 		}
 	}
-	/* The same vertical at the same depth, on the group rather than on its panel: what the
-	 stroke marks is the section, and a section is its header and what hangs under it.
-	 Drawn transparent when closed rather than absent, so a toggle moves no text — and
-	 closed, there is nothing under the header for it to gather.
+	/* The nesting vertical, one `--_qm-nest` in from the card's edge with the panel's
+	 fields the same rung off it (ARCHITECTURE §"A plane is a tone"). `--_qm-border` and
+	 not `--_qm-accent`: a card's edge and the verticals inside it are one stroke at three
+	 depths, and a tone that changed as it went in would read as unrelated lines rather
+	 than one figure. A named section is what earns it, which is why the ungrouped block
+	 above draws none.
 
-	 It declares no caps: the header's block padding stands the stroke off the title and
-	 the panel's off the last control, both at the rung above. */
+	 On the group rather than on its panel: what the stroke marks is the section, and a
+	 section is its header and what hangs under it. Drawn transparent when closed rather
+	 than absent, so a toggle moves no text — and closed, there is nothing under the header
+	 for it to gather. Its caps are the header's block padding above and the panel's below,
+	 at the rung the ungrouped section spends on both of its own ends. */
 	.qm-group {
 		display: flex;
 		flex-direction: column;

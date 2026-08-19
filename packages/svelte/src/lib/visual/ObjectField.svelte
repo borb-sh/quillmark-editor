@@ -4,9 +4,9 @@
  only: a nested prose/array/object property renders a placeholder instead of
  recursing.
 
- The nesting is a vertical at `--_qm-border`, the ladder's third stroke: the card's edge,
- the section's vertical one `--_qm-nest` in, this one a rung further, the properties a
- rung inside it (ARCHITECTURE §"A plane is a tone").
+ The nesting is a vertical at `--_qm-border`, the ladder's last stroke: the card's edge,
+ an open section's vertical one `--_qm-nest` in where the field is in one, this one a rung
+ further, the properties a rung inside it (ARCHITECTURE §"A plane is a tone").
 
  One figure wherever it mounts: a variant's cells under their discriminant and an array
  element's properties under its summary row sit at the depth a field-level subform sits
