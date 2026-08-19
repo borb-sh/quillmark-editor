@@ -3,37 +3,38 @@
 // content, whose top never moves.
 
 import { flushSync } from 'svelte';
-
-/** The editor owns no scrollport of its own — a host that asked for no pane scrolls the
- *  document instead — so which box a scroll moves is the mounting site's answer, found by
- *  walking for it (VISUAL_EDITOR §"Focus and the preview bridge"). */
-function scrollportOf(el: HTMLElement): HTMLElement | undefined {
-	for (let p = el.parentElement; p; p = p.parentElement) {
-		const overflow = getComputedStyle(p).overflowY;
-		if ((overflow === 'auto' || overflow === 'scroll') && p.scrollHeight > p.clientHeight) return p;
-	}
-	return (document.scrollingElement as HTMLElement | null) ?? undefined;
-}
+import { rungMs } from './motion.js';
 
 /**
- * Run `change` with `anchor` left on the viewport line it stands on now.
+ * Run `change` and keep `anchor` inside the fold for the length of the move.
  *
- * A section closing above the pressed control carries that control off the fold, out from
- * under the pointer still resting on it. Holding it still is the whole of the gesture's
- * scroll: the press has already put its target on screen, so there is nowhere to travel.
+ * A section closing above the pressed control carries that control off the fold with it,
+ * and what answers that is the trip every landing here already takes: the minimum, to the
+ * nearest edge, never a centring (VISUAL_EDITOR §"Focus and the preview bridge"). So a
+ * control the collapse never carries out of view costs no scroll at all, and one it would
+ * rides up and parks at the edge — which is where a section just opened wants its header,
+ * the fold below it being the room its fields unfold into. Holding the control still
+ * instead would pin it wherever it was pressed, and a press near the foot of the fold
+ * opens a section into the screen it is sitting on the edge of.
  *
- * The drift is measured rather than computed, so a scrollport the shorter content has
- * already clamped corrects by what is left to spend. `flushSync` is what makes one
- * measurement enough: the change lands in the DOM inside the call, and the second read is
- * the settled layout rather than a frame of it — so the collapse it measures is instant,
- * an animating track still reading its start value one flush in (`Card.revealLeaf` reads
- * the same flush).
+ * Per frame, because both panels move over the motion rung: a trip taken once is taken
+ * against a track that has not moved yet, the same flush a reveal's landing measures in
+ * (`Card.revealLeaf`). `instant`, because a correction chasing a moving target must land
+ * within the frame — a host's `scroll-behavior: smooth` would animate each frame's
+ * correction toward the one before it.
  */
-export function holdStill(anchor: HTMLElement | undefined, change: () => void): void {
-	const port = anchor && scrollportOf(anchor);
-	if (!port) return void change();
-	const top = anchor.getBoundingClientRect().top;
+export function holdInView(anchor: HTMLElement | undefined, change: () => void): void {
+	if (!anchor) return void change();
 	change();
 	flushSync();
-	port.scrollTop += anchor.getBoundingClientRect().top - top;
+	const reveal = (): void => anchor.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+	reveal();
+	const rung = rungMs(getComputedStyle(anchor), '--_qm-duration-slow');
+	if (rung === undefined) return;
+	const until = performance.now() + rung;
+	const step = (now: number): void => {
+		reveal();
+		if (now < until) requestAnimationFrame(step);
+	};
+	requestAnimationFrame(step);
 }

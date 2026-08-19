@@ -42,7 +42,7 @@
 	import { emptyContent } from '../core/codec/index.js';
 	import { createLifespan } from '../core/teardown.js';
 	import { IdSeq, controlKind } from './structure.js';
-	import { holdStill } from './hold.js';
+	import { holdInView } from './hold.js';
 	import Icon from './icons/Icon.svelte';
 	import TextField from './TextField.svelte';
 	import ObjectField from './ObjectField.svelte';
@@ -167,13 +167,10 @@
 	function untitled(k: number): string {
 		return label != null ? t.strings.elementUntitled(label, k + 1) : String(k + 1);
 	}
-	/** An open row's subform unmounts under its own summary, so the only box that can carry
-	 *  this summary off is a row closing above it, and that is what the scroll pays for
-	 *  (`hold.ts`). */
+	/** The summary is the anchor: a row closing above it is what would carry it off the fold,
+	 *  and a row's subform hangs under its own summary (`hold.ts`). */
 	function toggleRow(id: string, summary: HTMLElement): void {
-		const closing = openId === id ? undefined : openId;
-		const above = closing !== undefined && ids.indexOf(closing) < ids.indexOf(id);
-		holdStill(above ? summary : undefined, () => {
+		holdInView(summary, () => {
 			openId = openId === id ? undefined : id;
 		});
 	}

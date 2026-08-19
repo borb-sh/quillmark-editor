@@ -1,65 +1,76 @@
 // @vitest-environment jsdom
-// The scroll that holds a pressed control still across a disclosure's collapse
-// (`visual/hold.ts`). jsdom lays nothing out, so the geometry is stubbed and what is
-// asserted is the decision; the trip itself is the playground's to show.
-import { describe, it, expect } from 'vitest';
-import { holdStill } from '$lib/visual/hold.js';
+// The trip that keeps a pressed control inside the fold across a disclosure's collapse
+// (`visual/hold.ts`). jsdom lays nothing out and reports custom properties as empty, so
+// the rung is stubbed where the chase is under test and what is asserted is the shape of
+// the call; the trip itself is the playground's to show.
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { holdInView } from '$lib/visual/hold.js';
 
-/** A scroller with `tops` to hand back, one per `getBoundingClientRect` on the anchor:
- *  the reads either side of the change, in order. */
-function scrollportWith(tops: number[], scrollTop = 1000) {
-	const port = document.createElement('div');
-	port.style.overflowY = 'auto';
-	Object.defineProperty(port, 'scrollHeight', { value: 4000 });
-	Object.defineProperty(port, 'clientHeight', { value: 700 });
-	port.scrollTop = scrollTop;
-	const anchor = document.createElement('button');
-	port.append(anchor);
-	document.body.append(port);
-	const reads = [...tops];
-	anchor.getBoundingClientRect = () => ({ top: reads.shift() ?? 0 }) as DOMRect;
-	return { port, anchor, left: () => reads.length };
+afterEach(() => vi.restoreAllMocks());
+
+function anchor(): HTMLElement {
+	const el = document.createElement('button');
+	el.scrollIntoView = vi.fn();
+	document.body.append(el);
+	return el;
 }
 
-describe('holdStill', () => {
-	it('spends the drift the change opened up', () => {
-		// The header stood at 440 and the collapse above it left it at 200: 240px of
-		// scroll is what puts it back on its line.
-		const { port, anchor } = scrollportWith([440, 200]);
-		let ran = false;
-		holdStill(anchor, () => (ran = true));
-		expect(ran).toBe(true);
-		expect(port.scrollTop).toBe(760);
+/** A computed style carrying one rung, which jsdom's own reports as empty. */
+function withRung(ms: string): void {
+	const real = window.getComputedStyle.bind(window);
+	vi.spyOn(window, 'getComputedStyle').mockImplementation((el: Element) => {
+		const style = real(el);
+		return { ...style, getPropertyValue: (p: string) => (p === '--_qm-duration-slow' ? ms : '') };
+	});
+}
+
+describe('holdInView', () => {
+	it('reveals the anchor by the minimum trip, instantly', () => {
+		const el = anchor();
+		holdInView(el, () => {});
+		expect(el.scrollIntoView).toHaveBeenCalledWith({ block: 'nearest', behavior: 'instant' });
 	});
 
-	it('spends nothing when the change moved nothing above the anchor', () => {
-		const { port, anchor } = scrollportWith([440, 440]);
-		holdStill(anchor, () => {});
-		expect(port.scrollTop).toBe(1000);
+	it('reveals it against the change, not against the layout before it', () => {
+		const el = anchor();
+		let openAtReveal: string | null = null;
+		(el.scrollIntoView as ReturnType<typeof vi.fn>).mockImplementation(() => {
+			openAtReveal = el.getAttribute('aria-expanded');
+		});
+		holdInView(el, () => el.setAttribute('aria-expanded', 'true'));
+		expect(openAtReveal).toBe('true');
 	});
 
 	it('runs the change with no anchor to hold', () => {
-		const { port } = scrollportWith([440, 200]);
 		let ran = false;
-		holdStill(undefined, () => (ran = true));
+		holdInView(undefined, () => (ran = true));
 		expect(ran).toBe(true);
-		expect(port.scrollTop).toBe(1000);
 	});
 
-	it('walks past a box with no overflow to spend', () => {
-		const { port, anchor } = scrollportWith([440, 200]);
-		const clipped = document.createElement('div');
-		clipped.style.overflowY = 'hidden';
-		anchor.remove();
-		clipped.append(anchor);
-		port.append(clipped);
-		holdStill(anchor, () => {});
-		expect(port.scrollTop).toBe(760);
+	it('chases the move for the length of the motion rung', () => {
+		const el = anchor();
+		withRung('200ms');
+		const frames: FrameRequestCallback[] = [];
+		vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => frames.push(cb));
+		const start = performance.now();
+
+		holdInView(el, () => {});
+		expect(el.scrollIntoView).toHaveBeenCalledTimes(1); // the one before the chase
+
+		frames.pop()!(start + 100);
+		expect(el.scrollIntoView).toHaveBeenCalledTimes(2);
+		expect(frames).toHaveLength(1); // still inside the rung, so it re-arms
+
+		frames.pop()!(start + 300);
+		expect(el.scrollIntoView).toHaveBeenCalledTimes(3);
+		expect(frames).toHaveLength(0); // past the rung, so it stops
 	});
 
-	it('measures once either side of the change', () => {
-		const { anchor, left } = scrollportWith([440, 200]);
-		holdStill(anchor, () => {});
-		expect(left()).toBe(0);
+	it('takes the one trip where no rung reads, which is jsdom and an unstyled root', () => {
+		const el = anchor();
+		const rafs = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 0);
+		holdInView(el, () => {});
+		expect(el.scrollIntoView).toHaveBeenCalledTimes(1);
+		expect(rafs).not.toHaveBeenCalled();
 	});
 });

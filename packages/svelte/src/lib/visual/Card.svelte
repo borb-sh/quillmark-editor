@@ -16,7 +16,7 @@
 	import type { LeafRegistry } from './leaves.js';
 	import type { CardModel, FieldModel } from './structure.js';
 	import { placeFields, humanize, initialExpandedGroup } from './structure.js';
-	import { holdStill } from './hold.js';
+	import { holdInView } from './hold.js';
 	import type { FieldDomIds } from './domid.js';
 	import Field from './Field.svelte';
 	import ProseField from './ProseField.svelte';
@@ -145,9 +145,6 @@
 	 *  ({@link revealLeaf}), restored by the header gesture the motion is there for, so its
 	 *  return needs no timer. */
 	let animate = $state(true);
-	/** The one panel whose collapse is spent as scroll rather than animated, so the header
-	 *  the press landed on holds its line ({@link toggleGroup}). */
-	let instant = $state<string | null>(null);
 	/**
 	 * Move to `next` (`null` = all closed). A closing panel goes `inert` with whatever it
 	 * held still focused, and `inert` does not say where focus should go — the browser
@@ -161,22 +158,12 @@
 			headers[closing]?.focus();
 		expanded = next;
 	}
-	/**
-	 * A panel opens under its own header, so the only box that can carry this header off is
-	 * a panel closing above it — and that is what the scroll pays for, at the price of the
-	 * closing animation: the trip is measured one flush in, where an animating track still
-	 * reads its start value (`hold.ts`).
-	 */
+	/** The header is the anchor: a section closing above it is what would carry it off the
+	 *  fold, and a section opens under its own header (`hold.ts`). */
 	function toggleGroup(group: string): void {
 		animate = true;
-		const closing = expanded === group ? null : expanded;
-		const above = closing !== null && order(closing) < order(group);
-		holdStill(above ? headers[group] : undefined, () => {
-			instant = above ? closing : null;
-			setExpanded(expanded === group ? null : group);
-		});
+		holdInView(headers[group], () => setExpanded(expanded === group ? null : group));
 	}
-	const order = (group: string): number => grouped.findIndex((s) => s.group === group);
 
 	/**
 	 * Open the group holding leaf `key`: a caret placed in a collapsed panel does not
@@ -276,7 +263,7 @@
 								{@const group = section.group as string}
 								{@const isOpen = expanded === group}
 								{@const panelId = ops.panelId(group)}
-								<div class="qm-group" class:qm-open={isOpen} class:qm-instant={instant === group}>
+								<div class="qm-group" class:qm-open={isOpen}>
 									<button
 										type="button"
 										class="qm-group-header"
@@ -654,14 +641,12 @@
 	.qm-group.qm-open .qm-group-panel {
 		grid-template-rows: 1fr;
 	}
-	/* The track is the accordion's only stroke that moves layout, and both readers of it
-	 measure one flush after asking — where an animating track still reads its start value.
-	 A reveal stills every panel, its landing measuring a leaf inside one (`revealLeaf`);
-	 the header gesture stills only the panel whose collapse it is spending as scroll
-	 (`hold.ts`). Both panels of a reveal's move are inside the group box, so the opening
-	 one and the closing one above it stand still together. */
-	.qm-groups.qm-instant .qm-group-panel,
-	.qm-group.qm-instant .qm-group-panel {
+	/* The track is the accordion's only stroke that moves layout, and a reveal's landing
+	 measures its target one flush after asking — where an animating track still reads its
+	 start value. Both panels of the move are inside the group box, so the opening one and
+	 the closing one above it stand still together (`revealLeaf`). A header gesture keeps
+	 the motion and rides its own trip over it instead (`hold.ts`). */
+	.qm-groups.qm-instant .qm-group-panel {
 		transition: none;
 	}
 	/* Two boxes because the axes clip differently, and the track is the only thing that
