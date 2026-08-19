@@ -15,7 +15,7 @@
 	import { Preview } from '@quillmark/svelte/preview';
 	import type { Document, LiveSession, Quill } from '@quillmark/wasm';
 	import type { Landing } from '@quillmark/svelte/core';
-	import { loadSpecimenTree } from './fixture';
+	import { loadFixtureTree } from './fixture';
 	import { INSTALL, OPEN_SESSION, PREVIEW, VISUAL } from './samples';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
@@ -48,7 +48,7 @@
 					import('@quillmark/svelte/visual')
 				]);
 				const { Quill } = await init();
-				const quill = Quill.fromTree(await loadSpecimenTree());
+				const quill = Quill.fromTree(await loadFixtureTree());
 				created.unshift(quill);
 				const previewDoc = quill.seedDocument();
 				created.unshift(previewDoc);

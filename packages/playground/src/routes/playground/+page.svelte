@@ -38,23 +38,33 @@
   render-error feed: a real consumer derives external diagnostics from
   `session.warnings` (wired here, `[]` for the reference quill) plus render errors.
 
-  The seed variants are query flags with no chrome: seed changes read once at mount,
-  for the branches the reference quill on disk reaches none of
-  (PLAYGROUND §"Fixture variants").
+  Which quill is a control rather than a flag: it is a fact about what is on screen,
+  and the answer changes what both surfaces are. Picking tears the shell down and
+  stands it back up. The seed variants stay query flags with no chrome, read once per
+  open, for the branches a quill on disk reaches none of
+  (PLAYGROUND §"Which quill, and what is seeded into it").
 -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import type { Quill, Document, LiveSession, ChangeSet, Diagnostic } from '@quillmark/wasm';
 	import type { Landing, Place, EditorError } from '@quillmark/svelte/core';
 	import type { ActiveLeaf, EditorChange } from '@quillmark/svelte/visual';
 	import { Preview } from '@quillmark/svelte/preview';
-	import { loadSpecimenTree } from '../fixture';
+	import { DEFAULT_FIXTURE, fixtureNames, loadFixtureTree } from '../fixture';
 
 	type Status = { phase: 'loading' } | { phase: 'error'; message: string } | { phase: 'ready' };
 	type VisualEditorComponent = typeof import('@quillmark/svelte/visual').VisualEditor;
 
 	let status = $state<Status>({ phase: 'loading' });
 	let VisualEditor = $state<VisualEditorComponent | undefined>();
+
+	// Which quill the shell is over, and every one the served quiver holds. What is in
+	// the quiver is the pack's call: a dev server packs under the draft floor too, so
+	// the memo stands beside the reference quill there and in no deploy.
+	let fixtures = $state<string[]>([]);
+	let fixture = $state(DEFAULT_FIXTURE);
+	// Inert while an open is in flight: a second pick mid-open would race it.
+	let opening = $state(true);
 
 	let session: LiveSession | undefined = $state();
 	let quillHandle: Quill | undefined = $state();
@@ -86,7 +96,24 @@
 	let lastChangeSource = $state('none');
 	let lastError = $state('none');
 
+	// Every readout above names something in the document that is going, and the
+	// injected stand-in names a field the next quill need not have.
+	function resetBridge(): void {
+		lastHit = undefined;
+		activeAddr = 'none';
+		lastFocus = 'none';
+		lastChange = undefined;
+		lastChangeSource = 'none';
+		lastError = 'none';
+		injected = [];
+		syncDiagnostics();
+	}
+
+	// The handles the open in force made, newest first.
 	let toFree: Array<{ free(): void }> = [];
+	// Which open is in force. One that lands after a later one started frees what it
+	// made and assigns nothing, so a pick during a pick leaves no session behind.
+	let generation = 0;
 
 	// ── Debounced recompile ─────────────────────────────────────────────────────
 	// One session, many edit sources → one apply per settled burst. The timer is
@@ -162,64 +189,104 @@
 		syncDiagnostics();
 	}
 
-	onMount(() => {
-		let cancelled = false;
-		(async () => {
-			try {
-				// Dynamic: the WASM binary and VisualEditor's ProseMirror stack are the
-				// route's heaviest payload and nothing before paint needs them, so they load
-				// after mount. `init` instantiates the core and resolves to `Quill` and
-				// `Document`, which the artifact exports nowhere statically. The fixture
-				// load awaits the same memoized gate to materialize its quill.
-				const [{ Engine, MAIN_CARD_ADDR }, { init }, visual] = await Promise.all([
-					import('@quillmark/wasm'),
-					import('@quillmark/svelte/core'),
-					import('@quillmark/svelte/visual')
-				]);
-				const { Quill, Document } = await init();
-				const params = new URLSearchParams(window.location.search);
-				const quill = Quill.fromTree(await loadSpecimenTree());
-				const doc = quill.seedDocument();
-				// The seed variants. `?foreign` holds a card whose kind the schema cannot
-				// project: `Document.insertCard` is schema-agnostic where the Quill-bound
-				// writer would reject it, which is the case the recovery shell handles.
-				// `?tips` seeds the guidance channel a quill or consumer supplies (`$ext`,
-				// not schema), through `patchEditorExt`, so a consumer seeding one key does
-				// not replace the namespace.
-				if (params.has('foreign')) {
-					doc.insertCard(Document.makeCard('legacy_kind', {}, 'Trapped legacy body.'));
-				}
-				if (params.has('tips')) {
-					visual.patchEditorExt(doc, MAIN_CARD_ADDR, {
-						tips: [
-							'Press **Tab** to move on.',
-							'Run `npm run dev` for the playground.',
-							'Last one — dismissing clears the channel.'
-						]
-					});
-				}
-				const engine = new Engine();
-				const openedSession = await engine.open(quill, doc);
-				if (cancelled) {
-					openedSession.free();
-					doc.free();
-					quill.free();
-					return;
-				}
-				VisualEditor = visual.VisualEditor;
-				session = openedSession;
-				quillHandle = quill;
-				docHandle = doc;
-				syncDiagnostics();
-				toFree = [openedSession, doc, quill];
-				status = { phase: 'ready' };
-			} catch (e) {
-				if (!cancelled)
-					status = { phase: 'error', message: e instanceof Error ? e.message : String(e) };
+	/**
+	 * Tear the shell down and stand it back up over `name`. The surfaces come down
+	 * before their handles do — the ready phase is what mounts them, so a loading phase
+	 * and a flush is the teardown — and the handles go before the next open allocates,
+	 * so one session is live at a time.
+	 */
+	async function open(name: string): Promise<void> {
+		const mine = ++generation;
+		opening = true;
+		status = { phase: 'loading' };
+		if (recompileTimer != null) {
+			clearTimeout(recompileTimer);
+			recompileTimer = undefined;
+		}
+		session = undefined;
+		quillHandle = undefined;
+		docHandle = undefined;
+		editorRef = undefined;
+		previewRef = undefined;
+		resetBridge();
+		await tick();
+		for (const h of toFree) h.free();
+		toFree = [];
+
+		// Handles created so far, newest first; freed in reverse creation order on a
+		// stale open and on a mid-chain failure (`engine.open` throwing after
+		// `quill`/`doc` already exist).
+		const created: Array<{ free(): void }> = [];
+		try {
+			// Dynamic: the WASM binary and VisualEditor's ProseMirror stack are the
+			// route's heaviest payload and nothing before paint needs them, so they load
+			// after mount. `init` instantiates the core and resolves to `Quill` and
+			// `Document`, which the artifact exports nowhere statically. The fixture
+			// load awaits the same memoized gate to materialize its quill.
+			const [{ Engine, MAIN_CARD_ADDR }, { init }, visual] = await Promise.all([
+				import('@quillmark/wasm'),
+				import('@quillmark/svelte/core'),
+				import('@quillmark/svelte/visual')
+			]);
+			const { Quill, Document } = await init();
+			fixtures = await fixtureNames();
+			const params = new URLSearchParams(window.location.search);
+			const quill = Quill.fromTree(await loadFixtureTree(name));
+			created.unshift(quill);
+			const doc = quill.seedDocument();
+			created.unshift(doc);
+			// The seed variants. `?foreign` holds a card whose kind the schema cannot
+			// project: `Document.insertCard` is schema-agnostic where the Quill-bound
+			// writer would reject it, which is the case the recovery shell handles.
+			// `?tips` seeds the guidance channel a quill or consumer supplies (`$ext`,
+			// not schema), through `patchEditorExt`, so a consumer seeding one key does
+			// not replace the namespace.
+			if (params.has('foreign')) {
+				doc.insertCard(Document.makeCard('legacy_kind', {}, 'Trapped legacy body.'));
 			}
-		})();
+			if (params.has('tips')) {
+				visual.patchEditorExt(doc, MAIN_CARD_ADDR, {
+					tips: [
+						'Press **Tab** to move on.',
+						'Run `npm run dev` for the playground.',
+						'Last one — dismissing clears the channel.'
+					]
+				});
+			}
+			const engine = new Engine();
+			const openedSession = await engine.open(quill, doc);
+			created.unshift(openedSession);
+			if (mine !== generation) {
+				for (const h of created) h.free();
+				return;
+			}
+			VisualEditor = visual.VisualEditor;
+			session = openedSession;
+			quillHandle = quill;
+			docHandle = doc;
+			syncDiagnostics();
+			toFree = created;
+			status = { phase: 'ready' };
+		} catch (e) {
+			for (const h of created) h.free();
+			if (mine === generation)
+				status = { phase: 'error', message: e instanceof Error ? e.message : String(e) };
+		} finally {
+			if (mine === generation) opening = false;
+		}
+	}
+
+	function pick(name: string): void {
+		fixture = name;
+		void open(name);
+	}
+
+	onMount(() => {
+		void open(fixture);
 		return () => {
-			cancelled = true;
+			// Bumped rather than flagged: it is the same guard an open in flight already
+			// reads, so an unmount mid-open frees what that open made and lands nothing.
+			generation++;
 			if (recompileTimer != null) clearTimeout(recompileTimer);
 			for (const h of toFree) h.free();
 			toFree = [];
@@ -243,11 +310,15 @@
 		<p data-testid="status" class="qm-status qm-status-error phase">Error: {status.message}</p>
 	{/if}
 
-	{#if status.phase === 'ready'}
-		<!-- The bridge, read back out: each hop's last outcome, so a round-trip that
-		     lands nowhere shows here. A row of labelled readouts and no plate: the label
-		     and readout runs already say this is chrome, and a plate spends a fill, a
-		     hairline and two rungs of the panes' height saying it again. -->
+	<!-- The bridge, read back out: each hop's last outcome, so a round-trip that lands
+	     nowhere shows here. A row of labelled readouts and no plate: the label and
+	     readout runs already say this is chrome, and a plate spends a fill, a hairline
+	     and two rungs of the panes' height saying it again.
+
+	     Drawn from the moment the catalog is known rather than with the panes, since the
+	     picker at its end is what opens them: a control that goes while what it asked
+	     for loads is one a hand cannot get back to. -->
+	{#if fixtures.length > 0}
 		<div class="strip">
 			<span class="stat"
 				><span class="qm-label">active</span>
@@ -282,15 +353,43 @@
 				></span
 			>
 			<span class="strip-actions">
+				<!-- An axis holding one value is not a choice, so it is printed rather than
+				     offered: a deploy packs the reference quill alone. A native select
+				     where there is something to pick, that being the control the surfaces
+				     under it compete with least. -->
+				{#if fixtures.length > 1}
+					<label class="pick">
+						<span class="qm-label">quill</span>
+						<select
+							class="qm-control"
+							data-testid="pick-quill"
+							disabled={opening}
+							value={fixture}
+							onchange={(e) => pick(e.currentTarget.value)}
+						>
+							{#each fixtures as name (name)}
+								<option value={name}>{name}</option>
+							{/each}
+						</select>
+					</label>
+				{:else}
+					<span class="pick">
+						<span class="qm-label">quill</span>
+						<span class="qm-readout" data-testid="pick-quill">{fixture}</span>
+					</span>
+				{/if}
 				<button
 					class="qm-control"
 					type="button"
 					data-testid="inject-diagnostics"
+					disabled={opening}
 					onclick={injectDiagnostics}>Inject diagnostics</button
 				>
 			</span>
 		</div>
+	{/if}
 
+	{#if status.phase === 'ready'}
 		<!-- Drawn only under the preset's threshold, where the split shows one track.
 		     The pair reads as one choice, so the pressed state is the whole of what
 		     says which: `.qm-control` already carries it. -->
@@ -380,8 +479,17 @@
 
 	.strip-actions {
 		display: flex;
-		gap: var(--qmh-space);
+		align-items: center;
+		gap: var(--qmh-space-3);
 		margin-inline-start: auto;
+	}
+
+	/* The one pair on the strip whose value is a control rather than a readout, so the
+	   label sits on its centre and not on the readouts' baseline. */
+	.pick {
+		display: flex;
+		align-items: center;
+		gap: var(--qmh-space);
 	}
 
 	/* The split's tracks, its gap, its frames and the width it shows one track at are
