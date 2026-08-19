@@ -4,7 +4,7 @@
 // slots both track the live count; 0→N escapes the empty state, N→0 returns.
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
 import { createPreview } from '$lib/preview/controller';
-import type { LiveSession, ChangeSet } from '@quillmark/wasm';
+import type { LiveSession, ChangeSet, FieldRegion } from '@quillmark/wasm';
 
 // jsdom has no IntersectionObserver; the paint loop only needs it to observe
 // visibility, which these count-transition assertions do not exercise (no page
@@ -106,9 +106,10 @@ describe('a recompile re-locates the followed caret', () => {
 		located = [];
 	});
 
-	function trackingSession(): LiveSession {
+	function trackingSession(boxes: FieldRegion[] = []): LiveSession {
 		return {
 			...mockSession(1),
+			fieldBoxes: (field: string) => boxes.filter((b) => b.field === field),
 			locate: (field: string, pos: number) => {
 				located.push([field, pos]);
 				return undefined;
@@ -150,6 +151,32 @@ describe('a recompile re-locates the followed caret', () => {
 			['main.title', 2],
 			['main.title', 2]
 		]);
+		preview.destroy();
+	});
+
+	// A discrete hop is a host naming the field the pane shows, and the caret loses to
+	// it: re-asserted at the next recompile, it would pull the pane straight back off
+	// that field. A hop that placed nothing moved nothing, so it takes no rank.
+	it('a placed discrete hop ends it', () => {
+		const box = { field: 'main.date', page: 0, rect: [10, 10, 110, 30] } as FieldRegion;
+		const preview = createPreview(trackingSession([box]), { container });
+		preview.focusPosition({ field: 'main.body', pos: 12 });
+		located.length = 0;
+
+		expect(preview.scrollToField('main.date')).toBe(true);
+		preview.refresh(change(1));
+		expect(located).toEqual([]);
+		preview.destroy();
+	});
+
+	it('a hop this compile places nothing for leaves it standing', () => {
+		const preview = createPreview(trackingSession(), { container });
+		preview.focusPosition({ field: 'main.body', pos: 12 });
+		located.length = 0;
+
+		expect(preview.scrollToField('main.date')).toBe(false);
+		preview.refresh(change(1));
+		expect(located).toEqual([['main.body', 12]]);
 		preview.destroy();
 	});
 });

@@ -44,6 +44,40 @@ function hasBox(port: DOMRect): boolean {
 	return port.width > 0 && port.height > 0;
 }
 
+/** The vertical extent the fold test reads; a `DOMRect` is one. */
+export interface VerticalSpan {
+	top: number;
+	bottom: number;
+	height: number;
+}
+
+/** What a rect reporting no height clears an edge by, in CSS px: a caret's own at the
+ *  smallest zoom a page still reads at. */
+const MIN_CLEARANCE = 8;
+
+/**
+ * Whether `target` sits clear of `port`'s edges by the fold's clearance, which is the
+ * target's own height: a caret rect flush against an edge is visible and unusable, and
+ * the next line typed lands past it. Derived from the target rather than a margin dial,
+ * so it scales with zoom exactly as the caret does, and bounded at both ends so the
+ * answer is reachable across the whole range of targets a compile locates.
+ *
+ * The floor is what a zero-height rect gets, which bare intersection would score as
+ * clear at either edge. The cap is a third of the room the port has to spare, so a
+ * target too tall for its own height of clearance — a located line at zoom, a short
+ * split track — passes once centred and holds a band around it, rather than being
+ * re-centred by every keystroke. A target taller than the port is clear while it covers
+ * the port: no scroll shows more of it.
+ */
+export function clearOfTheFold(target: VerticalSpan, port: VerticalSpan): boolean {
+	if (target.height >= port.height) return target.top <= port.top && target.bottom >= port.bottom;
+	const clearance = Math.min(
+		Math.max(target.height, MIN_CLEARANCE),
+		(port.height - target.height) / 3
+	);
+	return target.top - clearance >= port.top && target.bottom + clearance <= port.bottom;
+}
+
 export function createBridge(
 	session: LiveSession,
 	container: HTMLElement,
@@ -102,15 +136,6 @@ export function createBridge(
 		else if (target.right > port.right) container.scrollLeft += target.right - port.right;
 	}
 
-	// Clear of the fold is the target's own height of clearance at each edge, not bare
-	// intersection: a caret rect flush against one is visible and unusable, and the
-	// next line typed lands past it. Derived from the target rather than a margin
-	// dial, so it scales with zoom exactly as the caret does.
-	function clearOfTheFold(target: DOMRect): boolean {
-		const port = container.getBoundingClientRect();
-		return target.top - target.height >= port.top && target.bottom + target.height <= port.bottom;
-	}
-
 	// The trip a pane with no box could not run, held for the box coming back. One, and
 	// the last one asked for: a caret hop supersedes the hop before it on a showing pane
 	// too.
@@ -166,7 +191,7 @@ export function createBridge(
 		// takes the scrollport back from the user on every one of them, including
 		// the ones that changed nothing about where the caret already was.
 		const target = measure(slot, rectToPercent(region.rect, slot.size));
-		if (clearOfTheFold(target)) return;
+		if (clearOfTheFold(target, container.getBoundingClientRect())) return;
 		centre(target);
 	}
 
