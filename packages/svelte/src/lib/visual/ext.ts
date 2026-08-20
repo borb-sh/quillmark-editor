@@ -25,14 +25,13 @@ import type { Document, CardAddr } from '@quillmark/wasm';
  * `undefined` survives the wasm-bindgen crossing is not a property worth depending
  * on.
  *
- * **A namespace emptied of keys is removed, not stored empty**, which is
- * `removeExtNamespace`'s one correct use: it takes the whole namespace, and here
- * there is nothing left in it to lose. `$ext` goes with it when `editor` was the
- * last namespace, and that is what keeps the document emittable — a stored `{}`
- * survives the model but not the round-trip, where an empty mapping omits its own
- * key and leaves the parent a bare `$ext:`, which reads back as null and fails the
- * next parse. A patch that drops keys the namespace does not have writes nothing at
- * all, so a dismissal on a document carrying no tips is not a mutation.
+ * **A namespace emptied of keys is removed, not stored empty.** That is
+ * `removeExtNamespace`'s one correct use: it takes the whole namespace, and there is
+ * nothing left in this one to lose. `$ext` goes with it when `editor` was the last
+ * namespace. A stored `{}` survives the model but not the emit, where an empty
+ * mapping omits its own key and leaves a bare `$ext:` that reads back as null and
+ * fails the next parse. A patch dropping keys the namespace does not have writes
+ * nothing, so dismissing tips on a document that carries none is not a mutation.
  */
 export function patchEditorExt(
 	doc: Document,

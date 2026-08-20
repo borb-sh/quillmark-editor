@@ -134,16 +134,12 @@ describe('patchEditorExt', () => {
 	});
 
 	it('leaves a document the parser accepts back', () => {
-		// What a stored empty namespace costs, and the whole reason the drop is a
-		// removal: `$ext: {editor: {}}` survives the model but not the emit, where an
-		// empty mapping omits its own key and leaves a bare `$ext:` that reads back as
-		// null. Asserted through the round-trip rather than on the emitted text, which
-		// is the boundary's business and not this verb's.
+		// What a stored empty namespace costs the document (`ext.ts`), held where it
+		// lands. The emit that turns it into a bare `$ext:` is the boundary's, so what
+		// this pins is that a dismissed document parses back, not what it looks like.
 		const doc = quill.seedDocument();
 		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: ['a tip'] });
 		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
-		const markdown = doc.toMarkdown();
-		expect(markdown).not.toMatch(/^\$ext:\s*$/m);
-		expect(() => core.Document.fromMarkdown(markdown)).not.toThrow();
+		expect(() => core.Document.fromMarkdown(doc.toMarkdown())).not.toThrow();
 	});
 });
