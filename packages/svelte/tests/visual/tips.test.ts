@@ -117,12 +117,33 @@ describe('patchEditorExt', () => {
 		doc.storeExtNamespace(MAIN_CARD_ADDR, 'other', { keep: 1 });
 		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: ['x'] });
 		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
-		expect(doc.main.ext).toEqual({ editor: {}, other: { keep: 1 } });
+		expect(doc.main.ext).toEqual({ other: { keep: 1 } });
 	});
 
-	it('is a no-op patch on a document with no `editor` namespace', () => {
+	it('takes the namespace, and `$ext` with it, once the last key drops', () => {
+		const doc = quill.seedDocument();
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: ['x'] });
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
+		expect(doc.main.ext).toBeUndefined();
+	});
+
+	it('writes nothing when the patch drops keys the namespace does not have', () => {
 		const doc = quill.seedDocument();
 		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
-		expect(editorExt(doc)).toEqual({});
+		expect(doc.main.ext).toBeUndefined();
+	});
+
+	it('leaves a document the parser accepts back', () => {
+		// What a stored empty namespace costs, and the whole reason the drop is a
+		// removal: `$ext: {editor: {}}` survives the model but not the emit, where an
+		// empty mapping omits its own key and leaves a bare `$ext:` that reads back as
+		// null. Asserted through the round-trip rather than on the emitted text, which
+		// is the boundary's business and not this verb's.
+		const doc = quill.seedDocument();
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: ['a tip'] });
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
+		const markdown = doc.toMarkdown();
+		expect(markdown).not.toMatch(/^\$ext:\s*$/m);
+		expect(() => core.Document.fromMarkdown(markdown)).not.toThrow();
 	});
 });
