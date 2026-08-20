@@ -148,20 +148,21 @@ describe('placeFields', () => {
 		]);
 	});
 
-	it('gives a compact run of one the half-width span, wherever it sits', () => {
-		// Trailing, leading, and sandwiched: a run of one is a run of one.
+	it('spans a stranded compact field across the whole row, wherever it sits', () => {
+		// Trailing, leading, and alone: a run of one has nothing to share with, so the
+		// hint buys it nothing and it takes the width every unpacked field takes.
 		expect(spans([mk('a', false), mk('b', true)])).toEqual([
 			['a', 'full'],
-			['b', 'lone']
-		]);
-		expect(spans([mk('a', true), mk('b', false)])).toEqual([
-			['a', 'lone'],
 			['b', 'full']
 		]);
-		expect(spans([mk('a', true)])).toEqual([['a', 'lone']]);
+		expect(spans([mk('a', true), mk('b', false)])).toEqual([
+			['a', 'full'],
+			['b', 'full']
+		]);
+		expect(spans([mk('a', true)])).toEqual([['a', 'full']]);
 	});
 
-	it('keeps a run of two as cells — `lone` is only ever a run of ONE', () => {
+	it('keeps a run of two as cells — one is the only run that strands', () => {
 		expect(spans([mk('a', true), mk('b', true)])).toEqual([
 			['a', 'cell'],
 			['b', 'cell']
@@ -193,7 +194,25 @@ describe('placeFields', () => {
 			])
 		).toEqual([
 			['world', 'full'],
-			['after', 'lone']
+			['after', 'full']
+		]);
+	});
+
+	it("reads a variant's compact hint as nothing at all, its neighbours included", () => {
+		// Not merely "the variant spans the row": the hint moves no field on either side
+		// of it, so a schema that declares it and one that does not place identically.
+		const row = (compact: boolean) => [
+			mk('a', true),
+			mk('b', true),
+			mk('world', compact, { control: 'variant', schema: { type: 'enum', values: ['a'] } }),
+			mk('c', true)
+		];
+		expect(spans(row(true))).toEqual(spans(row(false)));
+		expect(spans(row(true))).toEqual([
+			['a', 'cell'],
+			['b', 'cell'],
+			['world', 'full'],
+			['c', 'full']
 		]);
 	});
 
@@ -234,9 +253,9 @@ describe('placeFields', () => {
 		expect(
 			spans([mk('a', true), mk('block', true, { control: 'prose', inline: false }), mk('b', true)])
 		).toEqual([
-			['a', 'lone'],
+			['a', 'full'],
 			['block', 'full'],
-			['b', 'lone']
+			['b', 'full']
 		]);
 	});
 });
