@@ -117,12 +117,29 @@ describe('patchEditorExt', () => {
 		doc.storeExtNamespace(MAIN_CARD_ADDR, 'other', { keep: 1 });
 		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: ['x'] });
 		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
-		expect(doc.main.ext).toEqual({ editor: {}, other: { keep: 1 } });
+		expect(doc.main.ext).toEqual({ other: { keep: 1 } });
 	});
 
-	it('is a no-op patch on a document with no `editor` namespace', () => {
+	it('takes the namespace, and `$ext` with it, once the last key drops', () => {
+		const doc = quill.seedDocument();
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: ['x'] });
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
+		expect(doc.main.ext).toBeUndefined();
+	});
+
+	it('writes nothing when the patch drops keys the namespace does not have', () => {
 		const doc = quill.seedDocument();
 		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
-		expect(editorExt(doc)).toEqual({});
+		expect(doc.main.ext).toBeUndefined();
+	});
+
+	it('leaves a document the parser accepts back', () => {
+		// What a stored empty namespace costs the document (`ext.ts`), held where it
+		// lands. The emit that turns it into a bare `$ext:` is the boundary's, so what
+		// this pins is that a dismissed document parses back, not what it looks like.
+		const doc = quill.seedDocument();
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: ['a tip'] });
+		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });
+		expect(() => core.Document.fromMarkdown(doc.toMarkdown())).not.toThrow();
 	});
 });

@@ -24,6 +24,14 @@ import type { Document, CardAddr } from '@quillmark/wasm';
  * The drop is an explicit `delete`, not a stored `undefined`: whether a JS
  * `undefined` survives the wasm-bindgen crossing is not a property worth depending
  * on.
+ *
+ * **A namespace emptied of keys is removed, not stored empty.** That is
+ * `removeExtNamespace`'s one correct use: it takes the whole namespace, and there is
+ * nothing left in this one to lose. `$ext` goes with it when `editor` was the last
+ * namespace. A stored `{}` survives the model but not the emit, where an empty
+ * mapping omits its own key and leaves a bare `$ext:` that reads back as null and
+ * fails the next parse. A patch dropping keys the namespace does not have writes
+ * nothing, so dismissing tips on a document that carries none is not a mutation.
  */
 export function patchEditorExt(
 	doc: Document,
@@ -32,10 +40,12 @@ export function patchEditorExt(
 ): void {
 	// `getExtNamespace` reads just this namespace rather than serializing the whole
 	// card to fish out one `$ext` slot.
-	const next = { ...((doc.getExtNamespace(addr, 'editor') ?? {}) as Record<string, unknown>) };
+	const current = doc.getExtNamespace(addr, 'editor') as Record<string, unknown> | undefined;
+	const next = { ...(current ?? {}) };
 	for (const [key, value] of Object.entries(patch)) {
 		if (value === undefined) delete next[key];
 		else next[key] = value;
 	}
-	doc.storeExtNamespace(addr, 'editor', next);
+	if (Object.keys(next).length > 0) doc.storeExtNamespace(addr, 'editor', next);
+	else if (current) doc.removeExtNamespace(addr, 'editor');
 }
