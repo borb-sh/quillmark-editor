@@ -562,9 +562,9 @@
 	 observer to loop and no re-packing to restructure the DOM under a prose leaf.
 
 	 It steps 1 → 2 → 4, skipping 3: each rung is the width at which a track still clears
-	 the comfortable field minimum, and an even capacity is what lets `lone`'s half land
-	 on a track boundary. A field ends on its track's own edge, so a rung is
-	 `n * 220px + gaps`. */
+	 the comfortable field minimum, and an even capacity is what lets the half a subform
+	 of one takes (`--cols-half`, `ObjectField`) land on a track boundary. A field ends on
+	 its track's own edge, so a rung is `n * 220px + gaps`. */
 	.qm-fields {
 		--cols: 1;
 		--cols-half: 1;

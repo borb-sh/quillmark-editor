@@ -279,8 +279,10 @@
 		align-items: start;
 		min-width: 0;
 	}
-	/* A subform of one takes half the capacity, the way a packable run of one does
-	   (`.qm-field.lone`): at full capacity a single track reads as truncated. */
+	/* A subform of one takes half the capacity: at full capacity a single track reads as
+	   truncated, and there are no sibling properties for it to line up with. A stranded
+	   field takes the whole row instead (`placeFields`): the width it would leave empty is
+	   the card's, where this one sits inside a figure the nesting has already narrowed. */
 	.qm-object-prop:only-child {
 		grid-column: span var(--cols-half);
 	}

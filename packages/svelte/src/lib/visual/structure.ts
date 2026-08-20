@@ -373,7 +373,6 @@ export function initialExpandedGroup(sections: GroupSection[]): string | null {
 /** How wide a field sits in its section grid. */
 export type FieldSpan =
 	| 'cell' // one column, auto-placed among its neighbours
-	| 'lone' // half the capacity from column 1: a packable run of one
 	| 'full'; // the whole grid, its own row
 
 export interface PlacedField {
@@ -391,7 +390,9 @@ export interface PlacedField {
  *
  * A variant declines for the same reason one step further in: its height is the live
  * world's cell count, so it is set by a pick rather than only by the document, and a
- * packed neighbour would reflow every time the discriminant moves.
+ * packed neighbour would reflow every time the discriminant moves. The hint reaches
+ * nothing inside one either: a world's cells are the object subform's own grid, which
+ * reads no `ui` of its own, so `ui.compact` is inert everywhere a variant carries it.
  *
  * An array declines whatever its items are: one-line elements make a one-line step,
  * but nothing holds two arrays to the same number of them, so the shorter of a packed
@@ -408,8 +409,10 @@ function packable(f: FieldModel): boolean {
  * Assign each field its span in the section grid. Consecutive packable fields are
  * `cell`s the grid auto-places: capacity and wrapping are the container query's
  * business, so a trailing orphan keeps its column width rather than growing to fill.
- * A packable run of one is `lone`: with no row above to align to, one column reads as
- * truncated, so it takes half the capacity from column 1. Everything else is `full`.
+ * A run of one is stranded — nothing packed beside it, and no row above to align to —
+ * so it is `full` like the shapes that declined: a lone narrow track reads as truncated
+ * against the width it leaves empty, and sharing was the whole of what asked for it.
+ * Everything else is `full`.
  *
  * Pure, and stays pure: no width, no measurement, nothing to re-derive on resize.
  */
@@ -419,7 +422,7 @@ export function placeFields(fields: FieldModel[]): PlacedField[] {
 	// A run of one is only knowable at its end, so the span is patched back onto the
 	// field already placed.
 	const flush = () => {
-		if (run === 1) out[out.length - 1].span = 'lone';
+		if (run === 1) out[out.length - 1].span = 'full';
 		run = 0;
 	};
 	for (const f of fields) {

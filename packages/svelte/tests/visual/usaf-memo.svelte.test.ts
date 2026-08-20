@@ -122,24 +122,21 @@ describe('the shipped quill on the surface', () => {
 		expect(byName.tag_line.inline).toBe(true); // the one richtext scalar, declared alike
 		expect(byName.dissemination.compact).toBe(true);
 
-		// And on the surface, where a packed field is a `cell` (or a `lone` where its run
-		// is one) and a declined one spans the row.
+		// And on the surface, where a packed field is a `cell` and a declined one — or one
+		// stranded with nothing to pack against — spans the row.
 		const q = memo();
 		const target = mountEditor(q, q.seedDocument());
 		const span = (label: string) => {
 			const el = [...target.querySelectorAll<HTMLElement>('.qm-field')].find(
 				(f) => f.querySelector('.qm-field-label')?.textContent?.trim() === label
 			)!;
-			return el.classList.contains('cell')
-				? 'cell'
-				: el.classList.contains('lone')
-					? 'lone'
-					: 'full';
+			return el.classList.contains('cell') ? 'cell' : 'full';
 		};
 		expect(span('Dissemination')).toBe('full');
-		// The `compact` request is read: a scalar the boundary does serve `inline` for
-		// packs. Its run is one, the fields around it being the leaves above.
-		expect(span('Tag line')).toBe('lone');
+		// The `compact` request is read, and buys nothing here: a scalar the boundary does
+		// serve `inline` for packs, but its run is one, the fields around it being the
+		// leaves above, so it takes the whole row.
+		expect(span('Tag line')).toBe('full');
 	});
 
 	it('draws the CUI world as four fillable cells', () => {

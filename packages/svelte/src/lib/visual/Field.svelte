@@ -210,7 +210,7 @@
 	const reportFocus = $derived(field.control === 'prose' ? undefined : () => onFocus?.(addr));
 </script>
 
-<div class="qm-field" class:cell={span === 'cell'} class:lone={span === 'lone'}>
+<div class="qm-field" class:cell={span === 'cell'}>
 	{#if field.control !== 'array'}
 		<FieldLabel
 			label={field.label}
@@ -367,9 +367,9 @@
 	 beside them, whose boxes end where their ink does. What a third track buys is the
 	 diagnostics of one row starting at one y; the alignment a row is read by is the
 	 controls', and the label track holds that. A diagnostic grows its row instead. */
-	.qm-field.cell,
-	.qm-field.lone {
+	.qm-field.cell {
 		display: grid;
+		grid-column: span 1;
 		grid-row: span 2;
 		grid-template-rows: subgrid;
 		row-gap: var(--_qm-space);
@@ -384,9 +384,6 @@
 		gap: var(--_qm-space);
 		min-width: 0;
 	}
-	.qm-field.cell {
-		grid-column: span 1;
-	}
 	/* Positioned for the arrival wash a landing inserts (`core/bloom.ts`), the way
 	   `.qm-prose` is: an inset child over the control, since an `<input>` takes none.
 	   The radius is the control's own, so the wash's corners are the box's rather than
@@ -395,10 +392,5 @@
 	.qm-field-control {
 		position: relative;
 		border-radius: var(--_qm-radius-inner);
-	}
-	/* A run of one takes half the capacity from column 1: `--cols-half` is the section's
-	 capacity halved, so the edge lands on a track boundary at every capacity. */
-	.qm-field.lone {
-		grid-column: span var(--cols-half);
 	}
 </style>
