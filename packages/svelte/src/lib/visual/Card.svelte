@@ -421,6 +421,15 @@
 		flex-direction: column;
 		gap: var(--_qm-space-3);
 	}
+	/* Headerless, with nothing between that edge and the payload, the edge is the stroke
+	 the payload's first section faces — the rules inside the card and this one being one
+	 stroke at two depths (ARCHITECTURE §"A plane is a tone"). So it insets nothing and the
+	 box facing it carries the rung, the way a rule's does: a heading tucks under the edge
+	 at `--_qm-space` with its vertical running to it, a field row stands the whole
+	 `--_qm-nest` below. A card that opens on its body keeps the inset — prose is neither. */
+	.qm-card.qm-main:has(> .qm-card-body > .qm-card-meta:first-child) {
+		padding-top: 0;
+	}
 	.qm-card-header {
 		display: flex;
 		align-items: center;
@@ -548,9 +557,11 @@
 	.qm-section {
 		padding-block: var(--_qm-space);
 	}
-	/* Where it faces a rule, the whole rung: its fields stand `--_qm-nest` off that rule,
-	 the rung they already stand off the card's edge beside them. */
-	.qm-meta-top > .qm-section:first-child {
+	/* Where it faces a stroke — a payload rule, or the card's own edge above a headerless
+	 one — the whole rung: its fields stand `--_qm-nest` off that stroke, the rung they
+	 already stand off the card's edge beside them. */
+	.qm-meta-top > .qm-section:first-child,
+	.qm-main .qm-card-meta > .qm-section:first-child {
 		padding-top: var(--_qm-nest);
 	}
 	.qm-meta-bottom > .qm-section:last-child {
@@ -614,10 +625,16 @@
 		margin-bottom: calc(-1 * var(--_qm-space));
 		transition:
 			border-color var(--_qm-duration-slow) var(--_qm-ease-reverse),
-			padding-bottom var(--_qm-duration-slow) var(--_qm-ease-reverse);
+			padding-bottom var(--_qm-duration-slow) var(--_qm-ease-reverse),
+			margin-bottom var(--_qm-duration-slow) var(--_qm-ease-reverse);
 	}
+	/* Open, the cap is air as well as stroke: a section ending on a field row stands the
+	 longer rung off what follows, and three of `--_qm-space` are what that comes to — the
+	 panel's own, this cap, and the next header's. Shut, a section ends on its header and
+	 stands the header's rung, so there is nothing to cap and the padding is handed back. */
 	.qm-group.qm-open {
 		border-left-color: var(--_qm-border);
+		margin-bottom: 0;
 	}
 	/* The one end that lands on a rule, where the padding is real and the rule is this
 	 box's own bottom edge — so the stroke ends on the rule at every frame of a fold rather
