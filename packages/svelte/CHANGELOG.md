@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**A section heading rides its vertical, one nesting step out from the fields it holds.** The chevron opening a heading stood on the column its fields start on, so the row that names a section began where the section's contents began and nothing in the figure said which held which. It opens at `--_qm-space` instead, the rung the header's own block padding already stands at — the whole air a heading keeps under the payload's top rule, which a rule cannot inset past, so it is the only inline inset that squares that corner. What each rule insets by is what faces it: the bottom closes on fields whichever kind of section is last and insets unconditionally, and the top opens on a heading that has already spent the rung, leaving the ungrouped block — the one thing that opens the payload with a field row — to stand its own there. The vertical caps at each end on the rung the content there stands off it, so a corner reads square in both of the states a rule can meet one at, and a section boundary keeps the three rungs it stood at.
+
 ## v0.7.3 - 2026-08-20
 
 ## v0.7.2 - 2026-08-20

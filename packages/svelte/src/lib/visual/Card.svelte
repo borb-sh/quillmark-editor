@@ -515,12 +515,13 @@
 		flex-direction: column;
 		gap: var(--_qm-space);
 	}
-	/* One rung in two places: what a rule insets its own edge by, and what a vertical
-	 reaches past the box it is drawn on. `--_qm-nest` is the distance a stroke stands off
-	 the content it holds — the same one the fields keep off the vertical inline — and a
-	 section's box already spends `--_qm-space` of it capping its own ends, so both spend
-	 the difference. That is what squares the corner: the field stands the same rung off
-	 the rule above it as off the vertical beside it. */
+	/* What a stroke stands off the content it holds is that content's own inset, and the
+	 same number in both axes is what squares a corner. The payload's two ends face
+	 different content — a section opens with its heading and closes with its fields — so
+	 only the lower one stands at `--_qm-nest`. The box closing there already spends
+	 `--_qm-space` of it, so the rule and the vertical landing on it both spend the
+	 difference: one rung in two places, what a rule insets its own edge by and what a
+	 vertical reaches past the box it is drawn on. */
 	.qm-card-meta {
 		--stroke-reach: calc(var(--_qm-nest) - var(--_qm-space));
 	}
@@ -530,12 +531,13 @@
 	 conditional on what it ranks against: `main` is headerless, and a card with no body
 	 has nothing under the payload to divide it from.
 
-	 The inset is the rule's own, so it goes with it: a card drawing one horizontal insets
-	 that end and not the other. The air outside the pair is the `--_qm-space-3` the card
-	 spends between its blocks. */
+	 What each insets by is what faces it. The bottom closes on fields whichever kind of
+	 section is last, so it insets unconditionally. The top opens on a heading, whose own
+	 block padding is that whole rung already — leaving the ungrouped block, the one thing
+	 that opens the payload with a field row instead, to stand its rung there itself. The
+	 air outside the pair is the `--_qm-space-3` the card spends between its blocks. */
 	.qm-meta-top {
 		border-top: var(--_qm-border-width) solid var(--_qm-border);
-		padding-top: var(--stroke-reach);
 	}
 	.qm-meta-bottom {
 		border-bottom: var(--_qm-border-width) solid var(--_qm-border);
@@ -551,6 +553,12 @@
 	 vertical here would mark a section a reader has no name for. */
 	.qm-section {
 		padding-block: var(--_qm-space);
+	}
+	/* Opening the payload, its fields stand `--_qm-nest` off the rule above them — the rung
+	 they already stand off the card's edge beside them, which is the stroke that closes
+	 that corner. */
+	.qm-meta-top > .qm-section:first-child {
+		padding-top: var(--_qm-nest);
 	}
 	/* Two query containers, one per kind of section, so capacity follows the width the
 	 fields actually get: a panel's inset makes that narrower than the card. */
@@ -597,34 +605,35 @@
 	 than absent, so a toggle moves no text — and closed, there is nothing under the header
 	 for it to gather.
 
-	 The stroke caps at `--_qm-nest`, at both ends and on every section alike. Its box
-	 already spends `--_qm-space` of that — the header's block padding above, the panel's
-	 below, the rung the ungrouped section spends on its own two ends — so the rest is
-	 grown here and handed straight back as margin: the stroke lengthens, and a section
-	 boundary keeps the three rungs it stood at. What the stroke reaches into is the air of
-	 that boundary, or, where the section is the payload's first or last, exactly the inset
-	 its rule took — so it lands on the rule at a corner with nothing drawn longer for it.
-	 One section open at a time, so no two strokes are ever visible to meet in between. */
+	 The stroke caps at each end on the rung the content there stands off it: above, the
+	 header's own block padding, which is that rung entire; below, `--_qm-nest`, of which
+	 the panel spends `--_qm-space`. The rest is grown here and handed straight back as
+	 margin — the stroke lengthens, and a section boundary keeps the three rungs it stood
+	 at. What it reaches into is the air of that boundary, or, where the section closes the
+	 payload, exactly the inset the rule took, so the two land on each other at a corner
+	 with nothing drawn longer to reach it. One section open at a time, so no two strokes
+	 are ever visible to meet in between. */
 	.qm-group {
 		display: flex;
 		flex-direction: column;
 		border-left: var(--_qm-border-width) solid transparent;
-		padding-block: var(--stroke-reach);
-		margin-block: calc(-1 * var(--stroke-reach));
+		padding-bottom: var(--stroke-reach);
+		margin-bottom: calc(-1 * var(--stroke-reach));
 		transition: border-color var(--_qm-duration-slow) var(--_qm-ease-reverse);
 	}
 	.qm-group.qm-open {
 		border-left-color: var(--_qm-border);
 	}
-	/* Symmetric vertical padding at the tightest rung that still clears WCAG 2.5.8's
-	 24×24 floor: the header is the whole row, so adjacent labels share one rhythm with no
-	 dead strip outside the button. Horizontal is the nesting step left and zero right —
-	 left, because the chevron opening the heading starts where the fields under it start,
-	 so everything the section holds stands off its vertical by one rung and the corner the
-	 stroke closes against a rule reads square; right, because the row is the target and an
-	 inset there is target given back. What the glyph gives up by taking the step is the
-	 gutter: at a tighter rung it stands in the clearance itself, with only its own bearing
-	 between ink and stroke, and the rotation swaps which bearing faces which.
+	/* One rung on three sides and zero on the end, the end because the row is the target
+	 and an inset there is target given back. The rung is `--_qm-space` in both axes, and
+	 neither is free: the block padding is the tightest that still clears WCAG 2.5.8's
+	 24×24 floor, and it is the whole air a heading opening the payload keeps under its
+	 rule, which a rule cannot inset past — so the inline inset is that same number or the
+	 corner is square on one axis alone. The heading rides the vertical there, one
+	 nesting step out from the fields under it, which is what states that it holds them.
+	 What the glyph gives up for the step is the gutter: it stands in the clearance itself,
+	 with only its own bearing between ink and stroke, and the rotation swaps which bearing
+	 faces which.
 
 	 `font: inherit` because a UA button inherits no face, then the body rung, one step
 	 over the field labels beneath it: at the label rung the two read as one register and
@@ -637,7 +646,7 @@
 		width: 100%;
 		border: none;
 		background: transparent;
-		padding: var(--_qm-space) 0 var(--_qm-space) var(--_qm-nest);
+		padding: var(--_qm-space) 0 var(--_qm-space) var(--_qm-space);
 		font: inherit;
 		font-size: var(--_qm-text-body);
 		font-weight: var(--_qm-weight-mid);
