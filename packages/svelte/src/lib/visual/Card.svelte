@@ -442,10 +442,15 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--_qm-space-2);
-		/* The group's vertical plus the rung the chevron stands off it: the title
-		 shares that column. Inline only. The block pull is half the card's block
-		 inset, so the header sits that far off the hairline and the rule. */
-		padding-inline: calc(var(--_qm-space) + var(--_qm-vertical-width));
+		/* The heading column, drawn the way a group draws it: a rail slot one vertical
+		 wide, then the rung the chevron stands off one. A border and the arithmetic that
+		 restates it are not the same length — a browser snaps the first to the device
+		 pixel and leaves the second fractional — so the two share a column only while both
+		 are borders. Both ends, so the title's ink and the delete glyph's stand alike. The
+		 block pull is half the card's block inset, so the header sits that far off the
+		 hairline and the rule. */
+		border-inline: var(--_qm-vertical-width) solid transparent;
+		padding-inline: var(--_qm-space);
 		margin-block: calc(-1 * var(--_qm-space-3) / 2);
 	}
 	.qm-card-header-right {
@@ -563,12 +568,13 @@
 	 accordion spends the same rung from its header and its panel, where it also caps the
 	 vertical those two edges hold.
 
-	 No stroke: a vertical would mark a section a reader has no name for. The start
-	 inset is the heading's — the group's vertical plus the rung the chevron stands
-	 off it — so a top-level field and a section heading share a column. */
+	 The rail slot is kept and left uninked: a vertical would mark a section a reader has
+	 no name for, and the slot is what stands a top-level field on the heading's column
+	 (`.qm-card-header`). */
 	.qm-section {
 		padding-block: var(--_qm-space);
-		padding-inline-start: calc(var(--_qm-space) + var(--_qm-vertical-width));
+		border-inline-start: var(--_qm-vertical-width) solid transparent;
+		padding-inline-start: var(--_qm-space);
 	}
 	/* Where it faces a rule, the rung a heading already stands off one. The fields
 	 sit on the heading column, not the card's edge. */
