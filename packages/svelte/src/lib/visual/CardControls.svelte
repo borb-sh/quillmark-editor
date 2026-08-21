@@ -56,6 +56,10 @@
 		display: flex;
 		align-items: center;
 		gap: var(--_qm-space-half);
+		/* One compositor layer for the row. Opacity on the pair otherwise snaps
+		   that box off the header's half-pixel, against delete which never leaves
+		   the document paint. */
+		transform: translateZ(0);
 	}
 	.qm-card-reorder {
 		display: flex;
