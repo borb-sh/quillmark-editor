@@ -4,6 +4,22 @@
 
 ## Unreleased
 
+**A section heading rides its vertical, one nesting step out from the fields it holds.** The chevron opening a heading stood on the column its fields start on, so the row that names a section began where the section's contents began and nothing in the figure said which held which. It opens at `--_qm-space` instead, the rung the header's own block padding already stands at — the whole air a heading keeps under the payload's top rule, which a rule cannot inset past, so it is the only inline inset that squares that corner.
+
+**A payload rule is drawn on the edge of the box it faces, and the air is that box's own**, so each rule stands off the ink beside it by the inset that squares its corner: `--_qm-nest` for a field row, `--_qm-space` for a heading, each the rung that ink already stands off a vertical inline. Two headings closing the payload's two ends now stand the same distance off their rules, where the lower one stood three rungs against the upper one's one. Where the last section is open the box carries the longer rung as real padding, so its vertical ends on the rule at every frame of a fold rather than only at the two ends of one; where a reveal moved the accordion instead, nothing about it animates, the landing measuring its target one flush after asking.
+
+**A card's edge stands a step tighter than the verticals inside it**, `--_qm-space-2` where they keep `--_qm-nest`: an edge that closes a block nests nothing under it, and the two rules it holds run that much further for the room. Everything the card draws moves with it, so what a field row or a heading keeps from the rules and the verticals beside it is unchanged. What a field row keeps from a rule is the rung of whichever stroke holds it — the card's own edge for the ungrouped block, the nesting rung for a section's fields — so the corner it closes reads square at either.
+
+**The verticals carry half a step more width than the strokes that close a block or rank two**, `--_qm-vertical-width` at 1.5px against the hairline everything else reads: a section's, a subform's and a blockquote's alike. Depth is what a vertical states and the one thing a dense card asks a reader to find, where an edge that closes and a rule that ranks are read from the block they bound.
+
+**A headerless card keeps a rung of its own above its payload** rather than standing as the rule its first section's vertical would run to. The tangent corner costs more than it pays there: a card opening on air reads as an island, and one whose first heading tucks under its own edge reads as a lid.
+
+**A field row stands the longer rung off whatever follows it**, the next section's heading as well as the rule closing the payload. An open section's vertical caps in air rather than in margin handed straight back, so the boundary under it is `--_qm-nest` where it was two thirds of one, and a field row ends the same distance from the heading below it as from a rule or the card's own edge.
+
+**A headerless card's edge is the stroke its payload's first section faces**, where nothing stands between the two. The card insets nothing there and the box facing it carries the rung, the way a payload rule's does: a heading tucks under the edge at `--_qm-space` with its vertical running to it, and a field row stands the whole `--_qm-nest` below rather than that and the section's own cap besides. A card that opens on its body keeps the inset, prose being neither.
+
+**A disclosure row stands off the next by the two headers' own block padding and nothing else.** The accordion spent a rung of gap between its sections besides, calibrated as the distance the fields keep between their rows — a label over a well, which reads as a float between two lines of text — so a run of shut headings read as separate items rather than as the list of sections it is. The rows tile now, and their tap targets with them. A section's vertical caps its free end at `--_qm-space`, the rung a subform's own vertical already caps at, so the stroke ends where it did against the heading below it and the two figures cap alike.
+
 ## v0.7.3 - 2026-08-20
 
 ## v0.7.2 - 2026-08-20

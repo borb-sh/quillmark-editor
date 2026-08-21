@@ -1,12 +1,11 @@
 <!--
   Card controls, composable cards only.
   Right-aligned in the header: a move-up/move-down chevron pair revealed while the
-  pointer or the caret is in the card (each disabled at its edge), then an
-  always-visible delete. Reorder is buttons, not drag (V1). The card scopes that
-  reveal, so its condition lives in the parent's CSS; the pair keeps the narrower
-  guarantee here, that a focused chevron is a visible one. The card also hangs this
-  cluster to land these glyphs on its right gutter, and reads `--_qm-glyph-control`
-  to do it: the size is the stylesheet's below, never an attribute.
+  pointer or the caret is in the card (each disabled at its edge), then delete.
+  Reorder is buttons, not drag (V1). All three are chips (controls.css): fill arrives
+  on hover, and delete rests faded danger, full under the pointer. The card scopes
+  that reveal, so its condition lives in the parent's CSS; the pair keeps the narrower
+  guarantee here, that a focused chevron is a visible one.
 -->
 <script lang="ts">
 	import { wording } from './strings.js';
@@ -31,14 +30,14 @@
 	<div class="qm-card-reorder">
 		<button
 			type="button"
-			class="qm-icon-btn"
+			class="qm-chip qm-focus-ring"
 			title={t.strings.cardMoveUp}
 			disabled={isFirst}
 			onclick={onMoveUp}><Icon name="chevron-up" /></button
 		>
 		<button
 			type="button"
-			class="qm-icon-btn"
+			class="qm-chip qm-focus-ring"
 			title={t.strings.cardMoveDown}
 			disabled={isLast}
 			onclick={onMoveDown}><Icon name="chevron-down" /></button
@@ -46,9 +45,9 @@
 	</div>
 	<button
 		type="button"
-		class="qm-icon-btn qm-card-delete"
+		class="qm-chip qm-card-delete qm-focus-ring"
 		title={t.strings.cardDelete}
-		onclick={onDelete}><Icon name="x" /></button
+		onclick={onDelete}><Icon name="trash-2" /></button
 	>
 </div>
 
@@ -56,20 +55,10 @@
 	.qm-card-controls {
 		display: flex;
 		align-items: center;
-		gap: var(--_qm-space);
-	}
-	/* The glyph rung in CSS rather than through the icon's `size`, because the card
-	 header's right hang is arithmetic over this number and the tap floor: an
-	 attribute set in the script is a second place the size lives, and the balance
-	 breaks silently when the two disagree. A stylesheet beats an SVG presentation
-	 attribute, so the rung wins without the attribute being removed from the icon. */
-	.qm-card-controls :global(svg) {
-		width: var(--_qm-glyph-control);
-		height: var(--_qm-glyph-control);
+		gap: var(--_qm-space-half);
 	}
 	.qm-card-reorder {
 		display: flex;
-		gap: var(--_qm-space-half);
 		opacity: 0;
 		transition: opacity var(--_qm-duration-fast) var(--_qm-ease-reverse);
 	}
@@ -80,13 +69,25 @@
 	.qm-card-reorder:focus-within {
 		opacity: 1;
 	}
-	/* Box and disabled state come from `.qm-icon-btn` (controls.css); only the ink
-	 is this component's: the reorder pair recedes to the label tone, delete
-	 carries the danger hue (scoped, so both beat the layered base). */
-	.qm-icon-btn {
-		color: var(--_qm-ink-label);
+	/* Squares: the chip's inline pad is for a label. Width and height are one rung
+	 so the hover fill is a square and the glyph sits in the middle. */
+	.qm-card-controls button {
+		width: var(--_qm-tap-min);
+		height: var(--_qm-tap-min);
+		padding: 0;
 	}
+	/* Hover fill comes from `.qm-chip` (controls.css). Idle recede is on the ink,
+	 not the box: a layer on the chip is two rasters of the same stroke, and the
+	 fill has to stay opaque. Danger mixed to the idle rung; full under the pointer. */
 	.qm-card-delete {
+		color: color-mix(
+			in oklab,
+			var(--_qm-danger) calc(100% * var(--_qm-opacity-idle)),
+			var(--_qm-surface)
+		);
+	}
+	.qm-card-delete:hover,
+	.qm-card-delete:focus-visible {
 		color: var(--_qm-danger);
 	}
 </style>

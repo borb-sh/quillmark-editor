@@ -9,9 +9,8 @@
 
 	interface Props extends Omit<SVGAttributes<SVGSVGElement>, 'name'> {
 		name: IconName;
-		/** The frame's edge, in px. The card controls pass none and take the default,
-		 *  then size the glyph from `--_qm-glyph-control` in CSS, where the header's
-		 *  right hang is measured against the same number. */
+		/** The frame's edge, in px. A chip sizes the glyph from `--_qm-glyph-control`
+		 *  in CSS, which beats this attribute; callers that are not chips pass a size. */
 		size?: number;
 	}
 	let { name, size = 24, ...rest }: Props = $props();
