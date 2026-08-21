@@ -28,9 +28,8 @@ import type { Document, CardAddr } from '@quillmark/wasm';
  * **A namespace emptied of keys is removed, not stored empty.** That is
  * `removeExtNamespace`'s one correct use: it takes the whole namespace, and there is
  * nothing left in this one to lose. `$ext` goes with it when `editor` was the last
- * namespace. A stored `{}` survives the model but not the emit, where an empty
- * mapping omits its own key and leaves a bare `$ext:` that reads back as null and
- * fails the next parse. A patch dropping keys the namespace does not have writes
+ * namespace, so a document nothing has renamed or hinted carries no editor slot
+ * rather than an empty one. A patch dropping keys the namespace does not have writes
  * nothing, so dismissing tips on a document that carries none is not a mutation.
  */
 export function patchEditorExt(
