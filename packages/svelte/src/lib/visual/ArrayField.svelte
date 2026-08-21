@@ -587,7 +587,7 @@
 	 the two read as one register. Inner radius: the chip family is the card's, and this
 	 box is a line of type. The chip's tap floor is given back (`.qm-tap-floor`),
 	 and the padding with it, so the drawn box is the line and the target is the floor.
-	 It rests dim and comes up on hover of the field; empty, it is the way in. */
+	 It rests dim and comes up under the pointer; empty, it is the way in. */
 	.qm-add-el {
 		padding: 0 var(--_qm-space);
 		font-weight: var(--_qm-weight-mid);
@@ -595,7 +595,7 @@
 		border-radius: var(--_qm-radius-inner);
 		opacity: var(--_qm-opacity-idle);
 	}
-	.qm-array:hover .qm-add-el,
+	.qm-add-el:hover,
 	.qm-add-el:focus-visible {
 		opacity: 1;
 	}
