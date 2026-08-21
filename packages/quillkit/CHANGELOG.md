@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.5.2 - 2026-08-21
+
 **The carried `@quillmark/wasm` is 0.108.3, and a quill under test renders a paragraph that is one bare Typst marker.** A body holding the `/` that opens the slash menu compiles, where the studio's preview answered `expected colon` on that keystroke; the same escape covers `-`, `+`, `=` and `N.`, a marker at the head of bold text or a table cell, and text after inline code or an image opening with `(` or `.name`.
 
 ## v0.5.1 - 2026-08-19
