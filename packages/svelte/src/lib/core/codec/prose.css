@@ -76,7 +76,7 @@ li.ProseMirror-selectednode::after {
    reads as set apart without a fill or a second box. */
 .ProseMirror blockquote {
 	padding-left: var(--_qm-space-3);
-	border-left: var(--_qm-border-width) solid var(--_qm-border);
+	border-left: var(--_qm-vertical-width) solid var(--_qm-border);
 }
 
 /* ── The positive half ───────────────────────────────────────────────────────

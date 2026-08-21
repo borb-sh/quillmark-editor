@@ -280,14 +280,19 @@
 	--_qm-reveal: 500ms cubic-bezier(0.4, 0, 0.2, 1);
 
 	/* ── Geometry ──────────────────────────────────────────────────────────*/
-	/* One stroke width for every edge the chrome draws: a card's, a control's,
-	   and the verticals nested inside it alike. A threshold rather than a
-	   rhythm choice, like the tap floor: a hairline is a hairline at any
-	   `--qm-space`, so it does not derive from a dial. It exists as a rung because
-	   the nesting ladder's whole claim is that a card's edge, a section's vertical
-	   and a subform's are one stroke at three depths, and `check:style`'s
-	   border-width axis can only hold that against a token. */
+	/* One stroke width for every edge the chrome draws and every rule it ranks
+	   with: a card's, a control's, the two closing a card's payload. A threshold
+	   rather than a rhythm choice, like the tap floor: a hairline is a hairline at
+	   any `--qm-space`, so neither derives from a dial. Both exist as rungs because
+	   `check:style`'s border-width axis can only hold a stroke against a token. */
 	--_qm-border-width: 1px;
+	/* Half a step over it, for the verticals alone — a section's, a subform's, a
+	   blockquote's. What a vertical states is depth, and depth is the one thing a
+	   reader has to find in a dense card; the strokes that close a block or rank two
+	   stay at the hairline, so the ladder is what carries the extra weight. Half,
+	   because a whole step reads as a different kind of line rather than the same
+	   one doing more work. */
+	--_qm-vertical-width: 1.5px;
 	--_qm-radius: var(--qm-radius, 8px);
 	/* The interior corner, and half is the relationship rather than the number: a
 	   corner inside a corner reads as nested only while it is visibly tighter, and

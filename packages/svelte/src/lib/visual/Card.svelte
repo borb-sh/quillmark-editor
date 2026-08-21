@@ -408,27 +408,28 @@
 
 <style>
 	/* An island: the card is the base plane, the column behind it the sunken one, and the
-	 hairline closes it (ARCHITECTURE §Styling). The inset is the same rung as the gap, so
-	 what separates the header from the fields is what separates the fields from the
-	 card's edge. The inline half reads `--_qm-nest` at that same number: this edge is the
-	 nesting ladder's first stroke, and its inset the first step. */
+	 hairline closes it (ARCHITECTURE §Styling). The block half is the same rung as the
+	 gap, so what separates the header from the fields is what separates the fields from
+	 the card's edge. The inline half stands a step tighter than the nesting rung the
+	 verticals inside keep: this edge closes the block rather than nesting one, and the
+	 rules it holds run that much further for it. */
 	.qm-card {
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
-		padding: var(--_qm-space-3) var(--_qm-nest);
+		padding: var(--_qm-space-3) var(--_qm-space-2);
 		background: var(--_qm-surface);
 		display: flex;
 		flex-direction: column;
 		gap: var(--_qm-space-3);
 	}
-	/* Headerless, with nothing between that edge and the payload, the edge is the stroke
-	 the payload's first section faces — the rules inside the card and this one being one
-	 stroke at two depths (ARCHITECTURE §"A plane is a tone"). So it insets nothing and the
-	 box facing it carries the rung, the way a rule's does: a heading tucks under the edge
-	 at `--_qm-space` with its vertical running to it, a field row stands the whole
-	 `--_qm-nest` below. A card that opens on its body keeps the inset — prose is neither. */
+	/* Headerless, the payload faces that edge with nothing between, and the edge keeps a
+	 rung of its own rather than standing as the rule the first section's vertical would
+	 run to: the tangent corner is worth less here than a card that opens on air. What the
+	 payload spends inside it is unchanged, so a field row leading it stands the edge's own
+	 inset off the top, as it does off the side. A card that opens on its body keeps the
+	 full inset — prose is neither a heading nor a field row. */
 	.qm-card.qm-main:has(> .qm-card-body > .qm-card-meta:first-child) {
-		padding-top: 0;
+		padding-top: var(--_qm-space);
 	}
 	.qm-card-header {
 		display: flex;
@@ -557,15 +558,15 @@
 	.qm-section {
 		padding-block: var(--_qm-space);
 	}
-	/* Where it faces a stroke — a payload rule, or the card's own edge above a headerless
-	 one — the whole rung: its fields stand `--_qm-nest` off that stroke, the rung they
-	 already stand off the card's edge beside them. */
-	.qm-meta-top > .qm-section:first-child,
-	.qm-main .qm-card-meta > .qm-section:first-child {
-		padding-top: var(--_qm-nest);
+	/* Where it faces a rule, the rung it already stands off the card's edge beside it,
+	 which is the stroke holding it: these fields hang off no vertical, so the corner they
+	 close is the card's own and squares on the card's own inset. A section's fields close
+	 theirs on the nesting rung instead, which is what holds them. */
+	.qm-meta-top > .qm-section:first-child {
+		padding-top: var(--_qm-space-2);
 	}
 	.qm-meta-bottom > .qm-section:last-child {
-		padding-bottom: var(--_qm-nest);
+		padding-bottom: var(--_qm-space-2);
 	}
 	/* Two query containers, one per kind of section, so capacity follows the width the
 	 fields actually get: a panel's inset makes that narrower than the card. */
@@ -620,7 +621,7 @@
 	.qm-group {
 		display: flex;
 		flex-direction: column;
-		border-left: var(--_qm-border-width) solid transparent;
+		border-left: var(--_qm-vertical-width) solid transparent;
 		padding-bottom: var(--_qm-space);
 		margin-bottom: calc(-1 * var(--_qm-space));
 		transition:
