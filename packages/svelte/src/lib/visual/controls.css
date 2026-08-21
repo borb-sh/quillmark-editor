@@ -1,8 +1,8 @@
 /* The control recipes more than one component draws: the focus ring, the box a
- typed value sits in, and the square icon button. They live here rather than per
- component because Svelte scopes a `<style>` block to the component that owns the
- markup: a component that carries a shared class without also carrying its rule
- ships unstyled, and nothing raises it.
+ typed value sits in, the unboxed glyph, the add strip, and the chip. They live here
+ rather than per component because Svelte scopes a `<style>` block to the component
+ that owns the markup: a component that carries a shared class without also carrying
+ its rule ships unstyled, and nothing raises it.
 
  Not in `core/theme.css`: that file is the derivation (public dials in, the
  private `--_qm-*` scale out) and it mints values. This file mints none; every
@@ -12,7 +12,7 @@
  Every selector here is `:where()`-wrapped, so a recipe computes at specificity zero.
  That is the point twice over: a consumer's stylesheet beats the chrome without
  `!important`, and a component's own scoped block overrides its shared base —
- `.qm-card-delete` recolours a `.qm-icon-btn`, `.qm-json` adds the monospace face over
+ `.qm-card-delete` recolours a `.qm-chip` under the pointer, `.qm-json` adds the monospace face over
  `.qm-input` — with no specificity fight. Unlayered with it, so a host's own layered
  reset never reaches these rules whatever order the sheets load in (`core/theme.css`). */
 
@@ -116,12 +116,11 @@
 }
 
 /* The second recipe, and it is not the box above: a field is a box because you
- type into it, a button is not a box because you press it. No resting border and
- no resting fill; the
- surface arrives on hover, off the rung the enum listbox already highlights with.
- Deliberately no `color`: the callers disagree on purpose (the card delete is
- `--_qm-danger`, the array remove inherits its row's ink), and a base colour here
- would flatten that distinction rather than share a recipe.
+ type into it. A button rests with no fill; the surface arrives on hover, off the
+ rung the enum listbox already highlights with. Deliberately no `color`: the
+ callers disagree on purpose (the array remove takes danger under the pointer, the
+ tips foot inherits, a chip takes the label tone), and a base colour here would flatten
+ that distinction rather than share a recipe.
 
  `--_qm-tap-min` is WCAG 2.5.8's floor, read rather than re-expressed per
  control: `min-*` is outside every `check:style` axis, so a second expression of
@@ -132,9 +131,9 @@
  the floor means the same height whatever element carries it; and a caller that
  stretches one of these to its row gets a width the padding sits inside.
 
- Both button families are named here rather than opting in through a marker: a
- glyph button and an add affordance are not sometimes flat, so a class they could
- be built without is a class one of them will eventually miss.
+ Every button family is named here rather than opting in through a marker: a
+ glyph, an add strip and a chip are not sometimes flat, so a class they could be
+ built without is a class one of them will eventually miss.
 
  The type half is the shared rule above, which both families are named in; what
  diverges is the leading. Where the box's height is a line box, a button's is
@@ -147,7 +146,8 @@
  own block: the tips foot takes the label rung, which is that surface's decision,
  not the family's. */
 :where(.qm-icon-btn),
-:where(.qm-add-affordance) {
+:where(.qm-add-affordance),
+:where(.qm-chip) {
 	line-height: 1;
 	box-sizing: border-box;
 	min-width: var(--_qm-tap-min);
@@ -159,17 +159,19 @@
 	transition: background-color var(--_qm-duration-fast) var(--_qm-ease-reverse);
 }
 :where(.qm-icon-btn:hover:not(:disabled)),
-:where(.qm-add-affordance:hover:not(:disabled)) {
+:where(.qm-add-affordance:hover:not(:disabled)),
+:where(.qm-chip:hover:not(:disabled)) {
 	background: var(--_qm-surface-hover);
 }
 :where(.qm-icon-btn:disabled),
-:where(.qm-add-affordance:disabled) {
+:where(.qm-add-affordance:disabled),
+:where(.qm-chip:disabled) {
 	opacity: var(--_qm-opacity-idle);
 	cursor: default;
 }
 
-/* A glyph button: card reorder/delete, array remove, the field label's guidance
- marker, the tips card's foot. */
+/* A glyph riding another plane: the array remove (a slab of the well), the field
+ label's guidance marker, the tips card's foot. A named pressable is a chip. */
 :where(.qm-icon-btn) {
 	display: inline-flex;
 	align-items: center;
@@ -178,20 +180,53 @@
 	padding: var(--_qm-space-half) var(--_qm-space);
 }
 
-/* An add affordance: the between-card trigger and the array foot's. A pill rather
- than the inner radius, because it fills on hover instead of tinting ink: both rest
- unfilled on `--_qm-opacity-idle`, so a hover shifting ink alone would have little
- to shift. The recede ladder itself stays with each caller: it is driven by their
- own hover/focus state. */
+/* An add strip: the between-card trigger. A pill rather than the inner radius,
+ because it fills on hover instead of tinting ink: it rests unfilled on
+ `--_qm-opacity-idle`, so a hover shifting ink alone would have little to shift.
+ The recede ladder itself stays with the caller: it is driven by the strip's own
+ hover/focus state. The array's add is a chip. */
 :where(.qm-add-affordance) {
 	border-radius: var(--_qm-radius-pill);
-	color: var(--_qm-ink-label);
 	transition:
 		opacity var(--_qm-duration-fast) var(--_qm-ease-reverse),
 		background-color var(--_qm-duration-fast) var(--_qm-ease-reverse);
 }
-:where(.qm-add-affordance:hover) {
+
+/* A well spans and sinks. A chip hugs, and like every button it rests unfilled:
+ the fill arrives on hover. Named (a label) or unnamed (the glyph is the name) —
+ the array's add and the card header's reorder/delete. The card's own radius: a
+ chip sits on the card, where a well takes the inner because it is cut into it. A
+ glyph riding another plane stays `.qm-icon-btn`; a gap that is the insertion
+ stays `.qm-add-affordance`.
+
+ Ink is the label rung at rest and the body rung under the pointer, the same
+ ladder the add strip takes: a chip that sat at `--_qm-ink` read as a written
+ value. */
+:where(.qm-chip) {
+	font: inherit;
+	font-size: var(--_qm-text-label);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--_qm-space);
+	padding: var(--_qm-space) var(--_qm-space-2);
+	border-radius: var(--_qm-radius);
+	transition:
+		background-color var(--_qm-duration-fast) var(--_qm-ease-reverse),
+		color var(--_qm-duration-fast) var(--_qm-ease-reverse);
+}
+:where(.qm-add-affordance),
+:where(.qm-chip) {
+	color: var(--_qm-ink-label);
+}
+:where(.qm-add-affordance:hover),
+:where(.qm-chip:hover) {
 	color: var(--_qm-ink);
+}
+:where(.qm-chip svg) {
+	flex-shrink: 0;
+	width: var(--_qm-glyph-control);
+	height: var(--_qm-glyph-control);
 }
 
 /* The press floor, for a trigger standing in a line of text or a band of gutter
@@ -203,8 +238,8 @@
  construction: a pseudo-element has no node.
 
  The family's floor comes off in the same rule, carrying this class being what giving
- it up means. It sits after both families for that: same specificity, so source order
- decides. */
+ it up means. It sits after the unboxed recipes for that: same specificity, so source
+ order decides. */
 :where(.qm-tap-floor) {
 	position: relative;
 	min-width: 0;

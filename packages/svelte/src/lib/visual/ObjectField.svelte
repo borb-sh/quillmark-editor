@@ -260,7 +260,7 @@
 		display: grid;
 		grid-template-columns: repeat(var(--cols), 1fr);
 		gap: var(--_qm-space-2);
-		border-inline-start: var(--_qm-border-width) solid var(--_qm-border);
+		border-inline-start: var(--_qm-vertical-width) solid var(--_qm-border);
 		padding-inline-start: var(--_qm-nest);
 		padding-block: var(--_qm-space);
 	}

@@ -280,14 +280,19 @@
 	--_qm-reveal: 500ms cubic-bezier(0.4, 0, 0.2, 1);
 
 	/* ── Geometry ──────────────────────────────────────────────────────────*/
-	/* One stroke width for every edge the chrome draws: a card's, a control's,
-	   and the verticals nested inside it alike. A threshold rather than a
-	   rhythm choice, like the tap floor: a hairline is a hairline at any
-	   `--qm-space`, so it does not derive from a dial. It exists as a rung because
-	   the nesting ladder's whole claim is that a card's edge, a section's vertical
-	   and a subform's are one stroke at three depths, and `check:style`'s
-	   border-width axis can only hold that against a token. */
+	/* One stroke width for every edge the chrome draws and every rule it ranks
+	   with: a card's, a control's, the two closing a card's payload. A threshold
+	   rather than a rhythm choice, like the tap floor: a hairline is a hairline at
+	   any `--qm-space`, so neither derives from a dial. Both exist as rungs because
+	   `check:style`'s border-width axis can only hold a stroke against a token. */
 	--_qm-border-width: 1px;
+	/* Half a step over it, for the verticals alone — a section's, a subform's, a
+	   blockquote's. What a vertical states is depth, and depth is the one thing a
+	   reader has to find in a dense card; the strokes that close a block or rank two
+	   stay at the hairline, so the ladder is what carries the extra weight. Half,
+	   because a whole step reads as a different kind of line rather than the same
+	   one doing more work. */
+	--_qm-vertical-width: 1.5px;
 	--_qm-radius: var(--qm-radius, 8px);
 	/* The interior corner, and half is the relationship rather than the number: a
 	   corner inside a corner reads as nested only while it is visibly tighter, and
@@ -324,17 +329,12 @@
 	--_qm-tail: 40vh;
 	/* WCAG 2.5.8's 24x24 pointer-target floor. A rung rather than a sixth step on
 	   the space scale: it is a threshold the spec fixes, not a rhythm choice, so
-	   it does not move when `--qm-space` does. Both button families read it, so the
+	   it does not move when `--qm-space` does. Every button family reads it, so the
 	   floor is one number instead of one expression per control. */
 	--_qm-tap-min: 24px;
-	/* The reorder/delete glyph. A rung because the card header's
-	   right hang is half the difference between this and the tap floor: the glyph
-	   centres in a target sized by the floor, so what stands between it and the
-	   card's gutter is an arithmetic of the two, and a literal on either side is a
-	   balance that silently breaks when the glyph moves. Sized in CSS rather than
-	   through the icon's `size`, so the hang and the glyph read one number. Scoped to
-	   the control pair: the hint and the format marks take their own sizes, and a
-	   rung claiming to be every glyph would be false at three of them. */
+	/* The chrome glyph: a chip's, and the in-well remove's. Sized in CSS rather than
+	   through the icon's `size`, so a stylesheet beats the SVG presentation attribute
+	   and one rung is the whole of what a control draws. */
 	--_qm-glyph-control: 14px;
 
 	/* ── Type ────────────────────────────────────────────────────────────────
