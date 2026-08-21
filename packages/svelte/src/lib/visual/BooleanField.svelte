@@ -38,7 +38,7 @@
 
 <span class="qm-switch-wrap">
 	<Switch.Root
-		class="qm-switch qm-focus-ring"
+		class="qm-switch qm-focus-ring qm-tap-floor"
 		checked={local.value}
 		{id}
 		aria-label={id ? undefined : label}
@@ -55,6 +55,11 @@
 <style>
 	/* A primitive renders its own element, which a scoped selector cannot reach:
 	 styled through the wrapper with `:global`. */
+	/* The track is the drawn box and the target is `.qm-tap-floor`'s (controls.css): a
+	 switch is a mark standing in a field's row, so its height is the track's, where WCAG
+	 2.5.8's floor is half again that. The `<label for>` beside it forwards a press but
+	 stands at the label rung, so it is no taller: without the floor no region on the
+	 surface reaches this control at the size every other control on it holds. */
 	.qm-switch-wrap :global(.qm-switch) {
 		display: inline-flex;
 		align-items: center;
