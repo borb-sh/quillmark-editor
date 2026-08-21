@@ -409,10 +409,11 @@
 <style>
 	/* An island: the card is the base plane, the column behind it the sunken one, and the
 	 hairline closes it (ARCHITECTURE §Styling). The block half is the same rung as the
-	 gap, so what separates the header from the fields is what separates the fields from
-	 the card's edge. The inline half stands a step tighter than the nesting rung the
-	 verticals inside keep: this edge closes the block rather than nesting one, and the
-	 rules it holds run that much further for it. */
+	 gap: the payload stands that far off the card's edge and off the body below it. The
+	 header insets itself to the section-heading column (`.qm-card-header`). The inline
+	 half stands a step tighter than the nesting rung the verticals inside keep: this
+	 edge closes the block rather than nesting one, and the rules it holds run that much
+	 further for it. */
 	.qm-card {
 		border: var(--_qm-border-width) solid var(--_qm-border);
 		border-radius: var(--_qm-radius);
@@ -436,9 +437,17 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--_qm-space-2);
+		/* The group's vertical plus the rung the chevron stands off it: the title
+		 shares that column, and the other three sides take the same length so the
+		 header's inset is one number. The card's block padding is one rung larger
+		 than its inline, and the pull of that rung is what makes the four meet.
+		 The hang on `.qm-card-header-right` lands the delete glyph on this
+		 padding's end edge. */
+		padding: calc(var(--_qm-space) + var(--_qm-vertical-width));
+		margin-block: calc(-1 * var(--_qm-space));
 	}
 	/* The overhang is the tap target's own centring given back, so the glyphs sit on the
-	 card's gutter rather than the targets around them. It is the fill that crosses the
+	 header's inset rather than the targets around them. It is the fill that crosses the
 	 line, not a box: an icon button rests unboxed and fills only under the pointer. */
 	.qm-card-header-right {
 		display: flex;

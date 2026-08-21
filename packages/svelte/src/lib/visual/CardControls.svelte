@@ -5,7 +5,7 @@
   always-visible delete. Reorder is buttons, not drag (V1). The card scopes that
   reveal, so its condition lives in the parent's CSS; the pair keeps the narrower
   guarantee here, that a focused chevron is a visible one. The card also hangs this
-  cluster to land these glyphs on its right gutter, and reads `--_qm-glyph-control`
+  cluster to land these glyphs on the header's inset, and reads `--_qm-glyph-control`
   to do it: the size is the stylesheet's below, never an attribute.
 -->
 <script lang="ts">
@@ -48,7 +48,7 @@
 		type="button"
 		class="qm-icon-btn qm-card-delete"
 		title={t.strings.cardDelete}
-		onclick={onDelete}><Icon name="x" /></button
+		onclick={onDelete}><Icon name="trash-2" /></button
 	>
 </div>
 
