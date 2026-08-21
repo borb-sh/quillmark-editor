@@ -443,13 +443,12 @@
 		justify-content: space-between;
 		gap: var(--_qm-space-2);
 		/* The group's vertical plus the rung the chevron stands off it: the title
-		 shares that column, and the other three sides take the same length so the
-		 header's inset is one number. The card's block padding is one rung larger
-		 than its inline, and the pull of that rung is what makes the four meet.
-		 The hang on `.qm-card-header-right` lands the delete glyph on this
-		 padding's end edge. */
-		padding: calc(var(--_qm-space) + var(--_qm-vertical-width));
-		margin-block: calc(-1 * var(--_qm-space));
+		 shares that column. Inline only. The block pull is half the card's block
+		 inset, so the header sits that far off the hairline and the rule. The hang
+		 on `.qm-card-header-right` lands the delete glyph on this padding's end
+		 edge. */
+		padding-inline: calc(var(--_qm-space) + var(--_qm-vertical-width));
+		margin-block: calc(-1 * var(--_qm-space-3) / 2);
 	}
 	/* The overhang is the tap target's own centring given back, so the glyphs sit on the
 	 header's inset rather than the targets around them. It is the fill that crosses the
@@ -458,7 +457,7 @@
 		display: flex;
 		align-items: center;
 		gap: var(--_qm-space-2);
-		margin-right: calc(-1 * (var(--_qm-tap-min) - var(--_qm-glyph-control)) / 2);
+		margin-right: calc(-1 * (var(--_qm-tap-header) - var(--_qm-glyph-header)) / 2);
 	}
 	/* Focus as well as hover, so a caret in any leaf, the title, or a chevron holds the
 	 reveal: hover alone would strand the pair on keyboard and touch. */
@@ -469,7 +468,7 @@
 	/* The rename hit region is the header's free width at full height, so a press
 	 anywhere left of the controls enters the title edit. `align-self: stretch` beats the
 	 header's centring, which is also what keeps the target legal with no padding: WCAG
-	 2.5.8's floor is the row's, which the controls hold at `--_qm-tap-min`. */
+	 2.5.8's floor is the row's, which the controls hold at `--_qm-tap-header`. */
 	.qm-card-rename {
 		flex: 1;
 		min-width: 0;
@@ -566,16 +565,15 @@
 	 accordion spends the same rung from its header and its panel, where it also caps the
 	 vertical those two edges hold.
 
-	 No stroke and no inset: fields declaring no `ui.group` are the card's own, at the rank
-	 its body is at, and the card's edge is the only container there is to state. A
-	 vertical here would mark a section a reader has no name for. */
+	 No stroke: a vertical would mark a section a reader has no name for. The start
+	 inset is the heading's — the group's vertical plus the rung the chevron stands
+	 off it — so a top-level field and a section heading share a column. */
 	.qm-section {
 		padding-block: var(--_qm-space);
+		padding-inline-start: calc(var(--_qm-space) + var(--_qm-vertical-width));
 	}
-	/* Where it faces a rule, the rung it already stands off the card's edge beside it,
-	 which is the stroke holding it: these fields hang off no vertical, so the corner they
-	 close is the card's own and squares on the card's own inset. A section's fields close
-	 theirs on the nesting rung instead, which is what holds them. */
+	/* Where it faces a rule, the rung a heading already stands off one. The fields
+	 sit on the heading column, not the card's edge. */
 	.qm-meta-top > .qm-section:first-child {
 		padding-top: var(--_qm-space-2);
 	}

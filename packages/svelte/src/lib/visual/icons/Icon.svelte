@@ -10,7 +10,7 @@
 	interface Props extends Omit<SVGAttributes<SVGSVGElement>, 'name'> {
 		name: IconName;
 		/** The frame's edge, in px. The card controls pass none and take the default,
-		 *  then size the glyph from `--_qm-glyph-control` in CSS, where the header's
+		 *  then size the glyph from `--_qm-glyph-header` in CSS, where the header's
 		 *  right hang is measured against the same number. */
 		size?: number;
 	}

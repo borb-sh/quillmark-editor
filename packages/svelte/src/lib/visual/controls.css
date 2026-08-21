@@ -12,7 +12,7 @@
  Every selector here is `:where()`-wrapped, so a recipe computes at specificity zero.
  That is the point twice over: a consumer's stylesheet beats the chrome without
  `!important`, and a component's own scoped block overrides its shared base —
- `.qm-card-delete` recolours a `.qm-icon-btn`, `.qm-json` adds the monospace face over
+ `.qm-card-delete` recolours a `.qm-icon-btn` under the pointer, `.qm-json` adds the monospace face over
  `.qm-input` — with no specificity fight. Unlayered with it, so a host's own layered
  reset never reaches these rules whatever order the sheets load in (`core/theme.css`). */
 
@@ -119,9 +119,10 @@
  type into it, a button is not a box because you press it. No resting border and
  no resting fill; the
  surface arrives on hover, off the rung the enum listbox already highlights with.
- Deliberately no `color`: the callers disagree on purpose (the card delete is
- `--_qm-danger`, the array remove inherits its row's ink), and a base colour here
- would flatten that distinction rather than share a recipe.
+ Deliberately no `color`: the callers disagree on purpose (the card delete and
+ the array remove take danger under the pointer, the reorder pair stays at the
+ label tone), and a base colour here would flatten that distinction rather than
+ share a recipe.
 
  `--_qm-tap-min` is WCAG 2.5.8's floor, read rather than re-expressed per
  control: `min-*` is outside every `check:style` axis, so a second expression of

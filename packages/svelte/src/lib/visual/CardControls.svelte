@@ -2,11 +2,12 @@
   Card controls, composable cards only.
   Right-aligned in the header: a move-up/move-down chevron pair revealed while the
   pointer or the caret is in the card (each disabled at its edge), then an
-  always-visible delete. Reorder is buttons, not drag (V1). The card scopes that
-  reveal, so its condition lives in the parent's CSS; the pair keeps the narrower
-  guarantee here, that a focused chevron is a visible one. The card also hangs this
-  cluster to land these glyphs on the header's inset, and reads `--_qm-glyph-control`
-  to do it: the size is the stylesheet's below, never an attribute.
+  always-visible delete, receded to the label tone until the pointer is on it.
+  Reorder is buttons, not drag (V1). The card scopes that reveal, so its condition
+  lives in the parent's CSS; the pair keeps the narrower guarantee here, that a
+  focused chevron is a visible one. The card also hangs this cluster to land these
+  glyphs on the header's inset, and reads `--_qm-glyph-header` to do it: the size
+  is the stylesheet's below, never an attribute.
 -->
 <script lang="ts">
 	import { wording } from './strings.js';
@@ -59,17 +60,17 @@
 		gap: var(--_qm-space);
 	}
 	/* The glyph rung in CSS rather than through the icon's `size`, because the card
-	 header's right hang is arithmetic over this number and the tap floor: an
+	 header's right hang is arithmetic over this number and the tap box: an
 	 attribute set in the script is a second place the size lives, and the balance
 	 breaks silently when the two disagree. A stylesheet beats an SVG presentation
 	 attribute, so the rung wins without the attribute being removed from the icon. */
 	.qm-card-controls :global(svg) {
-		width: var(--_qm-glyph-control);
-		height: var(--_qm-glyph-control);
+		width: var(--_qm-glyph-header);
+		height: var(--_qm-glyph-header);
 	}
 	.qm-card-reorder {
 		display: flex;
-		gap: var(--_qm-space-half);
+		gap: var(--_qm-space);
 		opacity: 0;
 		transition: opacity var(--_qm-duration-fast) var(--_qm-ease-reverse);
 	}
@@ -80,13 +81,27 @@
 	.qm-card-reorder:focus-within {
 		opacity: 1;
 	}
-	/* Box and disabled state come from `.qm-icon-btn` (controls.css); only the ink
-	 is this component's: the reorder pair recedes to the label tone, delete
-	 carries the danger hue (scoped, so both beat the layered base). */
+	/* Box and disabled state come from `.qm-icon-btn` (controls.css); the tap box
+	 and the ink are this component's: the family floors at `--_qm-tap-min`, the
+	 header is the larger pair, both recede to the label tone, and delete takes
+	 the danger hue under the pointer (scoped, so they beat the layered base).
+	 Width and height are one rung, so the hover fill is a square. */
 	.qm-icon-btn {
+		width: var(--_qm-tap-header);
+		height: var(--_qm-tap-header);
+		padding: 0;
 		color: var(--_qm-ink-label);
 	}
 	.qm-card-delete {
+		opacity: var(--_qm-opacity-idle);
+		transition:
+			opacity var(--_qm-duration-fast) var(--_qm-ease-reverse),
+			color var(--_qm-duration-fast) var(--_qm-ease-reverse),
+			background-color var(--_qm-duration-fast) var(--_qm-ease-reverse);
+	}
+	.qm-card-delete:hover,
+	.qm-card-delete:focus-visible {
+		opacity: 1;
 		color: var(--_qm-danger);
 	}
 </style>
