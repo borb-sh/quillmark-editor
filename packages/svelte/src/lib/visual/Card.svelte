@@ -444,31 +444,23 @@
 		gap: var(--_qm-space-2);
 		/* The group's vertical plus the rung the chevron stands off it: the title
 		 shares that column. Inline only. The block pull is half the card's block
-		 inset, so the header sits that far off the hairline and the rule. The hang
-		 on `.qm-card-header-right` lands the delete glyph on this padding's end
-		 edge. */
+		 inset, so the header sits that far off the hairline and the rule. */
 		padding-inline: calc(var(--_qm-space) + var(--_qm-vertical-width));
 		margin-block: calc(-1 * var(--_qm-space-3) / 2);
 	}
-	/* The overhang is the tap target's own centring given back, so the glyphs sit on the
-	 header's inset rather than the targets around them. It is the fill that crosses the
-	 line, not a box: an icon button rests unboxed and fills only under the pointer. */
 	.qm-card-header-right {
 		display: flex;
 		align-items: center;
 		gap: var(--_qm-space-2);
-		margin-right: calc(-1 * (var(--_qm-tap-header) - var(--_qm-glyph-header)) / 2);
-	}
-	/* Focus as well as hover, so a caret in any leaf, the title, or a chevron holds the
-	 reveal: hover alone would strand the pair on keyboard and touch. */
-	.qm-card:hover :global(.qm-card-reorder),
-	.qm-card:focus-within :global(.qm-card-reorder) {
-		opacity: 1;
+		/* The overhang is the tap target's own centring given back, so the delete
+		 glyph sits on the header's inset rather than the pad around it. The fill is
+		 what crosses the line. */
+		margin-inline-end: calc(-1 * (var(--_qm-tap-min) - var(--_qm-glyph-control)) / 2);
 	}
 	/* The rename hit region is the header's free width at full height, so a press
 	 anywhere left of the controls enters the title edit. `align-self: stretch` beats the
 	 header's centring, which is also what keeps the target legal with no padding: WCAG
-	 2.5.8's floor is the row's, which the controls hold at `--_qm-tap-header`. */
+	 2.5.8's floor is the row's, which the chips hold at `--_qm-tap-min`. */
 	.qm-card-rename {
 		flex: 1;
 		min-width: 0;

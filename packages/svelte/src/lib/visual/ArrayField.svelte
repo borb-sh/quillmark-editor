@@ -5,7 +5,7 @@
  by `items.type`: `richtext` / `plaintext` → a prose element
  ({@link ProseValue}), `object` → a summary row that opens onto a subform,
  everything else → a text input. The
- add affordance sits in the label header row (space-between with the field label);
+ add chip sits in the label header row (space-between with the field label);
  {@link Field} skips its own label for array controls and hands this component the
  label track with it.
 
@@ -352,7 +352,7 @@
 		{/if}
 		<button
 			type="button"
-			class="qm-add-el qm-add-affordance qm-tap-floor"
+			class="qm-add-el qm-chip qm-focus-ring qm-tap-floor"
 			bind:this={addEl}
 			onclick={add}>{t.strings.arrayAdd}</button
 		>
@@ -442,10 +442,9 @@
 		gap: var(--_qm-space);
 	}
 	/* The array's first line is the row's label line: this component owns the label
-	 track (Field.svelte), so the header has to measure what a `.qm-field-label-row`
-	 measures or an array shares a row with a scalar and their labels sit apart. The
-	 label is the same component; what had to give was the add affordance's height,
-	 below. */
+	 track (Field.svelte). Arrays never pack (`packable`), so the chip's tap floor is
+	 free to size the header; a caption on this line would have had to match
+	 `.qm-field-label-row`. */
 	.qm-array-header {
 		display: flex;
 		align-items: center;
@@ -584,29 +583,20 @@
 		color: var(--_qm-ink-label);
 		font-style: italic;
 	}
-	/* It rests dim and comes up on hover of the field rather than of itself: one trigger
-	 at the head of a row of controls is found by looking at the array, not by grazing its
-	 first line.
-
-	 The box is the label's line box and the target is `.qm-tap-floor`'s (controls.css): a
-	 target-sized box would stand the header 8px taller than the `.qm-field-label-row`
-	 beside it in a shared row and put the two labels on different lines.
-
-	 The label rung in place of the family's body rung, which the family invites: it reads
-	 as one more thing on the label line rather than as a control from the row below. */
+	/* The label line's own type: size, weight and leading are `.qm-field-label`'s, so
+	 the two read as one register. The chip's tap floor is given back (`.qm-tap-floor`),
+	 and the padding with it, so the drawn box is the line and the target is the floor.
+	 It rests dim and comes up on hover of the field; empty, it is the way in. */
 	.qm-add-el {
 		padding: 0 var(--_qm-space);
-		font-size: var(--_qm-text-label);
+		font-weight: var(--_qm-weight-mid);
+		line-height: var(--_qm-leading-tight);
 		opacity: var(--_qm-opacity-idle);
 	}
 	.qm-array:hover .qm-add-el,
 	.qm-add-el:focus-visible {
 		opacity: 1;
 	}
-	/* Empty, the rows box is `display: none` and the field is a label and this trigger:
-	   nothing left for it to compete with, and nothing else in the field to act on. So
-	   it rests full-strength there and takes the recede back once it heads a list. A
-	   receded trigger beside no content reads as a caption rather than as a way in. */
 	.qm-array.empty .qm-add-el {
 		opacity: 1;
 	}

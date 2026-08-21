@@ -44,7 +44,7 @@ export interface VisualStrings extends TableChromeStrings, SlashStrings {
 
 	// ── The add affordance ────────────────────────────────────────────────────
 	/** The trailing strip's visible words, which are also every strip's accessible
-	 * name; the glyph rides the wording, as the array foot's does. One string over
+	 * name; the plus rides the wording. One string over
 	 * one kind and many: the trigger seeds A card, and which kind is the menu's word
 	 * to say or the schema's to have already settled. */
 	addCard: string;
