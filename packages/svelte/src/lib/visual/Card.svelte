@@ -423,14 +423,19 @@
 		flex-direction: column;
 		gap: var(--_qm-space-3);
 	}
-	/* Headerless, the payload faces that edge with nothing between, and the edge keeps a
-	 rung of its own rather than standing as the rule the first section's vertical would
-	 run to: the tangent corner is worth less here than a card that opens on air. What the
-	 payload spends inside it is unchanged, so a field row leading it stands the edge's own
-	 inset off the top, as it does off the side. A card that opens on its body keeps the
-	 full inset — prose is neither a heading nor a field row. */
+	/* Headerless, the payload faces that edge with nothing between. A field row
+	 leading it stands the edge's own inset off the top, as it does off the side:
+	 this rung plus the section's block padding is the inline inset. A card that
+	 opens on its body keeps the full inset — prose is neither a heading nor a
+	 field row. */
 	.qm-card.qm-main:has(> .qm-card-body > .qm-card-meta:first-child) {
 		padding-top: var(--_qm-space);
+	}
+	/* A section heading leading it: the vertical starts at the content's
+	 top-left, so the top inset is the inline one and the tip is a square
+	 corner of the card. */
+	.qm-card.qm-main:has(> .qm-card-body > .qm-card-meta:first-child > .qm-groups:first-child) {
+		padding-top: var(--_qm-space-2);
 	}
 	.qm-card-header {
 		display: flex;
