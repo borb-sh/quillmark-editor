@@ -631,6 +631,13 @@
 	 the accordion stops looking like structure. Size, weight and leading sit after
 	 `font`, a shorthand that carries `line-height`. */
 	.qm-group-header {
+		/* Positioned, and paint is not what it buys: a group's box grows by
+		 `--stroke-reach` at both ends and hands the growth back as margin, so
+		 consecutive boxes overlap in a band at every seam, and a closed group's header
+		 ends inside the next group's box. In flow, the later sibling takes the presses
+		 that land in the band and the bottom of the header is a dead strip; positioned,
+		 the control holds its own box, and the band paints the same either way. */
+		position: relative;
 		display: flex;
 		align-items: center;
 		gap: var(--_qm-space);
