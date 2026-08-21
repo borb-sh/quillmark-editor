@@ -2,8 +2,8 @@
   Card controls, composable cards only.
   Right-aligned in the header: a move-up/move-down chevron pair revealed while the
   pointer or the caret is in the card (each disabled at its edge), then delete.
-  Reorder is buttons, not drag (V1). All three are chips (controls.css): fill arrives
-  on hover, and delete rests faded danger, full under the pointer. The card scopes
+  Reorder is buttons, not drag (V1). All three are chips (controls.css): all rest on the
+  label tone, fill arrives on hover, and delete takes danger there. The card scopes
   that reveal, so its condition lives in the parent's CSS; the pair keeps the narrower
   guarantee here, that a focused chevron is a visible one.
 -->
@@ -76,16 +76,11 @@
 		height: var(--_qm-tap-min);
 		padding: 0;
 	}
-	/* Hover fill comes from `.qm-chip` (controls.css). Idle recede is on the ink,
-	 not the box: a layer on the chip is two rasters of the same stroke, and the
-	 fill has to stay opaque. Danger mixed to the idle rung; full under the pointer. */
-	.qm-card-delete {
-		color: color-mix(
-			in oklab,
-			var(--_qm-danger) calc(100% * var(--_qm-opacity-idle)),
-			var(--_qm-surface)
-		);
-	}
+	/* Hover fill comes from `.qm-chip` (controls.css); the ink is this component's. All
+	 three rest on the label tone, so the cluster reads as one row of controls and the
+	 hue is what the pointer buys. Danger is a state and not a resting colour: mixed
+	 toward the surface it lands at 1.8:1 against it, under WCAG 1.4.11's 3:1 floor for
+	 the visual that identifies a control, and this one's visual is the glyph alone. */
 	.qm-card-delete:hover,
 	.qm-card-delete:focus-visible {
 		color: var(--_qm-danger);
