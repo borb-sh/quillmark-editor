@@ -104,8 +104,8 @@
 			aria-describedby={describedBy}
 			data-ghosted={unset ? '' : undefined}
 		>
-			{shown}
-			<Icon name="chevron-down" size={14} />
+			<span class="qm-select-shown">{shown}</span>
+			<Icon name="chevron-down" class="qm-select-chevron" size={14} />
 		</Select.Trigger>
 		<Select.Portal to={portalTarget}>
 			<Select.Content collisionBoundary={portalTarget ?? []} sideOffset={4}>
@@ -175,6 +175,21 @@
 		box-sizing: border-box;
 		text-align: left;
 		cursor: pointer;
+	}
+	/* The value is one line however long it runs, and the glyph beside it keeps its rung:
+	   the box is an inset plus one line box (controls.css), which a value that wraps
+	   stands two lines tall, and a flex glyph with nothing holding it gives its width up
+	   to the text first and is gone by the time the row is tight. The pair is the same
+	   guard the element summary takes over its own title, and `min-width` is the half
+	   that lets the text shrink at all. */
+	.qm-select-shown {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.qm-select-wrap :global(.qm-select-chevron) {
+		flex-shrink: 0;
 	}
 	/* The focus ring rides `.qm-focus-ring` on the trigger (controls.css). */
 	/* Shown-never-written: the closed control reads muted while unset, matching the
