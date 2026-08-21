@@ -57,7 +57,8 @@
 :where(.qm-input),
 :where(.qm-prose),
 :where(.qm-icon-btn),
-:where(.qm-add-affordance) {
+:where(.qm-add-affordance),
+:where(.qm-chip) {
 	font: inherit;
 	font-size: var(--_qm-text-body);
 }
@@ -202,8 +203,9 @@
  Ink is the label rung at rest and the body rung under the pointer, the same
  ladder the add strip takes: a chip that sat at `--_qm-ink` read as a written
  value. */
+/* The size alone, never the `font` shorthand: it carries `line-height`, and this rule
+ sits below the one that collapses a button's line box onto its content. */
 :where(.qm-chip) {
-	font: inherit;
 	font-size: var(--_qm-text-label);
 	display: inline-flex;
 	align-items: center;

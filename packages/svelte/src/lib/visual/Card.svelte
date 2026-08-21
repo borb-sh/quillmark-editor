@@ -442,10 +442,15 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--_qm-space-2);
-		/* The group's vertical plus the rung the chevron stands off it: the title
-		 shares that column. Inline only. The block pull is half the card's block
-		 inset, so the header sits that far off the hairline and the rule. */
-		padding-inline: calc(var(--_qm-space) + var(--_qm-vertical-width));
+		/* The heading column, drawn the way a group draws it: a rail slot one vertical
+		 wide, then the rung the chevron stands off one. A border and the arithmetic that
+		 restates it are not the same length — a browser snaps the first to the device
+		 pixel and leaves the second fractional — so the two share a column only while both
+		 are borders. Both ends, so the title's ink and the delete glyph's stand alike. The
+		 block pull is half the card's block inset, so the header sits that far off the
+		 hairline and the rule. */
+		border-inline: var(--_qm-vertical-width) solid transparent;
+		padding-inline: var(--_qm-space);
 		margin-block: calc(-1 * var(--_qm-space-3) / 2);
 	}
 	.qm-card-header-right {
@@ -534,13 +539,9 @@
 	 what stands one disclosure row off the next is the two headers' own block padding and
 	 nothing else, so the rows tile and their targets with them. A run of one-line rows
 	 wants the tighter rhythm — the `--_qm-space-3` the fields keep between their own rows
-	 is calibrated for a label over a well, and reads as a float between two lines of text.
-
-	 `--stroke-reach` is what a box standing a field row off a rule has left to spend: the
-	 rung is `--_qm-nest`, of which its own block padding is already `--_qm-space`. */
+	 is calibrated for a label over a well, and reads as a float between two lines of text. */
 	.qm-card-meta {
 		gap: var(--_qm-space);
-		--stroke-reach: calc(var(--_qm-nest) - var(--_qm-space));
 	}
 	/* The card's two horizontals, and ranking is the one thing a horizontal is for: they
 	 stand the payload against the title above it and the body below it, where saying what
@@ -563,12 +564,13 @@
 	 accordion spends the same rung from its header and its panel, where it also caps the
 	 vertical those two edges hold.
 
-	 No stroke: a vertical would mark a section a reader has no name for. The start
-	 inset is the heading's — the group's vertical plus the rung the chevron stands
-	 off it — so a top-level field and a section heading share a column. */
+	 The rail slot is kept and left uninked: a vertical would mark a section a reader has
+	 no name for, and the slot is what stands a top-level field on the heading's column
+	 (`.qm-card-header`). */
 	.qm-section {
 		padding-block: var(--_qm-space);
-		padding-inline-start: calc(var(--_qm-space) + var(--_qm-vertical-width));
+		border-inline-start: var(--_qm-vertical-width) solid transparent;
+		padding-inline-start: var(--_qm-space);
 	}
 	/* Where it faces a rule, the rung a heading already stands off one. The fields
 	 sit on the heading column, not the card's edge. */
@@ -624,40 +626,20 @@
 	 for it to gather.
 
 	 A free end of the stroke caps at `--_qm-space`, the rung the subform's own vertical
-	 caps at (`ObjectField`), grown as padding and handed straight back as margin so the
-	 stroke lengthens and no boundary moves. Above, that is also the rung the header stands
-	 off it, so the top end is the same number whether it caps free or lands on a rule.
+	 caps at (`ObjectField`). Above, that is the header's block padding. Below, it is the
+	 panel's, spent inside the clipped track (`.qm-group-panel-inner > .qm-fields`), where a
+	 fold reveals it with everything else the track holds: the box itself keeps no cap, so
+	 the stroke ends on the rule at every frame rather than at the two ends of one, and
+	 nothing here animates but the colour.
 	 One section open at a time, so no two strokes are ever visible to meet in between. */
 	.qm-group {
 		display: flex;
 		flex-direction: column;
 		border-left: var(--_qm-vertical-width) solid transparent;
-		padding-bottom: var(--_qm-space);
-		margin-bottom: calc(-1 * var(--_qm-space));
-		transition:
-			border-color var(--_qm-duration-slow) var(--_qm-ease-reverse),
-			padding-bottom var(--_qm-duration-slow) var(--_qm-ease-reverse),
-			margin-bottom var(--_qm-duration-slow) var(--_qm-ease-reverse);
+		transition: border-color var(--_qm-duration-slow) var(--_qm-ease-reverse);
 	}
-	/* Open, the cap is air as well as stroke: a section ending on a field row stands the
-	 longer rung off what follows, and three of `--_qm-space` are what that comes to — the
-	 panel's own, this cap, and the next header's. Shut, a section ends on its header and
-	 stands the header's rung, so there is nothing to cap and the padding is handed back. */
 	.qm-group.qm-open {
 		border-left-color: var(--_qm-border);
-		margin-bottom: 0;
-	}
-	/* The one end that lands on a rule, where the padding is real and the rule is this
-	 box's own bottom edge — so the stroke ends on the rule at every frame of a fold rather
-	 than at the two ends of one, and the fields inside stand `--_qm-nest` off it. Shut,
-	 the box ends on the header's block padding and the rule takes the heading's rung
-	 there, the same one the rule above it takes. */
-	.qm-meta-bottom > .qm-groups:last-child > .qm-group:last-child {
-		padding-bottom: 0;
-		margin-bottom: 0;
-	}
-	.qm-meta-bottom > .qm-groups:last-child > .qm-group:last-child.qm-open {
-		padding-bottom: var(--stroke-reach);
 	}
 	/* One rung on three sides and zero on the end, the end because the row is the target
 	 and an inset there is target given back. The rung is `--_qm-space` in both axes, and
@@ -716,13 +698,12 @@
 	.qm-group.qm-open .qm-group-panel {
 		grid-template-rows: 1fr;
 	}
-	/* What a toggle moves is the panel's track, and the box's own bottom edge where the
-	 last section is the one toggling. A reveal's landing measures its target one flush
-	 after asking — where either, mid-flight, still reads its start value — so nothing
-	 about the accordion animates for it. Both panels of the move are inside the group box,
-	 so the opening one and the closing one above it stand still together (`revealLeaf`). */
-	.qm-groups.qm-instant .qm-group-panel,
-	.qm-groups.qm-instant .qm-group {
+	/* What a toggle moves is the panel's track, and nothing else: the caps ride inside it.
+	 A reveal's landing measures its target one flush after asking — where an animating
+	 track still reads its start value — so the track stands still for it. Both panels of
+	 the move are inside the group box, so the opening one and the closing one above it
+	 stand still together (`revealLeaf`). */
+	.qm-groups.qm-instant .qm-group-panel {
 		transition: none;
 	}
 	/* Two boxes because the axes clip differently, and the track is the only thing that
@@ -743,9 +724,21 @@
 		padding-inline-end: var(--_qm-ring-reach);
 		margin-inline-end: calc(-1 * var(--_qm-ring-reach));
 	}
-	/* The lower of the two caps an open section's vertical takes (`.qm-group`). */
+	/* The two caps an open section's vertical takes (`.qm-group`). The lower carries the
+	 section's own share of the boundary under it as well as the panel's, three of
+	 `--_qm-space` being what a section ending on a field row stands off what follows — the
+	 panel's, this cap, and the next header's. Facing the payload's rule instead, the whole
+	 nesting rung, the one a field row stands off a horizontal. */
 	.qm-group-panel-inner > .qm-fields {
-		padding-block: var(--_qm-space);
+		padding-top: var(--_qm-space);
+		padding-bottom: var(--_qm-space-2);
+	}
+	.qm-meta-bottom
+		> .qm-groups:last-child
+		> .qm-group:last-child
+		.qm-group-panel-inner
+		> .qm-fields {
+		padding-bottom: var(--_qm-nest);
 	}
 	.qm-body-leaf {
 		display: flex;
