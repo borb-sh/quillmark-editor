@@ -134,9 +134,8 @@ describe('patchEditorExt', () => {
 	});
 
 	it('leaves a document the parser accepts back', () => {
-		// What a stored empty namespace costs the document (`ext.ts`), held where it
-		// lands. The emit that turns it into a bare `$ext:` is the boundary's, so what
-		// this pins is that a dismissed document parses back, not what it looks like.
+		// A dismissed document parses back, which is what the removal in `ext.ts` is for.
+		// What the emit makes of a namespace is the boundary's, so nothing here reads text.
 		const doc = quill.seedDocument();
 		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: ['a tip'] });
 		patchEditorExt(doc, MAIN_CARD_ADDR, { tips: undefined });

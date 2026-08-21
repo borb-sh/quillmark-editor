@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**The carried `@quillmark/wasm` is 0.108.3, and a quill under test renders a paragraph that is one bare Typst marker.** A body holding the `/` that opens the slash menu compiles, where the studio's preview answered `expected colon` on that keystroke; the same escape covers `-`, `+`, `=` and `N.`, a marker at the head of bold text or a table cell, and text after inline code or an image opening with `(` or `.name`.
+
 ## v0.5.1 - 2026-08-19
 
 **The carried `@quillmark/wasm` is 0.108.1, and a quill under test can be filled at depth.** A content cell under `variants:` reads at its codec, so the studio's editor mounts a leaf over one where it stood a line pointing at the source view; the same holds for a content property of an `object`. A quill whose classification world is four `plaintext` cells is fillable from the visual surface.
