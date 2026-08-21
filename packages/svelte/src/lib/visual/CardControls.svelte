@@ -1,8 +1,11 @@
 <!--
   Card controls, composable cards only.
-  Right-aligned in the header: a move-up/move-down chevron pair (each disabled at
-  its edge), then delete. Reorder is buttons, not drag (V1). All three are chips
-  (controls.css): fill arrives on hover, and delete takes danger under the pointer.
+  Right-aligned in the header: a move-up/move-down chevron pair revealed while the
+  pointer or the caret is in the card (each disabled at its edge), then delete.
+  Reorder is buttons, not drag (V1). All three are chips (controls.css): fill arrives
+  on hover, and delete rests faded danger, full under the pointer. The card scopes
+  that reveal, so its condition lives in the parent's CSS; the pair keeps the narrower
+  guarantee here, that a focused chevron is a visible one.
 -->
 <script lang="ts">
 	import { wording } from './strings.js';
@@ -56,6 +59,15 @@
 	}
 	.qm-card-reorder {
 		display: flex;
+		opacity: 0;
+		transition: opacity var(--_qm-duration-fast) var(--_qm-ease-reverse);
+	}
+	/* Opacity hides the pair without taking it out of the tab order, so the
+	   component holds its own floor: a chevron that has focus is drawn, and its ring
+	   with it. The card's reveal already covers this; the rule is here because the
+	   hidden state is. */
+	.qm-card-reorder:focus-within {
+		opacity: 1;
 	}
 	/* Squares: the chip's inline pad is for a label. Width and height are one rung
 	 so the hover fill is a square and the glyph sits in the middle. */
@@ -66,12 +78,11 @@
 	}
 	/* Hover fill comes from `.qm-chip` (controls.css). Idle recede is on the ink,
 	 not the box: a layer on the chip is two rasters of the same stroke, and the
-	 fill has to stay opaque. Danger under the pointer, rather than the family's
-	 ink. */
+	 fill has to stay opaque. Danger mixed to the idle rung; full under the pointer. */
 	.qm-card-delete {
 		color: color-mix(
 			in oklab,
-			var(--_qm-ink-label) calc(100% * var(--_qm-opacity-idle)),
+			var(--_qm-danger) calc(100% * var(--_qm-opacity-idle)),
 			var(--_qm-surface)
 		);
 	}
