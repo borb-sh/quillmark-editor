@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**A table draws one control at a time, and it is the one the pointer is on.** The band no longer comes up muted under a pointer anywhere on the island: a grip or an add bar is drawn while the pointer is on that control, while a bar holds the focus, or while it is what a gesture is about — the selected line's grip, the lifted one. Their boxes meet at no point, so what stands on screen is the one line the pointer has picked out. Every target is where it was, an invisible button being hit-tested like any other, so what changes is the look of a table under a passing pointer and not what it answers to.
+
 ## v0.7.3 - 2026-08-20
 
 ## v0.7.2 - 2026-08-20
