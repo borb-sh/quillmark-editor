@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.25.0 - 2026-08-21
+
 **The `@quillmark/wasm` peer floor is `>=0.108.3-0`.** Nothing here reads a content address or emits one, so the three steps land outside this package; the floor moves because a quiver hands out `Quill` handles the consumer's copy of the artifact has to be able to parse and render.
 
 ## v0.24.0 - 2026-08-18
