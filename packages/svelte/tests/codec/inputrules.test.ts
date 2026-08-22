@@ -151,7 +151,7 @@ describe('`# ` inside an item', () => {
 		view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, 3)));
 		type(view, '# ');
 		expect(view.state.doc.toString()).toBe('doc(bullet_list(list_item(heading("item"))))');
-		expect(representable(view.state)).toBe(true);
+		expect(representable(view.state.doc)).toBe(true);
 		view.destroy();
 	});
 
@@ -256,7 +256,7 @@ describe('the list shorthands decline at the head of an existing item', () => {
 		expect(view.state.doc.toString()).toBe(
 			'doc(bullet_list(list_item(blockquote(paragraph("alpha")))))'
 		);
-		expect(representable(view.state)).toBe(true);
+		expect(representable(view.state.doc)).toBe(true);
 		view.destroy();
 	});
 });
@@ -300,7 +300,7 @@ describe('the `---` divider shorthand', () => {
 		expect(view.state.doc.toString()).toBe(
 			'doc(bullet_list(list_item(horizontal_rule, paragraph)))'
 		);
-		expect(representable(view.state)).toBe(true);
+		expect(representable(view.state.doc)).toBe(true);
 		view.destroy();
 	});
 });

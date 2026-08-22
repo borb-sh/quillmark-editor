@@ -33,6 +33,8 @@ Marks apply over their `[start, end)` range; PM splits inline nodes at mark boun
 
 Two mark kinds do **not** become PM marks: see §Marks.
 
+**The grouping rules are also a shape constraint on the PM side.** Two adjacent siblings are two only where the lines can say so: a quote (and every unknown container) is one wrapper per `containers` identity, and a list run breaks on an ordinal decrease alone — so a list of one item followed by another list of its kind and `start` encodes to lines that decode as *one item holding two paragraphs*, the second item's marker gone. Decode emits no such pair, and no list command mints one (cleanup is command-local, §Structural keys in [VISUAL_EDITOR.md](VISUAL_EDITOR.md)); PM's own paste, drop and `replaceSelection` do, with nothing of this package's on the path. So the constraint is held where every edit passes rather than in each command: a plugin (`codec/boundaries.ts`) joins exactly the pairs the content cannot hold apart, on the transaction that minted one — the same commit, and one undo step. Joining further is the whole-doc fuse the same section refuses: a run of two or more items above the boundary carries its decrease, and an imported `1, 2, 1` must survive an edit in a region it did not touch.
+
 ## Encode: PM edit → `ChangeBundle`
 
 `contentEdit(oldRt, newRt)` pairs the stored content with the new PM doc's projection (`pmToContent`) and diffs their text once; `lower(edit)` fills out the four channels around that splice, in `applyChange`'s application order (`delta`, then `islandOps`, then `lineOps`, then `markOps`, all in *final* coordinates: every earlier channel applied):

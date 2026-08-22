@@ -1,5 +1,5 @@
 // The list structure keys: Tab/Shift-Tab indent-outdent, and what
-// Enter/Backspace mean inside a list. Driven through the bound commands
+// Enter/Backspace/Delete mean inside a list. Driven through the bound commands
 // `listKeymap` returns, not through re-derived copies of them, so a rebinding
 // breaks these.
 //
@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 import { EditorState, TextSelection } from 'prosemirror-state';
 import type { Node as PMNode } from 'prosemirror-model';
 import { blockSchema, decode, listKeymap } from '$lib/core/codec';
-import { md, atBlock, startOf, run, shape, keyDriver } from './_util.js';
+import { md, atBlock, startOf, run, shape, textblocks, keyDriver } from './_util.js';
 
 const keys = listKeymap(blockSchema);
 const { press, expectPress } = keyDriver(keys);
@@ -31,12 +31,22 @@ function after(markdown: string, caretAfter: string): EditorState {
 	return EditorState.create({ doc, selection: TextSelection.create(doc, pos) });
 }
 
+/** A state with the caret at the end of the `index`-th textblock: where Delete
+ * branches, as `atBlock`'s start is where Backspace does. */
+function endOf(doc: PMNode, index: number): EditorState {
+	const block = textblocks(doc)[index];
+	if (!block) throw new Error(`no textblock at index ${index}`);
+	const at = block.start + block.node.content.size;
+	return EditorState.create({ doc, selection: TextSelection.create(doc, at) });
+}
+
 // Hand-built nodes for the empty-item shapes: markdown has no spelling for an
 // item with no content, so these cases cannot come from `md()`.
 const n = blockSchema.nodes;
 const p = (text?: string) => n.paragraph.create(null, text ? blockSchema.text(text) : undefined);
 const li = (...blocks: PMNode[]) => n.list_item.create(null, blocks);
 const ul = (...items: PMNode[]) => n.bullet_list.create(null, items);
+const ol3 = (...items: PMNode[]) => n.ordered_list.create({ start: 3 }, items);
 const docOf = (...blocks: PMNode[]) => n.doc.create(null, blocks);
 
 describe('Tab / Shift-Tab change nesting depth', () => {
@@ -207,6 +217,73 @@ describe('Backspace', () => {
 	});
 });
 
+describe('Delete', () => {
+	it('at the end of an item, pulls the next item onto this line', () => {
+		expectPress(after('- a\n- b', 'a'), 'Delete', 'doc(bullet_list(list_item(paragraph("ab"))))');
+	});
+
+	it('at the end of an item owning a nested list, pulls its first child up', () => {
+		expectPress(
+			after('- a\n    - b', 'a'),
+			'Delete',
+			'doc(bullet_list(list_item(paragraph("ab"))))'
+		);
+	});
+
+	// The item after a nested run is an outer one, and its text still belongs on the
+	// line the caret is on: the same document Backspace at that item's start lands.
+	it('at the end of a nested item, pulls the outer item after it up', () => {
+		expectPress(
+			after('- a\n    - b\n- c', 'b'),
+			'Delete',
+			'doc(bullet_list(list_item(paragraph("a"), bullet_list(list_item(paragraph("bc"))))))'
+		);
+	});
+
+	it('at the end of a multi-paragraph item’s first block, merges inside the item', () => {
+		expectPress(
+			endOf(docOf(ul(li(p('a'), p('b')), li(p('c')))), 0),
+			'Delete',
+			'doc(bullet_list(list_item(paragraph("ab")), list_item(paragraph("c"))))'
+		);
+	});
+
+	it('mid-text, declines the key so the browser deletes a character', () => {
+		expect(run(after('- ab', 'a'), keys['Delete'])).toBe(null);
+	});
+
+	// The list's outer boundary is not an item's question: what a block after the list
+	// does under a Delete is the base keymap's answer, as its start under a Backspace is.
+	it('at the end of the last item, declines to the base keymap', () => {
+		expect(run(after('- a\n\nafter', 'a'), keys['Delete'])).toBe(null);
+	});
+
+	it('against a divider after the list, declines so the atom link answers', () => {
+		const doc = docOf(ul(li(p('a'))), blockSchema.nodes.horizontal_rule.create());
+		expect(run(endOf(doc, 0), keys['Delete'])).toBe(null);
+	});
+});
+
+// Backspace at an item's start and Delete at the end of the line above it are one
+// edit reached from two sides, so they land one document. The first item is the pair's
+// one exception and has its own tests above: Backspace lifts the item out where there
+// is no previous item to merge into, and Delete still merges.
+describe('the merge reads the same from either side', () => {
+	const cases: Record<string, [string, string, number]> = {
+		'two items': ['- a\n- b', 'a', 1],
+		'an outer item after a nested run': ['- a\n    - b\n- c', 'b', 2],
+		'a nested item after its sibling': ['- a\n    - b\n    - c', 'b', 2],
+		'an ordered pair': ['1. a\n2. b', 'a', 1]
+	};
+	for (const [name, [markdown, caretAfter, index]] of Object.entries(cases)) {
+		it(name, () => {
+			const forward = press(after(markdown, caretAfter), 'Delete');
+			const backward = press(startOf(markdown, index), 'Backspace');
+			expect(shape(forward)).toBe(shape(backward));
+		});
+	}
+});
+
 describe('ordered lists carry their numbering through a mutation', () => {
 	it('Tab nests a fresh ordered list starting at 1', () => {
 		expectPress(
@@ -221,6 +298,57 @@ describe('ordered lists carry their numbering through a mutation', () => {
 			startOf('3. a\n4. b', 1),
 			'Tab',
 			'doc(ordered_list(list_item(paragraph("a"), ordered_list(list_item(paragraph("b"))))))'
+		);
+		expect(next.doc.child(0).attrs.start).toBe(3);
+	});
+
+	// A lift splits the list, and the tail is a new node: it takes the number its first
+	// item already stood at, so an outdent renumbers nothing below it.
+	it('outdenting a middle item starts the tail at that item’s own ordinal', () => {
+		const next = expectPress(
+			startOf('3. a\n4. b\n5. c', 1),
+			'Shift-Tab',
+			'doc(ordered_list(list_item(paragraph("a"))), paragraph("b"), ordered_list(list_item(paragraph("c"))))'
+		);
+		expect([next.doc.child(0).attrs.start, next.doc.child(2).attrs.start]).toEqual([3, 5]);
+	});
+
+	it('the same split from an Enter on an empty middle item', () => {
+		const next = expectPress(
+			atBlock(docOf(ol3(li(p('a')), li(p()), li(p('c')))), 1),
+			'Enter',
+			'doc(ordered_list(list_item(paragraph("a"))), paragraph, ordered_list(list_item(paragraph("c"))))'
+		);
+		expect(next.doc.child(2).attrs.start).toBe(5);
+	});
+
+	it('lifting the first item leaves the rest numbered where they stood', () => {
+		const next = expectPress(
+			startOf('3. a\n4. b', 0),
+			'Backspace',
+			'doc(paragraph("a"), ordered_list(list_item(paragraph("b"))))'
+		);
+		expect(next.doc.child(1).attrs.start).toBe(4);
+	});
+
+	it('a nested ordered list splits by the same rule', () => {
+		const doc = docOf(ul(li(p('head'), ol3(li(p('x')), li(p('y')), li(p('z'))))));
+		const next = expectPress(
+			atBlock(doc, 2),
+			'Shift-Tab',
+			'doc(bullet_list(list_item(paragraph("head"), ordered_list(list_item(paragraph("x")))), list_item(paragraph("y"), ordered_list(list_item(paragraph("z"))))))'
+		);
+		const items = next.doc.child(0);
+		expect([items.child(0).child(1).attrs.start, items.child(1).child(1).attrs.start]).toEqual([
+			3, 5
+		]);
+	});
+
+	it('outdenting the last item leaves no tail to renumber', () => {
+		const next = expectPress(
+			startOf('3. a\n4. b', 1),
+			'Shift-Tab',
+			'doc(ordered_list(list_item(paragraph("a"))), paragraph("b"))'
 		);
 		expect(next.doc.child(0).attrs.start).toBe(3);
 	});

@@ -30,6 +30,7 @@ import { Decoration, DecorationSet, EditorView } from 'prosemirror-view';
 import type { Document, DocumentReader, Content, Addr, Quill } from '@quillmark/wasm';
 import type { EditorErrorHandler } from '../errors.js';
 import { reportError, errorMessage } from '../errors.js';
+import { boundaryPlugin } from './boundaries.js';
 import { decode } from './decode.js';
 import { usvToPM, pmToUsv, buildLineIndex, type LineIndex } from './positions.js';
 import { lower, pmToContent, contentEdit } from './encode.js';
@@ -543,8 +544,9 @@ export function createField(opts: CreateFieldOpts): FieldController {
  * plugins (`afterHistory`: the addressed leaf passes its anchor-position plugin;
  * a by-value leaf passes none), the
  * markdown-shorthand input rules, then the field keymap over the base keymap, and
- * last the two that answer to a caret or a selection beside a block: the gap cursor
- * and {@link pastAtomPlugin}.
+ * last the three that answer to what sits beside a block: the gap cursor,
+ * {@link pastAtomPlugin}, and the boundary guard (`boundaries.ts`), which reads the
+ * document every edit leaves rather than any one command's work.
  *
  * Every mark-shaped plugin reads the schema rather than a flag: over
  * `plaintextSchema` the shorthand rules build nothing (each is guarded on its mark
@@ -571,9 +573,10 @@ export function proseLeafPlugins(
 	if (!opts.noInputRules) list.push(inputRulesPlugin(schema));
 	list.push(keymap(editorKeymap(schema, opts.inline, !!opts.slash)));
 	list.push(keymap(baseKeymap));
-	// Both answer to something only a block leaf holds: an inline leaf is one textblock
-	// with no island and no gap to put a cursor in.
-	if (!opts.inline) list.push(gapCursor(), pastAtomPlugin());
+	// All three answer to something only a block leaf holds: an inline leaf is one
+	// textblock with no island, no gap to put a cursor in, and no container to sit
+	// beside another of its kind.
+	if (!opts.inline) list.push(gapCursor(), pastAtomPlugin(), boundaryPlugin());
 	if (opts.placeholder) list.push(placeholderPlugin(opts.placeholder));
 	return list;
 }

@@ -107,10 +107,11 @@ export const shape = (state: EditorState): string => state.doc.toString();
 
 /** The mutation survives the boundary: encode → normalize → decode is a fixpoint. A
  * command that produces a shape `Content` cannot hold would pass a doc-shape
- * assertion and still lose the user's edit on commit. */
-export function representable(state: EditorState): boolean {
-	const stored = normalize(pmToContent(state.doc));
-	return decode(stored, blockSchema).toString() === state.doc.toString();
+ * assertion and still lose the user's edit on commit. A property of the document
+ * alone, so a caller holding one asserts it without minting a state to carry it. */
+export function representable(doc: PMNode): boolean {
+	const stored = normalize(pmToContent(doc));
+	return decode(stored, blockSchema).toString() === doc.toString();
 }
 
 /**
@@ -135,7 +136,7 @@ export function keyDriver(keys: Record<string, Command>) {
 	function expectPress(state: EditorState, key: string, expected: string): EditorState {
 		const next = press(state, key);
 		expect(shape(next)).toBe(expected);
-		expect(representable(next), `not representable: ${shape(next)}`).toBe(true);
+		expect(representable(next.doc), `not representable: ${shape(next)}`).toBe(true);
 		return next;
 	}
 

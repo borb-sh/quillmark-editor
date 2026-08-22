@@ -57,3 +57,7 @@ export { inputRulesPlugin } from './inputrules.js';
 // (`bodyKeymap`); the suite drives both it and the list link directly.
 export { bodyKeymap } from './keymap.js';
 export { listKeymap } from './lists.js';
+
+// The sibling boundaries `Content` cannot carry: mounted by `proseLeafPlugins`, and
+// driven directly by the suite, where a paste is a `replaceSelection` with no view.
+export { boundaryPlugin } from './boundaries.js';
