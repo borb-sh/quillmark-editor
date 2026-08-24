@@ -39,7 +39,23 @@ function sel(markdown: string, from: number, to = from): EditorState {
 	});
 }
 
+/** A state over `markdown` with the caret at the end of the `index`-th textblock:
+ * where a forward delete is about the block's neighbour rather than about a
+ * character. */
+function endOf(markdown: string, index: number): EditorState {
+	const doc = decode(md(markdown), blockSchema);
+	const ends: number[] = [];
+	doc.descendants((node, pos) => {
+		if (node.isTextblock) ends.push(pos + 1 + node.content.size);
+		return !node.isTextblock;
+	});
+	return EditorState.create({ doc, selection: TextSelection.create(doc, ends[index]) });
+}
+
 const FENCE = '```\nfoo\nbar\n```';
+/** A fence under a paragraph, and a fence over one: the two sides of the edge. */
+const BELOW = 'head\n\n```\na\nb\n```';
+const ABOVE = '```\ncode\n```\n\ntail';
 
 describe('Tab indents', () => {
 	it('inserts one unit at the caret', () => {
@@ -156,6 +172,145 @@ describe('inside a list item, the code link wins', () => {
 			sel(IN_ITEM, 0),
 			'Shift-Tab',
 			'doc(paragraph("item"), code_block("code"))' // the list link lifts the item
+		);
+	});
+});
+
+// The edge, from both sides: a press that would join a fence with the prose block it
+// stands against retypes the fence and joins nothing, and the press after that is the
+// ordinary prose join.
+describe('a join at a fence’s edge retypes the fence first', () => {
+	it('Backspace at a fence’s head', () => {
+		const one = expectPress(
+			startOf(BELOW, 1),
+			'Backspace',
+			'doc(paragraph("head"), paragraph("a", hard_break, "b"))'
+		);
+		expectPress(one, 'Backspace', 'doc(paragraph("heada", hard_break, "b"))');
+	});
+
+	it('Delete at the end of the block above one', () => {
+		const one = expectPress(
+			endOf(BELOW, 0),
+			'Delete',
+			'doc(paragraph("head"), paragraph("a", hard_break, "b"))'
+		);
+		expectPress(one, 'Delete', 'doc(paragraph("heada", hard_break, "b"))');
+	});
+
+	it('Backspace at the head of the block after one', () => {
+		const one = expectPress(
+			startOf(ABOVE, 1),
+			'Backspace',
+			'doc(paragraph("code"), paragraph("tail"))'
+		);
+		expectPress(one, 'Backspace', 'doc(paragraph("codetail"))');
+	});
+
+	it('Delete at a fence’s end', () => {
+		const one = expectPress(endOf(ABOVE, 0), 'Delete', 'doc(paragraph("code"), paragraph("tail"))');
+		expectPress(one, 'Delete', 'doc(paragraph("codetail"))');
+	});
+
+	it('a heading is prose like any other block', () => {
+		expectPress(
+			startOf('# head\n\n```\ncode\n```', 1),
+			'Backspace',
+			'doc(heading("head"), paragraph("code"))'
+		);
+	});
+
+	it('a fence against a paragraph of its own item', () => {
+		expectPress(
+			startOf('- text\n\n  ```\n  code\n  ```', 1),
+			'Backspace',
+			'doc(bullet_list(list_item(paragraph("text"), paragraph("code"))))'
+		);
+	});
+
+	it('the exit paragraph a fence mints is still there after the press', () => {
+		// `toCodeBlock` mints it because a gap cursor will not sit beside a fence, so a
+		// press that takes it back leaves the caret nowhere to go.
+		const doc = blockSchema.nodes.doc.create(null, [
+			blockSchema.nodes.code_block.create(null, blockSchema.text('code')),
+			blockSchema.nodes.paragraph.create()
+		]);
+		const state = EditorState.create({ doc, selection: TextSelection.create(doc, 7) });
+		expectPress(state, 'Backspace', 'doc(paragraph("code"), paragraph)');
+	});
+
+	it('the caret stays in the block it was in', () => {
+		const next = press(startOf(ABOVE, 1), 'Backspace');
+		expect(next.selection.$from.parent.textContent).toBe('tail');
+		expect(next.selection.$from.parentOffset).toBe(0);
+	});
+});
+
+describe('the edge rule declines where a join retypes nothing', () => {
+	it('two fences join as one', () => {
+		expectPress(startOf('```\na\n```\n\n```\nb\n```', 1), 'Backspace', 'doc(code_block("ab"))');
+	});
+
+	it('two paragraphs join', () => {
+		expectPress(startOf('a\n\nb', 1), 'Backspace', 'doc(paragraph("ab"))');
+	});
+
+	it('at a container’s edge the block moves whole', () => {
+		// The base keymap joins no text there: it moves the block in or out, and a fence
+		// crossing that boundary is still a fence.
+		expectPress(
+			startOf('> quoted\n\n```\ncode\n```', 1),
+			'Backspace',
+			'doc(blockquote(paragraph("quoted"), code_block("code")))'
+		);
+		expectPress(
+			startOf('- item\n\n```\ncode\n```', 1),
+			'Backspace',
+			'doc(bullet_list(list_item(paragraph("item")), list_item(code_block("code"))))'
+		);
+	});
+
+	it('a fence that opens the body has no edge to be against', () => {
+		expect(run(sel(ABOVE, 0), keys['Backspace'])).toBe(null);
+	});
+
+	it('mid-fence it is not this key at all', () => {
+		expect(run(sel(FENCE, 2), keys['Backspace'])).toBe(null);
+	});
+});
+
+// A press at a later item's start is the list link's merge, which declines across this
+// same edge (`lists.ts`): the base keymap merges the items instead, each block whole.
+describe('in a list the items merge, each block whole', () => {
+	it('an item of prose after an item that is a fence', () => {
+		expectPress(
+			startOf('- ```\n  code\n  ```\n- b', 1),
+			'Backspace',
+			'doc(bullet_list(list_item(code_block("code"), paragraph("b"))))'
+		);
+	});
+
+	it('an item that is a fence after an item of prose', () => {
+		expectPress(
+			startOf('- a\n- ```\n  code\n  ```', 1),
+			'Backspace',
+			'doc(bullet_list(list_item(paragraph("a"), code_block("code"))))'
+		);
+	});
+
+	it('two items of prose still merge to one line', () => {
+		expectPress(
+			startOf('- a\n- b', 1),
+			'Backspace',
+			'doc(bullet_list(list_item(paragraph("ab"))))'
+		);
+	});
+
+	it('the first item still lifts, whatever sits above the list', () => {
+		expectPress(
+			startOf('```\ncode\n```\n\n- item', 1),
+			'Backspace',
+			'doc(code_block("code"), paragraph("item"))'
 		);
 	});
 });

@@ -38,16 +38,25 @@ function atItemStart(
 }
 
 /**
+ * The textblock at the end of `node`: `node` itself where it is one, else its last
+ * descendant that is — the block a caret above a boundary lands in, and the block a
+ * join across one reaches, `joinTextblockBackward` walking to the same one. `null` on
+ * an atom (an island, a rule), which `prosemirror-gapcursor` declines to sit beside
+ * too, its `closedBefore` asking this question from the other side.
+ */
+function lastBlockIn(node: PMNode | null | undefined): PMNode | null {
+	let last = node ?? null;
+	while (last && !last.isTextblock && !last.isAtom) last = last.lastChild;
+	return last?.isTextblock ? last : null;
+}
+
+/**
  * Whether a caret already fits immediately above the list at `pos`. The node ending
- * there answers for its last child, so a quote counts through its final paragraph;
- * an atom (an island, a rule) does not, and neither does a list opening its parent.
- * Those are the shapes `prosemirror-gapcursor` declines too, its `closedBefore`
- * asking this question from the other side.
+ * there answers for its last child, so a quote counts through its final paragraph; a
+ * list opening its parent has no node there at all.
  */
 function writableAbove(doc: PMNode, pos: number): boolean {
-	let before = doc.resolve(pos).nodeBefore;
-	while (before && !before.isTextblock && !before.isAtom) before = before.lastChild;
-	return !!before?.isTextblock;
+	return !!lastBlockIn(doc.resolve(pos).nodeBefore);
 }
 
 /**
@@ -96,11 +105,20 @@ function liftAtListStart(itemType: NodeType): Command {
  * `list_item(paragraph, paragraph)`: the item's marker gone while its text stays
  * on its own line, which the reference quill typesets as an unnumbered
  * continuation paragraph.
+ *
+ * Only between two blocks of one kind. A fence is not a line to put another line on,
+ * and the join across that edge would retype one side's whole text as the other's
+ * (`code.ts`, which refuses the same join between siblings); the base keymap's answer
+ * stands here instead, merging the items with each block kept whole.
  */
 function mergeIntoPreviousItem(itemType: NodeType): Command {
 	return (state, dispatch, view) => {
 		const at = atItemStart(state, itemType);
 		if (!at || at.itemIndex === 0) return false;
+		const into = lastBlockIn(state.doc.nodeAt(at.listPos)?.child(at.itemIndex - 1));
+		if (!into || !!into.type.spec.code !== !!state.selection.$from.parent.type.spec.code) {
+			return false;
+		}
 		return joinTextblockBackward(state, dispatch, view);
 	};
 }

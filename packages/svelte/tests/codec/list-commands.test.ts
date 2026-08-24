@@ -202,6 +202,21 @@ describe('Backspace', () => {
 		expect(run(after('- ab', 'a'), keys['Backspace'])).toBe(null);
 	});
 
+	it('across a code edge, declines: a fence is not a line to put a line on', () => {
+		// Either side of the edge; the base keymap merges the items whole there
+		// (`tests/codec/code-keys.test.ts`).
+		expect(run(startOf('- ```\n  code\n  ```\n- b', 1), keys['Backspace'])).toBe(null);
+		expect(run(startOf('- a\n- ```\n  code\n  ```', 1), keys['Backspace'])).toBe(null);
+	});
+
+	it('between two fences it is the ordinary merge', () => {
+		expectPress(
+			startOf('- ```\n  a\n  ```\n- ```\n  b\n  ```', 1),
+			'Backspace',
+			'doc(bullet_list(list_item(code_block("ab"))))'
+		);
+	});
+
 	it('at a later block of a multi-paragraph item, declines to the base keymap', () => {
 		expect(run(atBlock(docOf(ul(li(p('a'), p('b')))), 1), keys['Backspace'])).toBe(null);
 	});

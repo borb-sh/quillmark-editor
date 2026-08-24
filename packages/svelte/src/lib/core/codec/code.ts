@@ -3,6 +3,12 @@
 // a newline, because a code block is text the author controls to the character:
 // `whitespace: 'pre'`, `marks: ''` (`schema.ts`).
 //
+// Backspace and Delete are here for the edge rather than for the inside: a press that
+// would join a fence with the prose block it stands against retypes the fence to a
+// paragraph and joins nothing, from either side. They are the two keys this link binds
+// from outside a code block, and they sit ahead of the list link like the rest, so a
+// fence inside an item is answered by its own edge rather than by the item's merge.
+//
 // A code block's lines are not `Content` lines the codec addresses one by one: a
 // fence decodes to one `code_block` whose text carries literal `\n`s, and encode
 // spells it back as one `kind: 'code'` line plus a `continues: true` line per extra
@@ -15,7 +21,7 @@
 // text is what the preview typesets and a space's advance is renderer-independent;
 // two of them, because a memo's typeset column is narrow. Outdent accepts both
 // forms regardless: imported content carries whatever its author wrote.
-import type { Schema } from 'prosemirror-model';
+import type { Node as PMNode, Schema } from 'prosemirror-model';
 import { TextSelection, type Command, type EditorState } from 'prosemirror-state';
 import { newlineInCode } from 'prosemirror-commands';
 
@@ -118,19 +124,67 @@ const outdentInCode: Command = (state, dispatch) => {
 };
 
 /**
+ * The textblock the caret's own block stands directly against on `side`: its sibling
+ * under one parent, which is the only neighbour a press joins the text of. `null` at a
+ * container's edge, where the base keymap moves the whole block in or out rather than
+ * joining anything, and so retypes nothing.
+ */
+function blockAgainst(state: EditorState, side: -1 | 1): { node: PMNode; pos: number } | null {
+	const { $from, empty } = state.selection;
+	if (!empty || !$from.parent.isTextblock) return null;
+	if ($from.parentOffset !== (side < 0 ? 0 : $from.parent.content.size)) return null;
+	const $edge = state.doc.resolve(side < 0 ? $from.before() : $from.after());
+	const node = side < 0 ? $edge.nodeBefore : $edge.nodeAfter;
+	if (!node?.isTextblock) return null;
+	return { node, pos: side < 0 ? $edge.pos - node.nodeSize : $edge.pos };
+}
+
+/**
+ * Backspace at a fence's head or Delete at its end, and the same two presses from the
+ * block on the other side: retype the code block to a paragraph, and join nothing. The
+ * press after that is an ordinary join between two prose blocks.
+ *
+ * The join itself retypes one side's whole text as the other's kind on one keystroke —
+ * a fence's lines as prose, or a typed line as code — which is the destruction
+ * `atoms.ts` refuses for a neighbouring island, with nothing drawn first to say what is
+ * about to go. This is `toCodeBlock`'s inverse in its place (`blocks.ts`), and it takes
+ * no text with it: `linebreakReplacement` carries the fence's newlines across as breaks
+ * (`schema.ts`). The caret stays in the block it was in.
+ *
+ * Declines where both sides are code and where neither is: those joins retype nothing.
+ */
+function retypeAtProseEdge(side: -1 | 1): Command {
+	return (state, dispatch) => {
+		const paragraph = state.schema.nodes.paragraph;
+		const edge = blockAgainst(state, side);
+		if (!paragraph || !edge) return false;
+		const { $from } = state.selection;
+		const inside = !!$from.parent.type.spec.code;
+		if (inside === !!edge.node.type.spec.code) return false;
+		const at = inside ? $from.pos : edge.pos + 1;
+		dispatch?.(state.tr.setBlockType(at, at, paragraph).scrollIntoView());
+		return true;
+	};
+}
+
+/**
  * The `code_block` link of the body's key chains: `{}` for the inline/plaintext
  * schemas, which declare no code node.
  *
  * `Enter` is upstream's `newlineInCode`, and it is load-bearing rather than
  * cosmetic: inside a `list_item > code_block` the list link's `splitListItem`
  * otherwise splits the item in two, each half holding a code block. Every command
- * here declines outside a code block, so the list links keep the keys elsewhere.
+ * here declines away from a code block — inside one for the three keys about its
+ * text, against one for the two about its edge — so the list links keep the keys
+ * elsewhere.
  */
 export function codeKeymap(schema: Schema): Record<string, Command> {
 	if (!schema.nodes.code_block) return {};
 	return {
 		Tab: indentInCode,
 		'Shift-Tab': outdentInCode,
-		Enter: newlineInCode
+		Enter: newlineInCode,
+		Backspace: retypeAtProseEdge(-1),
+		Delete: retypeAtProseEdge(1)
 	};
 }
