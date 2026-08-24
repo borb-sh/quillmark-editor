@@ -117,22 +117,40 @@ describe('inline / plaintext constraints', () => {
 	});
 });
 
-describe('adjacent sibling lists (ordinal reset)', () => {
-	const item = (ordinal: number) =>
-		({ container: 'list_item', ordered: false, start: 1, ordinal }) as never;
-	// Two adjacent bullet lists: ordinals [0,1] then a reset to [0].
+// Contiguity plus an equal container path reads as one container, so a second
+// adjacent run of one shape carries `instance`. It is the only thing that tells the
+// two apart: the normalizer numbers a run's `ordinal`s gaplessly from 0, so a reset
+// carries no boundary of its own.
+describe('adjacent sibling containers (the `instance` boundary)', () => {
+	const item = (ordinal: number, instance?: number) =>
+		({
+			container: 'list_item',
+			ordered: false,
+			start: 1,
+			ordinal,
+			...(instance === undefined ? {} : { instance })
+		}) as never;
 	const twoLists: Content = {
 		text: 'a\nb\nc',
 		lines: [
 			{ containers: [item(0)], kind: 'para' },
 			{ containers: [item(1)], kind: 'para' },
-			{ containers: [item(0)], kind: 'para' }
+			{ containers: [item(0, 1)], kind: 'para' }
+		],
+		marks: [],
+		islands: []
+	};
+	const twoQuotes: Content = {
+		text: 'a\nb',
+		lines: [
+			{ containers: [{ container: 'quote' }], kind: 'para' },
+			{ containers: [{ container: 'quote', instance: 1 }], kind: 'para' }
 		],
 		marks: [],
 		islands: []
 	};
 
-	it('decodes an ordinal reset as a NEW list, not a merged one', () => {
+	it('decodes a second list `instance` as a NEW list, not a merged one', () => {
 		const doc = decode(twoLists, blockSchema);
 		expect(doc.childCount).toBe(2);
 		expect(doc.child(0).type.name).toBe('bullet_list');
@@ -141,11 +159,19 @@ describe('adjacent sibling lists (ordinal reset)', () => {
 		expect(doc.child(1).childCount).toBe(1);
 	});
 
+	it('decodes a second quote `instance` as a NEW blockquote', () => {
+		const doc = decode(twoQuotes, blockSchema);
+		expect(doc.childCount).toBe(2);
+		expect(doc.children.map((n) => n.type.name)).toEqual(['blockquote', 'blockquote']);
+	});
+
 	it('round-trips through the content (the exit-criterion shape)', () => {
-		// Normalization preserves the two-list shape, so a merged decode would
-		// re-encode ordinals [0,1,2] and fail this equality.
-		const canon = normalize(twoLists);
-		expect(contentEqual(normalize(pmToContent(decode(canon, blockSchema))), canon)).toBe(true);
+		// The normalizer keeps the discriminator, so a merged decode would re-encode
+		// one run — ordinals [0,1,2], or one two-paragraph quote — and fail this equality.
+		for (const rt of [twoLists, twoQuotes]) {
+			const canon = normalize(rt);
+			expect(contentEqual(normalize(pmToContent(decode(canon, blockSchema))), canon)).toBe(true);
+		}
 	});
 });
 

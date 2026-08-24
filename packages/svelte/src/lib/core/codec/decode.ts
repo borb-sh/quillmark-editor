@@ -133,16 +133,14 @@ function groupBlocks(
 			// Gather the maximal run of sibling `list_item` leaves at this depth
 			// (same ordered/start), then split it into items by `ordinal`.
 			const { ordered, start } = here;
+			const instance = here.instance ?? 0;
 			let j = i + 1;
-			let prevOrd = here.ordinal;
 			while (j < leaves.length) {
 				const c = atDepth(leaves[j], depth);
 				if (!c || !isListItemContainer(c) || c.ordered !== ordered || c.start !== start) break;
-				// An ordinal reset is an adjacent sibling list (content preserves the
-				// shape): merging it here would re-encode `[0,1,0]` as `[0,1,2]`,
-				// breaking the decode round-trip on the first edit.
-				if (c.ordinal < prevOrd) break;
-				prevOrd = c.ordinal;
+				// `instance` is the boundary between two adjacent lists; the normalizer
+				// numbers a run's `ordinal`s gaplessly from 0, so a reset carries none.
+				if ((c.instance ?? 0) !== instance) break;
 				j++;
 			}
 			const run = leaves.slice(i, j);
@@ -200,11 +198,14 @@ function ordinalAt(leaf: Leaf, depth: number): number {
 	return c && isListItemContainer(c) ? c.ordinal : -1;
 }
 
-/** Identity of a container for run gathering: its name plus its payload, NUL-joined
- * as `markKey` joins a mark's, so no `attrs` content can forge a name boundary.
- * Every arm but `list_item` (which has its own run rule) keys here. */
+/** Identity of a container for run gathering: its name, its `instance` and its payload,
+ * NUL-joined as `markKey` joins a mark's, so no `attrs` content can forge a name
+ * boundary. `instance` is what tells one container from an adjacent sibling of identical
+ * shape, which contiguity alone reads as one. Every arm but `list_item` (which has its
+ * own run rule) keys here. */
 function containerKey(c: ContentContainer): string {
-	return 'attrs' in c ? `${c.container}\u0000${JSON.stringify(c.attrs)}` : c.container;
+	const id = `${c.container}\u0000${c.instance ?? 0}`;
+	return 'attrs' in c ? `${id}\u0000${JSON.stringify(c.attrs)}` : id;
 }
 
 /** A single leaf block node (para/heading/code/rule/island, or an unknown kind
