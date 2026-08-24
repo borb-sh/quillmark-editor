@@ -261,7 +261,15 @@ function scanInline(
 	let pm = contentStart;
 	block.forEach((child) => {
 		if (child.isText) {
-			emitText(acc, child.text ?? '', pm, child.marks);
+			const text = child.text ?? '';
+			emitText(acc, text, pm, child.marks);
+			// A `\n` in a textblock that is not `whitespace: 'pre'` is the same line
+			// boundary a hard break is: `paragraph` is `inline*`, so the schema admits
+			// one, and `joinTextblocksAround` — a bare `replaceStep` running neither
+			// `clearIncompatible` nor `replaceNewlines` — leaves one. It rides the text
+			// run, where PM and USV advance together.
+			const breaks = text.split('\n').length - 1;
+			for (let i = 0; i < breaks; i++) acc.lines.push({ containers, continues: true, ...kind });
 		} else if (child.type.name === 'hard_break') {
 			// A within-block hard break: the content `\n` (a `continues` line).
 			acc.runs.push({ kind: 'nl', pmStart: pm, pmEnd: pm + 1, usvStart: acc.usvEnd });
@@ -344,7 +352,7 @@ export function contentEdit(oldRt: Content, newRt: Content): ContentEdit {
 export function lower(edit: ContentEdit, opts: LowerOpts = {}): ChangeBundle {
 	const { oldRt, newRt } = edit;
 	const { delta, islandOps, insertedAt } = splitIslands(edit);
-	const lineOps = diffLines(oldRt, newRt);
+	const lineOps = diffLines(oldRt, newRt, edit.delta);
 	const markOps = diffMarks(oldRt, newRt, delta, insertedAt, opts);
 	const bundle: ChangeBundle = {};
 	if (delta) bundle.delta = delta;
@@ -374,9 +382,35 @@ function diffText(oldText: string, newText: string): Delta | undefined {
 	return { ops };
 }
 
-/** Per-line `setContainers` / `setKind` / `setContinues` when line metadata changed; else none. */
-function diffLines(oldRt: Content, newRt: Content): LineOp[] {
-	if (lineMetaEqual(oldRt.lines, newRt.lines)) return [];
+/**
+ * Whether the splice moves a line boundary — a `\n` deleted, or one inserted. Where
+ * it does not, every line keeps the metadata it had and equal metadata on both sides
+ * is the whole story. Where it does, the store's split/join inheritance decides what
+ * each line ends up carrying, and an array that still matches position for position
+ * says nothing about it: one splice that both joins a boundary and opens another
+ * leaves the line count and the metadata array unchanged while the kinds slide.
+ */
+function movesBoundary(oldText: string, delta: Delta | undefined): boolean {
+	if (!delta) return false;
+	let at = 0;
+	let cps: string[] | undefined;
+	for (const op of delta.ops) {
+		if ('retain' in op) at += op.retain;
+		else if ('insert' in op) {
+			if (op.insert.includes('\n')) return true;
+		} else {
+			cps ??= codePoints(oldText);
+			if (cps.slice(at, at + op.delete).includes('\n')) return true;
+			at += op.delete;
+		}
+	}
+	return false;
+}
+
+/** Per-line `setContainers` / `setKind` / `setContinues` when line metadata changed or
+ *  the splice moved a boundary; else none. */
+function diffLines(oldRt: Content, newRt: Content, delta: Delta | undefined): LineOp[] {
+	if (!movesBoundary(oldRt.text, delta) && lineMetaEqual(oldRt.lines, newRt.lines)) return [];
 	const ops: LineOp[] = [];
 	// Force every new line's metadata. Redundant ops are safe no-ops (verified),
 	// so this is correct regardless of how the delta's split/join inheritance left

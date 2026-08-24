@@ -52,10 +52,11 @@ function writableAbove(doc: PMNode, pos: number): boolean {
 /**
  * Enter at the very start of a top-level list's first item, where nothing above the
  * list takes a caret → an empty paragraph above it, caret staying with the text it
- * pushed down. A list that opens a document, or one under an island or a rule, has
- * nowhere above to write and nothing else that opens one. Where a caret already
- * fits above, the key is the conventional split instead, at every item alike: an
- * escape a writer reaches by pressing Up needs no key of its own.
+ * pushed down. A list under an island or a rule has nowhere above to write and
+ * nothing else that opens one; a list that opens the body is the block link's, which
+ * answers the same fact for every block ahead of this chain (`blocks.ts`). Where a
+ * caret already fits above, the key is the conventional split instead, at every item
+ * alike: an escape a writer reaches by pressing Up needs no key of its own.
  *
  * Also only where the list itself is not inside an item: in a nested list this
  * pushes an empty paragraph into the parent item (`list_item` is `block+`, so the

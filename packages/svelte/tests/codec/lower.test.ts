@@ -3,12 +3,33 @@
 // real Document so `applyChange` actually runs; PM transactions are built on a DOM-free
 // EditorState, so this suite runs under node.
 import { describe, it, expect } from 'vitest';
-import { EditorState } from 'prosemirror-state';
+import { EditorState, TextSelection } from 'prosemirror-state';
 import type { Transaction } from 'prosemirror-state';
 import type { Node as PMNode } from 'prosemirror-model';
-import { decode, pmToContent, contentEdit, lower, blockSchema } from '$lib/core/codec';
+import { baseKeymap } from 'prosemirror-commands';
+import { blockSchema, bodyKeymap, contentEdit, decode, lower, pmToContent } from '$lib/core/codec';
 import type { Content, TableProps } from '@quillmark/wasm';
-import { freshDoc, normalize, contentEqual, md } from './_util.js';
+import { freshDoc, normalize, contentEqual, md, textblocks } from './_util.js';
+
+/** The transaction one key press produces, through the leaf's chain falling through
+ *  to the base keymap: a case whose subject is what a *gesture* stores, not what a
+ *  hand-built transaction does. */
+function keyTr(state: EditorState, key: string): Transaction {
+	let out: Transaction | undefined;
+	const claim = (tr: Transaction) => {
+		out = tr;
+	};
+	const keys = bodyKeymap(blockSchema);
+	if (!keys[key]?.(state, claim)) baseKeymap[key]?.(state, claim);
+	if (!out) throw new Error(`no command claimed ${key}`);
+	return out;
+}
+
+/** A state with the caret at the head of the `index`-th textblock. */
+function atHead(state: EditorState, index: number): EditorState {
+	const block = textblocks(state.doc)[index];
+	return state.apply(state.tr.setSelection(TextSelection.create(state.doc, block.start)));
+}
 
 interface AnchorOpts {
 	oldAnchors?: { id: string; pos: number }[];
@@ -77,6 +98,32 @@ describe('lower ∘ apply matches PM', () => {
 		expect(!!stored.lines[1].continues).toBe(true);
 		expect(stored.lines[1].kind).toBe('code');
 		expect(bundle.lineOps?.some((op) => op.op === 'setContinues')).toBe(true);
+	});
+	it('Backspace merging a fence into an item — the projection stays total', () => {
+		// The merge lands the fence's own `\n` inside a `paragraph`:
+		// `joinTextblocksAround` is a bare `replaceStep`, so no `clearIncompatible`
+		// pass rewrites it. The projection has to count it as the line boundary it is,
+		// or it carries more segments than lines and the bundle under-specifies the
+		// store — `applyChange` takes it, and the field diverges from the leaf.
+		const { stored } = lowerApply(md('- a\n\n- ```\n  alpha\n  beta\n  ```'), (s) =>
+			keyTr(atHead(s, 1), 'Backspace')
+		);
+		expect(stored.lines).toHaveLength(2);
+		expect(stored.lines.map((l) => l.kind)).toEqual(['para', 'para']);
+		expect(!!stored.lines[1].continues).toBe(true);
+		expect(stored.text).toBe('aalpha\nbeta');
+	});
+	it('a splice that joins one boundary and opens another restates every line', () => {
+		// A range from inside the fence to inside the heading, deleted. Both blocks
+		// survive, so both sides carry the same line metadata they did — and that is
+		// not "nothing to do": the delete takes the `\n` between them and the insert
+		// opens one a character earlier, so what the store's join/split inheritance
+		// leaves on the second line is the fence's kind, not the heading's.
+		const { stored, bundle } = lowerApply(md('```\nab\n```\n\n# *cd*'), (s) =>
+			s.tr.setSelection(TextSelection.create(s.doc, 2, 6)).deleteSelection()
+		);
+		expect(stored.lines.map((l) => l.kind)).toEqual(['code', 'heading']);
+		expect(bundle.lineOps?.some((op) => op.op === 'setKind')).toBe(true);
 	});
 });
 

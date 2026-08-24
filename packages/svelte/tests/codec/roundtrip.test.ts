@@ -1,15 +1,43 @@
-// Two structural properties the fixed-example suites miss:
+// Three structural properties the fixed-example suites miss:
 //   (1) decode → lower round-trip under a seeded generator over random line
 //       kinds / containers / continues / marks:
 //       `normalize(pmToContent(decode(rt))) == normalize(rt)`;
-//   (2) the position map after split/join/wrap: rebuild `buildLineIndex` and
+//   (2) the chain the leaf actually runs, under the same generator:
+//       `decode → press → pmToContent → lower → applyChange`, asserting the
+//       projection validates, the store equals the optimistic PM, and the position
+//       map still inverts;
+//   (3) the position map after split/join/wrap: rebuild `buildLineIndex` and
 //       re-assert the clean-inverse property.
+//
+// (1) and (2) are different statements about different halves. (1) is about the
+// codec's two pure functions and holds over contents a producer can build; (2) is
+// about the documents the *keymaps* can reach, which is the larger set — a shape no
+// `importMarkdown` produces still has to project.
 import { describe, it, expect } from 'vitest';
-import { EditorState } from 'prosemirror-state';
+import { EditorState, TextSelection, type Command } from 'prosemirror-state';
 import { wrapIn } from 'prosemirror-commands';
 import type { Node as PMNode } from 'prosemirror-model';
-import { decode, blockSchema, pmToContent } from '$lib/core/codec';
-import { md, normalize, contentEqual, assertPositionInverse } from './_util.js';
+import type { Content } from '@quillmark/wasm';
+import {
+	blockSchema,
+	bodyKeymap,
+	buildLineIndex,
+	contentEdit,
+	decode,
+	inputRulesPlugin,
+	lower,
+	pmToContent,
+	usvLength,
+	usvToPM
+} from '$lib/core/codec';
+import {
+	assertPositionInverse,
+	contentEqual,
+	freshDoc,
+	keyDriver,
+	md,
+	normalize
+} from './_util.js';
 
 // ── A deterministic PRNG (mulberry32) ───────────────────────────────────────
 // Seeded so any failure is reproducible from the reported seed: `Math.random`
@@ -27,11 +55,19 @@ function rng(seed: number): () => number {
 // ── A small markdown content generator ───────────────────────────────────────
 // Markdown (not raw `Content`) is the source so every sample is a guaranteed-
 // valid content via `importMarkdown`: the generator explores line kinds, list/
-// quote containers, the hard-break `continues` flag, and inline marks, while
-// staying clear of islands (own round-trip concerns) and mark-on-code
-// overlap (a separate normalization edge). At most one mark per word, so no
-// overlap that would blur the property under test.
+// quote containers, the hard-break `continues` flag, inline marks, code fences and
+// nesting to three levels, while staying clear of islands (own round-trip concerns)
+// and mark-on-code overlap (a separate normalization edge). At most one mark per
+// word, so no overlap that would blur the property under test.
+//
+// The fence and the nesting are what the fixed suites cover apart and never cross:
+// `list-shapes.test.ts` holds the nesting shapes and no code, `code-keys.test.ts` the
+// `list_item > code_block` cases and no generation. A fence carries astral characters
+// for the same reason a paragraph does —
+// a code block's `\n`s ride a `text` run, where PM and USV advance together and an
+// off-by-one would show.
 const WORDS = ['alpha', 'beta', 'gamma', 'x', 'the', 'quick', '😀', '🎉', '漢字', '日本語'];
+const LANGS = ['', '', 'rust', 'typ', 'py'];
 
 function pick<T>(r: () => number, arr: T[]): T {
 	return arr[Math.floor(r() * arr.length)];
@@ -52,25 +88,61 @@ function genInline(r: () => number): string {
 	return parts.join(' ');
 }
 
-function genBlock(r: () => number): string {
+/** A fence, sometimes empty, sometimes carrying a `lang` no editor gesture mints. */
+function genFence(r: () => number): string {
+	const open = '```' + pick(r, LANGS);
+	if (r() < 0.15) return `${open}\n\`\`\``;
+	const n = 1 + Math.floor(r() * 3);
+	const body = Array.from({ length: n }, () => pick(r, WORDS)).join('\n');
+	return `${open}\n${body}\n\`\`\``;
+}
+
+/** Prefix every line of a block so it sits one container in: `marker` opens the
+ *  first line, its own width continues the rest. A blank line stays blank, which is
+ *  what keeps a multi-block item one item. */
+function nest(block: string, marker: string): string {
+	const pad = ' '.repeat(marker.length);
+	return block
+		.split('\n')
+		.map((line, i) => (i === 0 ? marker + line : line ? pad + line : ''))
+		.join('\n');
+}
+
+function quoted(block: string): string {
+	return block
+		.split('\n')
+		.map((line) => (line ? `> ${line}` : '>'))
+		.join('\n');
+}
+
+function genList(r: () => number, depth: number, ordered: boolean): string {
+	const start = ordered && r() < 0.3 ? 2 + Math.floor(r() * 4) : 1;
+	const items = Array.from({ length: 1 + Math.floor(r() * 3) }, (_, i) =>
+		nest(genBlocks(r, depth, r() < 0.3 ? 2 : 1), ordered ? `${start + i}. ` : '- ')
+	);
+	// A blank line between items only where one spans lines: a tight list and a loose
+	// one are two shapes, and both are worth generating.
+	return items.join(items.some((item) => item.includes('\n')) ? '\n\n' : '\n');
+}
+
+function genBlock(r: () => number, depth: number): string {
 	const kind = r();
-	if (kind < 0.35) return genInline(r); // paragraph
-	if (kind < 0.5) return `# ${genInline(r)}`; // heading
-	if (kind < 0.68) {
-		const n = 1 + Math.floor(r() * 3); // bullet list
-		return Array.from({ length: n }, () => `- ${genInline(r)}`).join('\n');
-	}
-	if (kind < 0.82) {
-		const n = 1 + Math.floor(r() * 3); // ordered list
-		return Array.from({ length: n }, (_, i) => `${i + 1}. ${genInline(r)}`).join('\n');
-	}
-	if (kind < 0.92) return `> ${genInline(r)}`; // blockquote
-	return `${genInline(r)}\\\n${genInline(r)}`; // hard break → a `continues` line
+	if (kind < 0.26) return genInline(r); // paragraph
+	if (kind < 0.38) return `# ${genInline(r)}`; // heading
+	if (kind < 0.54) return genFence(r);
+	if (kind < 0.62) return `${genInline(r)}\\\n${genInline(r)}`; // hard break → `continues`
+	if (depth === 0) return genInline(r);
+	if (kind < 0.78) return genList(r, depth - 1, false);
+	if (kind < 0.9) return genList(r, depth - 1, true);
+	return quoted(genBlocks(r, depth - 1, 1 + Math.floor(r() * 2)));
+}
+
+function genBlocks(r: () => number, depth: number, n: number): string {
+	return Array.from({ length: n }, () => genBlock(r, depth)).join('\n\n');
 }
 
 function genMarkdown(r: () => number): string {
-	const n = 1 + Math.floor(r() * 5);
-	return Array.from({ length: n }, () => genBlock(r)).join('\n\n');
+	return genBlocks(r, 2, 1 + Math.floor(r() * 5));
 }
 
 describe('generative decode → lower round-trip', () => {
@@ -80,6 +152,94 @@ describe('generative decode → lower round-trip', () => {
 			const rt = md(source);
 			const back = pmToContent(decode(rt, blockSchema));
 			expect(contentEqual(normalize(back), normalize(rt)), `seed ${seed}\n${source}`).toBe(true);
+		}
+	});
+});
+
+// ── The chain the leaf runs, under the same generator ────────────────────────
+// `decode → press → pmToContent → lower → applyChange`, against a real `Document`,
+// with the gestures drawn from the keys `bodyKeymap` binds falling through to
+// `baseKeymap` — the composition `proseLeafPlugins` mounts, so precedence is under
+// test alongside the codec. Three assertions per step, and the first is the one the
+// pure round-trip cannot make: **every document the keymaps can reach projects to a
+// valid `Content`**. A projection that carries more segments than lines does not
+// throw on the way out; it under-specifies the bundle, `applyChange` accepts it, and
+// the field diverges from the leaf for the rest of the session.
+
+const { press } = keyDriver(bodyKeymap(blockSchema));
+const rules = inputRulesPlugin(blockSchema);
+const KEYS = ['Enter', 'Backspace', 'Delete', 'Tab', 'Shift-Tab', 'Mod-Enter'];
+const SHORTHANDS = ['# ', '> ', '- ', '2. ', '```', '---', '**w** '];
+
+/** Type `text` a character at a time through the input-rule plugin, falling back to
+ *  a plain insert where no rule claims the char: the browser's path, without a view
+ *  (the plugin's props read `state` / `dispatch` and nothing else off one). */
+function type(state: EditorState, text: string): EditorState {
+	let cur = state;
+	for (const ch of text) {
+		const { from, to } = cur.selection;
+		const view = {
+			state: cur,
+			composing: false,
+			dispatch: (tr: ReturnType<EditorState['tr']['insertText']>) => {
+				cur = cur.apply(tr);
+			}
+		};
+		const input = rules.props.handleTextInput as
+			((v: unknown, f: number, t: number, s: string) => boolean) | undefined;
+		if (!input?.(view, from, to, ch)) cur = cur.apply(cur.tr.insertText(ch, from, to));
+	}
+	return cur;
+}
+
+/** A random selection: a caret at a USV offset (so never inside a surrogate pair),
+ *  widened to a range often enough that the range branches are reached. */
+function place(r: () => number, state: EditorState): EditorState {
+	const index = buildLineIndex(state.doc);
+	const total = usvLength(pmToContent(state.doc).text);
+	const usv = (n: number) => usvToPM(index, Math.min(n, total));
+	const head = usv(Math.floor(r() * (total + 1)));
+	const anchor = r() < 0.2 ? usv(Math.floor(r() * (total + 1))) : head;
+	const sel = TextSelection.between(state.doc.resolve(anchor), state.doc.resolve(head));
+	return state.apply(state.tr.setSelection(sel));
+}
+
+function gesture(r: () => number, state: EditorState): EditorState {
+	const roll = r();
+	if (roll < 0.1) return type(state, pick(r, SHORTHANDS));
+	if (roll < 0.22) return type(state, pick(r, WORDS));
+	return press(state, pick(r, KEYS));
+}
+
+describe('generative keymap → lower → applyChange', () => {
+	it('every document the keymaps reach projects, stores and maps', () => {
+		// One scratch `Document` for the normalizer, reused across every step:
+		// `overwrite` replaces the content, and seeding a document is what a step costs.
+		const scratch = freshDoc();
+		const canonical = (rt: Content): Content => {
+			scratch.overwrite({}, rt);
+			return scratch.main.body;
+		};
+		for (let seed = 1; seed <= 300; seed++) {
+			const r = rng(seed);
+			const source = genMarkdown(r);
+			const doc = freshDoc();
+			doc.overwrite({}, md(source));
+			let stored = doc.main.body;
+			let state = EditorState.create({ doc: decode(stored, blockSchema) });
+			for (let step = 0; step < 10; step++) {
+				const where = `seed ${seed} step ${step}\n${source}`;
+				state = gesture(r, place(r, state));
+				const projected = pmToContent(state.doc);
+				// (1) valid: `overwrite` is where the content invariants are checked.
+				const optimistic = canonical(projected);
+				doc.applyChange({}, lower(contentEdit(stored, projected)));
+				stored = doc.main.body;
+				// (2) the store is what the writer is looking at.
+				expect(contentEqual(stored, optimistic), where).toBe(true);
+				// (3) the caret still crosses the boundary in both directions.
+				assertPositionInverse(state.doc, where);
+			}
 		}
 	});
 });
