@@ -223,11 +223,13 @@ describe('Delete on an empty line takes the line', () => {
 });
 
 describe('and declines where the line is a construct, or the last of them', () => {
+	// The list link spends the empty item on the seam below (`lists.ts`), where the base
+	// keymap would have unmarked the item below to fill it.
 	it('an empty item is the list keys’, the line being the whole of the item', () => {
 		expectPress(
 			atBlock(docOf(ul(li(p()), li(p('b')))), 0),
 			'Delete',
-			'doc(bullet_list(list_item(paragraph, paragraph("b"))))'
+			'doc(bullet_list(list_item(paragraph("b"))))'
 		);
 	});
 
