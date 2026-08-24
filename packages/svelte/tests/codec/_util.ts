@@ -42,6 +42,11 @@ export function md(markdown: string): Content {
 	return core.importMarkdown(markdown);
 }
 
+/** The markdown projection of a content: what a save writes and a reader reads back. */
+export function toMarkdown(rt: Content): string {
+	return core.exportMarkdown(rt);
+}
+
 /** The reference quill's seeded `title` (inline richtext) content. */
 export function titleContent(): Content {
 	return freshDoc().getStored('title') as Content;

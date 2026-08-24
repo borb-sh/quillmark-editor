@@ -59,7 +59,7 @@ describe('adjacent same-type lists keep their boundary', () => {
 		bullet: pair('bullet_list', null),
 		ordered: pair('ordered_list', { start: 1 })
 	})) {
-		it(`${name}: the ordinal reset survives the normalizer and re-decodes to two`, () => {
+		it(`${name}: the sibling boundary survives the normalizer and re-decodes to two`, () => {
 			const stored = normalize(pmToContent(doc));
 			expect(stored.lines.map((l) => (l.containers[0] as { ordinal: number }).ordinal)).toEqual([
 				0, 1, 0

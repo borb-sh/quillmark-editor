@@ -91,8 +91,10 @@ const indentInCode: Command = (state, dispatch) => {
  * Shift-Tab in a code block: remove one indent level from every covered line.
  *
  * Declines when no covered line carries an indent, so the key is not swallowed: it
- * falls through to the list link and then out of the leaf, which is the body's
- * keyboard exit from inside a code block (VISUAL_EDITOR §Chrome).
+ * falls through to the list link, and out of the leaf where that link declines too —
+ * the body's keyboard exit from a fence standing on its own (VISUAL_EDITOR §Chrome).
+ * Inside a `list_item` the list link claims the key and lifts the item out, so a fence
+ * there has no keyboard exit in either direction; Tab is the code block's whole point.
  */
 const outdentInCode: Command = (state, dispatch) => {
 	const block = codeBlockAt(state);

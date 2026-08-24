@@ -261,12 +261,19 @@ function scanInline(
 	let pm = contentStart;
 	block.forEach((child) => {
 		if (child.isText) {
-			emitText(acc, child.text ?? '', pm, child.marks);
+			// `inline*` admits a text node carrying `\n` — `joinTextblocksAround` mints one
+			// out of a fence, running neither `clearIncompatible` nor the whitespace pass —
+			// and a line boundary is what a `\n` is, the same one `hard_break` spells. Read
+			// as text it would carry the projection past its own line count, which
+			// `validate` refuses and `lower` then under-specifies rather than refusing.
+			let at = pm;
+			(child.text ?? '').split('\n').forEach((segment, i) => {
+				if (i > 0) breakLine(acc, at - 1, at, containers, kind);
+				emitText(acc, segment, at, child.marks);
+				at += segment.length + 1;
+			});
 		} else if (child.type.name === 'hard_break') {
-			// A within-block hard break: the content `\n` (a `continues` line).
-			acc.runs.push({ kind: 'nl', pmStart: pm, pmEnd: pm + 1, usvStart: acc.usvEnd });
-			appendText(acc, '\n');
-			acc.lines.push({ containers, continues: true, ...kind });
+			breakLine(acc, pm, pm + 1, containers, kind);
 		} else if (child.type.name === 'island_inline') {
 			acc.runs.push({ kind: 'atom', pmStart: pm, usvStart: acc.usvEnd });
 			appendText(acc, ISLAND_SLOT);
@@ -274,6 +281,20 @@ function scanInline(
 		}
 		pm += child.nodeSize;
 	});
+}
+
+/** A within-block break: the content `\n` over PM `[pmStart, pmEnd)`, and the
+ * `continues` line it opens carrying its head's metadata. */
+function breakLine(
+	acc: Acc,
+	pmStart: number,
+	pmEnd: number,
+	containers: ContentContainer[],
+	kind: ContentLineKind
+): void {
+	acc.runs.push({ kind: 'nl', pmStart, pmEnd, usvStart: acc.usvEnd });
+	appendText(acc, '\n');
+	acc.lines.push({ containers, continues: true, ...kind });
 }
 
 /** Append a text node's chars: one position run + a content mark per formatting/unknown mark. */
