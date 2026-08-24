@@ -8,6 +8,13 @@
 // no block split, no containers, no islands) and `plaintextSchema` is that one
 // without marks: same decode/lower/position machinery, narrower shape. Anchors are
 // not marks here (decorations).
+//
+// `toDOM` and `parseDOM` are one tier, not two halves of a rendering: a copy and a
+// paste inside one body run the whole document through them (CODEC §"Markdown at the
+// edges"), so every attribute written here is read back here. A carrier's payload
+// crosses as JSON under a `data-qm-*` name, which is the form the content's open sets
+// already have. Foreign HTML spells none of those names, so what a paste takes off the
+// web is unchanged; the one rule that widens that door on purpose is the fence's.
 import { Schema } from 'prosemirror-model';
 import type { MarkSpec, NodeSpec } from 'prosemirror-model';
 import { islandBlockSpec, islandInlineSpec } from './islands.js';
@@ -43,6 +50,28 @@ export function rendersHref(href: string): boolean {
 	return scheme === null || RENDERED_SCHEMES.has(scheme[1]!.toLowerCase());
 }
 
+// ── The open sets' DOM payload ──────────────────────────────────────────────
+// A carrier's tag is a `data-qm-unknown-*` name and its `attrs` are JSON beside it,
+// under one name across all three: an element carries at most one carrier, a
+// paragraph's tag and the mark's sitting on different elements.
+
+/** The `attrs` half of a carrier, absent where there is none. */
+function packAttrs(attrs: unknown): Record<string, string> {
+	return attrs == null ? {} : { 'data-qm-unknown-attrs': JSON.stringify(attrs) };
+}
+
+/** The `attrs` half back off an element. `null` for anything that is not the JSON
+ *  this schema wrote: a hand-built document reaches the same parse a paste does. */
+function unpackAttrs(el: HTMLElement): unknown {
+	const raw = el.getAttribute('data-qm-unknown-attrs');
+	if (raw == null) return null;
+	try {
+		return JSON.parse(raw);
+	} catch {
+		return null;
+	}
+}
+
 // ── Marks (the block and inline schemas share them; plaintext declares none) ─
 const marks: Record<string, MarkSpec> = {
 	// Order matters: it fixes mark-set sort order and parse precedence. `link`
@@ -56,9 +85,7 @@ const marks: Record<string, MarkSpec> = {
 	link: {
 		attrs: { href: { default: '' } },
 		inclusive: false,
-		parseDOM: [
-			{ tag: 'a[href]', getAttrs: (el) => ({ href: (el as HTMLElement).getAttribute('href') }) }
-		],
+		parseDOM: [{ tag: 'a[href]', getAttrs: (el) => ({ href: el.getAttribute('href') }) }],
 		// A refused href draws as a bare span: the text stands, unstyled and
 		// unclickable, and the mark keeps its value for encode.
 		toDOM: (mark) => {
@@ -72,9 +99,45 @@ const marks: Record<string, MarkSpec> = {
 	unknown: {
 		attrs: { type: { default: '' }, attrs: { default: null } },
 		excludes: '',
-		toDOM: () => ['span', { 'data-unknown': '' }, 0]
+		parseDOM: [
+			{
+				tag: 'span[data-qm-unknown-mark]',
+				getAttrs: (el) => ({
+					type: (el as HTMLElement).getAttribute('data-qm-unknown-mark'),
+					attrs: unpackAttrs(el as HTMLElement)
+				})
+			}
+		],
+		toDOM: (mark) => [
+			'span',
+			{ 'data-qm-unknown-mark': mark.attrs.type as string, ...packAttrs(mark.attrs.attrs) },
+			0
+		]
 	}
 };
+
+// ── The fence's language ────────────────────────────────────────────────────
+// The one attribute no keystroke in the visual editor mints: the shorthand fires on
+// the third backtick, before a language could be typed, and a slash command is a name
+// (VISUAL_EDITOR §"Settled and open"). A paste is the gesture that does, and this is
+// what reads it — a fence copied off a highlighted page arrives carrying the language
+// that page stated, one copied inside the body keeps its own.
+
+/** A `language-x` / `lang-x` token in a class list. */
+const LANG_CLASS = /(?:^|\s)lang(?:uage)?-(\S+)/;
+
+/** The language a `<pre>` states: `data-lang`, which is what `toDOM` writes, else the
+ *  class convention on the `pre` or on the `code` it wraps. `null` where it states
+ *  none, which is also what an empty value is. */
+function fenceLang(pre: HTMLElement): string | null {
+	const stated = pre.getAttribute('data-lang');
+	if (stated) return stated;
+	for (const el of [pre, pre.firstElementChild]) {
+		const match = el && LANG_CLASS.exec(el.getAttribute('class') ?? '');
+		if (match) return match[1]!;
+	}
+	return null;
+}
 
 // ── Block nodes ─────────────────────────────────────────────────────────────
 const blockNodes: Record<string, NodeSpec> = {
@@ -88,10 +151,18 @@ const blockNodes: Record<string, NodeSpec> = {
 		content: 'inline*',
 		group: 'block',
 		attrs: { unknown: { default: null } },
-		parseDOM: [{ tag: 'p' }],
+		parseDOM: [
+			{
+				tag: 'p',
+				getAttrs: (el) => {
+					const kind = el.getAttribute('data-qm-unknown-line');
+					return { unknown: kind == null ? null : { kind, attrs: unpackAttrs(el) } };
+				}
+			}
+		],
 		toDOM: (node) => {
-			const u = node.attrs.unknown as { kind: string } | null;
-			return u ? ['p', { 'data-qm-unknown-line': u.kind }, 0] : ['p', 0];
+			const u = node.attrs.unknown as { kind: string; attrs: unknown } | null;
+			return u ? ['p', { 'data-qm-unknown-line': u.kind, ...packAttrs(u.attrs) }, 0] : ['p', 0];
 		}
 	},
 	heading: {
@@ -110,7 +181,13 @@ const blockNodes: Record<string, NodeSpec> = {
 		marks: '',
 		whitespace: 'pre',
 		attrs: { lang: { default: null } },
-		parseDOM: [{ tag: 'pre', preserveWhitespace: 'full' }],
+		parseDOM: [
+			{
+				tag: 'pre',
+				preserveWhitespace: 'full',
+				getAttrs: (el) => ({ lang: fenceLang(el) })
+			}
+		],
 		toDOM: (node) => [
 			'pre',
 			node.attrs.lang ? { 'data-lang': node.attrs.lang as string } : {},
@@ -129,7 +206,18 @@ const blockNodes: Record<string, NodeSpec> = {
 		content: 'list_item+',
 		group: 'block',
 		attrs: { start: { default: 1 } },
-		parseDOM: [{ tag: 'ol' }],
+		parseDOM: [
+			{
+				tag: 'ol',
+				getAttrs: (el) => {
+					// A list stating no `start` starts at one, which is what `toDOM` leaves
+					// unwritten; `Number(null)` would read that absence as zero.
+					const stated = el.getAttribute('start');
+					const start = stated ? Number(stated) : 1;
+					return { start: Number.isInteger(start) ? start : 1 };
+				}
+			}
+		],
 		toDOM: (node) =>
 			node.attrs.start === 1 ? ['ol', 0] : ['ol', { start: node.attrs.start as number }, 0]
 	},
@@ -154,7 +242,23 @@ const blockNodes: Record<string, NodeSpec> = {
 		group: 'block',
 		defining: true,
 		attrs: { container: { default: '' }, attrs: { default: null } },
-		toDOM: (node) => ['div', { 'data-qm-unknown-container': node.attrs.container as string }, 0]
+		parseDOM: [
+			{
+				tag: 'div[data-qm-unknown-container]',
+				getAttrs: (el) => ({
+					container: el.getAttribute('data-qm-unknown-container'),
+					attrs: unpackAttrs(el)
+				})
+			}
+		],
+		toDOM: (node) => [
+			'div',
+			{
+				'data-qm-unknown-container': node.attrs.container as string,
+				...packAttrs(node.attrs.attrs)
+			},
+			0
+		]
 	},
 	island_block: islandBlockSpec
 };

@@ -9,7 +9,8 @@
 // reads it rather than hand-rolling a shape or guard. The open `type` arm means
 // a discriminant check does not auto-narrow `props`; key off `type` and read
 // `props` as the matching upstream type.
-import type { Node as PMNode, NodeSpec } from 'prosemirror-model';
+import { Fragment, Slice, type Node as PMNode, type NodeSpec } from 'prosemirror-model';
+import { Plugin } from 'prosemirror-state';
 import { isTableIsland } from '@quillmark/wasm';
 import type { ContentIsland, TableProps } from '@quillmark/wasm';
 
@@ -32,17 +33,49 @@ const islandAttrs = {
 	loss: { default: 'unrepresentable' }
 };
 
+// All four attributes cross the DOM: a copy and a paste inside one body run the document
+// through `toDOM`/`parseDOM` (CODEC §"Markdown at the edges"), and an island is a leaf
+// whose tags alone say only `[table]`. `props` crosses as JSON, the form the payload has
+// at the boundary. `data-island` is this package's own name, so a `<table>` off the web
+// still flattens to its cells' text — nothing out there spells it.
+
+/** The DOM an island node writes and reads back, for either spec. */
+function islandDOM(node: PMNode): Record<string, string> {
+	return {
+		'data-island': node.attrs.islandType as string,
+		'data-island-id': node.attrs.id as string,
+		'data-island-loss': node.attrs.loss as string,
+		'data-island-props': JSON.stringify(node.attrs.props ?? null)
+	};
+}
+
+/** An island node's attributes off that DOM. A `props` that is not the JSON written
+ *  above reads as `null`: the entry survives as an island of its type rather than
+ *  taking the paste down with it. */
+function islandAttrsFromDOM(el: HTMLElement): IslandNodeAttrs {
+	const raw = el.getAttribute('data-island-props');
+	let props: unknown = null;
+	try {
+		props = raw == null ? null : JSON.parse(raw);
+	} catch {
+		props = null;
+	}
+	return {
+		id: el.getAttribute('data-island-id') ?? '',
+		islandType: el.getAttribute('data-island') ?? '',
+		props,
+		loss: (el.getAttribute('data-island-loss') ?? 'unrepresentable') as ContentIsland['loss']
+	};
+}
+
 /** Block island node (a table): one `island`-kind content line. Atom, unselectable content. */
 export const islandBlockSpec: NodeSpec = {
 	group: 'block',
 	atom: true,
 	selectable: true,
 	attrs: islandAttrs,
-	toDOM: (node) => [
-		'div',
-		{ 'data-island': node.attrs.islandType as string, 'data-island-id': node.attrs.id as string },
-		`[${node.attrs.islandType || 'island'}]`
-	]
+	parseDOM: [{ tag: 'div[data-island]', getAttrs: (el) => islandAttrsFromDOM(el) }],
+	toDOM: (node) => ['div', islandDOM(node), `[${node.attrs.islandType || 'island'}]`]
 };
 
 /** Inline island node (an image): a `U+FFFC` slot inside a `para` line. */
@@ -52,11 +85,8 @@ export const islandInlineSpec: NodeSpec = {
 	atom: true,
 	selectable: true,
 	attrs: islandAttrs,
-	toDOM: (node) => [
-		'span',
-		{ 'data-island': node.attrs.islandType as string, 'data-island-id': node.attrs.id as string },
-		`[${node.attrs.islandType || 'island'}]`
-	]
+	parseDOM: [{ tag: 'span[data-island]', getAttrs: (el) => islandAttrsFromDOM(el) }],
+	toDOM: (node) => ['span', islandDOM(node), `[${node.attrs.islandType || 'island'}]`]
 };
 
 /** A PM island node's attributes: the content entry, spelled the way a node spec
@@ -103,7 +133,7 @@ export function tablePropsOfNode(node: PMNode): TableProps | undefined {
 export function islandMinter(doc: PMNode): () => string {
 	let next = 0;
 	doc.descendants((node) => {
-		if (node.type.name !== 'island_block' && node.type.name !== 'island_inline') return true;
+		if (!isIsland(node)) return true;
 		const m = /^isl-(\d+)$/.exec(node.attrs.id as string);
 		if (m) next = Math.max(next, Number(m[1]) + 1);
 		return false;
@@ -115,4 +145,83 @@ export function islandMinter(doc: PMNode): () => string {
  *  command placing exactly one island wants. */
 export function mintIslandId(doc: PMNode): string {
 	return islandMinter(doc)();
+}
+
+/** Either island node: the test the minter, the id sweep and the paste pass share, so a
+ *  third island shape is one arm rather than three. */
+function isIsland(node: PMNode): boolean {
+	return node.type.name === 'island_block' || node.type.name === 'island_inline';
+}
+
+/** The ids a document already holds. */
+function heldIds(doc: PMNode): Set<string> {
+	const held = new Set<string>();
+	doc.descendants((node) => {
+		if (!isIsland(node)) return true;
+		held.add(node.attrs.id as string);
+		return false;
+	});
+	return held;
+}
+
+/** `fragment` with every island whose id is already `taken` re-minted, or `null` where
+ *  none was: an untouched paste stays the slice it arrived as. Every surviving id joins
+ *  the set, so a slice carrying one id twice comes apart in the same pass. */
+function remintIslands(
+	fragment: Fragment,
+	taken: Set<string>,
+	mint: () => string
+): Fragment | null {
+	const out: PMNode[] = [];
+	let changed = false;
+	fragment.forEach((node) => {
+		if (!isIsland(node)) {
+			const inner = node.isLeaf ? null : remintIslands(node.content, taken, mint);
+			changed ||= inner !== null;
+			out.push(inner ? node.copy(inner) : node);
+			return;
+		}
+		let id = node.attrs.id as string;
+		if (taken.has(id)) {
+			do id = mint();
+			while (taken.has(id));
+			changed = true;
+		}
+		taken.add(id);
+		out.push(
+			id === node.attrs.id ? node : node.type.create({ ...node.attrs, id }, null, node.marks)
+		);
+	});
+	return changed ? Fragment.fromArray(out) : null;
+}
+
+/**
+ * The paste's island pass: an id the field already holds is re-minted on the way in.
+ *
+ * An id is an identity in the content and unique across the field, so two islands
+ * wearing one is a projection the store has no shape for. A copy rather than a cut is
+ * where that arrives, and a paste out of a second field is the other; a cut pasted back
+ * collides with nothing and keeps the identity it had.
+ *
+ * The test is the document as it stands, which a drag moving a selection over an island
+ * reads one too many: the original is still there when the slice is transformed and gone
+ * when it lands, so that island arrives under a fresh id. A fresh id costs it nothing a
+ * duplicate would cost the whole field.
+ *
+ * A plugin prop rather than a view option: the leaf mounts the codec's plugin stack, and
+ * which nodes carry an identity is the codec's to know.
+ */
+export function islandPastePlugin(): Plugin {
+	return new Plugin({
+		props: {
+			transformPasted: (slice, view) => {
+				const content = remintIslands(
+					slice.content,
+					heldIds(view.state.doc),
+					islandMinter(view.state.doc)
+				);
+				return content ? new Slice(content, slice.openStart, slice.openEnd) : slice;
+			}
+		}
+	});
 }
