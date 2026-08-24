@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**The carried `@quillmark/wasm` is 0.109.0, and a quill under test keeps two adjacent containers apart.** Two quotes in a row typeset as two, two ordered lists number from their own firsts rather than the second running on from the first, and the CommonMark idiom for spelling two lists apart keeps the second list's marker. A container inside a list item no longer ends that list either, so an item's quote or fence stays the item's and the items below it keep their numbering.
+
 ## v0.5.2 - 2026-08-21
 
 **The carried `@quillmark/wasm` is 0.108.3, and a quill under test renders a paragraph that is one bare Typst marker.** A body holding the `/` that opens the slash menu compiles, where the studio's preview answered `expected colon` on that keystroke; the same escape covers `-`, `+`, `=` and `N.`, a marker at the head of bold text or a table cell, and text after inline code or an image opening with `(` or `.name`.

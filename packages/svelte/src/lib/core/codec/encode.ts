@@ -95,7 +95,11 @@ export function pmToContent(doc: PMNode): Content {
 	return { text, lines, marks, islands };
 }
 
-/** Walk a block-content fragment; `contentStart` is the PM pos before its first child. */
+/** Walk a block-content fragment; `contentStart` is the PM pos before its first child.
+ * Two container siblings of one run shape read as a single container — contiguity plus
+ * an equal path is what the store means by "the same one" — so each alternates its
+ * `instance` against the sibling before it. Sibling adjacency is the whole scope: a
+ * container one level in has a differing path above it, which already tells it apart. */
 function scanBlocks(
 	acc: Acc,
 	parent: PMNode,
@@ -103,13 +107,48 @@ function scanBlocks(
 	containers: ContentContainer[]
 ): void {
 	let pm = contentStart;
+	let prevShape: string | null = null;
+	let instance = 0;
 	parent.forEach((child) => {
-		scanBlock(acc, child, pm, containers);
+		const shape = runShape(child);
+		instance = shape !== null && shape === prevShape ? instance ^ 1 : 0;
+		prevShape = shape;
+		scanBlock(acc, child, pm, containers, instance);
 		pm += child.nodeSize;
 	});
 }
 
-function scanBlock(acc: Acc, node: PMNode, nodePos: number, containers: ContentContainer[]): void {
+/** A block's container run shape, `ordinal` and `instance` aside; null where it opens
+ * no container. A list's `start` is not in it — the store welds two runs differing only
+ * there — and an unknown's `attrs` is, as `containerKey` reads it on the way back. */
+function runShape(node: PMNode): string | null {
+	switch (node.type.name) {
+		case 'blockquote':
+			return 'quote';
+		case 'bullet_list':
+			return 'list\u0000bullet';
+		case 'ordered_list':
+			return 'list\u0000ordered';
+		case 'unknown_container':
+			return `unknown\u0000${node.attrs.container}\u0000${JSON.stringify(node.attrs.attrs)}`;
+		default:
+			return null;
+	}
+}
+
+/** `instance` where it tells a container from an identical adjacent sibling. The
+ * canonical form omits a zero, so emitting one would diff against every store read. */
+function discriminate<T extends ContentContainer>(container: T, instance: number): T {
+	return instance ? { ...container, instance } : container;
+}
+
+function scanBlock(
+	acc: Acc,
+	node: PMNode,
+	nodePos: number,
+	containers: ContentContainer[],
+	instance: number
+): void {
 	const name = node.type.name;
 	const contentStart = nodePos + 1;
 	switch (name) {
@@ -148,12 +187,18 @@ function scanBlock(acc: Acc, node: PMNode, nodePos: number, containers: ContentC
 			acc.lastContentEndPm = nodePos + 1;
 			break;
 		case 'blockquote':
-			scanBlocks(acc, node, contentStart, [...containers, { container: 'quote' }]);
+			scanBlocks(acc, node, contentStart, [
+				...containers,
+				discriminate({ container: 'quote' as const }, instance)
+			]);
 			break;
 		case 'unknown_container':
 			scanBlocks(acc, node, contentStart, [
 				...containers,
-				{ container: node.attrs.container as string, attrs: node.attrs.attrs }
+				discriminate(
+					{ container: node.attrs.container as string, attrs: node.attrs.attrs },
+					instance
+				)
 			]);
 			break;
 		case 'bullet_list':
@@ -162,12 +207,10 @@ function scanBlock(acc: Acc, node: PMNode, nodePos: number, containers: ContentC
 			const start = ordered ? (node.attrs.start as number) : 1;
 			let itemPos = contentStart;
 			node.forEach((item, _off, index) => {
-				const container: ContentContainer = {
-					container: 'list_item',
-					ordered,
-					start,
-					ordinal: index
-				};
+				const container: ContentContainer = discriminate(
+					{ container: 'list_item' as const, ordered, start, ordinal: index },
+					instance
+				);
 				scanBlocks(acc, item, itemPos + 1, [...containers, container]);
 				itemPos += item.nodeSize;
 			});

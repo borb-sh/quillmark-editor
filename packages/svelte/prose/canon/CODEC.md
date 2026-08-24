@@ -29,6 +29,8 @@ Every edit lowers. `overwrite(addr, rt)` is left with two cases, neither a shape
 
 Fold the flat lines into the tree: group consecutive lines by common `containers` prefix (a shared `[ListItem]` path is one item's paragraphs; `[ListItem, Quote]` a quote nested in it), and join `continues` runs into one block (a code fence's lines → one `code_block`; a paragraph's hard breaks → one paragraph with `hard_break` nodes). The line `kind` selects the block node: `para` → paragraph, `heading{level}`, `code{lang}`, `rule` → horizontal_rule, `island` → a block island node, and anything else → a paragraph carrying the unknown kind (§Open sets).
 
+Contiguity plus an equal path is the whole of what makes one container, so `instance` is what tells one from an adjacent sibling of identical shape — two quotes in a row, two lists — which contiguity alone reads as one. The fold keys on it (a quote and an unknown alongside their name and payload; a list's run breaks where it changes) and the projection mints it, alternating against the sibling before it. Sibling adjacency is the whole scope: a container nested one level in already has a differing path above it. A run's `ordinal`s are gapless from 0, so a reset marks no boundary of its own.
+
 Marks apply over their `[start, end)` range; PM splits inline nodes at mark boundaries, so free overlap of *different* formatting kinds is representable without loss (`strong[0,4)` + `emph[2,6)` → text nodes `{strong}`, `{strong,emph}`, `{emph}`). An island slot inside a `Para` line decodes to an inline node (an image); an `Island`-kind line decodes to a block node (a table), either carrying the island `id` and typed props.
 
 Two mark kinds do **not** become PM marks: see §Marks.

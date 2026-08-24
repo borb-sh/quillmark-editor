@@ -39,10 +39,10 @@ describe('list shapes round-trip', () => {
 });
 
 // Two adjacent lists of the same type; the shape the cleanup invariant must not
-// fuse (`lists.ts` §cleanup). Markdown has no spelling for it (a blank line between
-// two bullet runs makes one loose list), so it cannot come from `md()` and every
-// case above is blind to it. An ordinal decrease is the boundary: `decode` breaks
-// its run on one, and the upstream normalizer stores it verbatim.
+// fuse (`lists.ts` §cleanup). `md('- a\n\n<!-- -->\n\n- b')` is CommonMark's spelling
+// for it. `instance` is the boundary: the projection mints one for a second sibling of
+// the same run shape, `decode` breaks its run on it, and the normalizer keeps it — which
+// is what restarts the second run's `ordinal`s, gapless from 0 within a run.
 describe('adjacent same-type lists keep their boundary', () => {
 	const item = (t: string) =>
 		blockSchema.nodes.list_item.create(

@@ -7,8 +7,8 @@
 // Cleanup is command-local, never a global pass: `liftToOuterList` joins the
 // boundary it opens and `sinkListItem` reuses the previous item's nested list, so
 // no mutation strands a node. A whole-doc normalizer would instead fuse adjacent
-// same-type lists, and that boundary is load-bearing: an ordinal decrease is how
-// `Content` marks one, the upstream normalizer stores it verbatim
+// same-type lists, and that boundary is load-bearing: `Container.instance` is how
+// `Content` marks one, the upstream normalizer keeps it
 // (`tests/codec/list-shapes.test.ts`), and fusing renumbers an imported `1, 2, 1`
 // in a region no edit touched. Reads preserve it; only an edit normalizes.
 import type { Node as PMNode, NodeType, Schema } from 'prosemirror-model';
