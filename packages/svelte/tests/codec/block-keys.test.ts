@@ -46,6 +46,14 @@ describe('a first block a gap cursor declines gets a paragraph above it', () => 
 		);
 	});
 
+	it('an empty fence that opens the body becomes the paragraph', () => {
+		expectPress(startOf('```\n\n```', 0), 'Enter', 'doc(paragraph)');
+	});
+
+	it("an empty fence in an item that opens the body becomes the item's paragraph", () => {
+		expectPress(startOf('- ```\n  \n  ```', 0), 'Enter', 'doc(bullet_list(list_item(paragraph)))');
+	});
+
 	it('the caret stays with the text it pushed down', () => {
 		const next = press(startOf('```\ncode\n```', 0), 'Enter');
 		expect(next.selection.$from.parent.type.name).toBe('code_block');
@@ -67,6 +75,14 @@ describe('everywhere else the key keeps its meaning', () => {
 			at('head\n\n```\ncode\n```', 1, 0),
 			'Enter',
 			'doc(paragraph("head"), code_block("\\ncode"))'
+		);
+	});
+
+	it('an empty fence below a block takes a newline — there is a block above to reach', () => {
+		expectPress(
+			at('head\n\n```\n\n```', 1, 0),
+			'Enter',
+			'doc(paragraph("head"), code_block("\\n"))'
 		);
 	});
 
