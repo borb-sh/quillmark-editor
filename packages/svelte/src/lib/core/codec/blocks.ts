@@ -196,10 +196,10 @@ export function consuming(
  *
  * A code block, a quote and a list are the blocks `prosemirror-gapcursor` declines
  * to sit beside, and nothing else mints a block above one: three keystrokes on an
- * empty body (` ``` `, `> `, `- `) put one first, and from then on the document
- * cannot be given a title. The argument is `paragraphAboveList`'s, about the block
- * rather than about lists, which is why this link comes first and that one narrows
- * to the position it still owns.
+ * empty body (` ``` `, `> `, `- `) put one first, and a document carrying one there
+ * can never be given a title. The argument is `paragraphAboveList`'s, about the
+ * block rather than about lists, so this link comes first and that one holds the
+ * position it alone reaches, a list under an island or a rule.
  *
  * Declines wherever the first block is a plain textblock, whose Enter-split already
  * leaves a paragraph above, and on an empty one, where the key belongs to whichever

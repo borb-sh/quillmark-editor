@@ -1,8 +1,8 @@
 // The block link: the two Enter cases that are about the body rather than about the
 // surface the caret is in — its very start, the one position no surface owns and the
 // only route to a block above a first block a gap cursor will not sit beside; and a
-// selection spanning two textblocks, which upstream's `splitBlock` computes against a
-// document that no longer exists. Driven through `bodyKeymap` over `baseKeymap`, so
+// selection spanning two textblocks, which upstream's `splitBlock` computes against
+// the pre-delete document. Driven through `bodyKeymap` over `baseKeymap`, so
 // the link is under test at its place in the chain rather than on its own.
 import { describe, it, expect } from 'vitest';
 import { EditorState, TextSelection } from 'prosemirror-state';

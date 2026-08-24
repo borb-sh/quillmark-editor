@@ -61,9 +61,9 @@ function rng(seed: number): () => number {
 // word, so no overlap that would blur the property under test.
 //
 // The fence and the nesting are what the fixed suites cover apart and never cross:
-// `list-shapes.test.ts` has eight nesting shapes with no code in them,
-// `code-keys.test.ts` four `list_item > code_block` cases with no generation behind
-// them. A fence carries astral characters for the same reason a paragraph does —
+// `list-shapes.test.ts` holds the nesting shapes and no code, `code-keys.test.ts` the
+// `list_item > code_block` cases and no generation. A fence carries astral characters
+// for the same reason a paragraph does —
 // a code block's `\n`s ride a `text` run, where PM and USV advance together and an
 // off-by-one would show.
 const WORDS = ['alpha', 'beta', 'gamma', 'x', 'the', 'quick', '😀', '🎉', '漢字', '日本語'];
@@ -213,8 +213,8 @@ function gesture(r: () => number, state: EditorState): EditorState {
 
 describe('generative keymap → lower → applyChange', () => {
 	it('every document the keymaps reach projects, stores and maps', () => {
-		// One scratch `Document` for the normalizer, reused: `overwrite` replaces the
-		// content, and seeding one per step is the whole cost of the property.
+		// One scratch `Document` for the normalizer, reused across every step:
+		// `overwrite` replaces the content, and seeding a document is what a step costs.
 		const scratch = freshDoc();
 		const canonical = (rt: Content): Content => {
 			scratch.overwrite({}, rt);
