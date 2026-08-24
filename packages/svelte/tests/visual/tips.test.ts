@@ -72,8 +72,17 @@ describe('renderTip', () => {
 		// makes the author of the tip the author of the document. An href is an
 		// attribute value rather than markup, so the round-trip above does not reach
 		// it; the mark's own gate does (`codec/schema.ts`).
-		for (const scheme of ['javascript:alert(1)', 'data:text/html,<script>alert(1)</script>'])
-			expect(html(`See [docs](${scheme})`)).toBe('<p>See <span>docs</span></p>');
+		//
+		// No anchor and no `href` is the whole of it: the refused value rides on the
+		// span under a `data-` name so a copy keeps the mark (CODEC §Marks), which is a
+		// value the DOM holds rather than a target anything follows.
+		for (const scheme of ['javascript:alert(1)', 'data:text/html,<script>alert(1)</script>']) {
+			const el = document.createElement('div');
+			el.innerHTML = html(`See [docs](${scheme})`);
+			expect(el.querySelector('a')).toBe(null);
+			expect(el.querySelector('[href]')).toBe(null);
+			expect(el.textContent).toBe('See docs');
+		}
 	});
 
 	it('draws the schemes a tip legitimately carries', () => {

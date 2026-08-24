@@ -1,5 +1,5 @@
 // The list structure keys: Tab/Shift-Tab indent-outdent, and what
-// Enter/Backspace mean inside a list. Driven through the bound commands
+// Enter/Backspace/Delete mean inside a list. Driven through the bound commands
 // `listKeymap` returns, not through re-derived copies of them, so a rebinding
 // breaks these.
 //
@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 import { EditorState, TextSelection } from 'prosemirror-state';
 import type { Node as PMNode } from 'prosemirror-model';
 import { blockSchema, decode, listKeymap } from '$lib/core/codec';
-import { md, atBlock, startOf, run, shape, keyDriver } from './_util.js';
+import { md, atBlock, atBlockEnd, startOf, endOf, run, keyDriver } from './_util.js';
 
 const keys = listKeymap(blockSchema);
 const { press, expectPress } = keyDriver(keys);
@@ -202,8 +202,107 @@ describe('Backspace', () => {
 		expect(run(after('- ab', 'a'), keys['Backspace'])).toBe(null);
 	});
 
+	it('across a code edge, declines: a fence is not a line to put a line on', () => {
+		// Either side of the edge; the base keymap merges the items whole there
+		// (`tests/codec/code-keys.test.ts`).
+		expect(run(startOf('- ```\n  code\n  ```\n- b', 1), keys['Backspace'])).toBe(null);
+		expect(run(startOf('- a\n- ```\n  code\n  ```', 1), keys['Backspace'])).toBe(null);
+	});
+
+	it('between two fences it is the ordinary merge', () => {
+		expectPress(
+			startOf('- ```\n  a\n  ```\n- ```\n  b\n  ```', 1),
+			'Backspace',
+			'doc(bullet_list(list_item(code_block("ab"))))'
+		);
+	});
+
 	it('at a later block of a multi-paragraph item, declines to the base keymap', () => {
 		expect(run(atBlock(docOf(ul(li(p('a'), p('b')))), 1), keys['Backspace'])).toBe(null);
+	});
+});
+
+// One seam, one edit, whichever side a writer approaches it from: each case states its
+// document once and presses both keys at it — Delete at the end of the block above,
+// Backspace at the head of the block below.
+function seam(doc: PMNode, above: number, below: number, expected: string): void {
+	expectPress(atBlockEnd(doc, above), 'Delete', expected);
+	expectPress(atBlock(doc, below), 'Backspace', expected);
+}
+
+describe('Delete is Backspace at the seam below', () => {
+	it('joins two items into one line', () => {
+		seam(decode(md('- a\n- b'), blockSchema), 0, 1, 'doc(bullet_list(list_item(paragraph("ab"))))');
+	});
+
+	it('the item that follows keeps its ordinal', () => {
+		seam(
+			decode(md('1. a\n2. b\n3. c'), blockSchema),
+			0,
+			1,
+			'doc(ordered_list(list_item(paragraph("ab")), list_item(paragraph("c"))))'
+		);
+	});
+
+	it('lifts a nested first item, where the item below is not a sibling', () => {
+		seam(
+			decode(md('- a\n    - b'), blockSchema),
+			0,
+			1,
+			'doc(bullet_list(list_item(paragraph("a")), list_item(paragraph("b"))))'
+		);
+	});
+
+	it('reads the item’s last block, not its first', () => {
+		seam(
+			docOf(ul(li(p('a'), p('cont')), li(p('b')))),
+			1,
+			2,
+			'doc(bullet_list(list_item(paragraph("a"), paragraph("contb"))))'
+		);
+	});
+
+	it('reaches the item below at a shallower level than the caret’s', () => {
+		seam(
+			decode(md('- a\n    - b\n- c'), blockSchema),
+			1,
+			2,
+			'doc(bullet_list(list_item(paragraph("a"), bullet_list(list_item(paragraph("bc"))))))'
+		);
+	});
+
+	it('spends an empty item rather than unmarking the one below it', () => {
+		seam(
+			docOf(ul(li(p('a')), li(p()), li(p('c')))),
+			1,
+			2,
+			'doc(bullet_list(list_item(paragraph("a")), list_item(paragraph("c"))))'
+		);
+	});
+
+	it('leaves the caret where the key was pressed, merging and lifting alike', () => {
+		for (const markdown of ['- a\n- b', '- a\n    - b']) {
+			const state = endOf(markdown, 0);
+			expect(press(state, 'Delete').selection.from, markdown).toBe(state.selection.from);
+		}
+	});
+
+	it('mid-text, declines the key so the browser deletes a character', () => {
+		expect(run(after('- ab', 'a'), keys['Delete'])).toBe(null);
+	});
+
+	it('at a seam inside one item, declines: two blocks of an item are not two items', () => {
+		expect(run(atBlockEnd(docOf(ul(li(p('a'), p('b')))), 0), keys['Delete'])).toBe(null);
+	});
+
+	it('declines outside a list, the leading edge staying the base keymap’s', () => {
+		expect(run(endOf('head\n\n- a', 0), keys['Delete'])).toBe(null);
+	});
+
+	// The list's outer boundary is the base keymap's on both keys, and what they agree on
+	// there is that the paragraph below becomes an item.
+	it('at the last item’s end, declines: the boundary below the list is not a seam', () => {
+		expect(run(atBlockEnd(docOf(ul(li(p('a'))), p('tail')), 0), keys['Delete'])).toBe(null);
 	});
 });
 

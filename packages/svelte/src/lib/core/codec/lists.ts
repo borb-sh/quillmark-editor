@@ -1,8 +1,8 @@
 // List editing: the body leaf's structural commands, over
-// `prosemirror-schema-list` primitives. Indent/outdent on Tab, and the two
+// `prosemirror-schema-list` primitives. Indent/outdent on Tab, and the three
 // structural keys lists redefine: Enter (split, exit an empty item, open a
-// paragraph where nothing above the list takes a caret) and Backspace (merge, or
-// lift at the list's start).
+// paragraph where nothing above the list takes a caret), Backspace (merge, or
+// lift at the list's start) and Delete (Backspace at the seam below).
 //
 // Cleanup is command-local, never a global pass: `liftToOuterList` joins the
 // boundary it opens and `sinkListItem` reuses the previous item's nested list, so
@@ -11,9 +11,10 @@
 // `Content` marks one, the upstream normalizer keeps it
 // (`tests/codec/list-shapes.test.ts`), and fusing renumbers an imported `1, 2, 1`
 // in a region no edit touched. Reads preserve it; only an edit normalizes.
-import type { Node as PMNode, NodeType, Schema } from 'prosemirror-model';
+import type { Node as PMNode, NodeType, ResolvedPos, Schema } from 'prosemirror-model';
 import { liftListItem, sinkListItem, splitListItem } from 'prosemirror-schema-list';
-import type { Command } from 'prosemirror-state';
+import { EditorState, Selection, TextSelection } from 'prosemirror-state';
+import type { Command, Transaction } from 'prosemirror-state';
 import { chainCommands, joinTextblockBackward } from 'prosemirror-commands';
 
 /** The caret's enclosing `list_item` when it sits at the very start of that item's
@@ -37,16 +38,25 @@ function atItemStart(
 }
 
 /**
+ * The textblock at the end of `node`: `node` itself where it is one, else its last
+ * descendant that is — the block a caret above a boundary lands in, and the block a
+ * join across one reaches, `joinTextblockBackward` walking to the same one. `null` on
+ * an atom (an island, a rule), which `prosemirror-gapcursor` declines to sit beside
+ * too, its `closedBefore` asking this question from the other side.
+ */
+function lastBlockIn(node: PMNode | null | undefined): PMNode | null {
+	let last = node ?? null;
+	while (last && !last.isTextblock && !last.isAtom) last = last.lastChild;
+	return last?.isTextblock ? last : null;
+}
+
+/**
  * Whether a caret already fits immediately above the list at `pos`. The node ending
- * there answers for its last child, so a quote counts through its final paragraph;
- * an atom (an island, a rule) does not, and neither does a list opening its parent.
- * Those are the shapes `prosemirror-gapcursor` declines too, its `closedBefore`
- * asking this question from the other side.
+ * there answers for its last child, so a quote counts through its final paragraph; a
+ * list opening its parent has no node there at all.
  */
 function writableAbove(doc: PMNode, pos: number): boolean {
-	let before = doc.resolve(pos).nodeBefore;
-	while (before && !before.isTextblock && !before.isAtom) before = before.lastChild;
-	return !!before?.isTextblock;
+	return !!lastBlockIn(doc.resolve(pos).nodeBefore);
 }
 
 /**
@@ -95,12 +105,58 @@ function liftAtListStart(itemType: NodeType): Command {
  * `list_item(paragraph, paragraph)`: the item's marker gone while its text stays
  * on its own line, which the reference quill typesets as an unnumbered
  * continuation paragraph.
+ *
+ * Only between two blocks of one kind. A fence is not a line to put another line on,
+ * and the join across that edge would retype one side's whole text as the other's
+ * (`code.ts`, which refuses the same join between siblings); the base keymap's answer
+ * stands here instead, merging the items with each block kept whole.
  */
 function mergeIntoPreviousItem(itemType: NodeType): Command {
 	return (state, dispatch, view) => {
 		const at = atItemStart(state, itemType);
 		if (!at || at.itemIndex === 0) return false;
+		const into = lastBlockIn(state.doc.nodeAt(at.listPos)?.child(at.itemIndex - 1));
+		if (!into || !!into.type.spec.code !== !!state.selection.$from.parent.type.spec.code) {
+			return false;
+		}
 		return joinTextblockBackward(state, dispatch, view);
+	};
+}
+
+/** Whether the caret sits inside a `list_item` at any depth: a quote's paragraph
+ * inside an item is still an item's, and a caret outside every list is at no seam of
+ * one. */
+function inItem($pos: ResolvedPos, itemType: NodeType): boolean {
+	for (let depth = $pos.depth; depth > 0; depth--) {
+		if ($pos.node(depth).type === itemType) return true;
+	}
+	return false;
+}
+
+/**
+ * Delete at the very end of a block inside an item → `press`, the Backspace chain, at
+ * the head of the block below: one seam, one edit, whichever side a writer approaches
+ * it from. Not the base keymap's `joinForward`, which merges the blocks and leaves the
+ * `list_item(paragraph, paragraph)` above.
+ *
+ * The reflection carries the edit and not the caret, which stays where the key was
+ * pressed: a lift moves the item below, and Delete does not follow it.
+ *
+ * Declining wherever the chain does is what keeps this to the list's own seams: a
+ * boundary inside one item, and the list's outer edge, stay the base keymap's, where
+ * the two keys already answer alike.
+ */
+function backspaceBelow(itemType: NodeType, press: Command): Command {
+	return (state, dispatch) => {
+		const { $from, empty } = state.selection;
+		if (!empty || $from.parentOffset !== $from.parent.content.size) return false;
+		if (!inItem($from, itemType)) return false;
+		const below = Selection.near(state.doc.resolve($from.after()), 1);
+		if (below.from <= $from.pos) return false;
+		const pressed = $from.pos;
+		const keepCaret = (tr: Transaction): void =>
+			dispatch?.(tr.setSelection(TextSelection.create(tr.doc, tr.mapping.map(pressed))));
+		return press(EditorState.create({ doc: state.doc, selection: below }), dispatch && keepCaret);
 	};
 }
 
@@ -121,12 +177,17 @@ function mergeIntoPreviousItem(itemType: NodeType): Command {
  * its own: it splits a non-empty item, and on an empty item it either splits the
  * wrapping item (a nested empty item, so Enter lifts exactly one level) or bails
  * so the third link lifts a top-level empty item out to a paragraph. `Backspace`
- * forks on the item's index: the first item lifts, any later one merges.
+ * forks on the item's index: the first item lifts, any later one merges. `Delete` is
+ * that same chain at the seam below rather than a second table of cases beside it, so
+ * the two keys cannot come to differ over a seam this link reaches. An empty line is
+ * not one: the block link takes it ahead of this chain (`blocks.ts`), the caret's own
+ * line being a nearer fact than the boundary under it.
  */
 export function listKeymap(schema: Schema): Record<string, Command> {
 	const itemType = schema.nodes.list_item;
 	const paragraph = schema.nodes.paragraph;
 	if (!itemType || !paragraph) return {};
+	const backspace = chainCommands(liftAtListStart(itemType), mergeIntoPreviousItem(itemType));
 	return {
 		Tab: sinkListItem(itemType),
 		'Shift-Tab': liftListItem(itemType),
@@ -135,6 +196,7 @@ export function listKeymap(schema: Schema): Record<string, Command> {
 			splitListItem(itemType),
 			liftListItem(itemType)
 		),
-		Backspace: chainCommands(liftAtListStart(itemType), mergeIntoPreviousItem(itemType))
+		Backspace: backspace,
+		Delete: backspaceBelow(itemType, backspace)
 	};
 }
