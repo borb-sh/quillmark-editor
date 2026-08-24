@@ -179,7 +179,9 @@ function backspaceBelow(itemType: NodeType, press: Command): Command {
  * so the third link lifts a top-level empty item out to a paragraph. `Backspace`
  * forks on the item's index: the first item lifts, any later one merges. `Delete` is
  * that same chain at the seam below rather than a second table of cases beside it, so
- * the two keys cannot come to differ over one boundary.
+ * the two keys cannot come to differ over a seam this link reaches. An empty line is
+ * not one: the block link takes it ahead of this chain (`blocks.ts`), the caret's own
+ * line being a nearer fact than the boundary under it.
  */
 export function listKeymap(schema: Schema): Record<string, Command> {
 	const itemType = schema.nodes.list_item;

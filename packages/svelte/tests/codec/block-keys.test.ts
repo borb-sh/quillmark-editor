@@ -7,7 +7,7 @@
 // `baseKeymap`, so the link is under test at its place in the chain rather than on
 // its own.
 import { describe, it, expect } from 'vitest';
-import { EditorState, TextSelection } from 'prosemirror-state';
+import { EditorState, NodeSelection, TextSelection } from 'prosemirror-state';
 import type { Node as PMNode } from 'prosemirror-model';
 import { blockSchema, bodyKeymap, decode } from '$lib/core/codec';
 import { md, atBlock, startOf, keyDriver, shape, textblocks } from './_util.js';
@@ -191,12 +191,17 @@ describe('Delete on an empty line takes the line', () => {
 		);
 	});
 
-	it('an island below the line is neither taken nor armed', () => {
-		expectPress(
+	// Taken, not eaten: the island stands and the selection lands on it, which is the
+	// state `atoms.ts` draws before a press that would take it (CODEC §"A delete against
+	// an island"). So the table goes on the press after, never on this one.
+	it('an island below the line stands, armed for the press after', () => {
+		const next = expectPress(
 			atBlock(docOf(p(), n.island_block.create({ kind: 'table', payload: '' })), 0),
 			'Delete',
 			'doc(island_block)'
 		);
+		expect(next.selection).toBeInstanceOf(NodeSelection);
+		expect((next.selection as NodeSelection).node.type.name).toBe('island_block');
 	});
 
 	it('an item’s continuation line goes, and the item below stays an item', () => {

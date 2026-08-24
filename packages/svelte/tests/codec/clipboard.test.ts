@@ -16,6 +16,7 @@ import {
 import { EditorState, TextSelection } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { blockSchema as S, pmToContent, proseLeafPlugins } from '$lib/core/codec';
+import { tablePropsOfNode } from '$lib/core/codec/islands.js';
 import { mount } from './_util.js';
 
 // The clipboard's own two halves, as PM registers them by default.
@@ -160,12 +161,114 @@ describe('what a paste from outside the editor states', () => {
 		expect(parse('<ol><li>a</li></ol>').child(0).attrs.start).toBe(1);
 	});
 
-	// The door that stays shut: a table is markup no `data-island` names, so it
+	// The door that stays shut: a table is markup no `data-qm-island` names, so it
 	// flattens to its cells' text exactly as it did.
 	it('a table flattens to its cells, minting no island', () => {
 		expect(parse('<table><tr><td>a</td><td>b</td></tr></table>').toString()).toBe(
 			'doc(paragraph("ab"))'
 		);
+	});
+});
+
+// What a carrier may not carry, and what a leaf a rule swallows takes with it. A paste
+// is the one door into the schema that no decode stands behind, so a value that reaches
+// a node here reaches the store without ever having been a `Content`.
+describe('what the parse rules refuse', () => {
+	// `textblockKind` re-emits a carrier's name with `attrs` beside it (`encode.ts`) and
+	// the store refuses `attrs` beside a built-in discriminant — a throw on every commit
+	// for the rest of the session, from a paragraph that looks ordinary on screen.
+	it.each(['para', 'heading', 'code', 'rule', 'island', ''])(
+		'a line carrier naming the built-in kind %s carries nothing',
+		(kind) => {
+			const back = parse(`<p data-qm-unknown-line="${kind}">x</p>`);
+			expect(back.child(0).attrs.unknown).toBe(null);
+			expect(pmToContent(back).lines[0]).toEqual({ containers: [], kind: 'para' });
+		}
+	);
+
+	it('a kind this build does not know still rides in', () => {
+		const back = parse(
+			'<p data-qm-unknown-line="footnote" data-qm-unknown-attrs=\'{"n":1}\'>x</p>'
+		);
+		expect(back.child(0).attrs.unknown).toEqual({ kind: 'footnote', attrs: { n: 1 } });
+	});
+
+	it.each(['quote', 'list_item'])(
+		'a container carrier naming the built-in %s declines, and its blocks stand',
+		(container) => {
+			expect(parse(`<div data-qm-unknown-container="${container}"><p>a</p></div>`).toString()).toBe(
+				'doc(paragraph("a"))'
+			);
+		}
+	);
+
+	it.each(['strong', 'link', 'code', 'anchor'])(
+		'a mark carrier naming the built-in %s declines, and the text stands unmarked',
+		(type) => {
+			const back = parse(`<p><span data-qm-unknown-mark="${type}">a</span></p>`);
+			expect(back.toString()).toBe('doc(paragraph("a"))');
+			expect(pmToContent(back).marks).toEqual([]);
+		}
+	);
+
+	// A carrier's payload is the keyed object upstream spells; a bare scalar is not one.
+	it('a carrier payload that is not an object reads as none', () => {
+		const back = parse(
+			'<div data-qm-unknown-container="aside" data-qm-unknown-attrs="42"><p>a</p></div>'
+		);
+		expect(back.child(0).attrs.attrs).toBe(null);
+	});
+
+	// An island node is a leaf, so a rule claiming an element takes its whole subtree.
+	it.each([
+		['a name the web also uses', '<div data-island="widget"><p>keep me</p></div>'],
+		[
+			"this schema's name without the id it writes",
+			'<div data-qm-island="widget"><p>keep me</p></div>'
+		]
+	])('%s mints no island, and the blocks under it stand', (_name, html) => {
+		expect(parse(html).toString()).toBe('doc(paragraph("keep me"))');
+	});
+
+	// A `start` the store would normalize away is one the leaf would go on drawing: a
+	// leaf re-hydrates only on an external change (CODEC §Reconciliation).
+	it.each(['-3', '1e21', 'abc'])('an ol starting at %s starts at one', (start) => {
+		expect(parse(`<ol start="${start}"><li>a</li></ol>`).child(0).attrs.start).toBe(1);
+	});
+
+	// `0.` is an ordinal `importMarkdown` produces and the store keeps, so it is a value
+	// `toDOM` writes and this has to read back rather than round up.
+	it('an ol starting at zero keeps its zero', () => {
+		expect(parse('<ol start="0"><li>a</li></ol>').child(0).attrs.start).toBe(0);
+	});
+});
+
+// The type says which reader; the shape says whether it can read. Well-formed JSON of
+// the wrong shape is what a decode never produces and a paste can.
+describe('an island payload of the wrong shape reaches no reader', () => {
+	const island = (props: string) =>
+		parse(
+			`<div data-qm-island="table" data-qm-island-id="isl-9" data-qm-island-props='${props}'></div>`
+		);
+
+	it.each([
+		['rows that are not rows', '{"header":[],"rows":"nope","aligns":[]}'],
+		['cells that are not cells', '{"header":[7],"rows":[],"aligns":[]}'],
+		['nothing at all', 'null']
+	])('%s draws the placeholder instead', (_name, props) => {
+		expect(tablePropsOfNode(island(props).child(0))).toBeUndefined();
+	});
+
+	// The fixture above carries opaque JSON, which is all the round-trip is about; a
+	// reader wants the rectangle, so this states one.
+	it('and a table the reader can index still reads', () => {
+		const props = {
+			header: [{ text: 'h', marks: [] }],
+			rows: [[{ text: 'a', marks: [] }]],
+			aligns: ['none']
+		};
+		const before = doc(table({ ...TABLE, props }));
+		expect(tablePropsOfNode(parse(serialize(before)).child(0))).toEqual(props);
 	});
 });
 

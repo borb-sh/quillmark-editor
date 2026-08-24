@@ -61,15 +61,36 @@ function packAttrs(attrs: unknown): Record<string, string> {
 }
 
 /** The `attrs` half back off an element. `null` for anything that is not the JSON
- *  this schema wrote: a hand-built document reaches the same parse a paste does. */
+ *  this schema wrote: a hand-built document reaches the same parse a paste does, and a
+ *  carrier's payload is the keyed object upstream spells, never a bare scalar. */
 function unpackAttrs(el: HTMLElement): unknown {
 	const raw = el.getAttribute('data-qm-unknown-attrs');
 	if (raw == null) return null;
 	try {
-		return JSON.parse(raw);
+		const parsed: unknown = JSON.parse(raw);
+		return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) ? parsed : null;
 	} catch {
 		return null;
 	}
+}
+
+// ── The names a carrier may not wear ────────────────────────────────────────
+// A carrier holds a value this build does not know, so a name the content model does
+// know is the one thing it cannot carry: `textblockKind` re-emits it with `attrs`
+// beside it (`encode.ts`), and the store refuses `attrs` beside a built-in
+// discriminant, which fails every write for the rest of the session. It is the guard
+// `decode` already applies from the other side, where a `para` line mints no carrier.
+
+/** The line kinds `ContentLineKind` names, which decode maps to a node of their own. */
+const BUILTIN_LINE_KINDS = new Set(['para', 'heading', 'code', 'rule', 'island']);
+
+/** The containers `ContentContainer` names. */
+const BUILTIN_CONTAINERS = new Set(['list_item', 'quote']);
+
+/** A carrier's name, or `null` where it is empty or one the model owns. */
+function carrierName(el: HTMLElement, attr: string, builtin: Set<string>): string | null {
+	const name = el.getAttribute(attr);
+	return name && !builtin.has(name) ? name : null;
 }
 
 // ── Marks (the block and inline schemas share them; plaintext declares none) ─
@@ -85,12 +106,18 @@ const marks: Record<string, MarkSpec> = {
 	link: {
 		attrs: { href: { default: '' } },
 		inclusive: false,
-		parseDOM: [{ tag: 'a[href]', getAttrs: (el) => ({ href: el.getAttribute('href') }) }],
+		parseDOM: [
+			{ tag: 'a[href]', getAttrs: (el) => ({ href: el.getAttribute('href') }) },
+			{ tag: 'span[data-qm-href]', getAttrs: (el) => ({ href: el.getAttribute('data-qm-href') }) }
+		],
 		// A refused href draws as a bare span: the text stands, unstyled and
-		// unclickable, and the mark keeps its value for encode.
+		// unclickable, and the mark keeps its value for encode. The value rides on the
+		// span rather than being dropped with the tag, an `href` no renderer will follow
+		// still being one the document holds: a copy is not the explicit conversion that
+		// is allowed to lose it, and the pair is one tier (§head).
 		toDOM: (mark) => {
 			const href = mark.attrs.href as string;
-			return rendersHref(href) ? ['a', { href }, 0] : ['span', 0];
+			return rendersHref(href) ? ['a', { href }, 0] : ['span', { 'data-qm-href': href }, 0];
 		}
 	},
 	// The open-set escape hatch: an inert mark that renders as a bare span and
@@ -102,10 +129,12 @@ const marks: Record<string, MarkSpec> = {
 		parseDOM: [
 			{
 				tag: 'span[data-qm-unknown-mark]',
-				getAttrs: (el) => ({
-					type: (el as HTMLElement).getAttribute('data-qm-unknown-mark'),
-					attrs: unpackAttrs(el as HTMLElement)
-				})
+				// `false` declines the rule, so the text arrives unmarked rather than
+				// carrying a second spelling of a mark this schema already has.
+				getAttrs: (el) => {
+					const type = carrierName(el, 'data-qm-unknown-mark', BUILTIN_MARKS);
+					return type ? { type, attrs: unpackAttrs(el) } : false;
+				}
 			}
 		],
 		toDOM: (mark) => [
@@ -115,6 +144,11 @@ const marks: Record<string, MarkSpec> = {
 		]
 	}
 };
+
+/** The mark types the content model names: this schema's own, and `anchor`, which is a
+ *  decoration here rather than a mark (§Marks). Read off the record above, so a mark
+ *  added there closes the carrier's door on its name in the same edit. */
+const BUILTIN_MARKS = new Set([...Object.keys(marks), 'anchor']);
 
 // ── The fence's language ────────────────────────────────────────────────────
 // The one attribute no keystroke in the visual editor mints: the shorthand fires on
@@ -155,8 +189,8 @@ const blockNodes: Record<string, NodeSpec> = {
 			{
 				tag: 'p',
 				getAttrs: (el) => {
-					const kind = el.getAttribute('data-qm-unknown-line');
-					return { unknown: kind == null ? null : { kind, attrs: unpackAttrs(el) } };
+					const kind = carrierName(el, 'data-qm-unknown-line', BUILTIN_LINE_KINDS);
+					return { unknown: kind ? { kind, attrs: unpackAttrs(el) } : null };
 				}
 			}
 		],
@@ -211,10 +245,15 @@ const blockNodes: Record<string, NodeSpec> = {
 				tag: 'ol',
 				getAttrs: (el) => {
 					// A list stating no `start` starts at one, which is what `toDOM` leaves
-					// unwritten; `Number(null)` would read that absence as zero.
+					// unwritten; `Number(null)` would read that absence as zero. A value the
+					// store would normalize away reads as that absence too, the leaf
+					// re-hydrating only on an external change (CODEC §Reconciliation), so a PM
+					// doc keeping one disagrees with what is stored for the rest of the
+					// session. Zero is not such a value: `0.` is an ordinal `importMarkdown`
+					// produces and the store keeps.
 					const stated = el.getAttribute('start');
 					const start = stated ? Number(stated) : 1;
-					return { start: Number.isInteger(start) ? start : 1 };
+					return { start: Number.isSafeInteger(start) && start >= 0 ? start : 1 };
 				}
 			}
 		],
@@ -245,10 +284,12 @@ const blockNodes: Record<string, NodeSpec> = {
 		parseDOM: [
 			{
 				tag: 'div[data-qm-unknown-container]',
-				getAttrs: (el) => ({
-					container: el.getAttribute('data-qm-unknown-container'),
-					attrs: unpackAttrs(el)
-				})
+				// `false` declines the rule, so the div's children flow at the enclosing
+				// level — which is how a transparent container renders anyway.
+				getAttrs: (el) => {
+					const container = carrierName(el, 'data-qm-unknown-container', BUILTIN_CONTAINERS);
+					return container ? { container, attrs: unpackAttrs(el) } : false;
+				}
 			}
 		],
 		toDOM: (node) => [

@@ -12,7 +12,7 @@
 import { Fragment, Slice, type Node as PMNode, type NodeSpec } from 'prosemirror-model';
 import { Plugin } from 'prosemirror-state';
 import { isTableIsland } from '@quillmark/wasm';
-import type { ContentIsland, TableProps } from '@quillmark/wasm';
+import type { ContentIsland, TableCell, TableProps } from '@quillmark/wasm';
 
 /** The `U+FFFC` object-replacement char that occupies one island slot in `text`. */
 export const ISLAND_SLOT = '￼';
@@ -36,24 +36,29 @@ const islandAttrs = {
 // All four attributes cross the DOM: a copy and a paste inside one body run the document
 // through `toDOM`/`parseDOM` (CODEC §"Markdown at the edges"), and an island is a leaf
 // whose tags alone say only `[table]`. `props` crosses as JSON, the form the payload has
-// at the boundary. `data-island` is this package's own name, so a `<table>` off the web
-// still flattens to its cells' text — nothing out there spells it.
+// at the boundary. The names are `data-qm-*` like every other carrier's, and the id is
+// what the rule requires: an island is a leaf, so a rule reading a tag someone else
+// chose would swallow that element's whole subtree.
 
 /** The DOM an island node writes and reads back, for either spec. */
 function islandDOM(node: PMNode): Record<string, string> {
 	return {
-		'data-island': node.attrs.islandType as string,
-		'data-island-id': node.attrs.id as string,
-		'data-island-loss': node.attrs.loss as string,
-		'data-island-props': JSON.stringify(node.attrs.props ?? null)
+		'data-qm-island': node.attrs.islandType as string,
+		'data-qm-island-id': node.attrs.id as string,
+		'data-qm-island-loss': node.attrs.loss as string,
+		'data-qm-island-props': JSON.stringify(node.attrs.props ?? null)
 	};
 }
 
-/** An island node's attributes off that DOM. A `props` that is not the JSON written
- *  above reads as `null`: the entry survives as an island of its type rather than
- *  taking the paste down with it. */
-function islandAttrsFromDOM(el: HTMLElement): IslandNodeAttrs {
-	const raw = el.getAttribute('data-island-props');
+/** An island node's attributes off that DOM, or `false` for an element carrying no id:
+ *  the whole set is what this schema writes, and the tag alone is a name the web also
+ *  uses. A `props` that is not the JSON written above reads as `null`, and one of the
+ *  wrong shape is `undefined` at its reader (§`tablePropsOfNode`): the entry survives as
+ *  an island of its type rather than taking the paste down with it. */
+function islandAttrsFromDOM(el: HTMLElement): IslandNodeAttrs | false {
+	const id = el.getAttribute('data-qm-island-id');
+	if (id == null) return false;
+	const raw = el.getAttribute('data-qm-island-props');
 	let props: unknown = null;
 	try {
 		props = raw == null ? null : JSON.parse(raw);
@@ -61,10 +66,10 @@ function islandAttrsFromDOM(el: HTMLElement): IslandNodeAttrs {
 		props = null;
 	}
 	return {
-		id: el.getAttribute('data-island-id') ?? '',
-		islandType: el.getAttribute('data-island') ?? '',
+		id,
+		islandType: el.getAttribute('data-qm-island') ?? '',
 		props,
-		loss: (el.getAttribute('data-island-loss') ?? 'unrepresentable') as ContentIsland['loss']
+		loss: (el.getAttribute('data-qm-island-loss') ?? 'unrepresentable') as ContentIsland['loss']
 	};
 }
 
@@ -74,7 +79,7 @@ export const islandBlockSpec: NodeSpec = {
 	atom: true,
 	selectable: true,
 	attrs: islandAttrs,
-	parseDOM: [{ tag: 'div[data-island]', getAttrs: (el) => islandAttrsFromDOM(el) }],
+	parseDOM: [{ tag: 'div[data-qm-island]', getAttrs: (el) => islandAttrsFromDOM(el) }],
 	toDOM: (node) => ['div', islandDOM(node), `[${node.attrs.islandType || 'island'}]`]
 };
 
@@ -85,7 +90,7 @@ export const islandInlineSpec: NodeSpec = {
 	atom: true,
 	selectable: true,
 	attrs: islandAttrs,
-	parseDOM: [{ tag: 'span[data-island]', getAttrs: (el) => islandAttrsFromDOM(el) }],
+	parseDOM: [{ tag: 'span[data-qm-island]', getAttrs: (el) => islandAttrsFromDOM(el) }],
 	toDOM: (node) => ['span', islandDOM(node), `[${node.attrs.islandType || 'island'}]`]
 };
 
@@ -110,12 +115,31 @@ export function islandEntryFromNode(attrs: IslandNodeAttrs): ContentIsland {
 	};
 }
 
-/** A node's `TableProps`, or `undefined` for any other island: the boundary's own
- *  guard over the entry the node carries, so the open `type` arm narrows once here
- *  rather than at each reader. */
+/** The `TableProps` shape, over a value that reached the node off the DOM rather than
+ *  out of a decode: the rectangle every reader indexes (`table.ts`), down to the `text`
+ *  a row's emptiness is read off. */
+function isTableProps(props: unknown): props is TableProps {
+	if (typeof props !== 'object' || props === null) return false;
+	const { header, rows, aligns } = props as Record<string, unknown>;
+	const cells = (v: unknown): boolean =>
+		Array.isArray(v) &&
+		v.every(
+			(c) => typeof c === 'object' && c !== null && typeof (c as TableCell).text === 'string'
+		);
+	return (
+		cells(header) && Array.isArray(aligns) && Array.isArray(rows) && rows.every((row) => cells(row))
+	);
+}
+
+/** A node's `TableProps`, or `undefined` for any other island and for a payload of the
+ *  wrong shape: the boundary's own guard over the entry the node carries, so the open
+ *  `type` arm narrows once here rather than at each reader. The type says which reader,
+ *  the shape says whether it can read: a paste is a door the entry arrives through
+ *  without a decode behind it, and every caller already draws the placeholder for
+ *  `undefined` (`table-view.ts` §`render`). */
 export function tablePropsOfNode(node: PMNode): TableProps | undefined {
 	const entry = islandEntryFromNode(node.attrs as IslandNodeAttrs);
-	return isTableIsland(entry) ? entry.props : undefined;
+	return isTableIsland(entry) && isTableProps(entry.props) ? entry.props : undefined;
 }
 
 /**

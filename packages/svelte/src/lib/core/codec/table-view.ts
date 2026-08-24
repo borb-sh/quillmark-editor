@@ -327,8 +327,8 @@ class TableIslandView implements NodeView {
 		private readonly deps: TableViewDeps
 	) {
 		this.dom = el('div', 'qm-island qm-table-island');
-		this.dom.setAttribute('data-island', node.attrs.islandType as string);
-		this.dom.setAttribute('data-island-id', node.attrs.id as string);
+		this.dom.setAttribute('data-qm-island', node.attrs.islandType as string);
+		this.dom.setAttribute('data-qm-island-id', node.attrs.id as string);
 		this.dom.addEventListener('mousedown', this.onPointerDown);
 		this.render();
 	}
