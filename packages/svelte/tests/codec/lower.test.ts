@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { EditorState, TextSelection } from 'prosemirror-state';
 import type { Transaction } from 'prosemirror-state';
 import type { Node as PMNode } from 'prosemirror-model';
-import { baseKeymap } from 'prosemirror-commands';
+import { baseKeymap, joinTextblockBackward } from 'prosemirror-commands';
 import { blockSchema, bodyKeymap, contentEdit, decode, lower, pmToContent } from '$lib/core/codec';
 import type { Content, TableProps } from '@quillmark/wasm';
 import { freshDoc, normalize, contentEqual, md, textblocks } from './_util.js';
@@ -99,19 +99,34 @@ describe('lower ∘ apply matches PM', () => {
 		expect(stored.lines[1].kind).toBe('code');
 		expect(bundle.lineOps?.some((op) => op.op === 'setContinues')).toBe(true);
 	});
-	it('Backspace merging a fence into an item — the projection stays total', () => {
+	it('a join landing a fence’s newline in a paragraph — the projection stays total', () => {
 		// The merge lands the fence's own `\n` inside a `paragraph`:
 		// `joinTextblocksAround` is a bare `replaceStep`, so no `clearIncompatible`
 		// pass rewrites it. The projection has to count it as the line boundary it is,
 		// or it carries more segments than lines and the bundle under-specifies the
 		// store — `applyChange` takes it, and the field diverges from the leaf.
-		const { stored } = lowerApply(md('- a\n\n- ```\n  alpha\n  beta\n  ```'), (s) =>
-			keyTr(atHead(s, 1), 'Backspace')
-		);
+		// Upstream's command directly: no gesture reaches this shape, the leaf's chain
+		// refusing a join at a fence's edge (`code.ts`), and the projection is total
+		// whatever produces one.
+		const { stored } = lowerApply(md('- a\n\n- ```\n  alpha\n  beta\n  ```'), (s) => {
+			let out: Transaction | undefined;
+			joinTextblockBackward(atHead(s, 1), (tr) => {
+				out = tr;
+			});
+			if (!out) throw new Error('no join');
+			return out;
+		});
 		expect(stored.lines).toHaveLength(2);
 		expect(stored.lines.map((l) => l.kind)).toEqual(['para', 'para']);
 		expect(!!stored.lines[1].continues).toBe(true);
 		expect(stored.text).toBe('aalpha\nbeta');
+	});
+	it('the press itself keeps each block whole', () => {
+		const { stored } = lowerApply(md('- a\n\n- ```\n  alpha\n  beta\n  ```'), (s) =>
+			keyTr(atHead(s, 1), 'Backspace')
+		);
+		expect(stored.lines.map((l) => l.kind)).toEqual(['para', 'code', 'code']);
+		expect(stored.text).toBe('a\nalpha\nbeta');
 	});
 	it('a splice that joins one boundary and opens another restates every line', () => {
 		// A range from inside the fence to inside the heading, deleted. Both blocks
