@@ -144,7 +144,7 @@ Writing is the half that bites. Lowering restates **every** line's metadata as s
 | container | its children, at the enclosing level | the `unknown_container` node |
 | island `type` | the island leaf | `islandType` + opaque `props` on the node |
 
-A carrier is dropped only by an **explicit** conversion (retyping the paragraph to a heading, lifting out of the container), which is the one place losing it is what the user asked for.
+A carrier is dropped only by an **explicit** conversion (retyping the paragraph to a heading, lifting out of the container), which is the one place losing it is what the user asked for. A copy is not one of them: each carrier's tag and payload cross the DOM the clipboard runs through (§Markdown at the edges).
 
 ## Inline mode
 
@@ -161,8 +161,9 @@ The schema distinction is also what sizes the leaf: a constrained leaf holds one
 Markdown never represents an edit, and the clipboard is not how it reaches a field. One of the three doors is open:
 
 - **whole-document serialize**: `Document.toMarkdown()`, read-only, canonical.
-- **paste**: shut. What a paste gets is ProseMirror's own DOM parse against the schema above and nothing this package adds: lists, headings and marks survive it, markdown text arrives literally, and a `<table>` flattens to its cells' text, the schema declaring no `parseDOM` for an island. A field takes markdown by import — Quillmark's conversion to a DTO, or the source editor — which is a whole document with its anchors rather than a fragment that has to be rebased onto one.
+- **paste**: shut to markdown, and to every construct this package's own `data-*` names do not spell. What a paste gets is ProseMirror's own DOM parse against the schema above: lists, headings and marks survive it, markdown text arrives literally, and a `<table>` flattens to its cells' text, nothing on the web naming an island. A field takes markdown by import — Quillmark's conversion to a DTO, or the source editor — which is a whole document with its anchors rather than a fragment that has to be rebased onto one. One rule reaches past the shut door on purpose: a `<pre>` stating a language, by `data-lang` or the `language-*` class every highlighter emits, arrives carrying it, and that is the whole of how a `code_block.lang` is minted in the visual editor (VISUAL_EDITOR §"Settled and open").
 - **copy**: the clipboard takes PM's own serialization. Nothing writes markdown, so there is no lossy export to warn about.
+- **the pair is a tier, not a rendering.** A copy and a paste inside one body run the whole document out through `toDOM` and back through `parseDOM`, so an attribute written there and not read back is a value an ordinary copy destroys — §"Open sets"' three carriers included, whose whole job is surviving everything but an explicit conversion. Every attribute the schema writes is read back: a fence's language, a list's `start`, each carrier's tag and its JSON `attrs`, an island's `props` and `loss` beside its type. The one value a paste does not carry verbatim is an island id, which is an identity rather than a payload: an id the field already holds is re-minted on the way in (`codec/islands.ts`), so a copy lands beside its original instead of as a second island wearing one id, and a cut pasted back keeps what it had.
 
 ## Reconciliation
 
