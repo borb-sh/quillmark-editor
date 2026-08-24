@@ -162,10 +162,14 @@ const blockNodes: Record<string, NodeSpec> = {
 // ── Inline nodes ────────────────────────────────────────────────────────────
 const inlineLeafNodes: Record<string, NodeSpec> = {
 	text: { group: 'inline' },
+	// `linebreakReplacement` is what makes a join across a `code_block`'s edge
+	// lossless: `Transform.join` and `setBlockType` convert its `\n`s to breaks
+	// rather than flattening them to spaces, and a break is a `continues` line.
 	hard_break: {
 		inline: true,
 		group: 'inline',
 		selectable: false,
+		linebreakReplacement: true,
 		parseDOM: [{ tag: 'br' }],
 		toDOM: () => ['br']
 	},

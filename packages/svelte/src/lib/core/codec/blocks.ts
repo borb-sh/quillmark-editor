@@ -6,9 +6,14 @@
 // declines anywhere else, and a pick does what the shorthand would have done there —
 // the run consumed, the caret at the block's head. The menu asks each command whether
 // it would run rather than restating its guards (§`slashItems`).
-import type { Attrs, Node as PMNode, NodeType, ResolvedPos } from 'prosemirror-model';
+//
+// `blockKeymap` is the other half of the file and answers to no door: the Enter cases
+// that are about the body rather than about any block in it, outermost of the leaf's
+// key chains (`keymap.ts`).
+import type { Attrs, Node as PMNode, NodeType, ResolvedPos, Schema } from 'prosemirror-model';
 import { Selection } from 'prosemirror-state';
 import type { Command, EditorState, Transaction } from 'prosemirror-state';
+import { chainCommands, splitBlock } from 'prosemirror-commands';
 import { canJoin, findWrapping } from 'prosemirror-transform';
 
 /** The head of a textblock: where a shorthand fires, and where a pick lands once its
@@ -183,4 +188,61 @@ export function consuming(
 	for (const step of produced.steps) tr.step(step);
 	tr.setSelection(Selection.fromJSON(tr.doc, produced.selection.toJSON()));
 	return { tr, produced };
+}
+
+/**
+ * Enter at the very start of a body whose first block takes no caret above it → an
+ * empty paragraph there, the caret staying with the text it pushed down.
+ *
+ * A code block, a quote and a list are the blocks `prosemirror-gapcursor` declines
+ * to sit beside, and nothing else mints a block above one: three keystrokes on an
+ * empty body (` ``` `, `> `, `- `) put one first, and from then on the document
+ * cannot be given a title. The argument is `paragraphAboveList`'s, about the block
+ * rather than about lists, which is why this link comes first and that one narrows
+ * to the position it still owns.
+ *
+ * Declines wherever the first block is a plain textblock, whose Enter-split already
+ * leaves a paragraph above, and on an empty one, where the key belongs to whichever
+ * link answers a block with nothing in it (an empty first item exits the list).
+ */
+const paragraphAtBodyStart: Command = (state, dispatch) => {
+	const paragraph = state.schema.nodes.paragraph;
+	const { $from, empty } = state.selection;
+	if (!paragraph || !empty || $from.pos !== $from.depth) return false;
+	if ($from.parent.content.size === 0) return false;
+	if ($from.depth === 1 && $from.parent.isTextblock && !$from.parent.type.spec.code) return false;
+	dispatch?.(state.tr.insert(0, paragraph.create()).scrollIntoView());
+	return true;
+};
+
+/**
+ * Enter over a selection spanning two textblocks: take the selection, then split
+ * what is left, both in one transaction.
+ *
+ * The edit upstream's `splitBlock` means, computed against a document that exists.
+ * It deletes the selection inside its own transaction and then reads the default
+ * block's fit off the *pre-delete* document — `$from.node(splitDepth - 1)` against an
+ * index resolved in the new one — so where the range starts at the head of a
+ * `defining` block and ends inside a list, it retypes a `list_item` to a paragraph
+ * and throws `RangeError` out of the keystroke.
+ */
+const splitAcrossBlocks: Command = (state, dispatch) => {
+	const { $from, $to, empty } = state.selection;
+	if (empty || $from.parent === $to.parent) return false;
+	if (!dispatch) return true;
+	const tr = state.tr.deleteSelection();
+	splitBlock(state.apply(tr), (split) => {
+		for (const step of split.steps) tr.step(step);
+		tr.setSelection(Selection.fromJSON(tr.doc, split.selection.toJSON()));
+	});
+	dispatch(tr.scrollIntoView());
+	return true;
+};
+
+/** The body-wide link of the leaf's key chains: `{}` for a schema with no paragraph
+ *  to mint. Outermost of the structural links, being about the body rather than
+ *  about the surface the caret is in. */
+export function blockKeymap(schema: Schema): Record<string, Command> {
+	if (!schema.nodes.paragraph) return {};
+	return { Enter: chainCommands(paragraphAtBodyStart, splitAcrossBlocks) };
 }

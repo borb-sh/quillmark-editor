@@ -9,6 +9,10 @@
 // first link that claims the key gets it; and where none does, the key is not
 // swallowed at all and leaves the body a keyboard exit.
 //
+// The block link is the exception to that order and comes ahead of them all: it is
+// about the body itself — the one position no surface owns, its very start — and a
+// link reading a caret's own surface would answer there first and never let it run.
+//
 // A table island's cell traversal is not a link here: it binds on the nested cell
 // view (`table-view.ts`), a keymap over a different document, so a key a cell
 // handled never reaches this map at all.
@@ -19,6 +23,7 @@ import type { Schema } from 'prosemirror-model';
 import { chainCommands } from 'prosemirror-commands';
 import type { Command } from 'prosemirror-state';
 import { atomKeymap } from './atoms.js';
+import { blockKeymap } from './blocks.js';
 import { codeKeymap } from './code.js';
 import { listKeymap } from './lists.js';
 import { slashKeymap } from './slash.js';
@@ -47,5 +52,11 @@ function chainKeymaps(...maps: Record<string, Command>[]): Record<string, Comman
  * no visible reason. */
 export function bodyKeymap(schema: Schema, slash?: boolean): Record<string, Command> {
 	const links = slash ? [slashKeymap()] : [];
-	return chainKeymaps(...links, codeKeymap(schema), listKeymap(schema), atomKeymap(schema));
+	return chainKeymaps(
+		...links,
+		blockKeymap(schema),
+		codeKeymap(schema),
+		listKeymap(schema),
+		atomKeymap(schema)
+	);
 }
