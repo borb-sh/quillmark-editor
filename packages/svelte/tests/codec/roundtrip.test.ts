@@ -4,8 +4,8 @@
 //       `normalize(pmToContent(decode(rt))) == normalize(rt)`;
 //   (2) the chain the leaf actually runs, under the same generator:
 //       `decode → press → pmToContent → lower → applyChange`, asserting the
-//       projection validates, the store equals the optimistic PM, and the position
-//       map still inverts;
+//       projection validates, the store equals the optimistic PM, the position map
+//       still inverts, and the store decodes back to the leaf;
 //   (3) the position map after split/join/wrap: rebuild `buildLineIndex` and
 //       re-assert the clean-inverse property.
 //
@@ -30,6 +30,7 @@ import {
 	usvLength,
 	usvToPM
 } from '$lib/core/codec';
+import { linebreakPlugin } from '$lib/core/codec/breaks.js';
 import {
 	assertPositionInverse,
 	contentEqual,
@@ -159,12 +160,19 @@ describe('generative decode → lower round-trip', () => {
 // ── The chain the leaf runs, under the same generator ────────────────────────
 // `decode → press → pmToContent → lower → applyChange`, against a real `Document`,
 // with the gestures drawn from the keys `bodyKeymap` binds falling through to
-// `baseKeymap` — the composition `proseLeafPlugins` mounts, so precedence is under
-// test alongside the codec. Three assertions per step, and the first is the one the
-// pure round-trip cannot make: **every document the keymaps can reach projects to a
-// valid `Content`**. A projection that carries more segments than lines does not
-// throw on the way out; it under-specifies the bundle, `applyChange` accepts it, and
-// the field diverges from the leaf for the rest of the session.
+// `baseKeymap`, over the normalizer the leaf mounts beneath them — the composition
+// `proseLeafPlugins` assembles, so precedence is under test alongside the codec. Four
+// assertions per step, and the first is the one the pure round-trip cannot make:
+// **every document the keymaps can reach projects to a valid `Content`**. A projection
+// that carries more segments than lines does not throw on the way out; it
+// under-specifies the bundle, `applyChange` accepts it, and the field diverges from
+// the leaf for the rest of the session.
+//
+// The fourth closes the loop the other way: the store decodes back to the document the
+// writer is looking at. A leaf holding a second spelling of a shape stores and previews
+// correctly and still draws something else, until a re-hydrate swaps it out from under
+// the caret. It is what `representable` asserts per fixed case (`_util.ts`), against
+// the reachable set rather than the written one.
 
 const { press } = keyDriver(bodyKeymap(blockSchema));
 const rules = inputRulesPlugin(blockSchema);
@@ -226,7 +234,10 @@ describe('generative keymap → lower → applyChange', () => {
 			const doc = freshDoc();
 			doc.overwrite({}, md(source));
 			let stored = doc.main.body;
-			let state = EditorState.create({ doc: decode(stored, blockSchema) });
+			let state = EditorState.create({
+				doc: decode(stored, blockSchema),
+				plugins: [linebreakPlugin(blockSchema)]
+			});
 			for (let step = 0; step < 10; step++) {
 				const where = `seed ${seed} step ${step}\n${source}`;
 				state = gesture(r, place(r, state));
@@ -239,6 +250,8 @@ describe('generative keymap → lower → applyChange', () => {
 				expect(contentEqual(stored, optimistic), where).toBe(true);
 				// (3) the caret still crosses the boundary in both directions.
 				assertPositionInverse(state.doc, where);
+				// (4) and a re-hydrate draws the leaf back, unchanged.
+				expect(decode(stored, blockSchema).toString(), where).toBe(state.doc.toString());
 			}
 		}
 	});
