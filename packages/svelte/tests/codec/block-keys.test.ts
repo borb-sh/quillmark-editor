@@ -228,8 +228,8 @@ describe('Delete on an empty line takes the line', () => {
 });
 
 describe('and declines where the line is a construct, or the last of them', () => {
-	// The list link spends the empty item on the seam below (`lists.ts`), where the base
-	// keymap would have unmarked the item below to fill it.
+	// The list link spends the empty item on the seam below (`lists.ts`), ahead of the
+	// base keymap, which unmarks the item below to fill it instead.
 	it('an empty item is the list keys’, the line being the whole of the item', () => {
 		expectPress(
 			atBlock(docOf(ul(li(p()), li(p('b')))), 0),

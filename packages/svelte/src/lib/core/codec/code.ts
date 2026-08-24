@@ -152,6 +152,8 @@ function blockAgainst(state: EditorState, side: -1 | 1): { node: PMNode; pos: nu
  * (`schema.ts`). The caret stays in the block it was in.
  *
  * Declines where both sides are code and where neither is: those joins retype nothing.
+ * An empty block on either side never reaches this at all: the block link takes the
+ * empty line ahead of the chain (`blocks.ts`), and there is no text to retype.
  */
 function retypeAtProseEdge(side: -1 | 1): Command {
 	return (state, dispatch) => {

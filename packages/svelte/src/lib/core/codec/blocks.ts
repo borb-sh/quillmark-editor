@@ -271,15 +271,16 @@ const splitAcrossBlocks: Command = (state, dispatch) => {
  * whole and keeping what it is.
  *
  * The links below it leave the line standing: the base keymap joins the block below
- * into it — a list's first item lifted out to fill it and no longer an item, a quote
- * unwrapped into it — and the atom link arms an island for the press after. Upstream
- * takes the line only where the sibling holds the same kind of content, so a heading
- * below keeps its level where a bullet loses its marker.
+ * into it — a list's first item lifted out to fill it, its marker gone — and the atom
+ * link arms an island for the press after. Upstream takes the line only where the
+ * sibling holds the same kind of content, so a heading below keeps its level where a
+ * bullet loses its marker.
  *
- * Declines where the parent cannot spare the block, an empty item or an empty quote
- * being a construct rather than a line in one: the key is whichever link answers a
- * construct with nothing in it. Declines with nothing after it too — a line with no
- * next line is Backspace's.
+ * Declines where the parent cannot spare the block: an empty item and an empty quote
+ * are the whole of what holds them, and the key is whichever link answers a construct
+ * with nothing in it. An empty fence is not that case — the doc spares it, and it
+ * carries no text to lose. Declines with nothing after it too: a line with no next
+ * line is Backspace's.
  */
 const takeEmptyLine: Command = (state, dispatch) => {
 	const { $from, empty } = state.selection;

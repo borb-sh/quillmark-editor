@@ -50,11 +50,10 @@ function islandDOM(node: PMNode): Record<string, string> {
 	};
 }
 
-/** An island node's attributes off that DOM, or `false` for an element carrying no id:
- *  the whole set is what this schema writes, and the tag alone is a name the web also
- *  uses. A `props` that is not the JSON written above reads as `null`, and one of the
- *  wrong shape is `undefined` at its reader (§`tablePropsOfNode`): the entry survives as
- *  an island of its type rather than taking the paste down with it. */
+/** An island node's attributes off that DOM, or `false` where the id is absent. A
+ *  `props` that is not the JSON written above reads as `null`, and one of the wrong
+ *  shape is `undefined` at its reader (§`tablePropsOfNode`): the entry survives as an
+ *  island of its type rather than taking the paste down with it. */
 function islandAttrsFromDOM(el: HTMLElement): IslandNodeAttrs | false {
 	const id = el.getAttribute('data-qm-island-id');
 	if (id == null) return false;
@@ -134,8 +133,7 @@ function isTableProps(props: unknown): props is TableProps {
 /** A node's `TableProps`, or `undefined` for any other island and for a payload of the
  *  wrong shape: the boundary's own guard over the entry the node carries, so the open
  *  `type` arm narrows once here rather than at each reader. The type says which reader,
- *  the shape says whether it can read: a paste is a door the entry arrives through
- *  without a decode behind it, and every caller already draws the placeholder for
+ *  the shape says whether it can read; every caller draws the placeholder for
  *  `undefined` (`table-view.ts` §`render`). */
 export function tablePropsOfNode(node: PMNode): TableProps | undefined {
 	const entry = islandEntryFromNode(node.attrs as IslandNodeAttrs);

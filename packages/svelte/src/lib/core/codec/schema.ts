@@ -75,11 +75,11 @@ function unpackAttrs(el: HTMLElement): unknown {
 }
 
 // ── The names a carrier may not wear ────────────────────────────────────────
-// A carrier holds a value this build does not know, so a name the content model does
-// know is the one thing it cannot carry: `textblockKind` re-emits it with `attrs`
-// beside it (`encode.ts`), and the store refuses `attrs` beside a built-in
-// discriminant, which fails every write for the rest of the session. It is the guard
-// `decode` already applies from the other side, where a `para` line mints no carrier.
+// A carrier holds a value this build does not know, so a name the model does know is
+// the one it cannot carry: the projection re-emits it with `attrs` beside it
+// (`encode.ts` §`textblockKind`) and the store refuses `attrs` beside a built-in
+// discriminant, failing every write for the rest of the session. `decode` applies the
+// same guard from the other side, where a `para` line mints no carrier.
 
 /** The line kinds `ContentLineKind` names, which decode maps to a node of their own. */
 const BUILTIN_LINE_KINDS = new Set(['para', 'heading', 'code', 'rule', 'island']);
@@ -112,9 +112,9 @@ const marks: Record<string, MarkSpec> = {
 		],
 		// A refused href draws as a bare span: the text stands, unstyled and
 		// unclickable, and the mark keeps its value for encode. The value rides on the
-		// span rather than being dropped with the tag, an `href` no renderer will follow
-		// still being one the document holds: a copy is not the explicit conversion that
-		// is allowed to lose it, and the pair is one tier (§head).
+		// span rather than going with the tag — an `href` no renderer will follow is one
+		// the document still holds, and a copy is not the explicit conversion allowed to
+		// lose it.
 		toDOM: (mark) => {
 			const href = mark.attrs.href as string;
 			return rendersHref(href) ? ['a', { href }, 0] : ['span', { 'data-qm-href': href }, 0];
@@ -244,13 +244,12 @@ const blockNodes: Record<string, NodeSpec> = {
 			{
 				tag: 'ol',
 				getAttrs: (el) => {
-					// A list stating no `start` starts at one, which is what `toDOM` leaves
-					// unwritten; `Number(null)` would read that absence as zero. A value the
-					// store would normalize away reads as that absence too, the leaf
-					// re-hydrating only on an external change (CODEC §Reconciliation), so a PM
-					// doc keeping one disagrees with what is stored for the rest of the
-					// session. Zero is not such a value: `0.` is an ordinal `importMarkdown`
-					// produces and the store keeps.
+					// A list stating no `start` starts at one, the absence `toDOM` writes for
+					// it; `Number(null)` would read that absence as zero. A value the store
+					// would normalize away reads as that absence too: the leaf re-hydrates
+					// only on an external change (CODEC §Reconciliation), so a PM doc keeping
+					// one disagrees with the store for the rest of the session. Zero is not
+					// one — `0.` is an ordinal `importMarkdown` produces and the store keeps.
 					const stated = el.getAttribute('start');
 					const start = stated ? Number(stated) : 1;
 					return { start: Number.isSafeInteger(start) && start >= 0 ? start : 1 };
