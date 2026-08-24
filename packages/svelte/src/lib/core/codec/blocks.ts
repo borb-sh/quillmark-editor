@@ -190,6 +190,12 @@ export function consuming(
 	return { tr, produced };
 }
 
+/** The head of the body's first block: one position per open token above the caret,
+ *  and nothing before it. */
+function atBodyStart($from: ResolvedPos): boolean {
+	return $from.pos === $from.depth;
+}
+
 /**
  * Enter at the very start of a body whose first block takes no caret above it → an
  * empty paragraph there, the caret staying with the text it pushed down.
@@ -202,16 +208,37 @@ export function consuming(
  * position it alone reaches, a list under an island or a rule.
  *
  * Declines wherever the first block is a plain textblock, whose Enter-split already
- * leaves a paragraph above, and on an empty one, where the key belongs to whichever
- * link answers a block with nothing in it (an empty first item exits the list).
+ * leaves a paragraph above, and on an empty one, which the links after it answer.
  */
 const paragraphAtBodyStart: Command = (state, dispatch) => {
 	const paragraph = state.schema.nodes.paragraph;
 	const { $from, empty } = state.selection;
-	if (!paragraph || !empty || $from.pos !== $from.depth) return false;
+	if (!paragraph || !empty || !atBodyStart($from)) return false;
 	if ($from.parent.content.size === 0) return false;
 	if ($from.depth === 1 && $from.parent.isTextblock && !$from.parent.type.spec.code) return false;
 	dispatch?.(state.tr.insert(0, paragraph.create()).scrollIntoView());
+	return true;
+};
+
+/**
+ * Enter in an empty fence that opens the body → the fence, retyped to a paragraph.
+ *
+ * An empty first item exits its list and an empty first quoted paragraph lifts out of
+ * the quote, each leaving the one paragraph a caret above needs. A fence answers with
+ * `newlineInCode` instead — a line inside the block, in the direction already open —
+ * so the empty fence a body's first ` ``` ` mints holds a caret with nothing above it
+ * and no key that mints one.
+ *
+ * Retyping rather than inserting above, for the reason those exits leave one paragraph
+ * and not two: an empty fence carries nothing to keep.
+ */
+const paragraphFromEmptyFence: Command = (state, dispatch) => {
+	const paragraph = state.schema.nodes.paragraph;
+	const { $from, empty } = state.selection;
+	if (!paragraph || !empty || !atBodyStart($from)) return false;
+	if (!$from.parent.type.spec.code || $from.parent.content.size !== 0) return false;
+	if (!fits($from, paragraph)) return false;
+	dispatch?.(state.tr.setBlockType($from.pos, $from.pos, paragraph).scrollIntoView());
 	return true;
 };
 
@@ -244,5 +271,7 @@ const splitAcrossBlocks: Command = (state, dispatch) => {
  *  about the surface the caret is in. */
 export function blockKeymap(schema: Schema): Record<string, Command> {
 	if (!schema.nodes.paragraph) return {};
-	return { Enter: chainCommands(paragraphAtBodyStart, splitAcrossBlocks) };
+	return {
+		Enter: chainCommands(paragraphAtBodyStart, paragraphFromEmptyFence, splitAcrossBlocks)
+	};
 }
