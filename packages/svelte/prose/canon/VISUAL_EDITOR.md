@@ -225,6 +225,8 @@ The second rung is the editor's because the editor holds `quill.schema`: an inde
 
 **The element lane carries a place, not a focus**, and what a place means there is the row control's — the same reason a control owns its focus. A `richtext[]` or `plaintext[]` row is a prose leaf and takes the offset (`ProseValue.setCaret`, `createField`'s body over the view the row owns); an `object[]` row opens and takes the bare focus — opening is part of the landing rather than something the user does first, a collapsed row holding no control for a caret to sit in — an offset being a position in rendered content and a subform having no coordinate to spend one in. An absent `pos` is the placement rung on this lane exactly as on `Landing`, which is where a `'segment'` hit lands, so one rule covers both lanes.
 
+**The wash marks what the address named** (`core/bloom.ts`). An element landing blooms the row it took and not the repeater around it: the arrival answers "here" for a click made in the other pane, and a box wider than the one the click resolved says the field where the pick said the row. So the element lane hands its row back with the landing, and the registry's own box — the whole list — is what a landing on the field falls to, along with a row the document has since dropped. Every other control is one box, which is the one the registry holds.
+
 ## Not owned
 
 - content↔PM, the position map, mark/island translation: the codec's ([CODEC.md](CODEC.md)).

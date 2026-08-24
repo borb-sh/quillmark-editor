@@ -116,7 +116,10 @@
 		if (ids.length === n) return;
 		if (ids.length < n) ids = [...ids, ...seq.take(n - ids.length)];
 		else {
-			for (const id of ids.slice(n)) delete els[id];
+			for (const id of ids.slice(n)) {
+				delete els[id];
+				delete rowEls[id];
+			}
 			ids = ids.slice(0, n);
 		}
 	});
@@ -138,6 +141,11 @@
 	// {@link Card} keeps its header/panel refs in.
 	const els: Record<string, { focus: () => void; setCaret?: (pos: number) => void } | undefined> =
 		$state({});
+	// The rows' own boxes, on the same key and dropped on the same paths: what an
+	// element landing blooms in ({@link focusElement}), and what an object row's
+	// summary is found through. A row is a box whatever its element type, so the two
+	// element shapes register alike.
+	const rowEls: Record<string, HTMLElement | undefined> = $state({});
 	let addEl: HTMLButtonElement | undefined = $state();
 	let rootEl: HTMLElement | undefined = $state();
 	let rowsEl: HTMLElement | undefined = $state();
@@ -218,6 +226,7 @@
 		const next = ids.filter((_, i) => i !== k);
 		ids = next;
 		delete els[dropped];
+		delete rowEls[dropped];
 		// The open row can be the one removed; `openId` is cleared with it rather than
 		// left naming an element that has gone.
 		if (openId === dropped) openId = undefined;
@@ -241,13 +250,7 @@
 	 *  the row's own summary otherwise — a collapsed row's control is its summary. */
 	function focusObjectRow(id: string): void {
 		if (id === openId && openObjEl) return openObjEl.focus();
-		// Matched on the dataset: spelling an id into a selector needs `CSS.escape`,
-		// which the test DOM does not carry.
-		const rows = rowsEl?.querySelectorAll<HTMLElement>('[data-qm-el]') ?? [];
-		for (const row of rows) {
-			if (row.dataset.qmEl === id)
-				return row.querySelector<HTMLElement>('.qm-element-summary')?.focus();
-		}
+		rowEls[id]?.querySelector<HTMLElement>('.qm-element-summary')?.focus();
 	}
 	/** The box an arrival wash blooms in (`leaves.ts`, `core/bloom.ts`): the elements,
 	 * not the header above them. This component owns the field's label, so the wrapper
@@ -266,21 +269,33 @@
 	 *
 	 * An absent `pos` is the placement rung, exactly as on `Landing`. A row that takes
 	 * no offset gets the bare focus: the JSON element, whose textarea has no coordinate
-	 * to spend one in, and a `string` element, which the compile never addresses. */
-	export function focusElement(k: number, pos?: number): void {
+	 * to spend one in, and a `string` element, which the compile never addresses.
+	 *
+	 * The row's box comes back with the landing: the arrival wash is the address's own
+	 * granularity, and one row is what an element address named. A fallback to the
+	 * field answers `undefined`, which is the field's box again (`leaves.ts`). */
+	export function focusElement(k: number, pos?: number): HTMLElement | undefined {
+		const id = ids[k];
 		// A collapsed row holds no control for a caret to land in, so opening it is part
 		// of the landing rather than something the user does first: a preview click that
 		// resolves into an element has to arrive somewhere the caret can sit.
 		if (control === 'object') {
-			const id = ids[k];
-			if (id === undefined) return focus();
+			if (id === undefined) {
+				focus();
+				return undefined;
+			}
 			openId = id;
-			return void focusAfterFlush(id);
+			void focusAfterFlush(id);
+			return rowEls[id];
 		}
-		const el = els[ids[k]];
-		if (!el) return focus();
-		if (pos != null && el.setCaret) return el.setCaret(pos);
-		el.focus();
+		const el = id === undefined ? undefined : els[id];
+		if (!el) {
+			focus();
+			return undefined;
+		}
+		if (pos != null && el.setCaret) el.setCaret(pos);
+		else el.focus();
+		return rowEls[id];
 	}
 	/** Focus element `id` after the flush, never in the same tick: a mutation commits
 	 * the array by value, so the parent re-derives and the row does not exist until
@@ -362,7 +377,7 @@
 			{#if control === 'object'}
 				{@const open = openId === id}
 				{@const shown = elementTitle(k)}
-				<div class="qm-array-row qm-element" class:open data-qm-el={id}>
+				<div class="qm-array-row qm-element" class:open bind:this={rowEls[id]}>
 					<!-- The head is the row in collapsed form, and it is a box: the element IS
 					     a value, the way the enum trigger is, and the remove slab's grammar
 					     (the box's two end-side corners) needs corners to take. So a list of
@@ -404,7 +419,7 @@
 					{/if}
 				</div>
 			{:else}
-				<div class="qm-array-row">
+				<div class="qm-array-row" bind:this={rowEls[id]}>
 					{#if control === 'prose'}
 						<ProseValue
 							bind:this={els[id]}
@@ -477,6 +492,10 @@
 		position: relative;
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
+		/* The corners the row's wash takes, an element landing blooming here rather than
+		 over the whole list (`focusElement`): the row draws no box of its own, so the
+		 radius it lends the wash is the one its element's box draws. */
+		border-radius: var(--_qm-radius-inner);
 	}
 	/* The end inset the slab stands in, taken off whichever box the element drew:
 	 `.qm-input` is the text element and the JSON textarea, `.qm-control-box` the prose
