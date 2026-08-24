@@ -36,6 +36,7 @@ import { lower, pmToContent, contentEdit } from './encode.js';
 import { anchorsFromContent, type AnchorPos } from './marks.js';
 import { createReconciler, type Reconciler } from './reconcile.js';
 import { inputRulesPlugin } from './inputrules.js';
+import { linebreakPlugin } from './breaks.js';
 import { bodyKeymap } from './keymap.js';
 import { blockSchema, inlineSchema, plaintextSchema } from './schema.js';
 import { DEFAULT_TABLE_STRINGS, tableNodeView, type TableChromeStrings } from './table-view.js';
@@ -541,10 +542,10 @@ export function createField(opts: CreateFieldOpts): FieldController {
  * {@link createField} and the by-value inline editor (`ProseValue`), so the two
  * never fork the keymap/plugin ordering. History first, then any leaf-specific
  * plugins (`afterHistory`: the addressed leaf passes its anchor-position plugin;
- * a by-value leaf passes none), the
- * markdown-shorthand input rules, then the field keymap over the base keymap, and
- * last the two that answer to a caret or a selection beside a block: the gap cursor
- * and {@link pastAtomPlugin}.
+ * a by-value leaf passes none), then {@link linebreakPlugin}, which normalizes what
+ * the rest of the stack leaves, then the markdown-shorthand input rules, the field
+ * keymap over the base keymap, and last the two that answer to a caret or a selection
+ * beside a block: the gap cursor and {@link pastAtomPlugin}.
  *
  * Every mark-shaped plugin reads the schema rather than a flag: over
  * `plaintextSchema` the shorthand rules build nothing (each is guarded on its mark
@@ -566,7 +567,7 @@ export function proseLeafPlugins(
 		afterHistory?: Plugin[];
 	}
 ): Plugin[] {
-	const list: Plugin[] = [history(), ...(opts.afterHistory ?? [])];
+	const list: Plugin[] = [history(), ...(opts.afterHistory ?? []), linebreakPlugin(schema)];
 	if (opts.slash) list.push(slashPlugin(opts.slash));
 	if (!opts.noInputRules) list.push(inputRulesPlugin(schema));
 	list.push(keymap(editorKeymap(schema, opts.inline, !!opts.slash)));
