@@ -1,8 +1,8 @@
 // List editing: the body leaf's structural commands, over
-// `prosemirror-schema-list` primitives. Indent/outdent on Tab, and the two
+// `prosemirror-schema-list` primitives. Indent/outdent on Tab, and the three
 // structural keys lists redefine: Enter (split, exit an empty item, open a
-// paragraph where nothing above the list takes a caret) and Backspace (merge, or
-// lift at the list's start).
+// paragraph where nothing above the list takes a caret), Backspace (merge, or
+// lift at the list's start) and Delete (Backspace at the seam below).
 //
 // Cleanup is command-local, never a global pass: `liftToOuterList` joins the
 // boundary it opens and `sinkListItem` reuses the previous item's nested list, so
@@ -11,9 +11,10 @@
 // `Content` marks one, the upstream normalizer keeps it
 // (`tests/codec/list-shapes.test.ts`), and fusing renumbers an imported `1, 2, 1`
 // in a region no edit touched. Reads preserve it; only an edit normalizes.
-import type { Node as PMNode, NodeType, Schema } from 'prosemirror-model';
+import type { Node as PMNode, NodeType, ResolvedPos, Schema } from 'prosemirror-model';
 import { liftListItem, sinkListItem, splitListItem } from 'prosemirror-schema-list';
-import type { Command } from 'prosemirror-state';
+import { EditorState, Selection, TextSelection } from 'prosemirror-state';
+import type { Command, Transaction } from 'prosemirror-state';
 import { chainCommands, joinTextblockBackward } from 'prosemirror-commands';
 
 /** The caret's enclosing `list_item` when it sits at the very start of that item's
@@ -104,6 +105,43 @@ function mergeIntoPreviousItem(itemType: NodeType): Command {
 	};
 }
 
+/** Whether the caret sits inside a `list_item` at any depth: a quote's paragraph
+ * inside an item is still an item's, and a caret outside every list is at no seam of
+ * one. */
+function inItem($pos: ResolvedPos, itemType: NodeType): boolean {
+	for (let depth = $pos.depth; depth > 0; depth--) {
+		if ($pos.node(depth).type === itemType) return true;
+	}
+	return false;
+}
+
+/**
+ * Delete at the very end of a block inside an item → `press`, the Backspace chain, at
+ * the head of the block below: one seam, one edit, whichever side a writer approaches
+ * it from. Not the base keymap's `joinForward`, which merges the blocks and leaves the
+ * `list_item(paragraph, paragraph)` above.
+ *
+ * The reflection carries the edit and not the caret, which stays where the key was
+ * pressed: a lift moves the item below, and Delete does not follow it.
+ *
+ * Declining wherever the chain does is what keeps this to the list's own seams: a
+ * boundary inside one item, and the list's outer edge, stay the base keymap's, where
+ * the two keys already answer alike.
+ */
+function backspaceBelow(itemType: NodeType, press: Command): Command {
+	return (state, dispatch) => {
+		const { $from, empty } = state.selection;
+		if (!empty || $from.parentOffset !== $from.parent.content.size) return false;
+		if (!inItem($from, itemType)) return false;
+		const below = Selection.near(state.doc.resolve($from.after()), 1);
+		if (below.from <= $from.pos) return false;
+		const pressed = $from.pos;
+		const keepCaret = (tr: Transaction): void =>
+			dispatch?.(tr.setSelection(TextSelection.create(tr.doc, tr.mapping.map(pressed))));
+		return press(EditorState.create({ doc: state.doc, selection: below }), dispatch && keepCaret);
+	};
+}
+
 /**
  * The list bindings for a block-schema leaf: `{}` for the inline/plaintext
  * schemas, which declare no list nodes.
@@ -121,12 +159,15 @@ function mergeIntoPreviousItem(itemType: NodeType): Command {
  * its own: it splits a non-empty item, and on an empty item it either splits the
  * wrapping item (a nested empty item, so Enter lifts exactly one level) or bails
  * so the third link lifts a top-level empty item out to a paragraph. `Backspace`
- * forks on the item's index: the first item lifts, any later one merges.
+ * forks on the item's index: the first item lifts, any later one merges. `Delete` is
+ * that same chain at the seam below rather than a second table of cases beside it, so
+ * the two keys cannot come to differ over one boundary.
  */
 export function listKeymap(schema: Schema): Record<string, Command> {
 	const itemType = schema.nodes.list_item;
 	const paragraph = schema.nodes.paragraph;
 	if (!itemType || !paragraph) return {};
+	const backspace = chainCommands(liftAtListStart(itemType), mergeIntoPreviousItem(itemType));
 	return {
 		Tab: sinkListItem(itemType),
 		'Shift-Tab': liftListItem(itemType),
@@ -135,6 +176,7 @@ export function listKeymap(schema: Schema): Record<string, Command> {
 			splitListItem(itemType),
 			liftListItem(itemType)
 		),
-		Backspace: chainCommands(liftAtListStart(itemType), mergeIntoPreviousItem(itemType))
+		Backspace: backspace,
+		Delete: backspaceBelow(itemType, backspace)
 	};
 }

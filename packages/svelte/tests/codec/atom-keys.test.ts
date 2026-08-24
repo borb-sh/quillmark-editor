@@ -8,25 +8,13 @@
 import { describe, it, expect } from 'vitest';
 import { EditorState, NodeSelection, TextSelection } from 'prosemirror-state';
 import { blockSchema, bodyKeymap, decode } from '$lib/core/codec';
-import { md, startOf, run, shape, keyDriver } from './_util.js';
+import { md, startOf, endOf, run, shape, keyDriver } from './_util.js';
 
 const keys = bodyKeymap(blockSchema);
 const { press } = keyDriver(keys);
 
 const TABLE = 'para\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\ntail';
 const RULE = 'para\n\n---\n\ntail';
-
-/** A state with the caret at the end of the `index`-th textblock: where a forward
- *  delete is about the block's neighbour rather than about a character. */
-function endOf(markdown: string, index: number): EditorState {
-	const doc = decode(md(markdown), blockSchema);
-	const ends: number[] = [];
-	doc.descendants((node, pos) => {
-		if (node.isTextblock) ends.push(pos + 1 + node.content.size);
-		return !node.isTextblock;
-	});
-	return EditorState.create({ doc, selection: TextSelection.create(doc, ends[index]) });
-}
 
 /** The node a state has selected, or `undefined` for a text selection. */
 function selectedNode(state: EditorState): string | undefined {
@@ -93,5 +81,12 @@ describe('the link declines everywhere the neighbour can be entered', () => {
 		const next = press(state, 'Backspace');
 		expect(selectedNode(next)).toBeUndefined();
 		expect(next.doc.toString()).toBe('doc(island_block, paragraph("alpha"))');
+	});
+
+	it('an island below a list is a neighbour, not the item’s seam', () => {
+		// The mirror: the list link reads the seam below an item and declines where nothing
+		// there opens one, so the atom link answers as it does anywhere else.
+		const next = press(endOf('- alpha\n\n| a |\n|---|\n| 1 |', 0), 'Delete');
+		expect(selectedNode(next)).toBe('island_block');
 	});
 });

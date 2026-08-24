@@ -70,9 +70,26 @@ export function atBlock(doc: PMNode, index: number): EditorState {
 	return EditorState.create({ doc, selection: TextSelection.create(doc, block.start) });
 }
 
+/** A state with the caret at the end of the `index`-th textblock: the other side of
+ * every boundary `atBlock` addresses, where a delete is about the block below rather
+ * than about a character. */
+export function atBlockEnd(doc: PMNode, index: number): EditorState {
+	const block = textblocks(doc)[index];
+	if (!block) throw new Error(`no textblock at index ${index}`);
+	return EditorState.create({
+		doc,
+		selection: TextSelection.create(doc, block.start + block.node.content.size)
+	});
+}
+
 /** A state over `markdown` with the caret at the start of the `index`-th textblock. */
 export function startOf(markdown: string, index: number): EditorState {
 	return atBlock(decode(md(markdown), blockSchema), index);
+}
+
+/** A state over `markdown` with the caret at the end of the `index`-th textblock. */
+export function endOf(markdown: string, index: number): EditorState {
+	return atBlockEnd(decode(md(markdown), blockSchema), index);
 }
 
 /** Run `cmd`; the new state, or null when the command declined the key. */
