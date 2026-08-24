@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.9.0 - 2026-08-24
+
 **The `@quillmark/wasm` peer floor is `>=0.109.0-0`, where two adjacent containers of one shape are two.** Container identity is the container path plus contiguity, and the path carried nothing to tell one instance of a shape from the next: `[Quote], [Quote]` read as a single two-paragraph quote, and two one-item lists as a single item whose second line came back an unnumbered continuation. `ContentContainer.instance` is the discriminator, and the codec owes both halves of it. The projection mints one, alternating against the sibling before it, so what a writer put side by side survives the commit; the fold keys on it, so what the store holds comes back as two. The boundary was an ordinal reset and is not: a run's `ordinal`s canonicalize gapless from 0, which is what restarts the second run's numbering once `instance` marks where it begins. The preview reads the same fact from the other side — two adjacent runs typeset as two, and a container inside a list item stops ending that list, so an item's quote or fence stays the item's.
 
 ## v0.8.0 - 2026-08-21
