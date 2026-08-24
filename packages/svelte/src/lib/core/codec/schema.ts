@@ -162,10 +162,15 @@ const blockNodes: Record<string, NodeSpec> = {
 // ── Inline nodes ────────────────────────────────────────────────────────────
 const inlineLeafNodes: Record<string, NodeSpec> = {
 	text: { group: 'inline' },
+	// `linebreakReplacement` is what makes a join across a `code_block`'s edge lossless:
+	// `clearIncompatible` converts the fence's `\n`s to this node rather than flattening
+	// them to spaces, and `setBlockType` converts them back on the way in. One such node
+	// per schema, inline and a leaf, is the schema's own rule.
 	hard_break: {
 		inline: true,
 		group: 'inline',
 		selectable: false,
+		linebreakReplacement: true,
 		parseDOM: [{ tag: 'br' }],
 		toDOM: () => ['br']
 	},

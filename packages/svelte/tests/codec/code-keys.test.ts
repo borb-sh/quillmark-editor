@@ -9,9 +9,19 @@
 import { describe, it, expect } from 'vitest';
 import { EditorState, TextSelection } from 'prosemirror-state';
 import type { Node as PMNode } from 'prosemirror-model';
-import { blockSchema, bodyKeymap, decode, pmToContent } from '$lib/core/codec';
+import { blockSchema, bodyKeymap, contentEdit, decode, lower, pmToContent } from '$lib/core/codec';
 import { baseKeymap } from 'prosemirror-commands';
-import { md, normalize, startOf, run, shape, keyDriver } from './_util.js';
+import {
+	contentEqual,
+	freshDoc,
+	keyDriver,
+	md,
+	normalize,
+	run,
+	shape,
+	startOf,
+	toMarkdown
+} from './_util.js';
 
 const keys = bodyKeymap(blockSchema);
 const { press, expectPress } = keyDriver(keys);
@@ -179,5 +189,89 @@ describe('outside a code block the links decline', () => {
 
 	it('Enter still splits a paragraph through the base keymap', () => {
 		expectPress(startOf('one', 0), 'Enter', 'doc(paragraph, paragraph("one"))');
+	});
+});
+
+// A join across a fence's edge is the one gesture that puts a literal `\n` inside a
+// paragraph: `joinTextblocksAround` is a bare `replaceStep`, running neither
+// `clearIncompatible` nor its whitespace pass. `paragraph: { content: 'inline*' }`
+// admits the node, so the projection owes it a reading, and a line boundary is what a
+// `\n` is (CODEC §Decode). These drive the whole commit path — the key, then
+// `lower` → `applyChange` against a real Document — because the projection being
+// *under*-specified is what the channels then do faithfully.
+describe('a `\\n` inside a textblock is a line boundary', () => {
+	/** Press `key` at `pos`, commit through `lower` → `applyChange`, and give back both
+	 *  sides of the claim: what the store holds and what the leaf projects. */
+	function commit(markdown: string, at: (doc: PMNode) => number, key: string) {
+		const rt = md(markdown);
+		const store = freshDoc();
+		store.overwrite({}, rt);
+		const opened = store.main.body;
+		const doc = decode(opened, blockSchema);
+		const before = EditorState.create({ doc, selection: TextSelection.create(doc, at(doc)) });
+		const leaf = press(before, key).doc;
+		store.applyChange({}, lower(contentEdit(opened, pmToContent(leaf))));
+		return { stored: store.main.body, leaf };
+	}
+
+	// #496: the item's only block is a multi-line fence, and the caret is at its head.
+	it('Backspace merging a fence into the item above leaves the store equal to the leaf', () => {
+		const { stored, leaf } = commit('- a\n\n- ```\n  alpha\n  beta\n  ```', codeStart, 'Backspace');
+		expect(leaf.toString()).toBe('doc(bullet_list(list_item(paragraph("aalpha\\nbeta"))))');
+		expect(contentEqual(stored, normalize(pmToContent(leaf))), 'store equals leaf').toBe(true);
+		expect(stored.lines).toHaveLength(2);
+		expect(stored.lines[1].continues).toBe(true);
+		expect(stored.lines.every((l) => l.kind === 'para')).toBe(true);
+		expect(toMarkdown(stored)).toBe('- aalpha\\\n  beta');
+	});
+
+	it('the projection reads one for every textblock kind', () => {
+		for (const block of [
+			blockSchema.nodes.paragraph.create(null, blockSchema.text('a\nb')),
+			blockSchema.nodes.heading.create({ level: 2 }, blockSchema.text('a\nb'))
+		]) {
+			const rt = pmToContent(blockSchema.nodes.doc.create(null, block));
+			expect(rt.text).toBe('a\nb');
+			expect(rt.lines).toHaveLength(2);
+			expect(rt.lines[1].continues).toBe(true);
+			expect(contentEqual(normalize(rt), normalize(rt)), 'the store accepts it').toBe(true);
+		}
+	});
+
+	it('a mark over the break lands on both lines', () => {
+		const strong = blockSchema.marks.strong.create();
+		const rt = pmToContent(
+			blockSchema.nodes.doc.create(
+				null,
+				blockSchema.nodes.paragraph.create(null, blockSchema.text('a\nb', [strong]))
+			)
+		);
+		expect(rt.marks).toEqual([
+			{ start: 0, end: 1, type: 'strong' },
+			{ start: 2, end: 3, type: 'strong' }
+		]);
+	});
+});
+
+// `hard_break` declares `linebreakReplacement`, so the passes that do run —
+// `clearIncompatible` and `setBlockType` — convert `\n` ⇄ `hard_break` rather than
+// flattening a fence's lines to spaces.
+describe('retyping a fence keeps its lines', () => {
+	const toParagraph = (s: EditorState) =>
+		s.tr.setBlockType(0, s.doc.content.size, blockSchema.nodes.paragraph);
+	const toCode = (s: EditorState) =>
+		s.tr.setBlockType(0, s.doc.content.size, blockSchema.nodes.code_block);
+
+	it('a code block retyped to a paragraph breaks where it wrapped', () => {
+		const state = EditorState.create({ doc: decode(md(FENCE), blockSchema) });
+		expect(state.apply(toParagraph(state)).doc.toString()).toBe(
+			'doc(paragraph("foo", hard_break, "bar"))'
+		);
+	});
+
+	it("and back, its breaks the fence's own newlines", () => {
+		const start = EditorState.create({ doc: decode(md(FENCE), blockSchema) });
+		const prose = start.apply(toParagraph(start));
+		expect(prose.apply(toCode(prose)).doc.toString()).toBe('doc(code_block("foo\\nbar"))');
 	});
 });
