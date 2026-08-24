@@ -8,8 +8,8 @@
 // it would run rather than restating its guards (§`slashItems`).
 //
 // `blockKeymap` is the other half of the file and answers to no door: the Enter cases
-// that are about the body rather than about any block in it, outermost of the leaf's
-// key chains (`keymap.ts`).
+// that are about the body rather than about any block in it, and the Delete that is
+// about the caret's own line, outermost of the leaf's key chains (`keymap.ts`).
 import type { Attrs, Node as PMNode, NodeType, ResolvedPos, Schema } from 'prosemirror-model';
 import { Selection } from 'prosemirror-state';
 import type { Command, EditorState, Transaction } from 'prosemirror-state';
@@ -239,10 +239,38 @@ const splitAcrossBlocks: Command = (state, dispatch) => {
 	return true;
 };
 
+/**
+ * Delete on an empty textblock → take the line, whatever stands below moving up
+ * whole and keeping what it is.
+ *
+ * The links below it leave the line standing: the base keymap joins the block below
+ * into it — a list's first item lifted out to fill it and no longer an item, a quote
+ * unwrapped into it — and the atom link arms an island for the press after. Upstream
+ * takes the line only where the sibling holds the same kind of content, so a heading
+ * below keeps its level where a bullet loses its marker.
+ *
+ * Declines where the parent cannot spare the block, an empty item or an empty quote
+ * being a construct rather than a line in one: the key is whichever link answers a
+ * construct with nothing in it. Declines with nothing after it too — a line with no
+ * next line is Backspace's.
+ */
+const takeEmptyLine: Command = (state, dispatch) => {
+	const { $from, empty } = state.selection;
+	if (!empty || !$from.parent.isTextblock || $from.parent.content.size !== 0) return false;
+	const index = $from.index(-1);
+	if (!$from.node(-1).canReplace(index, index + 1)) return false;
+	if (!Selection.findFrom(state.doc.resolve($from.after()), 1)) return false;
+	dispatch?.(state.tr.delete($from.before(), $from.after()).scrollIntoView());
+	return true;
+};
+
 /** The body-wide link of the leaf's key chains: `{}` for a schema with no paragraph
- *  to mint. Outermost of the structural links, being about the body rather than
- *  about the surface the caret is in. */
+ *  to mint. Outermost of the structural links, being about the body, or about the
+ *  caret's own line, rather than about the surface either stands in. */
 export function blockKeymap(schema: Schema): Record<string, Command> {
 	if (!schema.nodes.paragraph) return {};
-	return { Enter: chainCommands(paragraphAtBodyStart, splitAcrossBlocks) };
+	return {
+		Enter: chainCommands(paragraphAtBodyStart, splitAcrossBlocks),
+		Delete: takeEmptyLine
+	};
 }
