@@ -147,7 +147,7 @@
 	let arrayEl = $state<
 		| {
 				focus: () => void;
-				focusElement: (k: number, pos?: number) => void;
+				focusElement: (k: number, pos?: number) => HTMLElement | undefined;
 				washBox: () => HTMLElement | undefined;
 		  }
 		| undefined
@@ -159,9 +159,11 @@
 		document.getElementById(domIds.control)?.focus();
 	}
 	/** The array's per-ELEMENT landing, for the addresses the preview mints under an
-	 *  array field (`leaves.ts`); read at the call, so it tracks the mounted repeater. */
-	function focusElement(k: number, pos?: number): void {
-		arrayEl?.focusElement(k, pos);
+	 *  array field (`leaves.ts`); read at the call, so it tracks the mounted repeater.
+	 *  The row it settled in comes back with it, the wash being the landing's own
+	 *  granularity. */
+	function focusElement(k: number, pos?: number): HTMLElement | undefined {
+		return arrayEl?.focusElement(k, pos);
 	}
 	// Only where `for` cannot reach; the labelable four are the browser's own, and a
 	// second handler over them would be a focus the label already placed.
@@ -181,7 +183,8 @@
 	 * that does not remount.
 	 *
 	 * An array carries the per-element lane as well; no other control has elements for
-	 * an address to name.
+	 * an address to name. `el` is the field-wide box, which an element landing does not
+	 * wash: that lane hands back its own row (`leaves.ts`).
 	 */
 	let controlEl = $state<HTMLElement | undefined>();
 	$effect(() => {

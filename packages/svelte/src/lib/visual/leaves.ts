@@ -38,8 +38,13 @@ export interface FieldControl {
 	 * `Landing`, and what a `pos` means is the row control's, the same way focusing is.
 	 * The place rides the call because the registry stays parent-keyed: a per-element
 	 * key is positional, in a registry whose doctrine is dodging positional churn.
+	 *
+	 * Returns the element's own box, which is what the wash blooms in: the address
+	 * named one row, and a wash over the whole repeater says the field where the click
+	 * said the row. `undefined` is the fallback the index past the live list took, and
+	 * reads as {@link el}.
 	 */
-	focusElement?(index: number, pos?: number): void;
+	focusElement?(index: number, pos?: number): HTMLElement | undefined;
 	readonly el: HTMLElement;
 }
 

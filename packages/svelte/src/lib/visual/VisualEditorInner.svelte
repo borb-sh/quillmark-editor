@@ -640,12 +640,11 @@
 		// did not resolve. `'cluster'` (and an absent granularity: the backend did not
 		// report it, treat as exact) places the caret. An absent `pos` is the placement
 		// rung and reaches the same floor.
-		land(found, at.granularity === 'segment' ? undefined : at.pos);
-		// Unconditional: a preview click is one discrete act, and its commonest target
-		// is the leaf already focused (where landing a caret changes nothing on screen)
-		// or one off-screen, where the browser's focus-scroll moves the page and leaves
-		// the caret to be hunted for.
-		bloomInside(found.control.el);
+		// The wash is unconditional, and takes the box the landing settled in: a preview
+		// click is one discrete act, and its commonest target is the leaf already focused
+		// (where landing a caret changes nothing on screen) or one off-screen, where the
+		// browser's focus-scroll moves the page and leaves the caret to be hunted for.
+		bloomInside(land(found, at.granularity === 'segment' ? undefined : at.pos));
 	}
 	/** The active leaf's controller: the formatting popover's observation seam.
 	 *  `undefined` for a focused form control, which holds no marks to toggle. */
@@ -689,16 +688,25 @@
 	 * selection outright), which is also the whole of what a click on plate-placed ink
 	 * can mean. An element is no `createField` leaf, so the offset goes down the element
 	 * lane instead, where what it means is the row control's (`leaves.ts`).
+	 *
+	 * Hands back the box the arrival wash blooms in, which is the landing's own
+	 * granularity rather than the registry's: an element lands in one row and says so
+	 * over that row, and everything else — the field, and a row the document has since
+	 * dropped — over the field's box.
 	 */
-	function land(found: Landed, pos: number | undefined): void {
+	function land(found: Landed, pos: number | undefined): HTMLElement {
 		if (found.element != null && found.control.focusElement) {
-			return found.control.focusElement(found.element, pos);
+			return found.control.focusElement(found.element, pos) ?? found.control.el;
 		}
 		if (pos != null) {
 			const prose = leaves.prose(found.key);
-			if (prose) return prose.setCaret(pos);
+			if (prose) {
+				prose.setCaret(pos);
+				return found.control.el;
+			}
 		}
 		found.control.focus();
+		return found.control.el;
 	}
 
 	// ── The verbs, as instance exports ──────────────────────────────────────────
@@ -717,8 +725,7 @@
 	export async function focusField(field: DocPath): Promise<void> {
 		const found = await revealLeaf(field);
 		if (!found) return missed(`no mounted field at ${field}`, field);
-		land(found, undefined);
-		bloomInside(found.control.el);
+		bloomInside(land(found, undefined));
 	}
 	/** Seed a card of `kind` and insert it at `at` (default: the end). Returns the new
 	 *  card's session key, or `undefined` when the quill seeds no card of that kind. */
