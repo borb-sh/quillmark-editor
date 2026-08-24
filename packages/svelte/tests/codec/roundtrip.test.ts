@@ -57,8 +57,8 @@ function rng(seed: number): () => number {
 // valid content via `importMarkdown`: the generator explores line kinds, list/
 // quote containers, the hard-break `continues` flag, inline marks, code fences and
 // nesting to three levels, while staying clear of islands (own round-trip concerns)
-// and mark-on-code overlap (a separate normalization edge). At most one mark per
-// word, so no overlap that would blur the property under test.
+// and mark-on-code overlap, a range no projection carries (CODEC §Marks).
+// At most one mark per word, so no overlap that would blur the property under test.
 //
 // The fence and the nesting are what the fixed suites cover apart and never cross:
 // `list-shapes.test.ts` holds the nesting shapes and no code, `code-keys.test.ts` the
