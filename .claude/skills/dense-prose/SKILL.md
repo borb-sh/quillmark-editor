@@ -17,6 +17,7 @@ The code is the primary documentation. Write none by default; keep one only wher
 
 - **Echo** (`// increment i`): delete, and let a clearer identifier carry it.
 - **Hand-list**: a header enumerating the module's public items rots, and the tooling already lists them — describe the module's job instead.
+- **Census**: a count of what another file declares ("three Enter cases", "five members") rots the moment the declaration gains one, and the diff that adds it never touches the sentence — say what the set is about and leave the number to the declaration. A count whose members are named in the same breath is review's.
 - **Copy**: a fact with a home elsewhere gets a cross-reference, since copied twice it drifts.
 - **Scaffolding**: the padding around the one real paragraph and one runnable example; "see X for comprehensive coverage".
 - **Earned**: the invariant, the constraint enforced in another file, the reason a plainly readable line is the way it is. Length tracks surprise — the unobvious gets the words, the obvious gets none.
@@ -62,4 +63,4 @@ Lead with the invariant or contract, then the mechanism; reuse the codebase's te
 
 ## Workflow
 
-Sweep for sells; history markers (`used to`, `no longer`, `previously`, `formerly`, `as of`, `removed in`, `renamed`, `we switched`, `legacy`, `deprecated`); deliberation markers (`spike`, `deferred`, `considered`, `for now`, `eventually`, `we tried`); status markers (`#\d+`, issue and PR links). Each hit is a violation or a load-bearing fact in costume. Rewrite in place — a comment contradicting the code gets fixed, not deleted — then confirm no test asserted the old wording. `npm run check:docs` catches a renamed heading stranding its references; the whole gate is `npm run gate`.
+Sweep for sells; history markers (`used to`, `no longer`, `previously`, `formerly`, `as of`, `removed in`, `renamed`, `we switched`, `legacy`, `deprecated`); deliberation markers (`spike`, `deferred`, `considered`, `for now`, `eventually`, `we tried`); status markers (`#\d+`, issue and PR links); censuses (a number word or digit before a plural another file declares). Each hit is a violation or a load-bearing fact in costume. Rewrite in place — a comment contradicting the code gets fixed, not deleted — then confirm no test asserted the old wording. `npm run check:docs` catches a renamed heading stranding its references; the whole gate is `npm run gate`.
