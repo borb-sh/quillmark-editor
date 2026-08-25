@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**The slash menu offers no divider.** A rule holds no content, so the row was reachable only from an empty block — where it landed a construct the caret then had to step past, in a menu whose every other name fills the block the writer is already in. `---` at the head of a block is the door it keeps (`codec/inputrules.ts`), and it draws what it mints.
+
 **A preview click into an array element washes that row, and not the list around it.** The arrival wash answers "here" for a click made in the other pane, and a landing on `main.keywords[0]` bloomed every row the field holds — the field, where the click had named one row. The element lane hands the row it took back with the landing, so the wash carries the address's own granularity; an `object[]` row is washed whole, head and open subform together, being what the address named. A landing on the field itself, and one naming a row the document has since dropped, wash the list as before.
 
 ## v0.9.0 - 2026-08-24
