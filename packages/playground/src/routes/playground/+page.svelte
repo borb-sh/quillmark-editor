@@ -25,6 +25,11 @@
   else: it fires on a bare arrow key, so a recompile hung off it would recompile
   on every one.
 
+  A document the engine refuses reaches no session, and the editor needs none: the shell
+  stands on `doc` and `quill`, the band says what refused, and the preview track waits.
+  The card the refusal named draws in its recovery shell, and the edit that retypes or
+  removes it tries the open again.
+
   Under the preset's threshold the split shows one track and the switch band says
   which, so the bridge's preview→editor hop reveals the editor as well as placing
   the caret in it: a hit that lands in a hidden pane lands nowhere a reader can see.
@@ -45,7 +50,14 @@
 -->
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import type { Quill, Document, LiveSession, ChangeSet, Diagnostic } from '@quillmark/wasm';
+	import type {
+		Engine,
+		Quill,
+		Document,
+		LiveSession,
+		ChangeSet,
+		Diagnostic
+	} from '@quillmark/wasm';
 	import type { Landing, Place, EditorError } from '@quillmark/svelte/core';
 	import type { ActiveLeaf, EditorChange } from '@quillmark/svelte/visual';
 	import { Preview } from '@quillmark/svelte/preview';
@@ -67,6 +79,10 @@
 	let session: LiveSession | undefined = $state();
 	let quillHandle: Quill | undefined = $state();
 	let docHandle: Document | undefined = $state();
+	// Held so the recovery loop can try the open again; the surfaces never read it.
+	let engineHandle: Engine | undefined;
+	// What the engine refused the document with, and why there is no session to paint from.
+	let refused = $state<string | undefined>();
 
 	// Surface handles for the imperative bridge hops.
 	let editorRef: { setCaret(at: Landing): Promise<void> } | undefined = $state();
@@ -119,11 +135,12 @@
 	let recompileTimer: ReturnType<typeof setTimeout> | undefined;
 	function scheduleRecompile(): void {
 		if (recompileTimer != null) clearTimeout(recompileTimer);
-		recompileTimer = setTimeout(recompileNow, 120);
+		recompileTimer = setTimeout(() => void recompileNow(), 120);
 	}
-	function recompileNow(): void {
+	async function recompileNow(): Promise<void> {
 		recompileTimer = undefined;
-		if (!session || !docHandle) return;
+		if (!docHandle) return;
+		if (!session) return reopen();
 		try {
 			const change = session.update(docHandle);
 			lastChange = change;
@@ -134,6 +151,25 @@
 			// transactional); surface it without crashing the shell.
 			console.error('[playground] recompile failed', e);
 		}
+	}
+
+	// A refused open is tried again by the edit that answers it; the session it lands joins
+	// the handles this open owns.
+	async function reopen(): Promise<void> {
+		if (!engineHandle || !quillHandle || !docHandle) return;
+		const mine = generation;
+		let opened: LiveSession;
+		try {
+			opened = await engineHandle.open(quillHandle, docHandle);
+		} catch (e) {
+			refused = e instanceof Error ? e.message : String(e);
+			return;
+		}
+		if (mine !== generation) return opened.free();
+		toFree.unshift(opened);
+		session = opened;
+		refused = undefined;
+		syncDiagnostics();
 	}
 
 	// ── Bridge: preview → editor ────────────────────────────────────────────────
@@ -169,7 +205,7 @@
 	// lag.
 	function handleChange(change: EditorChange): void {
 		lastChangeSource = change.source;
-		if (change.source === 'structure') recompileNow();
+		if (change.source === 'structure') void recompileNow();
 		else scheduleRecompile();
 	}
 	function handleError(err: EditorError): void {
@@ -206,6 +242,8 @@
 		session = undefined;
 		quillHandle = undefined;
 		docHandle = undefined;
+		engineHandle = undefined;
+		refused = undefined;
 		editorRef = undefined;
 		previewRef = undefined;
 		resetBridge();
@@ -237,10 +275,11 @@
 			created.unshift(doc);
 			// The seed variants. `?foreign` holds a card whose kind the schema cannot
 			// project: `Document.insertCard` is schema-agnostic where the Quill-bound
-			// writer would reject it, which is the case the recovery shell handles.
-			// `?tips` seeds the guidance channel a quill or consumer supplies (`$ext`,
-			// not schema), through `patchEditorExt`, so a consumer seeding one key does
-			// not replace the namespace.
+			// writer would reject it, and the engine refuses the document holding it, so the
+			// seed reaches both the recovery shell and the sessionless shell it draws in.
+			// `?tips` seeds the guidance channel a quill or consumer supplies
+			// (`$ext`, not schema), through `patchEditorExt`, so a consumer seeding one key
+			// does not replace the namespace.
 			if (params.has('foreign')) {
 				doc.insertCard(Document.makeCard('legacy_kind', {}, 'Trapped legacy body.'));
 			}
@@ -254,14 +293,24 @@
 				});
 			}
 			const engine = new Engine();
-			const openedSession = await engine.open(quill, doc);
-			created.unshift(openedSession);
+			// A refusal is a state of the document, not the end of the open: the editor binds
+			// `doc` and `quill` alone, so the shell stands without a session.
+			let openedSession: LiveSession | undefined;
+			let refusal: string | undefined;
+			try {
+				openedSession = await engine.open(quill, doc);
+				created.unshift(openedSession);
+			} catch (e) {
+				refusal = e instanceof Error ? e.message : String(e);
+			}
 			if (mine !== generation) {
 				for (const h of created) h.free();
 				return;
 			}
 			VisualEditor = visual.VisualEditor;
+			engineHandle = engine;
 			session = openedSession;
+			refused = refusal;
 			quillHandle = quill;
 			docHandle = doc;
 			syncDiagnostics();
@@ -293,6 +342,7 @@
 			session = undefined;
 			quillHandle = undefined;
 			docHandle = undefined;
+			engineHandle = undefined;
 		};
 	});
 </script>
@@ -308,6 +358,10 @@
 		<p data-testid="status" class="qm-status phase">Opening…</p>
 	{:else if status.phase === 'error'}
 		<p data-testid="status" class="qm-status qm-status-error phase">Error: {status.message}</p>
+	{:else if refused}
+		<!-- The paint is what is missing, not the route, so the band names what the engine
+		     would not take. -->
+		<p data-testid="refused" class="qm-status qm-status-error phase">Refused: {refused}</p>
 	{/if}
 
 	<!-- The bridge, read back out: each hop's last outcome, so a round-trip that lands

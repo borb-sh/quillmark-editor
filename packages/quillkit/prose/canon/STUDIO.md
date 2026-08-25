@@ -100,7 +100,9 @@ What crosses is the document, as its canonical markdown, landed through the boun
 
 **Showing what stranded is the point**, so those diagnostics reach the controls they name rather than being swallowed as a load warning. They describe the document as it *arrived*, so they are dropped at the first edit and the schema producer speaks for it from then on.
 
-Two edges the loop turns on. A ref that went away under the author (a version directory renamed) leaves the document nothing to land in, so whatever the catalog now holds is seeded instead. And a quill that will not **open**, the state an author reloads through most often with a plate mid-fix, keeps the document as text rather than eating it: the panes go empty, the errors say why, and the next repack that compiles gets it back.
+**A card kind the schema stopped declaring strands nothing.** Conform keeps the card whole and emits no `conform::*` diagnostic, so nothing reaches a control; `quill.validate` names it and `Engine.open` refuses the document it stands in. The document still lands, and the editor draws that card in its recovery shell — the one surface it is reachable from — so what the refusal costs is the paint.
+
+Two edges the loop turns on. A ref that went away under the author (a version directory renamed) leaves the document nothing to land in, so whatever the catalog now holds is seeded instead. And a quill the quiver will not **materialize** — a `Quill.yaml` mid-edit — leaves nothing to stand a surface on: the document waits it out as text, the panes go empty, the errors say why, and the next repack that resolves gets it back. A plate that will not compile is not that edge. The quill materializes and the document lands, so the surfaces stand and the line to open is carried where the paint would be.
 
 An open takes as long as the backend takes to load and compile a page, which is long enough for a second repack to land inside one, so the loser of two overlapping opens drops what it built instead of both writing the same slot.
 
@@ -116,7 +118,9 @@ A throw is unwrapped rather than reported as one line: a `QuillmarkError` carrie
 
 What that costs is the third shape. A diagnostic carrying neither address reaches nothing, and studio does not show it. A quill emitting one has a problem worth knowing about, and studio is no longer where it is found; `quillkit test` is blocked on and is where a quill's own faults are answered for.
 
-**A document that will not compile is a state of the paint.** The session is transactional, so the last good paint stays on screen and stops answering the document. That is what a failed open reports one pane over, so it takes the same register: the failure at the surface it is about, carrying the place to open. The paint stays whole underneath, being the only evidence of what the plate did before it stopped compiling, and the strip is laid over rather than stacked above, so breaking a plate and fixing it do not resize what is being judged.
+**A document that will not compile is a state of the paint.** The session is transactional, so the last good paint stays on screen and stops answering the document. A failed **open** is the same state with nothing under it, and takes the same register: the failure at the surface it is about, carrying the place to open. The paint stays whole underneath where there is one, being the only evidence of what the plate did before it stopped compiling, and the strip is laid over rather than stacked above, so breaking a plate and fixing it do not resize what is being judged.
+
+**The editor stands either way.** It binds a quill and a document and needs no session, so a failed open costs the preview alone. That is what makes a refusal answerable: the card the refusal named is drawn where it can be retyped or removed, and the edit that answers it tries the open again.
 
 ## Not
 
