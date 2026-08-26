@@ -108,6 +108,12 @@
 		box-sizing: border-box;
 		position: relative;
 		width: 100%;
+		/* The width is the host's, never the document's, which is the same boundary the
+		   editor states (`visual/VisualEditorInner.svelte` §`.qm-editor`): a mount standing
+		   in a column that floors at what it holds is asked for nothing the sheets in it
+		   are. `inline-size`, not `size`: the column is as tall as the pages painted in
+		   it. */
+		contain: inline-size;
 		height: 100%;
 		overflow-y: auto;
 		padding: var(--_qm-space-4);

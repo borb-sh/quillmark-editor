@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**The editor takes the width its host gives it, and asks for no more.** A table island scrolls its own columns and caps at the leaf, but a percentage cap is no cap while an ancestor is being sized to what it holds — so the table's full width travelled out of the leaf, out of the card and out of the surface. A host standing the mount in a column that floors at its content (a flex or grid track with no minimum of its own) widened by the whole table, and the pane beside it left the screen. The surface contains its inline size, so nothing a leaf holds reaches past the mount; the island contains its own, so the cap it draws is true wherever it lands. Neither box moves: a narrow table shrinks to its columns and a wide one scrolls inside the leaf. [THEMING](THEMING.md) §"Drop it in" states the guarantee where a host laying its own tracks reads it, and the preset's hosts, flooring nothing at their content, never saw the fault.
+
 ## v0.10.0 - 2026-08-26
 
 **The `@quillmark/wasm` peer floor is `>=0.110.0-0`, where the seam spells every container's `instance`.** The discriminator that tells one container from an adjacent sibling of identical shape was a writer's obligation no checker asked for; it is required on `ContentContainer`, `ContentContainerInput` is gone, and `LineOp.setContainers` takes the one shape. The projection spells the field on every container it mints rather than only where it is non-zero, which is what the read type now asks for and what the store already canonicalized to; the fold reads it where it stood. Nothing about which runs weld moves: what a writer put side by side still survives the commit, and what the store holds still comes back as two.

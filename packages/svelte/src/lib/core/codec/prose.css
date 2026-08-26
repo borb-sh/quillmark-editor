@@ -228,6 +228,16 @@ li.ProseMirror-selectednode::after {
 .ProseMirror > .qm-table-island + * {
 	margin-top: 0;
 }
+/* Width from above, never from the columns. The scroller below caps at `100%` of this
+   box, and a percentage is no cap while an ancestor is being sized to what it holds: a
+   leaf taking its width from its own contents is asked for the table's max-content width
+   and the cap never applies. The surface closes the same question at its edge
+   (`visual/VisualEditorInner.svelte` §`.qm-editor`); this end of it is what makes the cap
+   below true wherever the island lands. `inline-size`, not `size`: an island is as tall
+   as its rows. */
+.qm-table-island {
+	contain: inline-size;
+}
 .qm-table-scroller {
 	/* The one horizontally scrolling box in a leaf: a table is as wide as its
 	   columns, and a wide one must not push the card's own layout. `overflow-y` is
