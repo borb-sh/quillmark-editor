@@ -228,13 +228,13 @@ li.ProseMirror-selectednode::after {
 .ProseMirror > .qm-table-island + * {
 	margin-top: 0;
 }
-/* Width from above, never from the columns. The scroller's `max-width` caps the box that
-   is drawn, but a percentage counts as no cap at all while an ancestor is being sized to
-   what it holds, so without this the table's max-content width leaves the leaf, the card
-   and the surface: a host standing the mount in a column that floors at its content
-   widens by the whole table, and the pane beside it goes off the screen. Inline-size
-   containment ends that at the island, which is what makes the cap below the whole story.
-   The block axis is left alone: an island is as tall as its rows. */
+/* Width from above, never from the columns. The scroller below caps at `100%` of this
+   box, and a percentage is no cap at all while an ancestor is being sized to what it
+   holds: a leaf whose own width comes from its contents is asked for the table's
+   max-content width, and the cap never applies. The surface closes the same question at
+   its edge (`visual/VisualEditorInner.svelte` §`.qm-editor`), which is what a host is
+   owed; this is the leaf's end of it, and what makes the cap below true wherever the
+   island lands. The block axis is untouched: an island is as tall as its rows. */
 .qm-table-island {
 	contain: inline-size;
 }
