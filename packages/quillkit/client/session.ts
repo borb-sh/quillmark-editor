@@ -3,7 +3,7 @@
 // component, because it is the one thing in studio that is not chrome.
 import type { Diagnostic, Document, Engine, LiveSession, Quill } from '@quillmark/wasm';
 import type { Quiver } from '@quillmark/quiver';
-import { messageOf } from './notes';
+import { diagnosticsOf, messageOf } from './notes';
 
 /** How the document got here, and what the landing cost. */
 export interface Carry {
@@ -23,7 +23,11 @@ export interface Opened {
 	/** Borrowed from the quiver, never freed here (see `close`). */
 	quill: Quill;
 	doc: Document;
-	session: LiveSession;
+	/** Absent while the engine refuses this document ({@link openSession}). */
+	session?: LiveSession;
+	/** What the engine refused it with at the last attempt; empty while a session
+	 *  stands. */
+	refused: Diagnostic[];
 	carry: Carry;
 }
 
@@ -34,7 +38,12 @@ export interface Opened {
  * Carrying is what makes a repack an edit to the quill rather than a reset of the
  * work: a plate-only change lands the same document verbatim, an additive schema
  * change keeps it and defaults the new fields, and an incompatible one leaves what the
- * schema will not take as authored, with a diagnostic naming it.
+ * schema will not take as authored, with a `conform::*` diagnostic naming each value it
+ * would not commit.
+ *
+ * A card kind the schema does not declare strands nothing and produces no such
+ * diagnostic: conform keeps the card whole, `quill.validate` names it, and `Engine.open`
+ * refuses the document.
  */
 export async function openRef(
 	engine: Engine,
@@ -65,8 +74,25 @@ export async function openRef(
 	}
 	doc ??= quill.seedDocument();
 
-	const session = await engine.open(quill, doc);
-	return { ref, quill, doc, session, carry: landed };
+	return { ref, quill, doc, ...(await openSession(engine, quill, doc)), carry: landed };
+}
+
+/**
+ * A session over `doc`, or the diagnostics the engine refused it with. The refusal is
+ * returned because it is a state of the document rather than the end of the open: the
+ * editor stands on the quill and the document alone, so it draws the card the refusal
+ * named, and the edit that answers it calls this again.
+ */
+export async function openSession(
+	engine: Engine,
+	quill: Quill,
+	doc: Document
+): Promise<{ session?: LiveSession; refused: Diagnostic[] }> {
+	try {
+		return { session: await engine.open(quill, doc), refused: [] };
+	} catch (err) {
+		return { refused: diagnosticsOf(err) };
+	}
 }
 
 /**
@@ -75,6 +101,6 @@ export async function openRef(
  * holding a freed handle; dropping the quiver drops the last reference to it.
  */
 export function close(open: Opened): void {
-	open.session.free();
+	open.session?.free();
 	open.doc.free();
 }

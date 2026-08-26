@@ -17,6 +17,10 @@
     editor caret  ─► onCaretMove(at)  ─► preview.focusPosition(at)
     editor focus  ─► onActiveLeafChange ─► preview.endFollow()
 
+  A document the engine refuses reaches no session, and the editor needs none: it mounts
+  on the quill and the document alone, drawing the card the refusal named, while the
+  preview says what refused. The edit that answers it tries the open again.
+
   A repack of the source quiver arrives as one dev-server signal and is answered by
   minting a fresh `Quiver`: the manifest is content-addressed and the quill cache
   lives as long as the quiver does, so the quiver is dropped rather than invalidated.
@@ -40,7 +44,7 @@
 	import Picker from './Picker.svelte';
 	import Markdown from './Markdown.svelte';
 	import { catalogOf, openQuiver, type Catalog } from './quiver';
-	import { close, openRef, type Opened } from './session';
+	import { close, openRef, openSession, type Opened } from './session';
 	import { collect, diagnosticsOf, messageOf, placeOf } from './notes';
 
 	/** The dev server's signal that a repack landed. */
@@ -66,9 +70,8 @@
 	let catalog = $state.raw<Catalog | undefined>();
 	let picked = $state.raw<{ name: string; version: string } | undefined>();
 	let open = $state.raw<Opened | undefined>();
-	/** The document as text, kept across an open that failed. A quill that will not
-	 *  compile is the state an author is most often mid-fix on, and a reload loop that
-	 *  ate their document on the way through it would not be one. */
+	/** The document as text, kept across an open that materialized no quill: a `Quill.yaml`
+	 *  mid-edit is reloaded through, and the document survives the trip. */
 	let held = $state.raw<string | undefined>();
 
 	// ── The errors ──────────────────────────────────────────────────────────────
@@ -87,10 +90,9 @@
 	 *  failure carries one and nothing the schema says does, so this is the line the
 	 *  author opens whichever shape the failure took. */
 	const placed = $derived(thrown.find((d) => d.location));
-	/** A throw with a session still mounted: the document in hand does not compile, so
-	 *  the paint on screen is the last one that did and no longer answers it. A failed
-	 *  open is the other shape and has no session to be stale, so the panes are gone and
-	 *  the vacant block takes the same job. */
+	/** A failure with the surfaces up: the document in hand reaches no paint. With a session
+	 *  the last good paint stands under the strip and does not answer the document; with
+	 *  none there is nothing under it. */
 	const stalled = $derived(open !== undefined && thrown.length > 0);
 	/** What the strip names: the throw's place if it carried one, else its first note. */
 	const halt = $derived(stalled ? (placed ?? thrown[0]) : undefined);
@@ -104,7 +106,7 @@
 		notes = collect([
 			thrown,
 			open ? open.quill.validate(open.doc) : [],
-			open ? open.session.warnings : [],
+			open?.session ? open.session.warnings : [],
 			carried,
 			recovered
 		]);
@@ -149,14 +151,17 @@
 			if (mine !== turn) return close(next);
 			open = next;
 			held = undefined;
-			thrown = [];
+			thrown = next.refused;
 			carried = next.carry.stranded;
-			phase = { kind: 'ready' };
+			// Failed with the surfaces up: the head says the state, and the strip over the
+			// preview says what the engine would not take.
+			phase = next.session
+				? { kind: 'ready' }
+				: { kind: 'failed', message: next.refused[0].message };
 		} catch (err) {
 			if (mine !== turn) return;
-			// A quill that does not open is the case an author most needs read to them, so
-			// the panes go and the room they had says why. The document waits it out as
-			// text.
+			// No quill to stand a surface on, so the panes go and the room they had says
+			// why. The document waits it out as text.
 			held = carry;
 			thrown = diagnosticsOf(err);
 			carried = [];
@@ -260,21 +265,33 @@
 
 	function scheduleRecompile(): void {
 		clearTimeout(settle);
-		settle = setTimeout(recompileNow, RECOMPILE_MS);
+		settle = setTimeout(() => void recompileNow(), RECOMPILE_MS);
 	}
 
-	function recompileNow(): void {
+	/** Land the document on the paint: an update where a session stands, an open where the
+	 *  last one was refused. */
+	async function recompileNow(): Promise<void> {
 		settle = undefined;
-		if (!open) return;
-		try {
-			previewRef?.refresh(open.session.update(open.doc));
-			thrown = [];
-		} catch (err) {
-			// The session is transactional, so the last good paint stays on screen and
-			// stops answering the document, which is a state rather than a note. The
-			// strip over the preview says so and carries the place; the band lists it
-			// with everything else.
-			thrown = diagnosticsOf(err);
+		const at = open;
+		if (!at || !engine) return;
+		if (at.session) {
+			try {
+				previewRef?.refresh(at.session.update(at.doc));
+				thrown = [];
+			} catch (err) {
+				// The session is transactional, so the last good paint stays on screen and
+				// stops answering the document, which is a state rather than a note. The
+				// strip over the preview says so and carries the place; the band lists it
+				// with everything else.
+				thrown = diagnosticsOf(err);
+			}
+		} else {
+			const mine = turn;
+			const landed = await openSession(engine, at.quill, at.doc);
+			if (mine !== turn) return landed.session?.free();
+			open = { ...at, ...landed };
+			thrown = landed.refused;
+			if (landed.session) phase = { kind: 'ready' };
 		}
 		syncNotes();
 	}
@@ -285,7 +302,7 @@
 		if (carried.length) carried = [];
 		// A structure op happens once per gesture and the stack has already moved, so
 		// it applies at once; prose and field edits arrive per keystroke and debounce.
-		if (change.source === 'structure') recompileNow();
+		if (change.source === 'structure') void recompileNow();
 		else scheduleRecompile();
 	}
 
@@ -446,36 +463,42 @@
 				</section>
 				<section class="pane paint" aria-label="Preview">
 					{#if halt}
-						<!-- A document that will not compile is a state of the paint, not a row
-						     under it: it takes the register the failed open has, at the surface it
-						     is about, carrying the place to open (STUDIO §"The errors"). The band
-						     below still lists it, one list being its job. -->
+						<!-- A document that reaches no paint is a state of the paint, not a row under
+						     it: the failure at the surface it is about, carrying the place to open
+						     (STUDIO §"The errors"). The band below still lists it, one list being
+						     its job. The label says which of the two it stands over: a stale paint,
+						     or none. -->
 						<div class="stalled" data-testid="stalled" role="status">
-							<span class="qm-status qm-status-error">Compile failed</span>
+							<span class="qm-status qm-status-error"
+								>{open.session ? 'Compile failed' : 'Open failed'}</span
+							>
 							{#if halt.location}
 								<span class="qm-readout at">{placeOf(halt.location)}</span>
 							{/if}
 							<span class="what">{halt.message}</span>
 						</div>
 					{/if}
-					<Preview
-						bind:this={previewRef}
-						session={open.session}
-						onPick={handlePick}
-						onError={handleSurfaceError}
-					/>
+					{#if open.session}
+						<Preview
+							bind:this={previewRef}
+							session={open.session}
+							onPick={handlePick}
+							onError={handleSurfaceError}
+						/>
+					{/if}
 				</section>
 			</div>
 		</div>
 	{:else}
-		<!-- Nothing is mounted, so the room the panes had says why: the message where the
-		     paint would be, and the line of source it failed at under it. -->
+		<!-- No quill materialized, so there is no schema to draw a document against: the room
+		     the panes had says why, the message where the paint would be and the line of
+		     source it failed at under it. -->
 		<div class="vacant">
 			{#if phase.kind === 'failed'}
 				<p class="reason" data-testid="reason">{phase.message}</p>
 				{#if placed?.location}
-					<!-- The plate mid-fix is the state an author reloads through most often, and
-					     the line it failed at is what they do next. -->
+					<!-- A `Quill.yaml` mid-edit is what lands here, and the line it failed at is
+					     what the author does next. -->
 					<span class="qm-readout at" data-testid="reason-at">{placeOf(placed.location)}</span>
 				{/if}
 			{/if}
@@ -589,14 +612,17 @@
 
 	/* Positioned, because the compile failure is laid over this pane. The seam between the
 	   two is the split's gap; there is no resizer, a divider that can be dragged being an
-	   instrument. */
+	   instrument. It carries its own ground, which the preview paints over: `.panes` lays
+	   the seam's colour behind both tracks, so a pane with nothing mounted on it would
+	   show that colour across its whole area. */
 	.pane.paint {
 		position: relative;
+		background: var(--qmh-surface);
 	}
 
-	/* The failure over the paint rather than above it. The last good paint stays whole
-	   underneath: it is what the author was judging, and the only evidence of what the
-	   plate did before it stopped compiling. Overlaid rather than stacked, so the
+	/* The failure over the paint rather than above it. The last good paint, where there is
+	   one, stays whole underneath: it is what the author was judging, and the only
+	   evidence of what the plate did before it stopped compiling. Overlaid rather than stacked, so the
 	   keystroke that breaks a plate and the one that fixes it do not resize the surface
 	   being judged. */
 	.stalled {

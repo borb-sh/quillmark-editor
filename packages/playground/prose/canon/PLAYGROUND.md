@@ -49,6 +49,8 @@ What is in the list is the **pack's call**, not the route's. `usaf_memo` is held
 
 Two branches are not a schema's to declare — a guidance channel a consumer supplies, and a card whose kind the schema cannot project — and those are **query flags on `/playground`**, read once per open and applied to the seeded document: `?tips`, `?foreign`. They carry no chrome, because the only reader is a hand driving the harness, and a switch for one would be a control on the landing page for everyone else.
 
+`?foreign` reaches a second branch with it: the engine refuses a document holding a kind the schema does not declare, so the route opens without a session. The editor binds `doc` and `quill` and needs none, so the shell stands, the band says what refused, and the preview track waits — which is what makes the recovery shell reachable at all. The retype or delete it offers tries the open again.
+
 ## Quiver, not bundler
 
 Every route opens its session over a quill from a **quiver**, not from the bundler: no Typst source or font bytes in the JS bundle. The front page opens the reference quill; `/playground` opens whichever its picker holds. This is the workspace's one edge to `@quillmark/quiver`; the library has none, so the app is where the two tiers meet.

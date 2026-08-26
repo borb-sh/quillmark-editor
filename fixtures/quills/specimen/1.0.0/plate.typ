@@ -143,12 +143,13 @@
 })
 
 // ── Cards ───────────────────────────────────────────────────────────────────
-// One arm per declared kind. A kind the plate does not know is skipped rather
-// than raised: the document model lets a card outlive the schema that named it.
+// One arm per kind. `Engine.open` refuses a card whose kind the schema does not
+// declare, so only declared kinds reach here; the `$kind` read carries a default
+// regardless, the guard being the plate's rather than the engine's.
 #{
   let section-no = 0
   for (i, card) in data.at("$cards").enumerate() {
-    let kind = card.at("$kind")
+    let kind = card.at("$kind", default: none)
     let path = card.at("$path")
     // The helper leaves an unset body as the empty string; only a written one is
     // content, so the empty case passes `[]` rather than a stray `""`.
