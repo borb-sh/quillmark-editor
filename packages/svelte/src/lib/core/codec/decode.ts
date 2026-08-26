@@ -132,15 +132,14 @@ function groupBlocks(
 		if (isListItemContainer(here)) {
 			// Gather the maximal run of sibling `list_item` leaves at this depth
 			// (same ordered/start), then split it into items by `ordinal`.
-			const { ordered, start } = here;
-			const instance = here.instance ?? 0;
+			const { ordered, start, instance } = here;
 			let j = i + 1;
 			while (j < leaves.length) {
 				const c = atDepth(leaves[j], depth);
 				if (!c || !isListItemContainer(c) || c.ordered !== ordered || c.start !== start) break;
 				// `instance` is the boundary between two adjacent lists; the normalizer
 				// numbers a run's `ordinal`s gaplessly from 0, so a reset carries none.
-				if ((c.instance ?? 0) !== instance) break;
+				if (c.instance !== instance) break;
 				j++;
 			}
 			const run = leaves.slice(i, j);
@@ -204,7 +203,7 @@ function ordinalAt(leaf: Leaf, depth: number): number {
  * shape, which contiguity alone reads as one. Every arm but `list_item` (which has its
  * own run rule) keys here. */
 function containerKey(c: ContentContainer): string {
-	const id = `${c.container}\u0000${c.instance ?? 0}`;
+	const id = `${c.container}\u0000${c.instance}`;
 	return 'attrs' in c ? `${id}\u0000${JSON.stringify(c.attrs)}` : id;
 }
 

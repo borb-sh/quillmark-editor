@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**The `@quillmark/wasm` peer floor is `>=0.110.0-0`.** Nothing here reads a container path or emits one, and nothing here validates, so the release's breaks land outside this package; the floor moves because a quiver hands out `Quill` handles the consumer's copy of the artifact has to be able to parse and render.
+
 ## v0.26.0 - 2026-08-24
 
 **The `@quillmark/wasm` peer floor is `>=0.109.0-0`.** Nothing here reads a container path or emits one, so the release's breaks land outside this package; the floor moves because a quiver hands out `Quill` handles the consumer's copy of the artifact has to be able to parse and render.
