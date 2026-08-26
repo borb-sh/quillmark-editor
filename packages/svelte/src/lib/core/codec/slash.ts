@@ -26,14 +26,7 @@ import {
 } from 'prosemirror-state';
 import type { EditorView } from 'prosemirror-view';
 import { rangeAnchor, type RangeAnchor } from './anchor.js';
-import {
-	consuming,
-	insertDivider,
-	toCodeBlock,
-	toHeading,
-	wrapInList,
-	wrapInQuote
-} from './blocks.js';
+import { consuming, toCodeBlock, toHeading, wrapInList, wrapInQuote } from './blocks.js';
 import { mintIslandId } from './islands.js';
 import { newTable } from './table.js';
 
@@ -372,7 +365,6 @@ const SLASH_COMMANDS: Record<string, Command> = {
 	'numbered-list': wrapInList(true),
 	quote: wrapInQuote(),
 	code: toCodeBlock(),
-	divider: insertDivider(),
 	// The one command no shorthand reaches: a pipe row is not a prefix a rule can fire on.
 	// An insert rather than a turn, so it is also the only one a caret mid-paragraph is
 	// offered.

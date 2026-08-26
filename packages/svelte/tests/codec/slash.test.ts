@@ -112,19 +112,11 @@ describe('the trigger is a word boundary', () => {
 	});
 });
 
-describe('the vocabulary is the block shapes, one implementation behind two doors', () => {
-	it('offers every block a shorthand mints, and the table no shorthand reaches', () => {
+describe('the vocabulary is the block shapes a pick fills, one implementation behind two doors', () => {
+	it('offers the turns a shorthand mints, and the table no shorthand reaches', () => {
 		const { field, view, state } = leaf('');
 		typeAt(field, view, 0, '/');
-		expect(state()?.items).toEqual([
-			'heading',
-			'list',
-			'numbered-list',
-			'quote',
-			'code',
-			'divider',
-			'table'
-		]);
+		expect(state()?.items).toEqual(['heading', 'list', 'numbered-list', 'quote', 'code', 'table']);
 		field.destroy();
 	});
 
@@ -200,14 +192,6 @@ describe('the vocabulary is the block shapes, one implementation behind two door
 		expect(view.state.selection.$head.parent.type.name).toBe('code_block');
 		field.destroy();
 	});
-
-	it('`/divider` replaces the block and lands the caret past it', () => {
-		const { field, view } = leaf('');
-		pick(field, view, 0, 'divider');
-		expect(field.getContent().lines.map((l) => l.kind)).toEqual(['rule', 'para']);
-		expect(view.state.selection.$head.parent.type.name).toBe('paragraph');
-		field.destroy();
-	});
 });
 
 describe('a name is offered only where its command would run', () => {
@@ -226,14 +210,6 @@ describe('a name is offered only where its command would run', () => {
 		// The item holds every other shape the content does, and `# ` / `> ` fire there.
 		expect(state()?.items).toContain('heading');
 		expect(state()?.items).toContain('quote');
-		field.destroy();
-	});
-
-	it('drops the divider off a block with text in it, having nothing to retype into', () => {
-		const { field, view, state } = leaf('alpha');
-		typeAt(field, view, 0, '/');
-		expect(state()?.items).not.toContain('divider');
-		expect(state()?.items).toContain('heading');
 		field.destroy();
 	});
 
