@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**A table island takes the width its leaf has and asks its host for no more.** The scroller caps at `100%` of the leaf and scrolls the columns past that, but a percentage is no cap at all while an ancestor is being sized to what it holds — so the table's full width travelled out of the leaf, out of the card and out of the surface, and a host standing the editor in a column that floors at its content (a flex or grid track with no minimum of its own) widened by the whole table, with the pane beside it pushed off the screen. Inline-size containment on the island ends it there. The island's own box is unmoved: a narrow table still shrinks to its columns, and a wide one still scrolls inside the leaf. The preset's own hosts never saw it, `.qm-frame` and `.qm-workspace` flooring nothing at their content.
+
 ## v0.10.0 - 2026-08-26
 
 **The `@quillmark/wasm` peer floor is `>=0.110.0-0`, where the seam spells every container's `instance`.** The discriminator that tells one container from an adjacent sibling of identical shape was a writer's obligation no checker asked for; it is required on `ContentContainer`, `ContentContainerInput` is gone, and `LineOp.setContainers` takes the one shape. The projection spells the field on every container it mints rather than only where it is non-zero, which is what the read type now asks for and what the store already canonicalized to; the fold reads it where it stood. Nothing about which runs weld moves: what a writer put side by side still survives the commit, and what the store holds still comes back as two.
