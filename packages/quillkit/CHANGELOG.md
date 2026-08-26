@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.5.4 - 2026-08-26
+
 **The carried `@quillmark/wasm` is 0.110.0, and the gate refuses only what the render floor refuses.** A quill whose document holds a value the floor adopts — a bare scalar where an `array` is declared, `"3"` for an `integer` — passes where it was fatally `validation::type_mismatch` while rendering correctly, so a fatal validation diagnostic under test means the document does not render. A bare scalar stringified into an `enum` field is domain-checked on that string, so a spelling outside `values:` is caught where it was silent.
 
 ## v0.5.3 - 2026-08-24
