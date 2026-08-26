@@ -72,6 +72,52 @@ const PROBE = `(async () => {
 	};
 })()`;
 
+/**
+ * What the mounted surface asks its host for, measured where the host stops answering
+ * for it: the editor's track is put on its own min-content width, with and without a
+ * wide element inside the surface. A surface whose width followed its contents answers
+ * the second question with the element's width, and the pane it is mounted in takes that
+ * width from whatever stands beside it.
+ *
+ * The element stands in for a document's own widest construct — a table is as wide as
+ * its columns — so what is asserted is the boundary rather than any one construct.
+ */
+const DEMAND = `(async () => {
+	const deadline = Date.now() + 30000;
+	const until = async (find) => {
+		for (;;) {
+			const found = find();
+			if (found) return found;
+			if (Date.now() > deadline) return null;
+			await new Promise((wake) => setTimeout(wake, 50));
+		}
+	};
+	const pane = await until(() => document.querySelector('.qm-pane'));
+	if (pane === null) return null;
+	const track = pane.parentElement;
+	const asked = () => {
+		track.style.width = 'min-content';
+		const width = track.getBoundingClientRect().width;
+		track.style.width = '';
+		return width;
+	};
+
+	const bare = asked();
+	const probe = document.createElement('div');
+	probe.style.cssText = 'width: 4000px; height: 1px';
+	pane.appendChild(probe);
+	const held = asked();
+	probe.remove();
+	return { bare, held };
+})()`;
+
+interface Demand {
+	/** The surface's own width demand. */
+	bare: number;
+	/** The same, holding a 4000px element. */
+	held: number;
+}
+
 interface Probe {
 	booted: boolean;
 	quiverResolved: boolean;
@@ -134,6 +180,20 @@ describe('the built client, served under a subpath', () => {
 					0
 				);
 			}
+		},
+		LOAD_MS
+	);
+
+	it(
+		'asks its host for no more width than the document it holds',
+		async () => {
+			const asked = await load<Demand | null>(url, DEMAND, WIDE);
+
+			expect(asked, 'the editor mounted').not.toBeNull();
+			expect(asked?.held, 'a 4000px element inside the surface moves nothing').toBeCloseTo(
+				asked?.bare ?? 0,
+				0
+			);
 		},
 		LOAD_MS
 	);

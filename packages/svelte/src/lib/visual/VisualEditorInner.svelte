@@ -943,13 +943,12 @@
 		display: flex;
 		flex-direction: column;
 		/* The width is the host's, never the document's. A mount standing in a column that
-		   floors at what it holds — a flex or grid track carrying no minimum of its own —
-		   is otherwise asked for the widest thing in the document, and a table is as wide
-		   as its columns: the pane takes that width and whatever stands beside it leaves
-		   the screen. The island holds its own end of this (`codec/prose.css` §"The table
-		   island"); the containment here is the boundary, so a construct a leaf gains
-		   later cannot reach past it either. The block axis is untouched: a surface is as
-		   tall as its cards, or the pane's where `.qm-pane` says so. */
+		   floors at what it holds — a flex or grid track with no minimum of its own — is
+		   otherwise asked for the widest thing in the document, and a table is as wide as
+		   its columns. The island holds its own end of that (`codec/prose.css` §"The table
+		   island"); this is the boundary, so a construct a leaf gains later cannot reach
+		   past it either. `inline-size`, not `size`: a surface is as tall as its cards, or
+		   the pane's under `.qm-pane`. */
 		contain: inline-size;
 		gap: var(--_qm-space-2);
 		padding: var(--_qm-space-5);

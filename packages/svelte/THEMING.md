@@ -24,6 +24,8 @@ Nothing to import and nothing to set. The package pulls its own stylesheet, and 
 
 **Placing and sizing**: each surface carries a stable root class (`.qm-editor`, `.qm-preview`), so you can place it from your own stylesheet without a wrapper. Each also takes a `class` prop that merges onto the same element, which is the better handle when you have one to give.
 
+A surface's width is the one you give it. Each contains its own inline size, so what a document holds — a table is as wide as its columns — scrolls inside the mount rather than widening the column the mount stands in.
+
 **Taking the column back**: our selectors compute at specificity zero (below), so `padding: 0` or a `background` of your own on `.qm-editor` wins outright. Nothing is locked.
 
 ## Make it yours
