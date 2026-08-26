@@ -136,12 +136,6 @@ function runShape(node: PMNode): string | null {
 	}
 }
 
-/** `instance` where it tells a container from an identical adjacent sibling. The
- * canonical form omits a zero, so emitting one would diff against every store read. */
-function discriminate<T extends ContentContainer>(container: T, instance: number): T {
-	return instance ? { ...container, instance } : container;
-}
-
 function scanBlock(
 	acc: Acc,
 	node: PMNode,
@@ -187,18 +181,12 @@ function scanBlock(
 			acc.lastContentEndPm = nodePos + 1;
 			break;
 		case 'blockquote':
-			scanBlocks(acc, node, contentStart, [
-				...containers,
-				discriminate({ container: 'quote' as const }, instance)
-			]);
+			scanBlocks(acc, node, contentStart, [...containers, { container: 'quote', instance }]);
 			break;
 		case 'unknown_container':
 			scanBlocks(acc, node, contentStart, [
 				...containers,
-				discriminate(
-					{ container: node.attrs.container as string, attrs: node.attrs.attrs },
-					instance
-				)
+				{ container: node.attrs.container as string, attrs: node.attrs.attrs, instance }
 			]);
 			break;
 		case 'bullet_list':
@@ -207,10 +195,13 @@ function scanBlock(
 			const start = ordered ? (node.attrs.start as number) : 1;
 			let itemPos = contentStart;
 			node.forEach((item, _off, index) => {
-				const container: ContentContainer = discriminate(
-					{ container: 'list_item' as const, ordered, start, ordinal: index },
+				const container: ContentContainer = {
+					container: 'list_item',
+					ordered,
+					start,
+					ordinal: index,
 					instance
-				);
+				};
 				scanBlocks(acc, item, itemPos + 1, [...containers, container]);
 				itemPos += item.nodeSize;
 			});

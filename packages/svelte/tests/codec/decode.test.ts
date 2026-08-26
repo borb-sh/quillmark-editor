@@ -122,14 +122,8 @@ describe('inline / plaintext constraints', () => {
 // two apart: the normalizer numbers a run's `ordinal`s gaplessly from 0, so a reset
 // carries no boundary of its own.
 describe('adjacent sibling containers (the `instance` boundary)', () => {
-	const item = (ordinal: number, instance?: number) =>
-		({
-			container: 'list_item',
-			ordered: false,
-			start: 1,
-			ordinal,
-			...(instance === undefined ? {} : { instance })
-		}) as never;
+	const item = (ordinal: number, instance = 0) =>
+		({ container: 'list_item', ordered: false, start: 1, ordinal, instance }) as never;
 	const twoLists: Content = {
 		text: 'a\nb\nc',
 		lines: [
@@ -143,7 +137,7 @@ describe('adjacent sibling containers (the `instance` boundary)', () => {
 	const twoQuotes: Content = {
 		text: 'a\nb',
 		lines: [
-			{ containers: [{ container: 'quote' }], kind: 'para' },
+			{ containers: [{ container: 'quote', instance: 0 }], kind: 'para' },
 			{ containers: [{ container: 'quote', instance: 1 }], kind: 'para' }
 		],
 		marks: [],

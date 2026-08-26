@@ -218,12 +218,16 @@ describe('unknown line kind and container round-trip (verbatim)', () => {
 	it('survives decode → pmToContent verbatim', () => {
 		const back = pmToContent(decode(openRt, blockSchema));
 		expect(kindOf(back, 0)).toEqual({ kind: 'callout', attrs: { tone: 'warn' } });
-		expect(back.lines[1].containers).toEqual([{ container: 'aside', attrs: { side: 'left' } }]);
+		expect(back.lines[1].containers).toEqual([
+			{ container: 'aside', attrs: { side: 'left' }, instance: 0 }
+		]);
 	});
 	it('survives decode → lower(edit) → apply → decode', () => {
 		const { stored } = lowerApply(openRt, (s) => s.tr.insertText('Z', 2));
 		expect(kindOf(stored, 0)).toEqual({ kind: 'callout', attrs: { tone: 'warn' } });
-		expect(stored.lines[1].containers).toEqual([{ container: 'aside', attrs: { side: 'left' } }]);
+		expect(stored.lines[1].containers).toEqual([
+			{ container: 'aside', attrs: { side: 'left' }, instance: 0 }
+		]);
 	});
 });
 
