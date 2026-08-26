@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.10.0 - 2026-08-26
+
 **The `@quillmark/wasm` peer floor is `>=0.110.0-0`, where the seam spells every container's `instance`.** The discriminator that tells one container from an adjacent sibling of identical shape was a writer's obligation no checker asked for; it is required on `ContentContainer`, `ContentContainerInput` is gone, and `LineOp.setContainers` takes the one shape. The projection spells the field on every container it mints rather than only where it is non-zero, which is what the read type now asks for and what the store already canonicalized to; the fold reads it where it stood. Nothing about which runs weld moves: what a writer put side by side still survives the commit, and what the store holds still comes back as two.
 
 **A document that renders validates.** `validate` conforms each value at the render floor's leniency before judging it, so a fatal `validation::*` means the document does not render. Two things move for a host reading the codes under a field: a value the floor adopts — a bare scalar where an `array` is declared, `"3"` for an `integer` — raises nothing where it raised `validation::type_mismatch`, and a bare scalar the floor stringifies into an `enum` field is domain-checked on that string, so a spelling outside `values:` raises `validation::enum_violation` where it was silent. One refused element no longer mistypes its siblings: judging runs per node, so `[true, "abc"]` under `integer` items is one mismatch, at index 1. `formatDiagnostic` words the same three validation codes.
