@@ -120,9 +120,8 @@ export async function buildQuiver(
 
 	const { meta, catalog } = await scanSourceQuiver(sourceDir);
 
-	// Set where the swap stepped the outgoing generation aside and could not put it
-	// back: `prev` is then the only copy of what was serving, and the sweep below is
-	// what would take it.
+	// True where the swap stepped the outgoing generation aside and could not put it
+	// back: `prev` then holds the only copy, and the sweep below would take it.
 	let prevHoldsLastGood = false;
 
 	try {
@@ -279,11 +278,9 @@ export async function buildQuiver(
 		// `prev` is cleared first: a rename onto a non-empty directory fails, and the
 		// tree left by an interrupted run is one.
 		//
-		// Between the two renames the outgoing generation is only at `prev`, so a second
-		// rename that throws — EXDEV across a mount, EBUSY on a tree a reader holds,
-		// ENOSPC — is what "a build that throws leaves the previous one serving" is a
-		// claim about: it is put back, and where even that fails it is left where it is
-		// for the sweep to spare.
+		// Between them the outgoing generation is only at `prev`, so a second rename that
+		// throws — EXDEV across a mount, EBUSY on a tree a reader holds, ENOSPC — puts it
+		// back, and where the put-back fails leaves it there for the sweep to spare.
 		let steppedAside = false;
 		try {
 			await mkdir(dirname(out), { recursive: true });

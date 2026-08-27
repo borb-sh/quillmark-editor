@@ -42,16 +42,15 @@ export interface Mount {
 	root: string;
 }
 
-/** A file a request may have, and the size the stat that found it read. */
+/** A file a request may have, and its length off the stat that found it. */
 export interface Served {
 	at: string;
 	size: number;
 }
 
 /**
- * What each request resolves against, built once. The mounts are fixed before the
- * server listens, so the longest-prefix order is an answer to every request rather
- * than to each.
+ * What each request resolves against. The mounts are fixed before the server listens,
+ * so the longest-prefix order is settled once rather than per request.
  */
 export function fileResolver(mounts: Mount[]): (url: string) => Served | null {
 	// Longest prefix first, so `/quiver/…` reaches the pack rather than the client.
@@ -83,9 +82,9 @@ export function fileResolver(mounts: Mount[]): (url: string) => Served | null {
 		// request text would have to anticipate each spelling.
 		if (!within(root, at)) return null;
 
-		// One stat answers all three questions the response has — is it there, is it a
-		// file, how long is it. A second one is a second reading of a tree a repack
-		// swaps under the server, and the length it read would not be the body's.
+		// One stat answers all three questions the response has: is it there, is it a
+		// file, how long is it. A second would read a tree a repack swaps under the
+		// server, and the length it read would not be the body's.
 		let stats;
 		try {
 			stats = statSync(at);
@@ -134,7 +133,7 @@ export function createStaticServer(mounts: Mount[]): Server {
 		const stream = createReadStream(found.at);
 		// A repack removes the file between the stat and the open, and a `ReadStream`
 		// that errors with nothing listening throws out of the event loop and takes the
-		// studio down mid-session. The head is written by here, so the answer is a
+		// studio down mid-session. The head is already written, so the answer is a
 		// destroyed response rather than a status: a body short of the length it
 		// declared has to be a read a client can tell from a whole one.
 		stream.on('error', () => res.destroy());

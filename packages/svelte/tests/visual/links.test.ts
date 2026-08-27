@@ -84,7 +84,7 @@ describe('normalizeHref', () => {
 		// `SCHEME` reads its host as the scheme: what follows the colon is a port.
 		expect(normalizeHref('localhost:5173')).toBe('https://localhost:5173');
 		expect(normalizeHref('example.com:8080/x?q=1')).toBe('https://example.com:8080/x?q=1');
-		// The same host without a port and the same host as a bare IP already worked.
+		// The same host without a port, and as a bare IP, take the same prefix.
 		expect(normalizeHref('example.com')).toBe('https://example.com');
 		expect(normalizeHref('127.0.0.1:8000')).toBe('https://127.0.0.1:8000');
 	});

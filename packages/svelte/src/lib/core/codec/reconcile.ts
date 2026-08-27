@@ -12,7 +12,7 @@
 // `markKey` (`marks.ts`), which mint a key rather than answer. All four canonicalize
 // for the one reason: the sides are a WASM read and a JS projection, and neither
 // promises the other's key order. So nothing crossing this seam compares with
-// `JSON.stringify`, and a fifth strategy is one of these four in the wrong place.
+// `JSON.stringify`, and a new comparison is one of these four rather than a fifth.
 import type { Content } from '@quillmark/wasm';
 
 /** Tracks the last content the codec knows for a leaf, to distinguish foreign edits. */

@@ -260,9 +260,6 @@ function parseManifest(raw: string): BuiltManifest {
 		);
 	}
 
-	// Read into a local once and every guard below narrows what the push reads: an
-	// indexed access re-narrows nowhere, so a re-read is a cast, and a wall of casts is
-	// what makes an unsound one hard to see.
 	const entries = obj['quills'];
 	if (!Array.isArray(entries)) {
 		throw new QuiverError('quiver_invalid', 'Manifest must have a "quills" array');

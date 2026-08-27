@@ -24,12 +24,11 @@ export function packages() {
 		});
 }
 
-/** The installed `@quillmark/wasm`'s version, read off its own manifest. The artifact
- *  publishes one entry and no `./package.json`, so the manifest is not resolvable as a
- *  subpath: it is reached by walking up from the resolved entry to the first manifest
- *  that names the package. Walked rather than a fixed `../package.json`, so an entry
- *  that moves a level deeper is found rather than silently answered for by whatever
- *  manifest sits one above it. */
+/** The installed `@quillmark/wasm`'s version, off its own manifest. The artifact
+ *  publishes one entry and no `./package.json`, so the manifest is reached by walking
+ *  up from the resolved entry to the first one that names the package — walked rather
+ *  than a fixed `../`, so an entry a level deeper is found rather than answered for by
+ *  whatever manifest sits above it. */
 export function wasmVersion(root = ROOT) {
 	const entry = createRequire(join(root, 'package.json')).resolve('@quillmark/wasm');
 	for (let at = dirname(entry), up = dirname(at); ; at = up, up = dirname(at)) {

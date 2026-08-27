@@ -66,8 +66,7 @@ export function watchCollection(
 		if (filename === null || !isOwnWrite(filename)) fire();
 	});
 	// Unregister, then cancel, in that order (`core/teardown.ts`): cancelling first
-	// leaves a watcher that can re-arm the timer, and leaving the timer armed packs
-	// into a tree the caller is done with — and holds the process open until it does.
+	// leaves a watcher that can re-arm the timer.
 	return {
 		close: () => {
 			watcher.close();

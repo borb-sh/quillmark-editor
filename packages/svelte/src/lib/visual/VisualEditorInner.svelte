@@ -217,8 +217,7 @@
 		lastCaretField = undefined;
 		lastCaretPos = undefined;
 		const field = pathFor(plain);
-		// Both halves or neither: a stale addr names no path and no live card, and
-		// `ActiveLeaf`'s key is a host's handle rather than a decoration on the path.
+		// Both halves or neither: a stale addr names no path and no live card.
 		if (field != null && activeCardId != null)
 			onActiveLeafChange?.({ field, cardId: activeCardId });
 	}
@@ -433,8 +432,8 @@
 		// because nothing else will ever clear it.
 		const prefix = `${id}:`;
 		const stale = [...commitErrors.keys()].filter((k) => k.startsWith(prefix));
-		// Only where something matches: `editCommitErrors` clones the map, and a removal
-		// that refused nothing has nothing to re-derive.
+		// Guarded: `editCommitErrors` clones the map, and a removal matching nothing has
+		// nothing to re-derive.
 		if (stale.length) editCommitErrors((m) => stale.forEach((k) => m.delete(k)));
 		// No addr: the removed card has none left and every survivor's shifted. The
 		// stack changed, not a leaf, and the id is the only handle the removal leaves.

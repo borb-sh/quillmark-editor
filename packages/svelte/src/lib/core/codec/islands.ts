@@ -157,8 +157,7 @@ export function islandMinter(doc: PMNode): () => string {
 }
 
 /** The ids a document holds and the minter continuing past them, off one sweep: both
- *  answers are the same walk over the same nodes under the same predicate, and the
- *  paste pass wants them together. */
+ *  are the same walk under the same predicate, and the paste pass wants both. */
 function islandState(doc: PMNode): { held: Set<string>; mint: () => string } {
 	const held = new Set<string>();
 	let next = 0;

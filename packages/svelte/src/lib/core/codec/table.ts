@@ -285,8 +285,7 @@ export function cellFromDoc(doc: PMNode, prior: TableCell): TableCell {
 
 /** Whether two cells are the same value: what tells an own edit (the projection the
  *  view just produced) from an external one (an undo, a re-hydrate) without a flag.
- *  The marks structurally, for the reason `reconcile.ts` states: the two sides are a
- *  WASM read and a PM projection, and neither promises the other's key order. */
+ *  The marks structurally, for the reason `reconcile.ts` states. */
 export function cellEqual(a: TableCell, b: TableCell): boolean {
 	return a.text === b.text && valueEqual(a.marks, b.marks);
 }

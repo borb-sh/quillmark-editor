@@ -20,10 +20,10 @@ import { packages, report } from './workspace.mjs';
  * What `npm view <spec> version` answers: `{ version }` where the registry serves it,
  * `{ absent: true }` where it says E404, and `{ unknown }` for anything else it said.
  *
- * Three answers rather than two, because this runs unattended and its whole job is to be
- * believed: a DNS failure, a 5xx, a proxy, an expired token or a missing `npm` all exit
- * non-zero, and read as absence they report every published package at once — which
- * reads as a catastrophic release failure rather than as the outage it is.
+ * Three answers rather than two: a DNS failure, a 5xx, a proxy, an expired token or a
+ * missing `npm` all exit non-zero, and read as absence they report every published
+ * package at once — which reads as a catastrophic release failure rather than as the
+ * outage it is.
  */
 function published(spec) {
 	try {

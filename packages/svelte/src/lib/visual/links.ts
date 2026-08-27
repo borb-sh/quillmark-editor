@@ -31,9 +31,9 @@ const HOST_PORT = /^[a-z0-9.-]+:\d+([/?#]|$)/i;
  * A rooted value is left alone, being the spelling that asks for the embedding
  * page, and so is anything already carrying a scheme the link mark renders.
  *
- * `localhost:5173` names a host too, and `SCHEME` reads its host as a scheme: a value
- * whose colon is followed by a port is a host with a port, so it takes the host prefix
- * rather than the refusal a scheme nothing renders gets.
+ * `localhost:5173` names a host too, and `SCHEME` reads its host as the scheme: a
+ * colon followed by a port is a host with a port, so it takes the host prefix rather
+ * than the refusal a scheme nothing renders gets.
  *
  * `''` for a blank value and for a scheme the mark renders inert, both being nothing
  * to apply: `setLink` declines an empty href, so the refusal lands at the prompt's
