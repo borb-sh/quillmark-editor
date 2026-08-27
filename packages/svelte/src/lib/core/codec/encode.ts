@@ -436,7 +436,7 @@ function lineMetaEqual(a: ContentLine[], b: ContentLine[]): boolean {
 	for (let i = 0; i < a.length; i++) {
 		if (!!a[i].continues !== !!b[i].continues) return false;
 		if (kindKey(a[i]) !== kindKey(b[i])) return false;
-		if (JSON.stringify(a[i].containers) !== JSON.stringify(b[i].containers)) return false;
+		if (!valueEqual(a[i].containers, b[i].containers)) return false;
 	}
 	return true;
 }

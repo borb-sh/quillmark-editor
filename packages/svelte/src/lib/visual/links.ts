@@ -17,6 +17,9 @@ const SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 const ROOTED = /^[/#?]/;
 /** A bare mail address: one `@`, no scheme and no path. */
 const ADDRESS = /^[^\s/@]+@[^\s/@]+$/;
+/** A host carrying a port, which spells a scheme to `SCHEME` and is not one: what
+ *  follows the colon is digits, and no scheme the mark renders takes a port. */
+const HOST_PORT = /^[a-z0-9.-]+:\d+([/?#]|$)/i;
 
 /**
  * The href a typed value stands for. A value with no scheme names a host, and
@@ -28,14 +31,20 @@ const ADDRESS = /^[^\s/@]+@[^\s/@]+$/;
  * A rooted value is left alone, being the spelling that asks for the embedding
  * page, and so is anything already carrying a scheme the link mark renders.
  *
+ * `localhost:5173` names a host too, and `SCHEME` reads its host as a scheme: a value
+ * whose colon is followed by a port is a host with a port, so it takes the host prefix
+ * rather than the refusal a scheme nothing renders gets.
+ *
  * `''` for a blank value and for a scheme the mark renders inert, both being nothing
  * to apply: `setLink` declines an empty href, so the refusal lands at the prompt's
  * own exit rather than storing a link that draws as plain text.
  */
 export function normalizeHref(raw: string): string {
 	const value = raw.trim();
-	if (!value || !rendersHref(value)) return '';
-	if (SCHEME.test(value) || ROOTED.test(value)) return value;
+	if (!value) return '';
+	if (!rendersHref(value) && !HOST_PORT.test(value)) return '';
+	if (SCHEME.test(value) && rendersHref(value)) return value;
+	if (ROOTED.test(value)) return value;
 	return ADDRESS.test(value) ? `mailto:${value}` : `https://${value}`;
 }
 

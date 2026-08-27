@@ -290,8 +290,9 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	// vocabulary is the codec's own constant (`slash.ts`), not a wording to derive.
 	const slash = inline ? undefined : opts.onSlash;
 
-	const state = buildState(reconciler.last);
-	index = buildLineIndex(state.doc);
+	const seeded = buildState(reconciler.last);
+	const state = seeded.state;
+	index = seeded.index;
 
 	// The clearance PM's reveal keeps around the caret, in this leaf's own line box.
 	// Its default is 5px, which is a caret visible and unusable: the next line typed
@@ -354,7 +355,9 @@ export function createField(opts: CreateFieldOpts): FieldController {
 		}
 	});
 
-	function buildState(rt: Content): EditorState {
+	/** The state, and the index over the document it was built from: the seed reads one
+	 *  and every caller wants the same one, and `buildLineIndex` is a whole walk. */
+	function buildState(rt: Content): { state: EditorState; index: LineIndex } {
 		const pmDoc: PMNode = decode(rt, schema);
 		const anchors = plaintext ? [] : anchorsFromContent(rt);
 		// Seed anchor plugin positions in PM coords via a fresh index over pmDoc.
@@ -363,7 +366,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			id: a.id,
 			pos: usvToPM(seedIndex, a.pos)
 		}));
-		return EditorState.create({
+		const built = EditorState.create({
 			doc: pmDoc,
 			plugins: proseLeafPlugins(schema, {
 				inline,
@@ -375,6 +378,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 				afterHistory: [anchorPlugin(seededAnchors)]
 			})
 		});
+		return { state: built, index: seedIndex };
 	}
 
 	// (b)+(c): lower the edit to ops and commit, or `overwrite` a field not yet at
@@ -397,7 +401,7 @@ export function createField(opts: CreateFieldOpts): FieldController {
 				// Pre-edit anchors are the stored content's anchors (USV); post-edit
 				// anchors are the plugin's positions (mapped through the tr) as USV.
 				const oldAnchors = plaintext ? [] : anchorsFromContent(oldRt);
-				const newAnchors = plaintext ? [] : readAnchorsUsv(newDoc);
+				const newAnchors = plaintext ? [] : readAnchorsUsv();
 				doc.applyChange(addr, lower(edit, { oldAnchors, newAnchors }));
 			}
 			reconciler.commit(readLeaf(reader, addr));
@@ -434,8 +438,9 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	/** The anchors the plugin currently holds (PM coords); `[]` before the first apply. */
 	const heldAnchors = (): AnchorPos[] => anchorKey.getState(view.state) ?? [];
 
-	/** Anchor positions in the current (new) doc, as USV. */
-	function readAnchorsUsv(newDoc: PMNode): AnchorPos[] {
+	/** The plugin's anchor positions as USV, against `index` — which `dispatchTransaction`
+	 *  rebuilt over the new document before the commit this reads for. */
+	function readAnchorsUsv(): AnchorPos[] {
 		return heldAnchors().map((a) => ({ id: a.id, pos: pmToUsv(index, a.pos) }));
 	}
 
@@ -462,11 +467,11 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			if (!reconciler.shouldRehydrate(current)) return; // own edit / no change
 			const caretUsv = pmToUsv(index, view.state.selection.head);
 			const fresh = buildState(current);
-			view.updateState(fresh);
-			index = buildLineIndex(fresh.doc);
+			view.updateState(fresh.state);
+			index = fresh.index;
 			// Best-effort caret continuity across an external change: keep the USV.
 			const pm = usvToPM(index, caretUsv);
-			view.dispatch(view.state.tr.setSelection(Selection.near(fresh.doc.resolve(pm))));
+			view.dispatch(view.state.tr.setSelection(Selection.near(fresh.state.doc.resolve(pm))));
 			reconciler.commit(current);
 		},
 		setPlaceholder(text: string | undefined): void {

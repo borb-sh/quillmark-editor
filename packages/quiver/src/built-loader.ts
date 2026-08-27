@@ -206,14 +206,15 @@ function parsePointer(raw: string): string {
 		);
 	}
 
-	if (typeof obj['manifest'] !== 'string' || obj['manifest'].length === 0) {
+	const manifest = obj['manifest'];
+	if (typeof manifest !== 'string' || manifest.length === 0) {
 		throw new QuiverError(
 			'quiver_invalid',
 			'latest.json must have a non-empty string "manifest" field'
 		);
 	}
 
-	return obj['manifest'] as string;
+	return manifest;
 }
 
 function parseManifest(raw: string): BuiltManifest {
@@ -246,25 +247,31 @@ function parseManifest(raw: string): BuiltManifest {
 		);
 	}
 
-	if (typeof obj['name'] !== 'string' || obj['name'].length === 0) {
+	const name = obj['name'];
+	if (typeof name !== 'string' || name.length === 0) {
 		throw new QuiverError('quiver_invalid', 'Manifest must have a non-empty string "name" field');
 	}
 
-	if (obj['description'] !== undefined && typeof obj['description'] !== 'string') {
+	const description = obj['description'];
+	if (description !== undefined && typeof description !== 'string') {
 		throw new QuiverError(
 			'quiver_invalid',
-			`Manifest "description" must be a string if present, got ${typeof obj['description']}`
+			`Manifest "description" must be a string if present, got ${typeof description}`
 		);
 	}
 
-	if (!Array.isArray(obj['quills'])) {
+	// Read into a local once and every guard below narrows what the push reads: an
+	// indexed access re-narrows nowhere, so a re-read is a cast, and a wall of casts is
+	// what makes an unsound one hard to see.
+	const entries = obj['quills'];
+	if (!Array.isArray(entries)) {
 		throw new QuiverError('quiver_invalid', 'Manifest must have a "quills" array');
 	}
 
 	const quills: BuiltQuillEntry[] = [];
 
-	for (let i = 0; i < (obj['quills'] as unknown[]).length; i++) {
-		const entry = (obj['quills'] as unknown[])[i];
+	for (let i = 0; i < entries.length; i++) {
+		const entry = entries[i];
 
 		if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) {
 			throw new QuiverError('quiver_invalid', `manifest.quills[${i}] must be an object`);
@@ -273,46 +280,46 @@ function parseManifest(raw: string): BuiltManifest {
 		const e = entry as Record<string, unknown>;
 		assertNoUnknownKeys(e, ['name', 'version', 'bundle', 'fonts'], `manifest.quills[${i}]`);
 
-		if (typeof e['name'] !== 'string' || (e['name'] as string).length === 0) {
+		const quillName = e['name'];
+		if (typeof quillName !== 'string' || quillName.length === 0) {
 			throw new QuiverError(
 				'quiver_invalid',
 				`manifest.quills[${i}].name must be a non-empty string`
 			);
 		}
 
-		if (!isQuillName(e['name'] as string)) {
+		if (!isQuillName(quillName)) {
 			throw new QuiverError(
 				'quiver_invalid',
-				`manifest.quills[${i}].name "${e['name'] as string}" is not a name a ref can spell — only [A-Za-z0-9_-] are allowed`
+				`manifest.quills[${i}].name "${quillName}" is not a name a ref can spell — only [A-Za-z0-9_-] are allowed`
 			);
 		}
 
-		if (typeof e['version'] !== 'string' || !isCanonicalSemver(e['version'] as string)) {
+		const version = e['version'];
+		if (typeof version !== 'string' || !isCanonicalSemver(version)) {
 			throw new QuiverError(
 				'quiver_invalid',
-				`manifest.quills[${i}].version must be canonical semver (x.y.z), got "${String(e['version'])}"`
+				`manifest.quills[${i}].version must be canonical semver (x.y.z), got "${String(version)}"`
 			);
 		}
 
-		if (typeof e['bundle'] !== 'string' || (e['bundle'] as string).length === 0) {
+		const bundle = e['bundle'];
+		if (typeof bundle !== 'string' || bundle.length === 0) {
 			throw new QuiverError(
 				'quiver_invalid',
 				`manifest.quills[${i}].bundle must be a non-empty string`
 			);
 		}
 
-		digestOfName(
-			BUNDLE_FILENAME_RE,
-			e['bundle'] as string,
-			`manifest.quills[${i}].bundle filename`
-		);
+		digestOfName(BUNDLE_FILENAME_RE, bundle, `manifest.quills[${i}].bundle filename`);
 
-		if (typeof e['fonts'] !== 'object' || e['fonts'] === null || Array.isArray(e['fonts'])) {
+		const declared = e['fonts'];
+		if (typeof declared !== 'object' || declared === null || Array.isArray(declared)) {
 			throw new QuiverError('quiver_invalid', `manifest.quills[${i}].fonts must be an object`);
 		}
 
-		const fonts = e['fonts'] as Record<string, unknown>;
-		for (const [k, v] of Object.entries(fonts)) {
+		const fonts: Record<string, string> = {};
+		for (const [k, v] of Object.entries(declared)) {
 			if (typeof v !== 'string') {
 				throw new QuiverError(
 					'quiver_invalid',
@@ -320,21 +327,13 @@ function parseManifest(raw: string): BuiltManifest {
 				);
 			}
 			validateFontHash(v, `manifest.quills[${i}].fonts["${k}"]`);
+			fonts[k] = v;
 		}
 
-		quills.push({
-			name: e['name'] as string,
-			version: e['version'] as string,
-			bundle: e['bundle'] as string,
-			fonts: fonts as Record<string, string>
-		});
+		quills.push({ name: quillName, version, bundle, fonts });
 	}
 
-	return {
-		name: obj['name'] as string,
-		description: obj['description'] as string | undefined,
-		quills
-	};
+	return { name, description, quills };
 }
 
 // ─── Catalog assembly ─────────────────────────────────────────────────────────

@@ -2,16 +2,13 @@
 // builds, and a `client/` in this root would emit a second `dist/client` over the one
 // `vite build` writes.
 {
+	"extends": "./tsconfig.base.json",
 	"compilerOptions": {
-		"target": "ES2022",
 		"module": "NodeNext",
 		"moduleResolution": "NodeNext",
 		"outDir": "dist",
 		"rootDir": "src",
-		"declaration": false,
-		"strict": true,
-		"esModuleInterop": true,
-		"skipLibCheck": true
+		"declaration": false
 	},
 	"include": ["src"],
 	"exclude": ["src/__tests__"]

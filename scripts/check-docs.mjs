@@ -19,9 +19,8 @@
 //      stopped exporting the moment package code calls it.
 
 import { readFileSync, readdirSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import { basename, dirname, join, relative } from 'node:path';
-import { ROOT, report } from './workspace.mjs';
+import { basename, join, relative } from 'node:path';
+import { ROOT, report, wasmVersion } from './workspace.mjs';
 
 const LEDGER = 'packages/svelte/prose/canon/DOCUMENT_MODEL.md';
 
@@ -95,12 +94,7 @@ for (const abs of files) {
 
 // ── 2. The boundary pin ─────────────────────────────────────────────────────────
 
-// The artifact exports one entry and no `./package.json`, so its root is reached through
-// the entry rather than resolved directly.
-const require = createRequire(join(ROOT, 'package.json'));
-const installed = JSON.parse(
-	readFileSync(join(dirname(require.resolve('@quillmark/wasm')), '..', 'package.json'), 'utf8')
-).version;
+const installed = wasmVersion();
 
 const pins = [
 	...readFileSync(join(ROOT, LEDGER), 'utf8').matchAll(/`@quillmark\/wasm`\s+(\d+\.\d+\.\d+)/g)

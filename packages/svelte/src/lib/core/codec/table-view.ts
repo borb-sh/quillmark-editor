@@ -309,8 +309,9 @@ class TableIslandView implements NodeView {
 	private drag: Drag | undefined;
 	private sweep: Sweep | undefined;
 	/** The grips, by the line each acts on: what selection paint and a drag reach for
-	 *  without a query. The typed twin of `cells`. */
-	private grips = new Map<string, HTMLButtonElement>();
+	 *  without a query. The typed twin of `cells`, `Line` included — a key parsed back
+	 *  into one is the `data-` attribute `MountedCell.box` refuses. */
+	private grips = new Map<string, { line: Line; grip: HTMLButtonElement }>();
 	/** The grid's own box, and the containing block every out-of-flow control is placed
 	 *  against. Not the scroller: an absolute inside a scroll container is placed
 	 *  against a padding box the scroll then slides out from under, so a control at the
@@ -443,17 +444,37 @@ class TableIslandView implements NodeView {
 	};
 
 	/** The cell a press inside the frame belongs to: the nearest by rect, which for a
-	 *  press on a border or a cell's own padding is the cell it is against. */
+	 *  press on a border or a cell's own padding is the cell it is against.
+	 *
+	 *  A row's cells share a vertical extent and a column's a horizontal one, and the
+	 *  distance is a hypotenuse of the two, so the nearest cell is the nearest row
+	 *  crossed with the nearest column: the header row and the first column answer for
+	 *  the whole grid. R+C rects rather than R×C, for the reason a line drag measures
+	 *  once — at 20x8 that is 27 forced layouts a press instead of 160. */
 	private focusNearestCell(point: Point): void {
-		let best: MountedCell | undefined;
-		let nearest = Infinity;
+		let row: number | undefined;
+		let column: number | undefined;
+		let nearestRow = Infinity;
+		let nearestColumn = Infinity;
 		for (const mounted of this.cells) {
-			const at = distance(mounted.host.getBoundingClientRect(), point);
-			if (at >= nearest) continue;
-			nearest = at;
-			best = mounted;
+			if (mounted.c !== 0 && mounted.r !== 0) continue;
+			const box = mounted.host.getBoundingClientRect();
+			if (mounted.c === 0) {
+				const at = Math.max(box.top - point.y, 0, point.y - box.bottom);
+				if (at < nearestRow) {
+					nearestRow = at;
+					row = mounted.r;
+				}
+			}
+			if (mounted.r === 0) {
+				const at = Math.max(box.left - point.x, 0, point.x - box.right);
+				if (at < nearestColumn) {
+					nearestColumn = at;
+					column = mounted.c;
+				}
+			}
 		}
-		if (best) this.focusCell(best.r, best.c);
+		if (row !== undefined && column !== undefined) this.focusCell(row, column);
 	}
 
 	/** A caret beside the island, on the side the press landed: a gap cursor where the
@@ -646,11 +667,8 @@ class TableIslandView implements NodeView {
 	 *  and a selection is exactly the state that must not cost the carets in them. */
 	private paintSelection(): void {
 		const held = this.selected;
-		for (const [key, grip] of this.grips) {
-			const [axis, index] = key.split(':');
-			const line = { axis: axis as Axis, index: Number(index) };
+		for (const { line, grip } of this.grips.values())
 			grip.setAttribute('aria-pressed', String(!!held && sameCells(held, this.lineCells(line))));
-		}
 		for (const cell of this.cells)
 			cell.box.toggleAttribute(
 				'data-selected',
@@ -741,6 +759,10 @@ class TableIslandView implements NodeView {
 		event: PointerEvent
 	): void => {
 		if (event.button !== 0) return;
+		// The previous gesture ends first, as `armSweep`'s does: `endDrag` reads
+		// `this.drag` to know which grip to unbind, so a second press over a live drag
+		// would orphan the first grip's listeners and its pointer capture.
+		this.endDrag();
 		this.drag = {
 			line,
 			origin: { x: event.clientX, y: event.clientY },
@@ -1020,7 +1042,7 @@ class TableIslandView implements NodeView {
 		bar.appendChild(svg(GRIP[line.axis]));
 		btn.appendChild(bar);
 		btn.addEventListener('pointerdown', (e) => this.onGripDown(line, btn, e));
-		this.grips.set(lineKey(line), btn);
+		this.grips.set(lineKey(line), { line, grip: btn });
 		return btn;
 	}
 

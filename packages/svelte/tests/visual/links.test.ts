@@ -79,6 +79,16 @@ describe('normalizeHref', () => {
 		}
 	});
 
+	it('keeps a host that carries a port, which spells a scheme and is not one', () => {
+		// `localhost:5173` is the likeliest link anyone writes against this editor, and
+		// `SCHEME` reads its host as the scheme: what follows the colon is a port.
+		expect(normalizeHref('localhost:5173')).toBe('https://localhost:5173');
+		expect(normalizeHref('example.com:8080/x?q=1')).toBe('https://example.com:8080/x?q=1');
+		// The same host without a port and the same host as a bare IP already worked.
+		expect(normalizeHref('example.com')).toBe('https://example.com');
+		expect(normalizeHref('127.0.0.1:8000')).toBe('https://127.0.0.1:8000');
+	});
+
 	it('reads a bare address as mail, not as a host with userinfo', () => {
 		expect(normalizeHref('jane@example.com')).toBe('mailto:jane@example.com');
 	});

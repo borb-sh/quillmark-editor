@@ -153,14 +153,24 @@ export function tablePropsOfNode(node: PMNode): TableProps | undefined {
  * a stale content could collide with one the same transaction places.
  */
 export function islandMinter(doc: PMNode): () => string {
+	return islandState(doc).mint;
+}
+
+/** The ids a document holds and the minter continuing past them, off one sweep: both
+ *  answers are the same walk over the same nodes under the same predicate, and the
+ *  paste pass wants them together. */
+function islandState(doc: PMNode): { held: Set<string>; mint: () => string } {
+	const held = new Set<string>();
 	let next = 0;
 	doc.descendants((node) => {
 		if (!isIsland(node)) return true;
-		const m = /^isl-(\d+)$/.exec(node.attrs.id as string);
+		const id = node.attrs.id as string;
+		held.add(id);
+		const m = /^isl-(\d+)$/.exec(id);
 		if (m) next = Math.max(next, Number(m[1]) + 1);
 		return false;
 	});
-	return () => `isl-${next++}`;
+	return { held, mint: () => `isl-${next++}` };
 }
 
 /** The next island id for a field: one draw from {@link islandMinter}, which is what a
@@ -169,21 +179,10 @@ export function mintIslandId(doc: PMNode): string {
 	return islandMinter(doc)();
 }
 
-/** Either island node: the test the minter, the id sweep and the paste pass share, so a
- *  third island shape is one arm rather than three. */
+/** Either island node: the test the sweep and the paste pass share, so a third island
+ *  shape is one arm rather than two. */
 function isIsland(node: PMNode): boolean {
 	return node.type.name === 'island_block' || node.type.name === 'island_inline';
-}
-
-/** The ids a document already holds. */
-function heldIds(doc: PMNode): Set<string> {
-	const held = new Set<string>();
-	doc.descendants((node) => {
-		if (!isIsland(node)) return true;
-		held.add(node.attrs.id as string);
-		return false;
-	});
-	return held;
 }
 
 /** `fragment` with every island whose id is already `taken` re-minted, or `null` where
@@ -237,11 +236,8 @@ export function islandPastePlugin(): Plugin {
 	return new Plugin({
 		props: {
 			transformPasted: (slice, view) => {
-				const content = remintIslands(
-					slice.content,
-					heldIds(view.state.doc),
-					islandMinter(view.state.doc)
-				);
+				const { held, mint } = islandState(view.state.doc);
+				const content = remintIslands(slice.content, held, mint);
 				return content ? new Slice(content, slice.openStart, slice.openEnd) : slice;
 			}
 		}

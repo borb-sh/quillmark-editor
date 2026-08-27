@@ -106,19 +106,24 @@ export async function buildQuiver(
 	options: BuildOptions = {}
 ): Promise<void> {
 	// Dynamic imports keep this module safe to type-import from browser contexts.
-	const path = await import('node:path');
-	const { dirname, join, resolve } = path;
+	const nodePath = await import('node:path');
+	const { dirname, join, resolve } = nodePath;
 	const { mkdir, rename, rm, writeFile } = await import('node:fs/promises');
 	const { existsSync } = await import('node:fs');
 	const { createHash } = await import('node:crypto');
 
 	const { scanSourceQuiver, readQuillTree } = await import('./source-loader.js');
 
-	assertSafeOutDir(path, sourceDir, outDir);
+	assertSafeOutDir(nodePath, sourceDir, outDir);
 	const out = resolve(outDir);
 	const { stage, prev } = stagesOf(out);
 
 	const { meta, catalog } = await scanSourceQuiver(sourceDir);
+
+	// Set where the swap stepped the outgoing generation aside and could not put it
+	// back: `prev` is then the only copy of what was serving, and the sweep below is
+	// what would take it.
+	let prevHoldsLastGood = false;
 
 	try {
 		await packGeneration();
@@ -127,7 +132,8 @@ export async function buildQuiver(
 		// untouched. Neither tree outlives the call either way. Swept rather than
 		// checked: a sweep that threw would answer for the build, and what a caller
 		// needs to hear is why the build failed.
-		for (const at of [stage, prev]) await rm(at, { recursive: true, force: true }).catch(() => {});
+		const sweep = prevHoldsLastGood ? [stage] : [stage, prev];
+		for (const at of sweep) await rm(at, { recursive: true, force: true }).catch(() => {});
 	}
 
 	/**
@@ -167,16 +173,16 @@ export async function buildQuiver(
 				const fontEntries: Array<[string, Uint8Array]> = [];
 				const contentEntries: Array<[string, Uint8Array]> = [];
 
-				for (const [path, bytes] of tree) {
-					if (FONT_EXT.test(path)) {
-						fontEntries.push([path, bytes]);
+				for (const [rel, bytes] of tree) {
+					if (FONT_EXT.test(rel)) {
+						fontEntries.push([rel, bytes]);
 					} else {
-						contentEntries.push([path, bytes]);
+						contentEntries.push([rel, bytes]);
 					}
 				}
 
 				const fonts: Record<string, string> = {};
-				for (const [path, bytes] of fontEntries) {
+				for (const [rel, bytes] of fontEntries) {
 					// Full width: the store is keyed by hash, so two distinct fonts
 					// sharing a prefix would merge into one entry.
 					const hash = createHash('sha256').update(bytes).digest('hex');
@@ -191,12 +197,12 @@ export async function buildQuiver(
 						);
 					}
 
-					fonts[path] = hash;
+					fonts[rel] = hash;
 				}
 
 				const contentRecord: Record<string, Uint8Array> = {};
-				for (const [path, bytes] of contentEntries) {
-					contentRecord[path] = bytes;
+				for (const [rel, bytes] of contentEntries) {
+					contentRecord[rel] = bytes;
 				}
 				// The budget `bundle.ts` carries is spent here as well as at the read, so
 				// a quill no loader would take is refused by the build that packs it,
@@ -272,15 +278,33 @@ export async function buildQuiver(
 
 		// `prev` is cleared first: a rename onto a non-empty directory fails, and the
 		// tree left by an interrupted run is one.
+		//
+		// Between the two renames the outgoing generation is only at `prev`, so a second
+		// rename that throws — EXDEV across a mount, EBUSY on a tree a reader holds,
+		// ENOSPC — is what "a build that throws leaves the previous one serving" is a
+		// claim about: it is put back, and where even that fails it is left where it is
+		// for the sweep to spare.
+		let steppedAside = false;
 		try {
 			await mkdir(dirname(out), { recursive: true });
 			await rm(prev, { recursive: true, force: true });
-			if (existsSync(out)) await rename(out, prev);
+			if (existsSync(out)) {
+				await rename(out, prev);
+				steppedAside = true;
+			}
 			await rename(stage, out);
 		} catch (err) {
+			if (steppedAside)
+				prevHoldsLastGood = !(await rename(prev, out).then(
+					() => true,
+					() => false
+				));
 			throw new QuiverError(
 				'transport_error',
-				`Failed to move the build into "${outDir}": ${(err as Error).message}`,
+				`Failed to move the build into "${outDir}": ${(err as Error).message}` +
+					(prevHoldsLastGood
+						? `. The previous generation is at "${prev}" and has to be moved back by hand`
+						: ''),
 				{ cause: err }
 			);
 		}

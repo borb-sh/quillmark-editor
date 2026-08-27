@@ -12,13 +12,25 @@ import { within } from './paths.js';
 /** One repack per settled burst: an editor's save arrives as several watcher events. */
 const SETTLE_MS = 80;
 
-/** Call `fn` once a burst of calls stops arriving. */
-export function settle(ms: number, fn: () => void): () => void {
+/** Call `fn` once a burst of calls stops arriving. `cancel` drops a call still
+ *  waiting: a teardown that only unregisters leaves the scheduled half to run
+ *  (`core/teardown.ts`), and it holds the event loop open until it does. */
+export interface Settled {
+	(): void;
+	cancel(): void;
+}
+
+export function settle(ms: number, fn: () => void): Settled {
 	let timer: ReturnType<typeof setTimeout> | undefined;
-	return () => {
+	const fire: Settled = () => {
 		clearTimeout(timer);
 		timer = setTimeout(fn, ms);
 	};
+	fire.cancel = () => {
+		clearTimeout(timer);
+		timer = undefined;
+	};
+	return fire;
 }
 
 export interface Watcher {
@@ -53,7 +65,15 @@ export function watchCollection(
 		// a real edit costs an author the repack they asked for.
 		if (filename === null || !isOwnWrite(filename)) fire();
 	});
-	return { close: () => watcher.close() };
+	// Unregister, then cancel, in that order (`core/teardown.ts`): cancelling first
+	// leaves a watcher that can re-arm the timer, and leaving the timer armed packs
+	// into a tree the caller is done with — and holds the process open until it does.
+	return {
+		close: () => {
+			watcher.close();
+			fire.cancel();
+		}
+	};
 }
 
 /**

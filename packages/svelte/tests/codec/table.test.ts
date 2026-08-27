@@ -18,6 +18,7 @@ import type { FieldController, LeafViews } from '$lib/core/codec';
 import {
 	ALIGNS,
 	cellContent,
+	cellEqual,
 	cellFromDoc,
 	columnCount,
 	deleteColumn,
@@ -182,6 +183,25 @@ describe('the cell codec: a cell is its own content unit', () => {
 		const anchor = next.marks.find((m) => m.type === 'anchor') as { start: number; id: string };
 		expect(anchor.id).toBe('a1');
 		expect(anchor.start).toBe(5); // rebased through the two inserted chars
+	});
+
+	it('two spellings of one mark are one cell, whatever order the keys arrive in', () => {
+		// The two sides are a WASM read and this tier's projection, and neither promises
+		// the other's key order: compared as text, an own edit reads as an external one
+		// and `TableIslandView.update` reseeds the cell being typed in on every
+		// keystroke, caret and all.
+		const stored: TableCell = {
+			text: 'linked',
+			marks: [{ start: 0, end: 6, type: 'link', url: 'https://x.com' }] as TableCell['marks']
+		};
+		const projected: TableCell = {
+			text: 'linked',
+			marks: [{ url: 'https://x.com', type: 'link', end: 6, start: 0 }] as TableCell['marks']
+		};
+
+		expect(cellEqual(stored, projected)).toBe(true);
+		expect(cellEqual(stored, { ...stored, text: 'linkes' })).toBe(false);
+		expect(cellEqual(stored, { ...stored, marks: [] })).toBe(false);
 	});
 
 	it('a cell holds no line: a stray newline joins rather than splitting', () => {

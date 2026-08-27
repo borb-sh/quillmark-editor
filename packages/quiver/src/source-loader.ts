@@ -3,7 +3,7 @@
  * `node:fs`, so it is reachable from the Node entry alone.
  */
 
-import { readdir, readFile, lstat, stat } from 'node:fs/promises';
+import { readdir, readFile, lstat } from 'node:fs/promises';
 import type { Stats } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { QuiverError } from './errors.js';
@@ -36,8 +36,8 @@ function refuseSymlink(st: Stats, path: string): void {
  * to build a catalog of quill names → sorted versions (descending).
  *
  * Throws:
- *   - `quiver_invalid` if Quiver.yaml is missing/invalid, a quill or version directory
- *     is a symlink, a quill dir holding versions is named outside the ref charset, a
+ *   - `quiver_invalid` if Quiver.yaml is invalid, any rung it opens or reads is a
+ *     symlink, a quill dir holding versions is named outside the ref charset, a
  *     version dir name is non-canonical, or a version dir is missing its Quill.yaml
  *     sentinel.
  *   - `transport_error` for I/O failures (permissions, etc.).
@@ -51,8 +51,10 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 	const quiverYamlPath = join(rootDir, 'Quiver.yaml');
 	let raw: Uint8Array;
 	try {
+		refuseSymlink(await lstat(quiverYamlPath), quiverYamlPath);
 		raw = await readFile(quiverYamlPath);
 	} catch (err) {
+		if (err instanceof QuiverError) throw err;
 		// ENOENT → transport_error: a missing Quiver.yaml means the path itself
 		// does not point to a quiver — this is a missing-path condition, not a
 		// structural violation of a quiver that exists.
@@ -149,8 +151,9 @@ export async function scanSourceQuiver(rootDir: string): Promise<{
 
 			const quillYamlPath = join(versionPath, 'Quill.yaml');
 			try {
-				await stat(quillYamlPath);
+				refuseSymlink(await lstat(quillYamlPath), quillYamlPath);
 			} catch (err) {
+				if (err instanceof QuiverError) throw err;
 				const code = (err as NodeJS.ErrnoException).code;
 				if (code === 'ENOENT') {
 					throw new QuiverError(

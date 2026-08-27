@@ -128,10 +128,13 @@
 	 * array's elements, an object's properties, a variant's cells, and a subform's cells
 	 * under an open element. One door rather than one per depth, since `getContentAt`
 	 * takes the whole path and the walk down is each container prefixing its own step.
-	 * Read per call and never held: a leaf takes its state at mount, and a control asks
-	 * once. */
+	 *
+	 * The reader is held, as the codec's is (`field.ts`): a `{quill, doc}` pair reads
+	 * live, so every call through it sees the commit before it, and an array of prose
+	 * elements is one handle across the boundary rather than one per element. */
+	const reader = $derived(quill.reader(doc));
 	function contentAt(path: PathStep[]): Content | undefined {
-		return quill.reader(doc).getContentAt(addr, path);
+		return reader.getContentAt(addr, path);
 	}
 
 	// ── Focus: one answer, two callers (`leaves.ts`) ─────────────────────────────

@@ -262,6 +262,34 @@ describe('the symlink refusal', () => {
 		);
 	});
 
+	it('refuses a linked Quiver.yaml, which is what says the path is a quiver at all', async () => {
+		// Read outside the walk, so nothing else answers for it: followed, the quiver's
+		// own name comes from a file it does not hold. The target is valid YAML, so the
+		// refusal is the link and not the parse.
+		const { root } = await quiverWithOutsideFile();
+		const outside = join(root, '..', 'outside.yaml');
+		await writeFile(outside, 'name: smuggled\n');
+		await rm(join(root, 'Quiver.yaml'));
+		await symlink(outside, join(root, 'Quiver.yaml'));
+
+		await expect(scanSourceQuiver(root)).rejects.toThrow(
+			expect.objectContaining({ code: 'quiver_invalid' })
+		);
+	});
+
+	it('refuses a linked Quill.yaml sentinel at the rung that reads it', async () => {
+		// `readQuillTree` refuses it too, but from `build`/`getQuill` and naming a
+		// different rung than the one that let it through.
+		const { root, secret } = await quiverWithOutsideFile();
+		const sentinel = join(root, 'quills', 'memo', '1.0.0', 'Quill.yaml');
+		await rm(sentinel);
+		await symlink(secret, sentinel);
+
+		await expect(scanSourceQuiver(root)).rejects.toThrow(
+			expect.objectContaining({ code: 'quiver_invalid' })
+		);
+	});
+
 	it('leaves an ordinary tree alone', async () => {
 		const { root } = await quiverWithOutsideFile();
 		const { catalog } = await scanSourceQuiver(root);

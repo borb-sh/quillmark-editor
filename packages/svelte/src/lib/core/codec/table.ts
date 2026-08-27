@@ -20,6 +20,7 @@ import type { Content, ContentMark, TableCell, TableProps } from '@quillmark/was
 import type { Node as PMNode } from 'prosemirror-model';
 import { core } from '../lifecycle.js';
 import { contentEdit, pmToContent } from './encode.js';
+import { valueEqual } from './reconcile.js';
 
 /** One column's alignment, read off the boundary rather than restated. */
 export type TableAlign = TableProps['aligns'][number];
@@ -283,9 +284,11 @@ export function cellFromDoc(doc: PMNode, prior: TableCell): TableCell {
 }
 
 /** Whether two cells are the same value: what tells an own edit (the projection the
- *  view just produced) from an external one (an undo, a re-hydrate) without a flag. */
+ *  view just produced) from an external one (an undo, a re-hydrate) without a flag.
+ *  The marks structurally, for the reason `reconcile.ts` states: the two sides are a
+ *  WASM read and a PM projection, and neither promises the other's key order. */
 export function cellEqual(a: TableCell, b: TableCell): boolean {
-	return a.text === b.text && JSON.stringify(a.marks) === JSON.stringify(b.marks);
+	return a.text === b.text && valueEqual(a.marks, b.marks);
 }
 
 /** Whether two tables have the same rectangle and alignment: the change that forces

@@ -39,7 +39,7 @@ Browsers cannot read the source layout, so `build(src, out)` packs it at deploy 
 
 A build is never observably half-written. It is assembled in `<out>.stage` and moved in, and the tree it replaces is deleted after. Packing straight into `out` would leave a window seconds wide where the pointer is missing or names a manifest whose bundles have not landed, and a client reading it there reports a broken quiver for an edit that was fine; a build that throws would leave that window open until the next one.
 
-The property belongs here rather than to whatever is serving, because the directory is this function's and no caller can close a window inside it. What remains is two renames: a directory rename refuses a non-empty target, so the outgoing generation steps aside first. The staging siblings are named off `out` and cleared with it, which is why the destructive-write refusals are checked over all three.
+The property belongs here rather than to whatever is serving, because the directory is this function's and no caller can close a window inside it. What remains is two renames: a directory rename refuses a non-empty target, so the outgoing generation steps aside first. Between the two it is only at `.prev`, so a second rename that throws puts it back, and the sweep that clears the siblings spares it where even that fails: what the window costs is a torn read, never both generations. The staging siblings are named off `out` and cleared with it, which is why the destructive-write refusals are checked over all three.
 
 ## The draft floor
 

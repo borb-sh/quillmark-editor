@@ -16,15 +16,27 @@
 import { execFileSync } from 'node:child_process';
 import { packages, report } from './workspace.mjs';
 
-/** `npm view <spec> version`, or `undefined` where the registry has no such version. */
+/**
+ * What `npm view <spec> version` answers: `{ version }` where the registry serves it,
+ * `{ absent: true }` where it says E404, and `{ unknown }` for anything else it said.
+ *
+ * Three answers rather than two, because this runs unattended and its whole job is to be
+ * believed: a DNS failure, a 5xx, a proxy, an expired token or a missing `npm` all exit
+ * non-zero, and read as absence they report every published package at once — which
+ * reads as a catastrophic release failure rather than as the outage it is.
+ */
 function published(spec) {
 	try {
-		return execFileSync('npm', ['view', spec, 'version'], {
-			encoding: 'utf8',
-			stdio: ['ignore', 'pipe', 'ignore']
-		}).trim();
-	} catch {
-		return undefined;
+		return {
+			version: execFileSync('npm', ['view', spec, 'version'], {
+				encoding: 'utf8',
+				stdio: ['ignore', 'pipe', 'pipe']
+			}).trim()
+		};
+	} catch (err) {
+		const said = `${err.stderr ?? ''}`.trim();
+		if (/E404/.test(said)) return { absent: true };
+		return { unknown: said || err.message };
 	}
 }
 
@@ -35,7 +47,10 @@ for (const { json } of packages()) {
 	if (json.private === true) continue;
 	checked.push(json.name);
 	const spec = `${json.name}@${json.version}`;
-	if (published(spec) !== json.version)
+	const answer = published(spec);
+	if (answer.unknown !== undefined)
+		errors.push(`${spec} could not be read from the registry — npm said: ${answer.unknown}`);
+	else if (answer.absent || answer.version !== json.version)
 		errors.push(
 			`${spec} is on this branch and not on the registry — the release for it never landed`
 		);
