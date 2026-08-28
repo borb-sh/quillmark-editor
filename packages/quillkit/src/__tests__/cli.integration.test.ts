@@ -14,7 +14,7 @@
 
 import { describe, it, expect, afterEach, beforeAll } from 'vitest';
 import { execFile, spawn } from 'node:child_process';
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import { promisify } from 'node:util';
@@ -64,6 +64,26 @@ describe('quillkit test', () => {
 			/npm install --save-dev @quillmark\/wasm/
 		);
 	});
+
+	it(
+		'fails on a broken quillkit.config.js, saying what broke',
+		async () => {
+			// The arm `loadEngine`'s own suite cannot reach: a verb that exits non-zero, and
+			// the cause printed under the error.
+			const source = await temp.collection();
+			await writeFile(join(source, 'quillkit.config.js'), "throw new Error('config is broken');");
+
+			const failure = await run(process.execPath, [BIN, 'test'], { cwd: source }).then(
+				() => new Error('the gate ran to a verdict on a config that throws'),
+				(err: Error) => err
+			);
+
+			expect(failure.message).toContain('Cannot load quillkit.config.js');
+			expect(failure.message).toContain('config is broken');
+			expect(failure.message).not.toContain('pass  ');
+		},
+		RENDER_MS
+	);
 });
 
 describe('quillkit build', () => {

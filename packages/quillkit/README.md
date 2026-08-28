@@ -34,7 +34,7 @@ Every verb takes `--quiver <dir>`, the collection root where `Quiver.yaml` lives
 }
 ```
 
-It loads the source layout with `fromDir`, then compiles and renders every quill's example document, seeded from the blueprint's `example:` values. It finds the engine itself: a named `engine` export from `quillkit.config.js` at the collection root, else `@quillmark/wasm` from your own `node_modules`.
+It loads the source layout with `fromDir`, then compiles and renders every quill's example document, seeded from the blueprint's `example:` values. It finds the engine itself: a named `engine` export from `quillkit.config.js` at the collection root, else `@quillmark/wasm` from your own `node_modules`. A config that is there and throws fails the gate, naming the file and what threw: only a config you have not written falls through to the artifact.
 
 On vitest, jest or `node:test`, spawn the bin rather than rebuilding the loop against the library. The gate stays one implementation, and the case gates what CI gates:
 

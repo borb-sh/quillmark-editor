@@ -26,7 +26,12 @@ function flag(name: string): string | undefined {
 /** The collection every verb runs against, defaulting to the working directory. */
 const collection = (): string => resolve(flag('--quiver') ?? '.');
 
-const message = (err: unknown): string => (err instanceof Error ? err.message : String(err));
+/** An error's own words, with its cause's indented beneath: `collection.ts` names what was
+ *  loading and chains what threw. */
+function message(err: unknown): string {
+	if (!(err instanceof Error)) return String(err);
+	return err.cause == null ? err.message : `${err.message}\n  ${message(err.cause)}`;
+}
 
 // ---------------------------------------------------------------------------
 // test
