@@ -26,8 +26,8 @@ function flag(name: string): string | undefined {
 /** The collection every verb runs against, defaulting to the working directory. */
 const collection = (): string => resolve(flag('--quiver') ?? '.');
 
-/** An error's own words, and its cause's indented beneath: a load failure names the module
- *  it was loading, and the cause is what actually broke (`collection.ts`). */
+/** An error's own words, with its cause's indented beneath: `collection.ts` names what was
+ *  loading and chains what threw. */
 function message(err: unknown): string {
 	if (!(err instanceof Error)) return String(err);
 	return err.cause == null ? err.message : `${err.message}\n  ${message(err.cause)}`;

@@ -69,9 +69,7 @@ describe('quillkit test', () => {
 		'fails on a broken quillkit.config.js, saying what broke',
 		async () => {
 			// The arm `loadEngine`'s own suite cannot reach: a verb that exits non-zero, and
-			// a cause the bin prints under its error. Read as an absence, this config gates
-			// every quill through the artifact and prints a pass table for an engine the
-			// author did not write.
+			// the cause printed under the error.
 			const source = await temp.collection();
 			await writeFile(join(source, 'quillkit.config.js'), "throw new Error('config is broken');");
 

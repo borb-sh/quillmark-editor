@@ -1,12 +1,11 @@
 /**
- * `loadEngine`, over the ways a collection answers: what is absent names an install, what
- * is present and then fails says which module it was and carries what threw.
+ * `loadEngine` over the ways a collection answers: what is absent names an install, what is
+ * present and then fails names the module and carries what threw.
  *
- * The artifact here is a stub planted in the collection's own `node_modules`, which is
- * what keeps these milliseconds: `loadEngine` resolves, imports and inits whatever answers
- * to `@quillmark/wasm` from the collection, and the real one proves nothing about a
- * corrupt one. The author's end of it — a verb that exits non-zero and prints the cause —
- * is `cli.integration.test.ts`.
+ * The artifact is a stub planted in the collection's own `node_modules`. `loadEngine`
+ * resolves, imports and inits whatever answers to `@quillmark/wasm` there, and the real one
+ * proves nothing about a corrupt one. The author's end — a verb that exits non-zero with
+ * the cause printed under it — is `cli.integration.test.ts`.
  */
 
 import { describe, it, expect, afterEach } from 'vitest';
@@ -108,9 +107,7 @@ describe('a fault past absence', () => {
 	});
 
 	it('fails on a config whose own import is absent', async () => {
-		// The case no error can rule on: `ERR_MODULE_NOT_FOUND` is what a missing config
-		// raises and what a config raises over a specifier of its own, so presence is the
-		// filesystem's answer rather than the resolver's.
+		// The case no error can rule on: this raises `ERR_MODULE_NOT_FOUND` too.
 		const at = await planted(ARTIFACT);
 		await configure(at, "export { engine } from './engine.js';\n");
 		const err = await caught(loadEngine(at));

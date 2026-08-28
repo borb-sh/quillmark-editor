@@ -31,9 +31,9 @@ type Wasm = typeof import('@quillmark/wasm');
 const requireFrom = (collection: string): ReturnType<typeof createRequire> =>
 	createRequire(pathToFileURL(join(collection, 'package.json')).href);
 
-/** A path the resolver or the filesystem has already answered for, imported. What throws
- *  past that answer is a fault rather than an absence, so it names which module was being
- *  loaded and carries what threw as `cause`, which the bin prints beneath it. */
+/** A path the resolver or the filesystem has already answered for. What throws past that
+ *  answer is a fault rather than an absence, so it names what was loading and carries what
+ *  threw as `cause`. */
 async function loadFrom<T>(what: string, path: string): Promise<T> {
 	try {
 		return (await import(pathToFileURL(path).href)) as T;
@@ -65,12 +65,9 @@ export async function loadQuiverNode(collection: string): Promise<QuiverNode> {
  * **The core is instantiated here.** `new Engine()` is lazy, so the gate holds a live
  * instance before it renders rather than at whichever call first needs one.
  *
- * **The wasm loads before the config is read, and the order is load-bearing.** `init()`
- * is module-global, memoized and idempotent, so an engine the config builds out of this
- * same module rides the init run here. Reading the config first would leave the
- * documented extension point, `new Engine({ backends })`, un-inited to fail at its first
- * render — inside the gate's per-quill catch, which prints a setup fault as the author's
- * quill.
+ * **The wasm loads and inits before the config is read.** `init()` is module-global and
+ * memoized, so an engine the config builds out of that module rides this init
+ * (QUILLKIT §"Blocked on, looked at").
  */
 export async function loadEngine(collection: string): Promise<Engine> {
 	let resolved: string | undefined;
@@ -90,10 +87,9 @@ export async function loadEngine(collection: string): Promise<Engine> {
 		}
 	}
 
-	// Presence is the filesystem's answer, and a config that is there and throws fails the
-	// verb. No error can separate the two: `ERR_MODULE_NOT_FOUND` is equally what a config
-	// raises over a specifier of its own, and a broken config read as an absent one gates
-	// every quill through an engine the author did not write.
+	// Presence is the filesystem's answer: `ERR_MODULE_NOT_FOUND` is equally what an absent
+	// config raises and what a config raises over a specifier of its own, so no error can
+	// rule on which it is.
 	const config = join(collection, 'quillkit.config.js');
 	if (existsSync(config)) {
 		const { engine } = await loadFrom<{ engine?: Engine }>('quillkit.config.js', config);
