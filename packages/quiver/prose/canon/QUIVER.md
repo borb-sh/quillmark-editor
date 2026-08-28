@@ -73,6 +73,8 @@ Bundle and manifest names carry 32 hex chars; the width answers a chosen prefix 
 
 The ceiling is a constant rather than an option a consumer raises, because the check above is integrity and not provenance: what a budget answers is a build that packed something enormous, not an artifact chosen to be hostile, which is a thing to refuse by choosing the source. `packFiles` spends the same budget, so a quill over it is refused by the build that packs it, named, rather than by whatever reads the artifact later. Fonts sit outside it, being store entries the manifest names rather than bundle entries.
 
+**The budget is spent on the wire too.** Each fetch carries the ceiling for what it asked for: the unpack budget for a bundle, a smaller one for a font, smaller again for the pointer and the manifest. `HttpTransport` holds it — a `Content-Length` over it is refused before a byte is read, and a body that runs past it is cancelled mid-stream, `quiver_invalid` either way. Every other refusal above is a verdict on bytes that have all arrived: a digest is what the whole response hashes to, a budget what its zip declares. So without a ceiling at the socket, a response no reader would accept costs a browser tab before anything can say so. `FsBuiltTransport` and `MemoryTransport` ignore the number: a file is read at the size it is, and a held buffer is already held.
+
 What the addressing does not buy is a stale-pointer fallback: `build` replaces its output rather than adding to it, so a client pinned to a stale pointer gets 404s rather than a stale-but-working catalog. That costs nothing while an artifact and its clients deploy together; where they deploy independently, an append-only store with garbage collection is what buys it back.
 
 ## getQuill is the seam

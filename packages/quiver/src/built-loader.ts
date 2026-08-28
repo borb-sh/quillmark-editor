@@ -7,7 +7,7 @@
  */
 
 import { QuiverError } from './errors.js';
-import { unpackFiles } from './bundle.js';
+import { MAX_BUNDLE_BYTES, unpackFiles } from './bundle.js';
 import { isQuillName } from './ref.js';
 import { isCanonicalSemver, compareSemver } from './semver.js';
 import { NAME_DIGEST_LENGTH, sha256Hex } from './digest.js';
@@ -38,25 +38,43 @@ interface BuiltManifest {
  * (Node).
  */
 export interface BuiltTransport {
-	fetchBytes(relativePath: string, opts?: FetchOptions): Promise<Uint8Array>;
+	fetchBytes(relativePath: string, opts: FetchOptions): Promise<Uint8Array>;
 }
 
 /**
  * `revalidate` marks the one request that must not be answered from a cache:
  * `latest.json`, the only name in the artifact that is not content-addressed.
  * Everything else is safe to cache forever by construction.
+ *
+ * `maxBytes` is what the response may weigh, required because only the caller knows what
+ * it asked for: a pointer, a bundle and a font carry their own ceilings. A transport
+ * holding a stream refuses past it before the bytes are resident; one over a file or a
+ * held map ignores it.
  */
 export interface FetchOptions {
+	maxBytes: number;
 	revalidate?: boolean;
 }
 
 /**
- * Fetch, then check the bytes against the digest their name carries. That
- * check is what makes "content-addressed, safe to cache forever" a property
- * rather than a hope: it catches a corrupted CDN object, a partial sync, and a
- * name reused across releases. A mismatch is a transport failure (the bytes
- * that arrived are not the bytes asked for), so the caches that evict on error
- * let a retry succeed.
+ * The ceiling per path. A bundle's is the unpack budget itself (`bundle.ts`). The other
+ * two are their own: a font is a store entry rather than a bundle entry, and the pointer
+ * and the manifest are the small documents a catalog is read out of — the pointer being
+ * the one response in the artifact with no digest behind it.
+ */
+const MAX_DOCUMENT_BYTES = 8 * 1024 * 1024;
+const MAX_FONT_BYTES = 32 * 1024 * 1024;
+
+/**
+ * Fetch under `maxBytes`, then check the bytes against the digest their name
+ * carries. That check is what makes "content-addressed, safe to cache forever"
+ * a property rather than a hope: it catches a corrupted CDN object, a partial
+ * sync, and a name reused across releases. A mismatch is a transport failure
+ * (the bytes that arrived are not the bytes asked for), so the caches that
+ * evict on error let a retry succeed.
+ *
+ * The ceiling is the transport's to hold, because a digest is a verdict on
+ * bytes that have all arrived.
  *
  * Where no digest primitive exists (a page served over plain http, which is
  * not a secure context) the fetch passes through unchecked.
@@ -64,9 +82,10 @@ export interface FetchOptions {
 async function fetchVerified(
 	transport: BuiltTransport,
 	path: string,
-	expected: string
+	expected: string,
+	maxBytes: number
 ): Promise<Uint8Array> {
-	const bytes = await transport.fetchBytes(path);
+	const bytes = await transport.fetchBytes(path, { maxBytes });
 	const actual = await sha256Hex(bytes);
 	if (actual !== undefined && !actual.startsWith(expected)) {
 		throw new QuiverError(
@@ -127,7 +146,8 @@ class BuiltLoader implements QuiverLoader {
 		const zipBytes = await fetchVerified(
 			this.transport,
 			entry.bundle,
-			digestOfName(BUNDLE_FILENAME_RE, entry.bundle, 'bundle filename')
+			digestOfName(BUNDLE_FILENAME_RE, entry.bundle, 'bundle filename'),
+			MAX_BUNDLE_BYTES
 		);
 		const files = unpackFiles(zipBytes);
 
@@ -149,10 +169,12 @@ class BuiltLoader implements QuiverLoader {
 	private fetchFont(hash: string): Promise<Uint8Array> {
 		let promise = this.fontCache.get(hash);
 		if (!promise) {
-			promise = fetchVerified(this.transport, `store/${hash}`, hash).catch((err: unknown) => {
-				this.fontCache.delete(hash);
-				throw err;
-			});
+			promise = fetchVerified(this.transport, `store/${hash}`, hash, MAX_FONT_BYTES).catch(
+				(err: unknown) => {
+					this.fontCache.delete(hash);
+					throw err;
+				}
+			);
 			this.fontCache.set(hash, promise);
 		}
 		return promise;
@@ -361,7 +383,10 @@ export async function loadBuiltQuiver(transport: BuiltTransport): Promise<Quiver
 	// one fetch that must revalidate.
 	let pointerBytes: Uint8Array;
 	try {
-		pointerBytes = await transport.fetchBytes('latest.json', { revalidate: true });
+		pointerBytes = await transport.fetchBytes('latest.json', {
+			revalidate: true,
+			maxBytes: MAX_DOCUMENT_BYTES
+		});
 	} catch (err) {
 		if (err instanceof QuiverError) throw err;
 		throw new QuiverError(
@@ -380,7 +405,12 @@ export async function loadBuiltQuiver(transport: BuiltTransport): Promise<Quiver
 
 	let manifestBytes: Uint8Array;
 	try {
-		manifestBytes = await fetchVerified(transport, manifestFileName, manifestDigest);
+		manifestBytes = await fetchVerified(
+			transport,
+			manifestFileName,
+			manifestDigest,
+			MAX_DOCUMENT_BYTES
+		);
 	} catch (err) {
 		if (err instanceof QuiverError) throw err;
 		throw new QuiverError(
