@@ -8,17 +8,14 @@
 import { QuiverError } from '../errors.js';
 import type { BuiltTransport, FetchOptions } from '../built-loader.js';
 
-/** Over the ceiling is `quiver_invalid`, not `transport_error`: a retry fetches the
- *  same oversized response, so there is nothing for an evicting cache to fix. */
+/** Over the ceiling is `quiver_invalid`, not `transport_error`: a retry fetches the same
+ *  response, so there is nothing for an evicting cache to fix. */
 function oversized(url: string, max: number, says: string): QuiverError {
 	return new QuiverError('quiver_invalid', `"${url}" ${says} the ${max} bytes a fetch may read`);
 }
 
-/**
- * The body, chunk by chunk, refused the moment the running total passes the ceiling.
- * Cancelling the reader terminates the fetch, so the rest of an oversized response is
- * never pulled off the socket.
- */
+/** The body chunk by chunk, refused past the ceiling. Cancelling the reader terminates
+ *  the fetch, so nothing more of a refused response is pulled off the socket. */
 async function readCapped(
 	body: ReadableStream<Uint8Array>,
 	url: string,
@@ -79,21 +76,18 @@ export class HttpTransport implements BuiltTransport {
 			throw new QuiverError('transport_error', `HTTP ${response.status} fetching "${url}"`);
 		}
 
-		// A fast reject and nothing more: `Content-Length` states the encoded length, so
-		// under `Content-Encoding` it under-reports and can only accept early, and a
-		// missing or unparseable one is NaN, which accepts everything. Either way the
-		// running total below is what holds the ceiling.
+		// A fast reject; the running total below is what holds the ceiling. `Content-Length`
+		// is the encoded length, so under `Content-Encoding` it under-reports, and a missing
+		// or unparseable one is NaN — both can only accept early.
 		const declared = Number(response.headers.get('content-length'));
 		if (declared > opts.maxBytes) {
 			throw oversized(url, opts.maxBytes, `states ${declared} bytes, over`);
 		}
 
 		try {
-			// A host that hands back no stream is read whole and measured after — the
-			// degraded mode `digest.ts` takes where a page has no `crypto.subtle`. It
-			// still refuses what would reach an unpack budget or a digest check, and
-			// refusing outright would break hosts that work today against a hazard
-			// they do not have.
+			// A host that hands back no stream is measured after the fact rather than
+			// refused: the degraded check still bounds what reaches the unpack budget,
+			// and refusing outright would cost hosts that work today.
 			if (response.body === null) {
 				const buffer = await response.arrayBuffer();
 				if (buffer.byteLength > opts.maxBytes) throw oversized(url, opts.maxBytes, 'is over');

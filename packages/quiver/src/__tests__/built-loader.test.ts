@@ -297,8 +297,7 @@ describe('loadBuiltQuiver — the pointer revalidates', () => {
 });
 
 describe('loadBuiltQuiver — every fetch carries a ceiling', () => {
-	// The transport is the only layer with a stream to stop, and it is handed a
-	// number per path rather than one for the artifact: a pointer, a font and a
+	// One ceiling per path rather than one for the artifact: a pointer, a font and a
 	// bundle are three different sizes of thing.
 	it("names one per path, and a bundle's is what it unpacks to", async () => {
 		const font = new Uint8Array([1, 2, 3]);

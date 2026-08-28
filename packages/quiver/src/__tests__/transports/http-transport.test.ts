@@ -18,7 +18,7 @@ function mockErrorResponse(status: number): Response {
 	return new Response(null, { status });
 }
 
-/** A ceiling wide enough for every fixture below that is not about the ceiling. */
+/** A ceiling wide enough for every fixture that is not about the ceiling. */
 const CAP = { maxBytes: 1024 };
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -158,9 +158,8 @@ describe('HttpTransport — revalidation', () => {
 });
 
 describe('HttpTransport — the ceiling', () => {
-	// The one layer with a stream to stop. A digest mismatch and an over-budget
-	// bundle are both verdicts reached by holding the whole response, so what
-	// bounds a browser tab is refused here or nowhere.
+	// The one layer with a stream to stop: a digest mismatch and an over-budget bundle
+	// are both verdicts reached by holding the whole response.
 	let originalFetch: typeof globalThis.fetch | undefined;
 
 	beforeEach(() => {
@@ -205,15 +204,14 @@ describe('HttpTransport — the ceiling', () => {
 		await expect(transport.fetchBytes('store/abc', { maxBytes: 256 })).rejects.toThrow(
 			expect.objectContaining({ code: 'quiver_invalid' })
 		);
-		// The body never ends, so the throw and the cancel are the whole proof: the
-		// read stopped at the ceiling rather than at the end of the response.
+		// The body never ends, so the throw and the cancel are the proof: the read
+		// stopped at the ceiling, not at the end of the response.
 		expect(source.cancelled).toBe(true);
 	});
 
 	it('refuses a stated length over the ceiling without reading the body', async () => {
-		// A body that fails on its first read. The verdict comes off the header, so
-		// that failure is never reached and the code says so: over the ceiling, not
-		// a network fault.
+		// A body that fails on its first read: `quiver_invalid` rather than a network
+		// fault is the proof the header refused before anything touched it.
 		globalThis.fetch = makeFetchMock(
 			async () =>
 				new Response(

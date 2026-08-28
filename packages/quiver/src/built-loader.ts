@@ -46,11 +46,10 @@ export interface BuiltTransport {
  * `latest.json`, the only name in the artifact that is not content-addressed.
  * Everything else is safe to cache forever by construction.
  *
- * `maxBytes` is what the response may weigh, and it is required because the caller is
- * the one that knows: the loader asked for a pointer, a bundle or a font, and each has
- * its own number. A transport reading a stream refuses past it before the bytes are
- * resident; a transport over a file or a held map ignores it, having no stream and no
- * hazard.
+ * `maxBytes` is what the response may weigh, required because only the caller knows what
+ * it asked for: a pointer, a bundle and a font carry their own ceilings. A transport
+ * holding a stream refuses past it before the bytes are resident; one over a file or a
+ * held map ignores it.
  */
 export interface FetchOptions {
 	maxBytes: number;
@@ -58,13 +57,10 @@ export interface FetchOptions {
 }
 
 /**
- * The ceiling per path. A bundle's is `bundle.ts`'s unpack budget, which bounds the wire
- * too. The other two are their own: a font is not a bundle entry, and the pointer and
- * the manifest are the small documents the catalog is read out of — the pointer being the
- * one response in the artifact with no digest behind it.
- *
- * Held here rather than at the transport because a cap is a statement about what was
- * asked for, and the transport only knows a URL.
+ * The ceiling per path. A bundle's is the unpack budget itself (`bundle.ts`). The other
+ * two are their own: a font is a store entry rather than a bundle entry, and the pointer
+ * and the manifest are the small documents a catalog is read out of — the pointer being
+ * the one response in the artifact with no digest behind it.
  */
 const MAX_DOCUMENT_BYTES = 8 * 1024 * 1024;
 const MAX_FONT_BYTES = 32 * 1024 * 1024;
@@ -77,9 +73,8 @@ const MAX_FONT_BYTES = 32 * 1024 * 1024;
  * (the bytes that arrived are not the bytes asked for), so the caches that
  * evict on error let a retry succeed.
  *
- * The ceiling goes to the transport rather than being spent here, because a
- * digest is a verdict on bytes that have all arrived: naming it after the fetch
- * is naming it once the response is already resident.
+ * The ceiling is the transport's to hold, because a digest is a verdict on
+ * bytes that have all arrived.
  *
  * Where no digest primitive exists (a page served over plain http, which is
  * not a secure context) the fetch passes through unchecked.
