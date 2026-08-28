@@ -7,7 +7,17 @@ import { EditorState, TextSelection } from 'prosemirror-state';
 import type { Transaction } from 'prosemirror-state';
 import type { Node as PMNode } from 'prosemirror-model';
 import { baseKeymap, joinTextblockBackward } from 'prosemirror-commands';
-import { blockSchema, bodyKeymap, contentEdit, decode, lower, pmToContent } from '$lib/core/codec';
+import {
+	blockSchema,
+	bodyKeymap,
+	buildLineIndex,
+	contentEdit,
+	decode,
+	lower,
+	pmToContent,
+	pmToUsv,
+	usvToPM
+} from '$lib/core/codec';
 import type { Content, TableProps } from '@quillmark/wasm';
 import { freshDoc, normalize, contentEqual, md, textblocks } from './_util.js';
 
@@ -34,6 +44,14 @@ function atHead(state: EditorState, index: number): EditorState {
 interface AnchorOpts {
 	oldAnchors?: { id: string; pos: number }[];
 	newAnchors?: { id: string; pos: number }[];
+}
+
+/** The stored position of the identity anchor `id`. */
+function anchorAt(stored: Content, id: string): number | undefined {
+	const m = stored.marks.find(
+		(mark) => mark.type === 'anchor' && (mark as { id: string }).id === id
+	);
+	return m?.start;
 }
 
 /** Install `rt`, build a PM tr, lower+apply, and assert the store matches PM. */
@@ -283,6 +301,73 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		const anchor = body.marks.find((m) => m.type === 'anchor') as { id: string } | undefined;
 		expect(anchor?.id).toBe('c1');
 	});
+
+	// The cases above all edit *before* the anchor, where both associativities agree.
+	// At the anchor's own position they diverge, and that is where an anchor sits: it
+	// is a point pinned to a boundary.
+	describe('an insertion at the anchor’s own position', () => {
+		/** The anchor's position as the field's plugin holds it: PM-mapped through the
+		 *  transaction with `bias`, read back in USV. */
+		function projected(oldDoc: PMNode, tr: Transaction, pos: number, bias: 1 | -1): number {
+			const pm = usvToPM(buildLineIndex(oldDoc), pos);
+			return pmToUsv(buildLineIndex(tr.doc), tr.mapping.map(pm, bias));
+		}
+
+		/** Lower an edit against a held anchor and apply it, with the post-edit anchor
+		 *  the plugin's `bias` produces. Returns where the store put it, against where
+		 *  the projection did. */
+		function commit(rt: Content, pos: number, bias: 1 | -1, mkTr: (s: EditorState) => Transaction) {
+			const doc = freshDoc();
+			doc.overwrite({}, rt);
+			const oldRt = doc.main.body;
+			const oldDoc = decode(oldRt, blockSchema);
+			const tr = mkTr(EditorState.create({ doc: oldDoc }));
+			const after = projected(oldDoc, tr, pos, bias);
+			const bundle = lower(contentEdit(oldRt, pmToContent(tr.doc)), {
+				oldAnchors: [{ id: 'a1', pos }],
+				newAnchors: [{ id: 'a1', pos: after }]
+			});
+			doc.applyChange({}, bundle);
+			return { stored: anchorAt(doc.main.body, 'a1'), projected: after, bundle };
+		}
+
+		/** The inline island entry an image projects: a slot the island channel places. */
+		const imageEntry = () => ({ ...md('![a](u)').islands[0], id: 'isl-9' });
+
+		// Which bias the plugin maps with is `field.ts`'s to choose; whichever it picks,
+		// the store has to land where the projection put it. `lower` predicts the
+		// engine's own rebase to decide whether an op is needed at all, so a prediction
+		// that disagrees with the projection emits nothing and the two drift apart with
+		// no op to reconcile them.
+		for (const bias of [-1, 1] as const) {
+			it(`the delta channel lands the store where the projection put it (bias ${bias})`, () => {
+				const { stored, projected } = commit(anchorRt, 6, bias, (s) =>
+					s.tr.insertText('X', usvToPM(buildLineIndex(s.doc), 6))
+				);
+				expect(stored).toBe(projected);
+			});
+
+			it(`the island channel lands the store where the projection put it (bias ${bias})`, () => {
+				const { stored, projected, bundle } = commit(anchorRt, 6, bias, (s) =>
+					s.tr.insert(
+						usvToPM(buildLineIndex(s.doc), 6),
+						blockSchema.nodes.island_inline.create(imageEntry())
+					)
+				);
+				expect(bundle.islandOps, 'the slot rides the island channel').toMatchObject([
+					{ op: 'insert', at: 6 }
+				]);
+				expect(stored).toBe(projected);
+			});
+		}
+
+		it('agreement is silent: a projection matching the engine’s rebase emits no anchor op', () => {
+			const { bundle } = commit(anchorRt, 6, -1, (s) =>
+				s.tr.insertText('X', usvToPM(buildLineIndex(s.doc), 6))
+			);
+			expect(bundle.markOps ?? []).toEqual([]);
+		});
+	});
 });
 
 describe('the island channel — an island edit lowers op-wise', () => {
@@ -325,13 +410,6 @@ describe('the island channel — an island edit lowers op-wise', () => {
 	}
 
 	/** The stored anchor `id`'s position, or `undefined` if it is gone. */
-	function anchorAt(stored: Content, id: string): number | undefined {
-		const m = stored.marks.find(
-			(mark) => mark.type === 'anchor' && (mark as { id: string }).id === id
-		);
-		return m?.start;
-	}
-
 	it('a cell edit lowers to `set` and reaches the store', () => {
 		const { doc, bundle } = lowerEdit(md(TABLE_MD), (s) => retypeCell(s, 'HEAD'));
 		// The text is untouched: an island edit is not a splice.

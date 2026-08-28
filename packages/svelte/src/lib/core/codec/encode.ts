@@ -601,13 +601,13 @@ function diffMarks(
 	}
 
 	// Anchors: diff the decoration sets by id (positions already in final coords).
+	// An anchor is a point, so it rebases `before` through both channels, which is
+	// what `applyChange` does to a zero-width mark (verified). A rebase that read
+	// `after` through the delta would agree with the plugin's own PM mapping at an
+	// insertion point and disagree with the store, so the diff would emit nothing
+	// and the two would drift a character apart with no op to reconcile them.
 	if (opts.oldAnchors || opts.newAnchors) {
-		const oldA = new Map(
-			(opts.oldAnchors ?? []).map((a) => [
-				a.id,
-				shiftPastIslands(delta ? mapPos(delta, a.pos, 'after') : a.pos, insertedAt, 'before')
-			])
-		);
+		const oldA = new Map((opts.oldAnchors ?? []).map((a) => [a.id, rebase(a.pos, 'before')]));
 		const newA = new Map((opts.newAnchors ?? []).map((a) => [a.id, a.pos]));
 		for (const [id, pos] of newA) {
 			if (!oldA.has(id) || oldA.get(id) !== pos) {
