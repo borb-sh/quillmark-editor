@@ -3,6 +3,7 @@
 // scripts cannot disagree about the answer.
 
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -21,6 +22,24 @@ export function packages() {
 				throw new Error(`packages/${dir}: no package.json — packages/ holds workspace packages`);
 			return { dir, at, json: JSON.parse(readFileSync(join(at, 'package.json'), 'utf8')) };
 		});
+}
+
+/** The installed `@quillmark/wasm`'s version, off its own manifest. The artifact
+ *  publishes one entry and no `./package.json`, so the manifest is reached by walking
+ *  up from the resolved entry to the first one that names the package — walked rather
+ *  than a fixed `../`, so an entry a level deeper is found rather than answered for by
+ *  whatever manifest sits above it. */
+export function wasmVersion(root = ROOT) {
+	const entry = createRequire(join(root, 'package.json')).resolve('@quillmark/wasm');
+	for (let at = dirname(entry), up = dirname(at); ; at = up, up = dirname(at)) {
+		const manifest = join(at, 'package.json');
+		if (existsSync(manifest)) {
+			const json = JSON.parse(readFileSync(manifest, 'utf8'));
+			if (json.name === '@quillmark/wasm') return json.version;
+		}
+		if (up === at) break;
+	}
+	throw new Error(`@quillmark/wasm resolved to "${entry}" with no manifest of its own above it`);
 }
 
 /** Every file under `at` matching `ext`, sorted: `skip` names directories by path, `names`

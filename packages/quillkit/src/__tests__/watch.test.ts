@@ -5,8 +5,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { within } from '../paths.js';
-import { serialize, settle } from '../watch.js';
+import { serialize, settle, watchCollection } from '../watch.js';
 
 describe('the watch filter', () => {
 	it('the output a pack writes is not a source change', () => {
@@ -29,6 +32,47 @@ describe('settle', () => {
 		for (let i = 0; i < 5; i++) fire();
 		await new Promise((ok) => setTimeout(ok, 40));
 		expect(calls).toBe(1);
+	});
+
+	it('cancels the call still waiting', async () => {
+		// A teardown that only unregisters leaves the scheduled half to run — in
+		// `studio` a repack into a tree the caller is done with — and the timer holds
+		// the process open until it does.
+		let calls = 0;
+		const fire = settle(10, () => calls++);
+		fire();
+		fire.cancel();
+		await new Promise((ok) => setTimeout(ok, 40));
+		expect(calls).toBe(0);
+	});
+
+	it('takes a burst again after a cancel', async () => {
+		let calls = 0;
+		const fire = settle(10, () => calls++);
+		fire();
+		fire.cancel();
+		fire();
+		await new Promise((ok) => setTimeout(ok, 40));
+		expect(calls).toBe(1);
+	});
+});
+
+describe('watchCollection', () => {
+	it('close() ends the scheduled repack, not just the registration', async () => {
+		const at = await mkdtemp(join(tmpdir(), 'quillkit-watch-'));
+		try {
+			let packs = 0;
+			const watcher = watchCollection(at, [], () => packs++);
+			await writeFile(join(at, 'Quiver.yaml'), 'name: w\n');
+			// Inside the settle window, which is the whole of what `close` has to answer
+			// for: the event has landed and the repack has not.
+			await new Promise((ok) => setTimeout(ok, 10));
+			watcher.close();
+			await new Promise((ok) => setTimeout(ok, 200));
+			expect(packs).toBe(0);
+		} finally {
+			await rm(at, { recursive: true, force: true });
+		}
 	});
 });
 

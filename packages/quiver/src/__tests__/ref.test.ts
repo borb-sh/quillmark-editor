@@ -7,42 +7,36 @@ describe('parseQuillRef — valid refs', () => {
 		const result = parseQuillRef('specimen');
 		expect(result.name).toBe('specimen');
 		expect(result.selector).toBeUndefined();
-		expect(result.selectorDepth).toBeUndefined();
 	});
 
 	it('parses name@major: specimen@1', () => {
 		const result = parseQuillRef('specimen@1');
 		expect(result.name).toBe('specimen');
 		expect(result.selector).toBe('1');
-		expect(result.selectorDepth).toBe(1);
 	});
 
 	it('parses name@major.minor: specimen@1.2', () => {
 		const result = parseQuillRef('specimen@1.2');
 		expect(result.name).toBe('specimen');
 		expect(result.selector).toBe('1.2');
-		expect(result.selectorDepth).toBe(2);
 	});
 
 	it('parses name@x.y.z: specimen@1.2.3', () => {
 		const result = parseQuillRef('specimen@1.2.3');
 		expect(result.name).toBe('specimen');
 		expect(result.selector).toBe('1.2.3');
-		expect(result.selectorDepth).toBe(3);
 	});
 
 	it('parses hyphenated and mixed name: a-b_c@1.0.0', () => {
 		const result = parseQuillRef('a-b_c@1.0.0');
 		expect(result.name).toBe('a-b_c');
 		expect(result.selector).toBe('1.0.0');
-		expect(result.selectorDepth).toBe(3);
 	});
 
 	it('parses name with uppercase letters', () => {
 		const result = parseQuillRef('MyQuill@2.0.1');
 		expect(result.name).toBe('MyQuill');
 		expect(result.selector).toBe('2.0.1');
-		expect(result.selectorDepth).toBe(3);
 	});
 
 	it('parses name with digits', () => {

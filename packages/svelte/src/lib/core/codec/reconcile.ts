@@ -6,6 +6,13 @@
 // `revise`), gated by canonical-content equality scoped to the leaf's addr: the
 // analog of web-app's whole-document `Document.equals`, narrowed to one field.
 // Caret continuity across the field's own edits is the PM `StepMap`, not this.
+//
+// One seam, two questions, four verbs. "Is this the same value" is `contentEqual` and
+// `valueEqual`, here; "what does this value group as" is `kindKey` (`encode.ts`) and
+// `markKey` (`marks.ts`), which mint a key rather than answer. All four canonicalize
+// for the one reason: the sides are a WASM read and a JS projection, and neither
+// promises the other's key order. So nothing crossing this seam compares with
+// `JSON.stringify`, and a new comparison is one of these four rather than a fifth.
 import type { Content } from '@quillmark/wasm';
 
 /** Tracks the last content the codec knows for a leaf, to distinguish foreign edits. */

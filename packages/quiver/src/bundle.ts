@@ -92,15 +92,10 @@ export function packFiles(files: Record<string, Uint8Array>): Uint8Array {
  */
 export function unpackFiles(data: Uint8Array): Record<string, Uint8Array> {
 	const spend = bundleBudget();
-	const raw = unzipSync(data, {
+	return unzipSync(data, {
 		filter: ({ name, originalSize }) => {
 			spend(name, originalSize);
 			return true;
 		}
 	});
-	const result: Record<string, Uint8Array> = {};
-	for (const [key, value] of Object.entries(raw)) {
-		result[key] = value;
-	}
-	return result;
 }

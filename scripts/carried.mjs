@@ -16,10 +16,9 @@
 // is open.
 
 import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { ROOT } from './workspace.mjs';
+import { ROOT, wasmVersion } from './workspace.mjs';
 
 /** The siblings compiled into the client, by workspace directory. `@quillmark/wasm` is not
  *  one of them: it is external, and read off its own resolved manifest. */
@@ -36,11 +35,8 @@ export function carried(root = ROOT) {
 	for (const { dir, name } of SIBLINGS)
 		out[name] = versionAt(join(root, 'packages', dir, 'package.json'));
 
-	// The resolved copy rather than a declared range: the bundle takes one. The package
-	// exports only `.`, so the manifest is reached beside the entry rather than as a
-	// subpath.
-	const entry = createRequire(join(root, 'package.json')).resolve('@quillmark/wasm');
-	out['@quillmark/wasm'] = versionAt(new URL('../package.json', pathToFileURL(entry)));
+	// The resolved copy rather than a declared range: the bundle takes one.
+	out['@quillmark/wasm'] = wasmVersion(root);
 	return out;
 }
 

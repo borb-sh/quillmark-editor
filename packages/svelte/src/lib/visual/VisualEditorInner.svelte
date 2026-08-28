@@ -154,8 +154,11 @@
 		return cardIds.indexOf(id);
 	}
 	/** The inverse, for the two signals that arrive as an address and nothing else (a
-	 * focus, a prose commit), off the same array the mutation boundary reads. */
-	function cardIdOf(addr: Addr): CardId {
+	 * focus, a prose commit), off the same array the mutation boundary reads.
+	 * `undefined` for an address outside the live card array, as {@link pathFor}: the
+	 * key is a host's only handle on a card, so a stale one is dropped rather than
+	 * reported. */
+	function cardIdOf(addr: Addr): CardId | undefined {
 		return addr.card == null ? 'main' : cardIds[addr.card];
 	}
 
@@ -214,7 +217,9 @@
 		lastCaretField = undefined;
 		lastCaretPos = undefined;
 		const field = pathFor(plain);
-		if (field != null) onActiveLeafChange?.({ field, cardId: activeCardId });
+		// Both halves or neither: a stale addr names no path and no live card.
+		if (field != null && activeCardId != null)
+			onActiveLeafChange?.({ field, cardId: activeCardId });
 	}
 	/** No card kinds are read for a main address; the shared empty stands in so the
 	 *  common case allocates nothing. */
@@ -261,7 +266,9 @@
 	 *  bump `revision` (see {@link bump}). */
 	function proseChanged(addr: Addr): void {
 		const plain = normalize(addr);
-		onChange?.({ source: 'prose', cardId: cardIdOf(plain), path: pathFor(plain) });
+		const cardId = cardIdOf(plain);
+		if (cardId == null) return;
+		onChange?.({ source: 'prose', cardId, path: pathFor(plain) });
 	}
 
 	// ── Commit routing ──────────────────────────────────────────────────────────
@@ -423,10 +430,11 @@
 		// Ids are never reused, so an entry keyed to the gone card is unreachable rather
 		// than mis-attributed to whichever card takes this position: it needs dropping
 		// because nothing else will ever clear it.
-		if ([...commitErrors.keys()].some((k) => k.startsWith(`${id}:`)))
-			editCommitErrors((m) => {
-				for (const k of [...m.keys()]) if (k.startsWith(`${id}:`)) m.delete(k);
-			});
+		const prefix = `${id}:`;
+		const stale = [...commitErrors.keys()].filter((k) => k.startsWith(prefix));
+		// Guarded: `editCommitErrors` clones the map, and a removal matching nothing has
+		// nothing to re-derive.
+		if (stale.length) editCommitErrors((m) => stale.forEach((k) => m.delete(k)));
 		// No addr: the removed card has none left and every survivor's shifted. The
 		// stack changed, not a leaf, and the id is the only handle the removal leaves.
 		bump('structure', id);
