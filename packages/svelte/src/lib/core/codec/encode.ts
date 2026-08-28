@@ -30,7 +30,7 @@ import { core } from '../lifecycle.js';
 import { codePoints, usvLength } from './decode.js';
 import { ISLAND_SLOT, islandEntryFromNode, type IslandNodeAttrs } from './islands.js';
 import { contentDescriptorFromPM, descriptorOf, markKey } from './marks.js';
-import { valueEqual } from './reconcile.js';
+import { canonicalJson, valueEqual } from './reconcile.js';
 
 // ── Position-map runs (consumed by positions.ts) ────────────────────────────
 // A run is one segment of exact PM↔USV correspondence, in document order.
@@ -442,9 +442,10 @@ function lineMetaEqual(a: ContentLine[], b: ContentLine[]): boolean {
 }
 
 /** A line kind's comparison key: key-order-insensitive, because the two sides come
- * from different producers (a WASM read and this scan). */
+ * from different producers (a WASM read and this scan). Sorted at every depth, so an
+ * unknown kind's `attrs` bag is keyed by value like the rest of it. */
 function kindKey(l: ContentLine): string {
-	return JSON.stringify(Object.entries(kindPart(l)).sort(([x], [y]) => (x < y ? -1 : 1)));
+	return canonicalJson(kindPart(l));
 }
 
 // ── Island channel ──────────────────────────────────────────────────────────

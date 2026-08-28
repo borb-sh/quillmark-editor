@@ -84,3 +84,22 @@ function deepEqual(a: unknown, b: unknown): boolean {
 	}
 	return false;
 }
+
+/**
+ * A value's canonical string: key-sorted at every depth, so two spellings of one
+ * value mint one key. What the two key-minting verbs (`markKey`, `kindKey`) stringify
+ * with, for the reason the two equalities above canonicalize — a bare
+ * `JSON.stringify` keys a WASM read and a JS projection apart on key order alone.
+ */
+export function canonicalJson(value: unknown): string {
+	return JSON.stringify(canonical(value));
+}
+
+function canonical(v: unknown): unknown {
+	if (Array.isArray(v)) return v.map(canonical);
+	if (typeof v !== 'object' || v === null) return v;
+	const o = v as Record<string, unknown>;
+	const out: Record<string, unknown> = {};
+	for (const k of Object.keys(o).sort()) out[k] = canonical(o[k]);
+	return out;
+}

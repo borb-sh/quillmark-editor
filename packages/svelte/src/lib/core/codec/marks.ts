@@ -8,9 +8,18 @@
 import type { Mark, Schema } from 'prosemirror-model';
 import type { ContentMark } from '@quillmark/wasm';
 import { isAnchorMark, isLinkMark } from '@quillmark/wasm';
+import { canonicalJson } from './reconcile.js';
 
 /** Content formatting types that map 1:1 to a same-named PM mark. */
 const PLAIN_FORMATTING = new Set(['strong', 'underline', 'strike', 'code']);
+
+/** Whether `m` is an unknown mark: the open set `pmMarkFromContent` falls through to,
+ *  and the one class carrying `attrs`. A type name, not the presence of the key: the
+ *  boundary spells an empty bag `null` and an older one omitted it, and a descriptor
+ *  that read the key would put those two spellings of one mark in two diff groups. */
+function isUnknownMark(m: ContentMark): boolean {
+	return !isAnchorMark(m) && !isLinkMark(m) && m.type !== 'emph' && !PLAIN_FORMATTING.has(m.type);
+}
 
 /** A PM mark from a content formatting/unknown mark, or `null` for an anchor. */
 export function pmMarkFromContent(schema: Schema, m: ContentMark): Mark | null {
@@ -47,7 +56,7 @@ export function contentDescriptorFromPM(mark: Mark): Record<string, unknown> {
  */
 export function descriptorOf(m: ContentMark): Record<string, unknown> {
 	if (isLinkMark(m)) return { type: 'link', url: m.url };
-	if ('attrs' in m && !isAnchorMark(m)) return { type: m.type, attrs: m.attrs };
+	if (isUnknownMark(m)) return { type: m.type, attrs: (m as { attrs?: unknown }).attrs ?? null };
 	return { type: m.type };
 }
 
@@ -60,7 +69,7 @@ export function descriptorOf(m: ContentMark): Record<string, unknown> {
 export function markKey(descriptor: Record<string, unknown>): string {
 	const type = descriptor.type as string;
 	if (type === 'link') return `link\u0000${String(descriptor.url)}`;
-	if (descriptor.attrs !== undefined) return `${type}\u0000${JSON.stringify(descriptor.attrs)}`;
+	if (descriptor.attrs !== undefined) return `${type}\u0000${canonicalJson(descriptor.attrs)}`;
 	return type;
 }
 

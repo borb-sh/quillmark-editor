@@ -18,7 +18,13 @@ import {
 	pmToUsv,
 	usvToPM
 } from '$lib/core/codec';
-import type { Content, TableProps } from '@quillmark/wasm';
+import {
+	contentDescriptorFromPM,
+	descriptorOf,
+	markKey,
+	pmMarkFromContent
+} from '$lib/core/codec/marks.js';
+import type { Content, ContentMark, TableProps } from '@quillmark/wasm';
 import { freshDoc, normalize, contentEqual, md, textblocks } from './_util.js';
 
 /** The transaction one key press produces, through the leaf's chain falling through
@@ -202,6 +208,43 @@ describe('unknown mark round-trip (verbatim)', () => {
 		const u = stored.marks.find((m) => m.type === 'sub') as { attrs: unknown } | undefined;
 		expect(u).toBeTruthy();
 		expect(u!.attrs).toEqual({ x: 1 });
+	});
+
+	// The mark diff groups a WASM read against a PM projection with one key. The two
+	// descriptors are produced by different functions, so a mark that keys differently
+	// on the two sides lands in neither group: `lower` then emits a full-range `remove`
+	// and a full-range `add` for a mark nothing touched, on every keystroke.
+	describe('both descriptor producers key one mark alike', () => {
+		const mark = (m: Record<string, unknown>) => ({ start: 0, end: 3, ...m }) as never;
+		const cases: Record<string, ContentMark> = {
+			strong: mark({ type: 'strong' }),
+			emph: mark({ type: 'emph' }),
+			code: mark({ type: 'code' }),
+			link: mark({ type: 'link', url: 'http://x' }),
+			'unknown with attrs': mark({ type: 'sub', attrs: { x: 1 } }),
+			'unknown with null attrs': mark({ type: 'sub', attrs: null }),
+			'unknown with no attrs key': mark({ type: 'sub' })
+		};
+
+		for (const [name, m] of Object.entries(cases)) {
+			it(name, () => {
+				const pm = pmMarkFromContent(blockSchema, m);
+				expect(pm, 'every case here projects to a PM mark').not.toBeNull();
+				expect(markKey(contentDescriptorFromPM(pm!))).toBe(markKey(descriptorOf(m)));
+			});
+		}
+
+		it('an attrs bag keys by value, not by key order', () => {
+			expect(markKey(descriptorOf(mark({ type: 'sub', attrs: { a: 1, b: { c: 2, d: 3 } } })))).toBe(
+				markKey(descriptorOf(mark({ type: 'sub', attrs: { b: { d: 3, c: 2 }, a: 1 } })))
+			);
+		});
+
+		it('different attrs stay different families', () => {
+			expect(markKey(descriptorOf(mark({ type: 'sub', attrs: { x: 1 } })))).not.toBe(
+				markKey(descriptorOf(mark({ type: 'sub', attrs: { x: 2 } })))
+			);
+		});
 	});
 });
 
