@@ -116,7 +116,7 @@ A throw is unwrapped rather than reported as one line: a `QuillmarkError` carrie
 
 **A diagnostic is shown where it is about, and nowhere else.** There is no list. An address is written in one of two spaces, and each has a surface: `path` is the document's, and the editor routes a diagnostic to its control by it; `location` is the quill's source — a file, a line and a column, which a compile failure carries and nothing the schema says does — and the strip over the paint names it, which is what an author opens their other editor at.
 
-What that costs is the third shape. A diagnostic carrying neither address reaches nothing, and studio does not show it. A quill emitting one has a problem worth knowing about, and studio is no longer where it is found; `quillkit test` is blocked on and is where a quill's own faults are answered for.
+What that costs is the third shape. A diagnostic carrying neither address reaches nothing, and studio does not show it. A quill emitting one has a problem worth knowing about, and studio is not where it is found; `quillkit test` is blocked on and is where a quill's own faults are answered for.
 
 **A document that will not compile is a state of the paint.** The session is transactional, so the last good paint stays on screen and stops answering the document. A failed **open** is the same state with nothing under it, and takes the same register: the failure at the surface it is about, carrying the place to open. The paint stays whole underneath where there is one, being the only evidence of what the plate did before it stopped compiling, and the strip is laid over rather than stacked above, so breaking a plate and fixing it do not resize what is being judged.
 
