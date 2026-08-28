@@ -18,6 +18,9 @@ function mockErrorResponse(status: number): Response {
 	return new Response(null, { status });
 }
 
+/** A ceiling wide enough for every fixture below that is not about the ceiling. */
+const CAP = { maxBytes: 1024 };
+
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('HttpTransport.fetchBytes', () => {
@@ -46,7 +49,7 @@ describe('HttpTransport.fetchBytes', () => {
 		});
 
 		const transport = new HttpTransport('https://cdn.example.com/quivers/my/');
-		const bytes = await transport.fetchBytes('latest.json');
+		const bytes = await transport.fetchBytes('latest.json', CAP);
 
 		expect(bytes).toEqual(expected);
 		expect(capturedUrls).toEqual(['https://cdn.example.com/quivers/my/latest.json']);
@@ -56,7 +59,7 @@ describe('HttpTransport.fetchBytes', () => {
 		globalThis.fetch = makeFetchMock(async () => mockErrorResponse(404));
 
 		const transport = new HttpTransport('https://cdn.example.com/quivers/');
-		await expect(transport.fetchBytes('missing.json')).rejects.toThrow(
+		await expect(transport.fetchBytes('missing.json', CAP)).rejects.toThrow(
 			expect.objectContaining({ code: 'transport_error' })
 		);
 	});
@@ -69,7 +72,7 @@ describe('HttpTransport.fetchBytes', () => {
 		const transport = new HttpTransport('https://cdn.example.com/quivers/');
 		let thrown: unknown;
 		try {
-			await transport.fetchBytes('latest.json');
+			await transport.fetchBytes('latest.json', CAP);
 		} catch (e) {
 			thrown = e;
 		}
@@ -88,7 +91,7 @@ describe('HttpTransport.fetchBytes', () => {
 			});
 
 			const transport = new HttpTransport('https://cdn.example.com/base/');
-			await transport.fetchBytes('store/abc');
+			await transport.fetchBytes('store/abc', CAP);
 			expect(capturedUrls[0]).toBe('https://cdn.example.com/base/store/abc');
 		});
 
@@ -100,7 +103,7 @@ describe('HttpTransport.fetchBytes', () => {
 			});
 
 			const transport = new HttpTransport('https://cdn.example.com/base');
-			await transport.fetchBytes('store/abc');
+			await transport.fetchBytes('store/abc', CAP);
 			expect(capturedUrls[0]).toBe('https://cdn.example.com/base/store/abc');
 		});
 
@@ -112,7 +115,7 @@ describe('HttpTransport.fetchBytes', () => {
 			});
 
 			const transport = new HttpTransport('https://cdn.example.com/base/');
-			await transport.fetchBytes('/store/abc');
+			await transport.fetchBytes('/store/abc', CAP);
 			expect(capturedUrls[0]).toBe('https://cdn.example.com/base/store/abc');
 		});
 	});
@@ -140,7 +143,7 @@ describe('HttpTransport — revalidation', () => {
 		}) as typeof globalThis.fetch;
 
 		const transport = new HttpTransport('https://cdn.example.com/q/');
-		await transport.fetchBytes('latest.json', opts);
+		await transport.fetchBytes('latest.json', { ...CAP, ...opts });
 		return captured;
 	}
 
@@ -151,5 +154,134 @@ describe('HttpTransport — revalidation', () => {
 	it('leaves caching to the browser otherwise', async () => {
 		expect(await initFor()).toBeUndefined();
 		expect(await initFor({ revalidate: false })).toBeUndefined();
+	});
+});
+
+describe('HttpTransport — the ceiling', () => {
+	// The one layer with a stream to stop. A digest mismatch and an over-budget
+	// bundle are both verdicts reached by holding the whole response, so what
+	// bounds a browser tab is refused here or nowhere.
+	let originalFetch: typeof globalThis.fetch | undefined;
+
+	beforeEach(() => {
+		originalFetch = globalThis.fetch;
+	});
+
+	afterEach(() => {
+		if (originalFetch !== undefined) globalThis.fetch = originalFetch;
+	});
+
+	/** A body of `chunks` 64-byte chunks, reporting what was pulled off it. */
+	function streaming(chunks: number, headers: Record<string, string> = {}) {
+		const source = { pulls: 0, cancelled: false };
+		const stream = new ReadableStream<Uint8Array>({
+			pull(controller) {
+				if (source.pulls++ >= chunks) {
+					controller.close();
+					return;
+				}
+				controller.enqueue(new Uint8Array(64).fill(7));
+			},
+			cancel() {
+				source.cancelled = true;
+			}
+		});
+		globalThis.fetch = makeFetchMock(async () => new Response(stream, { status: 200, headers }));
+		return source;
+	}
+
+	const transport = new HttpTransport('https://cdn.example.com/q/');
+
+	it('reads a body under the ceiling whole', async () => {
+		streaming(4);
+		const bytes = await transport.fetchBytes('store/abc', { maxBytes: 256 });
+		expect(bytes.byteLength).toBe(256);
+		expect([...new Set(bytes)]).toEqual([7]);
+	});
+
+	it('refuses a body past the ceiling and drops the connection', async () => {
+		const source = streaming(Number.POSITIVE_INFINITY);
+
+		await expect(transport.fetchBytes('store/abc', { maxBytes: 256 })).rejects.toThrow(
+			expect.objectContaining({ code: 'quiver_invalid' })
+		);
+		// The body never ends, so the throw and the cancel are the whole proof: the
+		// read stopped at the ceiling rather than at the end of the response.
+		expect(source.cancelled).toBe(true);
+	});
+
+	it('refuses a stated length over the ceiling without reading the body', async () => {
+		// A body that fails on its first read. The verdict comes off the header, so
+		// that failure is never reached and the code says so: over the ceiling, not
+		// a network fault.
+		globalThis.fetch = makeFetchMock(
+			async () =>
+				new Response(
+					new ReadableStream<Uint8Array>({
+						pull(controller) {
+							controller.error(new TypeError('the body was read'));
+						}
+					}),
+					{ status: 200, headers: { 'content-length': String(4 * 1024 * 1024) } }
+				)
+		);
+
+		await expect(transport.fetchBytes('store/abc', { maxBytes: 256 })).rejects.toThrow(
+			expect.objectContaining({ code: 'quiver_invalid' })
+		);
+	});
+
+	it('holds the ceiling against a length that under-reports', async () => {
+		// `Content-Length` is the encoded length, so a compressed response states
+		// less than it delivers. The running total is what refuses.
+		streaming(Number.POSITIVE_INFINITY, { 'content-length': '8' });
+
+		await expect(transport.fetchBytes('store/abc', { maxBytes: 256 })).rejects.toThrow(
+			expect.objectContaining({ code: 'quiver_invalid' })
+		);
+	});
+
+	it('spends the ceiling after the fact where a host hands back no stream', async () => {
+		const bodiless = (size: number): Response =>
+			({
+				ok: true,
+				status: 200,
+				headers: new Headers(),
+				body: null,
+				arrayBuffer: async () => new ArrayBuffer(size)
+			}) as unknown as Response;
+
+		globalThis.fetch = makeFetchMock(async () => bodiless(4096));
+		await expect(transport.fetchBytes('store/abc', { maxBytes: 256 })).rejects.toThrow(
+			expect.objectContaining({ code: 'quiver_invalid' })
+		);
+
+		globalThis.fetch = makeFetchMock(async () => bodiless(128));
+		expect((await transport.fetchBytes('store/abc', { maxBytes: 256 })).byteLength).toBe(128);
+	});
+
+	it('a body that fails mid-stream is a transport_error', async () => {
+		globalThis.fetch = makeFetchMock(
+			async () =>
+				new Response(
+					new ReadableStream<Uint8Array>({
+						pull(controller) {
+							controller.error(new TypeError('Connection reset'));
+						}
+					}),
+					{ status: 200 }
+				)
+		);
+
+		let thrown: unknown;
+		try {
+			await transport.fetchBytes('store/abc', { maxBytes: 256 });
+		} catch (e) {
+			thrown = e;
+		}
+
+		expect(thrown).toBeInstanceOf(QuiverError);
+		expect((thrown as QuiverError).code).toBe('transport_error');
+		expect((thrown as QuiverError).cause).toBeInstanceOf(TypeError);
 	});
 });

@@ -10,7 +10,7 @@
 
 import { describe, it, expect, afterEach } from 'vitest';
 import { loadBuiltQuiver } from '../built-loader.js';
-import { packFiles } from '../bundle.js';
+import { MAX_BUNDLE_BYTES, packFiles } from '../bundle.js';
 import { NAME_DIGEST_LENGTH, sha256Hex } from '../digest.js';
 import { QuiverError } from '../errors.js';
 import { MANIFEST_VERSION, POINTER_FORMAT } from '../format.js';
@@ -44,14 +44,17 @@ class MemTransport implements BuiltTransport {
 	private readonly store: Map<string, Uint8Array>;
 	readonly fetchLog: string[] = [];
 	readonly revalidated: string[] = [];
+	/** Path → the ceiling the loader named for it. */
+	readonly ceilings: Map<string, number> = new Map();
 
 	constructor(entries: Record<string, Uint8Array>) {
 		this.store = new Map(Object.entries(entries));
 	}
 
-	async fetchBytes(relativePath: string, opts?: FetchOptions): Promise<Uint8Array> {
+	async fetchBytes(relativePath: string, opts: FetchOptions): Promise<Uint8Array> {
 		this.fetchLog.push(relativePath);
-		if (opts?.revalidate === true) this.revalidated.push(relativePath);
+		this.ceilings.set(relativePath, opts.maxBytes);
+		if (opts.revalidate === true) this.revalidated.push(relativePath);
 		const bytes = this.store.get(relativePath);
 		if (bytes === undefined) {
 			throw new QuiverError('transport_error', `MemTransport: not found: "${relativePath}"`);
@@ -290,6 +293,32 @@ describe('loadBuiltQuiver — the pointer revalidates', () => {
 
 		expect(transport.revalidated).toEqual(['latest.json']);
 		expect(transport.fetchLog.length).toBeGreaterThan(1);
+	});
+});
+
+describe('loadBuiltQuiver — every fetch carries a ceiling', () => {
+	// The transport is the only layer with a stream to stop, and it is handed a
+	// number per path rather than one for the artifact: a pointer, a font and a
+	// bundle are three different sizes of thing.
+	it("names one per path, and a bundle's is what it unpacks to", async () => {
+		const font = new Uint8Array([1, 2, 3]);
+		const { transport, manifestFileName, bundles } = await makeArtifact('capped', [
+			{ name: 'memo', version: '1.0.0', fonts: { 'fonts/body.ttf': font } }
+		]);
+		const q = await loadBuiltQuiver(transport);
+		await loadTreeViaGetQuill(q, 'memo', '1.0.0');
+
+		const { ceilings, fetchLog } = transport;
+		expect([...ceilings.keys()].sort()).toEqual([...new Set(fetchLog)].sort());
+
+		const bundle = ceilings.get(bundles['memo@1.0.0']!)!;
+		const store = ceilings.get(`store/${await fullDigest(font)}`)!;
+		const pointer = ceilings.get('latest.json')!;
+
+		expect(bundle).toBe(MAX_BUNDLE_BYTES);
+		expect(pointer).toBe(ceilings.get(manifestFileName));
+		expect(pointer).toBeLessThan(store);
+		expect(store).toBeLessThan(bundle);
 	});
 });
 

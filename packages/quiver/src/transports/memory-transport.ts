@@ -28,8 +28,9 @@ export class MemoryTransport implements BuiltTransport {
 		this.files = normalizeKeys(files);
 	}
 
-	/** The map answers first. `FetchOptions` reaches only the fallback: a held byte has no cache to revalidate against. */
-	async fetchBytes(relativePath: string, opts?: FetchOptions): Promise<Uint8Array> {
+	/** The map answers first. `FetchOptions` reaches only the fallback: a held byte has no
+	 *  cache to revalidate against and no arrival to refuse. */
+	async fetchBytes(relativePath: string, opts: FetchOptions): Promise<Uint8Array> {
 		const bytes = this.files.get(relativePath);
 		if (bytes !== undefined) return bytes;
 

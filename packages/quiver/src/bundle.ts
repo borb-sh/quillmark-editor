@@ -28,8 +28,11 @@ const ZIP_EPOCH = new Date(1980, 0, 1, 0, 0, 0, 0);
  *
  * Fonts are not in here: `build` writes them to the store and the manifest names them,
  * leaving a bundle its markdown, its Typst, and what those inline.
+ *
+ * `built-loader.ts` spends this on the wire as well: a deflated zip is never larger than
+ * what it inflates to, so one number bounds both ends of the same hazard.
  */
-const MAX_BUNDLE_BYTES = 64 * 1024 * 1024;
+export const MAX_BUNDLE_BYTES = 64 * 1024 * 1024;
 const MAX_ENTRY_BYTES = 16 * 1024 * 1024;
 const MAX_BUNDLE_ENTRIES = 2048;
 
