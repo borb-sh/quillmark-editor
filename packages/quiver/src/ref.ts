@@ -5,8 +5,6 @@ export interface ParsedQuillRef {
 	name: string;
 	/** Undefined selects the highest version present. */
 	selector?: string;
-	/** Selector part count: 1 = `x`, 2 = `x.y`, 3 = `x.y.z` (exact). */
-	selectorDepth?: 1 | 2 | 3;
 }
 
 const NAME_RE = /^[A-Za-z0-9_-]+$/;
@@ -68,8 +66,5 @@ export function parseQuillRef(ref: string): ParsedQuillRef {
 		);
 	}
 
-	const parts = selector.split('.');
-	const depth = parts.length as 1 | 2 | 3;
-
-	return { name, selector, selectorDepth: depth };
+	return { name, selector };
 }

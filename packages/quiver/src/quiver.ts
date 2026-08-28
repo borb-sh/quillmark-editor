@@ -157,19 +157,19 @@ export class Quiver {
 	 *   - `quill_not_found` if no version matches
 	 */
 	resolve(ref: string): string {
-		const parsed = parseQuillRef(ref);
-		const versions = this.#catalog.get(parsed.name);
+		const { name, selector } = parseQuillRef(ref);
+		const versions = this.#catalog.get(name);
 
 		if (versions && versions.length > 0) {
 			const candidates =
-				parsed.selector === undefined
+				selector === undefined
 					? [...versions]
-					: versions.filter((v) => matchesSemverSelector(v, parsed.selector!));
+					: versions.filter((v) => matchesSemverSelector(v, selector));
 
 			if (candidates.length > 0) {
 				// chooseHighestVersion returns null only for empty arrays; candidates is non-empty.
 				const winner = chooseHighestVersion(candidates)!;
-				return `${parsed.name}@${winner}`;
+				return `${name}@${winner}`;
 			}
 		}
 
