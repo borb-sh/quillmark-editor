@@ -440,10 +440,26 @@ export function placeFields(fields: FieldModel[]): PlacedField[] {
 
 /** Interpolate a `{field}` card-title template against live field values. */
 export function interpolateTitle(template: string, values: Record<string, unknown>): string {
-	return template.replace(/\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (_m, name: string) => {
-		const v = values[name];
-		return v == null ? '' : String(v);
-	});
+	return template.replace(/\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (_m, name: string) =>
+		titleText(values[name])
+	);
+}
+
+/** A field value as title text. A parsed field rests as the authored string; one the
+ *  editor has committed rests as `Content`, whose `text` is the same words. */
+export function titleText(v: unknown): string {
+	if (v == null) return '';
+	if (typeof v === 'object') {
+		const text = (v as { text?: unknown }).text;
+		return typeof text === 'string' ? text : '';
+	}
+	return String(v);
+}
+
+/** The field names a `{field}` title reads. */
+export function titleFields(template: string | undefined): string[] {
+	if (!template) return [];
+	return [...template.matchAll(/\{([A-Za-z_][A-Za-z0-9_]*)\}/g)].map((m) => m[1]);
 }
 
 /**

@@ -45,6 +45,7 @@
 		groupSections,
 		groupLabel,
 		cardTitle,
+		titleFields,
 		bodyEnabled,
 		humanize,
 		provenanceMap,
@@ -144,6 +145,7 @@
 	 */
 	function bump(source: ChangeSource, cardId?: CardId, at?: Addr | number): void {
 		revision++;
+		liveTitles = {};
 		const path =
 			at == null ? undefined : typeof at === 'number' ? cardPath(at, liveKinds()) : pathFor(at);
 		onChange?.({ source, cardId, path });
@@ -268,7 +270,32 @@
 		const plain = normalize(addr);
 		const cardId = cardIdOf(plain);
 		if (cardId == null) return;
+		refreshTitle(plain, cardId);
 		onChange?.({ source: 'prose', cardId, path: pathFor(plain) });
+	}
+
+	/** A card's header, re-read after a prose commit to a field its `{field}` title
+	 *  names: the one piece of the model a leaf's own commit changes, kept beside the
+	 *  model rather than re-deriving it, and dropped on the next bump, which rebuilds
+	 *  it from the document. */
+	let liveTitles = $state<Record<CardId, string>>({});
+	function refreshTitle(addr: Addr, cardId: CardId): void {
+		const field = addr.field;
+		if (field == null) return;
+		const isMain = addr.card == null;
+		const card = isMain ? doc.main : doc.cards[addr.card!];
+		if (!card) return;
+		const kind = isMain ? 'main' : (card as { kind: string }).kind;
+		const cardSchema = isMain ? quill.schema.main : quill.schema.card_kinds?.[kind];
+		if (!titleFields(cardSchema?.ui?.title).includes(field)) return;
+		const values: Record<string, unknown> = {};
+		for (const p of card.payloadItems)
+			if (p.type === 'field' && p.key != null) values[p.key] = p.value;
+		liveTitles = { ...liveTitles, [cardId]: cardTitle(cardSchema, kind, values, undefined) };
+	}
+	function titled(c: CardModel): CardModel {
+		const t = liveTitles[c.id];
+		return t == null ? c : { ...c, titlePlaceholder: t };
 	}
 
 	// ── Commit routing ──────────────────────────────────────────────────────────
@@ -815,7 +842,7 @@
 	<div class="qm-primary">
 		<Card
 			bind:this={mainCard}
-			card={model.main}
+			card={titled(model.main)}
 			{doc}
 			{quill}
 			isFirst={true}
@@ -847,7 +874,7 @@
 		<div class="qm-card-slot" bind:this={slotEls[i]} animate:reorder={isReordering}>
 			<Card
 				bind:this={cardRefs[i]}
-				card={c}
+				card={titled(c)}
 				{doc}
 				{quill}
 				isFirst={i === 0}
