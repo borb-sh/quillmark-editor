@@ -10,29 +10,37 @@
  * `import` alone is invisible to it: `@quillmark/quiver` and `@quillmark/wasm` both name
  * `default` beside it.
  *
- * Absence is the ordinary first-run failure, so each of these names the install rather
- * than surfacing a resolver's own words.
+ * Absence is the ordinary first-run failure, so a specifier that will not resolve names
+ * the install rather than surfacing a resolver's own words. It is also the only thing
+ * either loader recovers from.
  */
 
+import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Engine } from '@quillmark/wasm';
 
-/** Typed off the real thing, and type-only: no runtime edge exists. */
+/** Typed off the real things, and type-only: no runtime edge exists. */
 type QuiverNode = typeof import('@quillmark/quiver/node');
-
-/** What `@quillmark/wasm` hands a gate. `init()` is what makes the rest work. */
-interface Wasm {
-	Engine: new () => Engine;
-	init: () => Promise<unknown>;
-}
+type Wasm = typeof import('@quillmark/wasm');
 
 /** Resolution based at the collection rather than at this module, which is the whole
  *  of what makes a copy the author's. The `package.json` need not exist: resolution
  *  walks up from the directory holding it. */
 const requireFrom = (collection: string): ReturnType<typeof createRequire> =>
 	createRequire(pathToFileURL(join(collection, 'package.json')).href);
+
+/** A path the resolver or the filesystem has already answered for, imported. What throws
+ *  past that answer is a fault rather than an absence, so it names which module was being
+ *  loaded and carries what threw as `cause`, which the bin prints beneath it. */
+async function loadFrom<T>(what: string, path: string): Promise<T> {
+	try {
+		return (await import(pathToFileURL(path).href)) as T;
+	} catch (cause) {
+		throw new Error(`Cannot load ${what} from "${path}".`, { cause });
+	}
+}
 
 /** `@quillmark/quiver/node`, out of `collection`'s own tree: the loaders and `build`. */
 export async function loadQuiverNode(collection: string): Promise<QuiverNode> {
@@ -46,7 +54,7 @@ export async function loadQuiverNode(collection: string): Promise<QuiverNode> {
 				'  It is the quiver this packs and loads with, and the format it is packed in.'
 		);
 	}
-	return (await import(pathToFileURL(resolved).href)) as QuiverNode;
+	return loadFrom<QuiverNode>('@quillmark/quiver', resolved);
 }
 
 /**
@@ -56,25 +64,43 @@ export async function loadQuiverNode(collection: string): Promise<QuiverNode> {
  *
  * **The core is instantiated here.** `new Engine()` is lazy, so the gate holds a live
  * instance before it renders rather than at whichever call first needs one.
+ *
+ * **The wasm loads before the config is read, and the order is load-bearing.** `init()`
+ * is module-global, memoized and idempotent, so an engine the config builds out of this
+ * same module rides the init run here. Reading the config first would leave the
+ * documented extension point, `new Engine({ backends })`, un-inited to fail at its first
+ * render — inside the gate's per-quill catch, which prints a setup fault as the author's
+ * quill.
  */
 export async function loadEngine(collection: string): Promise<Engine> {
+	let resolved: string | undefined;
+	try {
+		resolved = requireFrom(collection).resolve('@quillmark/wasm');
+	} catch {
+		// Absent, and a quillkit.config.js may still carry the engine.
+	}
+
 	let wasm: Wasm | undefined;
-	try {
-		const resolved = requireFrom(collection).resolve('@quillmark/wasm');
-		wasm = (await import(pathToFileURL(resolved).href)) as Wasm;
-		await wasm.init();
-	} catch {
-		// Not installed: a quillkit.config.js may still provide an engine.
+	if (resolved !== undefined) {
+		wasm = await loadFrom<Wasm>('@quillmark/wasm', resolved);
+		try {
+			await wasm.init();
+		} catch (cause) {
+			throw new Error(`Cannot initialize @quillmark/wasm from "${resolved}".`, { cause });
+		}
 	}
 
-	try {
-		const config = await import(pathToFileURL(join(collection, 'quillkit.config.js')).href);
-		if (config.engine != null) return config.engine as Engine;
-	} catch {
-		// File absent or incomplete: fall through to auto-discovery.
+	// Presence is the filesystem's answer, and a config that is there and throws fails the
+	// verb. No error can separate the two: `ERR_MODULE_NOT_FOUND` is equally what a config
+	// raises over a specifier of its own, and a broken config read as an absent one gates
+	// every quill through an engine the author did not write.
+	const config = join(collection, 'quillkit.config.js');
+	if (existsSync(config)) {
+		const { engine } = await loadFrom<{ engine?: Engine }>('quillkit.config.js', config);
+		if (engine != null) return engine;
 	}
 
-	if (wasm == null) {
+	if (wasm === undefined) {
 		throw new Error(
 			`Cannot find @quillmark/wasm in "${collection}".\n` +
 				'  Install it:  npm install --save-dev @quillmark/wasm\n' +

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**A `quillkit.config.js` that throws fails the gate, and an artifact that will not load says what broke.** A config carrying a syntax error, a specifier that does not resolve or a throwing statement names the file and the error under it, where it read as a config that was not there and the gate rendered every quill through `@quillmark/wasm` and printed a pass table for it. Absence is the only fall-through and it is the filesystem's answer, not an error's. The artifact splits the same way: one that will not resolve names its install, and one that will not import or will not instantiate carries what threw.
+
 ## v0.5.4 - 2026-08-26
 
 **The carried `@quillmark/wasm` is 0.110.0, and the gate refuses only what the render floor refuses.** A quill whose document holds a value the floor adopts — a bare scalar where an `array` is declared, `"3"` for an `integer` — passes where it was fatally `validation::type_mismatch` while rendering correctly, so a fatal validation diagnostic under test means the document does not render. A bare scalar stringified into an `enum` field is domain-checked on that string, so a spelling outside `values:` is caught where it was silent.
