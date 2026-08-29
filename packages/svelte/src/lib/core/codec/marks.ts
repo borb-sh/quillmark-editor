@@ -14,9 +14,8 @@ import { canonicalJson } from './reconcile.js';
 const PLAIN_FORMATTING = new Set(['strong', 'underline', 'strike', 'code']);
 
 /** Whether `m` is an unknown mark: the open set `pmMarkFromContent` falls through to,
- *  and the one class carrying `attrs`. A type name, not the presence of the key: the
- *  boundary spells an empty bag `null` and an older one omitted it, and a descriptor
- *  that read the key would put those two spellings of one mark in two diff groups. */
+ *  and the one class whose descriptor carries `attrs`. Classified by type name, so a
+ *  spelling that omits `attrs` keys as the same mark as one spelling it `null`. */
 function isUnknownMark(m: ContentMark): boolean {
 	return !isAnchorMark(m) && !isLinkMark(m) && m.type !== 'emph' && !PLAIN_FORMATTING.has(m.type);
 }

@@ -345,9 +345,8 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		expect(anchor?.id).toBe('c1');
 	});
 
-	// The cases above all edit *before* the anchor, where both associativities agree.
-	// At the anchor's own position they diverge, and that is where an anchor sits: it
-	// is a point pinned to a boundary.
+	// The two associativities agree everywhere but at the anchor's own position, which
+	// is where an anchor sits: a point pinned to a boundary.
 	describe('an insertion at the anchor’s own position', () => {
 		/** The anchor's position as the field's plugin holds it: PM-mapped through the
 		 *  transaction with `bias`, read back in USV. */
@@ -378,10 +377,8 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		const imageEntry = () => ({ ...md('![a](u)').islands[0], id: 'isl-9' });
 
 		// Which bias the plugin maps with is `field.ts`'s to choose; whichever it picks,
-		// the store has to land where the projection put it. `lower` predicts the
-		// engine's own rebase to decide whether an op is needed at all, so a prediction
-		// that disagrees with the projection emits nothing and the two drift apart with
-		// no op to reconcile them.
+		// the store has to land where the projection put it. Both are asserted, so the
+		// pair holds through a retune of a dial neither owns.
 		for (const bias of [-1, 1] as const) {
 			it(`the delta channel lands the store where the projection put it (bias ${bias})`, () => {
 				const { stored, projected } = commit(anchorRt, 6, bias, (s) =>

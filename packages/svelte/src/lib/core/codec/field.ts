@@ -182,11 +182,9 @@ type AnchorEdit = { op: 'add'; id: string; pos: number } | { op: 'remove'; id: s
 /** Plugin-held anchor positions (PM coords), mapped through every edit's `StepMap`
  * and mutated by an {@link AnchorEdit} meta (an insert/remove at a selection).
  *
- * The `-1` bias is the content model's rule for a point, not PM's default: a
- * zero-width mark rebases `before`, so text typed at an anchor's own position lands
- * after it. PM's `+1` would carry the projection past an insert the store leaves it
- * before, and the mark diff would spend a `removeAnchor` + `add` every keystroke
- * dragging one to the other. */
+ * The `-1` is the store's rule for a point, not PM's default: `applyChange` rebases a
+ * zero-width mark `before`, so text typed at an anchor's own position lands after it
+ * and the mark diff has no op to spend reconciling this set with the store. */
 function anchorPlugin(seed: AnchorPos[]): Plugin<AnchorPos[]> {
 	return new Plugin<AnchorPos[]>({
 		key: anchorKey,

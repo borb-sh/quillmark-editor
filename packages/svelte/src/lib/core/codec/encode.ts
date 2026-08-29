@@ -441,9 +441,9 @@ function lineMetaEqual(a: ContentLine[], b: ContentLine[]): boolean {
 	return true;
 }
 
-/** A line kind's comparison key: key-order-insensitive, because the two sides come
- * from different producers (a WASM read and this scan). Sorted at every depth, so an
- * unknown kind's `attrs` bag is keyed by value like the rest of it. */
+/** A line kind's comparison key: key-order-insensitive at every depth, because the two
+ * sides come from different producers (a WASM read and this scan) and an unknown kind
+ * carries a nested `attrs` bag. */
 function kindKey(l: ContentLine): string {
 	return canonicalJson(kindPart(l));
 }
@@ -602,11 +602,9 @@ function diffMarks(
 	}
 
 	// Anchors: diff the decoration sets by id (positions already in final coords).
-	// An anchor is a point, so it rebases `before` through both channels, which is
-	// what `applyChange` does to a zero-width mark (verified). A rebase that read
-	// `after` through the delta would agree with the plugin's own PM mapping at an
-	// insertion point and disagree with the store, so the diff would emit nothing
-	// and the two would drift a character apart with no op to reconcile them.
+	// A point rebases `before` through both channels (`shiftPastIslands`). The
+	// prediction is what decides whether an op is needed, so it has to name where the
+	// store lands rather than where the projection does.
 	if (opts.oldAnchors || opts.newAnchors) {
 		const oldA = new Map((opts.oldAnchors ?? []).map((a) => [a.id, rebase(a.pos, 'before')]));
 		const newA = new Map((opts.newAnchors ?? []).map((a) => [a.id, a.pos]));
