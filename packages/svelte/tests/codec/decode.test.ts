@@ -11,6 +11,8 @@ import {
 	plaintextSchema
 } from '$lib/core/codec';
 import type { Content } from '@quillmark/wasm';
+import type { Node as PMNode } from 'prosemirror-model';
+import { pmMarkFromContent } from '$lib/core/codec/marks.js';
 import { md, normalize, contentEqual, titleContent, bodyContent } from './_util.js';
 
 /** decode → pmToContent, both sides normalized through the real content. */
@@ -231,5 +233,75 @@ describe('the href gate', () => {
 		const mark = decode(rt, blockSchema).child(0).child(0).marks[0]!;
 		expect(mark.attrs.href).toBe('javascript:alert(1)');
 		expect(contentEqual(reContent(rt), normalize(rt))).toBe(true);
+	});
+});
+
+describe('inline runs against the per-code-point definition', () => {
+	// A run's marks are what a scan of every code point states. Overlaps, adjacency and
+	// astral text are where an edge is miscounted, so the corpus is generated.
+
+	/** Every code point's mark set, scanned: the definition the runs answer to. Lowered
+	 *  through the shared converter, so the assertion is which code points carry which set
+	 *  rather than how a mark spells itself in either vocabulary. */
+	function scanned(rt: Content): string[][] {
+		return [...rt.text].map((_, i) =>
+			rt.marks
+				.filter((m) => m.start <= i && i < m.end)
+				.map((m) => pmMarkFromContent(blockSchema, m)?.type.name)
+				.filter((name): name is string => !!name)
+				.sort()
+		);
+	}
+
+	/** The same, read off the decoded paragraph's inline runs. */
+	function projected(doc: PMNode): string[][] {
+		const out: string[][] = [];
+		doc.child(0).forEach((node) => {
+			const types = node.marks.map((m) => m.type.name).sort();
+			for (const _ of node.text ?? '') out.push(types);
+		});
+		return out;
+	}
+
+	/** A deterministic body of overlapping, adjacent and nested marks over astral text. */
+	function fuzz(seed: number): string {
+		let s = seed;
+		const rnd = () => (s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+		const pick = <T>(xs: T[]): T => xs[Math.floor(rnd() * xs.length)];
+		const atoms = ['a', 'bb', 'ccc', '😀', 'x😀y', 'é', 'word'];
+		const wraps = [
+			(t: string) => `**${t}**`,
+			(t: string) => `*${t}*`,
+			(t: string) => `[${t}](https://e.x/1)`,
+			(t: string) => `***${t}***`,
+			(t: string) => t
+		];
+		let line = '';
+		for (let i = 0; i < 8; i++) line += pick(wraps)(pick(atoms) + pick(atoms));
+		return line || 'fallback';
+	}
+
+	it('gives every code point the marks the content states', () => {
+		for (let seed = 1; seed <= 300; seed++) {
+			const rt = md(fuzz(seed));
+			// One line, so the paragraph's runs tile `text` with no `\n` between them.
+			expect(rt.text.includes('\n'), `seed ${seed}`).toBe(false);
+			expect(projected(decode(rt, blockSchema)), `seed ${seed}`).toEqual(scanned(rt));
+		}
+	});
+
+	it('resolves the set again after an island slot, which carries no run of its own', () => {
+		// The slot's position is skipped, so a mark edge landing on it is seen only by the
+		// re-resolve the slot forces.
+		const rt: Content = {
+			text: 'ab￼cd',
+			lines: [{ containers: [], kind: 'para' }],
+			marks: [{ start: 2, end: 5, type: 'strong' } as never],
+			islands: [{ id: 'i1', type: 'table', props: null, loss: null } as never]
+		};
+		const para = decode(rt, blockSchema).child(0);
+		const tail = para.child(para.childCount - 1);
+		expect(tail.text).toBe('cd');
+		expect(tail.marks.map((m) => m.type.name)).toEqual(['strong']);
 	});
 });
