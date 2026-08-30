@@ -7,8 +7,24 @@ import { EditorState, TextSelection } from 'prosemirror-state';
 import type { Transaction } from 'prosemirror-state';
 import type { Node as PMNode } from 'prosemirror-model';
 import { baseKeymap, joinTextblockBackward } from 'prosemirror-commands';
-import { blockSchema, bodyKeymap, contentEdit, decode, lower, pmToContent } from '$lib/core/codec';
-import type { Content, TableProps } from '@quillmark/wasm';
+import {
+	blockSchema,
+	bodyKeymap,
+	buildLineIndex,
+	contentEdit,
+	decode,
+	lower,
+	pmToContent,
+	pmToUsv,
+	usvToPM
+} from '$lib/core/codec';
+import {
+	contentDescriptorFromPM,
+	descriptorOf,
+	markKey,
+	pmMarkFromContent
+} from '$lib/core/codec/marks.js';
+import type { Content, ContentMark, TableProps } from '@quillmark/wasm';
 import { freshDoc, normalize, contentEqual, md, textblocks } from './_util.js';
 
 /** The transaction one key press produces, through the leaf's chain falling through
@@ -32,8 +48,15 @@ function atHead(state: EditorState, index: number): EditorState {
 }
 
 interface AnchorOpts {
-	oldAnchors?: { id: string; pos: number }[];
 	newAnchors?: { id: string; pos: number }[];
+}
+
+/** The stored position of the identity anchor `id`. */
+function anchorAt(stored: Content, id: string): number | undefined {
+	const m = stored.marks.find(
+		(mark) => mark.type === 'anchor' && (mark as { id: string }).id === id
+	);
+	return m?.start;
 }
 
 /** Install `rt`, build a PM tr, lower+apply, and assert the store matches PM. */
@@ -185,6 +208,43 @@ describe('unknown mark round-trip (verbatim)', () => {
 		expect(u).toBeTruthy();
 		expect(u!.attrs).toEqual({ x: 1 });
 	});
+
+	// The mark diff groups a WASM read against a PM projection with one key. The two
+	// descriptors are produced by different functions, so a mark that keys differently
+	// on the two sides lands in neither group: `lower` then emits a full-range `remove`
+	// and a full-range `add` for a mark nothing touched, on every keystroke.
+	describe('both descriptor producers key one mark alike', () => {
+		const mark = (m: Record<string, unknown>) => ({ start: 0, end: 3, ...m }) as never;
+		const cases: Record<string, ContentMark> = {
+			strong: mark({ type: 'strong' }),
+			emph: mark({ type: 'emph' }),
+			code: mark({ type: 'code' }),
+			link: mark({ type: 'link', url: 'http://x' }),
+			'unknown with attrs': mark({ type: 'sub', attrs: { x: 1 } }),
+			'unknown with null attrs': mark({ type: 'sub', attrs: null }),
+			'unknown with no attrs key': mark({ type: 'sub' })
+		};
+
+		for (const [name, m] of Object.entries(cases)) {
+			it(name, () => {
+				const pm = pmMarkFromContent(blockSchema, m);
+				expect(pm, 'every case here projects to a PM mark').not.toBeNull();
+				expect(markKey(contentDescriptorFromPM(pm!))).toBe(markKey(descriptorOf(m)));
+			});
+		}
+
+		it('an attrs bag keys by value, not by key order', () => {
+			expect(markKey(descriptorOf(mark({ type: 'sub', attrs: { a: 1, b: { c: 2, d: 3 } } })))).toBe(
+				markKey(descriptorOf(mark({ type: 'sub', attrs: { b: { d: 3, c: 2 }, a: 1 } })))
+			);
+		});
+
+		it('different attrs stay different families', () => {
+			expect(markKey(descriptorOf(mark({ type: 'sub', attrs: { x: 1 } })))).not.toBe(
+				markKey(descriptorOf(mark({ type: 'sub', attrs: { x: 2 } })))
+			);
+		});
+	});
 });
 
 describe('unknown line kind and container round-trip (verbatim)', () => {
@@ -246,7 +306,6 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		const state = EditorState.create({ doc: decode(oldRt, blockSchema) });
 		const tr = state.tr.insertText('XX', 1); // insert before the anchor at USV 6
 		const bundle = lower(contentEdit(oldRt, pmToContent(tr.doc)), {
-			oldAnchors: [{ id: 'a1', pos: 6 }],
 			newAnchors: [{ id: 'a1', pos: 8 }] // rebased +2
 		});
 		doc.applyChange({}, bundle);
@@ -273,7 +332,6 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		const tr = state.tr.insertText('\n', 2); // a code-interior line before the anchor
 		const edit = contentEdit(oldRt, pmToContent(tr.doc));
 		const bundle = lower(edit, {
-			oldAnchors: [{ id: 'c1', pos: 3 }],
 			newAnchors: [{ id: 'c1', pos: 4 }] // the \n inserts before it → +1
 		});
 		doc.applyChange({}, bundle);
@@ -282,6 +340,69 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		expect(!!body.lines[1].continues).toBe(true);
 		const anchor = body.marks.find((m) => m.type === 'anchor') as { id: string } | undefined;
 		expect(anchor?.id).toBe('c1');
+	});
+
+	// The two associativities agree everywhere but at the anchor's own position, which
+	// is where an anchor sits: a point pinned to a boundary.
+	describe('an insertion at the anchor’s own position', () => {
+		/** The anchor's position as the field's plugin holds it: PM-mapped through the
+		 *  transaction with `bias`, read back in USV. */
+		function projected(oldDoc: PMNode, tr: Transaction, pos: number, bias: 1 | -1): number {
+			const pm = usvToPM(buildLineIndex(oldDoc), pos);
+			return pmToUsv(buildLineIndex(tr.doc), tr.mapping.map(pm, bias));
+		}
+
+		/** Lower an edit against a held anchor and apply it, with the post-edit anchor
+		 *  the plugin's `bias` produces. Returns where the store put it, against where
+		 *  the projection did. */
+		function commit(rt: Content, pos: number, bias: 1 | -1, mkTr: (s: EditorState) => Transaction) {
+			const doc = freshDoc();
+			doc.overwrite({}, rt);
+			const oldRt = doc.main.body;
+			const oldDoc = decode(oldRt, blockSchema);
+			const tr = mkTr(EditorState.create({ doc: oldDoc }));
+			const after = projected(oldDoc, tr, pos, bias);
+			const bundle = lower(contentEdit(oldRt, pmToContent(tr.doc)), {
+				newAnchors: [{ id: 'a1', pos: after }]
+			});
+			doc.applyChange({}, bundle);
+			return { stored: anchorAt(doc.main.body, 'a1'), projected: after, bundle };
+		}
+
+		/** The inline island entry an image projects: a slot the island channel places. */
+		const imageEntry = () => ({ ...md('![a](u)').islands[0], id: 'isl-9' });
+
+		// Which bias the plugin maps with is `field.ts`'s to choose; whichever it picks,
+		// the store has to land where the projection put it. Both are asserted, so the
+		// pair holds through a retune of a dial neither owns.
+		for (const bias of [-1, 1] as const) {
+			it(`the delta channel lands the store where the projection put it (bias ${bias})`, () => {
+				const { stored, projected } = commit(anchorRt, 6, bias, (s) =>
+					s.tr.insertText('X', usvToPM(buildLineIndex(s.doc), 6))
+				);
+				expect(stored).toBe(projected);
+			});
+
+			it(`the island channel lands the store where the projection put it (bias ${bias})`, () => {
+				const { stored, projected, bundle } = commit(anchorRt, 6, bias, (s) =>
+					s.tr.insert(
+						usvToPM(buildLineIndex(s.doc), 6),
+						blockSchema.nodes.island_inline.create(imageEntry())
+					)
+				);
+				expect(bundle.islandOps, 'the slot rides the island channel').toMatchObject([
+					{ op: 'insert', at: 6 }
+				]);
+				expect(stored).toBe(projected);
+			});
+		}
+
+		it('agreement is silent: a projection matching the engine’s rebase emits no anchor op', () => {
+			const { bundle } = commit(anchorRt, 6, -1, (s) =>
+				s.tr.insertText('X', usvToPM(buildLineIndex(s.doc), 6))
+			);
+			expect(bundle.markOps ?? []).toEqual([]);
+		});
 	});
 });
 
@@ -325,13 +446,6 @@ describe('the island channel — an island edit lowers op-wise', () => {
 	}
 
 	/** The stored anchor `id`'s position, or `undefined` if it is gone. */
-	function anchorAt(stored: Content, id: string): number | undefined {
-		const m = stored.marks.find(
-			(mark) => mark.type === 'anchor' && (mark as { id: string }).id === id
-		);
-		return m?.start;
-	}
-
 	it('a cell edit lowers to `set` and reaches the store', () => {
 		const { doc, bundle } = lowerEdit(md(TABLE_MD), (s) => retypeCell(s, 'HEAD'));
 		// The text is untouched: an island edit is not a splice.
@@ -346,7 +460,6 @@ describe('the island channel — an island edit lowers op-wise', () => {
 		const rt = md(TABLE_MD);
 		rt.marks.push({ start: 2, end: 2, type: 'anchor', id: 'a1' } as never);
 		const { doc, bundle } = lowerEdit(rt, (s) => retypeCell(s, 'HEAD'), {
-			oldAnchors: [{ id: 'a1', pos: 2 }],
 			newAnchors: [{ id: 'a1', pos: 2 }]
 		});
 		doc.applyChange({}, bundle);
@@ -374,7 +487,7 @@ describe('the island channel — an island edit lowers op-wise', () => {
 		const { doc, bundle } = lowerEdit(
 			rt,
 			(s) => s.tr.insert(s.doc.child(0).nodeSize, blockSchema.nodes.island_block.create(entry)),
-			{ oldAnchors: [{ id: 'a1', pos: 1 }], newAnchors: [{ id: 'a1', pos: 1 }] }
+			{ newAnchors: [{ id: 'a1', pos: 1 }] }
 		);
 		// The delta opens the line, the island op places the slot, the line op tags it.
 		expect(bundle.delta?.ops).toContainEqual({ insert: '\n' });

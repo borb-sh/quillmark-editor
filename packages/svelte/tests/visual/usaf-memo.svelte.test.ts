@@ -111,14 +111,14 @@ describe('the shipped quill on the surface', () => {
 		);
 	});
 
-	it('takes a `plaintext` field as a block leaf, the `inline` it declares not surviving', () => {
+	it('takes a `plaintext` field as the inline leaf it declares', () => {
 		// Most of this quill is `plaintext` + `inline: true`, and the boundary serves
-		// `inline` for richtext alone — so the leaf takes the block floor and `packable`
-		// declines the `ui.compact` beside it.
+		// `inline` at every type — so the leaf is a one-line one and `packable` takes
+		// the `ui.compact` beside it.
 		const byName = Object.fromEntries(fieldModels(memo().schema.main).map((m) => [m.name, m]));
 		expect(byName.subject.control).toBe('prose');
 		expect(byName.subject.plaintext).toBe(true);
-		expect(byName.subject.inline).toBe(false);
+		expect(byName.subject.inline).toBe(true);
 		expect(byName.tag_line.inline).toBe(true); // the one richtext scalar, declared alike
 		expect(byName.dissemination.compact).toBe(true);
 
@@ -132,11 +132,11 @@ describe('the shipped quill on the surface', () => {
 			)!;
 			return el.classList.contains('cell') ? 'cell' : 'full';
 		};
+		// `Dissemination` asks to pack and stands alone between block leaves, so its run
+		// is one and it takes the row; `Tag line` sits in a run of inline neighbours and
+		// packs. What separates them is the run each lands in, not what either declares.
 		expect(span('Dissemination')).toBe('full');
-		// The `compact` request is read, and buys nothing here: a scalar the boundary does
-		// serve `inline` for packs, but its run is one, the fields around it being the
-		// leaves above, so it takes the whole row.
-		expect(span('Tag line')).toBe('full');
+		expect(span('Tag line')).toBe('cell');
 	});
 
 	it('draws the CUI world as four fillable cells', () => {

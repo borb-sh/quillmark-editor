@@ -8,9 +8,8 @@
 // `setContainers` / `setContinues` metadata, and an island's payload rides
 // `islandOps`, the one channel that reaches it. Every op reads in one coordinate
 // space, the final USV content (delta then island ops applied). `applyChange`
-// auto-rebases existing marks with start-assoc `after` / end-assoc `before`
-// (== `mapPos`) through both text-moving channels, so the mark diff replicates
-// that rebase exactly and is coverage-precise.
+// auto-rebases the marks already in the field; `mapMarks` answers where that leaves
+// them, so `markOps` are the difference from that answer and stay coverage-precise.
 import type { Mark, Node as PMNode } from 'prosemirror-model';
 import { isAnchorMark } from '@quillmark/wasm';
 import type {
@@ -29,8 +28,8 @@ import type {
 import { core } from '../lifecycle.js';
 import { codePoints, usvLength } from './decode.js';
 import { ISLAND_SLOT, islandEntryFromNode, type IslandNodeAttrs } from './islands.js';
-import { contentDescriptorFromPM, descriptorOf, markKey } from './marks.js';
-import { valueEqual } from './reconcile.js';
+import { anchorsFromContent, contentDescriptorFromPM, descriptorOf, markKey } from './marks.js';
+import { canonicalJson, valueEqual } from './reconcile.js';
 
 // ── Position-map runs (consumed by positions.ts) ────────────────────────────
 // A run is one segment of exact PM↔USV correspondence, in document order.
@@ -298,7 +297,7 @@ function emitText(acc: Acc, s: string, pmStart: number, marks: readonly Mark[]):
  */
 function mergeMarks(raw: ContentMark[]): ContentMark[] {
 	const out: ContentMark[] = [];
-	for (const g of groupFormatting(raw, (m) => ({ start: m.start, end: m.end })).values()) {
+	for (const g of groupFormatting(raw).values()) {
 		for (const iv of union(g.intervals)) out.push({ ...iv, ...g.descriptor } as ContentMark);
 	}
 	// Stable, content-like order: by start, then end.
@@ -308,9 +307,8 @@ function mergeMarks(raw: ContentMark[]): ContentMark[] {
 // ── Lowering: diff old→new into a ChangeBundle ──────────────────────────────
 
 interface LowerOpts {
-	/** Anchor decoration positions before the edit (post-nothing); see field.ts. */
-	oldAnchors?: { id: string; pos: number }[];
-	/** Anchor decoration positions after the edit, in final (new) USV coords. */
+	/** Anchor decoration positions after the edit, in final (new) USV coords. The
+	 *  pre-edit set is `oldRt`'s own, so only the projection's is passed in. */
 	newAnchors?: { id: string; pos: number }[];
 }
 
@@ -342,13 +340,15 @@ export function contentEdit(oldRt: Content, newRt: Content): ContentEdit {
 /** Lower an edit to a `ChangeBundle`: the old→new content diff, as ops. */
 export function lower(edit: ContentEdit, opts: LowerOpts = {}): ChangeBundle {
 	const { oldRt, newRt } = edit;
-	const { delta, islandOps, insertedAt } = splitIslands(edit);
+	const { delta, islandOps } = splitIslands(edit);
 	const lineOps = diffLines(oldRt, newRt, edit.delta);
-	const markOps = diffMarks(oldRt, newRt, delta, insertedAt, opts);
+	// The text-moving channels first: the mark diff reads them back off the bundle,
+	// so what it rebases against is what `applyChange` will be handed.
 	const bundle: ChangeBundle = {};
 	if (delta) bundle.delta = delta;
 	if (islandOps.length) bundle.islandOps = islandOps;
 	if (lineOps.length) bundle.lineOps = lineOps;
+	const markOps = diffMarks(oldRt, newRt, bundle, opts);
 	if (markOps.length) bundle.markOps = markOps;
 	return bundle;
 }
@@ -441,10 +441,11 @@ function lineMetaEqual(a: ContentLine[], b: ContentLine[]): boolean {
 	return true;
 }
 
-/** A line kind's comparison key: key-order-insensitive, because the two sides come
- * from different producers (a WASM read and this scan). */
+/** A line kind's comparison key: key-order-insensitive at every depth, because the two
+ * sides come from different producers (a WASM read and this scan) and an unknown kind
+ * carries a nested `attrs` bag. */
 function kindKey(l: ContentLine): string {
-	return JSON.stringify(Object.entries(kindPart(l)).sort(([x], [y]) => (x < y ? -1 : 1)));
+	return canonicalJson(kindPart(l));
 }
 
 // ── Island channel ──────────────────────────────────────────────────────────
@@ -455,9 +456,6 @@ interface IslandSplit {
 	 *  when what remains is pure retains (the insert carried nothing else). */
 	delta?: Delta;
 	islandOps: IslandOp[];
-	/** The `insert` ops' positions, ascending, in final coords: what a mark rebase
-	 *  shifts through after the delta. */
-	insertedAt: number[];
 }
 
 /**
@@ -483,22 +481,18 @@ function splitIslands(edit: ContentEdit): IslandSplit {
 	const { start, end } = insertedRegion(delta);
 	const oldById = new Map(oldRt.islands.map((isl) => [isl.id, isl]));
 	const islandOps: IslandOp[] = [];
-	const insertedAt: number[] = [];
+	let inserts = 0;
 	newRt.islands.forEach((isl, i) => {
 		const at = slots[i];
 		if (at !== undefined && at >= start && at < end) {
 			islandOps.push({ op: 'insert', at, ...isl });
-			insertedAt.push(at);
+			inserts++;
 		} else {
 			const before = oldById.get(isl.id);
 			if (before && !valueEqual(before, isl)) islandOps.push({ op: 'set', ...isl });
 		}
 	});
-	return {
-		delta: insertedAt.length && delta ? withoutSlots(delta) : delta,
-		islandOps,
-		insertedAt
-	};
+	return { delta: inserts && delta ? withoutSlots(delta) : delta, islandOps };
 }
 
 /** The USV positions of `text`'s island slots, in document order: the i-th is the
@@ -545,18 +539,6 @@ function withoutSlots(delta: Delta): Delta | undefined {
 	return splices ? { ops } : undefined;
 }
 
-/**
- * A post-delta position carried through the bundle's island inserts, which move
- * text exactly as the delta does and rebase marks by the same rule (start-assoc
- * `after`, end-assoc `before`; an anchor is a point and holds `before`). Ascending
- * `at`s apply left to right, so each comparison reads the running position.
- */
-function shiftPastIslands(pos: number, insertedAt: number[], assoc: 'before' | 'after'): number {
-	let p = pos;
-	for (const at of insertedAt) if (assoc === 'after' ? p >= at : p > at) p++;
-	return p;
-}
-
 // ── Mark diff ───────────────────────────────────────────────────────────────
 
 interface Interval {
@@ -565,27 +547,15 @@ interface Interval {
 }
 
 /** Formatting/unknown marks → add/remove ops; anchors → add/removeAnchor by id. */
-function diffMarks(
-	oldRt: Content,
-	newRt: Content,
-	delta: Delta | undefined,
-	insertedAt: number[],
-	opts: LowerOpts
-): MarkOp[] {
+function diffMarks(oldRt: Content, newRt: Content, moved: ChangeBundle, opts: LowerOpts): MarkOp[] {
 	const ops: MarkOp[] = [];
-	// Read the gate once per diff rather than once per mark.
-	const { mapPos } = core();
-	// Rebase old marks through both text-moving channels to final coords, exactly
-	// as `applyChange` does internally (start assoc `after`, end assoc `before`).
-	const rebase = (pos: number, assoc: 'before' | 'after') =>
-		shiftPastIslands(delta ? mapPos(delta, pos, assoc) : pos, insertedAt, assoc);
+	// The store's answer for where `moved`'s text channels leave the field's marks;
+	// `markOps` are the difference from it.
+	const rebased = core().mapMarks(oldRt, moved);
 
 	// Group both sides by descriptor key (excluding anchors).
-	const oldGroups = groupFormatting(oldRt.marks, (m) => ({
-		start: rebase(m.start, 'after'),
-		end: rebase(m.end, 'before')
-	}));
-	const newGroups = groupFormatting(newRt.marks, (m) => ({ start: m.start, end: m.end }));
+	const oldGroups = groupFormatting(rebased);
+	const newGroups = groupFormatting(newRt.marks);
 
 	const keys = new Set([...oldGroups.keys(), ...newGroups.keys()]);
 	for (const key of keys) {
@@ -601,14 +571,9 @@ function diffMarks(
 	}
 
 	// Anchors: diff the decoration sets by id (positions already in final coords).
-	if (opts.oldAnchors || opts.newAnchors) {
-		const oldA = new Map(
-			(opts.oldAnchors ?? []).map((a) => [
-				a.id,
-				shiftPastIslands(delta ? mapPos(delta, a.pos, 'after') : a.pos, insertedAt, 'before')
-			])
-		);
-		const newA = new Map((opts.newAnchors ?? []).map((a) => [a.id, a.pos]));
+	if (opts.newAnchors) {
+		const oldA = new Map(anchorsFromContent({ marks: rebased }).map((a) => [a.id, a.pos]));
+		const newA = new Map(opts.newAnchors.map((a) => [a.id, a.pos]));
 		for (const [id, pos] of newA) {
 			if (!oldA.has(id) || oldA.get(id) !== pos) {
 				if (oldA.has(id)) ops.push({ op: 'removeAnchor', id });
@@ -625,11 +590,8 @@ interface FormattingGroup {
 	intervals: Interval[];
 }
 
-/** Group non-anchor marks by descriptor key, mapping each to an interval. */
-function groupFormatting(
-	marks: ContentMark[],
-	toInterval: (m: ContentMark) => Interval
-): Map<string, FormattingGroup> {
+/** Group non-anchor marks by descriptor key. */
+function groupFormatting(marks: ContentMark[]): Map<string, FormattingGroup> {
 	const groups = new Map<string, FormattingGroup>();
 	for (const m of marks) {
 		if (isAnchorMark(m)) continue;
@@ -640,7 +602,7 @@ function groupFormatting(
 			g = { descriptor, intervals: [] };
 			groups.set(key, g);
 		}
-		g.intervals.push(toInterval(m));
+		g.intervals.push({ start: m.start, end: m.end });
 	}
 	return groups;
 }

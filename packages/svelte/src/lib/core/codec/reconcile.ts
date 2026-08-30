@@ -84,3 +84,21 @@ function deepEqual(a: unknown, b: unknown): boolean {
 	}
 	return false;
 }
+
+/**
+ * A value's canonical string: key-sorted at every depth, so two spellings of one value
+ * mint one key whatever order each side's producer wrote them in. What the key-minting
+ * half of the seam stringifies with, for the reason the equalities deep-compare.
+ */
+export function canonicalJson(value: unknown): string {
+	return JSON.stringify(canonical(value));
+}
+
+function canonical(v: unknown): unknown {
+	if (Array.isArray(v)) return v.map(canonical);
+	if (typeof v !== 'object' || v === null) return v;
+	const o = v as Record<string, unknown>;
+	const out: Record<string, unknown> = {};
+	for (const k of Object.keys(o).sort()) out[k] = canonical(o[k]);
+	return out;
+}

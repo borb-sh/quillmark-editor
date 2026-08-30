@@ -180,7 +180,11 @@ const anchorKey = new PluginKey<AnchorPos[]>('quill-anchors');
 type AnchorEdit = { op: 'add'; id: string; pos: number } | { op: 'remove'; id: string };
 
 /** Plugin-held anchor positions (PM coords), mapped through every edit's `StepMap`
- * and mutated by an {@link AnchorEdit} meta (an insert/remove at a selection). */
+ * and mutated by an {@link AnchorEdit} meta (an insert/remove at a selection).
+ *
+ * The `-1` is the store's rule for a point, not PM's default: `applyChange` rebases a
+ * zero-width mark `before`, so text typed at an anchor's own position lands after it
+ * and the mark diff has no op to spend reconciling this set with the store. */
 function anchorPlugin(seed: AnchorPos[]): Plugin<AnchorPos[]> {
 	return new Plugin<AnchorPos[]>({
 		key: anchorKey,
@@ -188,7 +192,7 @@ function anchorPlugin(seed: AnchorPos[]): Plugin<AnchorPos[]> {
 			init: () => seed,
 			apply: (tr, anchors) => {
 				let next = tr.docChanged
-					? anchors.map((a) => ({ id: a.id, pos: tr.mapping.map(a.pos) }))
+					? anchors.map((a) => ({ id: a.id, pos: tr.mapping.map(a.pos, -1) }))
 					: anchors;
 				const edit = tr.getMeta(anchorKey) as AnchorEdit | undefined;
 				if (edit?.op === 'add') next = [...next, { id: edit.id, pos: edit.pos }];
@@ -398,11 +402,10 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			if (!opsCommittable(doc, addr)) {
 				doc.overwrite(addr, edit.newRt); // brings the field to content rest
 			} else {
-				// Pre-edit anchors are the stored content's anchors (USV); post-edit
-				// anchors are the plugin's positions (mapped through the tr) as USV.
-				const oldAnchors = plaintext ? [] : anchorsFromContent(oldRt);
+				// Post-edit anchors are the plugin's positions (mapped through the tr) as
+				// USV; the pre-edit set is `oldRt`'s own, which `lower` reads for itself.
 				const newAnchors = plaintext ? [] : readAnchorsUsv();
-				doc.applyChange(addr, lower(edit, { oldAnchors, newAnchors }));
+				doc.applyChange(addr, lower(edit, { newAnchors }));
 			}
 			reconciler.commit(readLeaf(reader, addr));
 			return true;
