@@ -18,6 +18,7 @@ import {
 	boxesForField,
 	rectToPercent,
 	clickToPdfPt,
+	pxToPt,
 	applyPercentRect,
 	type PercentRect
 } from './geometry.js';
@@ -55,6 +56,11 @@ export interface VerticalSpan {
  *  smallest zoom a page still reads at. */
 const MIN_CLEARANCE = 8;
 
+/** What a click may miss a field's ink by and still land on it, in CSS px of the page
+ *  as drawn, so it converts per click at the scale the slot is showing (PREVIEW.md
+ *  §"Click bridge" carries why the space is the screen's and not the document's). */
+const CLICK_SLACK_PX = 2;
+
 /**
  * Whether `target` sits clear of `port`'s edges by the fold's clearance, which is the
  * target's own height: a caret rect flush against an edge is visible and unusable, and
@@ -91,7 +97,8 @@ export function createBridge(
 	// the measurement). The second fires where a field is placed without its content
 	// being tracked, and the pick carries no `pos` there: a fabricated `0` would be an
 	// invented offset wearing a real one's type. No third rung hit-tests `regions()`,
-	// whose rects bound ink the field does not fill.
+	// whose rects bound ink the field does not fill; the slack below is the answer to
+	// what that rung would have been reached for.
 	if (onPick) {
 		for (const { page, el } of slots) {
 			const handleClick = (ev: MouseEvent): void => {
@@ -104,9 +111,10 @@ export function createBridge(
 				const px = ev.clientX - box.left;
 				const py = ev.clientY - box.top;
 				const pt = clickToPdfPt(px, py, box.width, box.height, slot.size);
-				const hit = session.positionAt(slot.page, pt.x, pt.y);
+				const tol = pxToPt(CLICK_SLACK_PX, box.width, slot.size);
+				const hit = session.positionAt(slot.page, pt.x, pt.y, tol);
 				if (hit) return void onPick(hit);
-				const field = session.fieldAt(slot.page, pt.x, pt.y);
+				const field = session.fieldAt(slot.page, pt.x, pt.y, tol);
 				if (field) onPick({ field });
 			};
 			el.addEventListener('click', handleClick);

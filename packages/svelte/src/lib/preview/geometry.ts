@@ -81,6 +81,15 @@ export function applyPercentRect(el: HTMLElement, pct: PercentRect): void {
 }
 
 /**
+ * A CSS-px length in a page element of CSS width `cssW` -> the PDF-pt length it
+ * covers: the same ratio {@link clickToPdfPt} applies to a point, for the click
+ * slack the bridge hands the session's point queries.
+ */
+export function pxToPt(px: number, cssW: number, pageSize: PageSize): number {
+	return (px / cssW) * pageSize.widthPt;
+}
+
+/**
  * Inverse: a click at CSS px `(px, py)` within a page element of CSS size
  * `(cssW, cssH)` -> PDF-pt. The exact inverse of {@link rectToPercent}: the
  * fraction `rectToPercent` would place a point's box corner at is the same

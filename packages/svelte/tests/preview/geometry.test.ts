@@ -10,7 +10,7 @@
 // the transform is an internal correctness seam, not part of that surface).
 import { describe, it, expect } from 'vitest';
 import { init, Engine, type FieldRegion, type PageSize } from '@quillmark/wasm';
-import { boxesForField, rectToPercent, clickToPdfPt } from '$lib/preview/geometry.js';
+import { boxesForField, rectToPercent, clickToPdfPt, pxToPt } from '$lib/preview/geometry.js';
 import { loadFixtureTree } from '../helpers/fixtures.js';
 
 const core = await init();
@@ -62,6 +62,18 @@ describe('geometry: synthetic round-trip', () => {
 		for (const pt of results) {
 			expect(pt.x).toBeCloseTo(rect[0], 6);
 			expect(pt.y).toBeCloseTo(rect[3], 6); // top-left on screen = y1 in bottom-left space
+		}
+	});
+
+	it('pxToPt measures a screen length in the same space clickToPdfPt lands a point', () => {
+		// A length is the distance between two points, so the length transform and the
+		// point transform have to agree on it wherever the page is drawn.
+		for (const cssW of [300, 612, 1500]) {
+			const cssH = (cssW / pageSize.widthPt) * pageSize.heightPt;
+			const span = 17;
+			const near = clickToPdfPt(100, 0, cssW, cssH, pageSize);
+			const far = clickToPdfPt(100 + span, 0, cssW, cssH, pageSize);
+			expect(pxToPt(span, cssW, pageSize)).toBeCloseTo(far.x - near.x, 6);
 		}
 	});
 });

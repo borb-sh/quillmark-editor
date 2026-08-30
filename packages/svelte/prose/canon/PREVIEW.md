@@ -42,17 +42,21 @@ A **field box** is the rectangle on the rendered page where a schema field's con
 The preview owns the pixel→pt math (inverse of the rect→`%` transform) and the session queries; the consumer completes the caret move, because only the editor's codec maps a content offset to a ProseMirror position.
 
 ```
-click → PDF-pt → session.positionAt(p, x, y) → ContentHit ─┐
-             └─► session.fieldAt(p, x, y)    → { field }  ─┴► onPick(at)
-                                                            ↳ consumer:
-                                                              codec.usvToPM → setCaret
+click → PDF-pt → session.positionAt(p, x, y, tol) → ContentHit ─┐
+             └─► session.fieldAt(p, x, y, tol)    → { field }  ─┴► onPick(at)
+                                                                ↳ consumer:
+                                                                  codec.usvToPM → setCaret
 ```
 
 **Two rungs, and the second is the plate's.** `positionAt` answers over span-tracked content; `fieldAt` answers over every placement the compile tracks, which is a strict superset — measured against the reference quill, a whole-page sweep finds no point where `positionAt` answers and `fieldAt` does not, and none where the two name unrelated fields. Where composed ink meets the element it surrounds, the two placements share an edge and `fieldAt` names the container of what `positionAt` names; the ladder reads `positionAt` first, so a click lands the finer of the two. So the second rung fires exactly where a field is printed without its content being tracked, which on a memo is the front matter: `main.signature_block`, a card's.
 
 **An absent `pos` is the placement rung**, and one hook carries both (`Landing`, `/core`): a pick names its field either way, so the coarse case is a pick with no offset rather than a second hook. A fabricated `0` would be an invented offset wearing a real one's type. `granularity` is the only precision axis, and reads where there is a `pos`: `'cluster'` → caret-exact, `'segment'` → focus the field/segment, no exact caret.
 
-**There is no third rung hit-testing `regions()` by hand.** Its rects are bounding boxes over ink the field does not fill — `main.body`'s union spans the gap between two disjoint segments — so a click in that gap would land on the body by geometry the compile never claimed. The cost is that a click inside a content box but off its ink — the gaps between and after lines — does nothing.
+**There is no third rung hit-testing `regions()` by hand.** Its rects are bounding boxes over ink the field does not fill — `main.body`'s union spans the gap between two disjoint segments — so a click in that gap would land on the body by geometry the compile never claimed.
+
+**Both rungs take a slack instead.** A glyph's hit box is its line's ink by that glyph's own advance, so the boxes along a line abut and the leading between two lines is inside the paragraph and on no glyph: a text column answers over a fraction of its own height, and a click in the gap is a miss the reader cannot see the reason for. Each query answers with the nearest ink within the slack, so a point in the leading takes the line it is nearer, at the column it was clicked in — which is where a caret goes. It stays a click on ink some placement drew, unlike a bounding box, and a point far from all of it lands nothing.
+
+**The slack is the pointer's, so this pane states it and converts it per click.** It is a fixed size on the screen (`CLICK_SLACK_PX`, `bridge.ts`) divided by the scale the slot is drawn at, `pxToPt` being that conversion beside the point transform it has to agree with. A tolerance fixed in points would shrink under the cursor exactly as the target does, which is the wrong direction: a narrow pane draws a page small, and that is where a line is hardest to hit. The session ranks by distance rather than growing each box, so the slack only fills a miss: ink under the pointer keeps the click, whatever the slack is.
 
 ## Follow-the-caret scroll
 
