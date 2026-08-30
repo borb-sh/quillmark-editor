@@ -29,7 +29,7 @@ import {
 	type Command
 } from 'prosemirror-state';
 import { EditorView, type NodeView, type NodeViewConstructor } from 'prosemirror-view';
-import type { TableProps } from '@quillmark/wasm';
+import type { TableCell, TableProps } from '@quillmark/wasm';
 import { decode } from './decode.js';
 import { inputRulesPlugin } from './inputrules.js';
 import { tablePropsOfNode } from './islands.js';
@@ -222,6 +222,11 @@ interface MountedCell {
 	 *  and painted on. Held rather than queried, so `r`/`c` stay the typed pair above
 	 *  instead of a `data-` attribute parsed back out of the DOM. */
 	box: HTMLElement;
+	/** The cell value this view is displaying, which is what tells an own edit from an
+	 *  external one in {@link TableIslandView.update}. Held rather than projected back
+	 *  off the doc: `cellFromDoc` crosses the WASM boundary once per cell holding an
+	 *  anchor, and both paths that move a nested doc have the value already. */
+	shown: TableCell;
 	unregister: () => void;
 	r: number;
 	c: number;
@@ -346,19 +351,24 @@ class TableIslandView implements NodeView {
 			return true;
 		}
 		// Same rectangle: reseed only the cells whose value the nested view is not
-		// already showing. The cell that produced this update projects to exactly what
-		// it stored, so it compares equal and keeps its caret; an undo or an external
+		// already showing. The cell that produced this update wrote exactly what it is
+		// showing, so it compares equal and keeps its caret; an undo or an external
 		// re-hydrate does not, and takes the fresh state.
+		//
+		// Against `shown` rather than a projection of the doc: this runs on every outer
+		// transaction, which is every keystroke in the table, and projecting each cell
+		// costs a `mapMarks` across the WASM boundary wherever one holds an anchor.
 		this.rendered = props;
 		for (const mounted of this.cells) {
 			const stored = cellAt(props, mounted.r, mounted.c);
-			if (cellEqual(stored, cellFromDoc(mounted.view.state.doc, stored))) continue;
+			if (cellEqual(stored, mounted.shown)) continue;
 			const head = mounted.view.state.selection.head;
 			const fresh = EditorState.create({
 				doc: decode(cellContent(stored), inlineSchema),
 				plugins: cellPlugins(this.cellKeys(mounted.r, mounted.c))
 			});
 			mounted.view.updateState(fresh);
+			mounted.shown = stored;
 			// Best-effort caret continuity, the rule a field's own re-hydrate takes: keep
 			// the offset, clamped into the text that is there now. A fresh state resolves
 			// its selection to the start of the cell, so an undo would otherwise put the
@@ -1079,9 +1089,10 @@ class TableIslandView implements NodeView {
 	): void {
 		const props = this.props();
 		const name = s.tableCell(r === 0 ? s.tableHeaderRow : s.tableRow(r), s.tableColumn(c + 1));
+		const seed = cellAt(props, r, c);
 		const view: EditorView = new EditorView(host, {
 			state: EditorState.create({
-				doc: decode(cellContent(cellAt(props, r, c)), inlineSchema),
+				doc: decode(cellContent(seed), inlineSchema),
 				plugins: cellPlugins(this.cellKeys(r, c))
 			}),
 			attributes: { 'aria-label': name, class: 'qm-table-cell-editor' },
@@ -1100,7 +1111,9 @@ class TableIslandView implements NodeView {
 				// reseed it comes back as changes no cell's own doc.
 				this.clearSelection();
 				const now = this.props();
-				this.write(withCell(now, r, c, cellFromDoc(next.doc, cellAt(now, r, c))));
+				const cell = cellFromDoc(next.doc, cellAt(now, r, c));
+				mounted.shown = cell;
+				this.write(withCell(now, r, c, cell));
 			},
 			handleDOMEvents: {
 				focus: () => {
@@ -1110,7 +1123,18 @@ class TableIslandView implements NodeView {
 				}
 			}
 		});
-		this.cells.push({ view, host, box, unregister: this.deps.register(view), r, c });
+		// `seed` is what the doc above was decoded from, and decode∘project is identity
+		// (`table.ts`, the cell codec), so it is what this view is showing.
+		const mounted: MountedCell = {
+			view,
+			host,
+			box,
+			shown: seed,
+			unregister: this.deps.register(view),
+			r,
+			c
+		};
+		this.cells.push(mounted);
 	}
 
 	// ── Ops ───────────────────────────────────────────────────────────────────

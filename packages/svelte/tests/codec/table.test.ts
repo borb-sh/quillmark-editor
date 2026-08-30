@@ -737,6 +737,34 @@ describe('the table NodeView', () => {
 		field.destroy();
 	});
 
+	// What the reseed loop compares an arriving cell against is the record each mounted
+	// cell holds of the value it is showing, so both paths that move a nested doc have
+	// to leave that record current. The two below are what a stale one costs.
+
+	it('an own edit reseeds nothing: the view keeps the doc its own transaction produced', () => {
+		const { field } = tableLeaf(LETTERED);
+		const view = cellViews(field)[0];
+		const tr = view.state.tr.insertText('!', 1);
+		view.dispatch(tr);
+		// Node identity, which the caret cannot answer for: a reseed decodes a fresh doc
+		// from the stored cell, and lands the caret back at the same offset by clamping.
+		expect(view.state.doc).toBe(tr.doc);
+		field.destroy();
+	});
+
+	it('a reseed leaves the record current, so a second external change reseeds again', () => {
+		const { doc, field } = tableLeaf(LETTERED);
+		doc.overwrite({}, withTable(withCell(LETTERED, 0, 0, cell('ONE'))));
+		field.applyExternal();
+		expect(cellViews(field)[0].state.doc.textContent).toBe('ONE');
+		// Back to the value the cell mounted with, which is what a record left at the
+		// mount seed still holds: it would compare equal and the reseed be skipped.
+		doc.overwrite({}, withTable(LETTERED));
+		field.applyExternal();
+		expect(cellViews(field)[0].state.doc.textContent).toBe('h1');
+		field.destroy();
+	});
+
 	it('a non-table island keeps the literal placeholder', () => {
 		const doc = quill().seedDocument();
 		const rt = md(TABLE_MD);
