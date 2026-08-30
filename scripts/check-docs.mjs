@@ -6,9 +6,11 @@
 //      commit that earns it, and the pointers to it sit in four other packages and in the
 //      gates' own failure messages, where nothing looks. Every `.md` the walk finds is a
 //      target, keyed by filename, so a pointer at a name the workspace does not carry is a
-//      finding rather than a skip, and a new doc is addressable the moment it lands. The
-//      sibling quillmark repo's canon is cited by filename and never with a section, so it
-//      passes through untouched.
+//      finding rather than a skip, and a new doc is addressable the moment it lands. A name
+//      two files answer to addresses neither, its headings being the union of both, so
+//      citing one is a finding and a collision nothing cites stands. The sibling quillmark
+//      repo's canon is cited by filename and never with a section, so it passes through
+//      untouched.
 //
 //   2. The boundary pin. `DOCUMENT_MODEL.md` is the single place the `@quillmark/wasm`
 //      version coupling is recorded, so the number in the prose answers to the number on
@@ -64,12 +66,16 @@ const files = [...tree(ROOT)];
 
 // ── 1. The section pointer ──────────────────────────────────────────────────────
 
-/** Each doc's headings, as word lists, keyed by filename without the extension. */
+/** Each doc's headings, as word lists, keyed by filename without the extension, and the
+ *  files each name is claimed by. */
+const docs = files.filter((f) => f.endsWith('.md'));
 const headings = new Map();
-for (const abs of files.filter((f) => f.endsWith('.md'))) {
+const claimants = new Map();
+for (const abs of docs) {
 	const name = basename(abs, '.md');
 	const hs = [...readFileSync(abs, 'utf8').matchAll(/^#+\s+(.+)$/gm)].map((m) => words(m[1]));
 	headings.set(name, [...(headings.get(name) ?? []), ...hs]);
+	claimants.set(name, [...(claimants.get(name) ?? []), relative(ROOT, abs)]);
 }
 
 let pointers = 0;
@@ -82,6 +88,14 @@ for (const abs of files) {
 				const hs = headings.get(doc);
 				if (!hs) {
 					errors.push(`${rel}:${i + 1}: \`${doc} §…\` — no such doc in this workspace`);
+					continue;
+				}
+				const claimed = claimants.get(doc);
+				if (claimed.length > 1) {
+					errors.push(
+						`${rel}:${i + 1}: \`${doc} §…\` names ${claimed.length} files (${claimed.join(', ')}); ` +
+							`the section would resolve against all of them`
+					);
 					continue;
 				}
 				pointers++;
@@ -108,5 +122,5 @@ if (pins.length === 0)
 report(
 	'Docs check',
 	errors,
-	`Docs OK — ${pointers} section pointers resolved across ${headings.size} docs, @quillmark/wasm ${installed}.`
+	`Docs OK — ${pointers} section pointers resolved across ${docs.length} docs, @quillmark/wasm ${installed}.`
 );

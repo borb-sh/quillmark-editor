@@ -272,6 +272,19 @@ function buildInline(
 		if (runText.length) out.push(schema.text(runText, runMarks));
 		runText = '';
 	};
+	// A mark set changes only where a mark starts or ends. `marks` is the field's whole
+	// list, so resolving one per code point costs the text against every mark in the
+	// document.
+	const segEndUSV = segStartUSV + cps.length;
+	const spanning = marks.filter((m) => m.start < segEndUSV && m.end > segStartUSV);
+	const edges = new Set<number>();
+	for (const m of spanning) {
+		if (m.start > segStartUSV) edges.add(m.start);
+		if (m.end < segEndUSV) edges.add(m.end);
+	}
+	let active: ContentMark[] = [];
+	let key = '';
+	let unresolved = true;
 	for (let k = 0; k < cps.length; k++) {
 		const cp = cps[k];
 		const pos = segStartUSV + k;
@@ -282,10 +295,14 @@ function buildInline(
 				out.push(schema.nodes.island_inline.create(attrs));
 			}
 			runKey = '\0slot'; // force a fresh run after a slot
+			unresolved = true; // the slot's own position is skipped, edge or not
 			continue;
 		}
-		const active = marks.filter((m) => m.start <= pos && pos < m.end);
-		const key = markSetKey(active);
+		if (unresolved || edges.has(pos)) {
+			active = spanning.filter((m) => m.start <= pos && pos < m.end);
+			key = markSetKey(active);
+			unresolved = false;
+		}
 		if (key !== runKey && runText.length) flush();
 		if (key !== runKey) {
 			runKey = key;
