@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+**The carried `@quillmark/wasm` is 0.111.0, and the PDF spine checks what it was trusting.** `quillkit check` refuses two shapes it passed: a pdfform base carrying its own `/AcroForm` (`pdf::existing_acroform`), which shipped a double-form PDF whose behavior was the reader's choice, and a non-finite widget rect (`pdf::bad_rect`), which wrote an unparseable PDF. Both are the quill's to fix — strip the background, correct the `form.json` geometry — and both are PDF output only, SVG and PNG drawing values regardless.
+
 **A `quillkit.config.js` that throws fails the gate, and an artifact that will not load says what broke.** A config carrying a syntax error, a specifier that does not resolve or a throwing statement names the file and the error under it, where it read as a config that was not there and the gate rendered every quill through `@quillmark/wasm` and printed a pass table for it. Absence is the only fall-through and it is the filesystem's answer, not an error's. The artifact splits the same way: one that will not resolve names its install, and one that will not import or will not instantiate carries what threw.
 
 ## v0.5.4 - 2026-08-26

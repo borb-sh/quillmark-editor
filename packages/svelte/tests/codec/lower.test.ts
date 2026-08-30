@@ -48,7 +48,6 @@ function atHead(state: EditorState, index: number): EditorState {
 }
 
 interface AnchorOpts {
-	oldAnchors?: { id: string; pos: number }[];
 	newAnchors?: { id: string; pos: number }[];
 }
 
@@ -307,7 +306,6 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		const state = EditorState.create({ doc: decode(oldRt, blockSchema) });
 		const tr = state.tr.insertText('XX', 1); // insert before the anchor at USV 6
 		const bundle = lower(contentEdit(oldRt, pmToContent(tr.doc)), {
-			oldAnchors: [{ id: 'a1', pos: 6 }],
 			newAnchors: [{ id: 'a1', pos: 8 }] // rebased +2
 		});
 		doc.applyChange({}, bundle);
@@ -334,7 +332,6 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		const tr = state.tr.insertText('\n', 2); // a code-interior line before the anchor
 		const edit = contentEdit(oldRt, pmToContent(tr.doc));
 		const bundle = lower(edit, {
-			oldAnchors: [{ id: 'c1', pos: 3 }],
 			newAnchors: [{ id: 'c1', pos: 4 }] // the \n inserts before it → +1
 		});
 		doc.applyChange({}, bundle);
@@ -366,7 +363,6 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 			const tr = mkTr(EditorState.create({ doc: oldDoc }));
 			const after = projected(oldDoc, tr, pos, bias);
 			const bundle = lower(contentEdit(oldRt, pmToContent(tr.doc)), {
-				oldAnchors: [{ id: 'a1', pos }],
 				newAnchors: [{ id: 'a1', pos: after }]
 			});
 			doc.applyChange({}, bundle);
@@ -464,7 +460,6 @@ describe('the island channel — an island edit lowers op-wise', () => {
 		const rt = md(TABLE_MD);
 		rt.marks.push({ start: 2, end: 2, type: 'anchor', id: 'a1' } as never);
 		const { doc, bundle } = lowerEdit(rt, (s) => retypeCell(s, 'HEAD'), {
-			oldAnchors: [{ id: 'a1', pos: 2 }],
 			newAnchors: [{ id: 'a1', pos: 2 }]
 		});
 		doc.applyChange({}, bundle);
@@ -492,7 +487,7 @@ describe('the island channel — an island edit lowers op-wise', () => {
 		const { doc, bundle } = lowerEdit(
 			rt,
 			(s) => s.tr.insert(s.doc.child(0).nodeSize, blockSchema.nodes.island_block.create(entry)),
-			{ oldAnchors: [{ id: 'a1', pos: 1 }], newAnchors: [{ id: 'a1', pos: 1 }] }
+			{ newAnchors: [{ id: 'a1', pos: 1 }] }
 		);
 		// The delta opens the line, the island op places the slot, the line op tags it.
 		expect(bundle.delta?.ops).toContainEqual({ insert: '\n' });

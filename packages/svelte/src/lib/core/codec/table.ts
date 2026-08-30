@@ -16,7 +16,7 @@
 // shape, so a cell decodes and projects through the same machinery a
 // `richtext(inline)` field does.
 import { isAnchorMark } from '@quillmark/wasm';
-import type { Content, ContentMark, TableCell, TableProps } from '@quillmark/wasm';
+import type { Content, TableCell, TableProps } from '@quillmark/wasm';
 import type { Node as PMNode } from 'prosemirror-model';
 import { core } from '../lifecycle.js';
 import { contentEdit, pmToContent } from './encode.js';
@@ -261,22 +261,21 @@ export function cellContent(cell: TableCell): Content {
  * the field plugin's coordinate space (the field's position map holds one `atom`
  * run for the whole table), so nothing here can mint one and the popover withholds
  * its `anchor` button while the caret is in a cell. Preserving them still means
- * rebasing: a cell edit is a splice like any other, so each held anchor maps through
- * the cell's own text delta by the rule `applyChange` uses on a field's
- * (start-assoc `after`), and a mark the splice deleted through lands where the
- * splice left it rather than pointing past the text.
+ * rebasing: a cell edit is a splice like any other, so `mapMarks` carries each held
+ * anchor through the cell's own delta by the rule the store applies to a field's,
+ * and a mark the splice deleted through lands where the splice left it rather than
+ * pointing past the text.
  */
 export function cellFromDoc(doc: PMNode, prior: TableCell): TableCell {
 	const projected = pmToContent(doc);
 	const text = projected.text;
 	const anchors = prior.marks.filter(isAnchorMark);
 	if (!anchors.length) return { text, marks: projected.marks };
-	const delta = contentEdit(cellContent(prior), cellContent({ text, marks: [] })).delta;
-	const { mapPos } = core();
-	const rebased = anchors.map((a) => {
-		const pos = delta ? mapPos(delta, a.start, 'after') : a.start;
-		return { ...a, start: pos, end: pos } as ContentMark;
-	});
+	const before = cellContent(prior);
+	const delta = contentEdit(before, cellContent({ text, marks: [] })).delta;
+	const rebased = core()
+		.mapMarks(before, delta ? { delta } : {})
+		.filter(isAnchorMark);
 	return {
 		text,
 		marks: [...projected.marks, ...rebased].sort((a, b) => a.start - b.start || a.end - b.end)

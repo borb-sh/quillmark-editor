@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+**The `@quillmark/wasm` peer floor is `>=0.111.0-0`, where `mapMarks` answers where a bundle leaves a field's marks.** Every text-moving channel of a `ChangeBundle` rebases the marks already in the field by one assoc rule, and the mark diff needed that answer to decide which `markOps` to emit — so it carried a copy of the rule, and the copy drifted. It asks now: `mapMarks(oldRt, bundle)` names the marks the field will hold, `markOps` are the difference from that, and the pre-edit anchor set is read off the same answer rather than passed in beside it. The rebase is the store's to define at every position, including an insertion at a zero-width mark, which is where the copy was wrong.
+
+**An anchor inside a table cell holds its position against text typed at it.** A cell edit rebased its held anchors a character to the right where the same gesture in a field left them put, so which side of your own typing a comment thread landed on depended on whether it sat in a table. Both lanes take the store's rule now.
+
+**A `plaintext` field declared `inline: true` mounts as the one-line leaf it asked for.** The boundary served `inline` for richtext alone and now serves it at every type, so such a field takes the inline leaf and `packable` accepts the `ui.compact` beside it: a field that spanned its row packs into a cell wherever its neighbours pack too. Nothing in this package changed to meet it — it reads `inline` off the schema and always did — but a host laying out a quill that declares the pair sees the rows it declared.
+
 ## v0.10.1 - 2026-08-26
 
 **The editor takes the width its host gives it, and asks for no more.** A table island scrolls its own columns and caps at the leaf, but a percentage cap is no cap while an ancestor is being sized to what it holds — so the table's full width travelled out of the leaf, out of the card and out of the surface. A host standing the mount in a column that floors at its content (a flex or grid track with no minimum of its own) widened by the whole table, and the pane beside it left the screen. The surface contains its inline size, so nothing a leaf holds reaches past the mount; the island contains its own, so the cap it draws is true wherever it lands. Neither box moves: a narrow table shrinks to its columns and a wide one scrolls inside the leaf. [THEMING](THEMING.md) §"Drop it in" states the guarantee where a host laying its own tracks reads it, and the preset's hosts, flooring nothing at their content, never saw the fault.

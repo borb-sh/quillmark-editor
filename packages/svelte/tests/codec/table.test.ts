@@ -185,6 +185,19 @@ describe('the cell codec: a cell is its own content unit', () => {
 		expect(anchor.start).toBe(5); // rebased through the two inserted chars
 	});
 
+	it('a cell anchor holds its position against an insertion at it, as a field’s does', () => {
+		const c: TableCell = {
+			text: 'abcd',
+			marks: [{ start: 2, end: 2, type: 'anchor', id: 'a1' }] as TableCell['marks']
+		};
+		// Typed at the anchor's own position: the one offset where the two assocs differ.
+		const edited = decode(cellContent({ text: 'abXcd', marks: [] }), inlineSchema);
+		const anchor = cellFromDoc(edited, c).marks.find((m) => m.type === 'anchor') as {
+			start: number;
+		};
+		expect(anchor.start).toBe(2);
+	});
+
 	it('two spellings of one mark are one cell, whatever order the keys arrive in', () => {
 		// The two sides are a WASM read and this tier's projection, and neither promises
 		// the other's key order: compared as text, an own edit reads as an external one

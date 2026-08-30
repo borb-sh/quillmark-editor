@@ -400,16 +400,17 @@ describe('against the real specimen schema', () => {
 		expect(Object.keys(byName.handling.schema.variants!)).toEqual(['CONTROLLED']);
 	});
 
-	it('reads `inline` off what the boundary serves, which spells it for richtext alone', () => {
+	it('reads `inline` off what the boundary serves, which spells it at every type', () => {
 		const byName = Object.fromEntries(fieldModels(main()).map((m) => [m.name, m]));
-		// `subtitle` and the `handling` cells declare `inline: true` on disk; the schema
-		// carries it for richtext only, so a plaintext leaf projects as a block one and
-		// `packable` declines the `ui.compact` it asks for.
+		// `subtitle` and the `handling` cells declare `inline: true` on disk, and the
+		// schema carries it whatever the field's type, so a plaintext leaf is an inline
+		// one and `packable` takes the `ui.compact` it asks for.
 		expect(byName.subtitle.schema.type).toBe('plaintext');
 		expect(byName.subtitle.plaintext).toBe(true);
-		expect(byName.subtitle.inline).toBe(false);
+		expect(byName.subtitle.inline).toBe(true);
 		expect(byName.epigraph.inline).toBe(true); // richtext, declared the same way
 		expect(byName.subtitle.compact).toBe(true);
+		// Packable and alone is still `full`: a run of one has nothing to pack against.
 		expect(placeFields([byName.subtitle])).toEqual([{ field: byName.subtitle, span: 'full' }]);
 	});
 

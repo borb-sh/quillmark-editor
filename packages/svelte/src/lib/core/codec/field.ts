@@ -402,11 +402,10 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			if (!opsCommittable(doc, addr)) {
 				doc.overwrite(addr, edit.newRt); // brings the field to content rest
 			} else {
-				// Pre-edit anchors are the stored content's anchors (USV); post-edit
-				// anchors are the plugin's positions (mapped through the tr) as USV.
-				const oldAnchors = plaintext ? [] : anchorsFromContent(oldRt);
+				// Post-edit anchors are the plugin's positions (mapped through the tr) as
+				// USV; the pre-edit set is `oldRt`'s own, which `lower` reads for itself.
 				const newAnchors = plaintext ? [] : readAnchorsUsv();
-				doc.applyChange(addr, lower(edit, { oldAnchors, newAnchors }));
+				doc.applyChange(addr, lower(edit, { newAnchors }));
 			}
 			reconciler.commit(readLeaf(reader, addr));
 			return true;
