@@ -549,8 +549,8 @@ interface Interval {
 /** Formatting/unknown marks → add/remove ops; anchors → add/removeAnchor by id. */
 function diffMarks(oldRt: Content, newRt: Content, moved: ChangeBundle, opts: LowerOpts): MarkOp[] {
 	const ops: MarkOp[] = [];
-	// Where `moved`'s text channels leave the field's marks, answered by the store
-	// rather than predicted here: `markOps` are the difference from this.
+	// The store's answer for where `moved`'s text channels leave the field's marks;
+	// `markOps` are the difference from it.
 	const rebased = core().mapMarks(oldRt, moved);
 
 	// Group both sides by descriptor key (excluding anchors).
