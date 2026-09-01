@@ -150,7 +150,7 @@ describe('the vocabulary is the block shapes a pick fills, one implementation be
 		const stored = field.getContent();
 		expect(stored.text).toBe('alpha');
 		expect(stored.lines[0].containers).toEqual([
-			{ container: 'list_item', ordered: false, start: 1, ordinal: 0, instance: 0 }
+			{ container: 'list_item', attrs: { ordered: false, start: 1, ordinal: 0 }, instance: 0 }
 		]);
 		field.destroy();
 	});
@@ -159,7 +159,7 @@ describe('the vocabulary is the block shapes a pick fills, one implementation be
 		const { field, view } = leaf('alpha');
 		pick(field, view, 0, 'numbered-list');
 		expect(field.getContent().lines[0].containers).toEqual([
-			{ container: 'list_item', ordered: true, start: 1, ordinal: 0, instance: 0 }
+			{ container: 'list_item', attrs: { ordered: true, start: 1, ordinal: 0 }, instance: 0 }
 		]);
 		field.destroy();
 	});
@@ -170,8 +170,8 @@ describe('the vocabulary is the block shapes a pick fills, one implementation be
 		const stored = field.getContent();
 		// One list of two items, so the second item is ordinal 1 of the first's list.
 		expect(stored.lines.map((l) => l.containers)).toEqual([
-			[{ container: 'list_item', ordered: false, start: 1, ordinal: 0, instance: 0 }],
-			[{ container: 'list_item', ordered: false, start: 1, ordinal: 1, instance: 0 }]
+			[{ container: 'list_item', attrs: { ordered: false, start: 1, ordinal: 0 }, instance: 0 }],
+			[{ container: 'list_item', attrs: { ordered: false, start: 1, ordinal: 1 }, instance: 0 }]
 		]);
 		field.destroy();
 	});
@@ -179,7 +179,7 @@ describe('the vocabulary is the block shapes a pick fills, one implementation be
 	it('`/heading` is level 1, the level `# ` counts to', () => {
 		const { field, view } = leaf('alpha');
 		pick(field, view, 0, 'heading');
-		expect(field.getContent().lines[0]).toMatchObject({ kind: 'heading', level: 1 });
+		expect(field.getContent().lines[0]).toMatchObject({ kind: 'heading', attrs: { level: 1 } });
 		field.destroy();
 	});
 
@@ -455,9 +455,7 @@ describe('a pick lands in the container the caret was writing in', () => {
 	/** The `list_item` container an item at `ordinal` carries. */
 	const item = (ordinal: number, ordered = false) => ({
 		container: 'list_item',
-		ordered,
-		start: 1,
-		ordinal,
+		attrs: { ordered, start: 1, ordinal },
 		instance: 0
 	});
 

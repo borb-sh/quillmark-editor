@@ -4,7 +4,9 @@
 
 ## Unreleased
 
-**The `@quillmark/wasm` peer floor is `>=0.111.0-0`.** Nothing here reads a mark or a field schema, so the release's editor-facing move lands outside this package; the floor rises because a quiver hands out `Quill` handles the consumer's copy of the artifact has to load, and that copy now refuses a pdfform base carrying an `/AcroForm` of its own (`pdf::existing_acroform`) or a non-finite widget rect (`pdf::bad_rect`). A quill that rendered PDF and stops did so on a double-form background whose behavior was the reader's choice.
+**The `@quillmark/wasm` peer floor is `>=0.112.0-0`.** Nothing here reads a line, a mark or a container, so the release's respelling of the content vocabulary lands outside this package; the floor rises because a quiver hands out `Quill` handles the consumer's copy of the artifact has to load, and a consumer reading content off one reads its payloads under `attrs`.
+
+**The floor's previous step refuses two PDF shapes.** A consumer's copy of the artifact now declines a pdfform base carrying an `/AcroForm` of its own (`pdf::existing_acroform`) or a non-finite widget rect (`pdf::bad_rect`). A quill that rendered PDF and stops did so on a double-form background whose behavior was the reader's choice.
 
 ## v0.27.0 - 2026-08-26
 

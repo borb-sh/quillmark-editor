@@ -132,11 +132,13 @@ function groupBlocks(
 		if (isListItemContainer(here)) {
 			// Gather the maximal run of sibling `list_item` leaves at this depth
 			// (same ordered/start), then split it into items by `ordinal`.
-			const { ordered, start, instance } = here;
+			const { ordered, start } = here.attrs;
+			const { instance } = here;
 			let j = i + 1;
 			while (j < leaves.length) {
 				const c = atDepth(leaves[j], depth);
-				if (!c || !isListItemContainer(c) || c.ordered !== ordered || c.start !== start) break;
+				if (!c || !isListItemContainer(c)) break;
+				if (c.attrs.ordered !== ordered || c.attrs.start !== start) break;
 				// `instance` is the boundary between two adjacent lists; the normalizer
 				// numbers a run's `ordinal`s gaplessly from 0, so a reset carries none.
 				if (c.instance !== instance) break;
@@ -194,7 +196,7 @@ function atDepth(leaf: Leaf, depth: number): ContentContainer | undefined {
  * guard has already established, so a miss is unreachable. */
 function ordinalAt(leaf: Leaf, depth: number): number {
 	const c = atDepth(leaf, depth);
-	return c && isListItemContainer(c) ? c.ordinal : -1;
+	return c && isListItemContainer(c) ? c.attrs.ordinal : -1;
 }
 
 /** Identity of a container for run gathering: its name, its `instance` and its payload,
@@ -221,7 +223,7 @@ function makeLeaf(schema: Schema, leaf: Leaf, marks: ContentMark[], cursor: Isla
 		// One code_block: the segments' texts joined by literal `\n`, no marks.
 		const text = leaf.segments.map((s) => s.text).join('\n');
 		const content = text.length ? [schema.text(text)] : [];
-		return schema.nodes.code_block.create({ lang: line.lang ?? null }, content);
+		return schema.nodes.code_block.create({ lang: line.attrs?.lang ?? null }, content);
 	}
 	// para / heading / unknown: inline content, `hard_break` between continued segments.
 	const inline: PMNode[] = [];
@@ -230,7 +232,7 @@ function makeLeaf(schema: Schema, leaf: Leaf, marks: ContentMark[], cursor: Isla
 		inline.push(...buildInline(schema, seg.text, seg.startUSV, marks, cursor, false));
 	});
 	if (isHeadingLine(line)) {
-		return schema.nodes.heading.create({ level: line.level }, inline);
+		return schema.nodes.heading.create({ level: line.attrs.level }, inline);
 	}
 	// An unknown kind renders as a paragraph and rides on it, so it re-encodes
 	// verbatim rather than flattening to `para` on the field's first edit.

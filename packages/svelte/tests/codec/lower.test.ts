@@ -25,6 +25,7 @@ import {
 	pmMarkFromContent
 } from '$lib/core/codec/marks.js';
 import type { Content, ContentMark, TableProps } from '@quillmark/wasm';
+import { isAnchorMark, isLinkMark } from '@quillmark/wasm';
 import { freshDoc, normalize, contentEqual, md, textblocks } from './_util.js';
 
 /** The transaction one key press produces, through the leaf's chain falling through
@@ -53,10 +54,7 @@ interface AnchorOpts {
 
 /** The stored position of the identity anchor `id`. */
 function anchorAt(stored: Content, id: string): number | undefined {
-	const m = stored.marks.find(
-		(mark) => mark.type === 'anchor' && (mark as { id: string }).id === id
-	);
-	return m?.start;
+	return stored.marks.find((mark) => isAnchorMark(mark) && mark.attrs.id === id)?.start;
 }
 
 /** Install `rt`, build a PM tr, lower+apply, and assert the store matches PM. */
@@ -180,12 +178,12 @@ describe('formatting marks round-trip', () => {
 		const strong = stored.marks.filter((m) => m.type === 'strong');
 		expect(strong.every((m) => m.start >= 4)).toBe(true);
 	});
-	it('link add carries href → url', () => {
+	it('link add carries href → attrs.url', () => {
 		const { stored } = lowerApply(md('go to site'), (s) =>
 			s.tr.addMark(6, 10, blockSchema.marks.link.create({ href: 'http://x' }))
 		);
-		const link = stored.marks.find((m) => m.type === 'link') as { url: string } | undefined;
-		expect(link?.url).toBe('http://x');
+		const link = stored.marks.find(isLinkMark);
+		expect(link?.attrs.url).toBe('http://x');
 	});
 });
 
@@ -219,7 +217,7 @@ describe('unknown mark round-trip (verbatim)', () => {
 			strong: mark({ type: 'strong' }),
 			emph: mark({ type: 'emph' }),
 			code: mark({ type: 'code' }),
-			link: mark({ type: 'link', url: 'http://x' }),
+			link: mark({ type: 'link', attrs: { url: 'http://x' } }),
 			'unknown with attrs': mark({ type: 'sub', attrs: { x: 1 } }),
 			'unknown with null attrs': mark({ type: 'sub', attrs: null }),
 			'unknown with no attrs key': mark({ type: 'sub' })
@@ -295,7 +293,7 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 	const anchorRt: Content = {
 		text: 'hello world',
 		lines: [{ containers: [], kind: 'para' }],
-		marks: [{ start: 6, end: 6, type: 'anchor', id: 'a1' } as never],
+		marks: [{ start: 6, end: 6, type: 'anchor', attrs: { id: 'a1' } } as never],
 		islands: []
 	};
 
@@ -309,9 +307,8 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 			newAnchors: [{ id: 'a1', pos: 8 }] // rebased +2
 		});
 		doc.applyChange({}, bundle);
-		const anchor = doc.main.body.marks.find((m) => m.type === 'anchor') as
-			{ id: string; start: number } | undefined;
-		expect(anchor?.id).toBe('a1');
+		const anchor = doc.main.body.marks.find(isAnchorMark);
+		expect(anchor?.attrs.id).toBe('a1');
 		expect(anchor?.start).toBe(8);
 	});
 
@@ -323,7 +320,7 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		const codeRt: Content = {
 			text: 'abc',
 			lines: [{ containers: [], kind: 'code' }],
-			marks: [{ start: 3, end: 3, type: 'anchor', id: 'c1' } as never],
+			marks: [{ start: 3, end: 3, type: 'anchor', attrs: { id: 'c1' } } as never],
 			islands: []
 		};
 		doc.overwrite({}, codeRt);
@@ -338,8 +335,8 @@ describe('identity anchor round-trip (op-based, survives edits)', () => {
 		const body = doc.main.body;
 		expect(body.lines).toHaveLength(2);
 		expect(!!body.lines[1].continues).toBe(true);
-		const anchor = body.marks.find((m) => m.type === 'anchor') as { id: string } | undefined;
-		expect(anchor?.id).toBe('c1');
+		const anchor = body.marks.find(isAnchorMark);
+		expect(anchor?.attrs.id).toBe('c1');
 	});
 
 	// The two associativities agree everywhere but at the anchor's own position, which
@@ -458,7 +455,7 @@ describe('the island channel — an island edit lowers op-wise', () => {
 
 	it('every anchor in the field survives a cell edit', () => {
 		const rt = md(TABLE_MD);
-		rt.marks.push({ start: 2, end: 2, type: 'anchor', id: 'a1' } as never);
+		rt.marks.push({ start: 2, end: 2, type: 'anchor', attrs: { id: 'a1' } } as never);
 		const { doc, bundle } = lowerEdit(rt, (s) => retypeCell(s, 'HEAD'), {
 			newAnchors: [{ id: 'a1', pos: 2 }]
 		});
@@ -477,7 +474,7 @@ describe('the island channel — an island edit lowers op-wise', () => {
 
 	it('a block island lowers to delta → islandOps → lineOps, and anchors survive', () => {
 		const rt = md('one\n\ntwo');
-		rt.marks.push({ start: 1, end: 1, type: 'anchor', id: 'a1' } as never);
+		rt.marks.push({ start: 1, end: 1, type: 'anchor', attrs: { id: 'a1' } } as never);
 		const entry = {
 			id: 'isl-0',
 			islandType: 'table',

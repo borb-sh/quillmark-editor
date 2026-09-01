@@ -14,8 +14,8 @@ import { canonicalJson } from './reconcile.js';
 const PLAIN_FORMATTING = new Set(['strong', 'underline', 'strike', 'code']);
 
 /** Whether `m` is an unknown mark: the open set `pmMarkFromContent` falls through to,
- *  and the one class whose descriptor carries `attrs`. Classified by type name, so a
- *  spelling that omits `attrs` keys as the same mark as one spelling it `null`. */
+ *  and the one class whose `attrs` is opaque. Classified by type name, so a spelling
+ *  that omits `attrs` keys as the same mark as one spelling it `null`. */
 function isUnknownMark(m: ContentMark): boolean {
 	return !isAnchorMark(m) && !isLinkMark(m) && m.type !== 'emph' && !PLAIN_FORMATTING.has(m.type);
 }
@@ -24,7 +24,7 @@ function isUnknownMark(m: ContentMark): boolean {
 export function pmMarkFromContent(schema: Schema, m: ContentMark): Mark | null {
 	if (isAnchorMark(m)) return null;
 	if (m.type === 'emph') return schema.marks.em.create();
-	if (isLinkMark(m)) return schema.marks.link.create({ href: m.url });
+	if (isLinkMark(m)) return schema.marks.link.create({ href: m.attrs.url });
 	if (PLAIN_FORMATTING.has(m.type)) return schema.marks[m.type].create();
 	// Anything else is an unknown mark: inert, renders nothing, round-trips verbatim.
 	return schema.marks.unknown.create({
@@ -41,7 +41,7 @@ export function pmMarkFromContent(schema: Schema, m: ContentMark): Mark | null {
 export function contentDescriptorFromPM(mark: Mark): Record<string, unknown> {
 	const name = mark.type.name;
 	if (name === 'em') return { type: 'emph' };
-	if (name === 'link') return { type: 'link', url: mark.attrs.href };
+	if (name === 'link') return { type: 'link', attrs: { url: mark.attrs.href } };
 	if (name === 'unknown') return { type: mark.attrs.type as string, attrs: mark.attrs.attrs };
 	// strong / underline / strike / code
 	return { type: name };
@@ -49,25 +49,26 @@ export function contentDescriptorFromPM(mark: Mark): Record<string, unknown> {
 
 /**
  * The range-free `{ type, … }` half of a content mark: `contentDescriptorFromPM`'s
- * content-side twin, and what a `MarkOp` carries beside its range. An anchor keys
- * on its type alone: its `id` is identity, not a formatting family, and the diff
- * routes anchors by id on a separate channel.
+ * content-side twin, and what a `MarkOp` carries beside its range. A payload rides
+ * `attrs` at every arm, so a link's bag crosses whole rather than rebuilt from the
+ * one key this package reads. An anchor keys on its type alone: its `id` is identity,
+ * not a formatting family, and the diff routes anchors by id on a separate channel.
  */
 export function descriptorOf(m: ContentMark): Record<string, unknown> {
-	if (isLinkMark(m)) return { type: 'link', url: m.url };
-	if (isUnknownMark(m)) return { type: m.type, attrs: (m as { attrs?: unknown }).attrs ?? null };
+	if (isLinkMark(m) || isUnknownMark(m))
+		return { type: m.type, attrs: (m as { attrs?: unknown }).attrs ?? null };
 	return { type: m.type };
 }
 
 /**
  * A stable grouping key for the mark diff: marks sharing a key union into one
- * coverage set. Formatting keys on its type; a link keys on type+url and an
- * unknown on type+attrs, because `applyChange`'s `remove` matches type and attrs
- * (verified), so different urls / attrs are independent mark families.
+ * coverage set. Payload-free formatting keys on its type, everything else on
+ * type+attrs, because `applyChange`'s `remove` matches type and attrs (verified),
+ * so two links differing in url are independent mark families. This is the seam's
+ * own `(type, attrs)` tie-break, which is why no arm needs a case of its own.
  */
 export function markKey(descriptor: Record<string, unknown>): string {
 	const type = descriptor.type as string;
-	if (type === 'link') return `link\u0000${String(descriptor.url)}`;
 	if (descriptor.attrs !== undefined) return `${type}\u0000${canonicalJson(descriptor.attrs)}`;
 	return type;
 }
@@ -85,6 +86,6 @@ export interface AnchorPos {
  */
 export function anchorsFromContent(rt: { marks: ContentMark[] }): AnchorPos[] {
 	const out: AnchorPos[] = [];
-	for (const m of rt.marks) if (isAnchorMark(m)) out.push({ id: m.id, pos: m.start });
+	for (const m of rt.marks) if (isAnchorMark(m)) out.push({ id: m.attrs.id, pos: m.start });
 	return out;
 }
