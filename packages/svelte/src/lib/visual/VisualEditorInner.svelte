@@ -32,7 +32,14 @@
 	import { errorMessage, reportError } from '../core/errors.js';
 	import { bloomInside } from '../core/bloom.js';
 	import { createLifespan } from '../core/teardown.js';
-	import type { Addr, CardAddr, Diagnostic, Resolved, ResolvedField } from '@quillmark/wasm';
+	import type {
+		Addr,
+		CardAddr,
+		Diagnostic,
+		PayloadItem,
+		Resolved,
+		ResolvedField
+	} from '@quillmark/wasm';
 	import type { VisualEditorProps } from './props.js';
 	import { mergeStrings, setWording } from './strings.js';
 	import type { CardId, ChangeSource } from './signals.js';
@@ -45,6 +52,8 @@
 		groupSections,
 		groupLabel,
 		cardTitle,
+		titleFields,
+		fieldValues,
 		bodyEnabled,
 		humanize,
 		provenanceMap,
@@ -144,6 +153,7 @@
 	 */
 	function bump(source: ChangeSource, cardId?: CardId, at?: Addr | number): void {
 		revision++;
+		liveTitles = {};
 		const path =
 			at == null ? undefined : typeof at === 'number' ? cardPath(at, liveKinds()) : pathFor(at);
 		onChange?.({ source, cardId, path });
@@ -268,7 +278,33 @@
 		const plain = normalize(addr);
 		const cardId = cardIdOf(plain);
 		if (cardId == null) return;
+		refreshTitle(plain, cardId);
 		onChange?.({ source: 'prose', cardId, path: pathFor(plain) });
+	}
+
+	/** A card's header after a prose commit to a field its `{field}` title names: the
+	 *  one piece of the model that lane changes, held beside the model and dropped on
+	 *  the next bump, which rebuilds it from the document. The kind is the derived
+	 *  tree's ({@link liveKinds}), so the document is read only for a title that
+	 *  names the field. */
+	let liveTitles = $state<Record<CardId, string>>({});
+	function refreshTitle(addr: Addr, cardId: CardId): void {
+		const { card: at, field } = addr;
+		if (field == null) return;
+		const shown = at == null ? model.main : model.cards[at];
+		if (!shown) return;
+		const cardSchema = at == null ? quill.schema.main : quill.schema.card_kinds?.[shown.kind];
+		if (!titleFields(cardSchema?.ui?.title).includes(field)) return;
+		const live = at == null ? doc.main : doc.cards[at];
+		if (!live) return;
+		liveTitles = {
+			...liveTitles,
+			[cardId]: cardTitle(cardSchema, shown.kind, fieldValues(live.payloadItems), undefined)
+		};
+	}
+	function titled(c: CardModel): CardModel {
+		const t = liveTitles[c.id];
+		return t == null ? c : { ...c, titlePlaceholder: t };
 	}
 
 	// ── Commit routing ──────────────────────────────────────────────────────────
@@ -544,15 +580,13 @@
 		isMain: boolean,
 		kind: string,
 		card: {
-			payloadItems: { type: string; key?: string; value?: unknown }[];
+			payloadItems: readonly PayloadItem[];
 			ext?: Record<string, unknown>;
 		},
 		cardSchema: Parameters<typeof fieldModels>[0] | undefined,
 		rows: ResolvedCardRows
 	): CardModel {
-		const values: Record<string, unknown> = {};
-		for (const p of card.payloadItems)
-			if (p.type === 'field' && p.key != null) values[p.key] = p.value;
+		const values = fieldValues(card.payloadItems);
 		const fields = cardSchema ? fieldModels(cardSchema) : [];
 		const sections = cardSchema
 			? groupSections(fields, groupOrder(cardSchema), (g) => groupLabel(cardSchema, g))
@@ -815,7 +849,7 @@
 	<div class="qm-primary">
 		<Card
 			bind:this={mainCard}
-			card={model.main}
+			card={titled(model.main)}
 			{doc}
 			{quill}
 			isFirst={true}
@@ -847,7 +881,7 @@
 		<div class="qm-card-slot" bind:this={slotEls[i]} animate:reorder={isReordering}>
 			<Card
 				bind:this={cardRefs[i]}
-				card={c}
+				card={titled(c)}
 				{doc}
 				{quill}
 				isFirst={i === 0}

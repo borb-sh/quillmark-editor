@@ -4,7 +4,14 @@
 // are unit-testable in isolation (tests/visual/structure.test.ts). The reactive
 // orchestration (revision counter, live doc reads) lives in VisualEditor.svelte;
 // this module is the projection math it feeds.
-import type { QuillCardSchema, QuillFieldSchema, ResolvedField, Resolved } from '@quillmark/wasm';
+import type {
+	Content,
+	PayloadItem,
+	QuillCardSchema,
+	QuillFieldSchema,
+	ResolvedField,
+	Resolved
+} from '@quillmark/wasm';
 
 /** The control a field type maps to (VISUAL_EDITOR §"Structure mirrors the schema"). */
 export type ControlKind =
@@ -438,12 +445,34 @@ export function placeFields(fields: FieldModel[]): PlacedField[] {
 	return out;
 }
 
+/** A card's field values by key, off its payload items. */
+export function fieldValues(items: readonly PayloadItem[]): Record<string, unknown> {
+	const values: Record<string, unknown> = {};
+	for (const p of items) if (p.type === 'field') values[p.key] = p.value;
+	return values;
+}
+
 /** Interpolate a `{field}` card-title template against live field values. */
 export function interpolateTitle(template: string, values: Record<string, unknown>): string {
-	return template.replace(/\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (_m, name: string) => {
-		const v = values[name];
-		return v == null ? '' : String(v);
-	});
+	return template.replace(/\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (_m, name: string) =>
+		titleText(values[name])
+	);
+}
+
+/** A field value as title text. A parsed field rests as the authored string and a
+ *  committed one as `Content`, whose `text` is the same words; a scalar reads as
+ *  itself and any other container as nothing. */
+export function titleText(v: unknown): string {
+	if (v == null) return '';
+	if (typeof v !== 'object') return String(v);
+	const text = (v as Partial<Content>).text;
+	return typeof text === 'string' ? text : '';
+}
+
+/** The field names a `{field}` title reads. */
+export function titleFields(template: string | undefined): string[] {
+	if (!template) return [];
+	return [...template.matchAll(/\{([A-Za-z_][A-Za-z0-9_]*)\}/g)].map((m) => m[1]);
 }
 
 /**
