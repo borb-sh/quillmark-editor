@@ -17,7 +17,7 @@ describe('substrate chain', () => {
 		expect(tree.has('Quill.yaml')).toBe(true);
 
 		const quill = core.Quill.fromTree(tree);
-		expect(quill.metadata.name).toBe('specimen');
+		expect(quill.metadata.name).toBe('showcase');
 		expect(quill.backendId).toBe('typst');
 		expect(Object.keys(quill.schema.main.fields).length).toBeGreaterThan(0);
 		expect(quill.schema.card_kinds).toHaveProperty('section');

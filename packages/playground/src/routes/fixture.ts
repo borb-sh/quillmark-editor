@@ -10,7 +10,7 @@ import { Quiver } from '@quillmark/quiver';
 import { base } from '$app/paths';
 
 /** The quill a route opens unless it is asked for another. */
-export const DEFAULT_FIXTURE = 'specimen';
+export const DEFAULT_FIXTURE = 'showcase';
 
 let quiverP: Promise<Quiver> | undefined;
 

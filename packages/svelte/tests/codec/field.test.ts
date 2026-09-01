@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// The standalone prose leaf: a `createField` over a real `specimen` `title` (inline)
+// The standalone prose leaf: a `createField` over a real `showcase` `title` (inline)
 // and body edits via applyChange; the caret survives own-edits through the PM StepMap;
 // an external content change re-hydrates and the leaf's own edit does not.
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -21,7 +21,7 @@ function viewOf(f: FieldController): EditorView {
 	return (f as FieldController & { view: EditorView }).view;
 }
 
-describe('createField over a real specimen leaf', () => {
+describe('createField over a real showcase leaf', () => {
 	let doc: Document;
 	beforeEach(() => {
 		doc = quill().seedDocument();

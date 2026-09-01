@@ -1,5 +1,5 @@
 // The pure join/ordering/layout math (VisualEditor's projection). Unit-tested
-// in isolation (no runes, no Document) including against the real specimen
+// in isolation (no runes, no Document) including against the real showcase
 // schema so the ordering contract and group layout are asserted on the fixture
 // the suite runs against.
 import { describe, it, expect } from 'vitest';
@@ -364,7 +364,7 @@ describe('required', () => {
 // inventory: a count, a group list or a field's copy pinned here fails on every
 // edit to the reference quill, and the failure is answered by pasting the new
 // value (CLAUDE.md §Verification).
-describe('against the real specimen schema', () => {
+describe('against the real showcase schema', () => {
 	const main = () => quill().schema.main;
 
 	it('projects fields in declaration order, with the real shapes mapping to controls', () => {

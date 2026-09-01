@@ -15,16 +15,16 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(HERE, '..', '..', '..', '..');
 
 /**
- * The reference quiver's quills (dev fixtures, never published). `specimen` is the
+ * The reference quiver's quills (dev fixtures, never published). `showcase` is the
  * workspace's own and is what a suite drives unless it says otherwise; `usaf_memo` is
  * a copy of a shipped quill, held at `0.0.0` (fixtures/Quiver.yaml).
  */
 const ROOTS = {
-	specimen: join(REPO_ROOT, 'fixtures', 'quills', 'specimen', '1.0.0'),
+	showcase: join(REPO_ROOT, 'fixtures', 'quills', 'showcase', '1.0.0'),
 	usaf_memo: join(REPO_ROOT, 'fixtures', 'quills', 'usaf_memo', '0.0.0')
 } as const;
 
-/** Which fixture quill: the default is `specimen` everywhere it is not named. */
+/** Which fixture quill: the default is `showcase` everywhere it is not named. */
 export type FixtureName = keyof typeof ROOTS;
 
 /**
@@ -33,7 +33,7 @@ export type FixtureName = keyof typeof ROOTS;
  * `Uint8Array`, never decoded). The version directory is quill content throughout,
  * so there is nothing here to skip.
  */
-export function loadFixtureTree(name: FixtureName = 'specimen'): Map<string, Uint8Array> {
+export function loadFixtureTree(name: FixtureName = 'showcase'): Map<string, Uint8Array> {
 	const root = ROOTS[name];
 	const tree = new Map<string, Uint8Array>();
 	const walk = (dir: string): void => {
@@ -57,7 +57,7 @@ export function loadFixtureTree(name: FixtureName = 'specimen'): Map<string, Uin
  * copy of this cache.
  */
 const cached = new Map<FixtureName, Quill>();
-export function quill(name: FixtureName = 'specimen'): Quill {
+export function quill(name: FixtureName = 'showcase'): Quill {
 	let held = cached.get(name);
 	if (!held) cached.set(name, (held = core.Quill.fromTree(loadFixtureTree(name))));
 	return held;

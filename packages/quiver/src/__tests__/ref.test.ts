@@ -3,27 +3,27 @@ import { parseQuillRef } from '../ref.js';
 import { QuiverError } from '../errors.js';
 
 describe('parseQuillRef — valid refs', () => {
-	it('parses bare name: specimen', () => {
-		const result = parseQuillRef('specimen');
-		expect(result.name).toBe('specimen');
+	it('parses bare name: showcase', () => {
+		const result = parseQuillRef('showcase');
+		expect(result.name).toBe('showcase');
 		expect(result.selector).toBeUndefined();
 	});
 
-	it('parses name@major: specimen@1', () => {
-		const result = parseQuillRef('specimen@1');
-		expect(result.name).toBe('specimen');
+	it('parses name@major: showcase@1', () => {
+		const result = parseQuillRef('showcase@1');
+		expect(result.name).toBe('showcase');
 		expect(result.selector).toBe('1');
 	});
 
-	it('parses name@major.minor: specimen@1.2', () => {
-		const result = parseQuillRef('specimen@1.2');
-		expect(result.name).toBe('specimen');
+	it('parses name@major.minor: showcase@1.2', () => {
+		const result = parseQuillRef('showcase@1.2');
+		expect(result.name).toBe('showcase');
 		expect(result.selector).toBe('1.2');
 	});
 
-	it('parses name@x.y.z: specimen@1.2.3', () => {
-		const result = parseQuillRef('specimen@1.2.3');
-		expect(result.name).toBe('specimen');
+	it('parses name@x.y.z: showcase@1.2.3', () => {
+		const result = parseQuillRef('showcase@1.2.3');
+		expect(result.name).toBe('showcase');
 		expect(result.selector).toBe('1.2.3');
 	});
 

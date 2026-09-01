@@ -52,7 +52,7 @@ describe('quillkit test', () => {
 				cwd: await temp.collection()
 			});
 
-			expect(stdout).toContain('pass  specimen@1.0.0');
+			expect(stdout).toContain('pass  showcase@1.0.0');
 			expect(stdout).toContain('pass  usaf_memo@0.0.0');
 			expect(stdout).toContain('2/2 passed');
 		},

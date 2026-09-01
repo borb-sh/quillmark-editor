@@ -34,7 +34,7 @@ npm run check:bundle       # the same scales, in a built consumer
 
 Three gates, and each holds what a reviewer cannot see for itself: a rung that resolves to nothing, a promise that outranks a consumer, a pointer at a heading that moved, an edge between two siblings. What is legible in a diff — a value's own shape, a manifest's, a declaration in a JS string — is review's.
 
-Everything runs against the one reference quill, [`fixtures/quills/specimen/1.0.0`](fixtures/quills/specimen), a dev fixture at the workspace root, never published: it declares a field for every control the tier draws and three card kinds, so a surface is exercised against a schema rather than against a mock.
+Everything runs against the one reference quill, [`fixtures/quills/showcase/1.0.0`](fixtures/quills/showcase), a dev fixture at the workspace root, never published: it declares a field for every control the tier draws and three card kinds, so a surface is exercised against a schema rather than against a mock.
 
 ## Canon
 

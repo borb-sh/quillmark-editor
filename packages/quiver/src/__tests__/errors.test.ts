@@ -34,12 +34,12 @@ describe('QuiverError', () => {
 	it('preserves all payload fields together', () => {
 		const cause = new Error('root');
 		const err = new QuiverError('quiver_invalid', 'full payload', {
-			ref: 'specimen@1.2.3',
+			ref: 'showcase@1.2.3',
 			version: '1.2.3',
 			quiverName: 'fixtures',
 			cause
 		});
-		expect(err.ref).toBe('specimen@1.2.3');
+		expect(err.ref).toBe('showcase@1.2.3');
 		expect(err.version).toBe('1.2.3');
 		expect(err.quiverName).toBe('fixtures');
 		expect(err.cause).toBe(cause);
