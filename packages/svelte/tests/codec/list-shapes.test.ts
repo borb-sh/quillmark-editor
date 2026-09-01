@@ -61,9 +61,9 @@ describe('adjacent same-type lists keep their boundary', () => {
 	})) {
 		it(`${name}: the ordinal reset survives the normalizer and re-decodes to two`, () => {
 			const stored = normalize(pmToContent(doc));
-			expect(stored.lines.map((l) => (l.containers[0] as { ordinal: number }).ordinal)).toEqual([
-				0, 1, 0
-			]);
+			expect(
+				stored.lines.map((l) => (l.containers[0] as { attrs: { ordinal: number } }).attrs.ordinal)
+			).toEqual([0, 1, 0]);
 			expect(decode(stored, blockSchema).childCount).toBe(2);
 		});
 	}

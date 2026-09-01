@@ -121,7 +121,7 @@ describe('a copy and a paste carry the whole node', () => {
 	// The rung the round-trip is for: what the leaf would store after the paste.
 	it('and the fence still spells its language in the content', () => {
 		const back = parse(serialize(doc(S.nodes.code_block.create({ lang: 'py' }, S.text('x')))));
-		expect(pmToContent(back).lines[0]).toMatchObject({ kind: 'code', lang: 'py' });
+		expect(pmToContent(back).lines[0]).toMatchObject({ kind: 'code', attrs: { lang: 'py' } });
 	});
 
 	// Through PM's own copy path rather than the serializer alone: the props a table
@@ -150,6 +150,17 @@ describe('what a paste from outside the editor states', () => {
 
 	it('a fence stating none carries none', () => {
 		expect(parse('<pre><code>plain</code></pre>').child(0).attrs.lang).toBe(null);
+	});
+
+	// A `lang` is written into a fence header unquoted, so the store refuses one it
+	// would have to reduce; the paste door reduces it instead of handing over a value
+	// the next `setKind` throws on.
+	it.each([
+		['a character no header can carry', '<pre><code class="language-r`s">x</code></pre>', 'r'],
+		['a second word', '<pre data-lang="rust and more"><code>x</code></pre>', 'rust'],
+		['nothing writable at all', '<pre data-lang="!?"><code>x</code></pre>', null]
+	])('a fence stating a language the store cannot write: %s', (_name, html, want) => {
+		expect(parse(html).child(0).attrs.lang).toBe(want);
 	});
 
 	it('an ordered list carrying its start', () => {

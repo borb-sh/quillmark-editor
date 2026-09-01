@@ -4,7 +4,7 @@
 
 ## Unreleased
 
-**The `@quillmark/wasm` peer floor is `>=0.111.0-0`.** Nothing here reads a mark or a field schema, so the release's editor-facing move lands outside this package; the floor rises because a quiver hands out `Quill` handles the consumer's copy of the artifact has to load, and that copy now refuses a pdfform base carrying an `/AcroForm` of its own (`pdf::existing_acroform`) or a non-finite widget rect (`pdf::bad_rect`). A quill that rendered PDF and stops did so on a double-form background whose behavior was the reader's choice.
+**The `@quillmark/wasm` peer floor is `>=0.112.0-0`.** Nothing here reads a mark, a line kind or a field schema, so the release's content respelling lands outside this package; the floor rises because a quiver hands out `Quill` handles the consumer's copy of the artifact has to load and render, and that copy refuses three shapes it took. A pdfform base carrying an `/AcroForm` of its own (`pdf::existing_acroform`) or a non-finite widget rect (`pdf::bad_rect`): a quill that rendered PDF and stops did so on a double-form background whose behavior was the reader's choice, or on geometry that wrote an unparseable PDF. And a variant-bearing enum whose `default:` is not a string, which loaded clean and then selected nothing. What a loading quill renders moves too: a document's dashes, ellipses and signed numbers reach the page as the characters it holds rather than as Typst's substitutions for them.
 
 ## v0.27.0 - 2026-08-26
 

@@ -160,15 +160,23 @@ const BUILTIN_MARKS = new Set([...Object.keys(marks), 'anchor']);
 /** A `language-x` / `lang-x` token in a class list. */
 const LANG_CLASS = /(?:^|\s)lang(?:uage)?-(\S+)/;
 
+/** A stated language reduced to what a fence header can carry: the leading run of
+ *  identifier characters, the store's own rule. A `lang` is written into the header
+ *  unquoted, so the authored lane refuses one it would have to repair — and a paste is
+ *  the door a value carrying a backtick or a line break comes through. */
+function writableLang(stated: string): string | null {
+	return /^[A-Za-z0-9\-_.+]*/.exec(stated)![0] || null;
+}
+
 /** The language a `<pre>` states: `data-lang`, which is what `toDOM` writes, else the
  *  class convention on the `pre` or on the `code` it wraps. `null` where it states
  *  none, which is also what an empty value is. */
 function fenceLang(pre: HTMLElement): string | null {
 	const stated = pre.getAttribute('data-lang');
-	if (stated) return stated;
+	if (stated) return writableLang(stated);
 	for (const el of [pre, pre.firstElementChild]) {
 		const match = el && LANG_CLASS.exec(el.getAttribute('class') ?? '');
-		if (match) return match[1]!;
+		if (match) return writableLang(match[1]!);
 	}
 	return null;
 }
