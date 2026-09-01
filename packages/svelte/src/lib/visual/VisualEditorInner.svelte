@@ -32,7 +32,14 @@
 	import { errorMessage, reportError } from '../core/errors.js';
 	import { bloomInside } from '../core/bloom.js';
 	import { createLifespan } from '../core/teardown.js';
-	import type { Addr, CardAddr, Diagnostic, Resolved, ResolvedField } from '@quillmark/wasm';
+	import type {
+		Addr,
+		CardAddr,
+		Diagnostic,
+		PayloadItem,
+		Resolved,
+		ResolvedField
+	} from '@quillmark/wasm';
 	import type { VisualEditorProps } from './props.js';
 	import { mergeStrings, setWording } from './strings.js';
 	import type { CardId, ChangeSource } from './signals.js';
@@ -46,6 +53,7 @@
 		groupLabel,
 		cardTitle,
 		titleFields,
+		fieldValues,
 		bodyEnabled,
 		humanize,
 		provenanceMap,
@@ -277,21 +285,22 @@
 	/** A card's header, re-read after a prose commit to a field its `{field}` title
 	 *  names: the one piece of the model a leaf's own commit changes, kept beside the
 	 *  model rather than re-deriving it, and dropped on the next bump, which rebuilds
-	 *  it from the document. */
+	 *  it from the document. The kind is the derived tree's, as {@link liveKinds}, so
+	 *  the document is read only once the title is known to name the field. */
 	let liveTitles = $state<Record<CardId, string>>({});
 	function refreshTitle(addr: Addr, cardId: CardId): void {
-		const field = addr.field;
+		const { card: at, field } = addr;
 		if (field == null) return;
-		const isMain = addr.card == null;
-		const card = isMain ? doc.main : doc.cards[addr.card!];
-		if (!card) return;
-		const kind = isMain ? 'main' : (card as { kind: string }).kind;
-		const cardSchema = isMain ? quill.schema.main : quill.schema.card_kinds?.[kind];
+		const shown = at == null ? model.main : model.cards[at];
+		if (!shown) return;
+		const cardSchema = at == null ? quill.schema.main : quill.schema.card_kinds?.[shown.kind];
 		if (!titleFields(cardSchema?.ui?.title).includes(field)) return;
-		const values: Record<string, unknown> = {};
-		for (const p of card.payloadItems)
-			if (p.type === 'field' && p.key != null) values[p.key] = p.value;
-		liveTitles = { ...liveTitles, [cardId]: cardTitle(cardSchema, kind, values, undefined) };
+		const live = at == null ? doc.main : doc.cards[at];
+		if (!live) return;
+		liveTitles = {
+			...liveTitles,
+			[cardId]: cardTitle(cardSchema, shown.kind, fieldValues(live.payloadItems), undefined)
+		};
 	}
 	function titled(c: CardModel): CardModel {
 		const t = liveTitles[c.id];
@@ -571,15 +580,13 @@
 		isMain: boolean,
 		kind: string,
 		card: {
-			payloadItems: { type: string; key?: string; value?: unknown }[];
+			payloadItems: readonly PayloadItem[];
 			ext?: Record<string, unknown>;
 		},
 		cardSchema: Parameters<typeof fieldModels>[0] | undefined,
 		rows: ResolvedCardRows
 	): CardModel {
-		const values: Record<string, unknown> = {};
-		for (const p of card.payloadItems)
-			if (p.type === 'field' && p.key != null) values[p.key] = p.value;
+		const values = fieldValues(card.payloadItems);
 		const fields = cardSchema ? fieldModels(cardSchema) : [];
 		const sections = cardSchema
 			? groupSections(fields, groupOrder(cardSchema), (g) => groupLabel(cardSchema, g))

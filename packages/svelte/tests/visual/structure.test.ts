@@ -16,6 +16,7 @@ import {
 	interpolateTitle,
 	titleText,
 	titleFields,
+	fieldValues,
 	cardTitle,
 	bodyEnabled,
 	variantMember,
@@ -118,6 +119,7 @@ describe('interpolateTitle + cardTitle', () => {
 		);
 		expect(titleText(content)).toBe('John A. Doe');
 		expect(titleText({ lines: [] })).toBe('');
+		expect(titleText(['a', 'b'])).toBe('');
 		expect(titleText(12)).toBe('12');
 		expect(titleText(undefined)).toBe('');
 	});
@@ -125,6 +127,16 @@ describe('interpolateTitle + cardTitle', () => {
 		expect(titleFields('{rank} {name}')).toEqual(['rank', 'name']);
 		expect(titleFields('Routing indorsement')).toEqual([]);
 		expect(titleFields(undefined)).toEqual([]);
+	});
+	it('joins a payload into values by key, comments aside', () => {
+		const content = { text: 'John A. Doe', lines: [], marks: [], islands: [] };
+		expect(
+			fieldValues([
+				{ type: 'field', key: 'rank', value: 'TSgt' },
+				{ type: 'comment', text: 'not a field' },
+				{ type: 'field', key: 'name', value: content }
+			])
+		).toEqual({ rank: 'TSgt', name: content });
 	});
 	it('override wins, then schema title, then humanized kind', () => {
 		const schema = { fields: {}, ui: { title: 'Routing indorsement' } };
