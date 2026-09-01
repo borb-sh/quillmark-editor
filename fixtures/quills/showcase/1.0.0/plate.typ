@@ -1,12 +1,12 @@
 #import "@local/quillmark-helper:0.1.0": data, display, form-field, signature-field
-#import "@local/specimen-layout:1.0.0": (
-  accent-rule, callout, mono-face, plain-text, specimen-page,
+#import "@local/showcase-layout:1.0.0": (
+  accent-rule, callout, mono-face, plain-text, showcase-page,
 )
 
 #let accent = data.at("accent", default: "slate")
 
-#show: specimen-page.with(
-  // A string, not `data.title`: see `specimen-page` on why the running head takes
+#show: showcase-page.with(
+  // A string, not `data.title`: see `showcase-page` on why the running head takes
   // a flattened projection and the block stays in the flow. The projection is the
   // quill's own walk — the helper offers no content-to-string coercion.
   running-title: plain-text(data.title),

@@ -66,7 +66,7 @@ describe('what a Diagnostic carries', () => {
 		// from a formatter is the correct answer rather than a concession.
 		let thrown: unknown;
 		try {
-			core.Document.fromMarkdown('~~~\n$quill: specimen@1.0.0\ntitle: [unclosed\n~~~\n\nBody.\n');
+			core.Document.fromMarkdown('~~~\n$quill: showcase@1.0.0\ntitle: [unclosed\n~~~\n\nBody.\n');
 		} catch (e) {
 			thrown = e;
 		}

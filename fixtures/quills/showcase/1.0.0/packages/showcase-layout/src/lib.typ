@@ -64,7 +64,7 @@
 /// furniture a click can never land in — the field then has none in the flow at
 /// all. The plate passes `plain-text` instead, and places the block itself in
 /// the flow, where a region can be read back off it.
-#let specimen-page(
+#let showcase-page(
   running-title: "",
   status: "draft",
   accent: "slate",

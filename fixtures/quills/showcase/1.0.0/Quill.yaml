@@ -1,5 +1,5 @@
 quill:
-  name: specimen
+  name: showcase
   version: 1.0.0
   backend: typst
   description: The workspace's reference quill. Declares every schema shape the JS tier draws a control for.
@@ -32,7 +32,7 @@ main:
     title:
       type: richtext
       inline: true
-      example: The Specimen Quill
+      example: The Showcase Quill
       ui:
         group: identity
       description: The document's title. Placed in the letterhead and again on the colophon page, so its regions span pages.

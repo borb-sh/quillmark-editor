@@ -66,7 +66,7 @@ describe('geometry: synthetic round-trip', () => {
 	});
 });
 
-describe('geometry: against a real compiled session (specimen)', () => {
+describe('geometry: against a real compiled session (showcase)', () => {
 	it('forward-transforms a title fieldBox to %, then inverse-transforms its center back to a positionAt hit on title', async () => {
 		const tree = loadFixtureTree();
 		const quill = core.Quill.fromTree(tree);
@@ -201,7 +201,7 @@ describe('boxesForField', () => {
 	});
 });
 
-describe('geometry: the addresses a compile serves (specimen)', () => {
+describe('geometry: the addresses a compile serves (showcase)', () => {
 	it('gives every regions() address a box, and a declared array one off its elements', async () => {
 		const quill = core.Quill.fromTree(loadFixtureTree());
 		const doc = quill.seedDocument();

@@ -43,7 +43,7 @@ describe('an array of richtext loaded from markdown', () => {
 	it('mounts authored-string elements as prose rows, with emphasis lowered', () => {
 		const q = quill();
 		const doc = core.Document.fromMarkdown(`~~~
-$quill: specimen@1.0.0
+$quill: showcase@1.0.0
 $kind: main
 title: Probe
 keywords:

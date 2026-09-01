@@ -38,7 +38,7 @@ const core = await init();
 // compiles to a valid PDF.
 const RENDER_FIXTURE = fileURLToPath(new URL('./fixtures/render-quiver', import.meta.url));
 
-// The workspace's reference quiver: `specimen@1.0.0`, a published-shape quill with a
+// The workspace's reference quiver: `showcase@1.0.0`, a published-shape quill with a
 // Typst package tree, an image asset, and five fonts the build dehydrates into
 // `store/`; beside it `usaf_memo@0.0.0`, which a build leaves out as a draft.
 const REFERENCE_QUIVER = fileURLToPath(new URL('../../../../fixtures', import.meta.url));
@@ -145,11 +145,11 @@ describe('the reference quill, source → build → fetch → render', () => {
 		// sits at `0.0.0`, under the draft floor, so a build leaves it out. It is a copy
 		// of a shipped quill rather than that release, and the version is what says so —
 		// the rule the synthetic fixtures assert (build.test.ts), holding over a real one.
-		expect((await fromDir(REFERENCE_QUIVER)).quillNames()).toEqual(['specimen', 'usaf_memo']);
-		expect(built.quillNames()).toEqual(['specimen']);
-		expect(built.resolve('specimen')).toBe('specimen@1.0.0');
+		expect((await fromDir(REFERENCE_QUIVER)).quillNames()).toEqual(['showcase', 'usaf_memo']);
+		expect(built.quillNames()).toEqual(['showcase']);
+		expect(built.resolve('showcase')).toBe('showcase@1.0.0');
 
-		const quill = await built.getQuill('specimen');
+		const quill = await built.getQuill('showcase');
 		expect(quill.backendId).toBe('typst');
 
 		// The fonts left the bundle at build time and came back from `store/` on
@@ -174,8 +174,8 @@ describe('the reference quill, source → build → fetch → render', () => {
 		// Zip, dehydrate, fetch, rehydrate: the quill that comes back out is the
 		// quill that went in. A build that drops, truncates, or reorders a file
 		// shows up here rather than as a typesetting error downstream.
-		const source = await (await fromDir(REFERENCE_QUIVER)).getQuill('specimen@1.0.0');
-		const built = await (await fromBuiltDir(join(outDir, 'packed'))).getQuill('specimen@1.0.0');
+		const source = await (await fromDir(REFERENCE_QUIVER)).getQuill('showcase@1.0.0');
+		const built = await (await fromBuiltDir(join(outDir, 'packed'))).getQuill('showcase@1.0.0');
 
 		const before = source.toTree();
 		const after = built.toTree();

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // The shipped quill, drawn. `usaf_memo` is a copy of a real one (fixtures/Quiver.yaml)
 // and declares nothing for this tier's benefit, so what it asks the surface for is
-// what a quill author asks for: the conformance lane beside `specimen`'s curated one.
+// what a quill author asks for: the conformance lane beside `showcase`'s curated one.
 //
 // Two kinds of claim here, and the difference is what survives a re-copy. The first
 // three read the schema the quill happens to declare — every field draws, every group

@@ -1,7 +1,7 @@
 // The provenance channel (FIELD_PROVENANCE): `quill.resolve(doc)` mapped to the
 // editor's name-keyed `provenance` map and the ghosted `default:` it feeds. The
 // pure helpers are unit-tested; the resolve behavior is asserted against the real
-// specimen schema, so the authored↔default flip the ghost turns on is pinned to
+// showcase schema, so the authored↔default flip the ghost turns on is pinned to
 // the fixture the suite runs against, not a mock.
 import { describe, it, expect } from 'vitest';
 import type { ResolvedField, Resolved } from '@quillmark/wasm';
@@ -71,7 +71,7 @@ describe('the ghost projection', () => {
 	});
 });
 
-describe('resolve over the real specimen schema', () => {
+describe('resolve over the real showcase schema', () => {
 	it('reports unset declared defaults as `default`-sourced with the schema value', () => {
 		const doc = quill().seedDocument();
 		const main = provenanceMap(quill().resolve(doc).main.fields);
