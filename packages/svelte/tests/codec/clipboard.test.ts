@@ -121,7 +121,7 @@ describe('a copy and a paste carry the whole node', () => {
 	// The rung the round-trip is for: what the leaf would store after the paste.
 	it('and the fence still spells its language in the content', () => {
 		const back = parse(serialize(doc(S.nodes.code_block.create({ lang: 'py' }, S.text('x')))));
-		expect(pmToContent(back).lines[0]).toMatchObject({ kind: 'code', lang: 'py' });
+		expect(pmToContent(back).lines[0]).toMatchObject({ kind: 'code', attrs: { lang: 'py' } });
 	});
 
 	// Through PM's own copy path rather than the serializer alone: the props a table

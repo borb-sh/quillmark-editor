@@ -175,20 +175,23 @@ describe('the cell codec: a cell is its own content unit', () => {
 	it('an anchor in a cell is preserved verbatim across an edit', () => {
 		const c: TableCell = {
 			text: 'abcd',
-			marks: [{ start: 3, end: 3, type: 'anchor', id: 'a1' }] as TableCell['marks']
+			marks: [{ start: 3, end: 3, type: 'anchor', attrs: { id: 'a1' } }] as TableCell['marks']
 		};
 		// Retype the cell to something longer, inserted before the anchor.
 		const edited = decode(cellContent({ text: 'XXabcd', marks: [] }), inlineSchema);
 		const next = cellFromDoc(edited, c);
-		const anchor = next.marks.find((m) => m.type === 'anchor') as { start: number; id: string };
-		expect(anchor.id).toBe('a1');
+		const anchor = next.marks.find((m) => m.type === 'anchor') as {
+			start: number;
+			attrs: { id: string };
+		};
+		expect(anchor.attrs.id).toBe('a1');
 		expect(anchor.start).toBe(5); // rebased through the two inserted chars
 	});
 
 	it('a cell anchor holds its position against an insertion at it, as a field’s does', () => {
 		const c: TableCell = {
 			text: 'abcd',
-			marks: [{ start: 2, end: 2, type: 'anchor', id: 'a1' }] as TableCell['marks']
+			marks: [{ start: 2, end: 2, type: 'anchor', attrs: { id: 'a1' } }] as TableCell['marks']
 		};
 		// Typed at the anchor's own position: the one offset where the two assocs differ.
 		const edited = decode(cellContent({ text: 'abXcd', marks: [] }), inlineSchema);
@@ -205,11 +208,15 @@ describe('the cell codec: a cell is its own content unit', () => {
 		// keystroke, caret and all.
 		const stored: TableCell = {
 			text: 'linked',
-			marks: [{ start: 0, end: 6, type: 'link', url: 'https://x.com' }] as TableCell['marks']
+			marks: [
+				{ start: 0, end: 6, type: 'link', attrs: { url: 'https://x.com' } }
+			] as TableCell['marks']
 		};
 		const projected: TableCell = {
 			text: 'linked',
-			marks: [{ url: 'https://x.com', type: 'link', end: 6, start: 0 }] as TableCell['marks']
+			marks: [
+				{ attrs: { url: 'https://x.com' }, type: 'link', end: 6, start: 0 }
+			] as TableCell['marks']
 		};
 
 		expect(cellEqual(stored, projected)).toBe(true);

@@ -125,7 +125,7 @@ describe('inline / plaintext constraints', () => {
 // carries no boundary of its own.
 describe('adjacent sibling containers (the `instance` boundary)', () => {
 	const item = (ordinal: number, instance = 0) =>
-		({ container: 'list_item', ordered: false, start: 1, ordinal, instance }) as never;
+		({ container: 'list_item', attrs: { ordered: false, start: 1, ordinal }, instance }) as never;
 	const twoLists: Content = {
 		text: 'a\nb\nc',
 		lines: [
@@ -179,8 +179,8 @@ describe('mark-set run keying', () => {
 			text: 'ab',
 			lines: [{ containers: [], kind: 'para' }],
 			marks: [
-				{ start: 0, end: 1, type: 'link', url: 'a|strong' } as never,
-				{ start: 1, end: 2, type: 'link', url: 'a' } as never,
+				{ start: 0, end: 1, type: 'link', attrs: { url: 'a|strong' } } as never,
+				{ start: 1, end: 2, type: 'link', attrs: { url: 'a' } } as never,
 				{ start: 1, end: 2, type: 'strong' } as never
 			],
 			islands: []
@@ -205,7 +205,7 @@ describe('the href gate', () => {
 		return {
 			text: 'here',
 			lines: [{ containers: [], kind: 'para' }],
-			marks: [{ start: 0, end: 4, type: 'link', url: href } as never],
+			marks: [{ start: 0, end: 4, type: 'link', attrs: { url: href } } as never],
 			islands: []
 		};
 	}

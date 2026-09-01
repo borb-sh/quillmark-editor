@@ -7,6 +7,7 @@ import { EditorView } from 'prosemirror-view';
 import { createField, blockSchema, pmToContent } from '$lib/core/codec';
 import type { FieldController } from '$lib/core/codec';
 import type { Document, TableProps } from '@quillmark/wasm';
+import { isAnchorMark } from '@quillmark/wasm';
 import { undo } from 'prosemirror-history';
 import { mount, quill, normalize, contentEqual, md } from './_util.js';
 
@@ -213,13 +214,11 @@ describe('a within-block hard break', () => {
 });
 
 describe('anchor insertion', () => {
-	/** The `anchor` identity marks of the stored body content. */
+	/** The `anchor` identity marks of the stored body content, `id` lifted out of `attrs`. */
 	function bodyAnchors(doc: Document): { id: string; start: number; end: number }[] {
-		return doc.main.body.marks.filter((m) => m.type === 'anchor') as {
-			id: string;
-			start: number;
-			end: number;
-		}[];
+		return doc.main.body.marks
+			.filter(isAnchorMark)
+			.map((m) => ({ id: m.attrs.id, start: m.start, end: m.end }));
 	}
 
 	it('inserts a caller-supplied identity anchor that persists in the content', () => {

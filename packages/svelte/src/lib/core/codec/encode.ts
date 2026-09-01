@@ -157,7 +157,8 @@ function scanBlock(
 		}
 		case 'code_block': {
 			const lang = (node.attrs.lang as string | null) ?? undefined;
-			const kind: ContentLineKind = lang != null ? { kind: 'code', lang } : { kind: 'code' };
+			const kind: ContentLineKind =
+				lang != null ? { kind: 'code', attrs: { lang } } : { kind: 'code' };
 			beginLine(acc, contentStart, containers, kind);
 			const codeText = node.textContent;
 			if (codeText.length) emitText(acc, codeText, contentStart, []);
@@ -196,9 +197,7 @@ function scanBlock(
 			node.forEach((item, _off, index) => {
 				const container: ContentContainer = {
 					container: 'list_item',
-					ordered,
-					start,
-					ordinal: index,
+					attrs: { ordered, start, ordinal: index },
 					instance
 				};
 				scanBlocks(acc, item, itemPos + 1, [...containers, container]);
@@ -216,7 +215,8 @@ function scanBlock(
 /** A textblock's line kind: a heading's `level`, or (for a paragraph) `para`, or
  * the unknown kind it carries (schema.ts) re-emitted verbatim. */
 function textblockKind(node: PMNode): ContentLineKind {
-	if (node.type.name === 'heading') return { kind: 'heading', level: node.attrs.level as number };
+	if (node.type.name === 'heading')
+		return { kind: 'heading', attrs: { level: node.attrs.level as number } };
 	const u = node.attrs.unknown as { kind: string; attrs: unknown } | null;
 	return u ? { kind: u.kind, attrs: u.attrs } : { kind: 'para' };
 }
@@ -546,7 +546,12 @@ interface Interval {
 	end: number;
 }
 
-/** Formatting/unknown marks → add/remove ops; anchors → add/removeAnchor by id. */
+/** Formatting/unknown marks → add/remove ops; anchors → add/removeAnchor by id.
+ *
+ * Every op here spells its payload under `attrs`, which is what the wire takes: it
+ * refuses the sibling spelling as a `legacy mark payload`. `MarkOp` still declares
+ * the siblings, so the casts below are load-bearing rather than a spread's formality
+ * — a checker reports neither shape. */
 function diffMarks(oldRt: Content, newRt: Content, moved: ChangeBundle, opts: LowerOpts): MarkOp[] {
 	const ops: MarkOp[] = [];
 	// The store's answer for where `moved`'s text channels leave the field's marks;
@@ -577,7 +582,7 @@ function diffMarks(oldRt: Content, newRt: Content, moved: ChangeBundle, opts: Lo
 		for (const [id, pos] of newA) {
 			if (!oldA.has(id) || oldA.get(id) !== pos) {
 				if (oldA.has(id)) ops.push({ op: 'removeAnchor', id });
-				ops.push({ op: 'add', start: pos, end: pos, type: 'anchor', id } as MarkOp);
+				ops.push({ op: 'add', start: pos, end: pos, type: 'anchor', attrs: { id } } as MarkOp);
 			}
 		}
 		for (const id of oldA.keys()) if (!newA.has(id)) ops.push({ op: 'removeAnchor', id });
