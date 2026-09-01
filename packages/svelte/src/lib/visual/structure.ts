@@ -445,8 +445,7 @@ export function placeFields(fields: FieldModel[]): PlacedField[] {
 	return out;
 }
 
-/** A card's field values by key, off its payload items: the join's right-hand side,
- *  and what a `{field}` title interpolates against. */
+/** A card's field values by key, off its payload items. */
 export function fieldValues(items: readonly PayloadItem[]): Record<string, unknown> {
 	const values: Record<string, unknown> = {};
 	for (const p of items) if (p.type === 'field') values[p.key] = p.value;
@@ -460,9 +459,9 @@ export function interpolateTitle(template: string, values: Record<string, unknow
 	);
 }
 
-/** A field value as title text: a scalar as itself, a `Content` by its `text`, any
- *  other container as nothing. A parsed field rests as the authored string; one the
- *  editor has committed rests as `Content`, whose `text` is the same words. */
+/** A field value as title text. A parsed field rests as the authored string and a
+ *  committed one as `Content`, whose `text` is the same words; a scalar reads as
+ *  itself and any other container as nothing. */
 export function titleText(v: unknown): string {
 	if (v == null) return '';
 	if (typeof v !== 'object') return String(v);

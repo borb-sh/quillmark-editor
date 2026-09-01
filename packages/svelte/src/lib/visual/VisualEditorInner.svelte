@@ -282,11 +282,11 @@
 		onChange?.({ source: 'prose', cardId, path: pathFor(plain) });
 	}
 
-	/** A card's header, re-read after a prose commit to a field its `{field}` title
-	 *  names: the one piece of the model a leaf's own commit changes, kept beside the
-	 *  model rather than re-deriving it, and dropped on the next bump, which rebuilds
-	 *  it from the document. The kind is the derived tree's, as {@link liveKinds}, so
-	 *  the document is read only once the title is known to name the field. */
+	/** A card's header after a prose commit to a field its `{field}` title names: the
+	 *  one piece of the model that lane changes, held beside the model and dropped on
+	 *  the next bump, which rebuilds it from the document. The kind is the derived
+	 *  tree's ({@link liveKinds}), so the document is read only for a title that
+	 *  names the field. */
 	let liveTitles = $state<Record<CardId, string>>({});
 	function refreshTitle(addr: Addr, cardId: CardId): void {
 		const { card: at, field } = addr;
