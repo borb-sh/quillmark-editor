@@ -108,7 +108,10 @@ export interface VisualStrings extends TableChromeStrings, SlashStrings {
 	retypePlaceholder: string;
 	noCardKinds: string;
 
-	// ── The empty body's ghost ────────────────────────────────────────────────
+	// ── The card body ─────────────────────────────────────────────────────────
+	/** The body leaf's accessible name: no label names it, the body being the one
+	 *  surface in a card that is paper ({@link Card}). */
+	bodyLabel: string;
 	/**
 	 * The flat built-in invitation: the package's own words, kept to the one thing
 	 * true of every body so it claims nothing about the card it sits in.
@@ -188,6 +191,7 @@ export const DEFAULT_VISUAL_STRINGS: VisualStrings = {
 	retypeLabel: 'Change to',
 	retypePlaceholder: 'Choose a type…',
 	noCardKinds: 'This document declares no card types — delete this card to remove it.',
+	bodyLabel: 'Body',
 	bodyGhost: 'Write…',
 	bodyPlaceholder: () => undefined
 };

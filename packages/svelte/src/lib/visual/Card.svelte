@@ -315,7 +315,7 @@
 						{quill}
 						addr={ops.makeAddr(undefined)}
 						unframed
-						label="Body"
+						label={t.strings.bodyLabel}
 						placeholder={card.bodyGhost}
 						leafKey={ops.leafKey(undefined)}
 						{onFocus}

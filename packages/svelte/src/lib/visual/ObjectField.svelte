@@ -122,7 +122,11 @@
 			prose.focus();
 			return true;
 		}
-		const el = cell.querySelector<HTMLElement>(FOCUSABLE);
+		// Past the label row: a property carrying a `description` opens with the hint
+		// trigger, which is focusable and stands before the control it describes.
+		const el = [...cell.querySelectorAll<HTMLElement>(FOCUSABLE)].find(
+			(n) => !n.closest('.qm-field-label-row')
+		);
 		el?.focus();
 		return !!el;
 	}
@@ -205,6 +209,7 @@
 					labelledBy={ids?.label}
 					describedBy={describes}
 					value={obj[key] as string | undefined}
+					fallback={sub.default != null ? String(sub.default) : undefined}
 					onCommit={(v) => commitProp(key, v)}
 				/>
 			{:else if kind === 'text'}
