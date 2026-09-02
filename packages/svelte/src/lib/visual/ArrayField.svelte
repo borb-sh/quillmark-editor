@@ -147,7 +147,6 @@
 	// element shapes register alike.
 	const rowEls: Record<string, HTMLElement | undefined> = $state({});
 	let addEl: HTMLButtonElement | undefined = $state();
-	let rootEl: HTMLElement | undefined = $state();
 	let rowsEl: HTMLElement | undefined = $state();
 
 	// ── Object elements: one open at a time ──────────────────────────────────────
@@ -345,7 +344,6 @@
 </script>
 
 <div
-	bind:this={rootEl}
 	class="qm-array"
 	class:empty={ids.length === 0}
 	role="group"

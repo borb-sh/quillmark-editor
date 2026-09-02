@@ -393,7 +393,7 @@
 				</select>
 			</label>
 		{:else}
-			<p class="qm-recovery-note qm-recovery-muted">
+			<p class="qm-recovery-note">
 				{t.strings.noCardKinds}
 			</p>
 		{/if}
@@ -778,9 +778,6 @@
 	.qm-recovery-note {
 		margin: 0;
 		font-size: var(--_qm-text-label);
-		color: var(--_qm-ink-label);
-	}
-	.qm-recovery-muted {
 		color: var(--_qm-ink-label);
 	}
 	.qm-recovery-retype {

@@ -131,7 +131,7 @@
 	}}><Icon name="info" size={13} /></button
 >
 
-<!-- Placement is the description'S height. One line rides the label rung beside its own
+<!-- Placement is the description's height. One line rides the label rung beside its own
  glyph, where the overhang past the rung's line box falls in the label-to-control gaps.
  Anything taller stands over the field: beside the glyph it would hang onto the control
  it describes, the one overlap a reader cannot clear by reaching for what is hidden,

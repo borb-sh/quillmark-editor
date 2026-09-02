@@ -14,7 +14,7 @@
 // field's, so one undo stack covers the leaf), no anchor plugin (an anchor in a cell
 // is preserved, never minted), and no placeholder.
 //
-// The chrome is A band and A selection (CODEC §"The table island"), and it raises
+// The chrome is a band and a selection (CODEC §"The table island"), and it raises
 // nothing. Every control is absolutely positioned out of the grid, so the band is in no
 // row and no column of it; `codec/prose.css` draws the band and the selection wash both.
 import { baseKeymap, chainCommands, toggleMark } from 'prosemirror-commands';

@@ -212,14 +212,18 @@
 		lastError = `${err.code}: ${err.message}`;
 	}
 
-	function injectDiagnostics(): void {
-		injected = [
-			{
-				severity: 'error',
-				message: 'External test error on title',
-				path: 'main.title'
-			}
-		];
+	// A toggle, not a trip: the stand-in is re-appended on every recompile, so a one-way
+	// press would pin it to `main.title` for the life of the open.
+	function toggleDiagnostics(): void {
+		injected = injected.length
+			? []
+			: [
+					{
+						severity: 'error',
+						message: 'External test error on title',
+						path: 'main.title'
+					}
+				];
 		syncDiagnostics();
 	}
 
@@ -437,7 +441,9 @@
 					type="button"
 					data-testid="inject-diagnostics"
 					disabled={opening}
-					onclick={injectDiagnostics}>Inject diagnostics</button
+					aria-pressed={injected.length > 0}
+					onclick={toggleDiagnostics}
+					>{injected.length ? 'Clear diagnostics' : 'Inject diagnostics'}</button
 				>
 			</span>
 		</div>

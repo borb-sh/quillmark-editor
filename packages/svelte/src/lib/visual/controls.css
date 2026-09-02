@@ -91,7 +91,7 @@
 	color: var(--_qm-ink);
 	caret-color: currentColor;
 }
-/* The box is A fill and not an edge (ARCHITECTURE §Styling), and the fill is the
+/* The box is a fill and not an edge (ARCHITECTURE §Styling), and the fill is the
  well rung: a field is a hole cut into the card rather than a plane of its own,
  and with no edge to carry it the step is the whole of what says so. */
 :where(.qm-control-box),
