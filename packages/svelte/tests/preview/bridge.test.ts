@@ -16,12 +16,18 @@ import type { PageSlot } from '$lib/preview/paint';
 
 const PAGE = { widthPt: 612, heightPt: 792 };
 
-/** One page slot whose box measures 612×792 CSS px, so a click at (x, y) reads back
- *  as the PDF point `(x, 792 - y)` and the queries can be keyed on plain numbers. */
-function mockSlots(): PageSlot[] {
+/** One page slot whose box measures `scale`×(612×792) CSS px, so at `scale` 1 a click at
+ *  (x, y) reads back as the PDF point `(x, 792 - y)` and the queries can be keyed on
+ *  plain numbers. */
+function mockSlots(scale = 1): PageSlot[] {
 	const el = document.createElement('div');
 	el.getBoundingClientRect = () =>
-		({ left: 0, top: 0, width: 612, height: 792 }) as unknown as DOMRect;
+		({
+			left: 0,
+			top: 0,
+			width: PAGE.widthPt * scale,
+			height: PAGE.heightPt * scale
+		}) as unknown as DOMRect;
 	document.body.appendChild(el);
 	return [{ page: 0, size: PAGE, el } as unknown as PageSlot];
 }
@@ -86,6 +92,30 @@ describe('the click ladder', () => {
 		expect(picks).toEqual([]);
 		expect(regions).not.toHaveBeenCalled();
 		bridge.destroy();
+	});
+
+	// One slack, both rungs, converted at the scale the page is drawn: it is the
+	// pointer's, so it is a fixed size on screen and a varying one in the document —
+	// halve the drawn width and a CSS pixel covers twice as many points. The relation
+	// is what is asserted; the constant is the bridge's alone.
+	it('hands both rungs one slack, converted at the scale the page is drawn', () => {
+		const tolAt = (scale: number): number => {
+			// Typed by the arity, not the signature: what is read back is which argument
+			// each rung was handed, and both rungs take the same four numbers.
+			const positionAt = vi.fn((..._args: number[]) => undefined);
+			const fieldAt = vi.fn((..._args: number[]) => undefined);
+			const session = { positionAt, fieldAt } as unknown as LiveSession;
+			const slots = mockSlots(scale);
+			const bridge = createBridge(session, document.body, slots, (at) => picks.push(at));
+			click(slots[0].el, 10, 10);
+			bridge.destroy();
+			expect(positionAt.mock.calls[0]).toHaveLength(4);
+			expect(fieldAt.mock.calls[0][3]).toBe(positionAt.mock.calls[0][3]);
+			return positionAt.mock.calls[0][3];
+		};
+		expect(tolAt(1)).toBeGreaterThan(0);
+		expect(tolAt(0.5)).toBeCloseTo(tolAt(1) * 2);
+		expect(tolAt(2)).toBeCloseTo(tolAt(1) / 2);
 	});
 });
 

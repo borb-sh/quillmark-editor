@@ -81,6 +81,17 @@ export function applyPercentRect(el: HTMLElement, pct: PercentRect): void {
 }
 
 /**
+ * A CSS-px length on a page element of CSS width `cssW` -> the PDF-pt length it spans.
+ * Width alone, because that is the scale the slot is drawn at: `paint.ts` sizes a slot
+ * by width under a locked aspect ratio, so {@link clickToPdfPt}'s two ratios are one
+ * number and a length has one to convert through. What the click bridge reads its
+ * pointer slack in points through.
+ */
+export function pxToPt(px: number, cssW: number, pageSize: PageSize): number {
+	return (px / cssW) * pageSize.widthPt;
+}
+
+/**
  * Inverse: a click at CSS px `(px, py)` within a page element of CSS size
  * `(cssW, cssH)` -> PDF-pt. The exact inverse of {@link rectToPercent}: the
  * fraction `rectToPercent` would place a point's box corner at is the same
