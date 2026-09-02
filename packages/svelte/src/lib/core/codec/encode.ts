@@ -44,8 +44,6 @@ export interface Scan {
 	marks: ContentMark[];
 	islands: ContentIsland[];
 	runs: PosRun[];
-	/** Total PM position at the end of the document content (doc.content.size). */
-	pmEnd: number;
 	/** Total USV length of `text`. */
 	usvEnd: number;
 }
@@ -78,7 +76,6 @@ export function scanDoc(doc: PMNode): Scan {
 		marks: [],
 		islands: [],
 		runs: [],
-		pmEnd: doc.content.size,
 		usvEnd: 0,
 		rawMarks: [],
 		lastContentEndPm: 0
@@ -88,10 +85,16 @@ export function scanDoc(doc: PMNode): Scan {
 	return acc;
 }
 
+/** The content projection a scan carries (drops the position runs): what a caller
+ *  holding a `Scan` reads instead of walking the document a second time. */
+export function scanContent(s: Scan): Content {
+	const { text, lines, marks, islands } = s;
+	return { text, lines, marks, islands };
+}
+
 /** `pmToContent`: the pure inverse of decode (drops the position runs). */
 export function pmToContent(doc: PMNode): Content {
-	const { text, lines, marks, islands } = scanDoc(doc);
-	return { text, lines, marks, islands };
+	return scanContent(scanDoc(doc));
 }
 
 /** Walk a block-content fragment; `contentStart` is the PM pos before its first child.

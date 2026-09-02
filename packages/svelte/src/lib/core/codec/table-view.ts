@@ -595,9 +595,10 @@ class TableIslandView implements NodeView {
 	// ── The selection ─────────────────────────────────────────────────────────
 
 	/** The rectangle a line covers, which is what selecting one means: a grip draws no
-	 *  second kind of selection, it draws this one. */
-	private lineCells(line: Line): Cells {
-		const props = this.props();
+	 *  second kind of selection, it draws this one. `props` is the caller's where it
+	 *  reads a line per grip ({@link TableIslandView.paintSelection}): each `props()`
+	 *  revalidates the whole table. */
+	private lineCells(line: Line, props: TableProps = this.props()): Cells {
 		return line.axis === 'row'
 			? { r0: line.index, c0: 0, r1: line.index, c1: columnCount(props) - 1 }
 			: { r0: 0, c0: line.index, r1: rowCount(props) - 1, c1: line.index };
@@ -650,6 +651,9 @@ class TableIslandView implements NodeView {
 	}
 
 	private select(cells: Cells): void {
+		// A sweep resolves a rectangle per pointer move and most of them are the one
+		// already held, which is a repaint of the state that is up.
+		if (this.selected && sameCells(this.selected, cells)) return;
 		// One subject at a time: a cell selection retires an island one, or the surface
 		// paints a washed row inside an outlined table and the next Backspace has two
 		// honest readings.
@@ -677,8 +681,12 @@ class TableIslandView implements NodeView {
 	 *  and a selection is exactly the state that must not cost the carets in them. */
 	private paintSelection(): void {
 		const held = this.selected;
+		const props = this.props();
 		for (const { line, grip } of this.grips.values())
-			grip.setAttribute('aria-pressed', String(!!held && sameCells(held, this.lineCells(line))));
+			grip.setAttribute(
+				'aria-pressed',
+				String(!!held && sameCells(held, this.lineCells(line, props)))
+			);
 		for (const cell of this.cells)
 			cell.box.toggleAttribute(
 				'data-selected',
