@@ -172,6 +172,12 @@ describe('the bin without a verb', () => {
 	it('prints usage and fails', async () => {
 		await expect(run(process.execPath, [BIN])).rejects.toThrow(/Usage:/);
 	});
+
+	it('prints usage for a name the verb table inherits', async () => {
+		// `toString` is on every object, so a dispatch reading the prototype chain calls it
+		// and dies of a TypeError where an author is owed the usage line.
+		await expect(run(process.execPath, [BIN, 'toString'])).rejects.toThrow(/Usage:/);
+	});
 });
 
 describe('what the tool loads', () => {

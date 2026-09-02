@@ -192,7 +192,9 @@ function die(err: unknown): never {
 
 const VERBS: Record<string, () => Promise<void>> = { test, build, studio, site };
 
-if (command !== undefined && command in VERBS) {
+// Own keys only: `in` reaches `Object.prototype`, and `quillkit toString` is a usage
+// line rather than a call onto whatever it found.
+if (command !== undefined && Object.hasOwn(VERBS, command)) {
 	VERBS[command]().catch(die);
 } else {
 	usage();
