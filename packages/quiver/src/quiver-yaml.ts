@@ -68,7 +68,7 @@ export function parseQuiverYaml(raw: string | Uint8Array): QuiverMeta {
 		);
 	}
 
-	const name = doc['name'] as string;
+	const name = doc['name'];
 
 	if (!isQuillName(name)) {
 		throw new QuiverError(
@@ -77,17 +77,15 @@ export function parseQuiverYaml(raw: string | Uint8Array): QuiverMeta {
 		);
 	}
 
-	if ('description' in doc && doc['description'] !== undefined) {
+	const meta: QuiverMeta = { name };
+
+	if (doc['description'] !== undefined) {
 		if (typeof doc['description'] !== 'string') {
 			throw new QuiverError(
 				'quiver_invalid',
 				`Quiver.yaml: "description" must be a string if present, got ${typeof doc['description']}`
 			);
 		}
-	}
-
-	const meta: QuiverMeta = { name };
-	if (typeof doc['description'] === 'string') {
 		meta.description = doc['description'];
 	}
 

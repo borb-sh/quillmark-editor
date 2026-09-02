@@ -11,7 +11,7 @@
  calendar) rather than `DatePicker`: the segments are the entry affordance, and a
  calendar is a second surface this field does not need.
 
- The boundary is A string, and the local is too. The primitive speaks
+ The boundary is a string, and the local is too. The primitive speaks
  `CalendarDate`; the document speaks `YYYY-MM-DD`. `CalendarDate` carries no time
  and no zone, so the round-trip is lossless and no local-midnight shift can occur:
  the hazard that makes `new Date('2026-07-25')` the wrong tool here. Authored
@@ -22,7 +22,7 @@
  parsed value: a fresh `CalendarDate` is never `===` the last one, which would
  make every reconcile fire and re-render all seven segments on each commit.
 
- The ghost is the default'S digits, not A format hint. An unset field
+ The ghost is the default's digits, not a format hint. An unset field
  carrying a `default:` prints the default's digits in the segments, ghost-toned,
  instead of the primitive's `mm`/`dd`/`yyyy` hints, which say "empty" where the
  rung says "will render 2026-01-01". The ghost is painted in the segment snippet,

@@ -242,6 +242,7 @@
 					{addr}
 					inline={field.inline}
 					plaintext={field.plaintext}
+					placeholder={defaultStr}
 					labelledBy={domIds.label}
 					{describedBy}
 					{leafKey}

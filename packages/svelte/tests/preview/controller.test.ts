@@ -49,7 +49,7 @@ describe('preview controller empty-state across page-count transitions', () => {
 		document.body.appendChild(container);
 	});
 
-	const pages = () => container.querySelectorAll('.qm-page').length;
+	const pages = () => container.querySelectorAll('.qm-page-slot').length;
 	const isEmpty = () => !!container.querySelector('.qm-preview-empty');
 
 	it('a session that opens empty escapes the empty state on a later apply', () => {
@@ -190,7 +190,7 @@ describe('preview controller supportsCanvas gating', () => {
 		container = document.createElement('div');
 		document.body.appendChild(container);
 	});
-	const pages = () => container.querySelectorAll('.qm-page').length;
+	const pages = () => container.querySelectorAll('.qm-page-slot').length;
 
 	it('a compile with pages the boundary cannot raster shows the unsupported message, not blank pages', () => {
 		const preview = createPreview(mockSession(2, false), { container });
@@ -236,7 +236,7 @@ describe('the page slot names its index', () => {
 	it('every slot carries its page number, in DOM order, across a count change', () => {
 		const preview = createPreview(mockSession(3), { container });
 		const numbers = () =>
-			[...container.querySelectorAll<HTMLElement>('.qm-page')].map((el) => el.dataset.page);
+			[...container.querySelectorAll<HTMLElement>('.qm-page-slot')].map((el) => el.dataset.page);
 		expect(numbers()).toEqual(['0', '1', '2']);
 
 		// The slots a grow reuses keep the number they were built with, and the ones it
@@ -311,7 +311,7 @@ describe('preview controller paint resilience', () => {
 
 	it('a paint that throws surfaces an error state without aborting the observer sweep', () => {
 		const preview = createPreview(throwingSession(2), { container });
-		expect(container.querySelectorAll('.qm-page').length).toBe(2);
+		expect(container.querySelectorAll('.qm-page-slot').length).toBe(2);
 
 		const io = ioInstances[ioInstances.length - 1];
 		// The whole point: the band sweep does not throw out of the IO callback.

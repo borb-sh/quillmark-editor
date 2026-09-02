@@ -39,6 +39,12 @@
 	 *  that would not parse. Both leave the document on screen standing. */
 	let refused = $state.raw<string | undefined>();
 
+	/** Where the gesture a click reports began. A click fires at the nearest common
+	 *  ancestor of press and release, so a selection dragged out of the textarea and
+	 *  released past the plate reports the dialog: the press is what tells a scrim click
+	 *  from a drag that ended on one. */
+	let pressed: EventTarget | null = null;
+
 	const dirty = $derived(draft !== text);
 
 	/** The document as bytes, named by its ref. Revoked on the same turn: the click has
@@ -73,7 +79,8 @@
 	class="panel"
 	aria-label="Document source"
 	onclose={onClose}
-	onclick={(e) => e.target === el && onClose()}
+	onpointerdown={(e) => (pressed = e.target)}
+	onclick={(e) => e.target === el && pressed === el && onClose()}
 >
 	<div class="qm-panel plate">
 		<header class="head">
@@ -207,5 +214,12 @@
 		inset: 0;
 		opacity: 0;
 		cursor: pointer;
+	}
+
+	/* Focus lands on the input, which is transparent and rings nothing. The label wears it,
+	   in the preset's ring. */
+	.file:focus-within {
+		outline: var(--qmh-ring-width) solid var(--qmh-ink);
+		outline-offset: var(--qmh-space-half);
 	}
 </style>

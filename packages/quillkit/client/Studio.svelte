@@ -271,6 +271,9 @@
 	/** Land the document on the paint: an update where a session stands, an open where the
 	 *  last one was refused. */
 	async function recompileNow(): Promise<void> {
+		// A structure op reaches here without the debounce, so a keystroke's pending timer
+		// is this call's to cancel: the document it would apply is the one being applied.
+		clearTimeout(settle);
 		settle = undefined;
 		const at = open;
 		if (!at || !engine) return;
@@ -286,9 +289,10 @@
 				thrown = diagnosticsOf(err);
 			}
 		} else {
-			const mine = turn;
 			const landed = await openSession(engine, at.quill, at.doc);
-			if (mine !== turn) return landed.session?.free();
+			// The slot rather than the turn: two recompiles over one unresolved `open` leave
+			// the turn where it was, and the loser's session is a handle nothing would free.
+			if (open !== at) return landed.session?.free();
 			open = { ...at, ...landed };
 			thrown = landed.refused;
 			if (landed.session) phase = { kind: 'ready' };

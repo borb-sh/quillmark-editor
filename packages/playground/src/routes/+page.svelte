@@ -110,7 +110,12 @@
 						<code>@quillmark/svelte</code> provides the surfaces;
 						<code>@quillmark/wasm</code> is the engine they read.
 					</p>
-					<pre class="qm-readout sample">{INSTALL}</pre>
+					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+					<pre
+						class="qm-readout sample"
+						role="region"
+						tabindex="0"
+						aria-label="Code sample: Install">{INSTALL}</pre>
 				</article>
 
 				<article class="step">
@@ -119,7 +124,12 @@
 						A quill is a template's file tree; a document is the content in it. Opening the two
 						compiles the first page and returns the session handle both surfaces read.
 					</p>
-					<pre class="qm-readout sample">{OPEN_SESSION}</pre>
+					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+					<pre
+						class="qm-readout sample"
+						role="region"
+						tabindex="0"
+						aria-label="Code sample: Session">{OPEN_SESSION}</pre>
 				</article>
 
 				<article class="step">
@@ -128,7 +138,12 @@
 						<code>&lt;Preview&gt;</code> paints the session's pages to canvas and resolves a click to
 						the content under it, so the compiled page is addressable and not just displayed.
 					</p>
-					<pre class="qm-readout sample">{PREVIEW}</pre>
+					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+					<pre
+						class="qm-readout sample"
+						role="region"
+						tabindex="0"
+						aria-label="Code sample: Preview">{PREVIEW}</pre>
 				</article>
 			</div>
 
@@ -171,7 +186,12 @@
 						<code>onChange</code> fires when an edit lands; applying it to the session returns the pages
 						the preview repaints.
 					</p>
-					<pre class="qm-readout sample">{VISUAL}</pre>
+					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+					<pre
+						class="qm-readout sample"
+						role="region"
+						tabindex="0"
+						aria-label="Code sample: Edit">{VISUAL}</pre>
 				</article>
 			</div>
 
@@ -307,7 +327,9 @@
 
 	/* Code keeps its own line breaks and scrolls sideways rather than wrapping: a
 	   wrapped line reads as two statements, and the column it sits in is the measure,
-	   which is the width the samples are cut to. */
+	   which is the width the samples are cut to. Stacked, the column is narrower than the
+	   cut, so each block is a scroller a keyboard reaches only through the `tabindex` and
+	   name it carries. */
 	.sample {
 		white-space: pre;
 		word-break: normal;

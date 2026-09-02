@@ -112,7 +112,7 @@ html:has(.qm-workspace) {
 	display: none;
 }
 
-/* One mount at A time under the threshold, rather than two of them abreast. Half a narrow
+/* One mount at a time under the threshold, rather than two of them abreast. Half a narrow
    viewport is under the width either surface reads at, so the split stops being one and
    the tracks become views of the same room: the host says which with `data-qm-show`, and
    the attribute names the track rather than what is in it, so nothing here knows an editor

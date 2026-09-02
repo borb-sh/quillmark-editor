@@ -193,7 +193,7 @@ A blanket `:focus-visible` of yours outranks ours, including on the controls tha
 
 ## What is deliberately not public
 
-The three root classes and `.qm-pane` are the whole class contract on the surfaces. Every other `qm-*` class inside them is internal and renames without notice: a class contract over the interior would freeze the DOM shape the surfaces are free to re-cut, and the dials already reach the values a restyle wants. The preset's classes are a contract of their own: they land on _your_ DOM, so they freeze nothing of ours.
+The two root classes and `.qm-pane` are the whole class contract on the surfaces. Every other `qm-*` class inside them is internal and renames without notice: a class contract over the interior would freeze the DOM shape the surfaces are free to re-cut, and the dials already reach the values a restyle wants. The preset's classes are a contract of their own: they land on _your_ DOM, so they freeze nothing of ours.
 
 The derived surface scale (surface / border / ink rungs, the blur radius, the popover's translucency ratio, the recede-opacity ladder, the two leading rungs, the overlay ring widths, the scroll tail) is internal on the same terms, and declared **on** each root element, so setting a rung from an ancestor does nothing. A dial appears when a real consumer needs one; every dial is one more thing a reader has to hold.
 

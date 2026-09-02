@@ -76,7 +76,11 @@ export function createPaintLoop(
 		// responsibilities"). `border-box` costs nothing here and keeps a slot a
 		// consumer insets from measuring wider than its paper.
 		const el = document.createElement('div');
-		el.className = 'qm-page';
+		// Not `.qm-page`: that name is the preset's page baseline, an unlayered rule at
+		// ordinary specificity a host puts on `<body>`, and a slot wearing it takes that
+		// rule's `color-scheme` inside a mounted root, which the derivation leaves to the
+		// host (`core/theme.css`).
+		el.className = 'qm-page-slot';
 		// The page's index, in the DOM. `pageByEl` is this module's and a consumer
 		// drawing an overlay of its own needs the number: position among siblings is
 		// the only handle without it, which is right today and is not a contract.

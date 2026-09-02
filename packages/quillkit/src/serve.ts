@@ -50,11 +50,13 @@ export interface Served {
 
 /**
  * What each request resolves against. The mounts are fixed before the server listens,
- * so the longest-prefix order is settled once rather than per request.
+ * so the longest-prefix order and each root are settled once rather than per request.
  */
 export function fileResolver(mounts: Mount[]): (url: string) => Served | null {
 	// Longest prefix first, so `/quiver/…` reaches the pack rather than the client.
-	const ordered = [...mounts].sort((a, b) => b.prefix.length - a.prefix.length);
+	const ordered = [...mounts]
+		.sort((a, b) => b.prefix.length - a.prefix.length)
+		.map((m) => ({ prefix: m.prefix, root: resolve(m.root) }));
 
 	return (url) => {
 		let path: string;
@@ -72,15 +74,14 @@ export function fileResolver(mounts: Mount[]): (url: string) => Served | null {
 		if (mount === undefined) return null;
 
 		const rest = path.slice(mount.prefix.length).replace(/^\/+/, '');
-		const root = resolve(mount.root);
 		// One screen, no router: the root is the client's `index.html` and nothing else
 		// falls back to it, so a missing asset is a 404 rather than a page.
-		const at = resolve(root, rest === '' ? 'index.html' : rest);
+		const at = resolve(mount.root, rest === '' ? 'index.html' : rest);
 
 		// The escape refusal, checked on the resolved path: `%2e%2e`, a doubled separator
 		// and a plain `..` all collapse into one answer here, where a check against the
 		// request text would have to anticipate each spelling.
-		if (!within(root, at)) return null;
+		if (!within(mount.root, at)) return null;
 
 		// One stat answers all three questions the response has: is it there, is it a
 		// file, how long is it. A second would read a tree a repack swaps under the
@@ -137,6 +138,9 @@ export function createStaticServer(mounts: Mount[]): Server {
 		// destroyed response rather than a status: a body short of the length it
 		// declared has to be a read a client can tell from a whole one.
 		stream.on('error', () => res.destroy());
+		// `pipe` unpipes on a closed destination and leaves the source paused, so a client
+		// that cancels mid-body would leave the fd open for the life of the server.
+		res.on('close', () => stream.destroy());
 		stream.pipe(res);
 	});
 }

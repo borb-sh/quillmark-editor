@@ -147,7 +147,6 @@
 	// element shapes register alike.
 	const rowEls: Record<string, HTMLElement | undefined> = $state({});
 	let addEl: HTMLButtonElement | undefined = $state();
-	let rootEl: HTMLElement | undefined = $state();
 	let rowsEl: HTMLElement | undefined = $state();
 
 	// ── Object elements: one open at a time ──────────────────────────────────────
@@ -268,8 +267,8 @@
 	 * compile the document has moved past.
 	 *
 	 * An absent `pos` is the placement rung, exactly as on `Landing`. A row that takes
-	 * no offset gets the bare focus: the JSON element, whose textarea has no coordinate
-	 * to spend one in, and a `string` element, which the compile never addresses.
+	 * no offset gets the bare focus: a `string` element, whose input has no coordinate
+	 * to spend one in and which the compile never addresses.
 	 *
 	 * The row's box comes back with the landing: the arrival wash is the address's own
 	 * granularity, and one row is what an element address named. A fallback to the
@@ -325,8 +324,8 @@
 	/**
 	 * The element keyboard contract. Both keys ride the element control's own keydown
 	 * (the input's, or the PM view's through `handleDOMEvents`) since neither
-	 * surface is a place a keymap of this component's could sit. The JSON element is
-	 * out: Enter is a newline in a textarea.
+	 * surface is a place a keymap of this component's could sit. An `object` element
+	 * wires neither: its row is a summary button, whose Enter is the disclosure's.
 	 */
 	function onElementKey(e: KeyboardEvent, k: number): void {
 		if (control === 'object' || e.isComposing) return;
@@ -345,7 +344,6 @@
 </script>
 
 <div
-	bind:this={rootEl}
 	class="qm-array"
 	class:empty={ids.length === 0}
 	role="group"
@@ -484,10 +482,10 @@
 	.qm-array-rows.empty {
 		display: none;
 	}
-	/* A grid rather than a block: an `<input>` and a `<textarea>` are inline-level and
-	 would sit on a baseline, standing the row a descender taller than the box the slab
-	 measures itself against. `minmax(0, …)` because a long unbroken value grows an `auto`
-	 track, and the edge with it. */
+	/* A grid rather than a block: an `<input>` is inline-level and would sit on a
+	 baseline, standing the row a descender taller than the box the slab measures itself
+	 against. `minmax(0, …)` because a long unbroken value grows an `auto` track, and the
+	 edge with it. */
 	.qm-array-row {
 		position: relative;
 		display: grid;
@@ -498,9 +496,9 @@
 		border-radius: var(--_qm-radius-inner);
 	}
 	/* The end inset the slab stands in, taken off whichever box the element drew:
-	 `.qm-input` is the text element and the JSON textarea, `.qm-control-box` the prose
-	 one. `:global`, because the box belongs to the child component's markup and the scope
-	 class stops at this component's. The longhand beats the family's `padding` shorthand
+	 `.qm-input` is the text element, `.qm-control-box` the prose one and an object row's
+	 summary. `:global`, because the box belongs to the child component's markup and the
+	 scope class stops at this component's. The longhand beats the family's `padding` shorthand
 	 without a specificity fight: this block is unlayered and `controls.css` is not. */
 	.qm-array-row :global(.qm-input),
 	.qm-array-row :global(.qm-control-box) {

@@ -8,7 +8,7 @@
 // `U+FFFC` island slot. `ContentHit.pos` / `FieldRegion.span` reach a PM caret
 // through `usvToPM`; a caret signal to the preview runs `pmToUsv` in reverse.
 import type { Node as PMNode } from 'prosemirror-model';
-import { scanDoc, type PosRun } from './encode.js';
+import { scanDoc, type PosRun, type Scan } from './encode.js';
 
 /** A prebuilt line→position index for a PM doc, rebuilt on structural change. */
 export interface LineIndex {
@@ -22,7 +22,12 @@ export interface LineIndex {
 
 /** Build the position index for `doc` (walks it once via the shared scanner). */
 export function buildLineIndex(doc: PMNode): LineIndex {
-	const s = scanDoc(doc);
+	return lineIndexOf(scanDoc(doc));
+}
+
+/** The index a scan's runs make. The commit path takes this one: it wants the
+ *  content projection off the same walk (`encode.ts`, `scanContent`). */
+export function lineIndexOf(s: Scan): LineIndex {
 	const runs = s.runs;
 	let pmEndContent = 1;
 	let firstContentStart = 1;

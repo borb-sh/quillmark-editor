@@ -31,8 +31,8 @@ import type { Document, DocumentReader, Content, Addr, Quill } from '@quillmark/
 import type { EditorErrorHandler } from '../errors.js';
 import { reportError, errorMessage } from '../errors.js';
 import { decode } from './decode.js';
-import { usvToPM, pmToUsv, buildLineIndex, type LineIndex } from './positions.js';
-import { lower, pmToContent, contentEdit } from './encode.js';
+import { usvToPM, pmToUsv, buildLineIndex, lineIndexOf, type LineIndex } from './positions.js';
+import { lower, pmToContent, scanContent, scanDoc, contentEdit } from './encode.js';
 import { islandPastePlugin } from './islands.js';
 import { anchorsFromContent, type AnchorPos } from './marks.js';
 import { createReconciler, type Reconciler } from './reconcile.js';
@@ -336,14 +336,19 @@ export function createField(opts: CreateFieldOpts): FieldController {
 			const oldRt = reconciler.last;
 			const next = view.state.apply(tr);
 			view.updateState(next); // (a) optimistic
-			index = buildLineIndex(next.doc);
+			// One walk per structural change: the index and the projection the commit
+			// diffs both come off it. A selection-only transaction leaves the document
+			// it was built from, so the index over it still holds.
+			const scan = tr.docChanged ? scanDoc(next.doc) : undefined;
+			if (scan) index = lineIndexOf(scan);
 
 			// Commit a content edit or an anchor mutation. An anchor insert/remove is
 			// zero-width, so `docChanged` is false: the `anchorKey` meta is what
 			// routes it through the same commit path (the diff emits the anchor op).
 			if (tr.docChanged || tr.getMeta(anchorKey)) {
 				// (d) the change signal, only for what actually landed.
-				if (commitEdit(oldRt, next.doc)) opts.onChange?.(addr);
+				const newRt = scan ? scanContent(scan) : pmToContent(next.doc);
+				if (commitEdit(oldRt, newRt)) opts.onChange?.(addr);
 			}
 			// The caret, for both structural and selection-only changes: a host
 			// following the caret wants an arrow key, and a host recompiling wants
@@ -389,10 +394,11 @@ export function createField(opts: CreateFieldOpts): FieldController {
 	// content rest. Keep the optimistic PM on throw.
 	// Returns whether anything landed: the caller's change signal, which must not
 	// be a property of which branch the commit took.
-	function commitEdit(oldRt: Content, newDoc: PMNode): boolean {
-		// The projection and its text splice, each computed once per keystroke: the gate
-		// below, both overwrite fallbacks, and `lower` all read this one `edit`.
-		const edit = contentEdit(oldRt, pmToContent(newDoc));
+	function commitEdit(oldRt: Content, newRt: Content): boolean {
+		// The text splice, computed once per keystroke: the gate below, both overwrite
+		// fallbacks, and `lower` all read this one `edit`. The projection is the
+		// caller's, off the same walk that rebuilt the index.
+		const edit = contentEdit(oldRt, newRt);
 		try {
 			// A field not yet at content rest is the only edit that overwrites by choice:
 			// `applyChange` throws on an absent declared field (verified) and mis-reads

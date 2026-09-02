@@ -168,9 +168,28 @@ describe('quillkit studio', () => {
 	}, 60_000);
 });
 
+describe('how a flag is spelled', () => {
+	it('reads a value joined by an equals sign', async () => {
+		// A verb reading only `--quiver <dir>` takes `--quiver=<dir>` for a directory it was
+		// never given and runs against the working one, which is a verdict about the wrong
+		// tree. The bare collection is what makes that visible: it names the missing packer,
+		// where the working directory resolves one.
+		const bare = await temp.dir();
+		await expect(
+			run(process.execPath, [BIN, 'site', `--quiver=${bare}`, `--out=${join(bare, 'site')}`])
+		).rejects.toThrow(/npm install --save-dev @quillmark\/quiver/);
+	});
+});
+
 describe('the bin without a verb', () => {
 	it('prints usage and fails', async () => {
 		await expect(run(process.execPath, [BIN])).rejects.toThrow(/Usage:/);
+	});
+
+	it('prints usage for a name the verb table inherits', async () => {
+		// `toString` is on every object, so a dispatch reading the prototype chain calls it
+		// and dies of a TypeError where an author is owed the usage line.
+		await expect(run(process.execPath, [BIN, 'toString'])).rejects.toThrow(/Usage:/);
 	});
 });
 

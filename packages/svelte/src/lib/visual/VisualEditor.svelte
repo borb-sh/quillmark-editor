@@ -3,7 +3,7 @@
  `doc` prop remounts the editor under it, so a consumer holding one mount across
  two documents gets a surface that names the live handle.
 
- It is A `{#key}`, not A reseed. The state a swap invalidates is not one field:
+ It is a `{#key}`, not a reseed. The state a swap invalidates is not one field:
  composable cards key on session id, the main card is keyed on nothing, and each
  prose leaf mounts once per stable leaf key with `createField` closing over the
  `doc` it mounted against — so after an in-place swap the main card's leaves

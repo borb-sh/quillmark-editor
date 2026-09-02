@@ -14,12 +14,10 @@
 	/* ── Rhythm ──────────────────────────────────────────────────────────────── */
 	/* The preset's ramp widened at the top, derived from its base rather than a second
 	   base beside it: a page separates sections where a card separates fields, so the
-	   ramp runs to 6rem. Derived, so no in-between value drifts in. */
+	   ramp runs to 4rem. Derived, so no in-between value drifts in. */
 	--pg-space-6: calc(var(--qmh-space) * 6);
 	--pg-space-8: calc(var(--qmh-space) * 8);
-	--pg-space-12: calc(var(--qmh-space) * 12);
 	--pg-space-16: calc(var(--qmh-space) * 16);
-	--pg-space-24: calc(var(--qmh-space) * 24);
 
 	/* ── The running head ────────────────────────────────────────────────────── */
 	/* The band the shell's head stands in, measured from the top of the viewport: what a

@@ -7,7 +7,7 @@ import type { LiveSession, ChangeSet } from '@quillmark/wasm';
 import type { DocPath, Landing, Place } from '../core/address.js';
 import { reportError, errorMessage, type EditorErrorHandler } from '../core/errors.js';
 import { createPaintLoop, type PaintLoop } from './paint.js';
-import { createBridge, type BridgeController } from './bridge.js';
+import { createBridge, type BridgeController, type HeldTrip } from './bridge.js';
 import { mergePreviewStrings, type PreviewStringsInput } from './strings.js';
 
 export interface PreviewOptions {
@@ -115,9 +115,13 @@ export function createPreview(session: LiveSession, opts: PreviewOptions): Previ
 	// slots array is a stable identity but its members are swapped on reconcile, and
 	// the listeners are per slot.
 	let bridge: BridgeController | undefined;
+	// Outlives that rebuild, so a trip held for a pane with no box crosses it. Only the
+	// follow is re-asserted after a recompile, and a `scrollToField` the pane could not
+	// run has nothing else that would ask again for it.
+	const held: HeldTrip = {};
 
 	function attach(): void {
-		bridge = createBridge(session, container, paintLoop.slots, opts.onPick);
+		bridge = createBridge(session, container, paintLoop.slots, opts.onPick, held);
 	}
 	function detach(): void {
 		bridge?.destroy();
