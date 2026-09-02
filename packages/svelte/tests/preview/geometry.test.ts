@@ -9,8 +9,8 @@
 // only re-exports the public `createPreview`/`Preview` surface per PREVIEW.md;
 // the transform is an internal correctness seam, not part of that surface).
 import { describe, it, expect } from 'vitest';
-import { init, Engine, type FieldRegion, type PageSize } from '@quillmark/wasm';
-import { boxesForField, rectToPercent, clickToPdfPt } from '$lib/preview/geometry.js';
+import { init, Engine, type ContentHit, type FieldRegion, type PageSize } from '@quillmark/wasm';
+import { boxesForField, rectToPercent, clickToPdfPt, pxToPt } from '$lib/preview/geometry.js';
 import { loadFixtureTree } from '../helpers/fixtures.js';
 
 const core = await init();
@@ -62,6 +62,19 @@ describe('geometry: synthetic round-trip', () => {
 		for (const pt of results) {
 			expect(pt.x).toBeCloseTo(rect[0], 6);
 			expect(pt.y).toBeCloseTo(rect[3], 6); // top-left on screen = y1 in bottom-left space
+		}
+	});
+
+	it('pxToPt measures a length in the space clickToPdfPt lands a point', () => {
+		// A length is the distance between two points, so the length transform and the
+		// point transform have to agree on it wherever the page is drawn. This is what
+		// makes the click slack a distance in the space the queries rank distances in.
+		for (const cssW of [300, 612, 1500]) {
+			const cssH = (cssW / pageSize.widthPt) * pageSize.heightPt;
+			const span = 17;
+			const near = clickToPdfPt(100, 0, cssW, cssH, pageSize);
+			const far = clickToPdfPt(100 + span, 0, cssW, cssH, pageSize);
+			expect(pxToPt(span, cssW, pageSize)).toBeCloseTo(far.x - near.x, 6);
 		}
 	});
 });
@@ -158,6 +171,49 @@ describe('geometry: against a real compiled session (showcase)', () => {
 				}
 			}
 			expect(checked).toBeGreaterThan(0);
+		} finally {
+			session.free();
+			doc.free();
+			quill.free();
+		}
+	});
+
+	// What the click slack stands on, and the one thing about it no diff shows: the
+	// session ranks placements by distance rather than growing each box, so a slack only
+	// ever fills a miss. If a pin traded that ranking for grown boxes, every click this
+	// pane places today could move, and nothing else here would notice.
+	//
+	// Held at both ends of the range a slack converts into, with the fill asserted beside
+	// it: a tolerance that changed nothing would satisfy the first assertion by doing
+	// nothing.
+	it('a slack only ever fills a miss: every exact hit answers the same under one', async () => {
+		const tree = loadFixtureTree();
+		const quill = core.Quill.fromTree(tree);
+		const doc = quill.seedDocument();
+		const engine = new Engine();
+		const session = await engine.open(quill, doc);
+		try {
+			const pageSize = session.pageSize(0);
+			const step = 8;
+			const hits: Array<[number, number, ContentHit]> = [];
+			const misses: Array<[number, number]> = [];
+			for (let y = step / 2; y < pageSize.heightPt; y += step) {
+				for (let x = step / 2; x < pageSize.widthPt; x += step) {
+					const exact = session.positionAt(0, x, y);
+					if (exact) hits.push([x, y, exact]);
+					else misses.push([x, y]);
+				}
+			}
+			expect(hits.length).toBeGreaterThan(0);
+
+			for (const tolPt of [1, 8]) {
+				for (const [x, y, exact] of hits) {
+					expect(session.positionAt(0, x, y, tolPt), `(${x}, ${y}) at ${tolPt}pt`).toEqual(exact);
+				}
+				const sampled = misses.filter((_, i) => i % 8 === 0);
+				const filled = sampled.filter(([x, y]) => session.positionAt(0, x, y, tolPt));
+				expect(filled.length, `nothing filled at ${tolPt}pt`).toBeGreaterThan(0);
+			}
 		} finally {
 			session.free();
 			doc.free();
