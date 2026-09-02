@@ -24,6 +24,7 @@ import { chainCommands } from 'prosemirror-commands';
 import type { Command } from 'prosemirror-state';
 import { atomKeymap } from './atoms.js';
 import { blockKeymap } from './blocks.js';
+import { breakKeymap } from './breaks.js';
 import { codeKeymap } from './code.js';
 import { listKeymap } from './lists.js';
 import { slashKeymap } from './slash.js';
@@ -49,7 +50,11 @@ function chainKeymaps(...maps: Record<string, Command>[]): Record<string, Comman
  * The slash menu is innermost of the three, and it is conditional rather than
  * schema-gated: the keys exist only where a menu can be drawn (`slash`), because Enter
  * and Escape claimed by a surface nobody can see is a body that swallows two keys for
- * no visible reason. */
+ * no visible reason.
+ *
+ * The break link is last and its place says nothing: Shift-Enter is a key no other
+ * link binds, and the fence it has to answer for it answers for itself
+ * (`breaks.ts`). */
 export function bodyKeymap(schema: Schema, slash?: boolean): Record<string, Command> {
 	const links = slash ? [slashKeymap()] : [];
 	return chainKeymaps(
@@ -57,6 +62,7 @@ export function bodyKeymap(schema: Schema, slash?: boolean): Record<string, Comm
 		blockKeymap(schema),
 		codeKeymap(schema),
 		listKeymap(schema),
-		atomKeymap(schema)
+		atomKeymap(schema),
+		breakKeymap(schema)
 	);
 }
