@@ -44,7 +44,9 @@ class FakeRO {
 	}
 	observe(): void {}
 	unobserve(): void {}
-	disconnect(): void {}
+	disconnect(): void {
+		ros = ros.filter((ro) => ro !== this);
+	}
 	report(): void {
 		this.cb([], this as unknown as ResizeObserver);
 	}
@@ -197,6 +199,41 @@ describe('a preview hidden by the narrow shell', () => {
 			['main.body', 12],
 			['main.body', 12]
 		]);
+		expect(container.scrollTop).toBeGreaterThan(0);
+
+		Element.prototype.getBoundingClientRect = rect;
+		preview.destroy();
+	});
+
+	// The discrete hop across the same window, with a recompile in it. A page count that
+	// moves rebuilds the bridge, and nothing re-asserts a `scrollToField` the way `refresh`
+	// re-asserts the follow: the trip is held by the controller, so the rebuild carries it.
+	it('holds the field trip across a recompile that changes the page count', () => {
+		const session = {
+			...mockSession(1),
+			regions: (): FieldRegion[] => [
+				{ field: 'main.date', page: 0, rect: [10, 10, 110, 30] } as FieldRegion
+			]
+		} as unknown as LiveSession;
+		const rect = Element.prototype.getBoundingClientRect;
+		Element.prototype.getBoundingClientRect = () =>
+			(container.getBoundingClientRect().height > 0
+				? { left: 0, top: 1000, right: 110, bottom: 1020, width: 100, height: 20 }
+				: { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 }) as DOMRect;
+		setBox(container, 600, 800);
+		const preview = createPreview(session, { container });
+		io?.report(true);
+
+		// The address is placed, which is the whole of what the boolean says; a pane with
+		// no box yet is not a second no.
+		setBox(container, 0, 0);
+		expect(preview.scrollToField('main.date')).toBe(true);
+		expect(container.scrollTop).toBe(0);
+
+		preview.refresh(change(2));
+		expect(container.scrollTop).toBe(0);
+
+		setBox(container, 600, 800);
 		expect(container.scrollTop).toBeGreaterThan(0);
 
 		Element.prototype.getBoundingClientRect = rect;

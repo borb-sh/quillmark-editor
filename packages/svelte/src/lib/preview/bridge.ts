@@ -85,11 +85,20 @@ export function clearOfTheFold(target: VerticalSpan, port: VerticalSpan): boolea
 	return target.top - clearance >= port.top && target.bottom + clearance <= port.bottom;
 }
 
+/** The trip a pane with no box could not run, held for the box coming back. One, and the
+ *  last one asked for: a caret hop supersedes the hop before it on a showing pane too.
+ *  A cell rather than closure state, so a bridge rebuilt under a changed page count
+ *  inherits what the one it replaced was holding (`controller.ts`). */
+export interface HeldTrip {
+	run?: () => void;
+}
+
 export function createBridge(
 	session: LiveSession,
 	container: HTMLElement,
 	slots: readonly PageSlot[],
-	onPick: ((at: Landing) => void) | undefined
+	onPick: ((at: Landing) => void) | undefined,
+	held: HeldTrip = {}
 ): BridgeController {
 	const unlisten: Array<() => void> = [];
 
@@ -146,20 +155,15 @@ export function createBridge(
 		else if (target.right > port.right) container.scrollLeft += target.right - port.right;
 	}
 
-	// The trip a pane with no box could not run, held for the box coming back. One, and
-	// the last one asked for: a caret hop supersedes the hop before it on a showing pane
-	// too.
-	let held: (() => void) | undefined;
-
 	// The re-assert. Nothing else asks on the way back: `refresh` re-asks only on a
 	// recompile, and the reader who has just tapped Preview is not typing, so the pane
 	// would open where the caret was several edits ago. Guarded for jsdom, which ships no
 	// ResizeObserver and lays out nothing for one to report.
 	if (typeof ResizeObserver !== 'undefined') {
 		const observer = new ResizeObserver(() => {
-			if (!held || !hasBox(container.getBoundingClientRect())) return;
-			const trip = held;
-			held = undefined;
+			if (!held.run || !hasBox(container.getBoundingClientRect())) return;
+			const trip = held.run;
+			held.run = undefined;
 			trip();
 		});
 		observer.observe(container);
@@ -175,7 +179,7 @@ export function createBridge(
 		// The address is placed, which is the whole of what the `boolean` answers; a pane
 		// with no box yet is not a second no.
 		if (!hasBox(port)) {
-			held = () => void scrollToField(field);
+			held.run = () => void scrollToField(field);
 			return true;
 		}
 		// A discrete act ("show me this field"), so it centres every time, unlike
@@ -195,7 +199,7 @@ export function createBridge(
 		// against whatever compile is current when the pane comes back.
 		const port = container.getBoundingClientRect();
 		if (!hasBox(port)) {
-			held = () => focusPosition(field, pos);
+			held.run = () => focusPosition(field, pos);
 			return;
 		}
 		// The continuous hop: one call per keystroke and per arrow key, so it moves
