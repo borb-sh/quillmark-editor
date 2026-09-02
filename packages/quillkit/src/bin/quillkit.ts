@@ -17,10 +17,14 @@ import { serialize, watchCollection } from '../watch.js';
 const argv = process.argv.slice(2);
 const command = argv[0];
 
-/** One flag with a value. */
+/** One flag with a value, spelled either `--name value` or `--name=value`. */
 function flag(name: string): string | undefined {
-	const i = argv.indexOf(name);
-	return i !== -1 && i + 1 < argv.length ? argv[i + 1] : undefined;
+	const eq = `${name}=`;
+	for (let i = 0; i < argv.length; i++) {
+		if (argv[i] === name) return i + 1 < argv.length ? argv[i + 1] : undefined;
+		if (argv[i].startsWith(eq)) return argv[i].slice(eq.length);
+	}
+	return undefined;
 }
 
 /** The collection every verb runs against, defaulting to the working directory. */

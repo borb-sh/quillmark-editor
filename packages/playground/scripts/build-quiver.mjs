@@ -1,7 +1,7 @@
 // Packs the workspace's fixture quiver into `static/quiver/`, where the app fetches
-// it at runtime. A browser cannot read the source layout, so this deploy-time pack is
-// the step every browser consumer of a quiver performs (PLAYGROUND §"Where the quills
-// come from").
+// it at runtime. A browser cannot read the source layout, so this deploy-time pack
+// is the step every browser consumer of a quiver performs
+// (PLAYGROUND §"Quiver, not bundler").
 //
 // `static/` is Kit's verbatim-copy tree, so one output serves both `vite dev` and the
 // static build. Generated, and gitignored.
