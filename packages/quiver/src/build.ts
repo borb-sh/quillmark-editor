@@ -161,6 +161,10 @@ export async function buildQuiver(
 			fonts: Record<string, string>;
 		}> = [];
 
+		// Font hashes already in the store. The store is content-addressed, so a font
+		// shared across quills or versions is written once.
+		const stored = new Set<string>();
+
 		for (const [quillName, versions] of catalog) {
 			for (const version of versions) {
 				if (!options.drafts && isDraft(version)) continue;
@@ -169,22 +173,20 @@ export async function buildQuiver(
 
 				const tree = await readQuillTree(quillDir);
 
-				const fontEntries: Array<[string, Uint8Array]> = [];
-				const contentEntries: Array<[string, Uint8Array]> = [];
+				const fonts: Record<string, string> = {};
+				const contentRecord: Record<string, Uint8Array> = {};
 
 				for (const [rel, bytes] of tree) {
-					if (FONT_EXT.test(rel)) {
-						fontEntries.push([rel, bytes]);
-					} else {
-						contentEntries.push([rel, bytes]);
+					if (!FONT_EXT.test(rel)) {
+						contentRecord[rel] = bytes;
+						continue;
 					}
-				}
 
-				const fonts: Record<string, string> = {};
-				for (const [rel, bytes] of fontEntries) {
 					// Full width: the store is keyed by hash, so two distinct fonts
 					// sharing a prefix would merge into one entry.
 					const hash = createHash('sha256').update(bytes).digest('hex');
+					fonts[rel] = hash;
+					if (stored.has(hash)) continue;
 
 					try {
 						await writeFile(join(stage, 'store', hash), bytes);
@@ -196,13 +198,9 @@ export async function buildQuiver(
 						);
 					}
 
-					fonts[rel] = hash;
+					stored.add(hash);
 				}
 
-				const contentRecord: Record<string, Uint8Array> = {};
-				for (const [rel, bytes] of contentEntries) {
-					contentRecord[rel] = bytes;
-				}
 				// The budget `bundle.ts` carries is spent here as well as at the read, so
 				// a quill no loader would take is refused by the build that packs it,
 				// where the author it names can still do something about it.

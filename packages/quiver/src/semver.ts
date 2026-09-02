@@ -38,11 +38,3 @@ export function compareSemver(a: string, b: string): number {
 export function isDraft(version: string): boolean {
 	return compareSemver(version, MIN_PUBLISHED_VERSION) < 0;
 }
-
-/** Returns the highest version string, or null if empty. */
-export function chooseHighestVersion(versions: string[]): string | null {
-	if (versions.length === 0) return null;
-	const copy = [...versions];
-	copy.sort((a, b) => compareSemver(b, a));
-	return copy[0];
-}

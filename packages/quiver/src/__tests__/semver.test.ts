@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
 	isCanonicalSemver,
 	matchesSemverSelector,
-	chooseHighestVersion,
 	compareSemver,
 	isDraft,
 	MIN_PUBLISHED_VERSION
@@ -53,30 +52,6 @@ describe('matchesSemverSelector', () => {
 		expect(matchesSemverSelector('10.20.30', '10.20')).toBe(true));
 	it('10.20.30 does not match selector 10.21', () =>
 		expect(matchesSemverSelector('10.20.30', '10.21')).toBe(false));
-});
-
-describe('chooseHighestVersion', () => {
-	it('returns null for empty array', () => expect(chooseHighestVersion([])).toBeNull());
-
-	it('returns the only version in single-element array', () => {
-		expect(chooseHighestVersion(['1.0.0'])).toBe('1.0.0');
-	});
-
-	it('picks highest from mixed versions', () => {
-		expect(chooseHighestVersion(['1.0.0', '2.0.0', '1.5.3'])).toBe('2.0.0');
-	});
-
-	it('picks highest patch', () => {
-		expect(chooseHighestVersion(['1.0.1', '1.0.0', '1.0.2'])).toBe('1.0.2');
-	});
-
-	it('picks highest minor', () => {
-		expect(chooseHighestVersion(['1.3.0', '1.10.0', '1.2.9'])).toBe('1.10.0');
-	});
-
-	it('returns same version when all equal', () => {
-		expect(chooseHighestVersion(['1.0.0', '1.0.0'])).toBe('1.0.0');
-	});
 });
 
 describe('compareSemver', () => {

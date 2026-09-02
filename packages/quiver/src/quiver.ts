@@ -12,7 +12,7 @@ import { QuiverError } from './errors.js';
 import { init } from '@quillmark/wasm';
 import type { Quill } from '@quillmark/wasm';
 import { parseQuillRef } from './ref.js';
-import { matchesSemverSelector, chooseHighestVersion } from './semver.js';
+import { matchesSemverSelector } from './semver.js';
 
 /** Loader strategy: source or build output. Package-internal. */
 export interface QuiverLoader {
@@ -160,17 +160,15 @@ export class Quiver {
 		const { name, selector } = parseQuillRef(ref);
 		const versions = this.#catalog.get(name);
 
-		if (versions && versions.length > 0) {
-			const candidates =
+		if (versions !== undefined) {
+			// Every loader materializes a catalog sorted descending, so the first match is
+			// the highest.
+			const winner =
 				selector === undefined
-					? [...versions]
-					: versions.filter((v) => matchesSemverSelector(v, selector));
+					? versions[0]
+					: versions.find((v) => matchesSemverSelector(v, selector));
 
-			if (candidates.length > 0) {
-				// chooseHighestVersion returns null only for empty arrays; candidates is non-empty.
-				const winner = chooseHighestVersion(candidates)!;
-				return `${name}@${winner}`;
-			}
+			if (winner !== undefined) return `${name}@${winner}`;
 		}
 
 		throw new QuiverError(

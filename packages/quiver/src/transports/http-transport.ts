@@ -77,8 +77,8 @@ export class HttpTransport implements BuiltTransport {
 		}
 
 		// A fast reject; the running total below is what holds the ceiling. `Content-Length`
-		// is the encoded length, so under `Content-Encoding` it under-reports, and a missing
-		// or unparseable one is NaN — both can only accept early.
+		// is the encoded length, so under `Content-Encoding` it under-reports; a missing one is
+		// 0 and an unparseable one NaN, neither over the ceiling, so both accept early.
 		const declared = Number(response.headers.get('content-length'));
 		if (declared > opts.maxBytes) {
 			throw oversized(url, opts.maxBytes, `states ${declared} bytes, over`);
