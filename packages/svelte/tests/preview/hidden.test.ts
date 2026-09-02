@@ -116,7 +116,7 @@ describe('a preview hidden by the narrow shell', () => {
 		// An edit lands in the other track; the page count moves under a preview no one
 		// is looking at. Nothing is visible, so nothing paints yet.
 		preview.refresh(change(3));
-		expect(container.querySelectorAll('.qm-page').length).toBe(3);
+		expect(container.querySelectorAll('.qm-page-slot').length).toBe(3);
 
 		// Back on this track, the observer reports again and the band is swept.
 		io?.report(true);
