@@ -91,7 +91,9 @@ export function packFiles(files: Record<string, Uint8Array>): Uint8Array {
 /**
  * Unpack a zip into a flat file map.
  * Returns { path: Uint8Array } for every file entry in the archive.
- * Throws `quiver_invalid` where the budget is spent, before any entry inflates.
+ * Throws `quiver_invalid` where the budget is spent. fflate filters and inflates one
+ * entry per pass, so the entries the budget already took are resident when it throws —
+ * bounded, being what fit inside it.
  */
 export function unpackFiles(data: Uint8Array): Record<string, Uint8Array> {
 	const spend = bundleBudget();

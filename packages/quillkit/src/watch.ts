@@ -6,7 +6,7 @@
  */
 
 import { watch } from 'node:fs';
-import { resolve, sep } from 'node:path';
+import { relative, resolve, sep } from 'node:path';
 import { within } from './paths.js';
 
 /** One repack per settled burst: an editor's save arrives as several watcher events. */
@@ -55,7 +55,11 @@ export function watchCollection(
 
 	const isOwnWrite = (path: string): boolean => {
 		const abs = resolve(root, path);
-		if (abs.split(sep).some((part) => part === 'node_modules' || part === '.git')) return true;
+		// Segments below the root, not of the absolute path: a collection installed at
+		// `node_modules/@scope/quills` is its own root, and every file under it would
+		// otherwise read as the output a pack writes.
+		const rel = relative(root, abs);
+		if (rel.split(sep).some((part) => part === 'node_modules' || part === '.git')) return true;
 		return excluded.some((at) => within(at, abs));
 	};
 
