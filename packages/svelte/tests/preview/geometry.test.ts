@@ -233,8 +233,8 @@ describe('boxesForField', () => {
 		// A container is placed at both: the array's own region is the ink the plate
 		// composed around its elements, and an element's is what it carries itself.
 		const regions = [region('main.authors', 0), region('main.authors[0]', 200)];
-		expect(boxesForField('main.authors', [], regions)).toEqual(regions);
-		expect(boxesForField('main.authors[0]', [], regions)).toEqual([regions[1]]);
+		expect(boxesForField('main.authors', [], () => regions)).toEqual(regions);
+		expect(boxesForField('main.authors[0]', [], () => regions)).toEqual([regions[1]]);
 	});
 
 	it('reads both boundary characters, and neither as a bare prefix', () => {
@@ -247,13 +247,13 @@ describe('boxesForField', () => {
 			region('main.contact.city', 200),
 			region('main.contact_note', 300)
 		];
-		expect(boxesForField('main.keywords', [], regions)).toEqual([regions[0]]);
-		expect(boxesForField('main.contact', [], regions)).toEqual([regions[2]]);
+		expect(boxesForField('main.keywords', [], () => regions)).toEqual([regions[0]]);
+		expect(boxesForField('main.contact', [], () => regions)).toEqual([regions[2]]);
 	});
 
 	it('prefers the union the compile did make', () => {
 		const boxes = [region('main.body', 0)];
-		expect(boxesForField('main.body', boxes, [region('main.body[9]', 200)])).toBe(boxes);
+		expect(boxesForField('main.body', boxes, () => [region('main.body[9]', 200)])).toBe(boxes);
 	});
 });
 
@@ -272,7 +272,7 @@ describe('geometry: the addresses a compile serves (showcase)', () => {
 			expect(fields).toContain('main.keywords[0]');
 
 			for (const field of fields) {
-				const boxes = boxesForField(field, session.fieldBoxes(field), regions);
+				const boxes = boxesForField(field, session.fieldBoxes(field), () => regions);
 				expect(boxes.length, `no box for ${field}`).toBeGreaterThan(0);
 			}
 			// The array is named by the ink the plate composes around its elements — the
@@ -285,7 +285,7 @@ describe('geometry: the addresses a compile serves (showcase)', () => {
 			);
 			expect(under.filter((r) => r.field === 'main.keywords').length).toBeGreaterThan(0);
 			expect(
-				boxesForField('main.keywords', session.fieldBoxes('main.keywords'), regions).length
+				boxesForField('main.keywords', session.fieldBoxes('main.keywords'), () => regions).length
 			).toBe(under.length);
 		} finally {
 			session.free();
@@ -306,7 +306,7 @@ describe('geometry: the addresses a compile serves (showcase)', () => {
 			expect(regions.length).toBeGreaterThan(0);
 			for (const field of new Set(regions.map((r) => r.field))) {
 				expect(
-					boxesForField(field, session.fieldBoxes(field), regions).length,
+					boxesForField(field, session.fieldBoxes(field), () => regions).length,
 					`no box for ${field}`
 				).toBeGreaterThan(0);
 			}
@@ -335,7 +335,7 @@ describe('geometry: the addresses a compile serves (showcase)', () => {
 			expect(fields).toContain('main.handling.caveat');
 			for (const cell of ['main.handling.controlled_by', 'main.handling.caveat']) {
 				expect(
-					boxesForField(cell, session.fieldBoxes(cell), session.regions()).length,
+					boxesForField(cell, session.fieldBoxes(cell), () => session.regions()).length,
 					`no box for ${cell}`
 				).toBeGreaterThan(0);
 			}

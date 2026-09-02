@@ -37,14 +37,17 @@ export interface PdfPoint {
  * boundary character (`.` for a nested field, `[` for an array element) keeps the
  * prefix a path boundary: `main.keywords` matches `main.keywords[0]`, not
  * `main.keywords_note`.
+ *
+ * `regions` is a thunk because the first rung answers without it, and taking it
+ * marshals every placement in the compile across the WASM boundary.
  */
 export function boxesForField(
 	field: string,
 	boxes: readonly FieldRegion[],
-	regions: readonly FieldRegion[]
+	regions: () => readonly FieldRegion[]
 ): readonly FieldRegion[] {
 	if (boxes.length) return boxes;
-	return regions.filter(
+	return regions().filter(
 		(r) => r.field === field || r.field.startsWith(`${field}.`) || r.field.startsWith(`${field}[`)
 	);
 }

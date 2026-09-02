@@ -135,11 +135,12 @@ export function createBridge(
 		return rect;
 	}
 
-	// Centre `target` vertically in the scrollport; the cross axis takes the minimum
-	// trip instead, since the container is a vertical scroller and only a page wider
-	// than the port has anything to move there.
-	function centre(target: DOMRect): void {
-		const port = container.getBoundingClientRect();
+	// Centre `target` vertically in `port`, the scrollport's box; the cross axis takes the
+	// minimum trip instead, since the container is a vertical scroller and only a page
+	// wider than the port has anything to move there. `port` is the caller's own read: the
+	// marker `measure` places is absolute inside the slot, so nothing between that read
+	// and this one moves the container's box, and one forced layout serves the whole hop.
+	function centre(target: DOMRect, port: DOMRect): void {
 		container.scrollTop += target.top + target.height / 2 - (port.top + port.height / 2);
 		if (target.left < port.left) container.scrollLeft += target.left - port.left;
 		else if (target.right > port.right) container.scrollLeft += target.right - port.right;
@@ -166,19 +167,20 @@ export function createBridge(
 	}
 
 	function scrollToField(field: string): boolean {
-		const box = boxesForField(field, session.fieldBoxes(field), session.regions())[0];
+		const box = boxesForField(field, session.fieldBoxes(field), () => session.regions())[0];
 		if (!box) return false;
 		const slot = slots[box.page];
 		if (!slot) return false;
+		const port = container.getBoundingClientRect();
 		// The address is placed, which is the whole of what the `boolean` answers; a pane
 		// with no box yet is not a second no.
-		if (!hasBox(container.getBoundingClientRect())) {
+		if (!hasBox(port)) {
 			held = () => void scrollToField(field);
 			return true;
 		}
 		// A discrete act ("show me this field"), so it centres every time, unlike
 		// the continuous hop below.
-		centre(measure(slot, rectToPercent(box.rect, slot.size)));
+		centre(measure(slot, rectToPercent(box.rect, slot.size)), port);
 		return true;
 	}
 
@@ -191,7 +193,8 @@ export function createBridge(
 		// for every keystroke of (`hasBox`): the follow would die silently for as long as
 		// a track is hidden. What is held is the request, not the trip, so it re-locates
 		// against whatever compile is current when the pane comes back.
-		if (!hasBox(container.getBoundingClientRect())) {
+		const port = container.getBoundingClientRect();
+		if (!hasBox(port)) {
 			held = () => focusPosition(field, pos);
 			return;
 		}
@@ -200,8 +203,8 @@ export function createBridge(
 		// takes the scrollport back from the user on every one of them, including
 		// the ones that changed nothing about where the caret already was.
 		const target = measure(slot, rectToPercent(region.rect, slot.size));
-		if (clearOfTheFold(target, container.getBoundingClientRect())) return;
-		centre(target);
+		if (clearOfTheFold(target, port)) return;
+		centre(target, port);
 	}
 
 	return {
