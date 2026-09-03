@@ -4,6 +4,7 @@
 import type { Diagnostic, Document, Engine, LiveSession, Quill } from '@quillmark/wasm';
 import type { Quiver } from '@quillmark/quiver';
 import { diagnosticsOf, messageOf } from './notes';
+import { applyProfile, loadProfile } from './profile';
 
 /** How the document got here, and what the landing cost. */
 export interface Carry {
@@ -11,6 +12,10 @@ export interface Carry {
 	 *  `carried`: the previous document, landed under the schema in hand.
 	 *  `reseeded`: the previous document was refused, so the example stands in. */
 	how: 'seeded' | 'carried' | 'reseeded';
+	/** The profile fields laid onto a seed, in the order they landed. Empty for a carry,
+	 *  which arrives with the values the author already typed, and for a seed with no
+	 *  profile saved (PROFILE, `profile.ts`). */
+	profiled: string[];
 	/** The `conform::*` diagnostics for the values the schema in hand will not take,
 	 *  or the one refusal that dropped the document. Empty for a seed, and the point
 	 *  of the surface rather than an error to swallow. */
@@ -58,21 +63,32 @@ export async function openRef(
 	const quill = await quiver.getQuill(ref);
 
 	let doc: Document | undefined;
-	let landed: Carry = { how: 'seeded', stranded: [] };
+	let landed: Carry = { how: 'seeded', stranded: [], profiled: [] };
 	if (carry !== undefined) {
 		try {
 			// The bound ingestion door: parse, then conform against the schema in hand,
 			// landing every declared field at its canonical rest. The `conform::*`
 			// diagnostics for the values that would not commit arrive on `warnings`.
 			doc = quill.parse(carry);
-			landed = { how: 'carried', stranded: doc.warnings };
+			landed = { how: 'carried', stranded: doc.warnings, profiled: [] };
 		} catch (err) {
 			// `toMarkdown` round-trips and the ref is unchanged, so a refusal here is
 			// outside the contract: seed, and say what refused.
-			landed = { how: 'reseeded', stranded: [{ severity: 'warning', message: messageOf(err) }] };
+			landed = {
+				how: 'reseeded',
+				stranded: [{ severity: 'warning', message: messageOf(err) }],
+				profiled: []
+			};
 		}
 	}
-	doc ??= quill.seedDocument();
+	if (doc === undefined) {
+		// A seed is a document with nothing in it but the schema's own example, which is
+		// where the author's saved boilerplate belongs: the profile is laid over the
+		// example, and a carry is left alone, having the values that were typed into it.
+		doc = quill.seedDocument();
+		const profile = loadProfile(quill.metadata.name);
+		if (profile) landed = { ...landed, profiled: applyProfile(doc, profile) };
+	}
 
 	return { ref, quill, doc, ...(await openSession(engine, quill, doc)), carry: landed };
 }
