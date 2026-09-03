@@ -43,6 +43,7 @@
 	import type { EditorChange } from '@quillmark/svelte/visual';
 	import Picker from './Picker.svelte';
 	import Markdown from './Markdown.svelte';
+	import Profile from './Profile.svelte';
 	import { catalogOf, openQuiver, type Catalog } from './quiver';
 	import { close, openRef, openSession, type Opened } from './session';
 	import { collect, diagnosticsOf, messageOf, placeOf } from './notes';
@@ -184,6 +185,10 @@
 	function openSource(): void {
 		sourceText = open ? open.doc.toMarkdown() : held;
 	}
+
+	/** Whether the profile panel is up. It reads the quill and the document on screen, so
+	 *  it opens only where both stand — a failed open has no schema to nominate against. */
+	let profiling = $state.raw(false);
 
 	/**
 	 * Land `text` as the document, which is the repack's carry with a different source.
@@ -401,6 +406,15 @@
 			disabled={!carrying}
 			onclick={openSource}>Edit source</button
 		>
+		<!-- The author's boilerplate, nominated off the document on screen (`profile.ts`).
+		     Inert without one: there is no schema to list and nothing to read values from. -->
+		<button
+			class="qm-control"
+			type="button"
+			data-testid="edit-profile"
+			disabled={!open}
+			onclick={() => (profiling = true)}>Profile</button
+		>
 		<span class="state">
 			{#if phase.kind === 'booting'}
 				<span class="qm-status" data-testid="phase">Opening…</span>
@@ -519,6 +533,12 @@
 		onApply={applyMarkdown}
 		onClose={() => (sourceText = undefined)}
 	/>
+{/if}
+
+<!-- Mounted only while up, for the reason the source panel is: the values it lists are
+     read as it opens, and a document edited behind it is a document it is not describing. -->
+{#if profiling && open}
+	<Profile quill={open.quill} doc={open.doc} onClose={() => (profiling = false)} />
 {/if}
 
 <style>
