@@ -4,7 +4,9 @@
 
 ## Unreleased
 
-**The `@quillmark/wasm` peer floor is `>=0.112.0-0`.** Nothing here reads a line, a mark or a container, so the release's respelling of the content vocabulary lands outside this package; the floor rises because a quiver hands out `Quill` handles the consumer's copy of the artifact has to load, and a consumer reading content off one reads its payloads under `attrs`.
+**The `@quillmark/wasm` peer floor is `>=0.113.0-0`.** Nothing here reads a document, so the release's move of `resolve` onto the reader lands outside this package; the floor rises because a quiver hands out `Quill` handles the consumer's copy of the artifact has to load, and a consumer resolving one calls `quill.reader(doc).resolve()` where it called `quill.resolve(doc)`. A consumer that persists a document moves with the storage DTO's verbs too: `toStored` / `fromStored` / `tryFromStored` / `loadStored`, the `*Json` spellings removed rather than aliased.
+
+**The floor's previous step is where every member of the content vocabulary spells its payload in `attrs`.** Nothing here reads a line, a mark or a container, so that respelling landed outside this package as well; a consumer reading content off a handle this quiver hands out reads its payloads under `attrs`.
 
 **The floor's previous step refuses two PDF shapes.** A consumer's copy of the artifact now declines a pdfform base carrying an `/AcroForm` of its own (`pdf::existing_acroform`) or a non-finite widget rect (`pdf::bad_rect`). A quill that rendered PDF and stops did so on a double-form background whose behavior was the reader's choice.
 

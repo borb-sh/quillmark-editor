@@ -11,7 +11,7 @@
 // that are about the body rather than about any block in it, and the Delete that is
 // about the caret's own line, outermost of the leaf's key chains (`keymap.ts`).
 import type { Attrs, Node as PMNode, NodeType, ResolvedPos, Schema } from 'prosemirror-model';
-import { Selection } from 'prosemirror-state';
+import { EditorState as PMEditorState, Selection } from 'prosemirror-state';
 import type { Command, EditorState, Transaction } from 'prosemirror-state';
 import { chainCommands, splitBlock } from 'prosemirror-commands';
 import { canJoin, findWrapping } from 'prosemirror-transform';
@@ -252,13 +252,19 @@ const paragraphFromEmptyFence: Command = (state, dispatch) => {
  * index resolved in the new one — so where the range starts at the head of a
  * `defining` block and ends inside a list, it retypes a `list_item` to a paragraph
  * and throws `RangeError` out of the keystroke.
+ *
+ * The document the split reads is `tr`'s own and carries no plugin, because its steps
+ * are replayed onto `tr`: `state.apply` would run every `appendTransaction` first
+ * (`breaks.ts` splits a heading at a break), and steps computed over those appends
+ * land at depths `tr` does not have.
  */
 const splitAcrossBlocks: Command = (state, dispatch) => {
 	const { $from, $to, empty } = state.selection;
 	if (empty || $from.parent === $to.parent) return false;
 	if (!dispatch) return true;
 	const tr = state.tr.deleteSelection();
-	splitBlock(state.apply(tr), (split) => {
+	const mid = PMEditorState.create({ doc: tr.doc, selection: tr.selection });
+	splitBlock(mid, (split) => {
 		for (const step of split.steps) tr.step(step);
 		tr.setSelection(Selection.fromJSON(tr.doc, split.selection.toJSON()));
 	});

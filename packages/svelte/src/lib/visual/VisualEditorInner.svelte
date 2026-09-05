@@ -630,12 +630,12 @@
 		// chrome, so a resolve failure degrades to no ghosts, never a blank form.
 		let resolved: Resolved | undefined;
 		try {
-			resolved = quill.resolve(doc);
+			resolved = quill.reader(doc).resolve();
 		} catch (e) {
 			reportError(onError, {
 				code: 'resolve-failed',
 				severity: 'error',
-				message: `quill.resolve threw; ghosted defaults fall back to none: ${errorMessage(e)}`,
+				message: `reader.resolve threw; ghosted defaults fall back to none: ${errorMessage(e)}`,
 				cause: e
 			});
 		}
